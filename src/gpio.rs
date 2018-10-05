@@ -529,7 +529,7 @@ gpio!(GPIOC, gpioc, gpiocen, PC, [
     PC15: (pc15, 15, Input<Floating>),
 ]);
 
-gpio!(GPIOD, gpiod, gpioden, pd, [
+gpio!(GPIOD, gpiod, gpioden, PD, [
     PD0: (pd0, 0, Input<Floating>),
     PD1: (pd1, 1, Input<Floating>),
     PD2: (pd2, 2, Input<Floating>),
