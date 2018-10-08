@@ -12,6 +12,8 @@ use stm32::{RCC, UART4, UART5, USART1, USART2, USART3, USART6};
 #[cfg(feature = "stm32f429")]
 use stm32::{RCC, UART4, UART5, UART7, UART8, USART1, USART2, USART3, USART6};
 
+use stm32::usart6::cr2::STOPW;
+
 use gpio::gpioa::{PA0, PA1, PA10, PA2, PA3, PA9};
 use gpio::gpiob::{PB10, PB11, PB6, PB7};
 use gpio::gpioc::{PC10, PC11, PC12, PC6, PC7};
@@ -38,6 +40,33 @@ pub enum Error {
     Parity,
     #[doc(hidden)]
     _Extensible,
+}
+
+pub enum AsyncWordLength {
+    DataBits8,
+    DataBits9,
+}
+
+pub enum AsyncParity {
+    ParityNone,
+    ParityEven,
+    ParityOdd
+}
+
+pub struct AsyncConfig {
+    pub wordlength: AsyncWordLength,
+    pub parity: AsyncParity,
+    pub stopbits: STOPW
+}
+
+impl Default for AsyncConfig {
+    fn default() -> AsyncConfig {
+        AsyncConfig {
+            wordlength: AsyncWordLength::DataBits8,
+            parity: AsyncParity::ParityNone,
+            stopbits: STOPW::STOP1
+        }
+    }
 }
 
 pub trait Pins<USART> {}
@@ -193,7 +222,7 @@ impl hal::serial::Write<u8> for Tx<USART1> {
 
 /// USART2
 impl<PINS> Serial<USART2, PINS> {
-    pub fn usart2(usart: USART2, pins: PINS, baud_rate: Bps, clocks: Clocks) -> Self
+    pub fn usart2(usart: USART2, pins: PINS, baud_rate: Bps, config: AsyncConfig, clocks: Clocks) -> Self
     where
         PINS: Pins<USART2>,
     {
@@ -216,10 +245,28 @@ impl<PINS> Serial<USART2, PINS> {
         usart.cr3.reset();
 
         // Enable transmission and receiving
-        usart
-            .cr1
-            .write(|w| w.ue().set_bit().te().set_bit().re().set_bit());
+        // and configure frame
+        usart.cr1.write(|w| w
+            .ue().set_bit()
+            .te().set_bit()
+            .re().set_bit()
+            .m().bit(match config.wordlength {
+                AsyncWordLength::DataBits8 => false,
+                AsyncWordLength::DataBits9 => true
+             })
+            .pce().bit(match config.parity {
+                AsyncParity::ParityNone => false,
+                _ => true
+             })
+            .ps().bit(match config.parity {
+                AsyncParity::ParityOdd => true,
+                _ => false
+             })
+            );
 
+        usart.cr2.write( |w| w
+            .stop().variant(config.stopbits)
+        );
         Serial { usart, pins }
     }
 
