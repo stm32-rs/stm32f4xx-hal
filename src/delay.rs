@@ -47,17 +47,29 @@ impl DelayMs<u8> for Delay {
 
 impl DelayUs<u32> for Delay {
     fn delay_us(&mut self, us: u32) {
-        let rvr = us * (self.clocks.hclk().0 / 8_000_000);
+        // The RVR register is 24 bits wide, as SysTick is based on a 24 bit counter
+        const MAX_RVR: u32 = (1 << 24);
 
-        assert!(rvr < (1 << 24));
+        let mut total_rvr = us * (self.clocks.hclk().0 / 8_000_000);
 
-        self.syst.set_reload(rvr);
-        self.syst.clear_current();
-        self.syst.enable_counter();
+        while total_rvr != 0 {
+            let current_rvr = if total_rvr < MAX_RVR {
+                total_rvr
+            } else {
+                MAX_RVR
+            };
 
-        while !self.syst.has_wrapped() {}
+            self.syst.set_reload(current_rvr);
+            self.syst.clear_current();
+            self.syst.enable_counter();
 
-        self.syst.disable_counter();
+            // Update the tracking variable while we are waiting...
+            total_rvr -= current_rvr;
+
+            while !self.syst.has_wrapped() {}
+
+            self.syst.disable_counter();
+        }
     }
 }
 
