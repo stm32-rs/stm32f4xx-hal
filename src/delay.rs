@@ -48,7 +48,7 @@ impl DelayMs<u8> for Delay {
 impl DelayUs<u32> for Delay {
     fn delay_us(&mut self, us: u32) {
         // The RVR register is 24 bits wide, as SysTick is based on a 24 bit counter
-        const MAX_RVR: u32 = (1 << 24);
+        const MAX_RVR: u32 = (1 << 24) - 1;
 
         let mut total_rvr = us * (self.clocks.hclk().0 / 8_000_000);
 
