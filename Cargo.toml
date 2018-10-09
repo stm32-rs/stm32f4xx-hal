@@ -44,6 +44,7 @@ version = "0.2.3"
 [features]
 default = ["rt", "stm32f407"]
 rt = []
+stm32f401 = ["stm32f4/stm32f401"]
 stm32f407 = ["stm32f4/stm32f407"]
 stm32f429 = ["stm32f4/stm32f429"]
 

@@ -14,6 +14,9 @@ pub extern crate nb;
 pub use nb::block;
 pub extern crate stm32f4;
 
+#[cfg(feature = "stm32f401")]
+pub use stm32f4::stm32f401 as stm32;
+
 #[cfg(feature = "stm32f407")]
 pub use stm32f4::stm32f407 as stm32;
 
