@@ -1,4 +1,4 @@
-use core::fmt::{Result, Write};
+use core::fmt;
 use core::marker::PhantomData;
 use core::ptr;
 
@@ -42,32 +42,77 @@ pub enum Error {
     _Extensible,
 }
 
-pub enum AsyncWordLength {
-    DataBits8,
-    DataBits9,
-}
+pub mod config {
+    use time::Bps;
 
-pub enum AsyncParity {
-    ParityNone,
-    ParityEven,
-    ParityOdd
-}
+    pub enum WordLength {
+        DataBits8,
+        DataBits9,
+    }
 
-pub struct AsyncConfig {
-    pub wordlength: AsyncWordLength,
-    pub parity: AsyncParity,
-    pub stopbits: STOPW
-}
+    pub enum Parity {
+        ParityNone,
+        ParityEven,
+        ParityOdd
+    }
 
-impl Default for AsyncConfig {
-    fn default() -> AsyncConfig {
-        AsyncConfig {
-            wordlength: AsyncWordLength::DataBits8,
-            parity: AsyncParity::ParityNone,
-            stopbits: STOPW::STOP1
+    pub enum StopBits {
+        #[doc = "1 stop bit"]
+        STOP1,
+        #[doc = "0.5 stop bits"]
+        STOP0P5,
+        #[doc = "2 stop bits"]
+        STOP2,
+        #[doc = "1.5 stop bits"]
+        STOP1P5,
+    }
+
+    pub struct Config {
+        pub baudrate: Bps,
+        pub wordlength: WordLength,
+        pub parity: Parity,
+        pub stopbits: StopBits
+    }
+
+    impl Config {
+        pub fn new(baudrate: Bps) -> Config {
+            Config {
+              baudrate,
+              wordlength: WordLength::DataBits8,
+              parity: Parity::ParityNone,
+              stopbits: StopBits::STOP1
+            }     
+        }
+
+        pub fn set_parity_none(&mut self) {
+            self.parity = Parity::ParityNone
+        }
+
+        pub fn set_parity_even(&mut self) {
+            self.parity = Parity::ParityEven
+        }
+
+        pub fn set_parity_odd(&mut self) {
+            self.parity = Parity::ParityOdd
+        }
+
+        pub fn set_wordlength_8(&mut self) {
+            self.wordlength = WordLength::DataBits8;
+        }
+
+        pub fn set_wordlength_9(&mut self) {
+            self.wordlength = WordLength::DataBits9;
+        }
+
+        pub fn set_stopbits(&mut self, stopbits: StopBits) {
+            self.stopbits = stopbits;
         }
     }
+
+    #[derive(Debug)]
+    pub struct InvalidConfig;
 }
+
 
 pub trait Pins<USART> {}
 
@@ -222,10 +267,12 @@ impl hal::serial::Write<u8> for Tx<USART1> {
 
 /// USART2
 impl<PINS> Serial<USART2, PINS> {
-    pub fn usart2(usart: USART2, pins: PINS, baud_rate: Bps, config: AsyncConfig, clocks: Clocks) -> Self
+    pub fn usart2(usart: USART2, pins: PINS, config: config::Config, clocks: Clocks) -> Result<Self,config::InvalidConfig>
     where
         PINS: Pins<USART2>,
     {
+        use self::config::*;
+
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
 
@@ -233,7 +280,7 @@ impl<PINS> Serial<USART2, PINS> {
         rcc.apb1enr.modify(|_, w| w.usart2en().set_bit());
 
         // Calculate correct baudrate divisor on the fly
-        let div = (clocks.pclk1().0 * 25) / (4 * baud_rate.0);
+        let div = (clocks.pclk1().0 * 25) / (4 * config.baudrate.0);
         let mantissa = div / 100;
         let fraction = ((div - mantissa * 100) * 16 + 50) / 100;
         usart
@@ -251,23 +298,28 @@ impl<PINS> Serial<USART2, PINS> {
             .te().set_bit()
             .re().set_bit()
             .m().bit(match config.wordlength {
-                AsyncWordLength::DataBits8 => false,
-                AsyncWordLength::DataBits9 => true
+                WordLength::DataBits8 => false,
+                WordLength::DataBits9 => true
              })
             .pce().bit(match config.parity {
-                AsyncParity::ParityNone => false,
+                Parity::ParityNone => false,
                 _ => true
              })
             .ps().bit(match config.parity {
-                AsyncParity::ParityOdd => true,
+                Parity::ParityOdd => true,
                 _ => false
              })
             );
 
         usart.cr2.write( |w| w
-            .stop().variant(config.stopbits)
+            .stop().variant(match config.stopbits {
+                StopBits::STOP0P5 => STOPW::STOP0P5,
+                StopBits::STOP1 => STOPW::STOP1,
+                StopBits::STOP1P5 => STOPW::STOP1P5,
+                StopBits::STOP2 => STOPW::STOP2
+            })
         );
-        Serial { usart, pins }
+        Ok(Serial { usart, pins })
     }
 
     pub fn split(self) -> (Tx<USART2>, Rx<USART2>) {
@@ -456,11 +508,11 @@ impl hal::serial::Write<u8> for Tx<USART3> {
     }
 }
 
-impl<USART> Write for Tx<USART>
+impl<USART> fmt::Write for Tx<USART>
 where
     Tx<USART>: hal::serial::Write<u8>,
 {
-    fn write_str(&mut self, s: &str) -> Result {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
         let _ = s
             .as_bytes()
             .into_iter()
