@@ -84,28 +84,34 @@ pub mod config {
             }     
         }
 
-        pub fn set_parity_none(&mut self) {
-            self.parity = Parity::ParityNone
+        pub fn parity_none(mut self) -> Self {
+            self.parity = Parity::ParityNone;
+            self
         }
 
-        pub fn set_parity_even(&mut self) {
-            self.parity = Parity::ParityEven
+        pub fn parity_even(mut self) -> Self {
+            self.parity = Parity::ParityEven;
+            self
         }
 
-        pub fn set_parity_odd(&mut self) {
-            self.parity = Parity::ParityOdd
+        pub fn parity_odd(mut self) -> Self {
+            self.parity = Parity::ParityOdd;
+            self
         }
 
-        pub fn set_wordlength_8(&mut self) {
+        pub fn wordlength_8(mut self) -> Self {
             self.wordlength = WordLength::DataBits8;
+            self
         }
 
-        pub fn set_wordlength_9(&mut self) {
+        pub fn wordlength_9(mut self) -> Self {
             self.wordlength = WordLength::DataBits9;
+            self
         }
 
-        pub fn set_stopbits(&mut self, stopbits: StopBits) {
+        pub fn stopbits(mut self, stopbits: StopBits) -> Self {
             self.stopbits = stopbits;
+            self
         }
     }
 
