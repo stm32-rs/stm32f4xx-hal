@@ -44,6 +44,7 @@ pub enum Error {
 
 pub mod config {
     use time::Bps;
+    use time::U32Ext;
 
     pub enum WordLength {
         DataBits8,
@@ -53,7 +54,7 @@ pub mod config {
     pub enum Parity {
         ParityNone,
         ParityEven,
-        ParityOdd
+        ParityOdd,
     }
 
     pub enum StopBits {
@@ -71,17 +72,13 @@ pub mod config {
         pub baudrate: Bps,
         pub wordlength: WordLength,
         pub parity: Parity,
-        pub stopbits: StopBits
+        pub stopbits: StopBits,
     }
 
     impl Config {
-        pub fn new(baudrate: Bps) -> Config {
-            Config {
-              baudrate,
-              wordlength: WordLength::DataBits8,
-              parity: Parity::ParityNone,
-              stopbits: StopBits::STOP1
-            }     
+        pub fn baudrate(mut self, baudrate: Bps) -> Self {
+            self.baudrate = baudrate;
+            self
         }
 
         pub fn parity_none(mut self) -> Self {
@@ -117,8 +114,19 @@ pub mod config {
 
     #[derive(Debug)]
     pub struct InvalidConfig;
-}
 
+    impl Default for Config {
+        fn default() -> Config {
+            let baudrate = 19_200_u32.bps();
+            Config {
+                baudrate,
+                wordlength: WordLength::DataBits8,
+                parity: Parity::ParityNone,
+                stopbits: StopBits::STOP1,
+            }
+        }
+    }
+}
 
 pub trait Pins<USART> {}
 
@@ -273,7 +281,12 @@ impl hal::serial::Write<u8> for Tx<USART1> {
 
 /// USART2
 impl<PINS> Serial<USART2, PINS> {
-    pub fn usart2(usart: USART2, pins: PINS, config: config::Config, clocks: Clocks) -> Result<Self,config::InvalidConfig>
+    pub fn usart2(
+        usart: USART2,
+        pins: PINS,
+        config: config::Config,
+        clocks: Clocks,
+    ) -> Result<Self, config::InvalidConfig>
     where
         PINS: Pins<USART2>,
     {
@@ -299,32 +312,36 @@ impl<PINS> Serial<USART2, PINS> {
 
         // Enable transmission and receiving
         // and configure frame
-        usart.cr1.write(|w| w
-            .ue().set_bit()
-            .te().set_bit()
-            .re().set_bit()
-            .m().bit(match config.wordlength {
-                WordLength::DataBits8 => false,
-                WordLength::DataBits9 => true
-             })
-            .pce().bit(match config.parity {
-                Parity::ParityNone => false,
-                _ => true
-             })
-            .ps().bit(match config.parity {
-                Parity::ParityOdd => true,
-                _ => false
-             })
-            );
+        usart.cr1.write(|w| {
+            w.ue()
+                .set_bit()
+                .te()
+                .set_bit()
+                .re()
+                .set_bit()
+                .m()
+                .bit(match config.wordlength {
+                    WordLength::DataBits8 => false,
+                    WordLength::DataBits9 => true,
+                }).pce()
+                .bit(match config.parity {
+                    Parity::ParityNone => false,
+                    _ => true,
+                }).ps()
+                .bit(match config.parity {
+                    Parity::ParityOdd => true,
+                    _ => false,
+                })
+        });
 
-        usart.cr2.write( |w| w
-            .stop().variant(match config.stopbits {
+        usart.cr2.write(|w| {
+            w.stop().variant(match config.stopbits {
                 StopBits::STOP0P5 => STOPW::STOP0P5,
                 StopBits::STOP1 => STOPW::STOP1,
                 StopBits::STOP1P5 => STOPW::STOP1P5,
-                StopBits::STOP2 => STOPW::STOP2
+                StopBits::STOP2 => STOPW::STOP2,
             })
-        );
+        });
         Ok(Serial { usart, pins })
     }
 
