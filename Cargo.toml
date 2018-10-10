@@ -16,11 +16,11 @@ keywords = [
 license = "0BSD"
 name = "stm32f4xx-hal"
 repository = "https://github.com/therealprof/stm32f4xx-hal"
-version = "0.1.0"
+version = "0.2.0"
 
 [dependencies]
 cortex-m = "0.5.7"
-cortex-m-rt = "0.6.3"
+cortex-m-rt = "0.6.4"
 nb = "0.1.1"
 
 [dependencies.bare-metal]
@@ -39,7 +39,7 @@ version = "0.2.1"
 features = [
     "rt",
 ]
-version = "0.2.3"
+version = "0.3.2"
 
 [features]
 default = ["rt", "stm32f407"]
