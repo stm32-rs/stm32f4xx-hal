@@ -567,6 +567,7 @@ gpio!(GPIOE, gpioe, gpioeen, PE, [
     PE15: (pe15, 15, Input<Floating>),
 ]);
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 gpio!(GPIOF, gpiof, gpiofen, PF, [
     PF0: (pf0, 0, Input<Floating>),
     PF1: (pf1, 1, Input<Floating>),
@@ -586,6 +587,7 @@ gpio!(GPIOF, gpiof, gpiofen, PF, [
     PF15: (pf15, 15, Input<Floating>),
 ]);
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 gpio!(GPIOG, gpiog, gpiogen, PG, [
     PG0: (pg0, 0, Input<Floating>),
     PG1: (pg1, 1, Input<Floating>),
@@ -605,6 +607,7 @@ gpio!(GPIOG, gpiog, gpiogen, PG, [
     PG15: (pg15, 15, Input<Floating>),
 ]);
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 gpio!(GPIOH, gpioh, gpiohen, PH, [
     PH0: (ph0, 0, Input<Floating>),
     PH1: (ph1, 1, Input<Floating>),
@@ -624,6 +627,7 @@ gpio!(GPIOH, gpioh, gpiohen, PH, [
     PH15: (ph15, 15, Input<Floating>),
 ]);
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 gpio!(GPIOI, gpioi, gpioien, PI, [
     PI0: (pi0, 0, Input<Floating>),
     PI1: (pi1, 1, Input<Floating>),
