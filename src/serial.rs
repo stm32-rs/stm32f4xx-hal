@@ -25,7 +25,6 @@ use gpio::gpiof::{PF6, PF7};
 use gpio::gpiog::{PG14, PG9};
 use gpio::{Alternate, AF7, AF8};
 use rcc::Clocks;
-use time::Bps;
 
 /// Serial error
 #[derive(Debug)]
@@ -169,366 +168,161 @@ pub struct Tx<USART> {
     _usart: PhantomData<USART>,
 }
 
-/// USART1
-impl<PINS> Serial<USART1, PINS> {
-    pub fn usart1(usart: USART1, pins: PINS, baud_rate: Bps, clocks: Clocks) -> Self
-    where
-        PINS: Pins<USART1>,
-    {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+macro_rules! halUsart {
+    ($(
+        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident,  $pclkX:ident),
+    )+) => {
+        $(
+            impl<PINS> Serial<$USARTX, PINS> {
+                pub fn $usartX(
+                    usart: $USARTX,
+                    pins: PINS,
+                    config: config::Config,
+                    clocks: Clocks,
+                ) -> Result<Self, config::InvalidConfig>
+                where
+                    PINS: Pins<$USARTX>,
+                {
+                    use self::config::*;
 
-        // Enable clock for USART
-        rcc.apb2enr.modify(|_, w| w.usart1en().set_bit());
+                    // NOTE(unsafe) This executes only during initialisation
+                    let rcc = unsafe { &(*RCC::ptr()) };
 
-        // Calculate correct baudrate divisor on the fly
-        let div = (clocks.pclk2().0 * 25) / (4 * baud_rate.0);
-        let mantissa = div / 100;
-        let fraction = ((div - mantissa * 100) * 16 + 50) / 100;
-        usart
-            .brr
-            .write(|w| unsafe { w.bits(mantissa << 4 | fraction) });
+                    // Enable clock for USART
+                    rcc.$apbXenr.modify(|_, w| w.$usartXen().set_bit());
 
-        // Reset other registers to disable advanced USART features
-        usart.cr2.reset();
-        usart.cr3.reset();
+                    // Calculate correct baudrate divisor on the fly
+                    let div = (clocks.$pclkX().0 * 25) / (4 * config.baudrate.0);
+                    let mantissa = div / 100;
+                    let fraction = ((div - mantissa * 100) * 16 + 50) / 100;
+                    usart
+                        .brr
+                        .write(|w| unsafe { w.bits(mantissa << 4 | fraction) });
 
-        // Enable transmission and receiving
-        usart
-            .cr1
-            .write(|w| w.ue().set_bit().te().set_bit().re().set_bit());
+                    // Reset other registers to disable advanced USART features
+                    usart.cr2.reset();
+                    usart.cr3.reset();
 
-        Serial { usart, pins }
-    }
+                    // Enable transmission and receiving
+                    // and configure frame
+                    usart.cr1.write(|w| {
+                        w.ue()
+                            .set_bit()
+                            .te()
+                            .set_bit()
+                            .re()
+                            .set_bit()
+                            .m()
+                            .bit(match config.wordlength {
+                                WordLength::DataBits8 => false,
+                                WordLength::DataBits9 => true,
+                            }).pce()
+                            .bit(match config.parity {
+                                Parity::ParityNone => false,
+                                _ => true,
+                            }).ps()
+                            .bit(match config.parity {
+                                Parity::ParityOdd => true,
+                                _ => false,
+                            })
+                    });
 
-    pub fn split(self) -> (Tx<USART1>, Rx<USART1>) {
-        (
-            Tx {
-                _usart: PhantomData,
-            },
-            Rx {
-                _usart: PhantomData,
-            },
-        )
-    }
+                    usart.cr2.write(|w| {
+                        w.stop().variant(match config.stopbits {
+                            StopBits::STOP0P5 => STOPW::STOP0P5,
+                            StopBits::STOP1 => STOPW::STOP1,
+                            StopBits::STOP1P5 => STOPW::STOP1P5,
+                            StopBits::STOP2 => STOPW::STOP2,
+                        })
+                    });
+                    Ok(Serial { usart, pins })
+                }
 
-    pub fn release(self) -> (USART1, PINS) {
-        (self.usart, self.pins)
-    }
-}
+                pub fn split(self) -> (Tx<$USARTX>, Rx<$USARTX>) {
+                    (
+                        Tx {
+                            _usart: PhantomData,
+                        },
+                        Rx {
+                            _usart: PhantomData,
+                        },
+                    )
+                }
+                pub fn release(self) -> ($USARTX, PINS) {
+                    (self.usart, self.pins)
+                }
+            }
 
-impl hal::serial::Read<u8> for Rx<USART1> {
-    type Error = Error;
+            impl hal::serial::Read<u8> for Rx<$USARTX> {
+                type Error = Error;
 
-    fn read(&mut self) -> nb::Result<u8, Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART1::ptr()).sr.read() };
+                fn read(&mut self) -> nb::Result<u8, Error> {
+                    // NOTE(unsafe) atomic read with no side effects
+                    let sr = unsafe { (*$USARTX::ptr()).sr.read() };
 
-        // Any error requires the dr to be read to clear
-        if sr.pe().bit_is_set()
-            || sr.fe().bit_is_set()
-            || sr.nf().bit_is_set()
-            || sr.ore().bit_is_set()
-        {
-            unsafe { (*USART1::ptr()).dr.read() };
-        }
+                    // Any error requires the dr to be read to clear
+                    if sr.pe().bit_is_set()
+                        || sr.fe().bit_is_set()
+                        || sr.nf().bit_is_set()
+                        || sr.ore().bit_is_set()
+                    {
+                        unsafe { (*$USARTX::ptr()).dr.read() };
+                    }
 
-        Err(if sr.pe().bit_is_set() {
-            nb::Error::Other(Error::Parity)
-        } else if sr.fe().bit_is_set() {
-            nb::Error::Other(Error::Framing)
-        } else if sr.nf().bit_is_set() {
-            nb::Error::Other(Error::Noise)
-        } else if sr.ore().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
-        } else if sr.rxne().bit_is_set() {
-            // NOTE(read_volatile) see `write_volatile` below
-            return Ok(unsafe { ptr::read_volatile(&(*USART1::ptr()).dr as *const _ as *const _) });
-        } else {
-            nb::Error::WouldBlock
-        })
-    }
-}
+                    Err(if sr.pe().bit_is_set() {
+                        nb::Error::Other(Error::Parity)
+                    } else if sr.fe().bit_is_set() {
+                        nb::Error::Other(Error::Framing)
+                    } else if sr.nf().bit_is_set() {
+                        nb::Error::Other(Error::Noise)
+                    } else if sr.ore().bit_is_set() {
+                        nb::Error::Other(Error::Overrun)
+                    } else if sr.rxne().bit_is_set() {
+                        // NOTE(read_volatile) see `write_volatile` below
+                        return Ok(unsafe { ptr::read_volatile(&(*$USARTX::ptr()).dr as *const _ as *const _) });
+                    } else {
+                        nb::Error::WouldBlock
+                    })
+                }
+            }
 
-impl hal::serial::Write<u8> for Tx<USART1> {
-    type Error = Error;
+            impl hal::serial::Write<u8> for Tx<$USARTX> {
+                type Error = Error;
 
-    fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART1::ptr()).sr.read() };
+                fn flush(&mut self) -> nb::Result<(), Self::Error> {
+                    // NOTE(unsafe) atomic read with no side effects
+                    let sr = unsafe { (*$USARTX::ptr()).sr.read() };
 
-        if sr.tc().bit_is_set() {
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
+                    if sr.tc().bit_is_set() {
+                        Ok(())
+                    } else {
+                        Err(nb::Error::WouldBlock)
+                    }
+                }
 
-    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART1::ptr()).sr.read() };
+                fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
+                    // NOTE(unsafe) atomic read with no side effects
+                    let sr = unsafe { (*$USARTX::ptr()).sr.read() };
 
-        if sr.txe().bit_is_set() {
-            // NOTE(unsafe) atomic write to stateless register
-            // NOTE(write_volatile) 8-bit write that's not possible through the svd2rust API
-            unsafe { ptr::write_volatile(&(*USART1::ptr()).dr as *const _ as *mut _, byte) }
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
-}
-
-/// USART2
-impl<PINS> Serial<USART2, PINS> {
-    pub fn usart2(
-        usart: USART2,
-        pins: PINS,
-        config: config::Config,
-        clocks: Clocks,
-    ) -> Result<Self, config::InvalidConfig>
-    where
-        PINS: Pins<USART2>,
-    {
-        use self::config::*;
-
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
-
-        // Enable clock for USART
-        rcc.apb1enr.modify(|_, w| w.usart2en().set_bit());
-
-        // Calculate correct baudrate divisor on the fly
-        let div = (clocks.pclk1().0 * 25) / (4 * config.baudrate.0);
-        let mantissa = div / 100;
-        let fraction = ((div - mantissa * 100) * 16 + 50) / 100;
-        usart
-            .brr
-            .write(|w| unsafe { w.bits(mantissa << 4 | fraction) });
-
-        // Reset other registers to disable advanced USART features
-        usart.cr2.reset();
-        usart.cr3.reset();
-
-        // Enable transmission and receiving
-        // and configure frame
-        usart.cr1.write(|w| {
-            w.ue()
-                .set_bit()
-                .te()
-                .set_bit()
-                .re()
-                .set_bit()
-                .m()
-                .bit(match config.wordlength {
-                    WordLength::DataBits8 => false,
-                    WordLength::DataBits9 => true,
-                }).pce()
-                .bit(match config.parity {
-                    Parity::ParityNone => false,
-                    _ => true,
-                }).ps()
-                .bit(match config.parity {
-                    Parity::ParityOdd => true,
-                    _ => false,
-                })
-        });
-
-        usart.cr2.write(|w| {
-            w.stop().variant(match config.stopbits {
-                StopBits::STOP0P5 => STOPW::STOP0P5,
-                StopBits::STOP1 => STOPW::STOP1,
-                StopBits::STOP1P5 => STOPW::STOP1P5,
-                StopBits::STOP2 => STOPW::STOP2,
-            })
-        });
-        Ok(Serial { usart, pins })
-    }
-
-    pub fn split(self) -> (Tx<USART2>, Rx<USART2>) {
-        (
-            Tx {
-                _usart: PhantomData,
-            },
-            Rx {
-                _usart: PhantomData,
-            },
-        )
-    }
-    pub fn release(self) -> (USART2, PINS) {
-        (self.usart, self.pins)
+                    if sr.txe().bit_is_set() {
+                        // NOTE(unsafe) atomic write to stateless register
+                        // NOTE(write_volatile) 8-bit write that's not possible through the svd2rust API
+                        unsafe { ptr::write_volatile(&(*$USARTX::ptr()).dr as *const _ as *mut _, byte) }
+                        Ok(())
+                    } else {
+                        Err(nb::Error::WouldBlock)
+                    }
+                }
+            }
+        )+
     }
 }
 
-impl hal::serial::Read<u8> for Rx<USART2> {
-    type Error = Error;
-
-    fn read(&mut self) -> nb::Result<u8, Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART2::ptr()).sr.read() };
-
-        // Any error requires the dr to be read to clear
-        if sr.pe().bit_is_set()
-            || sr.fe().bit_is_set()
-            || sr.nf().bit_is_set()
-            || sr.ore().bit_is_set()
-        {
-            unsafe { (*USART2::ptr()).dr.read() };
-        }
-
-        Err(if sr.pe().bit_is_set() {
-            nb::Error::Other(Error::Parity)
-        } else if sr.fe().bit_is_set() {
-            nb::Error::Other(Error::Framing)
-        } else if sr.nf().bit_is_set() {
-            nb::Error::Other(Error::Noise)
-        } else if sr.ore().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
-        } else if sr.rxne().bit_is_set() {
-            // NOTE(read_volatile) see `write_volatile` below
-            return Ok(unsafe { ptr::read_volatile(&(*USART2::ptr()).dr as *const _ as *const _) });
-        } else {
-            nb::Error::WouldBlock
-        })
-    }
-}
-
-impl hal::serial::Write<u8> for Tx<USART2> {
-    type Error = Error;
-
-    fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART2::ptr()).sr.read() };
-
-        if sr.tc().bit_is_set() {
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
-
-    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART2::ptr()).sr.read() };
-
-        if sr.txe().bit_is_set() {
-            // NOTE(unsafe) atomic write to stateless register
-            // NOTE(write_volatile) 8-bit write that's not possible through the svd2rust API
-            unsafe { ptr::write_volatile(&(*USART2::ptr()).dr as *const _ as *mut _, byte) }
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
-}
-
-/// USART3
-impl<PINS> Serial<USART3, PINS> {
-    pub fn usart3(usart: USART3, pins: PINS, baud_rate: Bps, clocks: Clocks) -> Self
-    where
-        PINS: Pins<USART3>,
-    {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
-
-        // Enable clock for USART
-        rcc.apb1enr.modify(|_, w| w.usart3en().set_bit());
-
-        // Calculate correct baudrate divisor on the fly
-        let div = (clocks.pclk1().0 * 25) / (4 * baud_rate.0);
-        let mantissa = div / 100;
-        let fraction = ((div - mantissa * 100) * 16 + 50) / 100;
-        usart
-            .brr
-            .write(|w| unsafe { w.bits(mantissa << 4 | fraction) });
-
-        // Reset other registers to disable advanced USART features
-        usart.cr2.reset();
-        usart.cr3.reset();
-
-        // Enable transmission and receiving
-        usart
-            .cr1
-            .write(|w| w.ue().set_bit().te().set_bit().re().set_bit());
-
-        Serial { usart, pins }
-    }
-
-    pub fn split(self) -> (Tx<USART3>, Rx<USART3>) {
-        (
-            Tx {
-                _usart: PhantomData,
-            },
-            Rx {
-                _usart: PhantomData,
-            },
-        )
-    }
-    pub fn release(self) -> (USART3, PINS) {
-        (self.usart, self.pins)
-    }
-}
-
-impl hal::serial::Read<u8> for Rx<USART3> {
-    type Error = Error;
-
-    fn read(&mut self) -> nb::Result<u8, Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART3::ptr()).sr.read() };
-
-        // Any error requires the dr to be read to clear
-        if sr.pe().bit_is_set()
-            || sr.fe().bit_is_set()
-            || sr.nf().bit_is_set()
-            || sr.ore().bit_is_set()
-        {
-            unsafe { (*USART3::ptr()).dr.read() };
-        }
-
-        Err(if sr.pe().bit_is_set() {
-            nb::Error::Other(Error::Parity)
-        } else if sr.fe().bit_is_set() {
-            nb::Error::Other(Error::Framing)
-        } else if sr.nf().bit_is_set() {
-            nb::Error::Other(Error::Noise)
-        } else if sr.ore().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
-        } else if sr.rxne().bit_is_set() {
-            // NOTE(read_volatile) see `write_volatile` below
-            return Ok(unsafe { ptr::read_volatile(&(*USART3::ptr()).dr as *const _ as *const _) });
-        } else {
-            nb::Error::WouldBlock
-        })
-    }
-}
-
-impl hal::serial::Write<u8> for Tx<USART3> {
-    type Error = Error;
-
-    fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART3::ptr()).sr.read() };
-
-        if sr.tc().bit_is_set() {
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
-
-    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART3::ptr()).sr.read() };
-
-        if sr.txe().bit_is_set() {
-            // NOTE(unsafe) atomic write to stateless register
-            // NOTE(write_volatile) 8-bit write that's not possible through the svd2rust API
-            unsafe { ptr::write_volatile(&(*USART3::ptr()).dr as *const _ as *mut _, byte) }
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
+halUsart! {
+    USART1: (usart1, apb2enr, usart1en, pclk2),
+    USART2: (usart2, apb1enr, usart2en, pclk1),
+    USART3: (usart3, apb1enr, usart3en, pclk1),
+    USART6: (usart6, apb2enr, usart6en, pclk2),
 }
 
 impl<USART> fmt::Write for Tx<USART>
