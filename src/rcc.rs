@@ -123,6 +123,9 @@ impl CFGR {
                 sysclk: Hertz(sysclk),
             }
         } else {
+            #[cfg(feature = "stm32f401")]
+            assert!(sysclk <= 84_000_000 && sysclk >= 24_000_000);
+
             #[cfg(feature = "stm32f407")]
             assert!(sysclk <= 168_000_000 && sysclk >= 24_000_000);
 

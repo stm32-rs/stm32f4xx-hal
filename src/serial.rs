@@ -6,6 +6,9 @@ use hal;
 use hal::prelude::*;
 use nb;
 
+#[cfg(feature = "stm32f401")]
+use stm32::{RCC, USART1, USART2, USART6};
+
 #[cfg(feature = "stm32f407")]
 use stm32::{RCC, UART4, UART5, USART1, USART2, USART3, USART6};
 
@@ -22,6 +25,7 @@ use gpio::gpiod::{PD2, PD5, PD6, PD8, PD9};
 use gpio::gpioe::{PE0, PE1};
 #[cfg(feature = "stm32f429")]
 use gpio::gpiof::{PF6, PF7};
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 use gpio::gpiog::{PG14, PG9};
 use gpio::{Alternate, AF7, AF8};
 use rcc::Clocks;
@@ -136,16 +140,23 @@ impl Pins<USART1> for (PB6<Alternate<AF7>>, PB7<Alternate<AF7>>) {}
 impl Pins<USART2> for (PA2<Alternate<AF7>>, PA3<Alternate<AF7>>) {}
 impl Pins<USART2> for (PD5<Alternate<AF7>>, PD6<Alternate<AF7>>) {}
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl Pins<USART3> for (PB10<Alternate<AF7>>, PB11<Alternate<AF7>>) {}
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl Pins<USART3> for (PC10<Alternate<AF7>>, PC11<Alternate<AF7>>) {}
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl Pins<USART3> for (PD8<Alternate<AF7>>, PD9<Alternate<AF7>>) {}
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl Pins<UART4> for (PA0<Alternate<AF8>>, PA1<Alternate<AF8>>) {}
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl Pins<UART4> for (PC10<Alternate<AF8>>, PC11<Alternate<AF8>>) {}
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl Pins<UART5> for (PC12<Alternate<AF8>>, PD2<Alternate<AF8>>) {}
 
 impl Pins<USART6> for (PC6<Alternate<AF8>>, PC7<Alternate<AF8>>) {}
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl Pins<USART6> for (PG14<Alternate<AF8>>, PG9<Alternate<AF8>>) {}
 
 #[cfg(feature = "stm32f429")]
@@ -422,7 +433,9 @@ impl hal::serial::Write<u8> for Tx<USART2> {
     }
 }
 
+
 /// USART3
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl<PINS> Serial<USART3, PINS> {
     pub fn usart3(usart: USART3, pins: PINS, baud_rate: Bps, clocks: Clocks) -> Self
     where
@@ -469,6 +482,7 @@ impl<PINS> Serial<USART3, PINS> {
     }
 }
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl hal::serial::Read<u8> for Rx<USART3> {
     type Error = Error;
 
@@ -502,6 +516,7 @@ impl hal::serial::Read<u8> for Rx<USART3> {
     }
 }
 
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 impl hal::serial::Write<u8> for Tx<USART3> {
     type Error = Error;
 
