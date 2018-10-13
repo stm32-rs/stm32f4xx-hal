@@ -16,7 +16,7 @@ keywords = [
 license = "0BSD"
 name = "stm32f4xx-hal"
 repository = "https://github.com/therealprof/stm32f4xx-hal"
-version = "0.2.0"
+version = "0.2.1"
 
 [dependencies]
 cortex-m = "0.5.7"
