@@ -1,8 +1,5 @@
 #![no_std]
-#![cfg_attr(feature = "rt", feature(global_asm))]
-#![feature(const_fn)]
 #![allow(non_camel_case_types)]
-#![feature(never_type)]
 
 extern crate bare_metal;
 extern crate cast;
