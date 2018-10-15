@@ -6,6 +6,7 @@ peripheral access API for the STMicro STM32F4 series microcontrollers. The
 selection of the MCU is done by feature gates, typically specified by board
 support crates. Currently supported configurations are:
 
+* stm32f401
 * stm32f407
 * stm32f429
 
