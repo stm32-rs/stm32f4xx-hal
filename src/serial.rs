@@ -21,7 +21,6 @@ use stm32::usart6::cr2::STOPW;
 #[cfg(feature = "stm32f401")]
 use stm32::usart1::cr2::STOPW;
 
-
 use gpio::gpioa::{PA0, PA1, PA10, PA2, PA3, PA9};
 use gpio::gpiob::{PB10, PB11, PB6, PB7};
 use gpio::gpioc::{PC10, PC11, PC12, PC6, PC7};
@@ -334,19 +333,16 @@ macro_rules! halUsart {
     }
 }
 
-
 halUsart! {
     USART1: (usart1, apb2enr, usart1en, pclk2),
     USART2: (usart2, apb1enr, usart2en, pclk1),
     USART6: (usart6, apb2enr, usart6en, pclk2),
 }
 
-
 #[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 halUsart! {
     USART3: (usart3, apb1enr, usart3en, pclk1),
 }
-
 
 impl<USART> fmt::Write for Tx<USART>
 where
