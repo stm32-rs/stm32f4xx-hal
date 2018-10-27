@@ -57,6 +57,14 @@ pub struct Output<MODE> {
 /// Push pull output (type state)
 pub struct PushPull;
 
+/// GPIO Pin speed selection
+pub enum Speed {
+    Low = 0,
+    Medium = 1,
+    High = 2,
+    VeryHigh = 3,
+}
+
 macro_rules! gpio {
     ($GPIOX:ident, $gpiox:ident, $iopxenr:ident, $PXx:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty),)+
@@ -70,7 +78,7 @@ macro_rules! gpio {
 
             use stm32::RCC;
             use super::{
-                Alternate, Floating, GpioExt, Input, OpenDrain, Output,
+                Alternate, Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AF0, AF1, AF2, AF3, AF4, AF5, AF6, AF7, AF8, AF9, AF10,
                 AF11, AF12, AF13, AF14, AF15
             };
@@ -128,7 +136,7 @@ macro_rules! gpio {
                 }
             }
 
-            fn _set_alternate_mode (index:usize, mode: u32)
+            fn _set_alternate_mode (index: usize, mode: u32)
             {
                 let offset = 2 * index;
                 let offset2 = 4 * index;
@@ -370,6 +378,18 @@ macro_rules! gpio {
 
 
                         $PXi { _mode: PhantomData }
+                    }
+
+                    /// Set pin speed
+                    pub fn set_speed(self, speed: Speed) -> Self {
+                        let offset = 2 * $i;
+
+                        unsafe {
+                            &(*$GPIOX::ptr()).ospeedr.modify(|r, w| {
+                                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
+                         })};
+
+                        self
                     }
                 }
 
