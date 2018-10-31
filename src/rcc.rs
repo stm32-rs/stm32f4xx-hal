@@ -1,4 +1,4 @@
-use stm32::{FLASH, RCC};
+use stm32::{FLASH, RCC, rcc};
 
 use time::Hertz;
 
@@ -11,6 +11,9 @@ pub trait RccExt {
 impl RccExt for RCC {
     fn constrain(self) -> Rcc {
         Rcc {
+            ahb: AHB { _0: () },
+            apb1: APB1 { _0: () },
+            apb2: APB2 { _0: () },
             cfgr: CFGR {
                 hclk: None,
                 pclk1: None,
@@ -23,7 +26,65 @@ impl RccExt for RCC {
 
 /// Constrained RCC peripheral
 pub struct Rcc {
+    /// AMBA High-performance Bus (AHB) registers
+    pub ahb: AHB,
+    /// Advanced Peripheral Bus 1 (APB1) registers
+    pub apb1: APB1,
+    /// Advanced Peripheral Bus 2 (APB2) registers
+    pub apb2: APB2,
+    /// Clock configuration
     pub cfgr: CFGR,
+}
+
+/// AMBA High-performance Bus (AHB) registers
+pub struct AHB {
+    _0: (),
+}
+
+impl AHB {
+    pub(crate) fn enr(&mut self) -> &rcc::AHB1ENR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).ahb1enr }
+    }
+
+    pub(crate) fn rstr(&mut self) -> &rcc::AHB1RSTR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).ahb1rstr }
+    }
+}
+
+/// Advanced Peripheral Bus 1 (APB1) registers
+pub struct APB1 {
+    _0: (),
+}
+
+impl APB1 {
+    pub(crate) fn enr(&mut self) -> &rcc::APB1ENR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).apb1enr }
+    }
+
+    pub(crate) fn rstr(&mut self) -> &rcc::APB1RSTR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).apb1rstr }
+    }
+}
+
+/// Advanced Peripheral Bus 2 (APB2) registers
+pub struct APB2 {
+    _0: (),
+}
+
+impl APB2 {
+    pub(crate) fn enr(&mut self) -> &rcc::APB2ENR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).apb2enr }
+    }
+
+    pub(crate) fn rstr(&mut self) -> &rcc::APB2RSTR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).apb2rstr }
+    }
 }
 
 const HSI: u32 = 16_000_000; // Hz
@@ -88,6 +149,8 @@ impl CFGR {
                 hclk: Hertz(hclk),
                 pclk1: Hertz(hclk),
                 pclk2: Hertz(hclk),
+                ppre1: 1,
+                ppre2: 1,
                 sysclk: Hertz(sysclk),
             }
         } else if sysclk == HSI && hclk < sysclk {
@@ -120,6 +183,8 @@ impl CFGR {
                 hclk: Hertz(hclk),
                 pclk1: Hertz(hclk),
                 pclk2: Hertz(hclk),
+                ppre1: 1,
+                ppre2: 1,
                 sysclk: Hertz(sysclk),
             }
         } else {
@@ -242,6 +307,8 @@ impl CFGR {
                 hclk: Hertz(hclk),
                 pclk1: Hertz(pclk1),
                 pclk2: Hertz(pclk2),
+                ppre1: ppre1 as u8,
+                ppre2: ppre2 as u8,
                 sysclk: Hertz(sysclk),
             }
         }
@@ -256,6 +323,10 @@ pub struct Clocks {
     hclk: Hertz,
     pclk1: Hertz,
     pclk2: Hertz,
+    ppre1: u8,
+    // TODO remove `allow`
+    #[allow(dead_code)]
+    ppre2: u8,
     sysclk: Hertz,
 }
 
@@ -273,6 +344,16 @@ impl Clocks {
     /// Returns the frequency of the APB2
     pub fn pclk2(&self) -> Hertz {
         self.pclk2
+    }
+
+    pub(crate) fn ppre1(&self) -> u8 {
+        self.ppre1
+    }
+
+    // TODO remove `allow`
+    #[allow(dead_code)]
+    pub(crate) fn ppre2(&self) -> u8 {
+        self.ppre2
     }
 
     /// Returns the system (core) frequency

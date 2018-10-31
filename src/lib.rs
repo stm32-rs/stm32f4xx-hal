@@ -4,6 +4,7 @@
 extern crate bare_metal;
 extern crate cast;
 extern crate cortex_m;
+extern crate void;
 pub extern crate embedded_hal as hal;
 
 #[macro_use]
@@ -27,3 +28,4 @@ pub mod prelude;
 pub mod rcc;
 pub mod serial;
 pub mod time;
+pub mod timer;
