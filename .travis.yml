@@ -1,10 +1,17 @@
 language: rust
 rust:
+  - beta
   - nightly
 cache: cargo
+env:
+- MCU=stm32f401
+- MCU=stm32f407
+- MCU=stm32f412
+- MCU=stm32f429
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
 script:
   - rustup target add thumbv7em-none-eabihf
-  - cargo build --features=stm32f401
-  - cargo build --features=stm32f407
-  - cargo build --features=stm32f412
-  - cargo build --features=stm32f429
+  - cargo build --features=$MCU
