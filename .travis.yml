@@ -1,0 +1,10 @@
+language: rust
+rust:
+  - nightly
+cache: cargo
+script:
+  - rustup target add thumbv7em-none-eabihf
+  - cargo build --features=stm32f401
+  - cargo build --features=stm32f407
+  - cargo build --features=stm32f412
+  - cargo build --features=stm32f429
