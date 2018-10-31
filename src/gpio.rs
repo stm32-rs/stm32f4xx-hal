@@ -125,6 +125,17 @@ macro_rules! gpio {
                 }
             }
 
+            impl<MODE> InputPin for $PXx<Output<MODE>> {
+                fn is_high(&self) -> bool {
+                    !self.is_low()
+                }
+
+                fn is_low(&self) -> bool {
+                    // NOTE(unsafe) atomic read with no side effects
+                    unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 }
+                }
+            }
+
             impl<MODE> InputPin for $PXx<Input<MODE>> {
                 fn is_high(&self) -> bool {
                     !self.is_low()
@@ -454,6 +465,17 @@ macro_rules! gpio {
                     fn set_low(&mut self) {
                         // NOTE(unsafe) atomic write to a stateless register
                         unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << ($i + 16))) }
+                    }
+                }
+
+                impl<MODE> InputPin for $PXi<Output<MODE>> {
+                    fn is_high(&self) -> bool {
+                        !self.is_low()
+                    }
+
+                    fn is_low(&self) -> bool {
+                        // NOTE(unsafe) atomic read with no side effects
+                        unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << $i) == 0 }
                     }
                 }
 
