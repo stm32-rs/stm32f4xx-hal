@@ -21,10 +21,19 @@ use stm32::usart6::cr2::STOPW;
 #[cfg(feature = "stm32f401")]
 use stm32::usart1::cr2::STOPW;
 
-use gpio::gpioa::{PA0, PA1, PA10, PA2, PA3, PA9};
-use gpio::gpiob::{PB10, PB11, PB6, PB7};
-use gpio::gpioc::{PC10, PC11, PC12, PC6, PC7};
-use gpio::gpiod::{PD2, PD5, PD6, PD8, PD9};
+use gpio::gpioa::{PA10, PA2, PA3, PA9};
+use gpio::gpiob::{PB6, PB7};
+use gpio::gpioc::{PC6, PC7};
+use gpio::gpiod::{PD5, PD6};
+
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+use gpio::gpioa::{PA0, PA1};
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+use gpio::gpiob::{PB10, PB11};
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+use gpio::gpioc::{PC10, PC11, PC12};
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+use gpio::gpiod::{PD2, PD8, PD9};
 #[cfg(feature = "stm32f429")]
 use gpio::gpioe::{PE0, PE1};
 #[cfg(feature = "stm32f429")]
