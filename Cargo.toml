@@ -32,6 +32,10 @@ features = ["const-fn"]
 default-features = false
 version = "0.2.2"
 
+[dependencies.void]
+default-features = false
+version = "1.0.2"
+
 [dependencies.embedded-hal]
 features = ["unproven"]
 version = "0.2.1"
