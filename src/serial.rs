@@ -67,6 +67,14 @@ pub enum Error {
     _Extensible,
 }
 
+/// Interrupt event
+pub enum Event {
+    /// New data has been received
+    Rxne,
+    /// New data can be sent
+    Txe,
+}
+
 pub mod config {
     use time::Bps;
     use time::U32Ext;
@@ -271,6 +279,30 @@ macro_rules! halUsart {
                         })
                     });
                     Ok(Serial { usart, pins })
+                }
+
+                /// Starts listening for an interrupt event
+                pub fn listen(&mut self, event: Event) {
+                    match event {
+                        Event::Rxne => {
+                            self.usart.cr1.modify(|_, w| w.rxneie().set_bit())
+                        },
+                        Event::Txe => {
+                            self.usart.cr1.modify(|_, w| w.txeie().set_bit())
+                        },
+                    }
+                }
+
+                /// Starts listening for an interrupt event
+                pub fn unlisten(&mut self, event: Event) {
+                    match event {
+                        Event::Rxne => {
+                            self.usart.cr1.modify(|_, w| w.rxneie().clear_bit())
+                        },
+                        Event::Txe => {
+                            self.usart.cr1.modify(|_, w| w.txeie().clear_bit())
+                        },
+                    }
                 }
 
                 pub fn split(self) -> (Tx<$USARTX>, Rx<$USARTX>) {
