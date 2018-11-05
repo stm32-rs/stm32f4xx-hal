@@ -17,7 +17,7 @@ license = "0BSD"
 name = "stm32f4xx-hal"
 readme = "README.md"
 repository = "https://github.com/therealprof/stm32f4xx-hal"
-version = "0.2.3"
+version = "0.2.4"
 
 [dependencies]
 cortex-m = "0.5.8"
@@ -41,9 +41,6 @@ features = ["unproven"]
 version = "0.2.2"
 
 [dependencies.stm32f4]
-features = [
-    "rt",
-]
 version = "0.3.2"
 
 [features]
