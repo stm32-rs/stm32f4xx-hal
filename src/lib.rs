@@ -26,6 +26,7 @@ pub use stm32f4::stm32f412 as stm32;
 pub use stm32f4::stm32f429 as stm32;
 
 // Enable use of interrupt macro
+#[cfg(feature = "rt")]
 pub use stm32f4::interrupt;
 
 pub mod delay;
