@@ -7,7 +7,6 @@ extern crate void;
 extern crate cortex_m;
 pub extern crate embedded_hal as hal;
 
-#[macro_use]
 pub extern crate nb;
 pub use nb::block;
 
