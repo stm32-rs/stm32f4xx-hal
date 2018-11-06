@@ -4,7 +4,7 @@ use core::ptr;
 
 use hal;
 use hal::prelude::*;
-use nb;
+use nb::block;
 
 #[cfg(feature = "stm32f401")]
 use stm32::{RCC, USART1, USART2, USART6};
