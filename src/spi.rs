@@ -287,7 +287,6 @@ macro_rules! hal {
                     clocks: Clocks
                 ) -> Self
                 where PINS: Pins<$SPIX> {
-
                     // NOTE(unsafe) This executes only during initialisation
                     let rcc = unsafe { &(*RCC::ptr()) };
 
@@ -404,19 +403,3 @@ hal! {
     SPI2: (spi2, apb1enr, spi2en, pclk1),
     SPI3: (spi3, apb1enr, spi3en, pclk1),
 }
-
-// TODO(psycowithespn) Enable all of these on the next version of stm32-rs.
-// #[cfg(any(feature = "stm32f401", feature = "stm32f412", feature = "stm32f429"))]
-// hal! {
-//     SPI4: (spi4, apb2enr, spi4en, pclk2),
-// }
-
-// #[cfg(any(feature = "stm32f412", feature = "stm32f429"))]
-// hal! {
-//     SPI5: (spi5, apb2enr, spi5en, pclk2),
-// }
-
-// #[cfg(feature = "stm32f429")]
-// hal! {
-//     SPI6: (spi6, apb2enr, spi6en, pclk2),
-// }
