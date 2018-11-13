@@ -79,24 +79,10 @@ impl CFGR {
 
         assert!(hclk <= sysclk);
 
-        if sysclk == HSI && hclk == sysclk {
-            // use HSI as source and run everything at the same speed
-            rcc.cfgr.modify(|_, w| unsafe {
-                w.ppre2().bits(0).ppre1().bits(0).hpre().bits(0).sw().hsi()
-            });
-
-            Clocks {
-                hclk: Hertz(hclk),
-                pclk1: Hertz(hclk),
-                pclk2: Hertz(hclk),
-                ppre1: 1,
-                ppre2: 1,
-                sysclk: Hertz(sysclk),
-            }
-        } else if sysclk == HSI && hclk < sysclk {
+        if sysclk == HSI {
             let hpre_bits = match sysclk / hclk {
                 0 => unreachable!(),
-                1 => 0b0111,
+                1 => 0b0000,
                 2 => 0b1000,
                 3...5 => 0b1001,
                 6...11 => 0b1010,
