@@ -164,7 +164,7 @@ impl CFGR {
 
             // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
             // and <= 432MHz, min 50, max 432
-            let plln = sysclk * sysclk_div / 1_000_000;
+            let plln = sysclk * sysclk_div / (HSI / pllm as u32);
 
             let pllp = (sysclk_div as u8 / 2) - 1;
 
