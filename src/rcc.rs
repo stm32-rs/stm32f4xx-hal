@@ -75,7 +75,7 @@ impl CFGR {
         let rcc = unsafe { &*RCC::ptr() };
 
         let sysclk = self.sysclk.unwrap_or(HSI);
-        let mut hclk = self.hclk.unwrap_or(HSI);
+        let mut hclk = self.hclk.unwrap_or(sysclk);
 
         assert!(hclk <= sysclk);
 
