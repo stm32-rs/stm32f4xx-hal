@@ -149,43 +149,24 @@ impl CFGR {
             // We're not diving down the hclk so it'll be the same as sysclk
             hclk = sysclk;
 
-            let (pllm, plln, pllp) = if sysclk >= 96_000_000 {
-                // Input divisor from HSI clock, must result in less than 2MHz
-                let pllm = 16;
-
-                // Main scaler, must result in >= 192MHz and <= 432MHz, min 50, max 432
-                let plln = (sysclk / 1_000_000) * 2;
-
-                // Sysclk output divisor, must result in >= 24MHz and <= 216MHz
-                // needs to be the equivalent of 2, 4, 6 or 8
-                let pllp = 0b00;
-
-                (pllm, plln, pllp)
+            // Sysclk output divisor must be one of 2, 4, 6 or 8
+            let sysclk_div = if sysclk >= 96_000_000 {
+                2
             } else if sysclk <= 54_000_000 {
-                // Input divisor from HSI clock, must result in less than 2MHz
-                let pllm = 16;
-
-                // Main scaler, must result in >= 192MHz and <= 432MHz, min 50, max 432
-                let plln = (sysclk / 1_000_000) * 8;
-
-                // Sysclk output divisor, must result in >= 24MHz and <= 216MHz
-                // needs to be the equivalent of 2, 4, 6 or 8
-                let pllp = 0b11;
-
-                (pllm, plln, pllp)
+                8
             } else {
-                // Input divisor from HSI clock, must result in less than 2MHz
-                let pllm = 16;
-
-                // Main scaler, must result in >= 192MHz and <= 432MHz, min 50, max 432
-                let plln = (sysclk / 1_000_000) * 4;
-
-                // Sysclk output divisor, must result in >= 24MHz and <= 216MHz
-                // needs to be the equivalent of 2, 4, 6 or 8
-                let pllp = 0b01;
-
-                (pllm, plln, pllp)
+                4
             };
+
+            // Input divisor from HSI clock, must result to frequency in
+            // the range from 1 to 2 MHz
+            let pllm = 16;
+
+            // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
+            // and <= 432MHz, min 50, max 432
+            let plln = (sysclk / 1_000_000) * sysclk_div;
+
+            let pllp = (sysclk_div as u8 / 2) - 1;
 
             let (ppre1_bits, ppre2_bits) = match hclk {
                 45_000_001...90_000_000 => (0b100, 0b011),
