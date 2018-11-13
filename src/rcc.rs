@@ -75,7 +75,6 @@ impl CFGR {
         let sysclk = self.sysclk.unwrap_or(HSI);
         let mut hclk = self.hclk.unwrap_or(HSI);
 
-        assert!(sysclk >= HSI);
         assert!(hclk <= sysclk);
 
         if sysclk == HSI && hclk == sysclk {
@@ -128,16 +127,24 @@ impl CFGR {
             }
         } else {
             #[cfg(feature = "stm32f401")]
-            assert!(sysclk <= 84_000_000 && sysclk >= 24_000_000);
+            let sysclk_min = 24_000_000;
+
+            #[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
+            let sysclk_min = 12_500_000;
+
+            #[cfg(feature = "stm32f401")]
+            let sysclk_max = 84_000_000;
 
             #[cfg(feature = "stm32f407")]
-            assert!(sysclk <= 168_000_000 && sysclk >= 24_000_000);
+            let sysclk_max = 168_000_000;
 
             #[cfg(feature = "stm32f412")]
-            assert!(sysclk <= 100_000_000 && sysclk >= 16_000_000);
+            let sysclk_max = 100_000_000;
 
             #[cfg(feature = "stm32f429")]
-            assert!(sysclk <= 180_000_000 && sysclk >= 24_000_000);
+            let sysclk_max = 180_000_000;
+
+            assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
 
             // We're not diving down the hclk so it'll be the same as sysclk
             hclk = sysclk;
