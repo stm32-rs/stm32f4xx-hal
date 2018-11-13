@@ -1,3 +1,5 @@
+use core::cmp::min;
+
 use stm32::{FLASH, RCC};
 
 use time::Hertz;
@@ -150,13 +152,7 @@ impl CFGR {
             hclk = sysclk;
 
             // Sysclk output divisor must be one of 2, 4, 6 or 8
-            let sysclk_div = if sysclk >= 96_000_000 {
-                2
-            } else if sysclk <= 54_000_000 {
-                8
-            } else {
-                4
-            };
+            let sysclk_div = min(8, (432_000_000 / sysclk) & !1);
 
             // Input divisor from HSI clock, must result to frequency in
             // the range from 1 to 2 MHz
