@@ -649,7 +649,7 @@ gpio!(GPIOG, gpiog, gpiogen, PG, [
     PG15: (pg15, 15, Input<Floating>),
 ]);
 
-#[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
+#[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429", feature = "stm32f411"))]
 gpio!(GPIOH, gpioh, gpiohen, PH, [
     PH0: (ph0, 0, Input<Floating>),
     PH1: (ph1, 1, Input<Floating>),

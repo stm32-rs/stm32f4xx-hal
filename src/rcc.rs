@@ -120,15 +120,18 @@ impl CFGR {
             #[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
             let sysclk_min = 12_500_000;
 
+            #[cfg(feature = "stm32f411")]
+            let sysclk_min = 16_000_000;
+
             #[cfg(feature = "stm32f401")]
             let sysclk_max = 84_000_000;
 
             #[cfg(feature = "stm32f407")]
             let sysclk_max = 168_000_000;
 
-            #[cfg(feature = "stm32f412")]
+            #[cfg(any(feature = "stm32f412", feature = "stm32f411"))]
             let sysclk_max = 100_000_000;
-
+            
             #[cfg(feature = "stm32f429")]
             let sysclk_max = 180_000_000;
 
