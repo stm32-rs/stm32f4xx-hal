@@ -137,23 +137,8 @@ impl<PINS> I2c<I2C1, PINS> {
         let value = self.i2c.dr.read().bits() as u8;
         Ok(value)
     }
-}
 
-impl<PINS> WriteRead for I2c<I2C1, PINS> {
-    type Error = Error;
-
-    fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.write(addr, bytes)?;
-        self.read(addr, buffer)?;
-
-        Ok(())
-    }
-}
-
-impl<PINS> Write for I2c<I2C1, PINS> {
-    type Error = Error;
-
-    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+    fn write_without_stop(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
         // Send a START condition
         self.i2c.cr1.modify(|_, w| w.start().set_bit());
 
@@ -188,7 +173,32 @@ impl<PINS> Write for I2c<I2C1, PINS> {
             self.send_byte(*c)?;
         }
 
-        // Fallthrough is success
+        Ok(())
+    }
+
+    fn send_stop(&self) {
+        self.i2c.cr1.modify(|_, w| w.stop().set_bit());
+    }
+}
+
+impl<PINS> WriteRead for I2c<I2C1, PINS> {
+    type Error = Error;
+
+    fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
+        self.write_without_stop(addr, bytes)?;
+        self.read(addr, buffer)?;
+
+        Ok(())
+    }
+}
+
+impl<PINS> Write for I2c<I2C1, PINS> {
+    type Error = Error;
+
+    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+        self.write_without_stop(addr, bytes)?;
+        self.send_stop();
+
         Ok(())
     }
 }
