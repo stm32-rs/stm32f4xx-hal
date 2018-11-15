@@ -10,7 +10,7 @@ use stm32::{RCC, SPI1, SPI2, SPI3, SPI4};
 #[cfg(feature = "stm32f407")]
 use stm32::{RCC, SPI1, SPI2, SPI3};
 
-#[cfg(feature = "stm32f412")]
+#[cfg(any(feature = "stm32f412", feature = "stm32f411"))]
 use stm32::{RCC, SPI1, SPI2, SPI3, SPI4, SPI5};
 
 #[cfg(feature = "stm32f429")]
@@ -19,17 +19,20 @@ use stm32::{RCC, SPI1, SPI2, SPI3, SPI4, SPI5, SPI6};
 #[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f429"))]
 use gpio::gpioa::{PA5, PA6, PA7};
 
-#[cfg(feature = "stm32f412")]
+#[cfg(any(feature = "stm32f412", feature = "stm32f411"))]
 use gpio::gpioa::{PA1, PA10, PA11, PA12, PA5, PA6, PA7};
 
 #[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f429"))]
 use gpio::gpiob::{PB10, PB13, PB14, PB15, PB3, PB4, PB5};
 
-#[cfg(feature = "stm32f412")]
+#[cfg(any(feature = "stm32f412", feature = "stm32f411"))]
 use gpio::gpiob::{PB0, PB10, PB12, PB13, PB14, PB15, PB3, PB4, PB5, PB8};
 
 #[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f429"))]
 use gpio::gpioc::{PC10, PC11, PC12, PC2, PC3};
+
+#[cfg(feature = "stm32f411")]
+use gpio::gpioc::{PC10, PC2, PC3, PC11, PC12};
 
 #[cfg(feature = "stm32f412")]
 use gpio::gpioc::{PC10, PC11, PC12, PC2, PC3, PC7};
@@ -52,7 +55,7 @@ use gpio::gpioh::{PH6, PH7};
 #[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 use gpio::gpioi::{PI1, PI2, PI3};
 
-#[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f429"))]
+#[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f429", feature = "stm32f411"))]
 use gpio::{Alternate, AF5, AF6};
 
 #[cfg(feature = "stm32f412")]
@@ -160,6 +163,40 @@ pins! {
             NoMosi,
             PB5<Alternate<AF6>>,
             PC12<Alternate<AF6>>
+        ]
+}
+
+#[cfg(feature = "stm32f411")]
+pins! {
+    SPI3:
+        SCK: [PB12<Alternate<AF5>>]
+        MISO: []
+        MOSI: []
+    SPI4:
+        SCK: [
+            NoSck,
+            PB13<Alternate<AF5>>
+        ]
+        MISO: [
+            NoMiso,
+            PA11<Alternate<AF5>>
+        ]
+        MOSI: [
+            NoMosi,
+             PA1<Alternate<AF5>>
+        ]
+    SPI5:
+        SCK: [
+            NoSck,
+            PB0<Alternate<AF5>>
+        ]
+        MISO: [
+            NoMiso,
+             PA12<Alternate<AF5>>
+        ]
+        MOSI: [
+            NoMosi,
+             PA10<Alternate<AF5>>
         ]
 }
 

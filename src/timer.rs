@@ -8,7 +8,7 @@ use nb;
 use void::Void;
 
 use stm32::{RCC, TIM1, TIM5, TIM9, TIM11};
-#[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
+#[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f412", feature = "stm32f429", feature = "stm32f411"))]
 use stm32::{TIM2, TIM3, TIM4, TIM10};
 #[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
 use stm32::{TIM6, TIM7, TIM8, TIM12, TIM13, TIM14};
@@ -183,7 +183,7 @@ hal! {
 }
 
 // available on all stm32f4 except stm32f410
-#[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
+#[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f412", feature = "stm32f429", feature = "stm32f411"))]
 hal! {
     TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, pclk1, ppre1),
     TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, pclk1, ppre1),
