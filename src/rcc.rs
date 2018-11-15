@@ -134,6 +134,9 @@ impl CFGR {
 
             assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
 
+            #[cfg(feature = "stm32f411")]
+            assert!(sysclk <= 100_000_000 && sysclk >= 16_000_000);
+
             // We're not diving down the hclk so it'll be the same as sysclk
             hclk = sysclk;
 
