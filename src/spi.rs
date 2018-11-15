@@ -163,7 +163,7 @@ pins! {
         ]
 }
 
-#[cfg(any(feature = "stm32f401", feature = "stm32f412", feature = "stm32f429"))]
+#[cfg(any(feature = "stm32f401", feature = "stm32f411", feature = "stm32f412", feature = "stm32f429"))]
 pins! {
     SPI2:
         SCK: [PD3<Alternate<AF5>>]
