@@ -114,14 +114,8 @@ impl CFGR {
                 sysclk: Hertz(sysclk),
             }
         } else {
-            #[cfg(feature = "stm32f401")]
+            #[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f411", feature = "stm32f412", feature = "stm32f429"))]
             let sysclk_min = 24_000_000;
-
-            #[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
-            let sysclk_min = 12_500_000;
-
-            #[cfg(feature = "stm32f411")]
-            let sysclk_min = 16_000_000;
 
             #[cfg(feature = "stm32f401")]
             let sysclk_max = 84_000_000;
