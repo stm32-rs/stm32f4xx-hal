@@ -5,7 +5,7 @@ use hal::blocking::i2c::{Read, Write, WriteRead};
 use gpio::gpiob::{PB6, PB7, PB8, PB9};
 use gpio::{Alternate, AF4};
 use rcc::Clocks;
-use time::{KiloHertz, U32Ext};
+use time::{Hertz, KiloHertz, U32Ext};
 
 /// I2C abstraction
 pub struct I2c<I2C, PINS> {
@@ -29,6 +29,8 @@ impl<PINS> I2c<I2C1, PINS> {
     where
         PINS: Pins<I2C1>,
     {
+        let speed: Hertz = speed.into();
+
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
 
@@ -43,14 +45,14 @@ impl<PINS> I2c<I2C1, PINS> {
         i2c.cr1.modify(|_, w| w.pe().clear_bit());
 
         // Calculate settings for I2C speed modes
-        let clock = clocks.pclk2().0;
+        let clock = clocks.pclk1().0;
         let freq = clock / 1_000_000;
         assert!(freq >= 2 && freq <= 50);
 
         // Configure bus frequency into I2C peripheral
         i2c.cr2.write(|w| unsafe { w.freq().bits(freq as u8) });
 
-        let trise = if speed <= 100.khz() {
+        let trise = if speed <= 100.khz().into() {
             freq + 1
         } else {
             (freq * 300) / 1000 + 1
@@ -60,9 +62,9 @@ impl<PINS> I2c<I2C1, PINS> {
         i2c.trise.write(|w| w.trise().bits(trise as u8));
 
         // I2C clock control calculation
-        if speed <= 100.khz() {
+        if speed <= 100.khz().into() {
             let ccr = {
-                let ccr = clock / speed.0;
+                let ccr = clock / (speed.0 * 2);
                 if ccr < 4 {
                     4
                 } else {

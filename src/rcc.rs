@@ -1,3 +1,5 @@
+use core::cmp::min;
+
 use stm32::{FLASH, RCC};
 
 use time::Hertz;
@@ -73,29 +75,14 @@ impl CFGR {
         let rcc = unsafe { &*RCC::ptr() };
 
         let sysclk = self.sysclk.unwrap_or(HSI);
-        let mut hclk = self.hclk.unwrap_or(HSI);
+        let mut hclk = self.hclk.unwrap_or(sysclk);
 
-        assert!(sysclk >= HSI);
         assert!(hclk <= sysclk);
 
-        if sysclk == HSI && hclk == sysclk {
-            // use HSI as source and run everything at the same speed
-            rcc.cfgr.modify(|_, w| unsafe {
-                w.ppre2().bits(0).ppre1().bits(0).hpre().bits(0).sw().hsi()
-            });
-
-            Clocks {
-                hclk: Hertz(hclk),
-                pclk1: Hertz(hclk),
-                pclk2: Hertz(hclk),
-                ppre1: 1,
-                ppre2: 1,
-                sysclk: Hertz(sysclk),
-            }
-        } else if sysclk == HSI && hclk < sysclk {
+        if sysclk == HSI {
             let hpre_bits = match sysclk / hclk {
                 0 => unreachable!(),
-                1 => 0b0111,
+                1 => 0b0000,
                 2 => 0b1000,
                 3...5 => 0b1001,
                 6...11 => 0b1010,
@@ -128,57 +115,43 @@ impl CFGR {
             }
         } else {
             #[cfg(feature = "stm32f401")]
-            assert!(sysclk <= 84_000_000 && sysclk >= 24_000_000);
+            let sysclk_min = 24_000_000;
+
+            #[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
+            let sysclk_min = 12_500_000;
+
+            #[cfg(feature = "stm32f411")]
+            let sysclk_min = 16_000_000;
+
+            #[cfg(feature = "stm32f401")]
+            let sysclk_max = 84_000_000;
 
             #[cfg(feature = "stm32f407")]
-            assert!(sysclk <= 168_000_000 && sysclk >= 24_000_000);
+            let sysclk_max = 168_000_000;
 
-            #[cfg(feature = "stm32f412")]
-            assert!(sysclk <= 100_000_000 && sysclk >= 16_000_000);
-
+            #[cfg(any(feature = "stm32f412", feature = "stm32f411"))]
+            let sysclk_max = 100_000_000;
+            
             #[cfg(feature = "stm32f429")]
-            assert!(sysclk <= 180_000_000 && sysclk >= 24_000_000);
+            let sysclk_max = 180_000_000;
+
+            assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
 
             // We're not diving down the hclk so it'll be the same as sysclk
             hclk = sysclk;
 
-            let (pllm, plln, pllp) = if sysclk >= 96_000_000 {
-                // Input divisor from HSI clock, must result in less than 2MHz
-                let pllm = 16;
+            // Sysclk output divisor must be one of 2, 4, 6 or 8
+            let sysclk_div = min(8, (432_000_000 / sysclk) & !1);
 
-                // Main scaler, must result in >= 192MHz and <= 432MHz, min 50, max 432
-                let plln = (sysclk / 1_000_000) * 2;
+            // Input divisor from HSI clock, must result to frequency in
+            // the range from 1 to 2 MHz
+            let pllm = 16;
 
-                // Sysclk output divisor, must result in >= 24MHz and <= 216MHz
-                // needs to be the equivalent of 2, 4, 6 or 8
-                let pllp = 0b00;
+            // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
+            // and <= 432MHz, min 50, max 432
+            let plln = sysclk * sysclk_div / (HSI / pllm as u32);
 
-                (pllm, plln, pllp)
-            } else if sysclk <= 54_000_000 {
-                // Input divisor from HSI clock, must result in less than 2MHz
-                let pllm = 16;
-
-                // Main scaler, must result in >= 192MHz and <= 432MHz, min 50, max 432
-                let plln = (sysclk / 1_000_000) * 8;
-
-                // Sysclk output divisor, must result in >= 24MHz and <= 216MHz
-                // needs to be the equivalent of 2, 4, 6 or 8
-                let pllp = 0b11;
-
-                (pllm, plln, pllp)
-            } else {
-                // Input divisor from HSI clock, must result in less than 2MHz
-                let pllm = 16;
-
-                // Main scaler, must result in >= 192MHz and <= 432MHz, min 50, max 432
-                let plln = (sysclk / 1_000_000) * 4;
-
-                // Sysclk output divisor, must result in >= 24MHz and <= 216MHz
-                // needs to be the equivalent of 2, 4, 6 or 8
-                let pllp = 0b01;
-
-                (pllm, plln, pllp)
-            };
+            let pllp = (sysclk_div as u8 / 2) - 1;
 
             let (ppre1_bits, ppre2_bits) = match hclk {
                 45_000_001...90_000_000 => (0b100, 0b011),
@@ -197,23 +170,7 @@ impl CFGR {
             // Adjust flash wait states
             unsafe {
                 flash.acr.modify(|_, w| {
-                    w.latency().bits(if sysclk <= 30_000_000 {
-                        0b0000
-                    } else if sysclk <= 60_000_000 {
-                        0b0001
-                    } else if sysclk <= 90_000_000 {
-                        0b0010
-                    } else if sysclk <= 120_000_000 {
-                        0b0011
-                    } else if sysclk <= 150_000_000 {
-                        0b0100
-                    } else if sysclk <= 180_000_000 {
-                        0b0101
-                    } else if sysclk <= 210_000_000 {
-                        0b0110
-                    } else {
-                        0b0111
-                    })
+                    w.latency().bits(((sysclk - 1) / 30_000_000) as u8)
                 })
             }
 
