@@ -131,8 +131,9 @@ macro_rules! gpio {
                 }
 
                 fn is_low(&self) -> bool {
+                    let gpio = unsafe { &(*$GPIOX::ptr()) };
                     // NOTE(unsafe) atomic read with no side effects
-                    unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 }
+                    gpio.idr.read().bits() & (1 << self.i) == 0
                 }
             }
 
@@ -142,8 +143,9 @@ macro_rules! gpio {
                 }
 
                 fn is_low(&self) -> bool {
+                    let gpio = unsafe { &(*$GPIOX::ptr()) };
                     // NOTE(unsafe) atomic read with no side effects
-                    unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 }
+                    gpio.idr.read().bits() & (1 << self.i) == 0
                 }
             }
 
@@ -158,14 +160,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af0(
                         self,
                     ) -> $PXi<Alternate<AF0>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af0()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af0());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -174,14 +171,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af1(
                         self,
                     ) -> $PXi<Alternate<AF1>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af1()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af1());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -190,14 +182,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af2(
                         self,
                     ) -> $PXi<Alternate<AF2>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af2()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af2());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -206,14 +193,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af3(
                         self,
                     ) -> $PXi<Alternate<AF3>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af3()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af3());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -222,14 +204,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af4(
                         self,
                     ) -> $PXi<Alternate<AF4>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af4()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af4());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -238,14 +215,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af5(
                         self,
                     ) -> $PXi<Alternate<AF5>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af5()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af5());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -254,14 +226,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af6(
                         self,
                     ) -> $PXi<Alternate<AF6>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af6()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af6());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -270,14 +237,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af7(
                         self,
                     ) -> $PXi<Alternate<AF7>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af7()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af7());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -286,14 +248,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af8(
                         self,
                     ) -> $PXi<Alternate<AF8>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af8()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af8());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -302,14 +259,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af9(
                         self,
                     ) -> $PXi<Alternate<AF9>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af9()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af9());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -318,14 +270,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af10(
                         self,
                     ) -> $PXi<Alternate<AF10>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af10()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af10());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -334,14 +281,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af11(
                         self,
                     ) -> $PXi<Alternate<AF11>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af11()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af11());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -350,14 +292,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af12(
                         self,
                     ) -> $PXi<Alternate<AF12>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af12()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af12());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -366,14 +303,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af13(
                         self,
                     ) -> $PXi<Alternate<AF13>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af13()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af13());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -382,14 +314,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af14(
                         self,
                     ) -> $PXi<Alternate<AF14>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af14()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af14());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -398,14 +325,9 @@ macro_rules! gpio {
                     pub fn into_alternate_af15(
                         self,
                     ) -> $PXi<Alternate<AF15>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().alternate()
-                            });
-                            &(*$GPIOX::ptr()).$afrx.modify(|_, w| {
-                                w.$afrxi().af15()
-                            });
-                        }
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().alternate());
+                        gpio.$afrx.modify(|_, w| w.$afrxi().af15());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -414,14 +336,9 @@ macro_rules! gpio {
                     pub fn into_floating_input(
                         self,
                     ) -> $PXi<Input<Floating>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().input()
-                            });
-                            &(*$GPIOX::ptr()).pupdr.modify(|_, w| {
-                                w.$pupdri().floating()
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().input());
+                        gpio.pupdr.modify(|_, w| w.$pupdri().floating());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -430,14 +347,9 @@ macro_rules! gpio {
                     pub fn into_pull_down_input(
                         self,
                     ) -> $PXi<Input<PullDown>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().input()
-                            });
-                            &(*$GPIOX::ptr()).pupdr.modify(|_, w| {
-                                w.$pupdri().pull_down()
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().input());
+                        gpio.pupdr.modify(|_, w| w.$pupdri().pull_down());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -446,14 +358,9 @@ macro_rules! gpio {
                     pub fn into_pull_up_input(
                         self,
                     ) -> $PXi<Input<PullUp>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().input()
-                            });
-                            &(*$GPIOX::ptr()).pupdr.modify(|_, w| {
-                                w.$pupdri().pull_up()
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().input());
+                        gpio.pupdr.modify(|_, w| w.$pupdri().pull_up());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -462,17 +369,10 @@ macro_rules! gpio {
                     pub fn into_open_drain_output(
                         self,
                     ) -> $PXi<Output<OpenDrain>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().output()
-                            });
-                            &(*$GPIOX::ptr()).pupdr.modify(|_, w| {
-                                w.$pupdri().floating()
-                            });
-                            &(*$GPIOX::ptr()).otyper.modify(|_, w| {
-                                w.$oti().open_drain()
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().output());
+                        gpio.pupdr.modify(|_, w| w.$pupdri().floating());
+                        gpio.otyper.modify(|_, w| w.$oti().open_drain());
 
                         $PXi { _mode: PhantomData }
                     }
@@ -481,28 +381,18 @@ macro_rules! gpio {
                     pub fn into_push_pull_output(
                         self,
                     ) -> $PXi<Output<PushPull>> {
-                        unsafe {
-                            &(*$GPIOX::ptr()).moder.modify(|_, w| {
-                                w.$moderi().output()
-                            });
-                            &(*$GPIOX::ptr()).pupdr.modify(|_, w| {
-                                w.$pupdri().floating()
-                            });
-                            &(*$GPIOX::ptr()).otyper.modify(|_, w| {
-                                w.$oti().push_pull()
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.moder.modify(|_, w| w.$moderi().output());
+                        gpio.pupdr.modify(|_, w| w.$pupdri().floating());
+                        gpio.otyper.modify(|_, w| w.$oti().push_pull());
 
                         $PXi { _mode: PhantomData }
                     }
 
                     /// Set pin speed
                     pub fn set_speed(self, speed: Speed) -> Self {
-                        unsafe {
-                            &(*$GPIOX::ptr()).ospeedr.modify(|_, w| {
-                                w.$ospeedri().bits(speed as u8)
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.ospeedr.modify(|_, w| w.$ospeedri().bits(speed as u8));
 
                         self
                     }
@@ -511,24 +401,22 @@ macro_rules! gpio {
                 impl $PXi<Output<OpenDrain>> {
                     /// Enables / disables the internal pull up
                     pub fn internal_pull_up(&mut self, on: bool) {
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|_, w| {
-                                if on { w.$pupdri().pull_up() }
-                                else  { w.$pupdri().floating() }
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.pupdr.modify(|_, w|
+                            if on { w.$pupdri().pull_up() }
+                            else  { w.$pupdri().floating() }
+                        );
                     }
                 }
 
                 impl<MODE> $PXi<Alternate<MODE>> {
                     /// Enables / disables the internal pull up
                     pub fn internal_pull_up(self, on: bool) -> Self {
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|_, w| {
-                                if on { w.$pupdri().pull_up() }
-                                else  { w.$pupdri().floating() }
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.pupdr.modify(|_, w|
+                            if on { w.$pupdri().pull_up() }
+                            else  { w.$pupdri().floating() }
+                        );
 
                         self
                     }
@@ -537,11 +425,8 @@ macro_rules! gpio {
                 impl<MODE> $PXi<Alternate<MODE>> {
                     /// Turns pin alternate configuration pin into open drain
                     pub fn set_open_drain(self) -> Self {
-                        unsafe {
-                            &(*$GPIOX::ptr()).otyper.modify(|_, w| {
-                                w.$oti().open_drain()
-                            });
-                        };
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
+                        gpio.otyper.modify(|_, w| w.$oti().open_drain());
 
                         self
                     }
@@ -562,13 +447,15 @@ macro_rules! gpio {
 
                 impl<MODE> OutputPin for $PXi<Output<MODE>> {
                     fn set_high(&mut self) {
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
                         // NOTE(unsafe) atomic write to a stateless register
-                        unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.$bsi().set()) }
+                        gpio.bsrr.write(|w| w.$bsi().set());
                     }
 
                     fn set_low(&mut self) {
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
                         // NOTE(unsafe) atomic write to a stateless register
-                        unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.$bri().reset()) }
+                        gpio.bsrr.write(|w| w.$bri().reset());
                     }
                 }
 
@@ -578,8 +465,9 @@ macro_rules! gpio {
                     }
 
                     fn is_low(&self) -> bool {
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
                         // NOTE(unsafe) atomic read with no side effects
-                        unsafe { (*$GPIOX::ptr()).idr.read().$idri().is_low() }
+                        gpio.idr.read().$idri().is_low()
                     }
                 }
 
@@ -602,8 +490,9 @@ macro_rules! gpio {
                     }
 
                     fn is_low(&self) -> bool {
+                        let gpio = unsafe { &(*$GPIOX::ptr()) };
                         // NOTE(unsafe) atomic read with no side effects
-                        unsafe { (*$GPIOX::ptr()).idr.read().$idri().is_low() }
+                        gpio.idr.read().$idri().is_low()
                     }
                 }
             )+
