@@ -662,6 +662,12 @@ gpio!(GPIOH, gpioh, gpiohen, PH, [
     PH15: (ph15, 15, moder15, ot15, ospeedr15, pupdr15, idr15, bs15, br15, afrh, afrh15, Input<Floating>),
 ]);
 
+#[cfg(any(feature = "stm32f401"))]
+gpio!(GPIOH, gpioh, gpiohen, PH, [
+    PH0: (ph0, 0, moder0, ot0, ospeedr0, pupdr0, idr0, bs0, br0, afrl, afrl0, Input<Floating>),
+    PH1: (ph1, 1, moder1, ot1, ospeedr1, pupdr1, idr1, bs1, br1, afrl, afrl1, Input<Floating>),
+]);
+
 #[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
 gpio!(GPIOI, gpioi, gpioien, PI, [
     PI0: (pi0, 0, moder0, ot0, ospeedr0, pupdr0, idr0, bs0, br0, afrl, afrl0, Input<Floating>),
