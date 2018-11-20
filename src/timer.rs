@@ -7,11 +7,15 @@ use hal::timer::{CountDown, Periodic};
 use nb;
 use void::Void;
 
-use stm32::{RCC, TIM1, TIM5, TIM9, TIM11};
-#[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f412", feature = "stm32f429", feature = "stm32f411"))]
+use stm32::RCC;
+#[cfg(any(feature = "stm32f401", feature = "stm32f405", feature = "stm32f407", feature = "stm32f410", feature = "stm32f411", feature = "stm32f412", feature = "stm32f413", feature = "stm32f415", feature = "stm32f417", feature = "stm32f423", feature = "stm32f427", feature = "stm32f429", feature = "stm32f437", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
+use stm32::{TIM1, TIM5, TIM9, TIM11};
+#[cfg(any(feature = "stm32f401", feature = "stm32f405", feature = "stm32f407", feature = "stm32f411", feature = "stm32f412", feature = "stm32f413", feature = "stm32f415", feature = "stm32f417", feature = "stm32f423", feature = "stm32f427", feature = "stm32f429", feature = "stm32f437", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
 use stm32::{TIM2, TIM3, TIM4, TIM10};
-#[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
-use stm32::{TIM6, TIM7, TIM8, TIM12, TIM13, TIM14};
+#[cfg(any(feature = "stm32f405", feature = "stm32f407", feature = "stm32f410", feature = "stm32f412", feature = "stm32f413", feature = "stm32f415", feature = "stm32f417", feature = "stm32f423", feature = "stm32f427", feature = "stm32f429", feature = "stm32f437", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
+use stm32::{TIM6};
+#[cfg(any(feature = "stm32f405", feature = "stm32f407", feature = "stm32f412", feature = "stm32f413", feature = "stm32f415", feature = "stm32f417", feature = "stm32f423", feature = "stm32f427", feature = "stm32f429", feature = "stm32f437", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
+use stm32::{TIM7, TIM8, TIM12, TIM13, TIM14};
 
 use rcc::{Clocks};
 use time::Hertz;
@@ -175,6 +179,7 @@ macro_rules! hal {
     }
 }
 
+#[cfg(any(feature = "stm32f401", feature = "stm32f405", feature = "stm32f407", feature = "stm32f410", feature = "stm32f411", feature = "stm32f412", feature = "stm32f413", feature = "stm32f415", feature = "stm32f417", feature = "stm32f423", feature = "stm32f427", feature = "stm32f429", feature = "stm32f437", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
 hal! {
     TIM1: (tim1, tim1en, tim1rst, apb2enr, apb2rstr, pclk2, ppre2),
     TIM5: (tim5, tim5en, tim5rst, apb1enr, apb1rstr, pclk1, ppre1),
@@ -182,8 +187,7 @@ hal! {
     TIM11: (tim11, tim11en, tim11rst, apb2enr, apb2rstr, pclk2, ppre2),
 }
 
-// available on all stm32f4 except stm32f410
-#[cfg(any(feature = "stm32f401", feature = "stm32f407", feature = "stm32f412", feature = "stm32f429", feature = "stm32f411"))]
+#[cfg(any(feature = "stm32f401", feature = "stm32f405", feature = "stm32f407", feature = "stm32f411", feature = "stm32f412", feature = "stm32f413", feature = "stm32f415", feature = "stm32f417", feature = "stm32f423", feature = "stm32f427", feature = "stm32f429", feature = "stm32f437", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
 hal! {
     TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, pclk1, ppre1),
     TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, pclk1, ppre1),
@@ -191,9 +195,13 @@ hal! {
     TIM10: (tim10, tim10en, tim10rst, apb2enr, apb2rstr, pclk2, ppre2),
 }
 
-#[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
+#[cfg(any(feature = "stm32f405", feature = "stm32f407", feature = "stm32f410", feature = "stm32f412", feature = "stm32f413", feature = "stm32f415", feature = "stm32f417", feature = "stm32f423", feature = "stm32f427", feature = "stm32f429", feature = "stm32f437", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
 hal! {
     TIM6: (tim6, tim6en, tim6rst, apb1enr, apb1rstr, pclk1, ppre1),
+}
+
+#[cfg(any(feature = "stm32f405", feature = "stm32f407", feature = "stm32f412", feature = "stm32f413", feature = "stm32f415", feature = "stm32f417", feature = "stm32f423", feature = "stm32f427", feature = "stm32f429", feature = "stm32f437", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
+hal! {
     TIM7: (tim7, tim7en, tim7rst, apb1enr, apb1rstr, pclk1, ppre1),
     TIM8: (tim8, tim8en, tim8rst, apb2enr, apb2rstr, pclk2, ppre2),
     TIM12: (tim12, tim12en, tim12rst, apb1enr, apb1rstr, pclk1, ppre1),
