@@ -122,7 +122,7 @@ trait I2cCommon {
         // Push out a byte of data
         self.i2c().dr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
-        // While until byte is transferred
+        // Wait until byte is transferred
         while {
             let sr1 = self.i2c().sr1.read();
 
@@ -302,7 +302,7 @@ impl<PINS> I2cInit for I2c<I2C1, PINS> {
 impl<PINS> I2c<I2C2, PINS> {
     pub fn i2c2(i2c: I2C2, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
     where
-        PINS: Pins<I2C1>,
+        PINS: Pins<I2C2>,
     {
         let i2c = I2c { i2c, pins };
 
