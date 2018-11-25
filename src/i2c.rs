@@ -21,6 +21,7 @@ pub trait Pins<I2c> {}
 
 impl Pins<I2C1> for (PB6<Alternate<AF4>>, PB7<Alternate<AF4>>) {}
 impl Pins<I2C1> for (PB8<Alternate<AF4>>, PB9<Alternate<AF4>>) {}
+impl Pins<I2C1> for (PB6<Alternate<AF4>>, PB9<Alternate<AF4>>) {}
 
 impl Pins<I2C2> for (PB10<Alternate<AF4>>, PB11<Alternate<AF4>>) {}
 
@@ -30,8 +31,10 @@ pub enum Error {
     NACK,
 }
 
+type I2cRegisterBlock = i2c3::RegisterBlock;
+
 trait I2cInit {
-    fn i2c(&self) -> &i2c3::RegisterBlock;
+    fn i2c(&self) -> &I2cRegisterBlock;
 
     fn enable_peripheral(&self, rcc: &rcc::RegisterBlock);
 
@@ -113,7 +116,7 @@ trait I2cInit {
 }
 
 trait I2cCommon {
-    fn i2c(&self) -> &i2c3::RegisterBlock;
+    fn i2c(&self) -> &I2cRegisterBlock;
 
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
@@ -146,16 +149,16 @@ trait I2cCommon {
 
 impl<I2C, PINS> I2cCommon for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c3::RegisterBlock>,
+    I2C: Deref<Target = I2cRegisterBlock>,
 {
-    fn i2c(&self) -> &i2c3::RegisterBlock {
+    fn i2c(&self) -> &I2cRegisterBlock {
         &self.i2c
     }
 }
 
 impl<I2C, PINS> WriteRead for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c3::RegisterBlock>,
+    I2C: Deref<Target = I2cRegisterBlock>,
 {
     type Error = Error;
 
@@ -169,7 +172,7 @@ where
 
 impl<I2C, PINS> Write for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c3::RegisterBlock>,
+    I2C: Deref<Target = I2cRegisterBlock>,
 {
     type Error = Error;
 
@@ -215,7 +218,7 @@ where
 
 impl<I2C, PINS> Read for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c3::RegisterBlock>,
+    I2C: Deref<Target = I2cRegisterBlock>,
 {
     type Error = Error;
 
@@ -281,7 +284,7 @@ impl<PINS> I2c<I2C1, PINS> {
 }
 
 impl<PINS> I2cInit for I2c<I2C1, PINS> {
-    fn i2c(&self) -> &i2c3::RegisterBlock {
+    fn i2c(&self) -> &I2cRegisterBlock {
         &self.i2c
     }
 
@@ -316,7 +319,7 @@ impl<PINS> I2c<I2C2, PINS> {
 }
 
 impl<PINS> I2cInit for I2c<I2C2, PINS> {
-    fn i2c(&self) -> &i2c3::RegisterBlock {
+    fn i2c(&self) -> &I2cRegisterBlock {
         &self.i2c
     }
 
