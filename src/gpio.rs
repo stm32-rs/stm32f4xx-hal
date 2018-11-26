@@ -152,9 +152,6 @@ macro_rules! gpio {
                 let offset = 2 * index;
                 let offset2 = 4 * index;
                 unsafe {
-                    &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                        w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset))
-                    });
                     if offset2 < 32 {
                         &(*$GPIOX::ptr()).afrl.modify(|r, w| {
                             w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2))
@@ -166,6 +163,9 @@ macro_rules! gpio {
                             w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2))
                         });
                     }
+                    &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                        w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset))
+                    });
                 }
             }
 
