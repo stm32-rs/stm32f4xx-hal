@@ -116,18 +116,25 @@ trait I2cInit {
 }
 
 trait I2cCommon {
-    fn i2c(&self) -> &I2cRegisterBlock;
+    fn send_byte(&self, byte: u8) -> Result<(), Error>;
 
+    fn recv_byte(&self) -> Result<u8, Error>;
+}
+
+impl<I2C, PINS> I2cCommon for I2c<I2C, PINS>
+where
+    I2C: Deref<Target = I2cRegisterBlock>,
+{
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
-        while self.i2c().sr1.read().tx_e().bit_is_clear() {}
+        while self.i2c.sr1.read().tx_e().bit_is_clear() {}
 
         // Push out a byte of data
-        self.i2c().dr.write(|w| unsafe { w.bits(u32::from(byte)) });
+        self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
         // Wait until byte is transferred
         while {
-            let sr1 = self.i2c().sr1.read();
+            let sr1 = self.i2c.sr1.read();
 
             // If we received a NACK, then this is an error
             if sr1.af().bit_is_set() {
@@ -141,18 +148,9 @@ trait I2cCommon {
     }
 
     fn recv_byte(&self) -> Result<u8, Error> {
-        while self.i2c().sr1.read().rx_ne().bit_is_clear() {}
-        let value = self.i2c().dr.read().bits() as u8;
+        while self.i2c.sr1.read().rx_ne().bit_is_clear() {}
+        let value = self.i2c.dr.read().bits() as u8;
         Ok(value)
-    }
-}
-
-impl<I2C, PINS> I2cCommon for I2c<I2C, PINS>
-where
-    I2C: Deref<Target = I2cRegisterBlock>,
-{
-    fn i2c(&self) -> &I2cRegisterBlock {
-        &self.i2c
     }
 }
 
