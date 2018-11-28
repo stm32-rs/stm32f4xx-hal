@@ -49,10 +49,6 @@ impl<PINS> I2c<I2C1, PINS> {
         i2c.i2c_init(speed, clocks.pclk1());
         i2c
     }
-
-    pub fn release(self) -> (I2C1, PINS) {
-        (self.i2c, self.pins)
-    }
 }
 
 impl<PINS> I2c<I2C2, PINS> {
@@ -73,10 +69,6 @@ impl<PINS> I2c<I2C2, PINS> {
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(speed, clocks.pclk1());
         i2c
-    }
-
-    pub fn release(self) -> (I2C2, PINS) {
-        (self.i2c, self.pins)
     }
 }
 
@@ -152,6 +144,10 @@ where
 
         // Enable the I2C processing
         self.i2c.cr1.modify(|_, w| w.pe().set_bit());
+    }
+
+    pub fn release(self) -> (I2C, PINS) {
+        (self.i2c, self.pins)
     }
 }
 
