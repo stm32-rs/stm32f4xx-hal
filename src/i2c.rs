@@ -30,6 +30,56 @@ pub enum Error {
     NACK,
 }
 
+impl<PINS> I2c<I2C1, PINS> {
+    pub fn i2c1(i2c: I2C1, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
+    where
+        PINS: Pins<I2C1>,
+    {
+        // NOTE(unsafe) This executes only during initialisation
+        let rcc = unsafe { &(*RCC::ptr()) };
+
+        // Enable clock for I2C1
+        rcc.apb1enr.modify(|_, w| w.i2c1en().set_bit());
+
+        // Reset I2C2
+        rcc.apb1rstr.modify(|_, w| w.i2c1rst().set_bit());
+        rcc.apb1rstr.modify(|_, w| w.i2c1rst().clear_bit());
+
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
+        i2c
+    }
+
+    pub fn release(self) -> (I2C1, PINS) {
+        (self.i2c, self.pins)
+    }
+}
+
+impl<PINS> I2c<I2C2, PINS> {
+    pub fn i2c2(i2c: I2C2, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
+    where
+        PINS: Pins<I2C2>,
+    {
+        // NOTE(unsafe) This executes only during initialisation
+        let rcc = unsafe { &(*RCC::ptr()) };
+
+        // Enable clock for I2C2
+        rcc.apb1enr.modify(|_, w| w.i2c2en().set_bit());
+
+        // Reset I2C2
+        rcc.apb1rstr.modify(|_, w| w.i2c2rst().set_bit());
+        rcc.apb1rstr.modify(|_, w| w.i2c2rst().clear_bit());
+
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
+        i2c
+    }
+
+    pub fn release(self) -> (I2C2, PINS) {
+        (self.i2c, self.pins)
+    }
+}
+
 type I2cRegisterBlock = i2c3::RegisterBlock;
 
 impl<I2C, PINS> I2c<I2C, PINS>
@@ -251,55 +301,5 @@ where
 
         // Fallthrough is success
         Ok(())
-    }
-}
-
-impl<PINS> I2c<I2C1, PINS> {
-    pub fn i2c1(i2c: I2C1, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<I2C1>,
-    {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
-
-        // Enable clock for I2C1
-        rcc.apb1enr.modify(|_, w| w.i2c1en().set_bit());
-
-        // Reset I2C2
-        rcc.apb1rstr.modify(|_, w| w.i2c1rst().set_bit());
-        rcc.apb1rstr.modify(|_, w| w.i2c1rst().clear_bit());
-
-        let i2c = I2c { i2c, pins };
-        i2c.i2c_init(speed, clocks.pclk1());
-        i2c
-    }
-
-    pub fn release(self) -> (I2C1, PINS) {
-        (self.i2c, self.pins)
-    }
-}
-
-impl<PINS> I2c<I2C2, PINS> {
-    pub fn i2c2(i2c: I2C2, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<I2C2>,
-    {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
-
-        // Enable clock for I2C2
-        rcc.apb1enr.modify(|_, w| w.i2c2en().set_bit());
-
-        // Reset I2C2
-        rcc.apb1rstr.modify(|_, w| w.i2c2rst().set_bit());
-        rcc.apb1rstr.modify(|_, w| w.i2c2rst().clear_bit());
-
-        let i2c = I2c { i2c, pins };
-        i2c.i2c_init(speed, clocks.pclk1());
-        i2c
-    }
-
-    pub fn release(self) -> (I2C2, PINS) {
-        (self.i2c, self.pins)
     }
 }
