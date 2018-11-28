@@ -1,7 +1,6 @@
 use core::ops::Deref;
 
 use crate::stm32::i2c3;
-use crate::stm32::rcc;
 use crate::stm32::{I2C1, I2C2, RCC};
 
 use hal::blocking::i2c::{Read, Write, WriteRead};
@@ -33,30 +32,20 @@ pub enum Error {
 
 type I2cRegisterBlock = i2c3::RegisterBlock;
 
-trait I2cInit {
-    fn i2c(&self) -> &I2cRegisterBlock;
-
-    fn enable_peripheral(&self, rcc: &rcc::RegisterBlock);
-
-    fn get_peripheral_clock(&self, clocks: Clocks) -> Hertz;
-
-    fn i2c_init(&self, speed: KiloHertz, clocks: Clocks) {
+impl<I2C, PINS> I2c<I2C, PINS>
+    where I2C: Deref<Target = I2cRegisterBlock> {
+    fn i2c_init(&self, speed: KiloHertz, pclk: Hertz) {
         let speed: Hertz = speed.into();
 
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
-        self.enable_peripheral(&rcc);
-
         // Make sure the I2C unit is disabled so we can configure it
-        self.i2c().cr1.modify(|_, w| w.pe().clear_bit());
+        self.i2c.cr1.modify(|_, w| w.pe().clear_bit());
 
         // Calculate settings for I2C speed modes
-        let clock = self.get_peripheral_clock(clocks).0;
-        let freq = clock / 1_000_000;
+        let freq = pclk.0 / 1_000_000;
         assert!(freq >= 2 && freq <= 50);
 
         // Configure bus frequency into I2C peripheral
-        self.i2c()
+        self.i2c
             .cr2
             .write(|w| unsafe { w.freq().bits(freq as u8) });
 
@@ -67,12 +56,12 @@ trait I2cInit {
         };
 
         // Configure correct rise times
-        self.i2c().trise.write(|w| w.trise().bits(trise as u8));
+        self.i2c.trise.write(|w| w.trise().bits(trise as u8));
 
         // I2C clock control calculation
         if speed <= 100.khz().into() {
             let ccr = {
-                let ccr = clock / (speed.0 * 2);
+                let ccr = pclk.0 / (speed.0 * 2);
                 if ccr < 4 {
                     4
                 } else {
@@ -81,7 +70,7 @@ trait I2cInit {
             };
 
             // Set clock to standard mode with appropriate parameters for selected speed
-            self.i2c().ccr.write(|w| unsafe {
+            self.i2c.ccr.write(|w| unsafe {
                 w.f_s()
                     .clear_bit()
                     .duty()
@@ -92,26 +81,26 @@ trait I2cInit {
         } else {
             const DUTYCYCLE: u8 = 0;
             if DUTYCYCLE == 0 {
-                let ccr = clock / (speed.0 * 3);
+                let ccr = pclk.0 / (speed.0 * 3);
                 let ccr = if ccr < 1 { 1 } else { ccr };
 
                 // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
-                self.i2c().ccr.write(|w| unsafe {
+                self.i2c.ccr.write(|w| unsafe {
                     w.f_s().set_bit().duty().clear_bit().ccr().bits(ccr as u16)
                 });
             } else {
-                let ccr = clock / (speed.0 * 25);
+                let ccr = pclk.0 / (speed.0 * 25);
                 let ccr = if ccr < 1 { 1 } else { ccr };
 
                 // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
-                self.i2c().ccr.write(|w| unsafe {
+                self.i2c.ccr.write(|w| unsafe {
                     w.f_s().set_bit().duty().set_bit().ccr().bits(ccr as u16)
                 });
             }
         }
 
         // Enable the I2C processing
-        self.i2c().cr1.modify(|_, w| w.pe().set_bit());
+        self.i2c.cr1.modify(|_, w| w.pe().set_bit());
     }
 }
 
@@ -270,9 +259,18 @@ impl<PINS> I2c<I2C1, PINS> {
     where
         PINS: Pins<I2C1>,
     {
-        let i2c = I2c { i2c, pins };
+        // NOTE(unsafe) This executes only during initialisation
+        let rcc = unsafe { &(*RCC::ptr()) };
 
-        i2c.i2c_init(speed, clocks);
+        // Enable clock for I2C1
+        rcc.apb1enr.modify(|_, w| w.i2c1en().set_bit());
+
+        // Reset I2C2
+        rcc.apb1rstr.modify(|_, w| w.i2c1rst().set_bit());
+        rcc.apb1rstr.modify(|_, w| w.i2c1rst().clear_bit());
+
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
         i2c
     }
 
@@ -281,56 +279,27 @@ impl<PINS> I2c<I2C1, PINS> {
     }
 }
 
-impl<PINS> I2cInit for I2c<I2C1, PINS> {
-    fn i2c(&self) -> &I2cRegisterBlock {
-        &self.i2c
-    }
-
-    fn enable_peripheral(&self, rcc: &rcc::RegisterBlock) {
-        // Enable clock for I2C1
-        rcc.apb1enr.modify(|_, w| w.i2c1en().set_bit());
-
-        // Reset I2C1
-        rcc.apb1rstr.modify(|_, w| w.i2c1rst().set_bit());
-        rcc.apb1rstr.modify(|_, w| w.i2c1rst().clear_bit());
-    }
-
-    fn get_peripheral_clock(&self, clocks: Clocks) -> Hertz {
-        clocks.pclk1()
-    }
-}
-
 impl<PINS> I2c<I2C2, PINS> {
     pub fn i2c2(i2c: I2C2, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
     where
         PINS: Pins<I2C2>,
     {
-        let i2c = I2c { i2c, pins };
+        // NOTE(unsafe) This executes only during initialisation
+        let rcc = unsafe { &(*RCC::ptr()) };
 
-        i2c.i2c_init(speed, clocks);
-        i2c
-    }
-
-    pub fn release(self) -> (I2C2, PINS) {
-        (self.i2c, self.pins)
-    }
-}
-
-impl<PINS> I2cInit for I2c<I2C2, PINS> {
-    fn i2c(&self) -> &I2cRegisterBlock {
-        &self.i2c
-    }
-
-    fn enable_peripheral(&self, rcc: &rcc::RegisterBlock) {
         // Enable clock for I2C2
         rcc.apb1enr.modify(|_, w| w.i2c2en().set_bit());
 
         // Reset I2C2
         rcc.apb1rstr.modify(|_, w| w.i2c2rst().set_bit());
         rcc.apb1rstr.modify(|_, w| w.i2c2rst().clear_bit());
+
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
+        i2c
     }
 
-    fn get_peripheral_clock(&self, clocks: Clocks) -> Hertz {
-        clocks.pclk1()
+    pub fn release(self) -> (I2C2, PINS) {
+        (self.i2c, self.pins)
     }
 }
