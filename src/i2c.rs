@@ -41,7 +41,7 @@ impl<PINS> I2c<I2C1, PINS> {
         // Enable clock for I2C1
         rcc.apb1enr.modify(|_, w| w.i2c1en().set_bit());
 
-        // Reset I2C2
+        // Reset I2C1
         rcc.apb1rstr.modify(|_, w| w.i2c1rst().set_bit());
         rcc.apb1rstr.modify(|_, w| w.i2c1rst().clear_bit());
 
@@ -83,7 +83,9 @@ impl<PINS> I2c<I2C2, PINS> {
 type I2cRegisterBlock = i2c3::RegisterBlock;
 
 impl<I2C, PINS> I2c<I2C, PINS>
-    where I2C: Deref<Target = I2cRegisterBlock> {
+where
+    I2C: Deref<Target = I2cRegisterBlock>,
+{
     fn i2c_init(&self, speed: KiloHertz, pclk: Hertz) {
         let speed: Hertz = speed.into();
 
@@ -91,13 +93,12 @@ impl<I2C, PINS> I2c<I2C, PINS>
         self.i2c.cr1.modify(|_, w| w.pe().clear_bit());
 
         // Calculate settings for I2C speed modes
-        let freq = pclk.0 / 1_000_000;
+        let clock = pclk.0;
+        let freq = clock / 1_000_000;
         assert!(freq >= 2 && freq <= 50);
 
         // Configure bus frequency into I2C peripheral
-        self.i2c
-            .cr2
-            .write(|w| unsafe { w.freq().bits(freq as u8) });
+        self.i2c.cr2.write(|w| unsafe { w.freq().bits(freq as u8) });
 
         let trise = if speed <= 100.khz().into() {
             freq + 1
@@ -111,7 +112,7 @@ impl<I2C, PINS> I2c<I2C, PINS>
         // I2C clock control calculation
         if speed <= 100.khz().into() {
             let ccr = {
-                let ccr = pclk.0 / (speed.0 * 2);
+                let ccr = clock / (speed.0 * 2);
                 if ccr < 4 {
                     4
                 } else {
@@ -131,7 +132,7 @@ impl<I2C, PINS> I2c<I2C, PINS>
         } else {
             const DUTYCYCLE: u8 = 0;
             if DUTYCYCLE == 0 {
-                let ccr = pclk.0 / (speed.0 * 3);
+                let ccr = clock / (speed.0 * 3);
                 let ccr = if ccr < 1 { 1 } else { ccr };
 
                 // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
@@ -139,7 +140,7 @@ impl<I2C, PINS> I2c<I2C, PINS>
                     w.f_s().set_bit().duty().clear_bit().ccr().bits(ccr as u16)
                 });
             } else {
-                let ccr = pclk.0 / (speed.0 * 25);
+                let ccr = clock / (speed.0 * 25);
                 let ccr = if ccr < 1 { 1 } else { ccr };
 
                 // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
