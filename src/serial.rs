@@ -34,15 +34,15 @@ use gpio::gpioa::{PA0, PA1};
 #[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
 use gpio::gpiob::{PB10, PB11};
 #[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
-use gpio::gpioc::{PC12};
+use gpio::gpioc::PC12;
+#[cfg(feature = "stm32f412")]
+use gpio::gpioc::PC5;
 #[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
 use gpio::gpioc::{PC10, PC11};
-#[cfg(feature = "stm32f412")]
-use gpio::gpioc::{PC5};
+#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+use gpio::gpiod::PD2;
 #[cfg(any(feature = "stm32f407", feature = "stm32f412", feature = "stm32f429"))]
 use gpio::gpiod::{PD8, PD9};
-#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
-use gpio::gpiod::{PD2};
 #[cfg(feature = "stm32f429")]
 use gpio::gpioe::{PE0, PE1};
 #[cfg(feature = "stm32f429")]
