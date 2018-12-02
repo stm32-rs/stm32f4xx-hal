@@ -73,6 +73,8 @@ pub enum Event {
     Rxne,
     /// New data can be sent
     Txe,
+    /// Idle line state detected
+    Idle,
 }
 
 pub mod config {
@@ -290,10 +292,13 @@ macro_rules! halUsart {
                         Event::Txe => {
                             self.usart.cr1.modify(|_, w| w.txeie().set_bit())
                         },
+                        Event::Idle => {
+                            self.usart.cr1.modify(|_, w| w.idleie().set_bit())
+                        },
                     }
                 }
 
-                /// Starts listening for an interrupt event
+                /// Stop listening for an interrupt event
                 pub fn unlisten(&mut self, event: Event) {
                     match event {
                         Event::Rxne => {
@@ -301,6 +306,9 @@ macro_rules! halUsart {
                         },
                         Event::Txe => {
                             self.usart.cr1.modify(|_, w| w.txeie().clear_bit())
+                        },
+                        Event::Idle => {
+                            self.usart.cr1.modify(|_, w| w.idleie().clear_bit())
                         },
                     }
                 }
