@@ -8,6 +8,7 @@ support crates. Currently supported configurations are:
 
 * stm32f401
 * stm32f407
+* stm32f411
 * stm32f412
 * stm32f429
 
