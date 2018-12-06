@@ -16,8 +16,8 @@ keywords = [
 license = "0BSD"
 name = "stm32f4xx-hal"
 readme = "README.md"
-repository = "https://github.com/therealprof/stm32f4xx-hal"
-version = "0.2.5"
+repository = "https://github.com/stm32-rs/stm32f4xx-hal"
+version = "0.2.6"
 
 [dependencies]
 cortex-m = "0.5.8"
