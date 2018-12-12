@@ -5,10 +5,22 @@ rust:
 cache: cargo
 env:
 - MCU=stm32f401
+- MCU=stm32f405
 - MCU=stm32f407
-- MCU=stm32f412
-- MCU=stm32f429
+- MCU=stm32f410
 - MCU=stm32f411
+- MCU=stm32f412
+- MCU=stm32f413
+- MCU=stm32f415
+- MCU=stm32f417
+- MCU=stm32f423
+- MCU=stm32f427
+- MCU=stm32f429
+- MCU=stm32f437
+- MCU=stm32f439
+- MCU=stm32f446
+- MCU=stm32f469
+- MCU=stm32f479
 matrix:
   allow_failures:
     - rust: nightly

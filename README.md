@@ -7,10 +7,22 @@ selection of the MCU is done by feature gates, typically specified by board
 support crates. Currently supported configurations are:
 
 * stm32f401
+* stm32f405
 * stm32f407
+* stm32f410
 * stm32f411
 * stm32f412
+* stm32f413
+* stm32f415
+* stm32f417
+* stm32f423
+* stm32f427
 * stm32f429
+* stm32f437
+* stm32f439
+* stm32f446
+* stm32f469
+* stm32f479
 
 The idea behind this crate is to gloss over the slight differences in the
 various peripherals available on those MCUs so a HAL can be written for all
