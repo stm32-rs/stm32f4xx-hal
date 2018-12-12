@@ -1,6 +1,6 @@
 use core::ops::Deref;
 
-use crate::stm32::i2c3;
+use crate::stm32::i2c1;
 use crate::stm32::{I2C1, I2C2, I2C3, RCC};
 
 use hal::blocking::i2c::{Read, Write, WriteRead};
@@ -97,7 +97,7 @@ impl<PINS> I2c<I2C3, PINS> {
     }
 }
 
-type I2cRegisterBlock = i2c3::RegisterBlock;
+type I2cRegisterBlock = i2c1::RegisterBlock;
 
 impl<I2C, PINS> I2c<I2C, PINS>
 where

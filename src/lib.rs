@@ -29,7 +29,7 @@ pub use stm32f4::stm32f411 as stm32;
 
 // Enable use of interrupt macro
 #[cfg(feature = "rt")]
-pub use stm32f4::interrupt;
+pub use crate::stm32::interrupt;
 
 #[cfg(any(
     feature = "stm32f401",
