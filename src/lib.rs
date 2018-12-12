@@ -15,17 +15,53 @@ pub extern crate stm32f4;
 #[cfg(feature = "stm32f401")]
 pub use stm32f4::stm32f401 as stm32;
 
+#[cfg(feature = "stm32f405")]
+pub use stm32f4::stm32f405 as stm32;
+
 #[cfg(feature = "stm32f407")]
 pub use stm32f4::stm32f407 as stm32;
+
+#[cfg(feature = "stm32f410")]
+pub use stm32f4::stm32f410 as stm32;
+
+#[cfg(feature = "stm32f411")]
+pub use stm32f4::stm32f411 as stm32;
 
 #[cfg(feature = "stm32f412")]
 pub use stm32f4::stm32f412 as stm32;
 
+#[cfg(feature = "stm32f413")]
+pub use stm32f4::stm32f413 as stm32;
+
+#[cfg(feature = "stm32f415")]
+pub use stm32f4::stm32f405 as stm32;
+
+#[cfg(feature = "stm32f417")]
+pub use stm32f4::stm32f407 as stm32;
+
+#[cfg(feature = "stm32f423")]
+pub use stm32f4::stm32f413 as stm32;
+
+#[cfg(feature = "stm32f427")]
+pub use stm32f4::stm32f427 as stm32;
+
 #[cfg(feature = "stm32f429")]
 pub use stm32f4::stm32f429 as stm32;
 
-#[cfg(feature = "stm32f411")]
-pub use stm32f4::stm32f411 as stm32;
+#[cfg(feature = "stm32f437")]
+pub use stm32f4::stm32f427 as stm32;
+
+#[cfg(feature = "stm32f439")]
+pub use stm32f4::stm32f429 as stm32;
+
+#[cfg(feature = "stm32f446")]
+pub use stm32f4::stm32f446 as stm32;
+
+#[cfg(feature = "stm32f469")]
+pub use stm32f4::stm32f469 as stm32;
+
+#[cfg(feature = "stm32f479")]
+pub use stm32f4::stm32f469 as stm32;
 
 // Enable use of interrupt macro
 #[cfg(feature = "rt")]
