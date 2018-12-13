@@ -1,6 +1,15 @@
 #![no_std]
 #![allow(non_camel_case_types)]
 
+#[cfg(not(any(
+    feature = "stm32f401",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f429",
+    )))]
+compile_error!("This crate requires one of the following features enabled: stm32f401, stm32f407, stm32f411, stm32f412 or stm32f429.");
+
 extern crate bare_metal;
 extern crate cast;
 extern crate cortex_m;
