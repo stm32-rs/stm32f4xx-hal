@@ -1,11 +1,11 @@
-use stm32::{I2C1, RCC};
+use crate::stm32::{I2C1, RCC};
 
 use hal::blocking::i2c::{Read, Write, WriteRead};
 
-use gpio::gpiob::{PB6, PB7, PB8, PB9};
-use gpio::{Alternate, AF4};
-use rcc::Clocks;
-use time::{Hertz, KiloHertz, U32Ext};
+use crate::gpio::gpiob::{PB6, PB7, PB8, PB9};
+use crate::gpio::{Alternate, AF4};
+use crate::rcc::Clocks;
+use crate::time::{Hertz, KiloHertz, U32Ext};
 
 /// I2C abstraction
 pub struct I2c<I2C, PINS> {
@@ -231,7 +231,7 @@ impl<PINS> Read for I2c<I2C1, PINS> {
         self.i2c.sr2.read();
 
         // Receive bytes into buffer
-        for mut c in buffer {
+        for c in buffer {
             *c = self.recv_byte()?;
         }
 

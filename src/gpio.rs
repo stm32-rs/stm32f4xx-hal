@@ -74,9 +74,9 @@ macro_rules! gpio {
             use core::marker::PhantomData;
 
             use hal::digital::{InputPin, OutputPin};
-            use stm32::$GPIOX;
+            use crate::stm32::$GPIOX;
 
-            use stm32::RCC;
+            use crate::stm32::RCC;
             use super::{
                 Alternate, Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AF0, AF1, AF2, AF3, AF4, AF5, AF6, AF7, AF8, AF9, AF10,

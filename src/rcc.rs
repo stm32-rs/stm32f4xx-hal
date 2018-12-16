@@ -1,8 +1,8 @@
 use core::cmp::min;
 
-use stm32::{FLASH, RCC};
+use crate::stm32::{FLASH, RCC};
 
-use time::Hertz;
+use crate::time::Hertz;
 
 /// Extension trait that constrains the `RCC` peripheral
 pub trait RccExt {
