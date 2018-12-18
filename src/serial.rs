@@ -364,6 +364,17 @@ macro_rules! halUsart {
                 }
             }
 
+            impl<PINS> hal::serial::Read<u8> for Serial<$USARTX, PINS> {
+                type Error = Error;
+
+                fn read(&mut self) -> nb::Result<u8, Error> {
+                    let mut rx: Rx<$USARTX> = Rx {
+                        _usart: PhantomData,
+                    };
+                    rx.read()
+                }
+            }
+
             impl hal::serial::Read<u8> for Rx<$USARTX> {
                 type Error = Error;
 
@@ -394,6 +405,24 @@ macro_rules! halUsart {
                     } else {
                         nb::Error::WouldBlock
                     })
+                }
+            }
+
+            impl<PINS> hal::serial::Write<u8> for Serial<$USARTX, PINS> {
+                type Error = Error;
+
+                fn flush(&mut self) -> nb::Result<(), Self::Error> {
+                    let mut tx: Tx<$USARTX> = Tx {
+                        _usart: PhantomData,
+                    };
+                    tx.flush()
+                }
+
+                fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
+                    let mut tx: Tx<$USARTX> = Tx {
+                        _usart: PhantomData,
+                    };
+                    tx.write(byte)
                 }
             }
 
