@@ -97,11 +97,9 @@ impl<PINS> I2c<I2C3, PINS> {
     }
 }
 
-type I2cRegisterBlock = i2c1::RegisterBlock;
-
 impl<I2C, PINS> I2c<I2C, PINS>
 where
-    I2C: Deref<Target = I2cRegisterBlock>,
+    I2C: Deref<Target = i2c1::RegisterBlock>,
 {
     fn i2c_init(&self, speed: KiloHertz, pclk: Hertz) {
         let speed: Hertz = speed.into();
@@ -184,7 +182,7 @@ trait I2cCommon {
 
 impl<I2C, PINS> I2cCommon for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = I2cRegisterBlock>,
+    I2C: Deref<Target = i2c1::RegisterBlock>,
 {
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
@@ -217,7 +215,7 @@ where
 
 impl<I2C, PINS> WriteRead for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = I2cRegisterBlock>,
+    I2C: Deref<Target = i2c1::RegisterBlock>,
 {
     type Error = Error;
 
@@ -231,7 +229,7 @@ where
 
 impl<I2C, PINS> Write for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = I2cRegisterBlock>,
+    I2C: Deref<Target = i2c1::RegisterBlock>,
 {
     type Error = Error;
 
@@ -277,7 +275,7 @@ where
 
 impl<I2C, PINS> Read for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = I2cRegisterBlock>,
+    I2C: Deref<Target = i2c1::RegisterBlock>,
 {
     type Error = Error;
 
