@@ -1,11 +1,13 @@
 use core::ops::Deref;
 
 use crate::stm32::i2c3;
-use crate::stm32::{I2C1, I2C2, RCC};
+use crate::stm32::{I2C1, I2C2, I2C3, RCC};
 
 use hal::blocking::i2c::{Read, Write, WriteRead};
 
+use crate::gpio::gpioa::PA8;
 use crate::gpio::gpiob::{PB10, PB11, PB6, PB7, PB8, PB9};
+use crate::gpio::gpioc::PC9;
 use crate::gpio::{Alternate, AF4};
 use crate::rcc::Clocks;
 use crate::time::{Hertz, KiloHertz, U32Ext};
@@ -23,6 +25,8 @@ impl Pins<I2C1> for (PB8<Alternate<AF4>>, PB9<Alternate<AF4>>) {}
 impl Pins<I2C1> for (PB6<Alternate<AF4>>, PB9<Alternate<AF4>>) {}
 
 impl Pins<I2C2> for (PB10<Alternate<AF4>>, PB11<Alternate<AF4>>) {}
+
+impl Pins<I2C3> for (PA8<Alternate<AF4>>, PC9<Alternate<AF4>>) {}
 
 #[derive(Debug)]
 pub enum Error {
@@ -65,6 +69,27 @@ impl<PINS> I2c<I2C2, PINS> {
         // Reset I2C2
         rcc.apb1rstr.modify(|_, w| w.i2c2rst().set_bit());
         rcc.apb1rstr.modify(|_, w| w.i2c2rst().clear_bit());
+
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
+        i2c
+    }
+}
+
+impl<PINS> I2c<I2C3, PINS> {
+    pub fn i2c3(i2c: I2C3, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
+    where
+        PINS: Pins<I2C3>,
+    {
+        // NOTE(unsafe) This executes only during initialisation
+        let rcc = unsafe { &(*RCC::ptr()) };
+
+        // Enable clock for I2C3
+        rcc.apb1enr.modify(|_, w| w.i2c3en().set_bit());
+
+        // Reset I2C3
+        rcc.apb1rstr.modify(|_, w| w.i2c3rst().set_bit());
+        rcc.apb1rstr.modify(|_, w| w.i2c3rst().clear_bit());
 
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(speed, clocks.pclk1());
