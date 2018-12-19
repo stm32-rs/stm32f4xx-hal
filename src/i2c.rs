@@ -1,11 +1,16 @@
-use stm32::{I2C1, RCC};
+use core::ops::Deref;
+
+use crate::stm32::i2c1;
+use crate::stm32::{I2C1, I2C2, I2C3, RCC};
 
 use hal::blocking::i2c::{Read, Write, WriteRead};
 
-use gpio::gpiob::{PB6, PB7, PB8, PB9};
-use gpio::{Alternate, AF4};
-use rcc::Clocks;
-use time::{Hertz, KiloHertz, U32Ext};
+use crate::gpio::gpioa::PA8;
+use crate::gpio::gpiob::{PB10, PB11, PB6, PB7, PB8, PB9};
+use crate::gpio::gpioc::PC9;
+use crate::gpio::{Alternate, AF4};
+use crate::rcc::Clocks;
+use crate::time::{Hertz, KiloHertz, U32Ext};
 
 /// I2C abstraction
 pub struct I2c<I2C, PINS> {
@@ -17,6 +22,11 @@ pub trait Pins<I2c> {}
 
 impl Pins<I2C1> for (PB6<Alternate<AF4>>, PB7<Alternate<AF4>>) {}
 impl Pins<I2C1> for (PB8<Alternate<AF4>>, PB9<Alternate<AF4>>) {}
+impl Pins<I2C1> for (PB6<Alternate<AF4>>, PB9<Alternate<AF4>>) {}
+
+impl Pins<I2C2> for (PB10<Alternate<AF4>>, PB11<Alternate<AF4>>) {}
+
+impl Pins<I2C3> for (PA8<Alternate<AF4>>, PC9<Alternate<AF4>>) {}
 
 #[derive(Debug)]
 pub enum Error {
@@ -29,8 +39,6 @@ impl<PINS> I2c<I2C1, PINS> {
     where
         PINS: Pins<I2C1>,
     {
-        let speed: Hertz = speed.into();
-
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
 
@@ -41,16 +49,71 @@ impl<PINS> I2c<I2C1, PINS> {
         rcc.apb1rstr.modify(|_, w| w.i2c1rst().set_bit());
         rcc.apb1rstr.modify(|_, w| w.i2c1rst().clear_bit());
 
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
+        i2c
+    }
+}
+
+impl<PINS> I2c<I2C2, PINS> {
+    pub fn i2c2(i2c: I2C2, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
+    where
+        PINS: Pins<I2C2>,
+    {
+        // NOTE(unsafe) This executes only during initialisation
+        let rcc = unsafe { &(*RCC::ptr()) };
+
+        // Enable clock for I2C2
+        rcc.apb1enr.modify(|_, w| w.i2c2en().set_bit());
+
+        // Reset I2C2
+        rcc.apb1rstr.modify(|_, w| w.i2c2rst().set_bit());
+        rcc.apb1rstr.modify(|_, w| w.i2c2rst().clear_bit());
+
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
+        i2c
+    }
+}
+
+impl<PINS> I2c<I2C3, PINS> {
+    pub fn i2c3(i2c: I2C3, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
+    where
+        PINS: Pins<I2C3>,
+    {
+        // NOTE(unsafe) This executes only during initialisation
+        let rcc = unsafe { &(*RCC::ptr()) };
+
+        // Enable clock for I2C3
+        rcc.apb1enr.modify(|_, w| w.i2c3en().set_bit());
+
+        // Reset I2C3
+        rcc.apb1rstr.modify(|_, w| w.i2c3rst().set_bit());
+        rcc.apb1rstr.modify(|_, w| w.i2c3rst().clear_bit());
+
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
+        i2c
+    }
+}
+
+impl<I2C, PINS> I2c<I2C, PINS>
+where
+    I2C: Deref<Target = i2c1::RegisterBlock>,
+{
+    fn i2c_init(&self, speed: KiloHertz, pclk: Hertz) {
+        let speed: Hertz = speed.into();
+
         // Make sure the I2C unit is disabled so we can configure it
-        i2c.cr1.modify(|_, w| w.pe().clear_bit());
+        self.i2c.cr1.modify(|_, w| w.pe().clear_bit());
 
         // Calculate settings for I2C speed modes
-        let clock = clocks.pclk1().0;
+        let clock = pclk.0;
         let freq = clock / 1_000_000;
         assert!(freq >= 2 && freq <= 50);
 
         // Configure bus frequency into I2C peripheral
-        i2c.cr2.write(|w| unsafe { w.freq().bits(freq as u8) });
+        self.i2c.cr2.write(|w| unsafe { w.freq().bits(freq as u8) });
 
         let trise = if speed <= 100.khz().into() {
             freq + 1
@@ -59,7 +122,7 @@ impl<PINS> I2c<I2C1, PINS> {
         };
 
         // Configure correct rise times
-        i2c.trise.write(|w| w.trise().bits(trise as u8));
+        self.i2c.trise.write(|w| w.trise().bits(trise as u8));
 
         // I2C clock control calculation
         if speed <= 100.khz().into() {
@@ -73,7 +136,7 @@ impl<PINS> I2c<I2C1, PINS> {
             };
 
             // Set clock to standard mode with appropriate parameters for selected speed
-            i2c.ccr.write(|w| unsafe {
+            self.i2c.ccr.write(|w| unsafe {
                 w.f_s()
                     .clear_bit()
                     .duty()
@@ -88,7 +151,7 @@ impl<PINS> I2c<I2C1, PINS> {
                 let ccr = if ccr < 1 { 1 } else { ccr };
 
                 // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
-                i2c.ccr.write(|w| unsafe {
+                self.i2c.ccr.write(|w| unsafe {
                     w.f_s().set_bit().duty().clear_bit().ccr().bits(ccr as u16)
                 });
             } else {
@@ -96,22 +159,31 @@ impl<PINS> I2c<I2C1, PINS> {
                 let ccr = if ccr < 1 { 1 } else { ccr };
 
                 // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
-                i2c.ccr.write(|w| unsafe {
+                self.i2c.ccr.write(|w| unsafe {
                     w.f_s().set_bit().duty().set_bit().ccr().bits(ccr as u16)
                 });
             }
         }
 
         // Enable the I2C processing
-        i2c.cr1.modify(|_, w| w.pe().set_bit());
-
-        I2c { i2c, pins }
+        self.i2c.cr1.modify(|_, w| w.pe().set_bit());
     }
 
-    pub fn release(self) -> (I2C1, PINS) {
+    pub fn release(self) -> (I2C, PINS) {
         (self.i2c, self.pins)
     }
+}
 
+trait I2cCommon {
+    fn send_byte(&self, byte: u8) -> Result<(), Error>;
+
+    fn recv_byte(&self) -> Result<u8, Error>;
+}
+
+impl<I2C, PINS> I2cCommon for I2c<I2C, PINS>
+where
+    I2C: Deref<Target = i2c1::RegisterBlock>,
+{
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
         while self.i2c.sr1.read().tx_e().bit_is_clear() {}
@@ -119,7 +191,7 @@ impl<PINS> I2c<I2C1, PINS> {
         // Push out a byte of data
         self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
-        // While until byte is transferred
+        // Wait until byte is transferred
         while {
             let sr1 = self.i2c.sr1.read();
 
@@ -141,7 +213,10 @@ impl<PINS> I2c<I2C1, PINS> {
     }
 }
 
-impl<PINS> WriteRead for I2c<I2C1, PINS> {
+impl<I2C, PINS> WriteRead for I2c<I2C, PINS>
+where
+    I2C: Deref<Target = i2c1::RegisterBlock>,
+{
     type Error = Error;
 
     fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
@@ -152,7 +227,10 @@ impl<PINS> WriteRead for I2c<I2C1, PINS> {
     }
 }
 
-impl<PINS> Write for I2c<I2C1, PINS> {
+impl<I2C, PINS> Write for I2c<I2C, PINS>
+where
+    I2C: Deref<Target = i2c1::RegisterBlock>,
+{
     type Error = Error;
 
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
@@ -195,7 +273,10 @@ impl<PINS> Write for I2c<I2C1, PINS> {
     }
 }
 
-impl<PINS> Read for I2c<I2C1, PINS> {
+impl<I2C, PINS> Read for I2c<I2C, PINS>
+where
+    I2C: Deref<Target = i2c1::RegisterBlock>,
+{
     type Error = Error;
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
@@ -231,7 +312,7 @@ impl<PINS> Read for I2c<I2C1, PINS> {
         self.i2c.sr2.read();
 
         // Receive bytes into buffer
-        for mut c in buffer {
+        for c in buffer {
             *c = self.recv_byte()?;
         }
 

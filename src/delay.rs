@@ -4,8 +4,8 @@ use cast::u32;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 
+use crate::rcc::Clocks;
 use hal::blocking::delay::{DelayMs, DelayUs};
-use rcc::Clocks;
 
 /// System timer (SysTick) as a delay provider
 pub struct Delay {
