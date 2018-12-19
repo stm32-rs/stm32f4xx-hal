@@ -6,70 +6,460 @@ use hal;
 use hal::prelude::*;
 use nb::block;
 
-#[cfg(any(feature = "stm32f401", feature = "stm32f411"))]
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 use crate::stm32::{RCC, USART1, USART2, USART6};
 
-#[cfg(feature = "stm32f407")]
-use crate::stm32::{RCC, UART4, UART5, USART1, USART2, USART3, USART6};
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::stm32::USART3;
 
-#[cfg(feature = "stm32f412")]
-use crate::stm32::{RCC, USART1, USART2, USART3, USART6};
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::stm32::{UART4, UART5};
 
-#[cfg(feature = "stm32f429")]
-use crate::stm32::{RCC, UART4, UART5, UART7, UART8, USART1, USART2, USART3, USART6};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::stm32::{UART7, UART8};
 
-#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
-use crate::stm32::usart6::cr2::STOPW;
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::stm32::{UART9, UART10};
+
 
 #[cfg(any(
     feature = "stm32f401",
-    feature = "stm32f412",
-    feature = "stm32f411"
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412"
 ))]
-use crate::stm32::usart1::cr2::STOPW;
+use crate::stm32::usart1::cr2::STOPW as USART_STOPW;
 
-use crate::gpio::gpioa::{PA10, PA2, PA3, PA9};
-use crate::gpio::gpiob::{PB6, PB7};
-use crate::gpio::gpioc::{PC6, PC7};
-use crate::gpio::gpiod::{PD5, PD6};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::stm32::usart3::cr2::STOPW as USART_STOPW;
 
-#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::stm32::usart6::cr2::STOPW as USART_STOPW;
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::stm32::uart4::cr2::STOPW as UART_STOPW;
+
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 use crate::gpio::gpioa::{PA0, PA1};
 #[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::gpio::gpioa::{PA2, PA3, PA9, PA10};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpioa::{PA8};
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpioa::{PA11, PA12};
+#[cfg(any(
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpioa::{PA15};
+
+#[cfg(any(
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiob::{PB3};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiob::{PB4};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiob::{PB5};
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::gpio::gpiob::{PB6, PB7};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiob::{PB8, PB9};
+#[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 use crate::gpio::gpiob::{PB10, PB11};
-#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
-use crate::gpio::gpioc::PC12;
-#[cfg(feature = "stm32f412")]
-use crate::gpio::gpioc::PC5;
 #[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiob::{PB12, PB13};
+
+#[cfg(any(
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f446"
+))]
+use crate::gpio::gpioc::{PC5};
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::gpio::gpioc::{PC6, PC7};
+#[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 use crate::gpio::gpioc::{PC10, PC11};
-#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::gpio::gpioc::PC12;
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiod::{PD0, PD1};
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 use crate::gpio::gpiod::PD2;
 #[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::gpio::gpiod::{PD5, PD6};
+#[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 use crate::gpio::gpiod::{PD8, PD9};
-#[cfg(feature = "stm32f429")]
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiod::PD10;
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiod::{PD14, PD15};
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 use crate::gpio::gpioe::{PE0, PE1};
-#[cfg(feature = "stm32f429")]
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpioe::{PE2, PE3};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::gpio::gpioe::{PE7, PE8};
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 use crate::gpio::gpiof::{PF6, PF7};
 #[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiof::{PF8, PF9};
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiog::{PG0, PG1};
+#[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 use crate::gpio::gpiog::{PG14, PG9};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiog::{PG11, PG12};
+
 use crate::gpio::{Alternate, AF7, AF8};
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::AF11;
 use crate::rcc::Clocks;
 
 /// Serial error
@@ -185,53 +575,354 @@ pub mod config {
 
 pub trait Pins<USART> {}
 
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<USART1> for (PA9<Alternate<AF7>>, PA10<Alternate<AF7>>) {}
+#[cfg(any(
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<USART1> for (PA15<Alternate<AF7>>, PB3<Alternate<AF7>>) {}
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<USART1> for (PB6<Alternate<AF7>>, PB7<Alternate<AF7>>) {}
 
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<USART2> for (PA2<Alternate<AF7>>, PA3<Alternate<AF7>>) {}
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<USART2> for (PD5<Alternate<AF7>>, PD6<Alternate<AF7>>) {}
 
 #[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 impl Pins<USART3> for (PB10<Alternate<AF7>>, PB11<Alternate<AF7>>) {}
-#[cfg(any(feature = "stm32f412"))]
+#[cfg(any(
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f446"
+))]
 impl Pins<USART3> for (PB10<Alternate<AF7>>, PC5<Alternate<AF7>>) {}
 #[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 impl Pins<USART3> for (PC10<Alternate<AF7>>, PC11<Alternate<AF7>>) {}
 #[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 impl Pins<USART3> for (PD8<Alternate<AF7>>, PD9<Alternate<AF7>>) {}
 
-#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<UART4> for (PA0<Alternate<AF8>>, PA1<Alternate<AF8>>) {}
-#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART4> for (PA12<Alternate<AF11>>, PA11<Alternate<AF11>>) {}
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<UART4> for (PC10<Alternate<AF8>>, PC11<Alternate<AF8>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART4> for (PD1<Alternate<AF11>>, PD0<Alternate<AF11>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART4> for (PD10<Alternate<AF8>>, PC11<Alternate<AF8>>) {}
 
-#[cfg(any(feature = "stm32f407", feature = "stm32f429"))]
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART5> for (PB6<Alternate<AF11>>, PB5<Alternate<AF11>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART5> for (PB9<Alternate<AF11>>, PB8<Alternate<AF11>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART5> for (PB13<Alternate<AF11>>, PB12<Alternate<AF11>>) {}
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<UART5> for (PC12<Alternate<AF8>>, PD2<Alternate<AF8>>) {}
+#[cfg(any(
+    feature = "stm32f446"
+))]
+impl Pins<UART5> for (PE8<Alternate<AF8>>, PE7<Alternate<AF8>>) {}
 
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<USART6> for (PA11<Alternate<AF8>>, PA12<Alternate<AF8>>) {}
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<USART6> for (PC6<Alternate<AF8>>, PC7<Alternate<AF8>>) {}
 #[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 impl Pins<USART6> for (PG14<Alternate<AF8>>, PG9<Alternate<AF8>>) {}
 
-#[cfg(feature = "stm32f429")]
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART7> for (PA15<Alternate<AF8>>, PA8<Alternate<AF8>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART7> for (PB4<Alternate<AF8>>, PB3<Alternate<AF8>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl Pins<UART7> for (PE8<Alternate<AF8>>, PE7<Alternate<AF8>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<UART7> for (PF7<Alternate<AF8>>, PF6<Alternate<AF8>>) {}
-#[cfg(feature = "stm32f429")]
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 impl Pins<UART8> for (PE1<Alternate<AF8>>, PE0<Alternate<AF8>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART8> for (PF9<Alternate<AF8>>, PF8<Alternate<AF8>>) {}
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART9> for (PD15<Alternate<AF11>>, PD14<Alternate<AF11>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART9> for (PG1<Alternate<AF11>>, PG0<Alternate<AF11>>) {}
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART10> for (PE3<Alternate<AF11>>, PE2<Alternate<AF11>>) {}
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl Pins<UART10> for (PG12<Alternate<AF11>>, PG11<Alternate<AF11>>) {}
+
 
 /// Serial abstraction
 pub struct Serial<USART, PINS> {
@@ -249,7 +940,7 @@ pub struct Tx<USART> {
     _usart: PhantomData<USART>,
 }
 
-macro_rules! halUsart {
+macro_rules! halUsartImpl {
     ($(
         $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident,  $pclkX:ident),
     )+) => {
@@ -308,15 +999,7 @@ macro_rules! halUsart {
                             })
                     });
 
-                    usart.cr2.write(|w| {
-                        w.stop().variant(match config.stopbits {
-                            StopBits::STOP0P5 => STOPW::STOP0P5,
-                            StopBits::STOP1 => STOPW::STOP1,
-                            StopBits::STOP1P5 => STOPW::STOP1P5,
-                            StopBits::STOP2 => STOPW::STOP2,
-                        })
-                    });
-                    Ok(Serial { usart, pins })
+                    Ok(Serial { usart, pins }.config_stop(config))
                 }
 
                 /// Starts listening for an interrupt event
@@ -458,6 +1141,94 @@ macro_rules! halUsart {
     }
 }
 
+macro_rules! halUsart {
+    ($(
+        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident, $pclkX:ident),
+    )+) => {
+        $(
+        impl<PINS> Serial<$USARTX, PINS> {
+            fn config_stop(self, config: config::Config) -> Self {
+                use self::config::*;
+
+                self.usart.cr2.write(|w| {
+                    w.stop().variant(match config.stopbits {
+                        StopBits::STOP0P5 => USART_STOPW::STOP0P5,
+                        StopBits::STOP1 => USART_STOPW::STOP1,
+                        StopBits::STOP1P5 => USART_STOPW::STOP1P5,
+                        StopBits::STOP2 => USART_STOPW::STOP2,
+                    })
+                });
+                self
+            }
+        }
+        )+
+
+        halUsartImpl! {
+            $( $USARTX: ($usartX, $apbXenr, $usartXen, $pclkX), )+
+        }
+    }
+}
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+macro_rules! halUart {
+    ($(
+        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident, $pclkX:ident),
+    )+) => {
+        $(
+        impl<PINS> Serial<$USARTX, PINS> {
+            fn config_stop(self, config: config::Config) -> Self {
+                use self::config::*;
+
+                self.usart.cr2.write(|w| {
+                    w.stop().variant(match config.stopbits {
+                        StopBits::STOP0P5 => UART_STOPW::STOP1,
+                        StopBits::STOP1 => UART_STOPW::STOP1,
+                        StopBits::STOP1P5 => UART_STOPW::STOP2,
+                        StopBits::STOP2 => UART_STOPW::STOP2,
+                    })
+                });
+                self
+            }
+        }
+        )+
+
+        halUsartImpl! {
+            $( $USARTX: ($usartX, $apbXenr, $usartXen, $pclkX), )+
+        }
+    }
+}
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 halUsart! {
     USART1: (usart1, apb2enr, usart1en, pclk2),
     USART2: (usart2, apb1enr, usart2en, pclk1),
@@ -465,12 +1236,74 @@ halUsart! {
 }
 
 #[cfg(any(
+    feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f412",
-    feature = "stm32f429"
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
 ))]
 halUsart! {
     USART3: (usart3, apb1enr, usart3en, pclk1),
+}
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+halUart! {
+    UART4: (uart4, apb1enr, uart4en, pclk1),
+    UART5: (uart5, apb1enr, uart5en, pclk1),
+}
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+halUsart! {
+    UART4: (uart4, apb1enr, uart4en, pclk1),
+    UART5: (uart5, apb1enr, uart5en, pclk1),
+}
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+halUsart! {
+    UART7: (uart7, apb1enr, uart7en, pclk1),
+    UART8: (uart8, apb1enr, uart8en, pclk1),
+}
+
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+halUsart! {
+    UART9: (uart9, apb2enr, uart9en, pclk2),
+    UART10: (uart10, apb2enr, uart10en, pclk2),
 }
 
 impl<USART> fmt::Write for Tx<USART>
