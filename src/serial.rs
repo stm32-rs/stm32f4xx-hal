@@ -964,12 +964,9 @@ macro_rules! halUsartImpl {
                     rcc.$apbXenr.modify(|_, w| w.$usartXen().set_bit());
 
                     // Calculate correct baudrate divisor on the fly
-                    let div = (clocks.$pclkX().0 * 25) / (4 * config.baudrate.0);
-                    let mantissa = div / 100;
-                    let fraction = ((div - mantissa * 100) * 16 + 50) / 100;
-                    usart
-                        .brr
-                        .write(|w| unsafe { w.bits(mantissa << 4 | fraction) });
+                    let div = (clocks.$pclkX().0 + config.baudrate.0 / 2)
+                        / config.baudrate.0;
+                    usart.brr.write(|w| unsafe { w.bits(div) });
 
                     // Reset other registers to disable advanced USART features
                     usart.cr2.reset();
