@@ -200,6 +200,14 @@ pub struct I2c<I2C, PINS> {
 }
 
 pub trait Pins<I2c> {}
+pub trait PinScl<I2c> {}
+pub trait PinSda<I2c> {}
+
+impl<I2c, SCL, SDA> Pins<I2c> for (SCL, SDA)
+where
+    SCL: PinScl<I2c>,
+    SDA: PinSda<I2c>,
+{}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -220,8 +228,7 @@ pub trait Pins<I2c> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl Pins<I2C1> for (PB6<Alternate<AF4>>, PB7<Alternate<AF4>>) {}
-
+impl PinScl<I2C1> for PB6<Alternate<AF4>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -241,30 +248,9 @@ impl Pins<I2C1> for (PB6<Alternate<AF4>>, PB7<Alternate<AF4>>) {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl Pins<I2C1> for (PB8<Alternate<AF4>>, PB9<Alternate<AF4>>) {}
-
-#[cfg(any(
-    feature = "stm32f446"
-))]
-impl Pins<I2C2> for (PB10<Alternate<AF4>>, PB3<Alternate<AF4>>) {}
+impl PinSda<I2C1> for PB7<Alternate<AF4>> {}
 #[cfg(any(
     feature = "stm32f401",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-impl Pins<I2C2> for (PB10<Alternate<AF4>>, PB3<Alternate<AF9>>) {}
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-impl Pins<I2C2> for (PB10<Alternate<AF4>>, PB9<Alternate<AF9>>) {}
-#[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f410",
@@ -282,14 +268,13 @@ impl Pins<I2C2> for (PB10<Alternate<AF4>>, PB9<Alternate<AF9>>) {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl Pins<I2C2> for (PB10<Alternate<AF4>>, PB11<Alternate<AF4>>) {}
+impl PinScl<I2C1> for PB8<Alternate<AF4>> {}
 #[cfg(any(
-    feature = "stm32f446"
-))]
-impl Pins<I2C2> for (PB10<Alternate<AF4>>, PC12<Alternate<AF4>>) {}
-#[cfg(any(
+    feature = "stm32f401",
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f415",
@@ -303,40 +288,133 @@ impl Pins<I2C2> for (PB10<Alternate<AF4>>, PC12<Alternate<AF4>>) {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl Pins<I2C2> for (PF1<Alternate<AF4>>, PF0<Alternate<AF4>>) {}
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-impl Pins<I2C2> for (PH4<Alternate<AF4>>, PH5<Alternate<AF4>>) {}
+impl PinSda<I2C1> for PB9<Alternate<AF4>> {}
 
 #[cfg(any(
     feature = "stm32f446"
 ))]
-impl Pins<I2C3> for (PA8<Alternate<AF4>>, PB4<Alternate<AF4>>) {}
+impl PinSda<I2C2> for PB3<Alternate<AF4>> {}
 #[cfg(any(
     feature = "stm32f401",
+    feature = "stm32f410",
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl Pins<I2C3> for (PA8<Alternate<AF4>>, PB4<Alternate<AF9>>) {}
+impl PinSda<I2C2> for PB3<Alternate<AF9>> {}
 #[cfg(any(
+    feature = "stm32f410",
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl Pins<I2C3> for (PA8<Alternate<AF4>>, PB8<Alternate<AF9>>) {}
+impl PinSda<I2C2> for PB9<Alternate<AF9>> {}
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl PinScl<I2C2> for PB10<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl PinSda<I2C2> for PB11<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f446"
+))]
+impl PinSda<I2C2> for PC12<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl PinScl<I2C2> for PF1<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl PinSda<I2C2> for PF0<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl PinScl<I2C2> for PH4<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl PinSda<I2C2> for PH5<Alternate<AF4>> {}
+
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -355,7 +433,45 @@ impl Pins<I2C3> for (PA8<Alternate<AF4>>, PB8<Alternate<AF9>>) {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl Pins<I2C3> for (PA8<Alternate<AF4>>, PC9<Alternate<AF4>>) {}
+impl PinScl<I2C3> for PA8<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f446"
+))]
+impl PinSda<I2C3> for PB4<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl PinSda<I2C3> for PB4<Alternate<AF9>> {}
+#[cfg(any(
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl PinSda<I2C3> for PB8<Alternate<AF9>> {}
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl PinSda<I2C3> for PC9<Alternate<AF4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -368,7 +484,20 @@ impl Pins<I2C3> for (PA8<Alternate<AF4>>, PC9<Alternate<AF4>>) {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl Pins<I2C3> for (PH7<Alternate<AF4>>, PH8<Alternate<AF4>>) {}
+impl PinScl<I2C3> for PH7<Alternate<AF4>> {}
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl PinSda<I2C3> for PH8<Alternate<AF4>> {}
 
 #[derive(Debug)]
 pub enum Error {
