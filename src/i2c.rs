@@ -42,7 +42,7 @@ use crate::stm32::{I2C1, I2C2, RCC};
 ))]
 use crate::stm32::I2C3;
 
-use hal::blocking::i2c::{Read, Write, WriteRead};
+use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
 #[cfg(any(
     feature = "stm32f401",

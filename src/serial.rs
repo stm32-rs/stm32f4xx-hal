@@ -2,8 +2,8 @@ use core::fmt;
 use core::marker::PhantomData;
 use core::ptr;
 
-use hal;
-use hal::prelude::*;
+use embedded_hal::serial;
+use embedded_hal::prelude::*;
 use nb::block;
 
 #[cfg(any(
@@ -1044,7 +1044,7 @@ macro_rules! halUsartImpl {
                 }
             }
 
-            impl<PINS> hal::serial::Read<u8> for Serial<$USARTX, PINS> {
+            impl<PINS> serial::Read<u8> for Serial<$USARTX, PINS> {
                 type Error = Error;
 
                 fn read(&mut self) -> nb::Result<u8, Error> {
@@ -1055,7 +1055,7 @@ macro_rules! halUsartImpl {
                 }
             }
 
-            impl hal::serial::Read<u8> for Rx<$USARTX> {
+            impl serial::Read<u8> for Rx<$USARTX> {
                 type Error = Error;
 
                 fn read(&mut self) -> nb::Result<u8, Error> {
@@ -1088,7 +1088,7 @@ macro_rules! halUsartImpl {
                 }
             }
 
-            impl<PINS> hal::serial::Write<u8> for Serial<$USARTX, PINS> {
+            impl<PINS> serial::Write<u8> for Serial<$USARTX, PINS> {
                 type Error = Error;
 
                 fn flush(&mut self) -> nb::Result<(), Self::Error> {
@@ -1106,7 +1106,7 @@ macro_rules! halUsartImpl {
                 }
             }
 
-            impl hal::serial::Write<u8> for Tx<$USARTX> {
+            impl serial::Write<u8> for Tx<$USARTX> {
                 type Error = Error;
 
                 fn flush(&mut self) -> nb::Result<(), Self::Error> {
@@ -1305,7 +1305,7 @@ halUsart! {
 
 impl<USART> fmt::Write for Tx<USART>
 where
-    Tx<USART>: hal::serial::Write<u8>,
+    Tx<USART>: serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         let _ = s
