@@ -1,7 +1,7 @@
 use core::ptr;
 
-use hal;
-pub use hal::spi::{Mode, Phase, Polarity};
+use embedded_hal::spi;
+pub use embedded_hal::spi::{Mode, Phase, Polarity};
 use nb;
 
 #[cfg(any(
@@ -784,7 +784,7 @@ macro_rules! hal {
                 }
             }
 
-            impl<PINS> hal::spi::FullDuplex<u8> for Spi<$SPIX, PINS> {
+            impl<PINS> spi::FullDuplex<u8> for Spi<$SPIX, PINS> {
                 type Error = Error;
 
                 fn read(&mut self) -> nb::Result<u8, Error> {
@@ -827,9 +827,9 @@ macro_rules! hal {
 
             }
 
-            impl<PINS> ::hal::blocking::spi::transfer::Default<u8> for Spi<$SPIX, PINS> {}
+            impl<PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<$SPIX, PINS> {}
 
-            impl<PINS> ::hal::blocking::spi::write::Default<u8> for Spi<$SPIX, PINS> {}
+            impl<PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<$SPIX, PINS> {}
         )+
     }
 }

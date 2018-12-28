@@ -73,7 +73,7 @@ macro_rules! gpio {
         pub mod $gpiox {
             use core::marker::PhantomData;
 
-            use hal::digital::{InputPin, OutputPin};
+            use embedded_hal::digital::{InputPin, OutputPin};
             use crate::stm32::$GPIOX;
 
             use crate::stm32::RCC;
