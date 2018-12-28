@@ -45,8 +45,6 @@ pub use embedded_hal as hal;
 pub use nb;
 pub use nb::block;
 
-pub use stm32f4;
-
 #[cfg(feature = "stm32f401")]
 pub use stm32f4::stm32f401 as stm32;
 
