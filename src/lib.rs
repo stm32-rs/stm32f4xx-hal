@@ -40,11 +40,7 @@ compile_error!("This crate requires one of the following device features enabled
         stm32f479
                 ");
 
-extern crate bare_metal;
-extern crate cast;
-extern crate cortex_m;
 pub extern crate embedded_hal as hal;
-extern crate void;
 
 pub extern crate nb;
 pub use nb::block;
