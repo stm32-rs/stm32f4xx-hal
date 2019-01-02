@@ -1,6 +1,7 @@
 use core::cmp::min;
 
 use crate::stm32::{FLASH, RCC};
+use crate::stm32::rcc::cfgr::HPREW;
 
 use crate::time::Hertz;
 
@@ -75,11 +76,12 @@ impl CFGR {
         let rcc = unsafe { &*RCC::ptr() };
 
         let sysclk = self.sysclk.unwrap_or(HSI);
-        let mut hclk = self.hclk.unwrap_or(sysclk);
-
-        assert!(hclk <= sysclk);
 
         if sysclk == HSI {
+            let hclk = self.hclk.unwrap_or(sysclk);
+
+            assert!(hclk <= sysclk);
+
             let hpre_bits = match sysclk / hclk {
                 0 => unreachable!(),
                 1 => 0b0000,
@@ -186,8 +188,21 @@ impl CFGR {
             // Calculate real system clock
             let sysclk = (HSI / pllm) * plln / sysclk_div;
 
-            // We're not diving down the hclk so it'll be the same as sysclk
-            hclk = sysclk;
+            let (hpre_bits, hpre_div) = match sysclk / self.hclk.unwrap_or(sysclk) {
+                0 => unreachable!(),
+                1 => (HPREW::DIV1, 1),
+                2 => (HPREW::DIV2, 2),
+                3...5 => (HPREW::DIV4, 4),
+                6...11 => (HPREW::DIV8, 8),
+                12...39 => (HPREW::DIV16, 16),
+                40...95 => (HPREW::DIV64, 64),
+                96...191 => (HPREW::DIV128, 128),
+                192...383 => (HPREW::DIV256, 256),
+                _ => (HPREW::DIV512, 512),
+            };
+
+            // Calculate real AHB clock
+            let hclk = sysclk / hpre_div;
 
             let (ppre1_bits, ppre2_bits) = match hclk {
                 45_000_001...90_000_000 => (0b100, 0b011),
@@ -255,7 +270,7 @@ impl CFGR {
                     .ppre1()
                     .bits(ppre1_bits)
                     .hpre()
-                    .bits(0)
+                    .variant(hpre_bits)
                     .sw()
                     .pll()
             });
