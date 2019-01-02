@@ -182,9 +182,9 @@ impl CFGR {
 
             // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
             // and <= 432MHz, min 50, max 432
-            let plln = sysclk * sysclk_div / (HSI / pllm as u32);
+            let plln = sysclk * sysclk_div / (HSI / pllm);
 
-            let pllp = (sysclk_div as u8 / 2) - 1;
+            let pllp = (sysclk_div / 2) - 1;
 
             let (ppre1_bits, ppre2_bits) = match hclk {
                 45_000_001...90_000_000 => (0b100, 0b011),
@@ -232,11 +232,11 @@ impl CFGR {
             // use PLL as source
             rcc.pllcfgr.write(|w| unsafe {
                 w.pllm()
-                    .bits(pllm)
+                    .bits(pllm as u8)
                     .plln()
                     .bits(plln as u16)
                     .pllp()
-                    .bits(pllp)
+                    .bits(pllp as u8)
             });
 
             // Enable PLL
