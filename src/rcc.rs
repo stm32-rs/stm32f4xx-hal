@@ -77,142 +77,142 @@ impl CFGR {
 
         let sysclk = self.sysclk.unwrap_or(HSI);
 
-            #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
-            let sysclk_min = 24_000_000;
+        #[cfg(any(
+            feature = "stm32f401",
+            feature = "stm32f405",
+            feature = "stm32f407",
+            feature = "stm32f410",
+            feature = "stm32f411",
+            feature = "stm32f412",
+            feature = "stm32f413",
+            feature = "stm32f415",
+            feature = "stm32f417",
+            feature = "stm32f423",
+            feature = "stm32f427",
+            feature = "stm32f429",
+            feature = "stm32f437",
+            feature = "stm32f439",
+            feature = "stm32f469",
+            feature = "stm32f479"
+        ))]
+        let sysclk_min = 24_000_000;
 
-            #[cfg(any(feature = "stm32f446"))]
-            let sysclk_min = 12_500_000;
+        #[cfg(any(feature = "stm32f446"))]
+        let sysclk_min = 12_500_000;
 
-            #[cfg(feature = "stm32f401")]
-            let sysclk_max = 84_000_000;
+        #[cfg(feature = "stm32f401")]
+        let sysclk_max = 84_000_000;
 
-            #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417"
-            ))]
-            let sysclk_max = 168_000_000;
+        #[cfg(any(
+            feature = "stm32f405",
+            feature = "stm32f407",
+            feature = "stm32f415",
+            feature = "stm32f417"
+        ))]
+        let sysclk_max = 168_000_000;
 
-            #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
-            ))]
-            let sysclk_max = 100_000_000;
+        #[cfg(any(
+            feature = "stm32f410",
+            feature = "stm32f411",
+            feature = "stm32f412",
+            feature = "stm32f413",
+            feature = "stm32f423"
+        ))]
+        let sysclk_max = 100_000_000;
 
-            #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
-            let sysclk_max = 180_000_000;
+        #[cfg(any(
+            feature = "stm32f427",
+            feature = "stm32f429",
+            feature = "stm32f437",
+            feature = "stm32f439",
+            feature = "stm32f446",
+            feature = "stm32f469",
+            feature = "stm32f479"
+        ))]
+        let sysclk_max = 180_000_000;
 
-            assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
+        assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
 
-            let pllsrcclk = HSI;
+        let pllsrcclk = HSI;
 
-            // Sysclk output divisor must be one of 2, 4, 6 or 8
-            let sysclk_div = min(8, (432_000_000 / sysclk) & !1);
+        // Sysclk output divisor must be one of 2, 4, 6 or 8
+        let sysclk_div = min(8, (432_000_000 / sysclk) & !1);
 
-            // Input divisor from HSI clock, must result to frequency in
-            // the range from 1 to 2 MHz
-            let pllm = 16;
+        // Input divisor from HSI clock, must result to frequency in
+        // the range from 1 to 2 MHz
+        let pllm = 16;
 
-            // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
-            // and <= 432MHz, min 50, max 432
-            let plln = sysclk * sysclk_div / (pllsrcclk / pllm);
+        // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
+        // and <= 432MHz, min 50, max 432
+        let plln = sysclk * sysclk_div / (pllsrcclk / pllm);
 
-            let pllp = (sysclk_div / 2) - 1;
+        let pllp = (sysclk_div / 2) - 1;
 
-            // Calculate real system clock
-            let sysclk = (pllsrcclk / pllm) * plln / sysclk_div;
+        // Calculate real system clock
+        let sysclk = (pllsrcclk / pllm) * plln / sysclk_div;
 
-            let use_pll = sysclk != pllsrcclk;
+        let use_pll = sysclk != pllsrcclk;
 
-            let (hpre_bits, hpre_div) = match sysclk / self.hclk.unwrap_or(sysclk) {
-                0 => unreachable!(),
-                1 => (HPREW::DIV1, 1),
-                2 => (HPREW::DIV2, 2),
-                3...5 => (HPREW::DIV4, 4),
-                6...11 => (HPREW::DIV8, 8),
-                12...39 => (HPREW::DIV16, 16),
-                40...95 => (HPREW::DIV64, 64),
-                96...191 => (HPREW::DIV128, 128),
-                192...383 => (HPREW::DIV256, 256),
-                _ => (HPREW::DIV512, 512),
-            };
+        let (hpre_bits, hpre_div) = match sysclk / self.hclk.unwrap_or(sysclk) {
+            0 => unreachable!(),
+            1 => (HPREW::DIV1, 1),
+            2 => (HPREW::DIV2, 2),
+            3...5 => (HPREW::DIV4, 4),
+            6...11 => (HPREW::DIV8, 8),
+            12...39 => (HPREW::DIV16, 16),
+            40...95 => (HPREW::DIV64, 64),
+            96...191 => (HPREW::DIV128, 128),
+            192...383 => (HPREW::DIV256, 256),
+            _ => (HPREW::DIV512, 512),
+        };
 
-            // Calculate real AHB clock
-            let hclk = sysclk / hpre_div;
+        // Calculate real AHB clock
+        let hclk = sysclk / hpre_div;
 
-            let (ppre1_bits, ppre2_bits) = match hclk {
-                45_000_001...90_000_000 => (0b100, 0b011),
-                90_000_001...180_000_000 => (0b101, 0b100),
-                _ => (0b011, 0b011),
-            };
+        let (ppre1_bits, ppre2_bits) = match hclk {
+            45_000_001...90_000_000 => (0b100, 0b011),
+            90_000_001...180_000_000 => (0b101, 0b100),
+            _ => (0b011, 0b011),
+        };
 
-            // Calculate real divisor
-            let ppre1 = 1 << (ppre1_bits - 0b011);
-            let ppre2 = 1 << (ppre2_bits - 0b011);
+        // Calculate real divisor
+        let ppre1 = 1 << (ppre1_bits - 0b011);
+        let ppre2 = 1 << (ppre2_bits - 0b011);
 
-            // Calculate new bus clocks
-            let pclk1 = hclk / ppre1 as u32;
-            let pclk2 = hclk / ppre2 as u32;
+        // Calculate new bus clocks
+        let pclk1 = hclk / ppre1 as u32;
+        let pclk2 = hclk / ppre2 as u32;
 
-            #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
-            let flash_latency_step = 30_000_000;
+        #[cfg(any(
+            feature = "stm32f401",
+            feature = "stm32f405",
+            feature = "stm32f407",
+            feature = "stm32f410",
+            feature = "stm32f411",
+            feature = "stm32f412",
+            feature = "stm32f415",
+            feature = "stm32f417",
+            feature = "stm32f427",
+            feature = "stm32f429",
+            feature = "stm32f437",
+            feature = "stm32f439",
+            feature = "stm32f446",
+            feature = "stm32f469",
+            feature = "stm32f479"
+        ))]
+        let flash_latency_step = 30_000_000;
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-            let flash_latency_step = 25_000_000;
+        #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+        let flash_latency_step = 25_000_000;
 
-            // Adjust flash wait states
-            unsafe {
-                flash
-                    .acr
-                    .modify(|_, w| w.latency().bits(((sysclk - 1) / flash_latency_step) as u8))
-            }
+        // Adjust flash wait states
+        unsafe {
+            flash
+                .acr
+                .modify(|_, w| w.latency().bits(((sysclk - 1) / flash_latency_step) as u8))
+        }
 
-            if use_pll {
+        if use_pll {
             // use PLL as source
             rcc.pllcfgr.write(|w| unsafe {
                 w.pllm()
@@ -228,32 +228,32 @@ impl CFGR {
 
             // Wait for PLL to stabilise
             while rcc.cr.read().pllrdy().bit_is_clear() {}
-            }
+        }
 
-            // Set scaling factors and select system clock source
-            rcc.cfgr.modify(|_, w| unsafe {
-                w.ppre2()
-                    .bits(ppre2_bits)
-                    .ppre1()
-                    .bits(ppre1_bits)
-                    .hpre()
-                    .variant(hpre_bits)
-                    .sw()
-                    .variant(if use_pll {
-                        SWW::PLL
-                    } else {
-                        SWW::HSI
-                    })
-            });
+        // Set scaling factors and select system clock source
+        rcc.cfgr.modify(|_, w| unsafe {
+            w.ppre2()
+                .bits(ppre2_bits)
+                .ppre1()
+                .bits(ppre1_bits)
+                .hpre()
+                .variant(hpre_bits)
+                .sw()
+                .variant(if use_pll {
+                    SWW::PLL
+                } else {
+                    SWW::HSI
+                })
+        });
 
-            Clocks {
-                hclk: Hertz(hclk),
-                pclk1: Hertz(pclk1),
-                pclk2: Hertz(pclk2),
-                ppre1,
-                ppre2,
-                sysclk: Hertz(sysclk),
-            }
+        Clocks {
+            hclk: Hertz(hclk),
+            pclk1: Hertz(pclk1),
+            pclk2: Hertz(pclk2),
+            ppre1,
+            ppre2,
+            sysclk: Hertz(sysclk),
+        }
     }
 }
 
