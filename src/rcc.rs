@@ -15,6 +15,7 @@ impl RccExt for RCC {
     fn constrain(self) -> Rcc {
         Rcc {
             cfgr: CFGR {
+                hse: None,
                 hclk: None,
                 pclk1: None,
                 pclk2: None,
@@ -32,6 +33,7 @@ pub struct Rcc {
 const HSI: u32 = 16_000_000; // Hz
 
 pub struct CFGR {
+    hse: Option<u32>,
     hclk: Option<u32>,
     pclk1: Option<u32>,
     pclk2: Option<u32>,
@@ -39,6 +41,16 @@ pub struct CFGR {
 }
 
 impl CFGR {
+    /// Uses HSE (external oscillator) instead of HSI (internal RC oscillator) as the clock source.
+    /// Will result in a hang if an external oscillator is not connected or it fails to start.
+    pub fn use_hse<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.hse = Some(freq.into().0);
+        self
+    }
+
     pub fn hclk<F>(mut self, freq: F) -> Self
     where
         F: Into<Hertz>,
@@ -75,7 +87,8 @@ impl CFGR {
         let flash = unsafe { &(*FLASH::ptr()) };
         let rcc = unsafe { &*RCC::ptr() };
 
-        let sysclk = self.sysclk.unwrap_or(HSI);
+        let pllsrcclk = self.hse.unwrap_or(HSI);
+        let sysclk = self.sysclk.unwrap_or(pllsrcclk);
 
         #[cfg(any(
             feature = "stm32f401",
@@ -133,12 +146,10 @@ impl CFGR {
 
         assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
 
-        let pllsrcclk = HSI;
-
         // Sysclk output divisor must be one of 2, 4, 6 or 8
         let sysclk_div = min(8, (432_000_000 / sysclk) & !1);
 
-        // Input divisor from HSI clock, must result to frequency in
+        // Input divisor from PLL source clock, must result to frequency in
         // the range from 1 to 2 MHz
         let pllm = 16;
 
@@ -212,6 +223,12 @@ impl CFGR {
                 .modify(|_, w| w.latency().bits(((sysclk - 1) / flash_latency_step) as u8))
         }
 
+        if self.hse.is_some() {
+            // enable HSE and wait for it to be ready
+            rcc.cr.modify(|_, w| w.hseon().set_bit());
+            while rcc.cr.read().hserdy().bit_is_clear() {}
+        }
+
         if use_pll {
             // use PLL as source
             rcc.pllcfgr.write(|w| unsafe {
@@ -221,10 +238,12 @@ impl CFGR {
                     .bits(plln as u16)
                     .pllp()
                     .bits(pllp as u8)
+                    .pllsrc()
+                    .bit(self.hse.is_some())
             });
 
             // Enable PLL
-            rcc.cr.write(|w| w.pllon().set_bit());
+            rcc.cr.modify(|_, w| w.pllon().set_bit());
 
             // Wait for PLL to stabilise
             while rcc.cr.read().pllrdy().bit_is_clear() {}
@@ -241,6 +260,8 @@ impl CFGR {
                 .sw()
                 .variant(if use_pll {
                     SWW::PLL
+                } else if self.hse.is_some() {
+                    SWW::HSE
                 } else {
                     SWW::HSI
                 })
