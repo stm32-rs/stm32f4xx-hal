@@ -77,45 +77,6 @@ impl CFGR {
 
         let sysclk = self.sysclk.unwrap_or(HSI);
 
-        if sysclk == HSI {
-            let hclk = self.hclk.unwrap_or(sysclk);
-
-            assert!(hclk <= sysclk);
-
-            let hpre_bits = match sysclk / hclk {
-                0 => unreachable!(),
-                1 => 0b0000,
-                2 => 0b1000,
-                3...5 => 0b1001,
-                6...11 => 0b1010,
-                12...39 => 0b1011,
-                40...95 => 0b1100,
-                96...191 => 0b1101,
-                192...383 => 0b1110,
-                _ => 0b1111,
-            };
-
-            // Use HSI as source and run everything at the same speed
-            rcc.cfgr.modify(|_, w| unsafe {
-                w.ppre2()
-                    .bits(0)
-                    .ppre1()
-                    .bits(0)
-                    .hpre()
-                    .bits(hpre_bits)
-                    .sw()
-                    .hsi()
-            });
-
-            Clocks {
-                hclk: Hertz(hclk),
-                pclk1: Hertz(hclk),
-                pclk2: Hertz(hclk),
-                ppre1: 1,
-                ppre2: 1,
-                sysclk: Hertz(sysclk),
-            }
-        } else {
             #[cfg(any(
                 feature = "stm32f401",
                 feature = "stm32f405",
@@ -293,7 +254,6 @@ impl CFGR {
                 ppre2,
                 sysclk: Hertz(sysclk),
             }
-        }
     }
 }
 
