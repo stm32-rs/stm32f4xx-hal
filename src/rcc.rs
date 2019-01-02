@@ -1,5 +1,3 @@
-use core::cmp::min;
-
 use crate::stm32::{FLASH, RCC};
 use crate::stm32::rcc::cfgr::{HPREW, SWW};
 
@@ -83,12 +81,53 @@ impl CFGR {
         self
     }
 
-    pub fn freeze(self) -> Clocks {
-        let flash = unsafe { &(*FLASH::ptr()) };
+    fn pll_setup(&self) -> (bool, u32)
+    {
         let rcc = unsafe { &*RCC::ptr() };
 
         let pllsrcclk = self.hse.unwrap_or(HSI);
         let sysclk = self.sysclk.unwrap_or(pllsrcclk);
+
+        // Sysclk output divisor must be one of 2, 4, 6 or 8
+        let sysclk_div = core::cmp::min(8, (432_000_000 / sysclk) & !1);
+
+        // Input divisor from PLL source clock, must result to frequency in
+        // the range from 1 to 2 MHz
+        let pllm = 16;
+
+        // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
+        // and <= 432MHz, min 50, max 432
+        let plln = sysclk * sysclk_div / (pllsrcclk / pllm);
+
+        let pllp = (sysclk_div / 2) - 1;
+
+        // Calculate real system clock
+        let sysclk = (pllsrcclk / pllm) * plln / sysclk_div;
+
+        if sysclk != pllsrcclk {
+            // use PLL as source
+            rcc.pllcfgr.write(|w| unsafe {
+                w.pllm()
+                    .bits(pllm as u8)
+                    .plln()
+                    .bits(plln as u16)
+                    .pllp()
+                    .bits(pllp as u8)
+                    .pllsrc()
+                    .bit(self.hse.is_some())
+            });
+
+            (true, sysclk)
+        } else {
+            (false, pllsrcclk)
+        }
+    }
+
+    pub fn freeze(self) -> Clocks {
+        let flash = unsafe { &(*FLASH::ptr()) };
+        let rcc = unsafe { &*RCC::ptr() };
+
+        let (use_pll, sysclk) = self.pll_setup();
 
         #[cfg(any(
             feature = "stm32f401",
@@ -144,25 +183,7 @@ impl CFGR {
         ))]
         let sysclk_max = 180_000_000;
 
-        assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
-
-        // Sysclk output divisor must be one of 2, 4, 6 or 8
-        let sysclk_div = min(8, (432_000_000 / sysclk) & !1);
-
-        // Input divisor from PLL source clock, must result to frequency in
-        // the range from 1 to 2 MHz
-        let pllm = 16;
-
-        // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
-        // and <= 432MHz, min 50, max 432
-        let plln = sysclk * sysclk_div / (pllsrcclk / pllm);
-
-        let pllp = (sysclk_div / 2) - 1;
-
-        // Calculate real system clock
-        let sysclk = (pllsrcclk / pllm) * plln / sysclk_div;
-
-        let use_pll = sysclk != pllsrcclk;
+        assert!(!use_pll || sysclk <= sysclk_max && sysclk >= sysclk_min);
 
         let (hpre_bits, hpre_div) = match sysclk / self.hclk.unwrap_or(sysclk) {
             0 => unreachable!(),
@@ -246,18 +267,6 @@ impl CFGR {
         }
 
         if use_pll {
-            // use PLL as source
-            rcc.pllcfgr.write(|w| unsafe {
-                w.pllm()
-                    .bits(pllm as u8)
-                    .plln()
-                    .bits(plln as u16)
-                    .pllp()
-                    .bits(pllp as u8)
-                    .pllsrc()
-                    .bit(self.hse.is_some())
-            });
-
             // Enable PLL
             rcc.cr.modify(|_, w| w.pllon().set_bit());
 
