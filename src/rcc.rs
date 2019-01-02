@@ -1,7 +1,7 @@
 use core::cmp::min;
 
 use crate::stm32::{FLASH, RCC};
-use crate::stm32::rcc::cfgr::HPREW;
+use crate::stm32::rcc::cfgr::{HPREW, SWW};
 
 use crate::time::Hertz;
 
@@ -172,6 +172,8 @@ impl CFGR {
 
             assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
 
+            let pllsrcclk = HSI;
+
             // Sysclk output divisor must be one of 2, 4, 6 or 8
             let sysclk_div = min(8, (432_000_000 / sysclk) & !1);
 
@@ -181,12 +183,14 @@ impl CFGR {
 
             // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
             // and <= 432MHz, min 50, max 432
-            let plln = sysclk * sysclk_div / (HSI / pllm);
+            let plln = sysclk * sysclk_div / (pllsrcclk / pllm);
 
             let pllp = (sysclk_div / 2) - 1;
 
             // Calculate real system clock
-            let sysclk = (HSI / pllm) * plln / sysclk_div;
+            let sysclk = (pllsrcclk / pllm) * plln / sysclk_div;
+
+            let use_pll = sysclk != pllsrcclk;
 
             let (hpre_bits, hpre_div) = match sysclk / self.hclk.unwrap_or(sysclk) {
                 0 => unreachable!(),
@@ -247,6 +251,7 @@ impl CFGR {
                     .modify(|_, w| w.latency().bits(((sysclk - 1) / flash_latency_step) as u8))
             }
 
+            if use_pll {
             // use PLL as source
             rcc.pllcfgr.write(|w| unsafe {
                 w.pllm()
@@ -262,8 +267,9 @@ impl CFGR {
 
             // Wait for PLL to stabilise
             while rcc.cr.read().pllrdy().bit_is_clear() {}
+            }
 
-            // Set scaling factors and switch clock to PLL
+            // Set scaling factors and select system clock source
             rcc.cfgr.modify(|_, w| unsafe {
                 w.ppre2()
                     .bits(ppre2_bits)
@@ -272,7 +278,11 @@ impl CFGR {
                     .hpre()
                     .variant(hpre_bits)
                     .sw()
-                    .pll()
+                    .variant(if use_pll {
+                        SWW::PLL
+                    } else {
+                        SWW::HSI
+                    })
             });
 
             Clocks {
