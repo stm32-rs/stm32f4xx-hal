@@ -170,9 +170,6 @@ impl CFGR {
 
             assert!(sysclk <= sysclk_max && sysclk >= sysclk_min);
 
-            // We're not diving down the hclk so it'll be the same as sysclk
-            hclk = sysclk;
-
             // Sysclk output divisor must be one of 2, 4, 6 or 8
             let sysclk_div = min(8, (432_000_000 / sysclk) & !1);
 
@@ -185,6 +182,12 @@ impl CFGR {
             let plln = sysclk * sysclk_div / (HSI / pllm);
 
             let pllp = (sysclk_div / 2) - 1;
+
+            // Calculate real system clock
+            let sysclk = (HSI / pllm) * plln / sysclk_div;
+
+            // We're not diving down the hclk so it'll be the same as sysclk
+            hclk = sysclk;
 
             let (ppre1_bits, ppre2_bits) = match hclk {
                 45_000_001...90_000_000 => (0b100, 0b011),
