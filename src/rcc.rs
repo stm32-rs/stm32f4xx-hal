@@ -180,19 +180,35 @@ impl CFGR {
         // Calculate real AHB clock
         let hclk = sysclk / hpre_div;
 
-        let (ppre1_bits, ppre2_bits) = match hclk {
-            45_000_001...90_000_000 => (0b100, 0b011),
-            90_000_001...180_000_000 => (0b101, 0b100),
-            _ => (0b011, 0b011),
+        let (pclk1_max, pclk2_max) = (45_000_000, 90_000_000);
+
+        let (ppre1_bits, ppre1) = match hclk / self.pclk1.unwrap_or(pclk1_max) {
+            0 => unreachable!(),
+            1 => (0b000, 1),
+            2 => (0b100, 2),
+            3...5 => (0b101, 4),
+            6...11 => (0b110, 8),
+            _ => (0b111, 16),
         };
 
-        // Calculate real divisor
-        let ppre1 = 1 << (ppre1_bits - 0b011);
-        let ppre2 = 1 << (ppre2_bits - 0b011);
-
-        // Calculate new bus clocks
+        // Calculate real APB1 clock
         let pclk1 = hclk / ppre1 as u32;
+
+        assert!(pclk1 <= pclk1_max);
+
+        let (ppre2_bits, ppre2) = match hclk / self.pclk2.unwrap_or(pclk2_max) {
+            0 => unreachable!(),
+            1 => (0b000, 1),
+            2 => (0b100, 2),
+            3...5 => (0b101, 4),
+            6...11 => (0b110, 8),
+            _ => (0b111, 16),
+        };
+
+        // Calculate real APB2 clock
         let pclk2 = hclk / ppre2 as u32;
+
+        assert!(pclk2 <= pclk2_max);
 
         #[cfg(any(
             feature = "stm32f401",
