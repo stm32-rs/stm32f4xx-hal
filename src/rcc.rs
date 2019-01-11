@@ -339,7 +339,16 @@ impl CFGR {
 
                 Some(pll_configuration.enable())
             }
-            _ => None
+            _ => {
+                // use PLL to provide 48 MHz clock
+
+                let pll_configuration = PLLConfiguration {
+                    source: &self.clock_src,
+                    pllclk: 96_000_000
+                };
+
+                Some(pll_configuration.enable())
+            }
         };
 
         let (ppre1_bits, ppre2_bits) = self.ppre_bits(hclk);
