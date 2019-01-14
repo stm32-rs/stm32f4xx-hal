@@ -68,7 +68,6 @@ impl<'a> PLLConfiguration<'a> {
             plln: plln as u16,
             pllp: pllp as u8,
             pllq: pllq as u8,
-
         }
     }
 
