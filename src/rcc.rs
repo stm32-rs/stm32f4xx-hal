@@ -201,7 +201,32 @@ impl CFGR {
         // Calculate real AHB clock
         let hclk = sysclk / hpre_div;
 
+        #[cfg(any(
+            feature = "stm32f401",
+            feature = "stm32f405",
+            feature = "stm32f407",
+            feature = "stm32f415",
+            feature = "stm32f417"
+        ))]
+        let (pclk1_max, pclk2_max) = (42_000_000, 84_000_000);
+        #[cfg(any(
+            feature = "stm32f427",
+            feature = "stm32f429",
+            feature = "stm32f437",
+            feature = "stm32f439",
+            feature = "stm32f446",
+            feature = "stm32f469",
+            feature = "stm32f479"
+        ))]
         let (pclk1_max, pclk2_max) = (45_000_000, 90_000_000);
+        #[cfg(any(
+            feature = "stm32f410",
+            feature = "stm32f411",
+            feature = "stm32f412",
+            feature = "stm32f413",
+            feature = "stm32f423"
+        ))]
+        let (pclk1_max, pclk2_max) = (50_000_000, 100_000_000);
 
         let (ppre1_bits, ppre1) = match hclk / self.pclk1.unwrap_or(pclk1_max) {
             0 => unreachable!(),
