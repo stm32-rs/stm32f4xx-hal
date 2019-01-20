@@ -6,6 +6,9 @@ use embedded_hal::serial;
 use embedded_hal::prelude::*;
 use nb::block;
 
+use crate::stm32::uart4::sr::R as UARTSR;
+use crate::stm32::usart6::sr::R as USARTSR;
+
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -1570,7 +1573,7 @@ pub struct Tx<USART> {
 
 macro_rules! halUsartImpl {
     ($(
-        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident,  $pclkX:ident),
+        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident, $usartXsr:ident, $pclkX:ident),
     )+) => {
         $(
             impl<PINS> Serial<$USARTX, PINS> {
@@ -1655,6 +1658,12 @@ macro_rules! halUsartImpl {
                             self.usart.cr1.modify(|_, w| w.idleie().clear_bit())
                         },
                     }
+                }
+
+                /// Readonly access to the uart status register
+                pub fn sr(self) -> $usartXsr {
+                    // NOTE(unsafe) atomic read with no side effects
+                    unsafe { (*$USARTX::ptr()).sr.read() }
                 }
 
                 pub fn split(self) -> (Tx<$USARTX>, Rx<$USARTX>) {
@@ -1789,7 +1798,7 @@ macro_rules! halUsart {
         )+
 
         halUsartImpl! {
-            $( $USARTX: ($usartX, $apbXenr, $usartXen, $pclkX), )+
+            $( $USARTX: ($usartX, $apbXenr, $usartXen, USARTSR, $pclkX), )+
         }
     }
 }
@@ -1830,7 +1839,7 @@ macro_rules! halUart {
         )+
 
         halUsartImpl! {
-            $( $USARTX: ($usartX, $apbXenr, $usartXen, $pclkX), )+
+            $( $USARTX: ($usartX, $apbXenr, $usartXen, UARTSR, $pclkX), )+
         }
     }
 }
