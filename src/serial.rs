@@ -6,8 +6,38 @@ use embedded_hal::serial;
 use embedded_hal::prelude::*;
 use nb::block;
 
-use crate::stm32::uart4::sr::R as UARTSR;
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+))]
+use crate::stm32::usart1::sr::R as USARTSR;
+
+#[cfg(any(
+    feature = "stm32f413",
+))]
+use crate::stm32::usart3::sr::R as USARTSR;
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f446",
+    feature = "stm32f469",
+))]
 use crate::stm32::usart6::sr::R as USARTSR;
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f446",
+    feature = "stm32f469",
+))]
+use crate::stm32::uart4::sr::R as UARTSR;
 
 #[cfg(any(
     feature = "stm32f401",
