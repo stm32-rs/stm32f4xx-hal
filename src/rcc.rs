@@ -1,4 +1,4 @@
-use crate::stm32::{FLASH, RCC};
+use crate::stm32::RCC;
 use crate::stm32::rcc::cfgr::{HPREW, SWW};
 
 use crate::time::Hertz;
@@ -123,8 +123,41 @@ impl CFGR {
         }
     }
 
+    fn flash_setup(sysclk: u32) {
+        use crate::stm32::FLASH;
+
+        #[cfg(any(
+            feature = "stm32f401",
+            feature = "stm32f405",
+            feature = "stm32f407",
+            feature = "stm32f410",
+            feature = "stm32f411",
+            feature = "stm32f412",
+            feature = "stm32f415",
+            feature = "stm32f417",
+            feature = "stm32f427",
+            feature = "stm32f429",
+            feature = "stm32f437",
+            feature = "stm32f439",
+            feature = "stm32f446",
+            feature = "stm32f469",
+            feature = "stm32f479"
+        ))]
+        let flash_latency_step = 30_000_000;
+
+        #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+        let flash_latency_step = 25_000_000;
+
+        unsafe {
+            let flash = &(*FLASH::ptr());
+            // Adjust flash wait states
+            flash.acr.modify(|_, w|
+                w.latency().bits(((sysclk - 1) / flash_latency_step) as u8)
+            )
+        }
+    }
+
     pub fn freeze(self) -> Clocks {
-        let flash = unsafe { &(*FLASH::ptr()) };
         let rcc = unsafe { &*RCC::ptr() };
 
         let (use_pll, sysclk) = self.pll_setup();
@@ -256,34 +289,7 @@ impl CFGR {
 
         assert!(pclk2 <= pclk2_max);
 
-        #[cfg(any(
-            feature = "stm32f401",
-            feature = "stm32f405",
-            feature = "stm32f407",
-            feature = "stm32f410",
-            feature = "stm32f411",
-            feature = "stm32f412",
-            feature = "stm32f415",
-            feature = "stm32f417",
-            feature = "stm32f427",
-            feature = "stm32f429",
-            feature = "stm32f437",
-            feature = "stm32f439",
-            feature = "stm32f446",
-            feature = "stm32f469",
-            feature = "stm32f479"
-        ))]
-        let flash_latency_step = 30_000_000;
-
-        #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-        let flash_latency_step = 25_000_000;
-
-        // Adjust flash wait states
-        unsafe {
-            flash
-                .acr
-                .modify(|_, w| w.latency().bits(((sysclk - 1) / flash_latency_step) as u8))
-        }
+        Self::flash_setup(sysclk);
 
         if self.hse.is_some() {
             // enable HSE and wait for it to be ready
