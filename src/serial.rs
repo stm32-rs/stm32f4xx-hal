@@ -8,39 +8,6 @@ use nb::block;
 
 #[cfg(any(
     feature = "stm32f401",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-))]
-use crate::stm32::usart1::sr::R as USARTSR;
-
-#[cfg(any(
-    feature = "stm32f413",
-))]
-use crate::stm32::usart3::sr::R as USARTSR;
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f446",
-    feature = "stm32f469",
-))]
-use crate::stm32::usart6::sr::R as USARTSR;
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f446",
-    feature = "stm32f469",
-))]
-use crate::stm32::uart4::sr::R as UARTSR;
-
-#[cfg(any(
-    feature = "stm32f401",
     feature = "stm32f405",
     feature = "stm32f407",
     feature = "stm32f410",
@@ -1603,7 +1570,7 @@ pub struct Tx<USART> {
 
 macro_rules! halUsartImpl {
     ($(
-        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident, $usartXsr:ident, $pclkX:ident),
+        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident,  $pclkX:ident),
     )+) => {
         $(
             impl<PINS> Serial<$USARTX, PINS> {
@@ -1690,10 +1657,19 @@ macro_rules! halUsartImpl {
                     }
                 }
 
-                /// Readonly access to the uart status register
-                pub fn sr(self) -> $usartXsr {
-                    // NOTE(unsafe) atomic read with no side effects
-                    unsafe { (*$USARTX::ptr()).sr.read() }
+                /// Return true if the line idle status is set
+                pub fn is_idle(& self) -> bool {
+                    unsafe { (*$USARTX::ptr()).sr.read().idle().bit_is_set() }
+                }
+
+                /// Return true if the tx register is empty (and can accept data)
+                pub fn is_txe(& self) -> bool {
+                    unsafe { (*$USARTX::ptr()).sr.read().txe().bit_is_set() }
+                }
+
+                /// Return true if the rx register is not empty (and can be read)
+                pub fn is_rxne(self) -> bool {
+                    unsafe { (*$USARTX::ptr()).sr.read().rxne().bit_is_set() }
                 }
 
                 pub fn split(self) -> (Tx<$USARTX>, Rx<$USARTX>) {
@@ -1828,7 +1804,7 @@ macro_rules! halUsart {
         )+
 
         halUsartImpl! {
-            $( $USARTX: ($usartX, $apbXenr, $usartXen, USARTSR, $pclkX), )+
+            $( $USARTX: ($usartX, $apbXenr, $usartXen, $pclkX), )+
         }
     }
 }
@@ -1869,7 +1845,7 @@ macro_rules! halUart {
         )+
 
         halUsartImpl! {
-            $( $USARTX: ($usartX, $apbXenr, $usartXen, UARTSR, $pclkX), )+
+            $( $USARTX: ($usartX, $apbXenr, $usartXen, $pclkX), )+
         }
     }
 }
