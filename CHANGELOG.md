@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - [breaking-change] Updated stm32f4 dependency to v0.7.0.
 
+- Replace macro by generic impl over spi1::RegisterBlock in SPI.
+
 ### Fixed
 
 - Properly terminate I2C read with a NACK then a STOP.
