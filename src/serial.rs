@@ -83,23 +83,15 @@ use crate::stm32::{UART9, UART10};
 
 #[cfg(any(
     feature = "stm32f401",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412"
-))]
-use crate::stm32::usart1::cr2::STOPW as USART_STOPW;
-
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-use crate::stm32::usart3::cr2::STOPW as USART_STOPW;
-
-#[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
     feature = "stm32f415",
     feature = "stm32f417",
+    feature = "stm32f423",
     feature = "stm32f427",
     feature = "stm32f429",
     feature = "stm32f437",
@@ -108,7 +100,7 @@ use crate::stm32::usart3::cr2::STOPW as USART_STOPW;
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::usart6::cr2::STOPW as USART_STOPW;
+use crate::stm32::usart1::cr2::STOPW as USART_STOPW;
 
 #[cfg(any(
     feature = "stm32f405",
