@@ -846,7 +846,10 @@ gpio!(GPIOI, gpioi, gpioien, PI, [
     PI15: (pi15, 15, Input<Floating>),
 ]);
 
-/*
+#[cfg(any(
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 gpio!(GPIOJ, gpioj, gpiojen, PJ, [
     PJ0: (pj0, 0, Input<Floating>),
     PJ1: (pj1, 1, Input<Floating>),
@@ -866,6 +869,10 @@ gpio!(GPIOJ, gpioj, gpiojen, PJ, [
     PJ15: (pj15, 15, Input<Floating>),
 ]);
 
+#[cfg(any(
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 gpio!(GPIOK, gpiok, gpioken, PK, [
     PK0: (pk0, 0, Input<Floating>),
     PK1: (pk1, 1, Input<Floating>),
@@ -876,4 +883,3 @@ gpio!(GPIOK, gpiok, gpioken, PK, [
     PK6: (pk6, 6, Input<Floating>),
     PK7: (pk7, 7, Input<Floating>),
 ]);
-*/
