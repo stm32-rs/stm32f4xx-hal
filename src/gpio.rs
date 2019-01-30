@@ -986,6 +986,10 @@ gpio!(GPIOI, gpioi, gpioien, PI, 8, [
 ]);
 
 #[cfg(any(
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
@@ -1009,6 +1013,10 @@ gpio!(GPIOJ, gpioj, gpiojen, PJ, 9, [
 ]);
 
 #[cfg(any(
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
