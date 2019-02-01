@@ -523,8 +523,14 @@ macro_rules! gpio {
                     /// generate interrupt on rising edge, falling edge or both
                     fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
                         match edge {
-                            Edge::RISING => exti.rtsr.write(|w| { w.$tri().set_bit() }),
-                            Edge::FALLING => exti.ftsr.write(|w| { w.$tri().set_bit() }),
+                            Edge::RISING => {
+                                exti.rtsr.write(|w| { w.$tri().set_bit()   });
+                                exti.ftsr.write(|w| { w.$tri().clear_bit() });
+                            },
+                            Edge::FALLING => {
+                                exti.ftsr.write(|w| { w.$tri().set_bit()   });
+                                exti.rtsr.write(|w| { w.$tri().clear_bit() });
+                            },
                             Edge::RISING_FALLING => {
                                 exti.rtsr.write(|w| { w.$tri().set_bit() });
                                 exti.ftsr.write(|w| { w.$tri().set_bit() });
