@@ -471,7 +471,9 @@ macro_rules! gpio {
 
                         $PXi { _mode: PhantomData }
                     }
+                }
 
+                impl<MODE> $PXi<Output<MODE>> {
                     /// Set pin speed
                     pub fn set_speed(self, speed: Speed) -> Self {
                         let offset = 2 * $i;
@@ -500,6 +502,19 @@ macro_rules! gpio {
                 }
 
                 impl<MODE> $PXi<Alternate<MODE>> {
+                    /// Set pin speed
+                    pub fn set_speed(self, speed: Speed) -> Self {
+                        let offset = 2 * $i;
+
+                        unsafe {
+                            &(*$GPIOX::ptr()).ospeedr.modify(|r, w| {
+                                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
+                            })
+                        };
+
+                        self
+                    }
+
                     /// Enables / disables the internal pull up
                     pub fn internal_pull_up(self, on: bool) -> Self {
                         let offset = 2 * $i;
