@@ -59,6 +59,9 @@ pub struct Output<MODE> {
 /// Push pull output (type state)
 pub struct PushPull;
 
+/// Analog mode (type state)
+pub struct Analog;
+
 /// GPIO Pin speed selection
 pub enum Speed {
     Low = 0,
@@ -98,7 +101,7 @@ macro_rules! gpio {
             use super::{
                 Alternate, Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AF0, AF1, AF2, AF3, AF4, AF5, AF6, AF7, AF8, AF9, AF10,
-                AF11, AF12, AF13, AF14, AF15, Edge, ExtiPin,
+                AF11, AF12, AF13, AF14, AF15, Analog, Edge, ExtiPin,
             };
 
             /// GPIO parts
@@ -468,6 +471,22 @@ macro_rules! gpio {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
                          })};
 
+
+                        $PXi { _mode: PhantomData }
+                    }
+
+                    /// Configures the pin to operate as an analog input pin
+                    pub fn into_analog(self) -> $PXi<Analog> {
+                        let offset = 2 * $i;
+
+                        unsafe {
+                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
+                            });
+                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                                w.bits((r.bits() & !(0b11 << offset)) | (0b11 << offset))
+                            }
+                        )};
 
                         $PXi { _mode: PhantomData }
                     }
