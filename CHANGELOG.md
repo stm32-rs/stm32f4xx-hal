@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Support ToggleableOutputPin trait in GPIO to allow using toggle().
+
 - Possibility to configure GPIO pins into analog input mode.
 
 - Possibility to configure GPIO pins to generate external interrupts.

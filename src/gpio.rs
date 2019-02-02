@@ -94,7 +94,7 @@ macro_rules! gpio {
         pub mod $gpiox {
             use core::marker::PhantomData;
 
-            use embedded_hal::digital::{InputPin, OutputPin};
+            use embedded_hal::digital::{InputPin, OutputPin, StatefulOutputPin, toggleable};
             use crate::stm32::$GPIOX;
 
             use crate::stm32::{RCC, EXTI, SYSCFG};
@@ -151,6 +151,19 @@ macro_rules! gpio {
                     unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << (self.i + 16))) }
                 }
             }
+
+            impl<MODE> StatefulOutputPin for $PXx<Output<MODE>> {
+                fn is_set_high(&self) -> bool {
+                    !self.is_set_low()
+                }
+
+                fn is_set_low(&self) -> bool {
+                    // NOTE(unsafe) atomic read with no side effects
+                    unsafe { (*$GPIOX::ptr()).odr.read().bits() & (1 << self.i) == 0 }
+                }
+            }
+
+            impl<MODE> toggleable::Default for $PXx<Output<MODE>> {}
 
             impl<MODE> InputPin for $PXx<Output<MODE>> {
                 fn is_high(&self) -> bool {
@@ -539,6 +552,19 @@ macro_rules! gpio {
                         unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << ($i + 16))) }
                     }
                 }
+
+                impl<MODE> StatefulOutputPin for $PXi<Output<MODE>> {
+                    fn is_set_high(&self) -> bool {
+                        !self.is_set_low()
+                    }
+
+                    fn is_set_low(&self) -> bool {
+                        // NOTE(unsafe) atomic read with no side effects
+                        unsafe { (*$GPIOX::ptr()).odr.read().bits() & (1 << $i) == 0 }
+                    }
+                }
+
+                impl<MODE> toggleable::Default for $PXi<Output<MODE>> {}
 
                 impl<MODE> InputPin for $PXi<Output<MODE>> {
                     fn is_high(&self) -> bool {
