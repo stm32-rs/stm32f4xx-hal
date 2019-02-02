@@ -549,12 +549,12 @@ macro_rules! gpio {
                     }
                 }
 
-                impl<MODE> $PXi<Output<MODE>> {
+                impl<MODE> $PXi<MODE> {
                     /// Erases the pin number from the type
                     ///
                     /// This is useful when you want to collect the pins into an array where you
                     /// need all the elements to have the same type
-                    pub fn downgrade(self) -> $PXx<Output<MODE>> {
+                    pub fn downgrade(self) -> $PXx<MODE> {
                         $PXx {
                             i: $i,
                             _mode: self._mode,
@@ -582,19 +582,6 @@ macro_rules! gpio {
                     fn is_low(&self) -> bool {
                         // NOTE(unsafe) atomic read with no side effects
                         unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << $i) == 0 }
-                    }
-                }
-
-                impl<MODE> $PXi<Input<MODE>> {
-                    /// Erases the pin number from the type
-                    ///
-                    /// This is useful when you want to collect the pins into an array where you
-                    /// need all the elements to have the same type
-                    pub fn downgrade(self) -> $PXx<Input<MODE>> {
-                        $PXx {
-                            i: $i,
-                            _mode: self._mode,
-                        }
                     }
                 }
 
