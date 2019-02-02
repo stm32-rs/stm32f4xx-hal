@@ -134,6 +134,12 @@ macro_rules! gpio {
                 _mode: PhantomData<MODE>,
             }
 
+            impl<MODE> $PXx<MODE> {
+                pub fn get_id(&self) -> u8 {
+                    self.i
+                }
+            }
+
             impl<MODE> OutputPin for $PXx<Output<MODE>> {
                 fn set_high(&mut self) {
                     // NOTE(unsafe) atomic write to a stateless register
@@ -649,13 +655,6 @@ macro_rules! gpio {
                 }
 
             )+
-
-                impl<TYPE> $PXx<TYPE> {
-                    pub fn get_id (&self) -> u8
-                    {
-                        self.i
-                    }
-                }
         }
     }
 }
