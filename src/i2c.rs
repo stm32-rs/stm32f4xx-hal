@@ -765,10 +765,7 @@ where
         self.i2c.cr1.modify(|_, w| w.start().set_bit());
 
         // Wait until START condition was generated
-        while {
-            let sr1 = self.i2c.sr1.read();
-            sr1.sb().bit_is_clear()
-        } {}
+        while self.i2c.sr1.read().sb().bit_is_clear() {}
 
         // Also wait until signalled we're master and everything is waiting for us
         while {
@@ -777,15 +774,10 @@ where
         } {}
 
         // Set up current address, we're trying to talk to
-        self.i2c
-            .dr
-            .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
+        self.i2c.dr.write(|w| unsafe { w.bits(u32::from(addr) << 1) });
 
         // Wait until address was sent
-        while {
-            let sr1 = self.i2c.sr1.read();
-            sr1.addr().bit_is_clear()
-        } {}
+        while self.i2c.sr1.read().addr().bit_is_clear() {}
 
         // Clear condition by reading SR2
         self.i2c.sr2.read();
@@ -808,15 +800,10 @@ where
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         // Send a START condition and set ACK bit
-        self.i2c
-            .cr1
-            .modify(|_, w| w.start().set_bit().ack().set_bit());
+        self.i2c.cr1.modify(|_, w| w.start().set_bit().ack().set_bit());
 
         // Wait until START condition was generated
-        while {
-            let sr1 = self.i2c.sr1.read();
-            sr1.sb().bit_is_clear()
-        } {}
+        while self.i2c.sr1.read().sb().bit_is_clear() {}
 
         // Also wait until signalled we're master and everything is waiting for us
         while {
@@ -825,15 +812,10 @@ where
         } {}
 
         // Set up current address, we're trying to talk to
-        self.i2c
-            .dr
-            .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
+        self.i2c.dr.write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
 
         // Wait until address was sent
-        while {
-            let sr1 = self.i2c.sr1.read();
-            sr1.addr().bit_is_clear()
-        } {}
+        while self.i2c.sr1.read().addr().bit_is_clear() {}
 
         // Clear condition by reading SR2
         self.i2c.sr2.read();
