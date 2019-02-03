@@ -261,7 +261,8 @@ impl CFGR {
         ))]
         let (pclk1_max, pclk2_max) = (50_000_000, 100_000_000);
 
-        let (ppre1_bits, ppre1) = match hclk / self.pclk1.unwrap_or(pclk1_max) {
+        let pclk1 = self.pclk1.unwrap_or(core::cmp::min(pclk1_max, hclk));
+        let (ppre1_bits, ppre1) = match hclk / pclk1 {
             0 => unreachable!(),
             1 => (0b000, 1),
             2 => (0b100, 2),
@@ -275,7 +276,8 @@ impl CFGR {
 
         assert!(pclk1 <= pclk1_max);
 
-        let (ppre2_bits, ppre2) = match hclk / self.pclk2.unwrap_or(pclk2_max) {
+        let pclk2 = self.pclk2.unwrap_or(core::cmp::min(pclk2_max, hclk));
+        let (ppre2_bits, ppre2) = match hclk / pclk2 {
             0 => unreachable!(),
             1 => (0b000, 1),
             2 => (0b100, 2),
