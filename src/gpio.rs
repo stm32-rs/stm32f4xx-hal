@@ -76,8 +76,9 @@ pub enum Edge {
 
 /// External Interrupt Pin
 pub trait ExtiPin {
+    fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG);
     fn trigger_on_edge(&mut self, exti: &mut EXTI, level: Edge);
-    fn enable_interrupt(&mut self, exti: &mut EXTI, syscfg: &mut SYSCFG);
+    fn enable_interrupt(&mut self, exti: &mut EXTI);
     fn disable_interrupt(&mut self, exti: &mut EXTI);
 }
 
@@ -520,6 +521,16 @@ macro_rules! gpio {
                 }
 
                 impl<MODE> ExtiPin for $PXi<Input<MODE>> {
+                    /// Configure EXTI Line $i to trigger from this pin.
+                    fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
+                        let offset = 4 * ($extigpionr % 4);
+                        syscfg.$exticri.modify(|r, w| unsafe {
+                            let mut exticr = r.bits();
+                            exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
+                            w.bits(exticr)
+                        });
+                    }
+
                     /// Generate interrupt on rising edge, falling edge or both
                     fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
                         match edge {
@@ -539,14 +550,7 @@ macro_rules! gpio {
                     }
 
                     /// Enable external interrupts from this pin.
-                    /// Note: This configures EXTI line $i to trigger from this pin
-                    fn enable_interrupt(&mut self, exti: &mut EXTI, syscfg: &mut SYSCFG) {
-                        let offset = 4 * ($extigpionr % 4);
-                        syscfg.$exticri.modify(|r, w| unsafe {
-                            let mut exticr = r.bits();
-                            exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
-                            w.bits(exticr)
-                        });
+                    fn enable_interrupt(&mut self, exti: &mut EXTI) {
                         exti.imr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
                     }
 
