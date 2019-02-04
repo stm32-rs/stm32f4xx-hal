@@ -927,12 +927,12 @@ gpio!(GPIOJ, gpioj, gpiojen, PJ, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOK, gpiok, gpioken, PK, [
-    PK0: (pk0, 0, Input<Floating>, exticr1, 9, tr0, mr0),
-    PK1: (pk1, 1, Input<Floating>, exticr1, 9, tr1, mr1),
-    PK2: (pk2, 2, Input<Floating>, exticr1, 9, tr2, mr2),
-    PK3: (pk3, 3, Input<Floating>, exticr1, 9, tr3, mr3),
-    PK4: (pk4, 4, Input<Floating>, exticr2, 9, tr4, mr4),
-    PK5: (pk5, 5, Input<Floating>, exticr2, 9, tr5, mr5),
-    PK6: (pk6, 6, Input<Floating>, exticr2, 9, tr6, mr6),
-    PK7: (pk7, 7, Input<Floating>, exticr2, 9, tr7, mr7),
+    PK0: (pk0, 0, Input<Floating>, exticr1, 10, tr0, mr0),
+    PK1: (pk1, 1, Input<Floating>, exticr1, 10, tr1, mr1),
+    PK2: (pk2, 2, Input<Floating>, exticr1, 10, tr2, mr2),
+    PK3: (pk3, 3, Input<Floating>, exticr1, 10, tr3, mr3),
+    PK4: (pk4, 4, Input<Floating>, exticr2, 10, tr4, mr4),
+    PK5: (pk5, 5, Input<Floating>, exticr2, 10, tr5, mr5),
+    PK6: (pk6, 6, Input<Floating>, exticr2, 10, tr6, mr6),
+    PK7: (pk7, 7, Input<Floating>, exticr2, 10, tr7, mr7),
 ]);
