@@ -83,7 +83,7 @@ pub trait ExtiPin {
 
 macro_rules! gpio {
     ($GPIOX:ident, $gpiox:ident, $iopxenr:ident, $PXx:ident, [
-        $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty, $exticri:ident, $extigpionr:expr, $tri:ident, $mri:ident),)+
+        $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty, $exticri:ident, $extigpionr:expr),)+
     ]) => {
         /// GPIO
         pub mod $gpiox {
@@ -520,20 +520,20 @@ macro_rules! gpio {
                 }
 
                 impl<MODE> ExtiPin for $PXi<Input<MODE>> {
-                    /// generate interrupt on rising edge, falling edge or both
+                    /// Generate interrupt on rising edge, falling edge or both
                     fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
                         match edge {
                             Edge::RISING => {
-                                exti.rtsr.write(|w| { w.$tri().set_bit()   });
-                                exti.ftsr.write(|w| { w.$tri().clear_bit() });
+                                exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                                exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
                             },
                             Edge::FALLING => {
-                                exti.ftsr.write(|w| { w.$tri().set_bit()   });
-                                exti.rtsr.write(|w| { w.$tri().clear_bit() });
+                                exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                                exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
                             },
                             Edge::RISING_FALLING => {
-                                exti.rtsr.write(|w| { w.$tri().set_bit() });
-                                exti.ftsr.write(|w| { w.$tri().set_bit() });
+                                exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                                exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
                             }
                         }
                     }
@@ -541,17 +541,18 @@ macro_rules! gpio {
                     /// Enable external interrupts from this pin.
                     /// Note: This configures EXTI line $i to trigger from this pin
                     fn enable_interrupt(&mut self, exti: &mut EXTI, syscfg: &mut SYSCFG) {
+                        let offset = 4 * ($extigpionr % 4);
                         syscfg.$exticri.modify(|r, w| unsafe {
                             let mut exticr = r.bits();
-                            exticr = (exticr & $extigpionr) | $extigpionr;
+                            exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
                             w.bits(exticr)
                         });
-                        exti.imr.write(|w| { w.$mri().set_bit() });
+                        exti.imr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
                     }
 
                     /// Disable external interrupts from this pin
                     fn disable_interrupt(&mut self, exti: &mut EXTI) {
-                        exti.imr.write(|w| { w.$mri().clear_bit() });
+                        exti.imr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
                     }
                 }
 
@@ -587,22 +588,22 @@ macro_rules! gpio {
     feature = "stm32f479"
 ))]
 gpio!(GPIOA, gpioa, gpioaen, PA, [
-    PA0: (pa0, 0, Input<Floating>, exticr1, 0, tr0, mr0),
-    PA1: (pa1, 1, Input<Floating>, exticr1, 0, tr1, mr1),
-    PA2: (pa2, 2, Input<Floating>, exticr1, 0, tr2, mr2),
-    PA3: (pa3, 3, Input<Floating>, exticr1, 0, tr3, mr3),
-    PA4: (pa4, 4, Input<Floating>, exticr2, 0, tr4, mr4),
-    PA5: (pa5, 5, Input<Floating>, exticr2, 0, tr5, mr5),
-    PA6: (pa6, 6, Input<Floating>, exticr2, 0, tr6, mr6),
-    PA7: (pa7, 7, Input<Floating>, exticr2, 0, tr7, mr7),
-    PA8: (pa8, 8, Input<Floating>, exticr3, 0, tr8, mr8),
-    PA9: (pa9, 9, Input<Floating>, exticr3, 0, tr9, mr9),
-    PA10: (pa10, 10, Input<Floating>, exticr3, 0, tr10, mr10),
-    PA11: (pa11, 11, Input<Floating>, exticr3, 0, tr11, mr11),
-    PA12: (pa12, 12, Input<Floating>, exticr4, 0, tr12, mr12),
-    PA13: (pa13, 13, Input<Floating>, exticr4, 0, tr13, mr13),
-    PA14: (pa14, 14, Input<Floating>, exticr4, 0, tr14, mr14),
-    PA15: (pa15, 15, Input<Floating>, exticr4, 0, tr15, mr15),
+    PA0: (pa0, 0, Input<Floating>, exticr1, 0),
+    PA1: (pa1, 1, Input<Floating>, exticr1, 0),
+    PA2: (pa2, 2, Input<Floating>, exticr1, 0),
+    PA3: (pa3, 3, Input<Floating>, exticr1, 0),
+    PA4: (pa4, 4, Input<Floating>, exticr2, 0),
+    PA5: (pa5, 5, Input<Floating>, exticr2, 0),
+    PA6: (pa6, 6, Input<Floating>, exticr2, 0),
+    PA7: (pa7, 7, Input<Floating>, exticr2, 0),
+    PA8: (pa8, 8, Input<Floating>, exticr3, 0),
+    PA9: (pa9, 9, Input<Floating>, exticr3, 0),
+    PA10: (pa10, 10, Input<Floating>, exticr3, 0),
+    PA11: (pa11, 11, Input<Floating>, exticr3, 0),
+    PA12: (pa12, 12, Input<Floating>, exticr4, 0),
+    PA13: (pa13, 13, Input<Floating>, exticr4, 0),
+    PA14: (pa14, 14, Input<Floating>, exticr4, 0),
+    PA15: (pa15, 15, Input<Floating>, exticr4, 0),
 ]);
 
 #[cfg(any(
@@ -625,22 +626,22 @@ gpio!(GPIOA, gpioa, gpioaen, PA, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOB, gpiob, gpioben, PB, [
-    PB0: (pb0, 0, Input<Floating>, exticr1, 1, tr0, mr0),
-    PB1: (pb1, 1, Input<Floating>, exticr1, 1, tr1, mr1),
-    PB2: (pb2, 2, Input<Floating>, exticr1, 1, tr2, mr2),
-    PB3: (pb3, 3, Input<Floating>, exticr1, 1, tr3, mr3),
-    PB4: (pb4, 4, Input<Floating>, exticr2, 1, tr4, mr4),
-    PB5: (pb5, 5, Input<Floating>, exticr2, 1, tr5, mr5),
-    PB6: (pb6, 6, Input<Floating>, exticr2, 1, tr6, mr6),
-    PB7: (pb7, 7, Input<Floating>, exticr2, 1, tr7, mr7),
-    PB8: (pb8, 8, Input<Floating>, exticr3, 1, tr8, mr8),
-    PB9: (pb9, 9, Input<Floating>, exticr3, 1, tr9, mr9),
-    PB10: (pb10, 10, Input<Floating>, exticr3, 1, tr10, mr10),
-    PB11: (pb11, 11, Input<Floating>, exticr3, 1, tr11, mr11),
-    PB12: (pb12, 12, Input<Floating>, exticr4, 1, tr12, mr12),
-    PB13: (pb13, 13, Input<Floating>, exticr4, 1, tr13, mr13),
-    PB14: (pb14, 14, Input<Floating>, exticr4, 1, tr14, mr14),
-    PB15: (pb15, 15, Input<Floating>, exticr4, 1, tr15, mr15),
+    PB0: (pb0, 0, Input<Floating>, exticr1, 1),
+    PB1: (pb1, 1, Input<Floating>, exticr1, 1),
+    PB2: (pb2, 2, Input<Floating>, exticr1, 1),
+    PB3: (pb3, 3, Input<Floating>, exticr1, 1),
+    PB4: (pb4, 4, Input<Floating>, exticr2, 1),
+    PB5: (pb5, 5, Input<Floating>, exticr2, 1),
+    PB6: (pb6, 6, Input<Floating>, exticr2, 1),
+    PB7: (pb7, 7, Input<Floating>, exticr2, 1),
+    PB8: (pb8, 8, Input<Floating>, exticr3, 1),
+    PB9: (pb9, 9, Input<Floating>, exticr3, 1),
+    PB10: (pb10, 10, Input<Floating>, exticr3, 1),
+    PB11: (pb11, 11, Input<Floating>, exticr3, 1),
+    PB12: (pb12, 12, Input<Floating>, exticr4, 1),
+    PB13: (pb13, 13, Input<Floating>, exticr4, 1),
+    PB14: (pb14, 14, Input<Floating>, exticr4, 1),
+    PB15: (pb15, 15, Input<Floating>, exticr4, 1),
 ]);
 
 #[cfg(any(
@@ -663,22 +664,22 @@ gpio!(GPIOB, gpiob, gpioben, PB, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOC, gpioc, gpiocen, PC, [
-    PC0: (pc0, 0, Input<Floating>, exticr1, 2, tr0, mr0),
-    PC1: (pc1, 1, Input<Floating>, exticr1, 2, tr1, mr1),
-    PC2: (pc2, 2, Input<Floating>, exticr1, 2, tr2, mr2),
-    PC3: (pc3, 3, Input<Floating>, exticr1, 2, tr3, mr3),
-    PC4: (pc4, 4, Input<Floating>, exticr2, 2, tr4, mr4),
-    PC5: (pc5, 5, Input<Floating>, exticr2, 2, tr5, mr5),
-    PC6: (pc6, 6, Input<Floating>, exticr2, 2, tr6, mr6),
-    PC7: (pc7, 7, Input<Floating>, exticr2, 2, tr7, mr7),
-    PC8: (pc8, 8, Input<Floating>, exticr3, 2, tr8, mr8),
-    PC9: (pc9, 9, Input<Floating>, exticr3, 2, tr9, mr9),
-    PC10: (pc10, 10, Input<Floating>, exticr3, 2, tr10, mr10),
-    PC11: (pc11, 11, Input<Floating>, exticr3, 2, tr11, mr11),
-    PC12: (pc12, 12, Input<Floating>, exticr4, 2, tr12, mr12),
-    PC13: (pc13, 13, Input<Floating>, exticr4, 2, tr13, mr13),
-    PC14: (pc14, 14, Input<Floating>, exticr4, 2, tr14, mr14),
-    PC15: (pc15, 15, Input<Floating>, exticr4, 2, tr15, mr15),
+    PC0: (pc0, 0, Input<Floating>, exticr1, 2),
+    PC1: (pc1, 1, Input<Floating>, exticr1, 2),
+    PC2: (pc2, 2, Input<Floating>, exticr1, 2),
+    PC3: (pc3, 3, Input<Floating>, exticr1, 2),
+    PC4: (pc4, 4, Input<Floating>, exticr2, 2),
+    PC5: (pc5, 5, Input<Floating>, exticr2, 2),
+    PC6: (pc6, 6, Input<Floating>, exticr2, 2),
+    PC7: (pc7, 7, Input<Floating>, exticr2, 2),
+    PC8: (pc8, 8, Input<Floating>, exticr3, 2),
+    PC9: (pc9, 9, Input<Floating>, exticr3, 2),
+    PC10: (pc10, 10, Input<Floating>, exticr3, 2),
+    PC11: (pc11, 11, Input<Floating>, exticr3, 2),
+    PC12: (pc12, 12, Input<Floating>, exticr4, 2),
+    PC13: (pc13, 13, Input<Floating>, exticr4, 2),
+    PC14: (pc14, 14, Input<Floating>, exticr4, 2),
+    PC15: (pc15, 15, Input<Floating>, exticr4, 2),
 ]);
 
 #[cfg(any(
@@ -700,22 +701,22 @@ gpio!(GPIOC, gpioc, gpiocen, PC, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOD, gpiod, gpioden, PD, [
-    PD0: (pd0, 0, Input<Floating>, exticr1, 3, tr0, mr0),
-    PD1: (pd1, 1, Input<Floating>, exticr1, 3, tr1, mr1),
-    PD2: (pd2, 2, Input<Floating>, exticr1, 3, tr2, mr2),
-    PD3: (pd3, 3, Input<Floating>, exticr1, 3, tr3, mr3),
-    PD4: (pd4, 4, Input<Floating>, exticr2, 3, tr4, mr4),
-    PD5: (pd5, 5, Input<Floating>, exticr2, 3, tr5, mr5),
-    PD6: (pd6, 6, Input<Floating>, exticr2, 3, tr6, mr6),
-    PD7: (pd7, 7, Input<Floating>, exticr2, 3, tr7, mr7),
-    PD8: (pd8, 8, Input<Floating>, exticr3, 3, tr8, mr8),
-    PD9: (pd9, 9, Input<Floating>, exticr3, 3, tr9, mr9),
-    PD10: (pd10, 10, Input<Floating>, exticr3, 3, tr10, mr10),
-    PD11: (pd11, 11, Input<Floating>, exticr3, 3, tr11, mr11),
-    PD12: (pd12, 12, Input<Floating>, exticr4, 3, tr12, mr12),
-    PD13: (pd13, 13, Input<Floating>, exticr4, 3, tr13, mr13),
-    PD14: (pd14, 14, Input<Floating>, exticr4, 3, tr14, mr14),
-    PD15: (pd15, 15, Input<Floating>, exticr4, 3, tr15, mr15),
+    PD0: (pd0, 0, Input<Floating>, exticr1, 3),
+    PD1: (pd1, 1, Input<Floating>, exticr1, 3),
+    PD2: (pd2, 2, Input<Floating>, exticr1, 3),
+    PD3: (pd3, 3, Input<Floating>, exticr1, 3),
+    PD4: (pd4, 4, Input<Floating>, exticr2, 3),
+    PD5: (pd5, 5, Input<Floating>, exticr2, 3),
+    PD6: (pd6, 6, Input<Floating>, exticr2, 3),
+    PD7: (pd7, 7, Input<Floating>, exticr2, 3),
+    PD8: (pd8, 8, Input<Floating>, exticr3, 3),
+    PD9: (pd9, 9, Input<Floating>, exticr3, 3),
+    PD10: (pd10, 10, Input<Floating>, exticr3, 3),
+    PD11: (pd11, 11, Input<Floating>, exticr3, 3),
+    PD12: (pd12, 12, Input<Floating>, exticr4, 3),
+    PD13: (pd13, 13, Input<Floating>, exticr4, 3),
+    PD14: (pd14, 14, Input<Floating>, exticr4, 3),
+    PD15: (pd15, 15, Input<Floating>, exticr4, 3),
 ]);
 
 #[cfg(any(
@@ -737,22 +738,22 @@ gpio!(GPIOD, gpiod, gpioden, PD, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOE, gpioe, gpioeen, PE, [
-    PE0: (pe0, 0, Input<Floating>, exticr1, 4, tr0, mr0),
-    PE1: (pe1, 1, Input<Floating>, exticr1, 4, tr1, mr1),
-    PE2: (pe2, 2, Input<Floating>, exticr1, 4, tr2, mr2),
-    PE3: (pe3, 3, Input<Floating>, exticr1, 4, tr3, mr3),
-    PE4: (pe4, 4, Input<Floating>, exticr2, 4, tr4, mr4),
-    PE5: (pe5, 5, Input<Floating>, exticr2, 4, tr5, mr5),
-    PE6: (pe6, 6, Input<Floating>, exticr2, 4, tr6, mr6),
-    PE7: (pe7, 7, Input<Floating>, exticr2, 4, tr7, mr7),
-    PE8: (pe8, 8, Input<Floating>, exticr3, 4, tr8, mr8),
-    PE9: (pe9, 9, Input<Floating>, exticr3, 4, tr9, mr9),
-    PE10: (pe10, 10, Input<Floating>, exticr3, 4, tr10, mr10),
-    PE11: (pe11, 11, Input<Floating>, exticr3, 4, tr11, mr11),
-    PE12: (pe12, 12, Input<Floating>, exticr4, 4, tr12, mr12),
-    PE13: (pe13, 13, Input<Floating>, exticr4, 4, tr13, mr13),
-    PE14: (pe14, 14, Input<Floating>, exticr4, 4, tr14, mr14),
-    PE15: (pe15, 15, Input<Floating>, exticr4, 4, tr15, mr15),
+    PE0: (pe0, 0, Input<Floating>, exticr1, 4),
+    PE1: (pe1, 1, Input<Floating>, exticr1, 4),
+    PE2: (pe2, 2, Input<Floating>, exticr1, 4),
+    PE3: (pe3, 3, Input<Floating>, exticr1, 4),
+    PE4: (pe4, 4, Input<Floating>, exticr2, 4),
+    PE5: (pe5, 5, Input<Floating>, exticr2, 4),
+    PE6: (pe6, 6, Input<Floating>, exticr2, 4),
+    PE7: (pe7, 7, Input<Floating>, exticr2, 4),
+    PE8: (pe8, 8, Input<Floating>, exticr3, 4),
+    PE9: (pe9, 9, Input<Floating>, exticr3, 4),
+    PE10: (pe10, 10, Input<Floating>, exticr3, 4),
+    PE11: (pe11, 11, Input<Floating>, exticr3, 4),
+    PE12: (pe12, 12, Input<Floating>, exticr4, 4),
+    PE13: (pe13, 13, Input<Floating>, exticr4, 4),
+    PE14: (pe14, 14, Input<Floating>, exticr4, 4),
+    PE15: (pe15, 15, Input<Floating>, exticr4, 4),
 ]);
 
 #[cfg(any(
@@ -772,22 +773,22 @@ gpio!(GPIOE, gpioe, gpioeen, PE, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOF, gpiof, gpiofen, PF, [
-    PF0: (pf0, 0, Input<Floating>, exticr1, 5, tr0, mr0),
-    PF1: (pf1, 1, Input<Floating>, exticr1, 5, tr1, mr1),
-    PF2: (pf2, 2, Input<Floating>, exticr1, 5, tr2, mr2),
-    PF3: (pf3, 3, Input<Floating>, exticr1, 5, tr3, mr3),
-    PF4: (pf4, 4, Input<Floating>, exticr2, 5, tr4, mr4),
-    PF5: (pf5, 5, Input<Floating>, exticr2, 5, tr5, mr5),
-    PF6: (pf6, 6, Input<Floating>, exticr2, 5, tr6, mr6),
-    PF7: (pf7, 7, Input<Floating>, exticr2, 5, tr7, mr7),
-    PF8: (pf8, 8, Input<Floating>, exticr3, 5, tr8, mr8),
-    PF9: (pf9, 9, Input<Floating>, exticr3, 5, tr9, mr9),
-    PF10: (pf10, 10, Input<Floating>, exticr3, 5, tr10, mr10),
-    PF11: (pf11, 11, Input<Floating>, exticr3, 5, tr11, mr11),
-    PF12: (pf12, 12, Input<Floating>, exticr4, 5, tr12, mr12),
-    PF13: (pf13, 13, Input<Floating>, exticr4, 5, tr13, mr13),
-    PF14: (pf14, 14, Input<Floating>, exticr4, 5, tr14, mr14),
-    PF15: (pf15, 15, Input<Floating>, exticr4, 5, tr15, mr15),
+    PF0: (pf0, 0, Input<Floating>, exticr1, 5),
+    PF1: (pf1, 1, Input<Floating>, exticr1, 5),
+    PF2: (pf2, 2, Input<Floating>, exticr1, 5),
+    PF3: (pf3, 3, Input<Floating>, exticr1, 5),
+    PF4: (pf4, 4, Input<Floating>, exticr2, 5),
+    PF5: (pf5, 5, Input<Floating>, exticr2, 5),
+    PF6: (pf6, 6, Input<Floating>, exticr2, 5),
+    PF7: (pf7, 7, Input<Floating>, exticr2, 5),
+    PF8: (pf8, 8, Input<Floating>, exticr3, 5),
+    PF9: (pf9, 9, Input<Floating>, exticr3, 5),
+    PF10: (pf10, 10, Input<Floating>, exticr3, 5),
+    PF11: (pf11, 11, Input<Floating>, exticr3, 5),
+    PF12: (pf12, 12, Input<Floating>, exticr4, 5),
+    PF13: (pf13, 13, Input<Floating>, exticr4, 5),
+    PF14: (pf14, 14, Input<Floating>, exticr4, 5),
+    PF15: (pf15, 15, Input<Floating>, exticr4, 5),
 ]);
 
 #[cfg(any(
@@ -807,22 +808,22 @@ gpio!(GPIOF, gpiof, gpiofen, PF, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOG, gpiog, gpiogen, PG, [
-    PG0: (pg0, 0, Input<Floating>, exticr1, 6, tr0, mr0),
-    PG1: (pg1, 1, Input<Floating>, exticr1, 6, tr1, mr1),
-    PG2: (pg2, 2, Input<Floating>, exticr1, 6, tr2, mr2),
-    PG3: (pg3, 3, Input<Floating>, exticr1, 6, tr3, mr3),
-    PG4: (pg4, 4, Input<Floating>, exticr2, 6, tr4, mr4),
-    PG5: (pg5, 5, Input<Floating>, exticr2, 6, tr5, mr5),
-    PG6: (pg6, 6, Input<Floating>, exticr2, 6, tr6, mr6),
-    PG7: (pg7, 7, Input<Floating>, exticr2, 6, tr7, mr7),
-    PG8: (pg8, 8, Input<Floating>, exticr3, 6, tr8, mr8),
-    PG9: (pg9, 9, Input<Floating>, exticr3, 6, tr9, mr9),
-    PG10: (pg10, 10, Input<Floating>, exticr3, 6, tr10, mr10),
-    PG11: (pg11, 11, Input<Floating>, exticr3, 6, tr11, mr11),
-    PG12: (pg12, 12, Input<Floating>, exticr4, 6, tr12, mr12),
-    PG13: (pg13, 13, Input<Floating>, exticr4, 6, tr13, mr13),
-    PG14: (pg14, 14, Input<Floating>, exticr4, 6, tr14, mr14),
-    PG15: (pg15, 15, Input<Floating>, exticr4, 6, tr15, mr15),
+    PG0: (pg0, 0, Input<Floating>, exticr1, 6),
+    PG1: (pg1, 1, Input<Floating>, exticr1, 6),
+    PG2: (pg2, 2, Input<Floating>, exticr1, 6),
+    PG3: (pg3, 3, Input<Floating>, exticr1, 6),
+    PG4: (pg4, 4, Input<Floating>, exticr2, 6),
+    PG5: (pg5, 5, Input<Floating>, exticr2, 6),
+    PG6: (pg6, 6, Input<Floating>, exticr2, 6),
+    PG7: (pg7, 7, Input<Floating>, exticr2, 6),
+    PG8: (pg8, 8, Input<Floating>, exticr3, 6),
+    PG9: (pg9, 9, Input<Floating>, exticr3, 6),
+    PG10: (pg10, 10, Input<Floating>, exticr3, 6),
+    PG11: (pg11, 11, Input<Floating>, exticr3, 6),
+    PG12: (pg12, 12, Input<Floating>, exticr4, 6),
+    PG13: (pg13, 13, Input<Floating>, exticr4, 6),
+    PG14: (pg14, 14, Input<Floating>, exticr4, 6),
+    PG15: (pg15, 15, Input<Floating>, exticr4, 6),
 ]);
 
 #[cfg(any(
@@ -844,28 +845,28 @@ gpio!(GPIOG, gpiog, gpiogen, PG, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOH, gpioh, gpiohen, PH, [
-    PH0: (ph0, 0, Input<Floating>, exticr1, 7, tr0, mr0),
-    PH1: (ph1, 1, Input<Floating>, exticr1, 7, tr1, mr1),
-    PH2: (ph2, 2, Input<Floating>, exticr1, 7, tr2, mr2),
-    PH3: (ph3, 3, Input<Floating>, exticr1, 7, tr3, mr3),
-    PH4: (ph4, 4, Input<Floating>, exticr2, 7, tr4, mr4),
-    PH5: (ph5, 5, Input<Floating>, exticr2, 7, tr5, mr5),
-    PH6: (ph6, 6, Input<Floating>, exticr2, 7, tr6, mr6),
-    PH7: (ph7, 7, Input<Floating>, exticr2, 7, tr7, mr7),
-    PH8: (ph8, 8, Input<Floating>, exticr3, 7, tr8, mr8),
-    PH9: (ph9, 9, Input<Floating>, exticr3, 7, tr9, mr9),
-    PH10: (ph10, 10, Input<Floating>, exticr3, 7, tr10, mr10),
-    PH11: (ph11, 11, Input<Floating>, exticr3, 7, tr11, mr11),
-    PH12: (ph12, 12, Input<Floating>, exticr4, 7, tr12, mr12),
-    PH13: (ph13, 13, Input<Floating>, exticr4, 7, tr13, mr13),
-    PH14: (ph14, 14, Input<Floating>, exticr4, 7, tr14, mr14),
-    PH15: (ph15, 15, Input<Floating>, exticr4, 7, tr15, mr15),
+    PH0: (ph0, 0, Input<Floating>, exticr1, 7),
+    PH1: (ph1, 1, Input<Floating>, exticr1, 7),
+    PH2: (ph2, 2, Input<Floating>, exticr1, 7),
+    PH3: (ph3, 3, Input<Floating>, exticr1, 7),
+    PH4: (ph4, 4, Input<Floating>, exticr2, 7),
+    PH5: (ph5, 5, Input<Floating>, exticr2, 7),
+    PH6: (ph6, 6, Input<Floating>, exticr2, 7),
+    PH7: (ph7, 7, Input<Floating>, exticr2, 7),
+    PH8: (ph8, 8, Input<Floating>, exticr3, 7),
+    PH9: (ph9, 9, Input<Floating>, exticr3, 7),
+    PH10: (ph10, 10, Input<Floating>, exticr3, 7),
+    PH11: (ph11, 11, Input<Floating>, exticr3, 7),
+    PH12: (ph12, 12, Input<Floating>, exticr4, 7),
+    PH13: (ph13, 13, Input<Floating>, exticr4, 7),
+    PH14: (ph14, 14, Input<Floating>, exticr4, 7),
+    PH15: (ph15, 15, Input<Floating>, exticr4, 7),
 ]);
 
 #[cfg(any(feature = "stm32f401"))]
 gpio!(GPIOH, gpioh, gpiohen, PH, [
-    PH0: (ph0, 0, Input<Floating>, exticr1, 7, tr0, mr0),
-    PH1: (ph1, 1, Input<Floating>, exticr1, 7, tr1, mr1),
+    PH0: (ph0, 0, Input<Floating>, exticr1, 7),
+    PH1: (ph1, 1, Input<Floating>, exticr1, 7),
 ]);
 
 #[cfg(any(
@@ -881,22 +882,22 @@ gpio!(GPIOH, gpioh, gpiohen, PH, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOI, gpioi, gpioien, PI, [
-    PI0: (pi0, 0, Input<Floating>, exticr1, 8, tr0, mr0),
-    PI1: (pi1, 1, Input<Floating>, exticr1, 8, tr1, mr1),
-    PI2: (pi2, 2, Input<Floating>, exticr1, 8, tr2, mr2),
-    PI3: (pi3, 3, Input<Floating>, exticr1, 8, tr3, mr3),
-    PI4: (pi4, 4, Input<Floating>, exticr2, 8, tr4, mr4),
-    PI5: (pi5, 5, Input<Floating>, exticr2, 8, tr5, mr5),
-    PI6: (pi6, 6, Input<Floating>, exticr2, 8, tr6, mr6),
-    PI7: (pi7, 7, Input<Floating>, exticr2, 8, tr7, mr7),
-    PI8: (pi8, 8, Input<Floating>, exticr3, 8, tr8, mr8),
-    PI9: (pi9, 9, Input<Floating>, exticr3, 8, tr9, mr9),
-    PI10: (pi10, 10, Input<Floating>, exticr3, 8, tr10, mr10),
-    PI11: (pi11, 11, Input<Floating>, exticr3, 8, tr11, mr11),
-    PI12: (pi12, 12, Input<Floating>, exticr4, 8, tr12, mr12),
-    PI13: (pi13, 13, Input<Floating>, exticr4, 8, tr13, mr13),
-    PI14: (pi14, 14, Input<Floating>, exticr4, 8, tr14, mr14),
-    PI15: (pi15, 15, Input<Floating>, exticr4, 8, tr15, mr15),
+    PI0: (pi0, 0, Input<Floating>, exticr1, 8),
+    PI1: (pi1, 1, Input<Floating>, exticr1, 8),
+    PI2: (pi2, 2, Input<Floating>, exticr1, 8),
+    PI3: (pi3, 3, Input<Floating>, exticr1, 8),
+    PI4: (pi4, 4, Input<Floating>, exticr2, 8),
+    PI5: (pi5, 5, Input<Floating>, exticr2, 8),
+    PI6: (pi6, 6, Input<Floating>, exticr2, 8),
+    PI7: (pi7, 7, Input<Floating>, exticr2, 8),
+    PI8: (pi8, 8, Input<Floating>, exticr3, 8),
+    PI9: (pi9, 9, Input<Floating>, exticr3, 8),
+    PI10: (pi10, 10, Input<Floating>, exticr3, 8),
+    PI11: (pi11, 11, Input<Floating>, exticr3, 8),
+    PI12: (pi12, 12, Input<Floating>, exticr4, 8),
+    PI13: (pi13, 13, Input<Floating>, exticr4, 8),
+    PI14: (pi14, 14, Input<Floating>, exticr4, 8),
+    PI15: (pi15, 15, Input<Floating>, exticr4, 8),
 ]);
 
 #[cfg(any(
@@ -904,22 +905,22 @@ gpio!(GPIOI, gpioi, gpioien, PI, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOJ, gpioj, gpiojen, PJ, [
-    PJ0: (pj0, 0, Input<Floating>, exticr1, 9, tr0, mr0),
-    PJ1: (pj1, 1, Input<Floating>, exticr1, 9, tr1, mr1),
-    PJ2: (pj2, 2, Input<Floating>, exticr1, 9, tr2, mr2),
-    PJ3: (pj3, 3, Input<Floating>, exticr1, 9, tr3, mr3),
-    PJ4: (pj4, 4, Input<Floating>, exticr2, 9, tr4, mr4),
-    PJ5: (pj5, 5, Input<Floating>, exticr2, 9, tr5, mr5),
-    PJ6: (pj6, 6, Input<Floating>, exticr2, 9, tr6, mr6),
-    PJ7: (pj7, 7, Input<Floating>, exticr2, 9, tr7, mr7),
-    PJ8: (pj8, 8, Input<Floating>, exticr3, 9, tr8, mr8),
-    PJ9: (pj9, 9, Input<Floating>, exticr3, 9, tr9, mr9),
-    PJ10: (pj10, 10, Input<Floating>, exticr3, 9, tr10, mr10),
-    PJ11: (pj11, 11, Input<Floating>, exticr3, 9, tr11, mr11),
-    PJ12: (pj12, 12, Input<Floating>, exticr4, 9, tr12, mr12),
-    PJ13: (pj13, 13, Input<Floating>, exticr4, 9, tr13, mr13),
-    PJ14: (pj14, 14, Input<Floating>, exticr4, 9, tr14, mr14),
-    PJ15: (pj15, 15, Input<Floating>, exticr4, 9, tr15, mr15),
+    PJ0: (pj0, 0, Input<Floating>, exticr1, 9),
+    PJ1: (pj1, 1, Input<Floating>, exticr1, 9),
+    PJ2: (pj2, 2, Input<Floating>, exticr1, 9),
+    PJ3: (pj3, 3, Input<Floating>, exticr1, 9),
+    PJ4: (pj4, 4, Input<Floating>, exticr2, 9),
+    PJ5: (pj5, 5, Input<Floating>, exticr2, 9),
+    PJ6: (pj6, 6, Input<Floating>, exticr2, 9),
+    PJ7: (pj7, 7, Input<Floating>, exticr2, 9),
+    PJ8: (pj8, 8, Input<Floating>, exticr3, 9),
+    PJ9: (pj9, 9, Input<Floating>, exticr3, 9),
+    PJ10: (pj10, 10, Input<Floating>, exticr3, 9),
+    PJ11: (pj11, 11, Input<Floating>, exticr3, 9),
+    PJ12: (pj12, 12, Input<Floating>, exticr4, 9),
+    PJ13: (pj13, 13, Input<Floating>, exticr4, 9),
+    PJ14: (pj14, 14, Input<Floating>, exticr4, 9),
+    PJ15: (pj15, 15, Input<Floating>, exticr4, 9),
 ]);
 
 #[cfg(any(
@@ -927,12 +928,12 @@ gpio!(GPIOJ, gpioj, gpiojen, PJ, [
     feature = "stm32f479"
 ))]
 gpio!(GPIOK, gpiok, gpioken, PK, [
-    PK0: (pk0, 0, Input<Floating>, exticr1, 10, tr0, mr0),
-    PK1: (pk1, 1, Input<Floating>, exticr1, 10, tr1, mr1),
-    PK2: (pk2, 2, Input<Floating>, exticr1, 10, tr2, mr2),
-    PK3: (pk3, 3, Input<Floating>, exticr1, 10, tr3, mr3),
-    PK4: (pk4, 4, Input<Floating>, exticr2, 10, tr4, mr4),
-    PK5: (pk5, 5, Input<Floating>, exticr2, 10, tr5, mr5),
-    PK6: (pk6, 6, Input<Floating>, exticr2, 10, tr6, mr6),
-    PK7: (pk7, 7, Input<Floating>, exticr2, 10, tr7, mr7),
+    PK0: (pk0, 0, Input<Floating>, exticr1, 10),
+    PK1: (pk1, 1, Input<Floating>, exticr1, 10),
+    PK2: (pk2, 2, Input<Floating>, exticr1, 10),
+    PK3: (pk3, 3, Input<Floating>, exticr1, 10),
+    PK4: (pk4, 4, Input<Floating>, exticr2, 10),
+    PK5: (pk5, 5, Input<Floating>, exticr2, 10),
+    PK6: (pk6, 6, Input<Floating>, exticr2, 10),
+    PK7: (pk7, 7, Input<Floating>, exticr2, 10),
 ]);
