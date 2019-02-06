@@ -945,9 +945,9 @@ gpio!(GPIOH, gpioh, gpiohen, PH, 7, [
 ]);
 
 #[cfg(any(feature = "stm32f401"))]
-gpio!(GPIOH, gpioh, gpiohen, PH, [
-    PH0: (ph0, 0, Input<Floating>, exticr1, 7),
-    PH1: (ph1, 1, Input<Floating>, exticr1, 7),
+gpio!(GPIOH, gpioh, gpiohen, PH, 7 [
+    PH0: (ph0, 0, Input<Floating>, exticr1),
+    PH1: (ph1, 1, Input<Floating>, exticr1),
 ]);
 
 #[cfg(any(
