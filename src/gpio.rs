@@ -172,30 +172,22 @@ macro_rules! gpio {
                     match self.i {
                         0...3 => {
                             syscfg.exticr1.modify(|r, w| unsafe {
-                                let mut exticr = r.bits();
-                                exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
-                                w.bits(exticr)
+                                w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
                         4...7 => {
                             syscfg.exticr2.modify(|r, w| unsafe {
-                                let mut exticr = r.bits();
-                                exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
-                                w.bits(exticr)
+                                w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
                         8...11 => {
                             syscfg.exticr3.modify(|r, w| unsafe {
-                                let mut exticr = r.bits();
-                                exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
-                                w.bits(exticr)
+                                w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
                         12...15 => {
                             syscfg.exticr4.modify(|r, w| unsafe {
-                                let mut exticr = r.bits();
-                                exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
-                                w.bits(exticr)
+                                w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
                         _ => {}
