@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Possibility to configure GPIO pins to generate external interrupts.
+
 - Support for stm32f405, stm32f410, stm32f413, stm32f415, stm32f417, stm32f423,
   stm32f427, stm32f437, stm32f439, stm32f446, stm32f469 and stm32f479.
 
