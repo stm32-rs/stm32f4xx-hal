@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Possibility to configure GPIO pins to generate external interrupts.
 
+- Support NoTx and NoRx in Serial to allow setting up a Rx only or Tx only port.
+
 - Support for stm32f405, stm32f410, stm32f413, stm32f415, stm32f417, stm32f423,
   stm32f427, stm32f437, stm32f439, stm32f446, stm32f469 and stm32f479.
 
@@ -25,6 +27,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Read and Write implementations for Serial.
 
 ### Changed
+
+- More versatile RCC clocks configuration.
+
+- Allow using any pair of Pins for I2C rather than only a few hardcoded ones.
+
+- Allow using any pair of Pins for Serial rather than only a few hardcoded ones.
 
 - [breaking-change] Updated stm32f4 dependency to v0.6.0.
 
