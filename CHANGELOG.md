@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Updated stm32f4 dependency to v0.5.0.
+- [breaking-change] Updated stm32f4 dependency to v0.6.0.
 
 ### Fixed
 
