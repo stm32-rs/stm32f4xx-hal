@@ -190,7 +190,7 @@ macro_rules! gpio {
             impl<MODE> ExtiPin for $PXx<Input<MODE>> {
                 /// Make corresponding EXTI line sensitive to this pin
                 fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
-                    let offset = 4 * ($extigpionr % 4);
+                    let offset = 4 * (self.i % 4);
                     match self.i {
                         0...3 => {
                             syscfg.exticr1.modify(|r, w| unsafe {
@@ -606,7 +606,7 @@ macro_rules! gpio {
                 impl<MODE> ExtiPin for $PXi<Input<MODE>> {
                     /// Configure EXTI Line $i to trigger from this pin.
                     fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
-                        let offset = 4 * ($extigpionr % 4);
+                        let offset = 4 * ($i % 4);
                         syscfg.$exticri.modify(|r, w| unsafe {
                             let mut exticr = r.bits();
                             exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
