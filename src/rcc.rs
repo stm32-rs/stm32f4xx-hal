@@ -93,16 +93,19 @@ impl CFGR {
 
         // Input divisor from PLL source clock, must result to frequency in
         // the range from 1 to 2 MHz
-        let pllm = 16;
+        let pllm = (pllsrcclk + 1_999_999) / 2_000_000;
+
+        let vco_in = pllsrcclk / pllm;
+        assert!(vco_in >= 1_000_000 && vco_in <= 2_000_000);
 
         // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
         // and <= 432MHz, min 50, max 432
-        let plln = sysclk * sysclk_div / (pllsrcclk / pllm);
+        let plln = sysclk * sysclk_div / vco_in;
 
         let pllp = (sysclk_div / 2) - 1;
 
         // Calculate real system clock
-        let sysclk = (pllsrcclk / pllm) * plln / sysclk_div;
+        let sysclk = vco_in * plln / sysclk_div;
 
         if sysclk != pllsrcclk {
             // use PLL as source
