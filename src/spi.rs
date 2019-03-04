@@ -779,6 +779,49 @@ macro_rules! hal {
                     Spi { spi, pins }
                 }
 
+                /// Enable transmit register empty interrupt
+                pub fn enable_txe_interrupt(&mut self) {
+                    self.spi.cr2.write(|w| { w.txeie().set_bit() });
+                }
+
+                /// Disable transmit register empty interrupt
+                pub fn disable_txe_interrupt(&mut self) {
+                    self.spi.cr2.write(|w| {w.txeie().clear_bit()});
+                }
+
+                /// Enable receive register not empty interrupt
+                pub fn enable_rxne_interrupt(&mut self) {
+                    self.spi.cr2.write(|w| {w.rxneie().set_bit()});
+                }
+
+                /// Disable receive register not empty interrupt
+                pub fn disable_rxne_interrupt(&mut self) {
+                    self.spi.cr2.write(|w| {w.rxneie().clear_bit()});
+                }
+
+                /// Enable error interrupt
+                pub fn enable_error_interrupt(&mut self) {
+                    self.spi.cr2.write(|w| {w.errie().set_bit()});
+                }
+
+                /// Disable error interrupt
+                pub fn disable_error_interrupt(&mut self) {
+                    self.spi.cr2.write(|w| {w.errie().clear_bit()});
+                }
+
+                /// Convenience function to enable all interrupts
+                pub fn enable_interrupts(&mut self) {
+                    self.enable_txe_interrupt();
+                    self.enable_rxne_interrupt();
+                    self.enable_error_interrupt();
+                }
+
+                /// Convenience function to disable all interrupts
+                pub fn disable_interrupts(&mut self) {
+                    self.disable_txe_interrupt();
+                    self.disable_rxne_interrupt();
+                    self.disable_error_interrupt();
+                }
                 pub fn free(self) -> ($SPIX, PINS) {
                     (self.spi, self.pins)
                 }
