@@ -822,6 +822,28 @@ macro_rules! hal {
                     self.disable_rxne_interrupt();
                     self.disable_error_interrupt();
                 }
+
+                /// Enable the peripheral, i.e. set the SPE bit in the SPI control register 1
+                pub fn enable(&mut self) {
+                    self.spi.cr1.write(|w| {w.spe().set_bit()})
+                }
+
+                /// Halt the SPI according to the procedure described in chapter
+                /// 28.3.8 of the STM32F4xx reference manual
+                // TODO: this only applies to master bi-directional transfer mode
+                pub fn wait_until_idle(&mut self) {
+                    while self.spi.sr.read().rxne().bit_is_clear() {}
+                    while self.spi.sr.read().txe().bit_is_clear()  {}
+                    while self.spi.sr.read().bsy().bit_is_set()    {}
+                }
+
+                /// Shut down, i.e. go into halt and then turn off the SPI peripheral
+                pub fn disable(&mut self) {
+                    self.disable_interrupts();
+                    self.wait_until_idle();
+                    self.spi.cr1.write(|w| {w.spe().clear_bit()});
+                }
+
                 pub fn free(self) -> ($SPIX, PINS) {
                     (self.spi, self.pins)
                 }
