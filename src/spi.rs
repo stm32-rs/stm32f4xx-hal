@@ -781,51 +781,47 @@ macro_rules! hal {
 
                 /// Enable transmit register empty interrupt
                 pub fn enable_txe_interrupt(&mut self) {
-                    self.spi.cr2.write(|w| { w.txeie().set_bit() });
+                    self.spi.cr2.modify(|r, w| unsafe {w.bits(r.bits() | (1 << 7))});
                 }
 
                 /// Disable transmit register empty interrupt
                 pub fn disable_txe_interrupt(&mut self) {
-                    self.spi.cr2.write(|w| {w.txeie().clear_bit()});
+                    self.spi.cr2.modify(|r, w| unsafe {w.bits(r.bits() & !(1 << 7))});
                 }
 
                 /// Enable receive register not empty interrupt
                 pub fn enable_rxne_interrupt(&mut self) {
-                    self.spi.cr2.write(|w| {w.rxneie().set_bit()});
+                    self.spi.cr2.modify(|r, w| unsafe {w.bits(r.bits() | (1 << 6))});
                 }
 
                 /// Disable receive register not empty interrupt
                 pub fn disable_rxne_interrupt(&mut self) {
-                    self.spi.cr2.write(|w| {w.rxneie().clear_bit()});
+                    self.spi.cr2.modify(|r, w| unsafe {w.bits(r.bits() & !(1 << 6))});
                 }
 
                 /// Enable error interrupt
                 pub fn enable_error_interrupt(&mut self) {
-                    self.spi.cr2.write(|w| {w.errie().set_bit()});
+                    self.spi.cr2.modify(|r, w| unsafe {w.bits(r.bits() | (1 << 5))});
                 }
 
                 /// Disable error interrupt
                 pub fn disable_error_interrupt(&mut self) {
-                    self.spi.cr2.write(|w| {w.errie().clear_bit()});
+                    self.spi.cr2.modify(|r, w| unsafe {w.bits(r.bits() & !(1 << 5))});
                 }
 
                 /// Convenience function to enable all interrupts
                 pub fn enable_interrupts(&mut self) {
-                    self.enable_txe_interrupt();
-                    self.enable_rxne_interrupt();
-                    self.enable_error_interrupt();
+                    self.spi.cr2.modify(|r, w| unsafe {w.bits(r.bits() | (7 << 5))});
                 }
 
                 /// Convenience function to disable all interrupts
                 pub fn disable_interrupts(&mut self) {
-                    self.disable_txe_interrupt();
-                    self.disable_rxne_interrupt();
-                    self.disable_error_interrupt();
+                    self.spi.cr2.modify(|r, w| unsafe {w.bits(r.bits() & !(7 << 5))});
                 }
 
                 /// Enable the peripheral, i.e. set the SPE bit in the SPI control register 1
                 pub fn enable(&mut self) {
-                    self.spi.cr1.write(|w| {w.spe().set_bit()})
+                    self.spi.cr1.modify(|r, w| unsafe {w.bits(r.bits() | (1 << 6))});
                 }
 
                 /// Halt the SPI according to the procedure described in chapter
@@ -837,11 +833,9 @@ macro_rules! hal {
                     while self.spi.sr.read().bsy().bit_is_set()    {}
                 }
 
-                /// Shut down, i.e. go into halt and then turn off the SPI peripheral
+                /// Disabe the peripheral, i.e. clear the SPE bit in the control register 1
                 pub fn disable(&mut self) {
-                    self.disable_interrupts();
-                    self.wait_until_idle();
-                    self.spi.cr1.write(|w| {w.spe().clear_bit()});
+                    self.spi.cr1.modify(|r, w| unsafe {w.bits(r.bits() & !(1 << 6))});
                 }
 
                 pub fn free(self) -> ($SPIX, PINS) {
