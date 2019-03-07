@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Implement IndependentWatchdog for the IWDG peripheral
+
 ## [v0.3.0] - 2019-01-14
 
 ### Added
