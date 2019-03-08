@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Hal ADC supporting one-shot and sequence conversion of regular channels.
+- Implement IndependentWatchdog for the IWDG peripheral
 
 ## [v0.3.0] - 2019-01-14
 
