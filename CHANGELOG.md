@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
 - API to enable and disable SPI interrupts
+
+- Hal ADC supporting one-shot and sequence conversion of regular channels.
+
+- Implement IndependentWatchdog for the IWDG peripheral
 
 ## [v0.3.0] - 2019-01-14
 
