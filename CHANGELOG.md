@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- API to enable and disable SPI interrupts
+
 ## [v0.3.0] - 2019-01-14
 
 ### Added

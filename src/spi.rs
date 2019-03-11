@@ -820,30 +820,11 @@ macro_rules! hal {
 
                 /// Convenience function to disable all interrupts
                 pub fn disable_interrupts(&mut self) {
-                    self.spi.cr2.modify(|_, w| {
+                    self.spi.cr2.modify(|_, w| { 
                         w.txeie().clear_bit()
                         .rxneie().clear_bit()
                         .errie().clear_bit()
                     });
-                }
-
-                /// Enable the peripheral, i.e. set the SPE bit in the SPI control register 1
-                pub fn enable(&mut self) {
-                    self.spi.cr1.modify(|_, w| { w.spe().set_bit() });
-                }
-
-                /// Halt the SPI according to the procedure described in chapter
-                /// 28.3.8 of the STM32F4xx reference manual
-                // TODO: this only applies to master bi-directional transfer mode
-                pub fn wait_until_idle(&mut self) {
-                    while self.spi.sr.read().rxne().bit_is_clear() {}
-                    while self.spi.sr.read().txe().bit_is_clear()  {}
-                    while self.spi.sr.read().bsy().bit_is_set()    {}
-                }
-
-                /// Disabe the peripheral, i.e. clear the SPE bit in the control register 1
-                pub fn disable(&mut self) {
-                    self.spi.cr1.modify(|_, w| {w.spe().clear_bit() });
                 }
 
                 pub fn free(self) -> ($SPIX, PINS) {
