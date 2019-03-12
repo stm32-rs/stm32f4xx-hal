@@ -705,6 +705,16 @@ pins! {
         MOSI: [PC1<Alternate<AF5>>]
 }
 
+/// Interrupt events
+pub enum Event {
+    /// New data has been received
+    Rxne ,
+    /// Data can be sent
+    Txe,
+    /// An error occurred
+    Error,
+}
+
 #[derive(Debug)]
 pub struct Spi<SPI, PINS> {
     spi: SPI,
@@ -779,52 +789,28 @@ macro_rules! hal {
                     Spi { spi, pins }
                 }
 
-                /// Enable transmit register empty interrupt
-                pub fn enable_txe_interrupt(&mut self) {
-                    self.spi.cr2.modify(|_, w| { w.txeie().set_bit() });
+                /// Enable interrupts for the given `event`:
+                ///  - Received data ready to be read (RXNE)
+                ///  - Transmit data register empty (TXE)
+                ///  - Transfer error
+                pub fn listen(&mut self, event: Event) {
+                    match event {
+                        Event::Rxne  => self.spi.cr2.modify(|_, w| { w.rxneie().set_bit() }),
+                        Event::Txe   => self.spi.cr2.modify(|_, w| { w.txeie().set_bit() }),
+                        Event::Error => self.spi.cr2.modify(|_, w| { w.errie().set_bit() }),
+                    }
                 }
 
-                /// Disable transmit register empty interrupt
-                pub fn disable_txe_interrupt(&mut self) {
-                    self.spi.cr2.modify(|_, w| { w.txeie().clear_bit() });
-                }
-
-                /// Enable receive register not empty interrupt
-                pub fn enable_rxne_interrupt(&mut self) {
-                    self.spi.cr2.modify(|_, w| { w.rxneie().set_bit() });
-                }
-
-                /// Disable receive register not empty interrupt
-                pub fn disable_rxne_interrupt(&mut self) {
-                    self.spi.cr2.modify(|_, w| { w.rxneie().clear_bit() });
-                }
-
-                /// Enable error interrupt
-                pub fn enable_error_interrupt(&mut self) {
-                    self.spi.cr2.modify(|_, w| { w.errie().set_bit() });
-                }
-
-                /// Disable error interrupt
-                pub fn disable_error_interrupt(&mut self) {
-                    self.spi.cr2.modify(|_, w| { w.errie().clear_bit() });
-                }
-
-                /// Convenience function to enable all interrupts
-                pub fn enable_interrupts(&mut self) {
-                    self.spi.cr2.modify(|_, w| {
-                        w.txeie().set_bit()
-                        .rxneie().set_bit()
-                        .errie().set_bit()
-                    });
-                }
-
-                /// Convenience function to disable all interrupts
-                pub fn disable_interrupts(&mut self) {
-                    self.spi.cr2.modify(|_, w| { 
-                        w.txeie().clear_bit()
-                        .rxneie().clear_bit()
-                        .errie().clear_bit()
-                    });
+                /// Disable interrupts for the given `event`:
+                ///  - Received data ready to be read (RXNE)
+                ///  - Transmit data register empty (TXE)
+                ///  - Transfer error
+                pub fn unlisten(&mut self, event: Event) {
+                    match event {
+                        Event::Rxne  => self.spi.cr2.modify(|_, w| { w.rxneie().clear_bit() }),
+                        Event::Txe   => self.spi.cr2.modify(|_, w| { w.txeie().clear_bit() }),
+                        Event::Error => self.spi.cr2.modify(|_, w| { w.errie().clear_bit() }),
+                    }
                 }
 
                 pub fn free(self) -> ($SPIX, PINS) {
