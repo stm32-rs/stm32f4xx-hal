@@ -1668,7 +1668,7 @@ macro_rules! halUsartImpl {
                 }
 
                 /// Return true if the rx register is not empty (and can be read)
-                pub fn is_rxne(self) -> bool {
+                pub fn is_rxne(& self) -> bool {
                     unsafe { (*$USARTX::ptr()).sr.read().rxne().bit_is_set() }
                 }
 
