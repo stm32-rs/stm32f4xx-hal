@@ -708,7 +708,7 @@ pins! {
 /// Interrupt events
 pub enum Event {
     /// New data has been received
-    Rxne ,
+    Rxne,
     /// Data can be sent
     Txe,
     /// An error occurred
