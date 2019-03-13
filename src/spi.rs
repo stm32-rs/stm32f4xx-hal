@@ -813,6 +813,24 @@ macro_rules! hal {
                     }
                 }
 
+                /// Return `true` if the TXE flag is set, i.e. new data to transmit
+                /// can be written to the SPI.
+                pub fn is_txe(&self) -> bool {
+                    self.spi.sr.read().txe().bit_is_set()
+                }
+
+                /// Return `true` if the RXNE flag is set, i.e. new data has been received
+                /// and can be read from the SPI.
+                pub fn is_rxne(&self) -> bool {
+                    self.spi.sr.read().rxne().bit_is_set()
+                }
+
+                /// Return `true` if the MODF flag is set, i.e. the SPI has experienced a
+                /// Master Mode Fault. (see chapter 28.3.10 of the STM32F4 Reference Manual)
+                pub fn is_modf(&self) -> bool {
+                    self.spi.sr.read().modf().bit_is_set()
+                }
+
                 pub fn free(self) -> ($SPIX, PINS) {
                     (self.spi, self.pins)
                 }
