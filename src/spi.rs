@@ -705,6 +705,16 @@ pins! {
         MOSI: [PC1<Alternate<AF5>>]
 }
 
+/// Interrupt events
+pub enum Event {
+    /// New data has been received
+    Rxne,
+    /// Data can be sent
+    Txe,
+    /// An error occurred
+    Error,
+}
+
 #[derive(Debug)]
 pub struct Spi<SPI, PINS> {
     spi: SPI,
@@ -777,6 +787,48 @@ macro_rules! hal {
                     });
 
                     Spi { spi, pins }
+                }
+
+                /// Enable interrupts for the given `event`:
+                ///  - Received data ready to be read (RXNE)
+                ///  - Transmit data register empty (TXE)
+                ///  - Transfer error
+                pub fn listen(&mut self, event: Event) {
+                    match event {
+                        Event::Rxne  => self.spi.cr2.modify(|_, w| { w.rxneie().set_bit() }),
+                        Event::Txe   => self.spi.cr2.modify(|_, w| { w.txeie().set_bit() }),
+                        Event::Error => self.spi.cr2.modify(|_, w| { w.errie().set_bit() }),
+                    }
+                }
+
+                /// Disable interrupts for the given `event`:
+                ///  - Received data ready to be read (RXNE)
+                ///  - Transmit data register empty (TXE)
+                ///  - Transfer error
+                pub fn unlisten(&mut self, event: Event) {
+                    match event {
+                        Event::Rxne  => self.spi.cr2.modify(|_, w| { w.rxneie().clear_bit() }),
+                        Event::Txe   => self.spi.cr2.modify(|_, w| { w.txeie().clear_bit() }),
+                        Event::Error => self.spi.cr2.modify(|_, w| { w.errie().clear_bit() }),
+                    }
+                }
+
+                /// Return `true` if the TXE flag is set, i.e. new data to transmit
+                /// can be written to the SPI.
+                pub fn is_txe(&self) -> bool {
+                    self.spi.sr.read().txe().bit_is_set()
+                }
+
+                /// Return `true` if the RXNE flag is set, i.e. new data has been received
+                /// and can be read from the SPI.
+                pub fn is_rxne(&self) -> bool {
+                    self.spi.sr.read().rxne().bit_is_set()
+                }
+
+                /// Return `true` if the MODF flag is set, i.e. the SPI has experienced a
+                /// Master Mode Fault. (see chapter 28.3.10 of the STM32F4 Reference Manual)
+                pub fn is_modf(&self) -> bool {
+                    self.spi.sr.read().modf().bit_is_set()
                 }
 
                 pub fn free(self) -> ($SPIX, PINS) {
