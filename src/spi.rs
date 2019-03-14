@@ -831,6 +831,12 @@ macro_rules! hal {
                     self.spi.sr.read().modf().bit_is_set()
                 }
 
+                /// Return `true` if the OVR flag is set, i.e. new data has been received
+                /// whil the receive data register was already filled.
+                pub fn is_ovr(&self) -> bool {
+                    self.spi.sr.read().ovr().bit_is_set()
+                }
+
                 pub fn free(self) -> ($SPIX, PINS) {
                     (self.spi, self.pins)
                 }
