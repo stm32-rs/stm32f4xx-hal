@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Implement `timer::Cancel` trait for `Timer<SYST>`.
 - Added PWM support and example.
 
+### Added
+
+- DMA configuration API
+
 ## [v0.7.0] - 2020-03-07
 
 ### Changed
