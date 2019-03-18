@@ -103,3 +103,5 @@ pub mod timer;
 pub mod watchdog;
 #[cfg(feature = "device-selected")]
 pub mod adc;
+#[cfg(feature = "device-selected")]
+pub mod signature;
