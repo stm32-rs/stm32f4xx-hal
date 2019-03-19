@@ -1,7 +1,7 @@
 //! Watchdog peripherals
 
 use crate::{
-    stm32::{IWDG, DBG},
+    stm32::{IWDG, DBGMCU},
     hal::watchdog::{Watchdog, WatchdogEnable},
     time::MilliSeconds,
 };
@@ -25,8 +25,8 @@ impl IndependentWatchdog {
     }
 
     /// Debug independent watchdog stopped when core is halted
-    pub fn stop_on_debug(&self, dbg: &DBG, stop: bool) {
-        dbg.dbgmcu_apb1_fz.modify(|_, w| w.dbg_iwdeg_stop().bit(stop));
+    pub fn stop_on_debug(&self, dbgmcu: &DBGMCU, stop: bool) {
+        dbgmcu.apb1_fz.modify(|_, w| w.dbg_iwdg_stop().bit(stop));
     }
 
     fn setup(&self, timeout_ms: u32) {
