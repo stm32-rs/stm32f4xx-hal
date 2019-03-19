@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Implement IndependentWatchdog for the IWDG peripheral
 
+- Implement reading the device electronic signature from flash
+
 ## [v0.3.0] - 2019-01-14
 
 ### Added
