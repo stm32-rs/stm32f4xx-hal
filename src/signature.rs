@@ -46,8 +46,10 @@ impl Uid {
     }
 
     /// Lot number
-    pub unsafe fn lot_num(&self) -> &str {
-        from_utf8_unchecked(&self.waf_lot[1..])
+    pub fn lot_num(&self) -> &str {
+        unsafe {
+            from_utf8_unchecked(&self.waf_lot[1..])
+        }
     }
 }
 
