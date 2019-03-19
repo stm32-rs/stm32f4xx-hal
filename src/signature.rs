@@ -4,6 +4,21 @@
 
 use core::str::from_utf8_unchecked;
 
+macro_rules! define_ptr_type {
+    ($name: ident, $ptr: expr) => (
+        impl $name {
+            fn ptr() -> *const Self {
+                $ptr as *const _
+            }
+
+            /// Returns a wrapped reference to the value in flash memory
+            pub fn get() -> &'static Self {
+                unsafe { &*Self::ptr() }
+            }
+        }
+    )
+}
+
 /// Uniqure Device ID register
 #[derive(Hash, Debug)]
 #[repr(C)]
@@ -12,17 +27,9 @@ pub struct Uid {
     y: u16,
     waf_lot: [u8; 8],
 }
+define_ptr_type!(Uid, 0x1FFF_7A10);
 
 impl Uid {
-    fn ptr() -> *const Self {
-        0x1FFF_7A10 as *const _
-    }
-
-    /// Returns a wrapped reference to the value in flash memory
-    pub fn get() -> &'static Self {
-        unsafe { &*Self::ptr() }
-    }
-
     /// X coordinate on wafer
     pub fn x(&self) -> u16 {
         self.x
@@ -48,17 +55,9 @@ impl Uid {
 #[derive(Debug)]
 #[repr(C)]
 pub struct FlashSize(u16);
+define_ptr_type!(FlashSize, 0x1FFF_7A22);
 
 impl FlashSize {
-    fn ptr() -> *const Self {
-        0x1FFF_7A22 as *const _
-    }
-
-    /// Returns a wrapped reference to the value in flash memory
-    pub fn get() -> &'static Self {
-        unsafe { &*Self::ptr() }
-    }
-
     /// Read flash size in kilobytes
     pub fn kilo_bytes(&self) -> u16 {
         self.0
