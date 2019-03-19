@@ -68,3 +68,42 @@ impl FlashSize {
         usize::from(self.kilo_bytes()) * 1024
     }
 }
+
+/// ADC VREF calibration value is stored in at the factory
+#[derive(Debug)]
+#[repr(C)]
+pub struct VrefCal(u16);
+define_ptr_type!(VrefCal, 0x1FFF_7A2A);
+
+impl VrefCal {
+    /// Read calibration value
+    pub fn read(&self) -> u16 {
+        self.0
+    }
+}
+
+/// A temperature reading taken at 30°C stored at the factory
+#[derive(Debug)]
+#[repr(C)]
+pub struct VtempCal30(u16);
+define_ptr_type!(VtempCal30, 0x1FFF_7A2C);
+
+impl VtempCal30 {
+    /// Read calibration value
+    pub fn read(&self) -> u16 {
+        self.0
+    }
+}
+
+/// A temperature reading taken at 110°C stored at the factory
+#[derive(Debug)]
+#[repr(C)]
+pub struct VtempCal110(u16);
+define_ptr_type!(VtempCal110, 0x1FFF_7A2E);
+
+impl VtempCal110 {
+    /// Read calibration value
+    pub fn read(&self) -> u16 {
+        self.0
+    }
+}
