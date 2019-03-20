@@ -3,8 +3,6 @@
 
 #![deny(missing_docs)]
 
-/// This is the address the VREF calibration value is stored in at the factory
-const VREFCAL: *const u16 = 0x1FFF_7A2A as *const u16;
 /// This is the test voltage, in millivolts of the calibration done at the factory
 const VDDA_CALIB: u32 = 3300;
 
@@ -28,12 +26,8 @@ use embedded_hal::adc::{
 use crate::{
     stm32,
     gpio::*,
+    signature::VrefCal,
 };
-
-/// Fetches the vref calibration value stored at the factory
-fn get_vref_cal() -> u32 {
-    unsafe { u32::from(ptr::read(VREFCAL)) }
-}
 
 /// Vref internal signal, used for calibration
 pub struct Vref;
@@ -687,10 +681,10 @@ macro_rules! adc {
                         self.enable_temperature_and_vref();
                     }
 
-                    let vref_cal = get_vref_cal();
+                    let vref_cal = VrefCal::get().read();
                     let vref_samp = self.read(&mut Vref).unwrap(); //This can't actually fail, it's just in a result to satisfy hal trait
 
-                    self.calibrated_vdda = (VDDA_CALIB * vref_cal) / u32::from(vref_samp);
+                    self.calibrated_vdda = (VDDA_CALIB * u32::from(vref_cal)) / u32::from(vref_samp);
                     if !vref_en {
                         self.disable_temperature_and_vref();
                     }
