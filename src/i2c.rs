@@ -838,13 +838,13 @@ where
         if buffer.len() <= 2 {
 
             // Clear the ack flag and set the pos flag to the nack gets sent
-            // after the next recieved byte
+            // after the next received byte
             self.i2c.cr1.modify(|_, w| w.ack().clear_bit().pos().set_bit());
 
             // Clear addr by reading SR2
             self.i2c.sr2.read();
 
-            // Wait untill both bytes are recived. Byte 1 will be in dr,
+            // Wait until both bytes are received. Byte 1 will be in dr,
             // and byte 2 will be in the shift register
             while {
                 let sr1 = self.i2c.sr1.read();
@@ -895,7 +895,7 @@ where
             // Set the stop bit to finish the transaction
             self.i2c.cr1.modify(|_, w| w.stop().set_bit());
 
-            // Recieve the last 2 bytes
+            // Receive the last 2 bytes
             last[1] = self.recv_byte()?;
             last[2] = self.recv_byte()?;
         }
