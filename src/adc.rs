@@ -7,15 +7,8 @@
 const VDDA_CALIB: u32 = 3300;
 
 /*
-    These are currently unused but put here to save looking the addresses up again in the datasheet
-    The formula for using them is:
-    Temperature in °C = (110-30)/(VTEMPCAL110-VTEMPCAL30) * (adc_sample - VTEMPCAL30) + 30
-
-/// This is the address of a temperature reading taken at 30°C stored at the factory
-const VTEMPCAL30: *const u16 = 0x1FFF_7A2C as *const u16;
-/// This is the address of a temperature reading taken at 110°C stored at the factory
-const VTEMPCAL110: *const u16 = 0x1FFF_7A2E as *const u16;
-
+    Currently unused but this is the formula for using temperature calibration:
+    Temperature in °C = (110-30)/(VtempCal110::get().read()-VtempCal30::get().read()) * (adc_sample - VtempCal30::get().read()) + 30
 */
 
 use crate::{gpio::*, signature::VrefCal, stm32};
