@@ -1081,7 +1081,7 @@ adc_pins!(
     Vref => (ADC1, 17),
 );
 
-///Not available on C variant
+// Not available on C variant
 #[cfg(feature = "stm32f401")]
 adc_pins!(
     gpioc::PC0<Analog> => (ADC1, 10),
@@ -1138,7 +1138,7 @@ adc_pins!(
     Vref => (ADC3, 17),
 );
 
-///Not available on O variant
+// Not available on O variant
 #[cfg(any(feature = "stm32f405", feature = "stm32f415"))]
 adc_pins!(
     gpioc::PC1<Analog> => (ADC1, 11),
@@ -1211,7 +1211,7 @@ adc_pins!(
     Vref => (ADC3, 17),
 );
 
-///Not available on V variant
+// Not available on V variant
 #[cfg(any(feature = "stm32f407", feature = "stm32f417"))]
 adc_pins!(
     gpiof::PF10<Analog> => (ADC3, 8),
@@ -1235,7 +1235,7 @@ adc_pins!(
     Vref => (ADC1, 17),
 );
 
-///Not available on T variant
+// Not available on T variant
 #[cfg(feature = "stm32f410")]
 adc_pins!(
     gpioa::PA1<Analog> => (ADC1, 1),
@@ -1246,7 +1246,7 @@ adc_pins!(
     gpiob::PB1<Analog> => (ADC1, 9),
 );
 
-///Only available on R variant
+// Only available on R variant
 #[cfg(feature = "stm32f410")]
 adc_pins!(
     gpioc::PC0<Analog> => (ADC1, 10),
@@ -1274,7 +1274,7 @@ adc_pins!(
     Vref => (ADC1, 17),
 );
 
-///Not available on C variant
+// Not available on C variant
 #[cfg(feature = "stm32f411")]
 adc_pins!(
     gpioc::PC0<Analog> => (ADC1, 10),
@@ -1325,7 +1325,7 @@ adc_pins!(
     Vref => (ADC1, 17),
 );
 
-///Not available on C variant
+// Not available on C variant
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 adc_pins!(
     gpioc::PC0<Analog> => (ADC1, 10),
@@ -1389,7 +1389,7 @@ adc_pins!(
     Vref => (ADC3, 17),
 );
 
-///Not available on V variant
+// Not available on V variant
 #[cfg(any(feature = "stm32f427", feature = "stm32f437"))]
 adc_pins!(
     gpiof::PF10<Analog> => (ADC3, 8),
@@ -1398,7 +1398,7 @@ adc_pins!(
     gpiof::PF5<Analog> => (ADC3, 15),
 );
 
-///Only available on I and Z variants
+// Only available on I and Z variants
 #[cfg(any(feature = "stm32f427", feature = "stm32f437"))]
 adc_pins!(
     gpiof::PF6<Analog> => (ADC3, 4),
@@ -1460,7 +1460,7 @@ adc_pins!(
     Vref => (ADC3, 17),
 );
 
-///Not available on V variant
+// Not available on V variant
 #[cfg(any(feature = "stm32f429", feature = "stm32f439"))]
 adc_pins!(
     gpiof::PF10<Analog> => (ADC3, 8),
@@ -1469,7 +1469,7 @@ adc_pins!(
     gpiof::PF5<Analog> => (ADC3, 15),
 );
 
-///Not available on V or A variants
+// Not available on V or A variants
 #[cfg(any(feature = "stm32f429", feature = "stm32f439"))]
 adc_pins!(
     gpiof::PF6<Analog> => (ADC3, 4),
@@ -1526,7 +1526,7 @@ adc_pins!(
     Vref => (ADC3, 17),
 );
 
-///Not available on M variant
+// Not available on M variant
 #[cfg(feature = "stm32f446")]
 adc_pins!(
     gpioc::PC1<Analog> => (ADC1, 11),
@@ -1537,7 +1537,7 @@ adc_pins!(
     gpioc::PC5<Analog> => (ADC3, 15),
 );
 
-///Only available on Z variant
+// Only available on Z variant
 #[cfg(feature = "stm32f446")]
 adc_pins!(
     gpiof::PF10<Analog> => (ADC3, 8),
@@ -1593,7 +1593,7 @@ adc_pins!(
     Vref => (ADC3, 17),
 );
 
-///Not available on A variant
+// Not available on A variant
 #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
 adc_pins!(
     gpioc::PC2<Analog> => (ADC1, 12),
@@ -1604,7 +1604,7 @@ adc_pins!(
     gpioc::PC3<Analog> => (ADC3, 13),
 );
 
-///Not available on V or A variants
+// Not available on V or A variants
 #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
 adc_pins!(
     gpioc::PC4<Analog> => (ADC1, 14),
@@ -1613,7 +1613,7 @@ adc_pins!(
     gpioc::PC5<Analog> => (ADC2, 15),
 );
 
-///Not available on V variant
+// Not available on V variant
 #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
 adc_pins!(
     gpiof::PF10<Analog> => (ADC3, 8),
@@ -1622,7 +1622,7 @@ adc_pins!(
     gpiof::PF5<Analog> => (ADC3, 15),
 );
 
-///Only available on B/I/N variants
+// Only available on B/I/N variants
 #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
 adc_pins!(
     gpiof::PF6<Analog> => (ADC3, 4),
