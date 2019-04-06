@@ -3,15 +3,12 @@
 
 #![deny(missing_docs)]
 
-/// This is the test voltage, in millivolts of the calibration done at the factory
-const VDDA_CALIB: u32 = 3300;
-
 /*
     Currently unused but this is the formula for using temperature calibration:
     Temperature in °C = (110-30)/(VtempCal110::get().read()-VtempCal30::get().read()) * (adc_sample - VtempCal30::get().read()) + 30
 */
 
-use crate::{gpio::*, signature::VrefCal, stm32};
+use crate::{gpio::*, signature::VrefCal, signature::VDDA_CALIB, stm32};
 use core::fmt;
 use embedded_hal::adc::{Channel, OneShot};
 
