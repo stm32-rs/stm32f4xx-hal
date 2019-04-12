@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.4.0] - 2019-04-12
+
 ### Added
 
 - API to enable and disable SPI interrupts
@@ -16,6 +18,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Implement IndependentWatchdog for the IWDG peripheral
 
 - Implement reading the device electronic signature from flash
+
+### Changed
+
+- [breaking-change] Updated cortex-m dependency to v0.6.0.
 
 ## [v0.3.0] - 2019-01-14
 
@@ -157,7 +163,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.4.0...HEAD
+[v0.4.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.2.8...v0.3.0
 [v0.2.8]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.2.7...v0.2.8
 [v0.2.7]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.2.6...v0.2.7
