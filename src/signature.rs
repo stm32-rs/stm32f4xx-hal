@@ -42,7 +42,7 @@ impl Uid {
 
     /// Wafer number
     pub fn waf_num(&self) -> u8 {
-        self.waf_lot[0].into()
+        self.waf_lot[0]
     }
 
     /// Lot number

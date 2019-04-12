@@ -265,7 +265,7 @@ impl CFGR {
         ))]
         let (pclk1_max, pclk2_max) = (50_000_000, 100_000_000);
 
-        let pclk1 = self.pclk1.unwrap_or(core::cmp::min(pclk1_max, hclk));
+        let pclk1 = self.pclk1.unwrap_or_else(|| core::cmp::min(pclk1_max, hclk));
         let (ppre1_bits, ppre1) = match (hclk + pclk1 - 1) / pclk1 {
             0 => unreachable!(),
             1 => (0b000, 1),
@@ -276,11 +276,11 @@ impl CFGR {
         };
 
         // Calculate real APB1 clock
-        let pclk1 = hclk / ppre1 as u32;
+        let pclk1 = hclk / u32::from(ppre1);
 
         assert!(pclk1 <= pclk1_max);
 
-        let pclk2 = self.pclk2.unwrap_or(core::cmp::min(pclk2_max, hclk));
+        let pclk2 = self.pclk2.unwrap_or_else(|| core::cmp::min(pclk2_max, hclk));
         let (ppre2_bits, ppre2) = match (hclk + pclk2 - 1) / pclk2 {
             0 => unreachable!(),
             1 => (0b000, 1),
@@ -291,7 +291,7 @@ impl CFGR {
         };
 
         // Calculate real APB2 clock
-        let pclk2 = hclk / ppre2 as u32;
+        let pclk2 = hclk / u32::from(ppre2);
 
         assert!(pclk2 <= pclk2_max);
 

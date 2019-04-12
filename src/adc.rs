@@ -18,16 +18,9 @@ const VTEMPCAL110: *const u16 = 0x1FFF_7A2E as *const u16;
 
 */
 
-use core::{ ptr, fmt };
-use embedded_hal::adc::{
-    Channel,
-    OneShot,
-};
-use crate::{
-    stm32,
-    gpio::*,
-    signature::VrefCal,
-};
+use crate::{gpio::*, signature::VrefCal, stm32};
+use core::fmt;
+use embedded_hal::adc::{Channel, OneShot};
 
 /// Vref internal signal, used for calibration
 pub struct Vref;
@@ -317,7 +310,7 @@ pub mod config {
         /// Right align output data
         Right,
         /// Left align output data
-        Left
+        Left,
     }
     impl From<Align> for bool {
         fn from(a: Align) -> bool {
@@ -422,7 +415,11 @@ pub mod config {
             self
         }
         /// change the external_trigger field
-        pub fn external_trigger(mut self, trigger_mode: TriggerMode, trigger: ExternalTrigger) -> Self {
+        pub fn external_trigger(
+            mut self,
+            trigger_mode: TriggerMode,
+            trigger: ExternalTrigger,
+        ) -> Self {
             self.external_trigger = (trigger_mode, trigger);
             self
         }
@@ -618,7 +615,11 @@ pub struct Adc<ADC> {
 }
 impl<ADC> fmt::Debug for Adc<ADC> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Adc: {{ calibrated_vdda: {:?}, max_sample: {:?}, config: {:?}, ... }}", self.calibrated_vdda, self.max_sample, self.config)
+        write!(
+            f,
+            "Adc: {{ calibrated_vdda: {:?}, max_sample: {:?}, config: {:?}, ... }}",
+            self.calibrated_vdda, self.max_sample, self.config
+        )
     }
 }
 
@@ -1062,8 +1063,6 @@ adc!(ADC2 => (adc2, ADC_COMMON, apb2enr, adc2en, apb2rstr, adcrst));
     feature = "stm32f479",
 ))]
 adc!(ADC3 => (adc3, ADC_COMMON, apb2enr, adc3en, apb2rstr, adcrst));
-
-
 
 #[cfg(feature = "stm32f401")]
 adc_pins!(
