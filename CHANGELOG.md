@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Properly terminate I2C read with a NACK then a STOP.
+
 ## [v0.4.0] - 2019-04-12
 
 ### Added

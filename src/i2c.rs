@@ -799,6 +799,8 @@ where
     type Error = Error;
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
+        if let Some((last, buffer)) = buffer.split_last_mut() {
+
         // Send a START condition and set ACK bit
         self.i2c.cr1.modify(|_, w| w.start().set_bit().ack().set_bit());
 
@@ -825,10 +827,17 @@ where
             *c = self.recv_byte()?;
         }
 
-        // Send STOP condition
-        self.i2c.cr1.modify(|_, w| w.stop().set_bit());
+        // Prepare to send NACK then STOP after next byte
+        self.i2c.cr1.modify(|_, w| w.ack().clear_bit().stop().set_bit());
+
+        // Receive last byte
+        *last = self.recv_byte()?;
 
         // Fallthrough is success
         Ok(())
+
+        } else {
+            Err(Error::OVERRUN)
+        }
     }
 }
