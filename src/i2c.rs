@@ -800,42 +800,40 @@ where
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         if let Some((last, buffer)) = buffer.split_last_mut() {
+            // Send a START condition and set ACK bit
+            self.i2c.cr1.modify(|_, w| w.start().set_bit().ack().set_bit());
 
-        // Send a START condition and set ACK bit
-        self.i2c.cr1.modify(|_, w| w.start().set_bit().ack().set_bit());
+            // Wait until START condition was generated
+            while self.i2c.sr1.read().sb().bit_is_clear() {}
 
-        // Wait until START condition was generated
-        while self.i2c.sr1.read().sb().bit_is_clear() {}
+            // Also wait until signalled we're master and everything is waiting for us
+            while {
+                let sr2 = self.i2c.sr2.read();
+                sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
+            } {}
 
-        // Also wait until signalled we're master and everything is waiting for us
-        while {
-            let sr2 = self.i2c.sr2.read();
-            sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
-        } {}
+            // Set up current address, we're trying to talk to
+            self.i2c.dr.write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
 
-        // Set up current address, we're trying to talk to
-        self.i2c.dr.write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
+            // Wait until address was sent
+            while self.i2c.sr1.read().addr().bit_is_clear() {}
 
-        // Wait until address was sent
-        while self.i2c.sr1.read().addr().bit_is_clear() {}
+            // Clear condition by reading SR2
+            self.i2c.sr2.read();
 
-        // Clear condition by reading SR2
-        self.i2c.sr2.read();
+            // Receive bytes into buffer
+            for c in buffer {
+                *c = self.recv_byte()?;
+            }
 
-        // Receive bytes into buffer
-        for c in buffer {
-            *c = self.recv_byte()?;
-        }
+            // Prepare to send NACK then STOP after next byte
+            self.i2c.cr1.modify(|_, w| w.ack().clear_bit().stop().set_bit());
 
-        // Prepare to send NACK then STOP after next byte
-        self.i2c.cr1.modify(|_, w| w.ack().clear_bit().stop().set_bit());
+            // Receive last byte
+            *last = self.recv_byte()?;
 
-        // Receive last byte
-        *last = self.recv_byte()?;
-
-        // Fallthrough is success
-        Ok(())
-
+            // Fallthrough is success
+            Ok(())
         } else {
             Err(Error::OVERRUN)
         }
