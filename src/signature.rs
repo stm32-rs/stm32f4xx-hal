@@ -4,6 +4,9 @@
 
 use core::str::from_utf8_unchecked;
 
+/// This is the test voltage, in millivolts of the calibration done at the factory
+pub const VDDA_CALIB: u32 = 3300;
+
 macro_rules! define_ptr_type {
     ($name: ident, $ptr: expr) => (
         impl $name {
