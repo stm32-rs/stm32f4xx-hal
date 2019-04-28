@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Implemented `Qei` trait
+
 ## [v0.5.0] - 2019-04-27
 
 ### Changed
