@@ -805,6 +805,7 @@ macro_rules! hal {
                     });
 
                     // configure as quadrature encoder
+                    // some chip variants declare `.bits()` as unsafe, some don't
                     #[allow(unused_unsafe)]
                     tim.smcr.write(|w| unsafe { w.sms().bits(3) });
 
