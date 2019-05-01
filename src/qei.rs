@@ -117,6 +117,7 @@ use crate::gpio::Alternate;
     feature = "stm32f401",
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f410",
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
@@ -261,7 +262,7 @@ where
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinC1<TIM1> for PA8<Alternate<AF2>> {}
+impl PinC1<TIM1> for PA8<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -282,7 +283,7 @@ impl PinC1<TIM1> for PA8<Alternate<AF2>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinC2<TIM1> for PA9<Alternate<AF2>> {}
+impl PinC2<TIM1> for PA9<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -302,7 +303,7 @@ impl PinC2<TIM1> for PA9<Alternate<AF2>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinC1<TIM1> for PE9<Alternate<AF2>> {}
+impl PinC1<TIM1> for PE9<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -322,7 +323,7 @@ impl PinC1<TIM1> for PE9<Alternate<AF2>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinC2<TIM1> for PE11<Alternate<AF2>> {}
+impl PinC2<TIM1> for PE11<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
