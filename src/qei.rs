@@ -794,7 +794,10 @@ macro_rules! hal {
         $(
             impl<PINS> Qei<$TIM, PINS> {
                 /// Configures a TIM peripheral as a quadrature encoder interface input
-                pub fn $tim(tim: $TIM, pins: PINS) -> Self {
+                pub fn $tim(tim: $TIM, pins: PINS) -> Self
+                where
+                    PINS: Pins<$TIM>
+                {
                     let rcc = unsafe { &(*RCC::ptr()) };
                     // enable and reset peripheral to a clean slate state
                     rcc.$apbenr.modify(|_, w| w.$timXen().set_bit());
