@@ -7,6 +7,7 @@ use crate::gpio::gpioa::*;
     feature = "stm32f401",
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f410",
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
@@ -79,6 +80,12 @@ use crate::gpio::gpiod::*;
     feature = "stm32f479"
 ))]
 use crate::gpio::gpioe::*;
+#[cfg(any(
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiof::*;
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -419,6 +426,12 @@ impl PinC2<TIM2> for PA1<Alternate<AF1>> {}
 ))]
 impl PinC2<TIM2> for PB3<Alternate<AF1>> {}
 
+#[cfg(feature = "stm32f446")]
+impl PinC1<TIM2> for PB8<Alternate<AF1>> {}
+
+#[cfg(feature = "stm32f446")]
+impl PinC2<TIM2> for PB9<Alternate<AF1>> {}
+
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -660,6 +673,23 @@ impl PinC1<TIM5> for PA0<Alternate<AF2>> {}
     feature = "stm32f479"
 ))]
 impl PinC2<TIM5> for PA1<Alternate<AF2>> {}
+
+#[cfg(feature = "stm32f410")]
+impl PinC1<TIM5> for PB12<Alternate<AF2>> {}
+
+#[cfg(any(
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl PinC1<TIM5> for PF3<Alternate<AF2>> {}
+
+#[cfg(any(
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl PinC2<TIM5> for PF4<Alternate<AF2>> {}
 
 #[cfg(any(
     feature = "stm32f405",
