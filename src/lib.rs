@@ -100,6 +100,8 @@ pub mod time;
 #[cfg(feature = "device-selected")]
 pub mod timer;
 #[cfg(feature = "device-selected")]
+pub mod qei;
+#[cfg(feature = "device-selected")]
 pub mod watchdog;
 #[cfg(feature = "device-selected")]
 pub mod adc;
