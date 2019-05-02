@@ -7,6 +7,7 @@ use crate::gpio::gpioa::*;
     feature = "stm32f401",
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f410",
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
@@ -80,20 +81,20 @@ use crate::gpio::gpiod::*;
 ))]
 use crate::gpio::gpioe::*;
 #[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::gpiof::*;
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
     feature = "stm32f415",
     feature = "stm32f417",
-    feature = "stm32f423",
     feature = "stm32f427",
     feature = "stm32f429",
     feature = "stm32f437",
     feature = "stm32f439",
-    feature = "stm32f446",
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
@@ -117,6 +118,7 @@ use crate::gpio::Alternate;
     feature = "stm32f401",
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f410",
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
@@ -261,7 +263,7 @@ where
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinC1<TIM1> for PA8<Alternate<AF2>> {}
+impl PinC1<TIM1> for PA8<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -282,7 +284,7 @@ impl PinC1<TIM1> for PA8<Alternate<AF2>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinC2<TIM1> for PA9<Alternate<AF2>> {}
+impl PinC2<TIM1> for PA9<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -302,7 +304,7 @@ impl PinC2<TIM1> for PA9<Alternate<AF2>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinC1<TIM1> for PE9<Alternate<AF2>> {}
+impl PinC1<TIM1> for PE9<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -322,7 +324,7 @@ impl PinC1<TIM1> for PE9<Alternate<AF2>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinC2<TIM1> for PE11<Alternate<AF2>> {}
+impl PinC2<TIM1> for PE11<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -423,6 +425,12 @@ impl PinC2<TIM2> for PA1<Alternate<AF1>> {}
     feature = "stm32f479"
 ))]
 impl PinC2<TIM2> for PB3<Alternate<AF1>> {}
+
+#[cfg(feature = "stm32f446")]
+impl PinC1<TIM2> for PB8<Alternate<AF1>> {}
+
+#[cfg(feature = "stm32f446")]
+impl PinC2<TIM2> for PB9<Alternate<AF1>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -666,21 +674,32 @@ impl PinC1<TIM5> for PA0<Alternate<AF2>> {}
 ))]
 impl PinC2<TIM5> for PA1<Alternate<AF2>> {}
 
+#[cfg(feature = "stm32f410")]
+impl PinC1<TIM5> for PB12<Alternate<AF2>> {}
+
+#[cfg(any(
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl PinC1<TIM5> for PF3<Alternate<AF2>> {}
+
+#[cfg(any(
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+impl PinC2<TIM5> for PF4<Alternate<AF2>> {}
+
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
     feature = "stm32f415",
     feature = "stm32f417",
-    feature = "stm32f423",
     feature = "stm32f427",
     feature = "stm32f429",
     feature = "stm32f437",
     feature = "stm32f439",
-    feature = "stm32f446",
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
@@ -689,18 +708,12 @@ impl PinC1<TIM5> for PH10<Alternate<AF2>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
     feature = "stm32f415",
     feature = "stm32f417",
-    feature = "stm32f423",
     feature = "stm32f427",
     feature = "stm32f429",
     feature = "stm32f437",
     feature = "stm32f439",
-    feature = "stm32f446",
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
@@ -781,7 +794,10 @@ macro_rules! hal {
         $(
             impl<PINS> Qei<$TIM, PINS> {
                 /// Configures a TIM peripheral as a quadrature encoder interface input
-                pub fn $tim(tim: $TIM, pins: PINS) -> Self {
+                pub fn $tim(tim: $TIM, pins: PINS) -> Self
+                where
+                    PINS: Pins<$TIM>
+                {
                     let rcc = unsafe { &(*RCC::ptr()) };
                     // enable and reset peripheral to a clean slate state
                     rcc.$apbenr.modify(|_, w| w.$timXen().set_bit());
@@ -790,7 +806,7 @@ macro_rules! hal {
 
                     // Configure TxC1 and TxC2 as captures
                     tim.ccmr1_output
-                        .write(|w| unsafe { w.bits({ (0b01 << 0) | (0b01 << 8) }) });
+                        .write(|w| unsafe { w.cc1s().bits(0b01).cc2s().bits(0b01) });
 
                     // enable and configure to capture on rising edge
                     tim.ccer.write(|w| {
