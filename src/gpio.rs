@@ -192,22 +192,22 @@ macro_rules! gpio {
                 fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
                     let offset = 4 * (self.i % 4);
                     match self.i {
-                        0...3 => {
+                        0..=3 => {
                             syscfg.exticr1.modify(|r, w| unsafe {
                                 w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
-                        4...7 => {
+                        4..=7 => {
                             syscfg.exticr2.modify(|r, w| unsafe {
                                 w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
-                        8...11 => {
+                        8..=11 => {
                             syscfg.exticr3.modify(|r, w| unsafe {
                                 w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
-                        12...15 => {
+                        12..=15 => {
                             syscfg.exticr4.modify(|r, w| unsafe {
                                 w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });

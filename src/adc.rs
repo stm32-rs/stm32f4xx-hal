@@ -915,8 +915,8 @@ macro_rules! adc {
                     let st = u32::from(st);
                     let ch = u32::from(channel);
                     match channel {
-                        0...9   => self.adc_reg.smpr2.modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch, 3, st)) }),
-                        10...18 => self.adc_reg.smpr1.modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch-10, 3, st)) }),
+                        0..=9   => self.adc_reg.smpr2.modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch, 3, st)) }),
+                        10..=18 => self.adc_reg.smpr1.modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch-10, 3, st)) }),
                         _ => unimplemented!(),
                     }
                 }
