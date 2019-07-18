@@ -93,7 +93,16 @@ impl CFGR {
 
         // Input divisor from PLL source clock, must result to frequency in
         // the range from 1 to 2 MHz
-        let pllm = (pllsrcclk + 1_999_999) / 2_000_000;
+        let pllm_min = (pllsrcclk + 1_999_999) / 2_000_000;
+        let pllm_max = pllsrcclk / 1_000_000;
+
+        // Find the lowest pllm value that minimize the difference between
+        // requested sysclk and actual sysclk.
+        let pllm = (pllm_min..=pllm_max).min_by_key(|pllm| {
+            let vco_in = pllsrcclk / pllm;
+            let plln = sysclk * sysclk_div / vco_in;
+            sysclk - (vco_in * plln / sysclk_div)
+        }).unwrap();
 
         let vco_in = pllsrcclk / pllm;
         assert!(vco_in >= 1_000_000 && vco_in <= 2_000_000);
