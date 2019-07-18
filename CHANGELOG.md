@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- [breaking-change] Updated embedded-hal dependency to v0.2.3 and switched
+  to digtial::v2 traits.
+
 ### Added
 
 - Implemented `Qei` trait
