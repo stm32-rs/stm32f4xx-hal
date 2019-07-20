@@ -26,9 +26,9 @@ features = ["stm32f429", "rt"]
 
 [dependencies]
 cortex-m = ">=0.5.8,<0.7"
-cortex-m-rt = "0.6.8"
+cortex-m-rt = "0.6.9"
 nb = "0.1.2"
-stm32f4 = "0.7.0"
+stm32f4 = "0.7.1"
 
 [dependencies.bare-metal]
 version = "0.2.4"
