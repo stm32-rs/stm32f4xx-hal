@@ -159,7 +159,7 @@ macro_rules! gpio {
 
             impl<MODE> StatefulOutputPin for $PXx<Output<MODE>> {
                 fn is_set_high(&self) -> Result<bool, Self::Error> {
-                    Ok(!self.is_set_low().unwrap())
+                    self.is_set_low().map(|v| !v)
                 }
 
                 fn is_set_low(&self) -> Result<bool, Self::Error> {
@@ -174,7 +174,7 @@ macro_rules! gpio {
                 type Error = Infallible;
 
                 fn is_high(&self) -> Result<bool, Self::Error> {
-                    Ok(!self.is_low().unwrap())
+                    self.is_low().map(|v| !v)
                 }
 
                 fn is_low(&self) -> Result<bool, Self::Error> {
@@ -187,7 +187,7 @@ macro_rules! gpio {
                 type Error = Infallible;
 
                 fn is_high(&self) -> Result<bool, Self::Error> {
-                    Ok(!self.is_low().unwrap())
+                    self.is_low().map(|v| !v)
                 }
 
                 fn is_low(&self) -> Result<bool, Self::Error> {
@@ -583,7 +583,7 @@ macro_rules! gpio {
 
                 impl<MODE> StatefulOutputPin for $PXi<Output<MODE>> {
                     fn is_set_high(&self) -> Result<bool, Self::Error> {
-                        Ok(!self.is_set_low().unwrap())
+                        self.is_set_low().map(|v| !v)
                     }
 
                     fn is_set_low(&self) -> Result<bool, Self::Error> {
@@ -598,7 +598,7 @@ macro_rules! gpio {
                     type Error = Infallible;
 
                     fn is_high(&self) -> Result<bool, Self::Error> {
-                        Ok(!self.is_low().unwrap())
+                        self.is_low().map(|v| !v)
                     }
 
                     fn is_low(&self) -> Result<bool, Self::Error> {
@@ -611,7 +611,7 @@ macro_rules! gpio {
                     type Error = Infallible;
 
                     fn is_high(&self) -> Result<bool, Self::Error> {
-                        Ok(!self.is_low().unwrap())
+                        self.is_low().map(|v| !v)
                     }
 
                     fn is_low(&self) -> Result<bool, Self::Error> {
