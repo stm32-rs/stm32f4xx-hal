@@ -93,6 +93,7 @@ macro_rules! gpio {
         /// GPIO
         pub mod $gpiox {
             use core::marker::PhantomData;
+            use core::convert::Infallible;
 
             use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, toggleable};
             use crate::stm32::$GPIOX;
@@ -141,7 +142,7 @@ macro_rules! gpio {
             }
 
             impl<MODE> OutputPin for $PXx<Output<MODE>> {
-                type Error = ();
+                type Error = Infallible;
 
                 fn set_high(&mut self) -> Result<(), Self::Error> {
                     // NOTE(unsafe) atomic write to a stateless register
@@ -158,7 +159,7 @@ macro_rules! gpio {
 
             impl<MODE> StatefulOutputPin for $PXx<Output<MODE>> {
                 fn is_set_high(&self) -> Result<bool, Self::Error> {
-                    Ok(!self.is_set_low().unwrap())
+                    self.is_set_low().map(|v| !v)
                 }
 
                 fn is_set_low(&self) -> Result<bool, Self::Error> {
@@ -170,10 +171,10 @@ macro_rules! gpio {
             impl<MODE> toggleable::Default for $PXx<Output<MODE>> {}
 
             impl<MODE> InputPin for $PXx<Output<MODE>> {
-                type Error = ();
+                type Error = Infallible;
 
                 fn is_high(&self) -> Result<bool, Self::Error> {
-                    Ok(!self.is_low().unwrap())
+                    self.is_low().map(|v| !v)
                 }
 
                 fn is_low(&self) -> Result<bool, Self::Error> {
@@ -183,10 +184,10 @@ macro_rules! gpio {
             }
 
             impl<MODE> InputPin for $PXx<Input<MODE>> {
-                type Error = ();
+                type Error = Infallible;
 
                 fn is_high(&self) -> Result<bool, Self::Error> {
-                    Ok(!self.is_low().unwrap())
+                    self.is_low().map(|v| !v)
                 }
 
                 fn is_low(&self) -> Result<bool, Self::Error> {
@@ -565,7 +566,7 @@ macro_rules! gpio {
                 }
 
                 impl<MODE> OutputPin for $PXi<Output<MODE>> {
-                    type Error = ();
+                    type Error = Infallible;
 
                     fn set_high(&mut self) -> Result<(), Self::Error> {
                         // NOTE(unsafe) atomic write to a stateless register
@@ -582,7 +583,7 @@ macro_rules! gpio {
 
                 impl<MODE> StatefulOutputPin for $PXi<Output<MODE>> {
                     fn is_set_high(&self) -> Result<bool, Self::Error> {
-                        Ok(!self.is_set_low().unwrap())
+                        self.is_set_low().map(|v| !v)
                     }
 
                     fn is_set_low(&self) -> Result<bool, Self::Error> {
@@ -594,10 +595,10 @@ macro_rules! gpio {
                 impl<MODE> toggleable::Default for $PXi<Output<MODE>> {}
 
                 impl<MODE> InputPin for $PXi<Output<MODE>> {
-                    type Error = ();
+                    type Error = Infallible;
 
                     fn is_high(&self) -> Result<bool, Self::Error> {
-                        Ok(!self.is_low().unwrap())
+                        self.is_low().map(|v| !v)
                     }
 
                     fn is_low(&self) -> Result<bool, Self::Error> {
@@ -607,10 +608,10 @@ macro_rules! gpio {
                 }
 
                 impl<MODE> InputPin for $PXi<Input<MODE>> {
-                    type Error = ();
+                    type Error = Infallible;
 
                     fn is_high(&self) -> Result<bool, Self::Error> {
-                        Ok(!self.is_low().unwrap())
+                        self.is_low().map(|v| !v)
                     }
 
                     fn is_low(&self) -> Result<bool, Self::Error> {
