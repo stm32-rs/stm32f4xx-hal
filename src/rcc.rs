@@ -165,6 +165,9 @@ impl CFGR {
             // Adjust flash wait states
             flash.acr.modify(|_, w|
                 w.latency().bits(((sysclk - 1) / flash_latency_step) as u8)
+                .prften().set_bit()
+                .icen().set_bit()
+                .dcen().set_bit()
             )
         }
     }
