@@ -177,11 +177,27 @@ macro_rules! hal {
                 }
 
                 /// Starts listening for an `event`
+                ///
+                /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
+                /// receiving events.
                 pub fn listen(&mut self, event: Event) {
                     match event {
                         Event::TimeOut => {
                             // Enable update event interrupt
                             self.tim.dier.write(|w| w.uie().set_bit());
+                        }
+                    }
+                }
+
+                /// Clears interrupt associated with `event`.
+                ///
+                /// If the interrupt is not cleared, it will immediately retrigger after
+                /// the ISR has finished.
+                pub fn clear_interrupt(&mut self, event: Event) {
+                    match event {
+                        Event::TimeOut => {
+                            // Clear interrupt flag
+                            self.tim.sr.write(|w| w.uif().clear_bit());
                         }
                     }
                 }
