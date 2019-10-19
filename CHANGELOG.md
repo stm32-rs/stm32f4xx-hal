@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Implemented `Qei` trait
+- Implemented `clear_interrupt()` method for TIM timers
 
 ## [v0.5.0] - 2019-04-27
 
