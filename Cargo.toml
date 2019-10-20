@@ -46,6 +46,14 @@ version = "1.0.2"
 features = ["unproven"]
 version = "0.2.3"
 
+[dev-dependencies]
+panic-semihosting = "0.5.3"
+cortex-m-semihosting = "0.3.3"
+arrayvec = { version = "0.5.1", default-features = false }
+panic-halt = "0.2.0"
+ssd1306 = "0.2.6"
+embedded-graphics = "0.4.9"
+
 [features]
 device-selected = []
 rt = ["stm32f4/rt"]

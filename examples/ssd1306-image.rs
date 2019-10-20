@@ -46,19 +46,19 @@ fn main() -> ! {
         disp.flush().unwrap();
 
         // Display the rustacean
-        let im = Image1BPP::new(include_bytes!("../resources/rustacean.data"), 128, 64);
+        let im = Image1BPP::new(include_bytes!("./ssd1306-image.data"), 128, 64);
         disp.draw(im.into_iter());
         disp.flush().unwrap();
 
         // Set up state for the loop
         let mut orientation = DisplayRotation::Rotate0;
-        let mut was_pressed = btn.is_low();
+        let mut was_pressed = btn.is_low().unwrap();
 
         // This runs continuously, as fast as possible
         loop {
             // Check if the button has just been pressed.
             // Remember, active low.
-            let is_pressed = btn.is_low();
+            let is_pressed = btn.is_low().unwrap();
             if !was_pressed && is_pressed {
                 // Since the button was pressed, flip the screen upside down
                 orientation = get_next_rotation(orientation);
