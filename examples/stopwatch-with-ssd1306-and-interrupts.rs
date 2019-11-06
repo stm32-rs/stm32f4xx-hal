@@ -32,7 +32,6 @@ use ssd1306::{prelude::*, Builder as SSD1306Builder};
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
 static TIMER_TIM2: Mutex<RefCell<Option<Timer<stm32::TIM2>>>> = Mutex::new(RefCell::new(None));
 static STATE: Mutex<Cell<StopwatchState>> = Mutex::new(Cell::new(StopwatchState::Ready));
-static EXTI: Mutex<RefCell<Option<stm32::EXTI>>> = Mutex::new(RefCell::new(None));
 static BUTTON: Mutex<RefCell<Option<PC13<Input<PullUp>>>>> = Mutex::new(RefCell::new(None));
 
 #[derive(Clone, Copy)]
@@ -75,10 +74,8 @@ fn main() -> ! {
         let mut timer = Timer::tim2(dp.TIM2, 1.khz(), clocks);
         timer.listen(Event::TimeOut);
 
-        let exti = dp.EXTI;
         free(|cs| {
             TIMER_TIM2.borrow(cs).replace(Some(timer));
-            EXTI.borrow(cs).replace(Some(exti));
             BUTTON.borrow(cs).replace(Some(board_btn));
         });
 
@@ -141,12 +138,11 @@ fn TIM2() {
 fn EXTI15_10() {
     free(|cs| {
         let mut btn_ref = BUTTON.borrow(cs).borrow_mut();
-        let mut exti_ref = EXTI.borrow(cs).borrow_mut();
-        if let (Some(ref mut btn), Some(ref mut exti)) = (btn_ref.deref_mut(), exti_ref.deref_mut())
+        if let Some(ref mut btn) = btn_ref.deref_mut()
         {
             // We cheat and don't bother checking _which_ exact interrupt line fired - there's only
             // ever going to be one in this example.
-            btn.clear_interrupt_pending_bit(exti);
+            btn.clear_interrupt_pending_bit();
 
             let state = STATE.borrow(cs).get();
             // Run the state machine in an ISR - probably not something you want to do in most
