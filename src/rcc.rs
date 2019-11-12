@@ -1,5 +1,5 @@
 use crate::stm32::RCC;
-use crate::stm32::rcc::cfgr::{HPREW, SWW};
+use crate::stm32::rcc::cfgr::{HPRE_A, SW_A};
 
 use crate::time::Hertz;
 
@@ -236,15 +236,15 @@ impl CFGR {
         let hclk = self.hclk.unwrap_or(sysclk);
         let (hpre_bits, hpre_div) = match (sysclk + hclk - 1) / hclk {
             0 => unreachable!(),
-            1 => (HPREW::DIV1, 1),
-            2 => (HPREW::DIV2, 2),
-            3..=5 => (HPREW::DIV4, 4),
-            6..=11 => (HPREW::DIV8, 8),
-            12..=39 => (HPREW::DIV16, 16),
-            40..=95 => (HPREW::DIV64, 64),
-            96..=191 => (HPREW::DIV128, 128),
-            192..=383 => (HPREW::DIV256, 256),
-            _ => (HPREW::DIV512, 512),
+            1 => (HPRE_A::DIV1, 1),
+            2 => (HPRE_A::DIV2, 2),
+            3..=5 => (HPRE_A::DIV4, 4),
+            6..=11 => (HPRE_A::DIV8, 8),
+            12..=39 => (HPRE_A::DIV16, 16),
+            40..=95 => (HPRE_A::DIV64, 64),
+            96..=191 => (HPRE_A::DIV128, 128),
+            192..=383 => (HPRE_A::DIV256, 256),
+            _ => (HPRE_A::DIV512, 512),
         };
 
         // Calculate real AHB clock
@@ -333,11 +333,11 @@ impl CFGR {
                 .variant(hpre_bits)
                 .sw()
                 .variant(if use_pll {
-                    SWW::PLL
+                    SW_A::PLL
                 } else if self.hse.is_some() {
-                    SWW::HSE
+                    SW_A::HSE
                 } else {
-                    SWW::HSI
+                    SW_A::HSI
                 })
         });
 
