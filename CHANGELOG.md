@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- [breaking-change] Updated stm32f4 dependency to v0.9.0.
+
 ### Added
 
 - Added examples in the examples folder.
