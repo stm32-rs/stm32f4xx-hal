@@ -52,8 +52,8 @@ fn main() -> ! {
         let i2c = I2c::i2c1(
             dp.I2C1,
             (
-                gpiob.pb8.into_alternate_af4(),
-                gpiob.pb9.into_alternate_af4(),
+                gpiob.pb8.into_alternate_af4().set_open_drain(),
+                gpiob.pb9.into_alternate_af4().set_open_drain(),
             ),
             400.khz(),
             clocks,
