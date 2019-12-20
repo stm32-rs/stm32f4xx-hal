@@ -80,10 +80,10 @@ fn main() -> ! {
         });
 
         // Enable interrupts
-        stm32::NVIC::unpend(hal::interrupt::TIM2);
-        stm32::NVIC::unpend(hal::interrupt::EXTI15_10);
+        stm32::NVIC::unpend(hal::stm32::Interrupt::TIM2);
+        stm32::NVIC::unpend(hal::stm32::Interrupt::EXTI15_10);
         unsafe {
-            stm32::NVIC::unmask(hal::interrupt::EXTI15_10);
+            stm32::NVIC::unmask(hal::stm32::Interrupt::EXTI15_10);
         };
 
         let mut delay = Delay::new(cp.SYST, clocks);
@@ -138,8 +138,7 @@ fn TIM2() {
 fn EXTI15_10() {
     free(|cs| {
         let mut btn_ref = BUTTON.borrow(cs).borrow_mut();
-        if let Some(ref mut btn) = btn_ref.deref_mut()
-        {
+        if let Some(ref mut btn) = btn_ref.deref_mut() {
             // We cheat and don't bother checking _which_ exact interrupt line fired - there's only
             // ever going to be one in this example.
             btn.clear_interrupt_pending_bit();
@@ -175,12 +174,12 @@ fn setup_clocks(rcc: Rcc) -> Clocks {
 fn stopwatch_start<'cs>(cs: &'cs CriticalSection) {
     ELAPSED_MS.borrow(cs).replace(0);
     unsafe {
-        stm32::NVIC::unmask(hal::interrupt::TIM2);
+        stm32::NVIC::unmask(hal::stm32::Interrupt::TIM2);
     }
 }
 
 fn stopwatch_stop<'cs>(_cs: &'cs CriticalSection) {
-    stm32::NVIC::mask(hal::interrupt::TIM2);
+    stm32::NVIC::mask(hal::stm32::Interrupt::TIM2);
 }
 
 // Formatting requires the arrayvec crate
