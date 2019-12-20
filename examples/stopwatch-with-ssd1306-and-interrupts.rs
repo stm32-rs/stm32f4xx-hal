@@ -9,7 +9,6 @@
 //!
 //! Note that `--release` is required to fix link errors for smaller devices.
 //!
-//!
 //! Press the User button on an STM32 Nucleo board to start/stop the timer. Pressing the Reset
 //! button will reset the stopwatch to zero.
 //!
