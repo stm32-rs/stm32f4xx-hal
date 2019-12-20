@@ -19,14 +19,10 @@ extern crate stm32f4xx_hal as hal;
 
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
-use ssd1306::{prelude::*, Builder as SSD1306Builder};
 use embedded_graphics::{image::Image1BPP, prelude::*};
+use ssd1306::{prelude::*, Builder as SSD1306Builder};
 
-use crate::hal::{
-    prelude::*,
-    stm32,
-    i2c::I2c
-};
+use crate::hal::{i2c::I2c, prelude::*, stm32};
 
 #[entry]
 fn main() -> ! {
@@ -98,7 +94,7 @@ fn get_next_rotation(rotation: DisplayRotation) -> DisplayRotation {
         // reset to 0 degrees landscape. On most SSD1306 displays, this means down is towards
         // the flat flex coming out of the display (and up is towards the breakout board pins).
         _ => DisplayRotation::Rotate0,
-    }
+    };
 }
 
 #[exception]
