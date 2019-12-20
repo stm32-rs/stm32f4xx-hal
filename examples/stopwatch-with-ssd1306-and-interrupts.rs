@@ -1,7 +1,22 @@
+//! A simple stopwatch app running on an SSD1306 display
+//!
+//! This example requires the `rt` feature to be enabled. For example, to run on an STM32F411 Nucleo
+//! dev board, run the following:
+//!
+//! ```bash
+//! cargo run --features stm32f411,rt --release --example stopwatch-with-ssd1306-and-interrupts
+//! ```
+//!
+//! Note that `--release` is required to fix link errors for smaller devices.
+//!
+//!
+//! Press the User button on an STM32 Nucleo board to start/stop the timer. Pressing the Reset
+//! button will reset the stopwatch to zero.
+//!
+//! Video of this example running: https://imgur.com/a/lQTQFLy
+
 #![no_std]
 #![no_main]
-
-// Video of this example running: https://imgur.com/a/lQTQFLy
 
 extern crate panic_semihosting; // logs messages to the host stderr; requires a debugger
 extern crate stm32f4xx_hal as hal;

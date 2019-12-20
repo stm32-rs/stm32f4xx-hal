@@ -1,3 +1,14 @@
+//! Draw Ferris the Rust mascot on an SSD1306 display
+//!
+//! This example requires the `rt` feature to be enabled. For example, to run on an STM32F411 Nucleo
+//! dev board, run the following:
+//!
+//! ```bash
+//! cargo run --features stm32f411,rt --release --example ssd1306-image
+//! ```
+//!
+//! Note that `--release` is required to fix link errors for smaller devices.
+
 #![no_std]
 #![no_main]
 
