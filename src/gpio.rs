@@ -2,7 +2,8 @@
 
 use core::marker::PhantomData;
 
-use crate::stm32::{EXTI, SYSCFG};
+use crate::stm32::EXTI;
+use crate::syscfg::Syscfg;
 
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
@@ -79,7 +80,7 @@ pub enum Edge {
 
 /// External Interrupt Pin
 pub trait ExtiPin {
-    fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG);
+    fn make_interrupt_source(&mut self, syscfg: &mut Syscfg);
     fn trigger_on_edge(&mut self, exti: &mut EXTI, level: Edge);
     fn enable_interrupt(&mut self, exti: &mut EXTI);
     fn disable_interrupt(&mut self, exti: &mut EXTI);
@@ -98,7 +99,8 @@ macro_rules! gpio {
             use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, toggleable};
             use crate::stm32::$GPIOX;
 
-            use crate::stm32::{RCC, EXTI, SYSCFG};
+            use crate::stm32::{RCC, EXTI};
+            use crate::syscfg::Syscfg;
             use super::{
                 Alternate, Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AF0, AF1, AF2, AF3, AF4, AF5, AF6, AF7, AF8, AF9, AF10,
@@ -198,26 +200,26 @@ macro_rules! gpio {
 
             impl<MODE> ExtiPin for $PXx<Input<MODE>> {
                 /// Make corresponding EXTI line sensitive to this pin
-                fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
+                fn make_interrupt_source(&mut self, syscfg: &mut Syscfg) {
                     let offset = 4 * (self.i % 4);
                     match self.i {
                         0..=3 => {
-                            syscfg.exticr1.modify(|r, w| unsafe {
+                            syscfg.raw.exticr1.modify(|r, w| unsafe {
                                 w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
                         4..=7 => {
-                            syscfg.exticr2.modify(|r, w| unsafe {
+                            syscfg.raw.exticr2.modify(|r, w| unsafe {
                                 w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
                         8..=11 => {
-                            syscfg.exticr3.modify(|r, w| unsafe {
+                            syscfg.raw.exticr3.modify(|r, w| unsafe {
                                 w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
                         12..=15 => {
-                            syscfg.exticr4.modify(|r, w| unsafe {
+                            syscfg.raw.exticr4.modify(|r, w| unsafe {
                                 w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                             });
                         },
@@ -622,9 +624,9 @@ macro_rules! gpio {
 
                 impl<MODE> ExtiPin for $PXi<Input<MODE>> {
                     /// Configure EXTI Line $i to trigger from this pin.
-                    fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
+                    fn make_interrupt_source(&mut self, syscfg: &mut Syscfg) {
                         let offset = 4 * ($i % 4);
-                        syscfg.$exticri.modify(|r, w| unsafe {
+                        syscfg.raw.$exticri.modify(|r, w| unsafe {
                             let mut exticr = r.bits();
                             exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
                             w.bits(exticr)
