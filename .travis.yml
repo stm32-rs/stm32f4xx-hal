@@ -17,4 +17,6 @@ matrix:
 install:
   - rustup target add thumbv7em-none-eabihf
 
-script: tools/check.py $COMMAND
+script:
+  - tools/check.py $COMMAND
+  - cargo build --examples --features=stm32f411,rt --release

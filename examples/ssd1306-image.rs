@@ -1,3 +1,14 @@
+//! Draw Ferris the Rust mascot on an SSD1306 display
+//!
+//! This example requires the `rt` feature to be enabled. For example, to run on an STM32F411 Nucleo
+//! dev board, run the following:
+//!
+//! ```bash
+//! cargo run --features stm32f411,rt --release --example ssd1306-image
+//! ```
+//!
+//! Note that `--release` is required to fix link errors for smaller devices.
+
 #![no_std]
 #![no_main]
 
@@ -8,14 +19,10 @@ extern crate stm32f4xx_hal as hal;
 
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
-use ssd1306::{prelude::*, Builder as SSD1306Builder};
 use embedded_graphics::{image::Image1BPP, prelude::*};
+use ssd1306::{prelude::*, Builder as SSD1306Builder};
 
-use crate::hal::{
-    prelude::*,
-    stm32,
-    i2c::I2c
-};
+use crate::hal::{i2c::I2c, prelude::*, stm32};
 
 #[entry]
 fn main() -> ! {
@@ -30,8 +37,8 @@ fn main() -> ! {
         // Set up I2C - SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F446xC/E datasheet page 60. Pin assignment as per the Nucleo-F446 board.
         let gpiob = dp.GPIOB.split();
-        let scl = gpiob.pb8.into_alternate_af4();
-        let sda = gpiob.pb9.into_alternate_af4();
+        let scl = gpiob.pb8.into_alternate_af4().set_open_drain();
+        let sda = gpiob.pb9.into_alternate_af4().set_open_drain();
         let i2c = I2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor
@@ -87,7 +94,7 @@ fn get_next_rotation(rotation: DisplayRotation) -> DisplayRotation {
         // reset to 0 degrees landscape. On most SSD1306 displays, this means down is towards
         // the flat flex coming out of the display (and up is towards the breakout board pins).
         _ => DisplayRotation::Rotate0,
-    }
+    };
 }
 
 #[exception]

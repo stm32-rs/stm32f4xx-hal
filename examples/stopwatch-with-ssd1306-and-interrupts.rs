@@ -1,7 +1,21 @@
+//! A simple stopwatch app running on an SSD1306 display
+//!
+//! This example requires the `rt` feature to be enabled. For example, to run on an STM32F411 Nucleo
+//! dev board, run the following:
+//!
+//! ```bash
+//! cargo run --features stm32f411,rt --release --example stopwatch-with-ssd1306-and-interrupts
+//! ```
+//!
+//! Note that `--release` is required to fix link errors for smaller devices.
+//!
+//! Press the User button on an STM32 Nucleo board to start/stop the timer. Pressing the Reset
+//! button will reset the stopwatch to zero.
+//!
+//! Video of this example running: https://imgur.com/a/lQTQFLy
+
 #![no_std]
 #![no_main]
-
-// Video of this example running: https://imgur.com/a/lQTQFLy
 
 extern crate panic_semihosting; // logs messages to the host stderr; requires a debugger
 extern crate stm32f4xx_hal as hal;
@@ -52,8 +66,8 @@ fn main() -> ! {
         let i2c = I2c::i2c1(
             dp.I2C1,
             (
-                gpiob.pb8.into_alternate_af4(),
-                gpiob.pb9.into_alternate_af4(),
+                gpiob.pb8.into_alternate_af4().set_open_drain(),
+                gpiob.pb9.into_alternate_af4().set_open_drain(),
             ),
             400.khz(),
             clocks,
@@ -80,10 +94,10 @@ fn main() -> ! {
         });
 
         // Enable interrupts
-        stm32::NVIC::unpend(hal::interrupt::TIM2);
-        stm32::NVIC::unpend(hal::interrupt::EXTI15_10);
+        stm32::NVIC::unpend(hal::stm32::Interrupt::TIM2);
+        stm32::NVIC::unpend(hal::stm32::Interrupt::EXTI15_10);
         unsafe {
-            stm32::NVIC::unmask(hal::interrupt::EXTI15_10);
+            stm32::NVIC::unmask(hal::stm32::Interrupt::EXTI15_10);
         };
 
         let mut delay = Delay::new(cp.SYST, clocks);
@@ -138,8 +152,7 @@ fn TIM2() {
 fn EXTI15_10() {
     free(|cs| {
         let mut btn_ref = BUTTON.borrow(cs).borrow_mut();
-        if let Some(ref mut btn) = btn_ref.deref_mut()
-        {
+        if let Some(ref mut btn) = btn_ref.deref_mut() {
             // We cheat and don't bother checking _which_ exact interrupt line fired - there's only
             // ever going to be one in this example.
             btn.clear_interrupt_pending_bit();
@@ -175,12 +188,12 @@ fn setup_clocks(rcc: Rcc) -> Clocks {
 fn stopwatch_start<'cs>(cs: &'cs CriticalSection) {
     ELAPSED_MS.borrow(cs).replace(0);
     unsafe {
-        stm32::NVIC::unmask(hal::interrupt::TIM2);
+        stm32::NVIC::unmask(hal::stm32::Interrupt::TIM2);
     }
 }
 
 fn stopwatch_stop<'cs>(_cs: &'cs CriticalSection) {
-    stm32::NVIC::mask(hal::interrupt::TIM2);
+    stm32::NVIC::mask(hal::stm32::Interrupt::TIM2);
 }
 
 // Formatting requires the arrayvec crate
