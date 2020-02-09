@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Added more type states for open drain AF modes so we can prevent (potential fatal) I2C misuse
 - [breaking-change] Updated stm32f4 dependency to v0.9.0.
 
 ### Added
