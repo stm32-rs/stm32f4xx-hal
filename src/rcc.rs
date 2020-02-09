@@ -1,5 +1,5 @@
-use crate::stm32::RCC;
 use crate::stm32::rcc::cfgr::{HPRE_A, SW_A};
+use crate::stm32::RCC;
 
 use crate::time::Hertz;
 
@@ -81,8 +81,7 @@ impl CFGR {
         self
     }
 
-    fn pll_setup(&self) -> (bool, u32)
-    {
+    fn pll_setup(&self) -> (bool, u32) {
         let rcc = unsafe { &*RCC::ptr() };
 
         let pllsrcclk = self.hse.unwrap_or(HSI);
@@ -98,11 +97,13 @@ impl CFGR {
 
         // Find the lowest pllm value that minimize the difference between
         // requested sysclk and actual sysclk.
-        let pllm = (pllm_min..=pllm_max).min_by_key(|pllm| {
-            let vco_in = pllsrcclk / pllm;
-            let plln = sysclk * sysclk_div / vco_in;
-            sysclk - (vco_in * plln / sysclk_div)
-        }).unwrap();
+        let pllm = (pllm_min..=pllm_max)
+            .min_by_key(|pllm| {
+                let vco_in = pllsrcclk / pllm;
+                let plln = sysclk * sysclk_div / vco_in;
+                sysclk - (vco_in * plln / sysclk_div)
+            })
+            .unwrap();
 
         let vco_in = pllsrcclk / pllm;
         assert!(vco_in >= 1_000_000 && vco_in <= 2_000_000);
@@ -163,12 +164,16 @@ impl CFGR {
         unsafe {
             let flash = &(*FLASH::ptr());
             // Adjust flash wait states
-            flash.acr.modify(|_, w|
-                w.latency().bits(((sysclk - 1) / flash_latency_step) as u8)
-                .prften().set_bit()
-                .icen().set_bit()
-                .dcen().set_bit()
-            )
+            flash.acr.modify(|_, w| {
+                w.latency()
+                    .bits(((sysclk - 1) / flash_latency_step) as u8)
+                    .prften()
+                    .set_bit()
+                    .icen()
+                    .set_bit()
+                    .dcen()
+                    .set_bit()
+            })
         }
     }
 
@@ -277,7 +282,9 @@ impl CFGR {
         ))]
         let (pclk1_max, pclk2_max) = (50_000_000, 100_000_000);
 
-        let pclk1 = self.pclk1.unwrap_or_else(|| core::cmp::min(pclk1_max, hclk));
+        let pclk1 = self
+            .pclk1
+            .unwrap_or_else(|| core::cmp::min(pclk1_max, hclk));
         let (ppre1_bits, ppre1) = match (hclk + pclk1 - 1) / pclk1 {
             0 => unreachable!(),
             1 => (0b000, 1),
@@ -292,7 +299,9 @@ impl CFGR {
 
         assert!(pclk1 <= pclk1_max);
 
-        let pclk2 = self.pclk2.unwrap_or_else(|| core::cmp::min(pclk2_max, hclk));
+        let pclk2 = self
+            .pclk2
+            .unwrap_or_else(|| core::cmp::min(pclk2_max, hclk));
         let (ppre2_bits, ppre2) = match (hclk + pclk2 - 1) / pclk2 {
             0 => unreachable!(),
             1 => (0b000, 1),

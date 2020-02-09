@@ -8,7 +8,7 @@ use core::str::from_utf8_unchecked;
 pub const VDDA_CALIB: u32 = 3300;
 
 macro_rules! define_ptr_type {
-    ($name: ident, $ptr: expr) => (
+    ($name: ident, $ptr: expr) => {
         impl $name {
             fn ptr() -> *const Self {
                 $ptr as *const _
@@ -19,7 +19,7 @@ macro_rules! define_ptr_type {
                 unsafe { &*Self::ptr() }
             }
         }
-    )
+    };
 }
 
 /// Uniqure Device ID register
@@ -50,9 +50,7 @@ impl Uid {
 
     /// Lot number
     pub fn lot_num(&self) -> &str {
-        unsafe {
-            from_utf8_unchecked(&self.waf_lot[1..])
-        }
+        unsafe { from_utf8_unchecked(&self.waf_lot[1..]) }
     }
 }
 
