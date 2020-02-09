@@ -30,7 +30,13 @@ pub struct AF13;
 pub struct AF14;
 pub struct AF15;
 
+/// Some alternate mode (type state)
 pub struct Alternate<MODE> {
+    _mode: PhantomData<MODE>,
+}
+
+/// Some alternate mode in open drain configuration (type state)
+pub struct AlternateOD<MODE> {
     _mode: PhantomData<MODE>,
 }
 
@@ -100,7 +106,7 @@ macro_rules! gpio {
 
             use crate::stm32::{RCC, EXTI, SYSCFG};
             use super::{
-                Alternate, Floating, GpioExt, Input, OpenDrain, Output, Speed,
+                Alternate, AlternateOD, Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AF0, AF1, AF2, AF3, AF4, AF5, AF6, AF7, AF8, AF9, AF10,
                 AF11, AF12, AF13, AF14, AF15, Analog, Edge, ExtiPin,
             };
@@ -383,6 +389,102 @@ macro_rules! gpio {
                         $PXi { _mode: PhantomData }
                     }
 
+                    /// Configures the pin to operate in AF0 open drain mode
+                    pub fn into_alternate_af0_open_drain(self) -> $PXi<AlternateOD<AF0>> {
+                        _set_alternate_mode($i, 0);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF1 open drain mode
+                    pub fn into_alternate_af1_open_drain(self) -> $PXi<AlternateOD<AF1>> {
+                        _set_alternate_mode($i, 1);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF2 open drain mode
+                    pub fn into_alternate_af2_open_drain(self) -> $PXi<AlternateOD<AF2>> {
+                        _set_alternate_mode($i, 2);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF3 open drain mode
+                    pub fn into_alternate_af3_open_drain(self) -> $PXi<AlternateOD<AF3>> {
+                        _set_alternate_mode($i, 3);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF4 open drain mode
+                    pub fn into_alternate_af4_open_drain(self) -> $PXi<AlternateOD<AF4>> {
+                        _set_alternate_mode($i, 4);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF5 open drain mode
+                    pub fn into_alternate_af5_open_drain(self) -> $PXi<AlternateOD<AF5>> {
+                        _set_alternate_mode($i, 5);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF6 open drain mode
+                    pub fn into_alternate_af6_open_drain(self) -> $PXi<AlternateOD<AF6>> {
+                        _set_alternate_mode($i, 6);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF7 open drain mode
+                    pub fn into_alternate_af7_open_drain(self) -> $PXi<AlternateOD<AF7>> {
+                        _set_alternate_mode($i, 7);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF8 open drain mode
+                    pub fn into_alternate_af8_open_drain(self) -> $PXi<AlternateOD<AF8>> {
+                        _set_alternate_mode($i, 8);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF9 open drain mode
+                    pub fn into_alternate_af9_open_drain(self) -> $PXi<AlternateOD<AF9>> {
+                        _set_alternate_mode($i, 9);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF10 open drain mode
+                    pub fn into_alternate_af10_open_drain(self) -> $PXi<AlternateOD<AF10>> {
+                        _set_alternate_mode($i, 10);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF11 open drain mode
+                    pub fn into_alternate_af11_open_drain(self) -> $PXi<AlternateOD<AF11>> {
+                        _set_alternate_mode($i, 11);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF12 open drain mode
+                    pub fn into_alternate_af12_open_drain(self) -> $PXi<AlternateOD<AF12>> {
+                        _set_alternate_mode($i, 12);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF13 open drain mode
+                    pub fn into_alternate_af13_open_drain(self) -> $PXi<AlternateOD<AF13>> {
+                        _set_alternate_mode($i, 13);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF14 open drain mode
+                    pub fn into_alternate_af14_open_drain(self) -> $PXi<AlternateOD<AF14>> {
+                        _set_alternate_mode($i, 14);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
+                    /// Configures the pin to operate in AF15 open drain mode
+                    pub fn into_alternate_af15_open_drain(self) -> $PXi<AlternateOD<AF15>> {
+                        _set_alternate_mode($i, 15);
+                        $PXi { _mode: PhantomData }.set_open_drain()
+                    }
+
                     /// Configures the pin to operate as a floating input pin
                     pub fn into_floating_input(self) -> $PXi<Input<Floating>> {
                         let offset = 2 * $i;
@@ -540,7 +642,7 @@ macro_rules! gpio {
 
                 impl<MODE> $PXi<Alternate<MODE>> {
                     /// Turns pin alternate configuration pin into open drain
-                    pub fn set_open_drain(self) -> Self {
+                    pub fn set_open_drain(self) -> $PXi<AlternateOD<MODE>> {
                         let offset = $i;
                         unsafe {
                             &(*$GPIOX::ptr()).otyper.modify(|r, w| {
@@ -548,7 +650,7 @@ macro_rules! gpio {
                             })
                         };
 
-                        self
+                        $PXi { _mode: PhantomData }
                     }
                 }
 

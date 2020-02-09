@@ -6,6 +6,25 @@ use crate::stm32::i2c1;
     feature = "stm32f401",
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::stm32::I2C3;
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
     feature = "stm32f410",
     feature = "stm32f411",
     feature = "stm32f412",
@@ -22,25 +41,6 @@ use crate::stm32::i2c1;
     feature = "stm32f479"
 ))]
 use crate::stm32::{I2C1, I2C2, RCC};
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::stm32::I2C3;
 
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
@@ -64,6 +64,25 @@ use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 ))]
 use crate::gpio::gpioa::PA8;
 
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::gpio::gpiob::PB11;
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f410",
@@ -102,27 +121,10 @@ use crate::gpio::gpiob::PB4;
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::gpio::gpiob::{PB6, PB7, PB8, PB9, PB10};
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpiob::PB11;
+use crate::gpio::gpiob::{PB10, PB6, PB7, PB8, PB9};
 
+#[cfg(any(feature = "stm32f446"))]
+use crate::gpio::gpioc::PC12;
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -142,10 +144,6 @@ use crate::gpio::gpiob::PB11;
     feature = "stm32f479"
 ))]
 use crate::gpio::gpioc::PC9;
-#[cfg(any(
-    feature = "stm32f446"
-))]
-use crate::gpio::gpioc::PC12;
 
 #[cfg(any(
     feature = "stm32f405",
@@ -179,7 +177,6 @@ use crate::gpio::gpiof::{PF0, PF1};
 ))]
 use crate::gpio::gpioh::{PH4, PH5, PH7, PH8};
 
-use crate::gpio::{Alternate, AF4};
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f410",
@@ -189,6 +186,7 @@ use crate::gpio::{Alternate, AF4};
     feature = "stm32f423"
 ))]
 use crate::gpio::AF9;
+use crate::gpio::{AlternateOD, AF4};
 
 use crate::rcc::Clocks;
 use crate::time::{Hertz, KiloHertz, U32Ext};
@@ -207,7 +205,8 @@ impl<I2c, SCL, SDA> Pins<I2c> for (SCL, SDA)
 where
     SCL: PinScl<I2c>,
     SDA: PinSda<I2c>,
-{}
+{
+}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -228,7 +227,7 @@ where
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C1> for PB6<Alternate<AF4>> {}
+impl PinScl<I2C1> for PB6<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -248,7 +247,7 @@ impl PinScl<I2C1> for PB6<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C1> for PB7<Alternate<AF4>> {}
+impl PinSda<I2C1> for PB7<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -268,7 +267,7 @@ impl PinSda<I2C1> for PB7<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C1> for PB8<Alternate<AF4>> {}
+impl PinScl<I2C1> for PB8<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -288,12 +287,10 @@ impl PinScl<I2C1> for PB8<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C1> for PB9<Alternate<AF4>> {}
+impl PinSda<I2C1> for PB9<AlternateOD<AF4>> {}
 
-#[cfg(any(
-    feature = "stm32f446"
-))]
-impl PinSda<I2C2> for PB3<Alternate<AF4>> {}
+#[cfg(any(feature = "stm32f446"))]
+impl PinSda<I2C2> for PB3<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f410",
@@ -302,7 +299,7 @@ impl PinSda<I2C2> for PB3<Alternate<AF4>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C2> for PB3<Alternate<AF9>> {}
+impl PinSda<I2C2> for PB3<AlternateOD<AF9>> {}
 #[cfg(any(
     feature = "stm32f410",
     feature = "stm32f411",
@@ -310,7 +307,7 @@ impl PinSda<I2C2> for PB3<Alternate<AF9>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C2> for PB9<Alternate<AF9>> {}
+impl PinSda<I2C2> for PB9<AlternateOD<AF9>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -330,7 +327,7 @@ impl PinSda<I2C2> for PB9<Alternate<AF9>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C2> for PB10<Alternate<AF4>> {}
+impl PinScl<I2C2> for PB10<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -349,11 +346,9 @@ impl PinScl<I2C2> for PB10<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for PB11<Alternate<AF4>> {}
-#[cfg(any(
-    feature = "stm32f446"
-))]
-impl PinSda<I2C2> for PC12<Alternate<AF4>> {}
+impl PinSda<I2C2> for PB11<AlternateOD<AF4>> {}
+#[cfg(any(feature = "stm32f446"))]
+impl PinSda<I2C2> for PC12<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -370,7 +365,7 @@ impl PinSda<I2C2> for PC12<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C2> for PF1<Alternate<AF4>> {}
+impl PinScl<I2C2> for PF1<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -387,7 +382,7 @@ impl PinScl<I2C2> for PF1<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for PF0<Alternate<AF4>> {}
+impl PinSda<I2C2> for PF0<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -400,7 +395,7 @@ impl PinSda<I2C2> for PF0<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C2> for PH4<Alternate<AF4>> {}
+impl PinScl<I2C2> for PH4<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -413,7 +408,7 @@ impl PinScl<I2C2> for PH4<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for PH5<Alternate<AF4>> {}
+impl PinSda<I2C2> for PH5<AlternateOD<AF4>> {}
 
 #[cfg(any(
     feature = "stm32f401",
@@ -433,11 +428,9 @@ impl PinSda<I2C2> for PH5<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C3> for PA8<Alternate<AF4>> {}
-#[cfg(any(
-    feature = "stm32f446"
-))]
-impl PinSda<I2C3> for PB4<Alternate<AF4>> {}
+impl PinScl<I2C3> for PA8<AlternateOD<AF4>> {}
+#[cfg(any(feature = "stm32f446"))]
+impl PinSda<I2C3> for PB4<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f411",
@@ -445,14 +438,14 @@ impl PinSda<I2C3> for PB4<Alternate<AF4>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C3> for PB4<Alternate<AF9>> {}
+impl PinSda<I2C3> for PB4<AlternateOD<AF9>> {}
 #[cfg(any(
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C3> for PB8<Alternate<AF9>> {}
+impl PinSda<I2C3> for PB8<AlternateOD<AF9>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -471,7 +464,7 @@ impl PinSda<I2C3> for PB8<Alternate<AF9>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C3> for PC9<Alternate<AF4>> {}
+impl PinSda<I2C3> for PC9<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -484,7 +477,7 @@ impl PinSda<I2C3> for PC9<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C3> for PH7<Alternate<AF4>> {}
+impl PinScl<I2C3> for PH7<AlternateOD<AF4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -497,7 +490,7 @@ impl PinScl<I2C3> for PH7<Alternate<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C3> for PH8<Alternate<AF4>> {}
+impl PinSda<I2C3> for PH8<AlternateOD<AF4>> {}
 
 #[derive(Debug)]
 pub enum Error {
@@ -774,7 +767,9 @@ where
         } {}
 
         // Set up current address, we're trying to talk to
-        self.i2c.dr.write(|w| unsafe { w.bits(u32::from(addr) << 1) });
+        self.i2c
+            .dr
+            .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
 
         // Wait until address was sent
         while self.i2c.sr1.read().addr().bit_is_clear() {}
@@ -801,7 +796,9 @@ where
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         if let Some((last, buffer)) = buffer.split_last_mut() {
             // Send a START condition and set ACK bit
-            self.i2c.cr1.modify(|_, w| w.start().set_bit().ack().set_bit());
+            self.i2c
+                .cr1
+                .modify(|_, w| w.start().set_bit().ack().set_bit());
 
             // Wait until START condition was generated
             while self.i2c.sr1.read().sb().bit_is_clear() {}
@@ -813,7 +810,9 @@ where
             } {}
 
             // Set up current address, we're trying to talk to
-            self.i2c.dr.write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
+            self.i2c
+                .dr
+                .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
 
             // Wait until address was sent
             while self.i2c.sr1.read().addr().bit_is_clear() {}
@@ -827,7 +826,9 @@ where
             }
 
             // Prepare to send NACK then STOP after next byte
-            self.i2c.cr1.modify(|_, w| w.ack().clear_bit().stop().set_bit());
+            self.i2c
+                .cr1
+                .modify(|_, w| w.ack().clear_bit().stop().set_bit());
 
             // Receive last byte
             *last = self.recv_byte()?;
