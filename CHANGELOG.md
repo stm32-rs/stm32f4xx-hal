@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Added examples in the examples folder.
+- Added USB driver.
 
 ## [v0.6.0] - 2019-10-19
 
