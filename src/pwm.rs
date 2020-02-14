@@ -1,112 +1,5 @@
-use core::marker::PhantomData;
-
-use crate::gpio::gpioa::*;
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpiob::*;
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioc::*;
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpiod::*;
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioe::*;
-#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
-use crate::gpio::gpiof::*;
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioh::*;
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioi::*;
-use crate::gpio::Alternate;
+use cast::{u16, u32};
+use core::{marker::PhantomData, mem::MaybeUninit};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -127,67 +20,8 @@ use crate::gpio::Alternate;
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::gpio::AF1;
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::AF2;
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::AF3;
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::stm32::{TIM1, TIM5};
+use crate::stm32::TIM1;
+use crate::{bb, hal, rcc::Clocks, stm32::RCC, time::Hertz};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -207,7 +41,7 @@ use crate::stm32::{TIM1, TIM5};
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::{TIM2, TIM3, TIM4};
+use crate::stm32::{TIM2, TIM3, TIM4, TIM5};
 
 #[cfg(any(
     feature = "stm32f405",
@@ -227,19 +61,6 @@ use crate::stm32::{TIM2, TIM3, TIM4};
 ))]
 use crate::stm32::TIM8;
 
-use crate::rcc::Clocks;
-use crate::time::Hertz;
-
-pub struct Pwm<TIM, CHANNEL> {
-    _channel: PhantomData<CHANNEL>,
-    _tim: PhantomData<TIM>,
-}
-
-pub struct C1;
-pub struct C2;
-pub struct C3;
-pub struct C4;
-
 pub trait Pins<TIM, P> {
     const C1: bool = false;
     const C2: bool = false;
@@ -247,10 +68,20 @@ pub trait Pins<TIM, P> {
     const C4: bool = false;
     type Channels;
 }
-pub trait PinC1<TIM> {}
-pub trait PinC2<TIM> {}
-pub trait PinC3<TIM> {}
-pub trait PinC4<TIM> {}
+use crate::timer::PinC1;
+use crate::timer::PinC2;
+use crate::timer::PinC3;
+use crate::timer::PinC4;
+
+pub struct C1;
+pub struct C2;
+pub struct C3;
+pub struct C4;
+
+pub struct PwmChannels<TIM, CHANNELS> {
+    _channel: PhantomData<CHANNELS>,
+    _tim: PhantomData<TIM>,
+}
 
 macro_rules! pins_impl {
     ( $( ( $($PINX:ident),+ ), ( $($TRAIT:ident),+ ), ( $($ENCHX:ident),* ); )+ ) => {
@@ -261,7 +92,7 @@ macro_rules! pins_impl {
                 $($PINX: $TRAIT<TIM>,)+
             {
                 $(const $ENCHX: bool = true;)+
-                type Channels = ($(Pwm<TIM, $ENCHX>),+);
+                type Channels = ($(PwmChannels<TIM, $ENCHX>),+);
             }
         )+
     };
@@ -285,10 +116,186 @@ pins_impl!(
     (P4), (PinC4), (C4);
 );
 
-macro_rules! channel_impl {
-    ( $( $TIM:ident, $PINC:ident, $PINX:ident, $MODE:ident<$AF:ident>; )+ ) => {
+macro_rules! pwm_hal {
+    ($($TIMX:ident: ($timX:ident, $apbenr:ident, $apbrstr:ident, $bit:expr, $pclk:ident, $ppre:ident),)+) => {
         $(
-            impl $PINC<$TIM> for $PINX<$MODE<$AF>> {}
+            pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
+            where
+                PINS: Pins<$TIMX, P>,
+                T: Into<Hertz>,
+            {
+                {
+                    //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+                    let rcc = unsafe {&(*RCC::ptr())};
+
+                    // Enable and reset the timer peripheral, it's the same bit position for both registers
+                    bb::set(&rcc.$apbenr, $bit);
+                    bb::set(&rcc.$apbrstr, $bit);
+                    bb::clear(&rcc.$apbrstr, $bit);
+                }
+                if PINS::C1 {
+                    tim.ccmr1_output()
+                        .modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1() );
+                }
+                if PINS::C2 {
+                    tim.ccmr1_output()
+                        .modify(|_, w| w.oc2pe().set_bit().oc2m().pwm_mode1() );
+                }
+                if PINS::C3 {
+                    tim.ccmr2_output()
+                        .modify(|_, w| w.oc3pe().set_bit().oc3m().pwm_mode1() );
+                }
+                if PINS::C4 {
+                    tim.ccmr2_output()
+                        .modify(|_, w| w.oc4pe().set_bit().oc4m().pwm_mode1() );
+                }
+
+                // The reference manual is a bit ambiguous about when enabling this bit is really
+                // necessary, but since we MUST enable the preload for the output channels then we
+                // might as well enable for the auto-reload too
+                tim.cr1.modify(|_, w| w.arpe().set_bit());
+
+                let clk = clocks.$pclk().0 * if clocks.$ppre() == 1 { 1 } else { 2 };
+                let ticks = clk / freq.into().0;
+                let psc = u16((ticks - 1) / (1 << 16)).unwrap();
+                tim.psc.write(|w| w.psc().bits(psc) );
+                let arr = u16(ticks / u32(psc + 1)).unwrap();
+                tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
+
+                // Trigger update event to load the registers
+                tim.cr1.modify(|_, w| w.urs().set_bit());
+                tim.egr.write(|w| w.ug().set_bit());
+                tim.cr1.modify(|_, w| w.urs().clear_bit());
+
+                tim.cr1.write(|w|
+                    w.cms()
+                        .bits(0b00)
+                        .dir()
+                        .clear_bit()
+                        .opm()
+                        .clear_bit()
+                        .cen()
+                        .set_bit()
+                );
+                //NOTE(unsafe) `PINS::Channels` is a ZST
+                unsafe { MaybeUninit::uninit().assume_init() }
+            }
+
+            impl hal::PwmPin for PwmChannels<$TIMX, C1> {
+                type Duty = u16;
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn disable(&mut self) {
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
+                }
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn enable(&mut self) {
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
+                }
+
+                //NOTE(unsafe) atomic read with no side effects
+                fn get_duty(&self) -> u16 {
+                    unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 }
+                }
+
+                //NOTE(unsafe) atomic read with no side effects
+                fn get_max_duty(&self) -> u16 {
+                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                }
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn set_duty(&mut self, duty: u16) {
+                    unsafe { (*$TIMX::ptr()).ccr1.write(|w| w.ccr().bits(duty.into())) }
+                }
+            }
+
+            impl hal::PwmPin for PwmChannels<$TIMX, C2> {
+                type Duty = u16;
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn disable(&mut self) {
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
+                }
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn enable(&mut self) {
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
+                }
+
+                //NOTE(unsafe) atomic read with no side effects
+                fn get_duty(&self) -> u16 {
+                    unsafe { (*$TIMX::ptr()).ccr2.read().ccr().bits() as u16}
+                }
+
+                //NOTE(unsafe) atomic read with no side effects
+                fn get_max_duty(&self) -> u16 {
+                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                }
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn set_duty(&mut self, duty: u16) {
+                    unsafe { (*$TIMX::ptr()).ccr2.write(|w| w.ccr().bits(duty.into())) }
+                }
+            }
+
+            impl hal::PwmPin for PwmChannels<$TIMX, C3> {
+                type Duty = u16;
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn disable(&mut self) {
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 8) }
+                }
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn enable(&mut self) {
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 8) }
+                }
+
+                //NOTE(unsafe) atomic read with no side effects
+                fn get_duty(&self) -> u16 {
+                    unsafe { (*$TIMX::ptr()).ccr3.read().ccr().bits() as u16 }
+                }
+
+                //NOTE(unsafe) atomic read with no side effects
+                fn get_max_duty(&self) -> u16 {
+                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                }
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn set_duty(&mut self, duty: u16) {
+                    unsafe { (*$TIMX::ptr()).ccr3.write(|w| w.ccr().bits(duty.into())) }
+                }
+            }
+
+            impl hal::PwmPin for PwmChannels<$TIMX, C4> {
+                type Duty = u16;
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn disable(&mut self) {
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 12) }
+                }
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn enable(&mut self) {
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 12) }
+                }
+
+                //NOTE(unsafe) atomic read with no side effects
+                fn get_duty(&self) -> u16 {
+                    unsafe { (*$TIMX::ptr()).ccr4.read().ccr().bits() as u16 }
+                }
+
+                //NOTE(unsafe) atomic read with no side effects
+                fn get_max_duty(&self) -> u16 {
+                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                }
+
+                //NOTE(unsafe) atomic write with no side effects
+                fn set_duty(&mut self, duty: u16) {
+                    unsafe { (*$TIMX::ptr()).ccr4.write(|w| w.ccr().bits(duty.into())) }
+                }
+            }
         )+
     };
 }
@@ -312,16 +319,11 @@ macro_rules! channel_impl {
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-channel_impl!(
-    TIM1, PinC1, PA8, Alternate<AF1>;
-    TIM1, PinC2, PA9, Alternate<AF1>;
-    TIM1, PinC3, PA10, Alternate<AF1>;
-    TIM1, PinC4, PA11, Alternate<AF1>;
-
-    TIM5, PinC1, PA0, Alternate<AF2>;
-    TIM5, PinC2, PA1, Alternate<AF2>;
-    TIM5, PinC3, PA2, Alternate<AF2>;
-    TIM5, PinC4, PA3, Alternate<AF2>;
+pwm_hal!(
+    TIM1: (tim1, apb2enr, apb2rstr, 0u8, pclk2, ppre2),
+    //TIM5: (tim5, apb1enr, apb1rstr, 3u8, pclk1, ppre1),
+    //TIM9: (tim9, apb2enr, apb2rstr, 16u8, pclk2, ppre2),
+    //TIM11: (tim11, apb2enr, apb2rstr, 18u8, pclk2, ppre2),
 );
 
 #[cfg(any(
@@ -342,46 +344,12 @@ channel_impl!(
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-channel_impl!(
-    TIM1, PinC1, PE9, Alternate<AF1>;
-    TIM1, PinC2, PE11, Alternate<AF1>;
-    TIM1, PinC3, PE13, Alternate<AF1>;
-    TIM1, PinC4, PE14, Alternate<AF1>;
-
-    TIM2, PinC1, PA0, Alternate<AF1>;
-    TIM2, PinC2, PA1, Alternate<AF1>;
-    TIM2, PinC3, PA2, Alternate<AF1>;
-    TIM2, PinC4, PA3, Alternate<AF1>;
-
-    TIM2, PinC2, PB3, Alternate<AF1>;
-    TIM2, PinC3, PB10, Alternate<AF1>;
-    TIM2, PinC4, PB11, Alternate<AF1>;
-
-    TIM2, PinC1, PA5, Alternate<AF1>;
-    TIM2, PinC1, PA15, Alternate<AF1>;
-
-    TIM3, PinC1, PA6, Alternate<AF2>;
-    TIM3, PinC2, PA7, Alternate<AF2>;
-    TIM3, PinC3, PB0, Alternate<AF2>;
-    TIM3, PinC4, PB1, Alternate<AF2>;
-
-    TIM3, PinC1, PB4, Alternate<AF2>;
-    TIM3, PinC2, PB5, Alternate<AF2>;
-
-    TIM3, PinC1, PC6, Alternate<AF2>;
-    TIM3, PinC2, PC7, Alternate<AF2>;
-    TIM3, PinC3, PC8, Alternate<AF2>;
-    TIM3, PinC4, PC9, Alternate<AF2>;
-
-    TIM4, PinC1, PB6, Alternate<AF2>;
-    TIM4, PinC2, PB7, Alternate<AF2>;
-    TIM4, PinC3, PB8, Alternate<AF2>;
-    TIM4, PinC4, PB9, Alternate<AF2>;
-
-    TIM4, PinC1, PD12, Alternate<AF2>;
-    TIM4, PinC2, PD13, Alternate<AF2>;
-    TIM4, PinC3, PD14, Alternate<AF2>;
-    TIM4, PinC4, PD15, Alternate<AF2>;
+pwm_hal!(
+    TIM2: (tim2, apb1enr, apb1rstr, 0u8, pclk1, ppre1),
+    TIM3: (tim3, apb1enr, apb1rstr, 1u8, pclk1, ppre1),
+    TIM4: (tim4, apb1enr, apb1rstr, 2u8, pclk1, ppre1),
+    TIM5: (tim5, apb1enr, apb1rstr, 3u8, pclk1, ppre1), // TODO, put it back together with TIM1 ?
+    //TIM10: (tim10, apb2enr, apb2rstr, 17u8, pclk2, ppre2),
 );
 
 #[cfg(any(
@@ -400,57 +368,9 @@ channel_impl!(
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-channel_impl!(
-    TIM8, PinC1, PC6, Alternate<AF3>;
-    TIM8, PinC2, PC7, Alternate<AF3>;
-    TIM8, PinC3, PC8, Alternate<AF3>;
-    TIM8, PinC4, PC9, Alternate<AF3>;
-);
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-channel_impl!(
-    TIM5, PinC1, PH10, Alternate<AF2>;
-    TIM5, PinC2, PH11, Alternate<AF2>;
-    TIM5, PinC3, PH12, Alternate<AF2>;
-    TIM5, PinC4, PI0, Alternate<AF2>;
-
-    TIM8, PinC1, PI5, Alternate<AF3>;
-    TIM8, PinC2, PI6, Alternate<AF3>;
-    TIM8, PinC3, PI7, Alternate<AF3>;
-    TIM8, PinC4, PI2, Alternate<AF3>;
-);
-
-#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
-channel_impl!(
-    TIM5, PinC1, PF3, Alternate<AF2>;
-    TIM5, PinC2, PF4, Alternate<AF2>;
-    TIM5, PinC3, PF5, Alternate<AF2>;
-    TIM5, PinC4, PF10, Alternate<AF2>;
-);
-
-#[cfg(feature = "stm32f410")]
-channel_impl!(
-    TIM5, PinC1, PB12, Alternate<AF2>;
-    //TIM5, PinC2, PC10, Alternate<AF2>;
-    //TIM5, PinC3, PC11, Alternate<AF2>;
-    TIM5, PinC4, PB11, Alternate<AF2>;
-);
-
-#[cfg(feature = "stm32f446")]
-channel_impl!(
-    TIM2, PinC1, PB8, Alternate<AF1>;
-    TIM2, PinC2, PB9, Alternate<AF1>;
-
-    TIM2, PinC4, PB2, Alternate<AF1>;
+pwm_hal!(
+    TIM8: (tim8, apb2enr, apb2rstr, 1u8, pclk2, ppre2),
+    //TIM12: (tim12, apb1enr, apb1rstr, 6u8, pclk1, ppre1),
+    //TIM13: (tim13, apb1enr, apb1rstr, 7u8, pclk1, ppre1),
+    //TIM14: (tim14, apb1enr, apb1rstr, 8u8, pclk1, ppre1),
 );
