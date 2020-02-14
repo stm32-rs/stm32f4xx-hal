@@ -103,7 +103,7 @@ pub mod i2c;
 ))]
 pub mod otg_fs;
 #[cfg(all(
-    feature = "usb_hs",
+    any(feature = "usb_hs", docsrs),
     any(
         feature = "stm32f405",
         feature = "stm32f407",

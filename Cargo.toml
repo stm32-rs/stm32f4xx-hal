@@ -22,7 +22,8 @@ repository = "https://github.com/stm32-rs/stm32f4xx-hal"
 version = "0.6.0"
 
 [package.metadata.docs.rs]
-features = ["stm32f429", "rt"]
+features = ["stm32f429", "rt", "usb_fs"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 cortex-m = ">=0.5.8,<0.7"
