@@ -87,6 +87,35 @@ pub mod delay;
 pub mod gpio;
 #[cfg(feature = "device-selected")]
 pub mod i2c;
+#[cfg(all(
+    feature = "usb_fs",
+    any(
+        feature = "stm32f401",
+        feature = "stm32f405",
+        feature = "stm32f407",
+        feature = "stm32f415",
+        feature = "stm32f417",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+    )
+))]
+pub mod otg_fs;
+#[cfg(all(
+    feature = "usb_hs",
+    any(
+        feature = "stm32f405",
+        feature = "stm32f407",
+        feature = "stm32f415",
+        feature = "stm32f417",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+    )
+))]
+pub mod otg_hs;
 #[cfg(feature = "device-selected")]
 pub mod prelude;
 #[cfg(feature = "device-selected")]
