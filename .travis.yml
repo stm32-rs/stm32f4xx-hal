@@ -19,4 +19,4 @@ install:
 
 script:
   - tools/check.py $COMMAND
-  - cargo build --examples --features=stm32f411,rt --release
+  - cargo build --examples --features=stm32f401,rt,usb_fs --release
