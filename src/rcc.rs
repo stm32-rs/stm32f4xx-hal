@@ -1,5 +1,5 @@
-use crate::stm32::RCC;
 use crate::stm32::rcc::cfgr::{HPRE_A, SW_A};
+use crate::stm32::RCC;
 
 use crate::time::Hertz;
 
@@ -189,12 +189,12 @@ impl CFGR {
         unsafe {
             let flash = &(*FLASH::ptr());
             // Adjust flash wait states
-            flash.acr.modify(|_, w|
-                w.latency().bits(((sysclk - 1) / flash_latency_step) as u8)
-                .prften().set_bit()
-                .icen().set_bit()
-                .dcen().set_bit()
-            )
+            flash.acr.modify(|_, w| {
+                w.latency().bits(((sysclk - 1) / flash_latency_step) as u8);
+                w.prften().set_bit();
+                w.icen().set_bit();
+                w.dcen().set_bit()
+            })
         }
     }
 
@@ -303,7 +303,9 @@ impl CFGR {
         ))]
         let (pclk1_max, pclk2_max) = (50_000_000, 100_000_000);
 
-        let pclk1 = self.pclk1.unwrap_or_else(|| core::cmp::min(pclk1_max, hclk));
+        let pclk1 = self
+            .pclk1
+            .unwrap_or_else(|| core::cmp::min(pclk1_max, hclk));
         let (ppre1_bits, ppre1) = match (hclk + pclk1 - 1) / pclk1 {
             0 => unreachable!(),
             1 => (0b000, 1),
@@ -318,7 +320,9 @@ impl CFGR {
 
         assert!(pclk1 <= pclk1_max);
 
-        let pclk2 = self.pclk2.unwrap_or_else(|| core::cmp::min(pclk2_max, hclk));
+        let pclk2 = self
+            .pclk2
+            .unwrap_or_else(|| core::cmp::min(pclk2_max, hclk));
         let (ppre2_bits, ppre2) = match (hclk + pclk2 - 1) / pclk2 {
             0 => unreachable!(),
             1 => (0b000, 1),
