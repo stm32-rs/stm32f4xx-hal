@@ -18,6 +18,7 @@ impl RccExt for RCC {
                 pclk1: None,
                 pclk2: None,
                 sysclk: None,
+                pll48clk: false,
             },
         }
     }
@@ -36,6 +37,7 @@ pub struct CFGR {
     pclk1: Option<u32>,
     pclk2: Option<u32>,
     sysclk: Option<u32>,
+    pll48clk: bool,
 }
 
 impl CFGR {
@@ -81,12 +83,18 @@ impl CFGR {
         self
     }
 
-    fn pll_setup(&self) -> (bool, u32)
-    {
-        let rcc = unsafe { &*RCC::ptr() };
+    pub fn require_pll48clk(mut self) -> Self {
+        self.pll48clk = true;
+        self
+    }
 
+    fn pll_setup(&self) -> (bool, bool, u32, Option<Hertz>) {
         let pllsrcclk = self.hse.unwrap_or(HSI);
         let sysclk = self.sysclk.unwrap_or(pllsrcclk);
+        let sysclk_on_pll = sysclk != pllsrcclk;
+        if !sysclk_on_pll && !self.pll48clk {
+            return (false, false, sysclk, None);
+        }
 
         // Sysclk output divisor must be one of 2, 4, 6 or 8
         let sysclk_div = core::cmp::min(8, (432_000_000 / sysclk) & !1);
@@ -96,43 +104,61 @@ impl CFGR {
         let pllm_min = (pllsrcclk + 1_999_999) / 2_000_000;
         let pllm_max = pllsrcclk / 1_000_000;
 
+        let target_freq = if self.pll48clk {
+            48_000_000
+        } else {
+            sysclk * sysclk_div
+        };
+
         // Find the lowest pllm value that minimize the difference between
-        // requested sysclk and actual sysclk.
-        let pllm = (pllm_min..=pllm_max).min_by_key(|pllm| {
-            let vco_in = pllsrcclk / pllm;
-            let plln = sysclk * sysclk_div / vco_in;
-            sysclk - (vco_in * plln / sysclk_div)
-        }).unwrap();
+        // target frequency and the real vco_out frequency.
+        let pllm = (pllm_min..=pllm_max)
+            .min_by_key(|pllm| {
+                let vco_in = pllsrcclk / pllm;
+                let plln = target_freq / vco_in;
+                target_freq - vco_in * plln
+            })
+            .unwrap();
 
         let vco_in = pllsrcclk / pllm;
         assert!(vco_in >= 1_000_000 && vco_in <= 2_000_000);
 
         // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
         // and <= 432MHz, min 50, max 432
-        let plln = sysclk * sysclk_div / vco_in;
-
+        let plln = if self.pll48clk {
+            // try the different valid pllq according to the valid
+            // main scaller values, and take the best
+            let pllq = (4..=9)
+                .min_by_key(|pllq| {
+                    let plln = 48_000_000 * pllq / vco_in;
+                    let pll48_diff = 48_000_000 - vco_in * plln / pllq;
+                    let sysclk_diff = (sysclk as i32 - (vco_in * plln / sysclk_div) as i32).abs();
+                    (pll48_diff, sysclk_diff)
+                })
+                .unwrap();
+            48_000_000 * pllq / vco_in
+        } else {
+            sysclk * sysclk_div / vco_in
+        };
         let pllp = (sysclk_div / 2) - 1;
 
-        // Calculate real system clock
-        let sysclk = vco_in * plln / sysclk_div;
+        let pllq = (vco_in * plln + 47_999_999) / 48_000_000;
+        let pll48clk = vco_in * plln / pllq;
 
-        if sysclk != pllsrcclk {
-            // use PLL as source
-            rcc.pllcfgr.write(|w| unsafe {
-                w.pllm()
-                    .bits(pllm as u8)
-                    .plln()
-                    .bits(plln as u16)
-                    .pllp()
-                    .bits(pllp as u8)
-                    .pllsrc()
-                    .bit(self.hse.is_some())
-            });
+        unsafe { &*RCC::ptr() }.pllcfgr.write(|w| unsafe {
+            w.pllm().bits(pllm as u8);
+            w.plln().bits(plln as u16);
+            w.pllp().bits(pllp as u8);
+            w.pllq().bits(pllq as u8);
+            w.pllsrc().bit(self.hse.is_some())
+        });
 
-            (true, sysclk)
+        let real_sysclk = if sysclk_on_pll {
+            vco_in * plln / sysclk_div
         } else {
-            (false, pllsrcclk)
-        }
+            sysclk
+        };
+        (true, sysclk_on_pll, real_sysclk, Some(Hertz(pll48clk)))
     }
 
     fn flash_setup(sysclk: u32) {
@@ -175,7 +201,7 @@ impl CFGR {
     pub fn freeze(self) -> Clocks {
         let rcc = unsafe { &*RCC::ptr() };
 
-        let (use_pll, sysclk) = self.pll_setup();
+        let (use_pll, sysclk_on_pll, sysclk, pll48clk) = self.pll_setup();
 
         #[cfg(any(
             feature = "stm32f401",
@@ -231,7 +257,7 @@ impl CFGR {
         ))]
         let sysclk_max = 180_000_000;
 
-        assert!(!use_pll || sysclk <= sysclk_max && sysclk >= sysclk_min);
+        assert!(!sysclk_on_pll || sysclk <= sysclk_max && sysclk >= sysclk_min);
 
         let hclk = self.hclk.unwrap_or(sysclk);
         let (hpre_bits, hpre_div) = match (sysclk + hclk - 1) / hclk {
@@ -332,7 +358,7 @@ impl CFGR {
                 .hpre()
                 .variant(hpre_bits)
                 .sw()
-                .variant(if use_pll {
+                .variant(if sysclk_on_pll {
                     SW_A::PLL
                 } else if self.hse.is_some() {
                     SW_A::HSE
@@ -348,6 +374,7 @@ impl CFGR {
             ppre1,
             ppre2,
             sysclk: Hertz(sysclk),
+            pll48clk,
         }
     }
 }
@@ -363,6 +390,7 @@ pub struct Clocks {
     ppre1: u8,
     ppre2: u8,
     sysclk: Hertz,
+    pll48clk: Option<Hertz>,
 }
 
 impl Clocks {
@@ -394,5 +422,10 @@ impl Clocks {
     /// Returns the system (core) frequency
     pub fn sysclk(&self) -> Hertz {
         self.sysclk
+    }
+
+    /// Returns the frequency of the PLL48 clock line
+    pub fn pll48clk(&self) -> Option<Hertz> {
+        self.pll48clk
     }
 }
