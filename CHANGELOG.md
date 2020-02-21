@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added examples in the examples folder.
 - Added USB driver.
 - PLL48Clk configuration.
+- Added bit-banding implementation.
 
 ## [v0.6.0] - 2019-10-19
 
