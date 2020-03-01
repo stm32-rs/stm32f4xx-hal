@@ -301,7 +301,7 @@ macro_rules! hal {
 hal! {
     TIM1: (tim1, tim1en, tim1rst, apb2enr, apb2rstr, pclk2, ppre2),
     TIM5: (tim5, tim5en, tim5rst, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM9: (tim9, tim9en, tim9rst, apb2enr, apb2rstr, pclk1, ppre1),
+    TIM9: (tim9, tim9en, tim9rst, apb2enr, apb2rstr, pclk2, ppre2),
     TIM11: (tim11, tim11en, tim11rst, apb2enr, apb2rstr, pclk2, ppre2),
 }
 

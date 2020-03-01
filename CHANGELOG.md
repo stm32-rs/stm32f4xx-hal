@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Wait 16 cycles after setting prescalers for some clock domains to follow manual.
+- Fixed `TIM9` `pclk` and `ppre`.
 
 ### Added
 

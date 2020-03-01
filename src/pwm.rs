@@ -135,13 +135,14 @@ macro_rules! pwm_all_channels {
                 T: Into<Hertz>,
             {
                 {
-                    //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                    let rcc = unsafe {&(*RCC::ptr())};
-
-                    // Enable and reset the timer peripheral, it's the same bit position for both registers
-                    bb::set(&rcc.$apbenr, $bit);
-                    bb::set(&rcc.$apbrstr, $bit);
-                    bb::clear(&rcc.$apbrstr, $bit);
+                    unsafe {
+                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+                        let rcc = &(*RCC::ptr());
+                        // Enable and reset the timer peripheral, it's the same bit position for both registers
+                        bb::set(&rcc.$apbenr, $bit);
+                        bb::set(&rcc.$apbrstr, $bit);
+                        bb::clear(&rcc.$apbrstr, $bit);
+                    }
                 }
                 if PINS::C1 {
                     tim.ccmr1_output()
@@ -320,13 +321,14 @@ macro_rules! pwm_2_channels {
                 T: Into<Hertz>,
             {
                 {
-                    //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                    let rcc = unsafe {&(*RCC::ptr())};
-
-                    // Enable and reset the timer peripheral, it's the same bit position for both registers
-                    bb::set(&rcc.$apbenr, $bit);
-                    bb::set(&rcc.$apbrstr, $bit);
-                    bb::clear(&rcc.$apbrstr, $bit);
+                    unsafe {
+                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+                        let rcc = &(*RCC::ptr());
+                        // Enable and reset the timer peripheral, it's the same bit position for both registers
+                        bb::set(&rcc.$apbenr, $bit);
+                        bb::set(&rcc.$apbrstr, $bit);
+                        bb::clear(&rcc.$apbrstr, $bit);
+                    }
                 }
                 if PINS::C1 {
                     //NOTE(unsafe) 6 is a valid value to write to oc1m
@@ -438,13 +440,14 @@ macro_rules! pwm_1_channel {
                 T: Into<Hertz>,
             {
                 {
-                    //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                    let rcc = unsafe {&(*RCC::ptr())};
-
-                    // Enable and reset the timer peripheral, it's the same bit position for both registers
-                    bb::set(&rcc.$apbenr, $bit);
-                    bb::set(&rcc.$apbrstr, $bit);
-                    bb::clear(&rcc.$apbrstr, $bit);
+                    unsafe {
+                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+                        let rcc = &(*RCC::ptr());
+                        // Enable and reset the timer peripheral, it's the same bit position for both registers
+                        bb::set(&rcc.$apbenr, $bit);
+                        bb::set(&rcc.$apbrstr, $bit);
+                        bb::clear(&rcc.$apbrstr, $bit);
+                    }
                 }
                 if PINS::C1 {
                     //NOTE(unsafe) 6 is a valid value to write to oc1m
@@ -521,13 +524,14 @@ macro_rules! pwm_tim5_f410 {
                 T: Into<Hertz>,
             {
                 {
-                    //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                    let rcc = unsafe {&(*RCC::ptr())};
-
-                    // Enable and reset the timer peripheral, it's the same bit position for both registers
-                    bb::set(&rcc.$apbenr, $bit);
-                    bb::set(&rcc.$apbrstr, $bit);
-                    bb::clear(&rcc.$apbrstr, $bit);
+                    unsafe {
+                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+                        let rcc = &(*RCC::ptr());
+                        // Enable and reset the timer peripheral, it's the same bit position for both registers
+                        bb::set(&rcc.$apbenr, $bit);
+                        bb::set(&rcc.$apbrstr, $bit);
+                        bb::clear(&rcc.$apbrstr, $bit);
+                    }
                 }
                 if PINS::C1 {
                     tim.ccmr1_output()
