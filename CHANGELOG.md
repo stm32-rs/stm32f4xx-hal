@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added USB driver.
 - PLL48Clk configuration.
 - Added bit-banding implementation.
+- Added support for RNG peripheral and rand_core, and an example that uses it.
 
 ## [v0.6.0] - 2019-10-19
 

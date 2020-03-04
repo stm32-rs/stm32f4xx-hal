@@ -122,6 +122,18 @@ pub mod otg_fs;
     )
 ))]
 pub mod otg_hs;
+
+#[cfg(all(
+    feature = "device-selected",
+    not(any(
+        feature = "stm32f401",
+        feature = "stm32f410",
+        feature = "stm32f411",
+        feature = "stm32f446",
+    ))
+))]
+pub mod rng;
+
 #[cfg(feature = "device-selected")]
 pub mod prelude;
 #[cfg(feature = "device-selected")]
