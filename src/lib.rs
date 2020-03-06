@@ -3,7 +3,7 @@
 
 #[cfg(not(feature = "device-selected"))]
 compile_error!(
-        "This crate requires one of the following device features enabled:
+    "This crate requires one of the following device features enabled:
         stm32f401
         stm32f405
         stm32f407

@@ -5,10 +5,13 @@
 
 use crate::stm32;
 
-use crate::gpio::{Alternate, AF10, gpioa::{PA11, PA12}};
+use crate::gpio::{
+    gpioa::{PA11, PA12},
+    Alternate, AF10,
+};
 
-use synopsys_usb_otg::UsbPeripheral;
 pub use synopsys_usb_otg::UsbBus;
+use synopsys_usb_otg::UsbPeripheral;
 
 pub struct USB {
     pub usb_global: stm32::OTG_FS_GLOBAL,

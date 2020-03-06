@@ -1,5 +1,5 @@
-use core::ptr;
 use core::ops::Deref;
+use core::ptr;
 
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
@@ -24,7 +24,7 @@ use nb;
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::{spi1, SPI1, SPI2, RCC};
+use crate::stm32::{spi1, RCC, SPI1, SPI2};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -178,11 +178,7 @@ use crate::gpio::gpiob::PB8;
 ))]
 use crate::gpio::gpiob::{PB10, PB13, PB14, PB15, PB3, PB4, PB5};
 
-#[cfg(any(
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(any(feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
 use crate::gpio::gpioc::PC1;
 #[cfg(any(
     feature = "stm32f410",
@@ -378,7 +374,8 @@ where
     SCK: PinSck<SPI>,
     MISO: PinMiso<SPI>,
     MOSI: PinMosi<SPI>,
-{}
+{
+}
 
 /// A filler type for when the SCK pin is unnecessary
 pub struct NoSck;
@@ -744,7 +741,7 @@ pub struct Spi<SPI, PINS> {
 impl<PINS> Spi<SPI1, PINS> {
     pub fn spi1(spi: SPI1, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
     where
-        PINS: Pins<SPI1>
+        PINS: Pins<SPI1>,
     {
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
@@ -778,7 +775,7 @@ impl<PINS> Spi<SPI1, PINS> {
 impl<PINS> Spi<SPI2, PINS> {
     pub fn spi2(spi: SPI2, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
     where
-        PINS: Pins<SPI2>
+        PINS: Pins<SPI2>,
     {
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
@@ -811,7 +808,7 @@ impl<PINS> Spi<SPI2, PINS> {
 impl<PINS> Spi<SPI3, PINS> {
     pub fn spi3(spi: SPI3, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
     where
-        PINS: Pins<SPI3>
+        PINS: Pins<SPI3>,
     {
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
@@ -840,7 +837,7 @@ impl<PINS> Spi<SPI3, PINS> {
 impl<PINS> Spi<SPI4, PINS> {
     pub fn spi4(spi: SPI4, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
     where
-        PINS: Pins<SPI4>
+        PINS: Pins<SPI4>,
     {
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
@@ -868,7 +865,7 @@ impl<PINS> Spi<SPI4, PINS> {
 impl<PINS> Spi<SPI5, PINS> {
     pub fn spi5(spi: SPI5, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
     where
-        PINS: Pins<SPI5>
+        PINS: Pins<SPI5>,
     {
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
@@ -891,7 +888,7 @@ impl<PINS> Spi<SPI5, PINS> {
 impl<PINS> Spi<SPI6, PINS> {
     pub fn spi6(spi: SPI6, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
     where
-        PINS: Pins<SPI6>
+        PINS: Pins<SPI6>,
     {
         // NOTE(unsafe) This executes only during initialisation
         let rcc = unsafe { &(*RCC::ptr()) };
@@ -907,8 +904,7 @@ impl<SPI, PINS> Spi<SPI, PINS>
 where
     SPI: Deref<Target = spi1::RegisterBlock>,
 {
-    pub fn init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self
-    {
+    pub fn init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self {
         // disable SS output
         self.spi.cr2.write(|w| w.ssoe().clear_bit());
 
@@ -931,29 +927,29 @@ where
         // dff: 8 bit frames
         // bidimode: 2-line unidirectional
         // spe: enable the SPI bus
-        self.spi.cr1.write(|w| { w
-            .cpha()
-            .bit(mode.phase == Phase::CaptureOnSecondTransition)
-            .cpol()
-            .bit(mode.polarity == Polarity::IdleHigh)
-            .mstr()
-            .set_bit()
-            .br()
-            .bits(br)
-            .lsbfirst()
-            .clear_bit()
-            .ssm()
-            .set_bit()
-            .ssi()
-            .set_bit()
-            .rxonly()
-            .clear_bit()
-            .dff()
-            .clear_bit()
-            .bidimode()
-            .clear_bit()
-            .spe()
-            .set_bit()
+        self.spi.cr1.write(|w| {
+            w.cpha()
+                .bit(mode.phase == Phase::CaptureOnSecondTransition)
+                .cpol()
+                .bit(mode.polarity == Polarity::IdleHigh)
+                .mstr()
+                .set_bit()
+                .br()
+                .bits(br)
+                .lsbfirst()
+                .clear_bit()
+                .ssm()
+                .set_bit()
+                .ssi()
+                .set_bit()
+                .rxonly()
+                .clear_bit()
+                .dff()
+                .clear_bit()
+                .bidimode()
+                .clear_bit()
+                .spe()
+                .set_bit()
         });
 
         self
@@ -965,9 +961,9 @@ where
     ///  - Transfer error
     pub fn listen(&mut self, event: Event) {
         match event {
-            Event::Rxne  => self.spi.cr2.modify(|_, w| { w.rxneie().set_bit() }),
-            Event::Txe   => self.spi.cr2.modify(|_, w| { w.txeie().set_bit() }),
-            Event::Error => self.spi.cr2.modify(|_, w| { w.errie().set_bit() }),
+            Event::Rxne => self.spi.cr2.modify(|_, w| w.rxneie().set_bit()),
+            Event::Txe => self.spi.cr2.modify(|_, w| w.txeie().set_bit()),
+            Event::Error => self.spi.cr2.modify(|_, w| w.errie().set_bit()),
         }
     }
 
@@ -977,9 +973,9 @@ where
     ///  - Transfer error
     pub fn unlisten(&mut self, event: Event) {
         match event {
-            Event::Rxne  => self.spi.cr2.modify(|_, w| { w.rxneie().clear_bit() }),
-            Event::Txe   => self.spi.cr2.modify(|_, w| { w.txeie().clear_bit() }),
-            Event::Error => self.spi.cr2.modify(|_, w| { w.errie().clear_bit() }),
+            Event::Rxne => self.spi.cr2.modify(|_, w| w.rxneie().clear_bit()),
+            Event::Txe => self.spi.cr2.modify(|_, w| w.txeie().clear_bit()),
+            Event::Error => self.spi.cr2.modify(|_, w| w.errie().clear_bit()),
         }
     }
 
@@ -1030,9 +1026,7 @@ where
         } else if sr.rxne().bit_is_set() {
             // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
             // reading a half-word)
-            return Ok(unsafe {
-                ptr::read_volatile(&self.spi.dr as *const _ as *const u8)
-            });
+            return Ok(unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const u8) });
         } else {
             nb::Error::WouldBlock
         })
@@ -1057,12 +1051,12 @@ where
     }
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS>
-where
-    SPI: Deref<Target = spi1::RegisterBlock>,
-{}
+impl<SPI, PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS> where
+    SPI: Deref<Target = spi1::RegisterBlock>
+{
+}
 
-impl<SPI, PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<SPI, PINS>
-where
-    SPI: Deref<Target = spi1::RegisterBlock>,
-{}
+impl<SPI, PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<SPI, PINS> where
+    SPI: Deref<Target = spi1::RegisterBlock>
+{
+}
