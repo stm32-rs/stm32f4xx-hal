@@ -1,6 +1,9 @@
 stm32f4xx-hal
 =============
 
+[![Crates.io](https://img.shields.io/crates/v/stm32f4xx-hal.svg)](https://crates.io/crates/stm32f4xx-hal)
+[![Released API docs](https://docs.rs/stm32f4xx-hal/badge.svg)](https://docs.rs/stm32f4xx-hal)
+
 _stm32f4xx-hal_ contains a multi device hardware abstraction on top of the
 peripheral access API for the STMicro STM32F4 series microcontrollers. The
 selection of the MCU is done by feature gates, typically specified by board
@@ -40,7 +43,7 @@ crate by Jorge Aparicio.
 
 [stm32f4]: https://crates.io/crates/stm32f4
 [stm32f103xx-hal]: https://github.com/japaric/stm32f103xx-hal
-[embedded-hal]: https://github.com/japaric/embedded-hal.git
+[embedded-hal]: https://github.com/rust-embedded/embedded-hal
 
 License
 -------
