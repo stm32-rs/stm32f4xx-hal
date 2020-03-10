@@ -45,6 +45,39 @@ crate by Jorge Aparicio.
 [stm32f103xx-hal]: https://github.com/japaric/stm32f103xx-hal
 [embedded-hal]: https://github.com/rust-embedded/embedded-hal
 
+Setting up your project
+-------
+
+Check if the bsp of your board exists in the
+[stm32-rs](https://github.com/stm32-rs) page.
+If it exists, the `stm32f4xx-hal` crate should be already included, so you can
+use the bsp as base for your project.
+
+Otherwise, create a new Rust project as you usually do with `cargo init`. The
+hello world of embedded development is usually to blink an LED. The code to do
+so is available in [examples/delay-blinky.rs](examples/delay-blinky.rs).
+Copy that file to the `main.rs` of your project.
+
+You also need to add some dependencies to your `Cargo.toml`:
+
+```toml
+[dependencies]
+embedded-hal = "0.2.3"
+nb = "0.1.2"
+cortex-m = "0.6.2"
+cortex-m-rt = "0.6.11"
+# Panic behaviour, see https://crates.io/keywords/panic-impl for alternatives
+panic-halt = "0.2.0"
+
+[dependencies.stm32f4xx-hal]
+version = "0.7"
+features = ["rt", "stm32f407"] # replace the model of your board here
+```
+
+We also need to tell Rust how to link our executable, and how to lay out the
+result in memory. To accomplish all this, copy [.cargo/config](.cargo/config)
+and [memory.x](memory.x) from the `stm32f4xx-hal` repo to your project.
+
 License
 -------
 
