@@ -91,7 +91,7 @@ use crate::{
 };
 use core::{
     marker::{PhantomData, Sized},
-    ops::Deref,
+    ops::{Deref, DerefMut},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -239,6 +239,7 @@ pub trait Direction: Bits<u8> {}
 #[derive(Debug, Clone, Copy)]
 pub struct PeripheralToMemory;
 impl Bits<u8> for PeripheralToMemory {
+    #[inline]
     fn bits(self) -> u8 {
         0
     }
@@ -248,6 +249,7 @@ impl PeripheralToMemory {
     fn new() -> Self {
         PeripheralToMemory
     }
+    #[inline]
     fn direction() -> DmaDirection {
         DmaDirection::PeripheralToMemory
     }
@@ -255,17 +257,24 @@ impl PeripheralToMemory {
 
 /// DMA from one memory location to another memory location
 #[derive(Debug, Clone, Copy)]
-pub struct MemoryToMemory;
-impl Bits<u8> for MemoryToMemory {
+pub struct MemoryToMemory<T> {
+    _data: PhantomData<T>,
+}
+
+impl<T> Bits<u8> for MemoryToMemory<T> {
+    #[inline]
     fn bits(self) -> u8 {
         2
     }
 }
-impl Direction for MemoryToMemory {}
-impl MemoryToMemory {
+
+impl<T> Direction for MemoryToMemory<T> {}
+
+impl<T> MemoryToMemory<T> {
     fn new() -> Self {
-        MemoryToMemory
+        Self { _data: PhantomData }
     }
+    #[inline]
     fn direction() -> DmaDirection {
         DmaDirection::MemoryToMemory
     }
@@ -275,6 +284,7 @@ impl MemoryToMemory {
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryToPeripheral;
 impl Bits<u8> for MemoryToPeripheral {
+    #[inline]
     fn bits(self) -> u8 {
         1
     }
@@ -289,49 +299,53 @@ impl MemoryToPeripheral {
     }
 }
 
-/// Get an address the DMA can use
-pub trait Address {
+/// Get an address and memory size the DMA can use
+pub trait PeriAddress: Sealed {
+    /// Memory size of the peripheral
+    type MemSize;
+
     /// Returns the address to be used by the DMA stream
     fn address(&self) -> u32;
 }
 
-impl Address for &u32 {
-    #[inline]
-    fn address(&self) -> u32 {
-        *self as *const _ as u32
-    }
-}
+impl Sealed for MemoryToMemory<u8> {}
+impl Sealed for MemoryToMemory<u16> {}
+impl Sealed for MemoryToMemory<u32> {}
 
-impl Address for &u16 {
-    #[inline]
-    fn address(&self) -> u32 {
-        *self as *const _ as u32
-    }
-}
-
-// TODO: remove ?
-impl Address for MemoryToMemory {
+impl PeriAddress for MemoryToMemory<u8> {
     fn address(&self) -> u32 {
         unimplemented!()
     }
+    type MemSize = u8;
 }
 
-impl Address for &[u16] {
-    #[inline]
+impl PeriAddress for MemoryToMemory<u16> {
     fn address(&self) -> u32 {
-        self.as_ptr() as *const _ as u32
+        unimplemented!()
     }
+    type MemSize = u16;
+}
+
+impl PeriAddress for MemoryToMemory<u32> {
+    fn address(&self) -> u32 {
+        unimplemented!()
+    }
+    type MemSize = u32;
 }
 
 /// Convenience macro for implementing addresses on peripherals
 macro_rules! address {
-    ($(($peripheral:ty, $register:ident)),+ $(,)*) => {
+    ($(($peripheral:ty, $register:ident, $size: ty)),+ $(,)*) => {
         $(
-            impl Address for $peripheral {
+            impl Sealed for $peripheral {}
+
+            impl PeriAddress for $peripheral {
                 #[inline]
                 fn address(&self) -> u32 {
                     &self.$register as *const _ as u32
                 }
+
+                type MemSize = $size;
             }
         )+
     };
@@ -379,7 +393,6 @@ pub enum FifoLevel {
     Full,
 }
 
-// TODO: remove ?
 impl From<u8> for FifoLevel {
     fn from(value: u8) -> Self {
         match value {
@@ -463,12 +476,14 @@ pub trait Instace: Deref<Target = DMARegisterBlock> + Sealed {
 }
 
 impl Instace for DMA1 {
+    #[inline]
     fn ptr() -> *const DMARegisterBlock {
         DMA1::ptr()
     }
 }
 
 impl Instace for DMA2 {
+    #[inline]
     fn ptr() -> *const DMARegisterBlock {
         DMA1::ptr()
     }
@@ -1189,17 +1204,29 @@ pub mod config {
 }
 
 /// DMA Stream
-pub struct DmaStream<STREAM: Stream, CHANNEL, PERIPHERAL, DIRECTION> {
+pub struct Transfer<STREAM, CHANNEL, PERIPHERAL, DIRECTION, BUF>
+where
+    STREAM: Stream,
+    PERIPHERAL: PeriAddress,
+    BUF: Deref<Target = [PERIPHERAL::MemSize]> + DerefMut + 'static,
+{
     stream: STREAM,
     _channel: PhantomData<CHANNEL>,
-    _peripheral: PhantomData<PERIPHERAL>,
+    peripheral: PERIPHERAL,
     _direction: PhantomData<DIRECTION>,
+    buf: BUF,
+    double_buf: Option<BUF>,
 }
 
 macro_rules! dma_map {
-    ($(($Stream:ty, $channel:ty, $peripheral:ty, $dir:ty)),+ $(,)*) => {
+    ($(($Stream:ty, $channel:ty, $Peripheral:ty, $dir:ty)),+ $(,)*) => {
         $(
-            impl DmaStream<$Stream, $channel, $peripheral, $dir> {
+            impl<BUF> Transfer<$Stream, $channel, $Peripheral, $dir, BUF>
+            where
+                $Stream: Stream,
+                $Peripheral: PeriAddress,
+                BUF: Deref<Target = [<$Peripheral as PeriAddress>::MemSize]> + DerefMut + 'static,
+            {
 
                 /// Applies all fields in DmaConfig
                 pub fn apply_config(&mut self, config: config::DmaConfig) {
@@ -1234,19 +1261,17 @@ macro_rules! dma_map {
                 }
 
                 /// Configures DMA stream to correct channel for peripheral, configures source and destination addresses and applies supplied config
-                ///
-                /// # Safety
-                ///
-                /// Buffer must be valid for DMA
-                pub unsafe fn init<MA>(stream: $Stream , peripheral: &$peripheral, memory: MA, double_buffer: Option<MA>, config: config::DmaConfig) -> Self
+                pub fn init<F>(stream: $Stream , peripheral: $Peripheral, memory: BUF, double_buf: Option<BUF>, config: config::DmaConfig, f: F) -> Self
                 where
-                    MA: Address,
+                    F: FnOnce(&mut $Peripheral),
                 {
                     let mut transfer = Self {
                         stream,
                         _channel: PhantomData,
-                        _peripheral: PhantomData,
+                        peripheral: peripheral,
                         _direction: PhantomData,
+                        buf: memory,
+                        double_buf,
                     };
 
                     transfer.stream.disable();
@@ -1258,7 +1283,7 @@ macro_rules! dma_map {
                     transfer.stream.set_direction(<$dir>::new());
 
                     //Set the memory address
-                    transfer.stream.set_memory_address(memory.address());
+                    transfer.stream.set_memory_address(transfer.buf.as_ptr() as u32);
 
                     let is_mem2mem = <$dir>::direction() == DmaDirection::MemoryToMemory;
                     if is_mem2mem {
@@ -1266,15 +1291,16 @@ macro_rules! dma_map {
                         assert!(config.fifo_enable);
                     } else {
                         //Set the peripheral address
-                        transfer.stream.set_peripheral_address(peripheral.address());
+                        transfer.stream.set_peripheral_address(transfer.peripheral.address());
                     }
 
+                    let double_buffer = &transfer.double_buf;
                     if let Some(db) = double_buffer {
                         if is_mem2mem {
                             //Double buffer is the source in mem2mem mode
-                            transfer.stream.set_peripheral_address(db.address());
+                            transfer.stream.set_peripheral_address(db.as_ptr() as u32);
                         } else {
-                            transfer.stream.set_memory_double_buffer_address(db.address());
+                            transfer.stream.set_memory_double_buffer_address(db.as_ptr() as u32);
                         }
                     } else {
                         // Double buffer mode must not be enabled if we haven't been given a second buffer
@@ -1282,9 +1308,17 @@ macro_rules! dma_map {
                     }
 
                     transfer.apply_config(config);
-                    transfer.stream.enable();
+                    f(&mut transfer.peripheral);
+                    unsafe { transfer.stream.enable(); }
 
                     transfer
+                }
+
+                /// Stops the stream and returns the underlying Resources
+                pub fn split(mut self) -> ($Stream, $Peripheral, BUF, Option<BUF>) {
+                    self.stream.disable();
+                    let Self { stream, peripheral, buf, double_buf, ..} = self;
+                    (stream, peripheral, buf, double_buf)
                 }
             }
         )+
@@ -1496,20 +1530,20 @@ dma_map!(
     feature = "stm32f479",
 ))]
 address!(
-    (CCR1<stm32::TIM4>, ccr1),
-    (CCR4<stm32::TIM3>, ccr4),
-    (CCR1<stm32::TIM2>, ccr1),
-    (CCR1<stm32::TIM3>, ccr1),
-    (CCR2<stm32::TIM2>, ccr2),
-    (CCR2<stm32::TIM3>, ccr2),
-    (CCR2<stm32::TIM4>, ccr2),
-    (CCR3<stm32::TIM3>, ccr3),
-    (CCR3<stm32::TIM4>, ccr3),
-    (CCR4<stm32::TIM2>, ccr4),
-    (DMAR<stm32::TIM3>, dmar),
-    (DMAR<stm32::TIM4>, dmar),
-    (stm32::SPI3, dr),
-    (stm32::I2C3, dr),
+    (CCR1<stm32::TIM4>, ccr1, u16),
+    (CCR4<stm32::TIM3>, ccr4, u16),
+    (CCR1<stm32::TIM2>, ccr1, u16),
+    (CCR1<stm32::TIM3>, ccr1, u16),
+    (CCR2<stm32::TIM2>, ccr2, u16),
+    (CCR2<stm32::TIM3>, ccr2, u16),
+    (CCR2<stm32::TIM4>, ccr2, u16),
+    (CCR3<stm32::TIM3>, ccr3, u16),
+    (CCR3<stm32::TIM4>, ccr3, u16),
+    (CCR4<stm32::TIM2>, ccr4, u16),
+    (DMAR<stm32::TIM3>, dmar, u16),
+    (DMAR<stm32::TIM4>, dmar, u16),
+    (stm32::SPI3, dr, u8),
+    (stm32::I2C3, dr, u8),
 );
 
 #[cfg(any(
@@ -1792,14 +1826,150 @@ dma_map!(
     (Stream6<DMA2>, Channel5, stm32::USART6, MemoryToPeripheral), //USART6_TX
     (Stream7<DMA2>, Channel4, stm32::USART1, MemoryToPeripheral), //USART1_TX
     (Stream7<DMA2>, Channel5, stm32::USART6, MemoryToPeripheral), //USART6_TX
-    (Stream0<DMA2>, Channel0, MemoryToMemory, MemoryToMemory),
-    (Stream1<DMA2>, Channel0, MemoryToMemory, MemoryToMemory),
-    (Stream2<DMA2>, Channel0, MemoryToMemory, MemoryToMemory),
-    (Stream3<DMA2>, Channel0, MemoryToMemory, MemoryToMemory),
-    (Stream4<DMA2>, Channel0, MemoryToMemory, MemoryToMemory),
-    (Stream5<DMA2>, Channel0, MemoryToMemory, MemoryToMemory),
-    (Stream6<DMA2>, Channel0, MemoryToMemory, MemoryToMemory),
-    (Stream7<DMA2>, Channel0, MemoryToMemory, MemoryToMemory),
+    (
+        Stream0<DMA2>,
+        Channel0,
+        MemoryToMemory<u8>,
+        MemoryToMemory<u8>
+    ),
+    (
+        Stream1<DMA2>,
+        Channel0,
+        MemoryToMemory<u8>,
+        MemoryToMemory<u8>
+    ),
+    (
+        Stream2<DMA2>,
+        Channel0,
+        MemoryToMemory<u8>,
+        MemoryToMemory<u8>
+    ),
+    (
+        Stream3<DMA2>,
+        Channel0,
+        MemoryToMemory<u8>,
+        MemoryToMemory<u8>
+    ),
+    (
+        Stream4<DMA2>,
+        Channel0,
+        MemoryToMemory<u8>,
+        MemoryToMemory<u8>
+    ),
+    (
+        Stream5<DMA2>,
+        Channel0,
+        MemoryToMemory<u8>,
+        MemoryToMemory<u8>
+    ),
+    (
+        Stream6<DMA2>,
+        Channel0,
+        MemoryToMemory<u8>,
+        MemoryToMemory<u8>
+    ),
+    (
+        Stream7<DMA2>,
+        Channel0,
+        MemoryToMemory<u8>,
+        MemoryToMemory<u8>
+    ),
+    (
+        Stream0<DMA2>,
+        Channel0,
+        MemoryToMemory<u16>,
+        MemoryToMemory<u16>
+    ),
+    (
+        Stream1<DMA2>,
+        Channel0,
+        MemoryToMemory<u16>,
+        MemoryToMemory<u16>
+    ),
+    (
+        Stream2<DMA2>,
+        Channel0,
+        MemoryToMemory<u16>,
+        MemoryToMemory<u16>
+    ),
+    (
+        Stream3<DMA2>,
+        Channel0,
+        MemoryToMemory<u16>,
+        MemoryToMemory<u16>
+    ),
+    (
+        Stream4<DMA2>,
+        Channel0,
+        MemoryToMemory<u16>,
+        MemoryToMemory<u16>
+    ),
+    (
+        Stream5<DMA2>,
+        Channel0,
+        MemoryToMemory<u16>,
+        MemoryToMemory<u16>
+    ),
+    (
+        Stream6<DMA2>,
+        Channel0,
+        MemoryToMemory<u16>,
+        MemoryToMemory<u16>
+    ),
+    (
+        Stream7<DMA2>,
+        Channel0,
+        MemoryToMemory<u16>,
+        MemoryToMemory<u16>
+    ),
+    (
+        Stream0<DMA2>,
+        Channel0,
+        MemoryToMemory<u32>,
+        MemoryToMemory<u32>
+    ),
+    (
+        Stream1<DMA2>,
+        Channel0,
+        MemoryToMemory<u32>,
+        MemoryToMemory<u32>
+    ),
+    (
+        Stream2<DMA2>,
+        Channel0,
+        MemoryToMemory<u32>,
+        MemoryToMemory<u32>
+    ),
+    (
+        Stream3<DMA2>,
+        Channel0,
+        MemoryToMemory<u32>,
+        MemoryToMemory<u32>
+    ),
+    (
+        Stream4<DMA2>,
+        Channel0,
+        MemoryToMemory<u32>,
+        MemoryToMemory<u32>
+    ),
+    (
+        Stream5<DMA2>,
+        Channel0,
+        MemoryToMemory<u32>,
+        MemoryToMemory<u32>
+    ),
+    (
+        Stream6<DMA2>,
+        Channel0,
+        MemoryToMemory<u32>,
+        MemoryToMemory<u32>
+    ),
+    (
+        Stream7<DMA2>,
+        Channel0,
+        MemoryToMemory<u32>,
+        MemoryToMemory<u32>
+    ),
 );
 
 #[cfg(any(
@@ -1822,24 +1992,24 @@ dma_map!(
     feature = "stm32f479",
 ))]
 address!(
-    (CCR1<stm32::TIM1>, ccr1),
-    (CCR2<stm32::TIM1>, ccr2),
-    (CCR3<stm32::TIM1>, ccr3),
-    (CCR4<stm32::TIM1>, ccr4),
-    (DMAR<stm32::TIM1>, dmar),
-    (CCR1<stm32::TIM5>, ccr1),
-    (CCR2<stm32::TIM5>, ccr2),
-    (CCR3<stm32::TIM5>, ccr3),
-    (CCR4<stm32::TIM5>, ccr4),
-    (DMAR<stm32::TIM5>, dmar),
-    (stm32::ADC1, dr),
-    (stm32::I2C1, dr),
-    (stm32::I2C2, dr),
-    (stm32::SPI1, dr),
-    (stm32::SPI2, dr),
-    (stm32::USART1, dr),
-    (stm32::USART2, dr),
-    (stm32::USART6, dr),
+    (CCR1<stm32::TIM1>, ccr1, u16),
+    (CCR2<stm32::TIM1>, ccr2, u16),
+    (CCR3<stm32::TIM1>, ccr3, u16),
+    (CCR4<stm32::TIM1>, ccr4, u16),
+    (DMAR<stm32::TIM1>, dmar, u16),
+    (CCR1<stm32::TIM5>, ccr1, u16),
+    (CCR2<stm32::TIM5>, ccr2, u16),
+    (CCR3<stm32::TIM5>, ccr3, u16),
+    (CCR4<stm32::TIM5>, ccr4, u16),
+    (DMAR<stm32::TIM5>, dmar, u16),
+    (stm32::ADC1, dr, u16),
+    (stm32::I2C1, dr, u8),
+    (stm32::I2C2, dr, u8),
+    (stm32::SPI1, dr, u8),
+    (stm32::SPI2, dr, u8),
+    (stm32::USART1, dr, u8),
+    (stm32::USART2, dr, u8),
+    (stm32::USART6, dr, u8),
 );
 
 #[cfg(any(
@@ -1908,7 +2078,10 @@ dma_map!(
 );
 
 #[cfg(any(feature = "stm32f401", feature = "stm32f411",))]
-address!((CCR3<stm32::TIM2>, ccr3), (DMAR<stm32::TIM2>, dmar),);
+address!(
+    (CCR3<stm32::TIM2>, ccr3, u16),
+    (DMAR<stm32::TIM2>, dmar, u16),
+);
 
 #[cfg(any(
     feature = "stm32f401",
@@ -1975,7 +2148,7 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!((stm32::SPI4, dr),);
+address!((stm32::SPI4, dr, u8),);
 
 #[cfg(any(
     feature = "stm32f417",
@@ -2015,8 +2188,8 @@ dma_map!(
     feature = "stm32f479",
 ))]
 address!(
-    (stm32::UART4, dr),
-    (stm32::UART5, dr),
+    (stm32::UART4, dr, u8),
+    (stm32::UART5, dr, u8),
     //(stm32::DAC, ??),
 );
 
@@ -2219,15 +2392,15 @@ dma_map!(
     feature = "stm32f479",
 ))]
 address!(
-    (CCR1<stm32::TIM8>, ccr1),
-    (CCR2<stm32::TIM8>, ccr2),
-    (CCR3<stm32::TIM8>, ccr3),
-    (CCR4<stm32::TIM8>, ccr4),
-    (DMAR<stm32::TIM8>, dmar),
-    (CCR3<stm32::TIM2>, ccr3),
-    (DMAR<stm32::TIM2>, dmar),
+    (CCR1<stm32::TIM8>, ccr1, u16),
+    (CCR2<stm32::TIM8>, ccr2, u16),
+    (CCR3<stm32::TIM8>, ccr3, u16),
+    (CCR4<stm32::TIM8>, ccr4, u16),
+    (DMAR<stm32::TIM8>, dmar, u16),
+    (CCR3<stm32::TIM2>, ccr3, u16),
+    (DMAR<stm32::TIM2>, dmar, u16),
     //(DMAR<stm32::TIM7>, dmar), //Missing?
-    (stm32::USART3, dr),
+    (stm32::USART3, dr, u8),
 );
 
 /*
@@ -2308,7 +2481,7 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!((stm32::HASH, din), (stm32::CRYP, din),);
+address!((stm32::HASH, din, u32), (stm32::CRYP, din, u32),);
 
 /* Not sure how DAC works with DMA
 #[cfg(any(
@@ -2386,7 +2559,11 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!((stm32::ADC2, dr), (stm32::ADC3, dr), (stm32::DCMI, dr),);
+address!(
+    (stm32::ADC2, dr, u16),
+    (stm32::ADC3, dr, u16),
+    (stm32::DCMI, dr, u32),
+);
 
 /* FMPI2C missing from peripheral crates
 #[cfg(any(
@@ -2464,7 +2641,7 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!((stm32::SPI5, dr),);
+address!((stm32::SPI5, dr, u8),);
 
 #[cfg(any(
     feature = "stm32f411",
@@ -2517,7 +2694,7 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!((stm32::QUADSPI, dr),);
+address!((stm32::QUADSPI, dr, u32),);
 
 #[cfg(any(
     feature = "stm32f413",
@@ -2546,7 +2723,7 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!((stm32::UART7, dr), (stm32::UART8, dr),);
+address!((stm32::UART7, dr, u8), (stm32::UART8, dr, u8),);
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 dma_map!(
@@ -2573,8 +2750,8 @@ dma_map!(
 address!(
     //(IN<stm32::AES>, dinr),
     //(OUT<stm32::AES>, doutr),
-    (stm32::UART9, dr),
-    (stm32::UART10, dr),
+    (stm32::UART9, dr, u8),
+    (stm32::UART10, dr, u8),
 );
 
 /* Not sure how SAI works
@@ -2637,7 +2814,7 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!((stm32::SPI6, dr),);
+address!((stm32::SPI6, dr, u8),);
 
 /*
 #[cfg(any(
