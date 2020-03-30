@@ -91,13 +91,25 @@ use crate::{
 };
 use core::{
     marker::{PhantomData, Sized},
+    mem,
     ops::{Deref, DerefMut},
 };
 
+/// Errors
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum DmaDirection {
+pub enum DMAError<BUF> {
+    /// DMA not ready to change buffers
+    NotReady(BUF),
+}
+
+/// Possible DMA's directions
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum DmaDirection {
+    /// Memory to Memory transfer
     MemoryToMemory,
+    /// Peripheral to Memory transfer
     PeripheralToMemory,
+    /// Memory to Peripheral transfer
     MemoryToPeripheral,
 }
 
@@ -133,6 +145,12 @@ pub trait Stream: Sealed {
 
     /// Clear fifo error interrupt (feif) for the DMA stream
     fn clear_fifo_error_interrupt(&mut self);
+
+    /// Get transfer complete flag
+    fn get_transfer_complete_flag() -> bool;
+
+    /// Get half transfer flag
+    fn get_half_transfer_flag() -> bool;
 
     /// Set the peripheral address (par) for the DMA stream
     fn set_peripheral_address(&mut self, value: u32);
@@ -233,7 +251,13 @@ pub trait Stream: Sealed {
 }
 
 /// DMA direction
-pub trait Direction: Bits<u8> {}
+pub trait Direction: Bits<u8> {
+    /// Creates a new instance of the type
+    fn new() -> Self;
+
+    /// Returns the `DmaDirection` of the type
+    fn direction() -> DmaDirection;
+}
 
 /// DMA from a peripheral to a memory location
 #[derive(Debug, Clone, Copy)]
@@ -244,8 +268,7 @@ impl Bits<u8> for PeripheralToMemory {
         0
     }
 }
-impl Direction for PeripheralToMemory {}
-impl PeripheralToMemory {
+impl Direction for PeripheralToMemory {
     fn new() -> Self {
         PeripheralToMemory
     }
@@ -268,9 +291,7 @@ impl<T> Bits<u8> for MemoryToMemory<T> {
     }
 }
 
-impl<T> Direction for MemoryToMemory<T> {}
-
-impl<T> MemoryToMemory<T> {
+impl<T> Direction for MemoryToMemory<T> {
     fn new() -> Self {
         Self { _data: PhantomData }
     }
@@ -289,8 +310,7 @@ impl Bits<u8> for MemoryToPeripheral {
         1
     }
 }
-impl Direction for MemoryToPeripheral {}
-impl MemoryToPeripheral {
+impl Direction for MemoryToPeripheral {
     fn new() -> Self {
         MemoryToPeripheral
     }
@@ -408,7 +428,7 @@ impl From<u8> for FifoLevel {
 }
 
 /// Which DMA buffer is in use
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CurrentBuffer {
     /// The first buffer (m0ar) is in use
     FirstBuffer,
@@ -595,7 +615,7 @@ impl DMAExt for DMA2 {
 /// The implementation does the heavy lifting of mapping to the right fields on the stream
 macro_rules! dma_stream {
     ($(($name:ident, $number:expr ,$ifcr:ident, $tcif:ident, $htif:ident, $teif:ident, $dmeif:ident,
-        $feif:ident)),+ $(,)*) => {
+        $feif:ident, $isr:ident, $tcisr:ident, $htisr:ident)),+ $(,)*) => {
         $(
             #[allow(dead_code)]
             impl<I: Instace> Stream for $name<I> {
@@ -657,6 +677,20 @@ macro_rules! dma_stream {
                     // that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.$ifcr.write(|w| w.$feif().set_bit());
+                }
+
+                #[inline]
+                fn get_transfer_complete_flag() -> bool {
+                    //NOTE(unsafe) Atomic read with no side effects
+                    let dma = unsafe { &*I::ptr() };
+                    dma.$isr.read().$tcisr().bit_is_set()
+                }
+
+                #[inline]
+                fn get_half_transfer_flag() -> bool {
+                    //NOTE(unsafe) Atomic read with no side effects
+                    let dma = unsafe { &*I::ptr() };
+                    dma.$isr.read().$htisr().bit_is_set()
                 }
 
                 #[inline]
@@ -878,18 +912,21 @@ macro_rules! dma_stream {
 }
 
 dma_stream!(
-    (Stream0, 0, lifcr, ctcif0, chtif0, cteif0, cdmeif0, cfeif0),
-    (Stream1, 1, lifcr, ctcif1, chtif1, cteif1, cdmeif1, cfeif1),
-    (Stream2, 2, lifcr, ctcif2, chtif2, cteif2, cdmeif2, cfeif2),
-    (Stream3, 3, lifcr, ctcif3, chtif3, cteif3, cdmeif3, cfeif3),
-    (Stream4, 4, hifcr, ctcif4, chtif4, cteif4, cdmeif4, cfeif4),
-    (Stream5, 5, hifcr, ctcif5, chtif5, cteif5, cdmeif5, cfeif5),
-    (Stream6, 6, hifcr, ctcif6, chtif6, cteif6, cdmeif6, cfeif6),
-    (Stream7, 7, hifcr, ctcif7, chtif7, cteif7, cdmeif7, cfeif7),
+    (Stream0, 0, lifcr, ctcif0, chtif0, cteif0, cdmeif0, cfeif0, lisr, tcif0, htif0),
+    (Stream1, 1, lifcr, ctcif1, chtif1, cteif1, cdmeif1, cfeif1, lisr, tcif1, htif1),
+    (Stream2, 2, lifcr, ctcif2, chtif2, cteif2, cdmeif2, cfeif2, lisr, tcif2, htif2),
+    (Stream3, 3, lifcr, ctcif3, chtif3, cteif3, cdmeif3, cfeif3, lisr, tcif3, htif3),
+    (Stream4, 4, hifcr, ctcif4, chtif4, cteif4, cdmeif4, cfeif4, hisr, tcif4, htif4),
+    (Stream5, 5, hifcr, ctcif5, chtif5, cteif5, cdmeif5, cfeif5, hisr, tcif5, htif5),
+    (Stream6, 6, hifcr, ctcif6, chtif6, cteif6, cdmeif6, cfeif6, hisr, tcif6, htif6),
+    (Stream7, 7, hifcr, ctcif7, chtif7, cteif7, cdmeif7, cfeif7, hisr, tcif7, htif7),
 );
 
 /// A channel that can be configured on a DMA stream
-pub trait Channel: Bits<u8> {}
+pub trait Channel: Bits<u8> {
+    /// Returns a new instance of the type
+    fn new() -> Self;
+}
 
 /// Macro that defines a channel and it's conversion to u8
 macro_rules! dma_channel {
@@ -902,8 +939,7 @@ macro_rules! dma_channel {
 
                 fn bits(self) -> u8 { $value }
             }
-            impl Channel for $name {}
-            impl $name {
+            impl Channel for $name {
                 fn new() -> Self {
                     $name
                 }
@@ -1104,12 +1140,6 @@ pub mod config {
             self.peripheral_size = peripheral_size;
             self
         }
-        /// Set the number_of_transfers
-        #[inline]
-        pub fn number_of_transfers(mut self, number_of_transfers: u16) -> Self {
-            self.number_of_transfers = number_of_transfers;
-            self
-        }
         /// Set the priority
         #[inline]
         pub fn priority(mut self, priority: Priority) -> Self {
@@ -1126,12 +1156,6 @@ pub mod config {
         #[inline]
         pub fn peripheral_increment(mut self, peripheral_increment: bool) -> Self {
             self.peripheral_increment = peripheral_increment;
-            self
-        }
-        /// Set the circular
-        #[inline]
-        pub fn circular(mut self, circular: bool) -> Self {
-            self.circular = circular;
             self
         }
         /// Set the transfer_complete_interrupt
@@ -1218,109 +1242,180 @@ where
     double_buf: Option<BUF>,
 }
 
+impl<STREAM, CHANNEL, PERIPHERAL, DIR, BUF> Transfer<STREAM, CHANNEL, PERIPHERAL, DIR, BUF>
+where
+    STREAM: Stream,
+    CHANNEL: Channel,
+    DIR: Direction,
+    PERIPHERAL: PeriAddress,
+    BUF: Deref<Target = [<PERIPHERAL as PeriAddress>::MemSize]> + DerefMut + 'static,
+    (STREAM, CHANNEL, PERIPHERAL, DIR): Sealed,
+{
+    /// Applies all fields in DmaConfig
+    pub fn apply_config(&mut self, config: config::DmaConfig) {
+        let was_enabled = <STREAM>::is_enabled();
+        if was_enabled {
+            self.stream.disable();
+        }
+
+        self.stream.clear_interrupts();
+        self.stream.set_priority(config.priority);
+        self.stream.set_memory_size(config.memory_size);
+        self.stream.set_peripheral_size(config.peripheral_size);
+        self.stream.set_memory_increment(config.memory_increment);
+        self.stream
+            .set_peripheral_increment(config.peripheral_increment);
+        self.stream.set_circular(config.circular);
+        self.stream
+            .set_transfer_complete_interrupt_enable(config.transfer_complete_interrupt);
+        self.stream
+            .set_half_transfer_interrupt_enable(config.half_transfer_interrupt);
+        self.stream
+            .set_transfer_error_interrupt_enable(config.transfer_error_interrupt);
+        self.stream
+            .set_direct_mode_error_interrupt_enable(config.direct_mode_error_interrupt);
+        self.stream
+            .set_fifo_error_interrupt_enable(config.fifo_error_interrupt);
+        self.stream.set_double_buffer(config.double_buffer);
+        self.stream.set_fifo_threshold(config.fifo_threshold);
+        self.stream.set_fifo_enable(config.fifo_enable);
+        self.stream.set_memory_burst(config.memory_burst);
+        self.stream.set_peripheral_burst(config.peripheral_burst);
+        self.stream.set_flow_controller(config.flow_controller);
+
+        if was_enabled {
+            unsafe {
+                self.stream.enable();
+            }
+        }
+    }
+
+    /// Configures DMA stream to correct channel for peripheral, configures source and destination
+    /// addresses and applies supplied configuration. In a memory to memory transfer the `double_buf`
+    /// argument is source of the data.
+    pub fn init<F>(
+        stream: STREAM,
+        peripheral: PERIPHERAL,
+        memory: BUF,
+        double_buf: Option<BUF>,
+        config: config::DmaConfig,
+        f: F,
+    ) -> Self
+    where
+        F: FnOnce(&mut PERIPHERAL),
+    {
+        let mut transfer = Self {
+            stream,
+            _channel: PhantomData,
+            peripheral: peripheral,
+            _direction: PhantomData,
+            buf: memory,
+            double_buf,
+        };
+
+        transfer.stream.disable();
+
+        //Set the channel
+        transfer.stream.set_channel(CHANNEL::new());
+
+        //Set peripheral to memory mode
+        transfer.stream.set_direction(DIR::new());
+
+        //Set the memory address
+        transfer
+            .stream
+            .set_memory_address(transfer.buf.as_ptr() as u32);
+
+        let is_mem2mem = DIR::direction() == DmaDirection::MemoryToMemory;
+        if is_mem2mem {
+            //Fifo must be enabled for memory to memory
+            assert!(config.fifo_enable);
+        } else {
+            //Set the peripheral address
+            transfer
+                .stream
+                .set_peripheral_address(transfer.peripheral.address());
+        }
+
+        let double_buffer = &transfer.double_buf;
+        if let Some(db) = double_buffer {
+            if is_mem2mem {
+                //Double buffer is the source in mem2mem mode
+                transfer.stream.set_peripheral_address(db.as_ptr() as u32);
+            } else {
+                transfer
+                    .stream
+                    .set_memory_double_buffer_address(db.as_ptr() as u32);
+            }
+        } else {
+            // Double buffer mode must not be enabled if we haven't been given a second buffer
+            assert!(!config.double_buffer);
+        }
+
+        transfer
+            .stream
+            .set_number_of_transfers(transfer.buf.len() as u16);
+        transfer.apply_config(config);
+        f(&mut transfer.peripheral);
+        unsafe {
+            transfer.stream.enable();
+        }
+
+        transfer
+    }
+
+    /// Changes the buffer and restarts or continues a transfer. This must be called immediately after
+    /// a transfer complete event.
+    pub fn cotinue(&mut self, new_buf: BUF) -> Result<BUF, DMAError<BUF>> {
+        if !STREAM::get_transfer_complete_flag() {
+            return Err(DMAError::NotReady(new_buf));
+        }
+        self.stream.clear_transfer_complete_interrupt();
+
+        if let Some(ref mut db) = self.double_buf {
+            if DIR::direction() != DmaDirection::MemoryToMemory {
+                // double buffering
+                if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
+                    self.stream.set_memory_address(new_buf.as_ptr() as u32);
+                    let old_buf = mem::replace(&mut self.buf, new_buf);
+                    return Ok(old_buf);
+                } else {
+                    self.stream
+                        .set_memory_double_buffer_address(new_buf.as_ptr() as u32);
+                    let old_buf = mem::replace(db, new_buf);
+                    return Ok(old_buf);
+                }
+            }
+        }
+        self.stream.disable();
+        self.stream.set_memory_address(new_buf.as_ptr() as u32);
+        self.stream.set_number_of_transfers(new_buf.len() as u16);
+        let old_buf = mem::replace(&mut self.buf, new_buf);
+        unsafe {
+            self.stream.enable();
+        }
+
+        Ok(old_buf)
+    }
+
+    /// Stops the stream and returns the underlying Resources
+    pub fn free(mut self) -> (STREAM, PERIPHERAL, BUF, Option<BUF>) {
+        self.stream.disable();
+        let Self {
+            stream,
+            peripheral,
+            buf,
+            double_buf,
+            ..
+        } = self;
+        (stream, peripheral, buf, double_buf)
+    }
+}
+
 macro_rules! dma_map {
     ($(($Stream:ty, $channel:ty, $Peripheral:ty, $dir:ty)),+ $(,)*) => {
         $(
-            impl<BUF> Transfer<$Stream, $channel, $Peripheral, $dir, BUF>
-            where
-                $Stream: Stream,
-                $Peripheral: PeriAddress,
-                BUF: Deref<Target = [<$Peripheral as PeriAddress>::MemSize]> + DerefMut + 'static,
-            {
-
-                /// Applies all fields in DmaConfig
-                pub fn apply_config(&mut self, config: config::DmaConfig) {
-                    let was_enabled = <$Stream>::is_enabled();
-                    if was_enabled {
-                        self.stream.disable();
-                    }
-
-                    self.stream.clear_interrupts();
-                    self.stream.set_priority(config.priority);
-                    self.stream.set_memory_size(config.memory_size);
-                    self.stream.set_peripheral_size(config.peripheral_size);
-                    self.stream.set_memory_increment(config.memory_increment);
-                    self.stream.set_peripheral_increment(config.peripheral_increment);
-                    self.stream.set_circular(config.circular);
-                    self.stream.set_transfer_complete_interrupt_enable(config.transfer_complete_interrupt);
-                    self.stream.set_half_transfer_interrupt_enable(config.half_transfer_interrupt);
-                    self.stream.set_transfer_error_interrupt_enable(config.transfer_error_interrupt);
-                    self.stream.set_direct_mode_error_interrupt_enable(config.direct_mode_error_interrupt);
-                    self.stream.set_fifo_error_interrupt_enable(config.fifo_error_interrupt);
-                    self.stream.set_number_of_transfers(config.number_of_transfers);
-                    self.stream.set_double_buffer(config.double_buffer);
-                    self.stream.set_fifo_threshold(config.fifo_threshold);
-                    self.stream.set_fifo_enable(config.fifo_enable);
-                    self.stream.set_memory_burst(config.memory_burst);
-                    self.stream.set_peripheral_burst(config.peripheral_burst);
-                    self.stream.set_flow_controller(config.flow_controller);
-
-                    if was_enabled {
-                        unsafe { self.stream.enable(); }
-                    }
-                }
-
-                /// Configures DMA stream to correct channel for peripheral, configures source and destination addresses and applies supplied config
-                pub fn init<F>(stream: $Stream , peripheral: $Peripheral, memory: BUF, double_buf: Option<BUF>, config: config::DmaConfig, f: F) -> Self
-                where
-                    F: FnOnce(&mut $Peripheral),
-                {
-                    let mut transfer = Self {
-                        stream,
-                        _channel: PhantomData,
-                        peripheral: peripheral,
-                        _direction: PhantomData,
-                        buf: memory,
-                        double_buf,
-                    };
-
-                    transfer.stream.disable();
-
-                    //Set the channel
-                    transfer.stream.set_channel(<$channel>::new());
-
-                    //Set peripheral to memory mode
-                    transfer.stream.set_direction(<$dir>::new());
-
-                    //Set the memory address
-                    transfer.stream.set_memory_address(transfer.buf.as_ptr() as u32);
-
-                    let is_mem2mem = <$dir>::direction() == DmaDirection::MemoryToMemory;
-                    if is_mem2mem {
-                        //Fifo must be enabled for memory to memory
-                        assert!(config.fifo_enable);
-                    } else {
-                        //Set the peripheral address
-                        transfer.stream.set_peripheral_address(transfer.peripheral.address());
-                    }
-
-                    let double_buffer = &transfer.double_buf;
-                    if let Some(db) = double_buffer {
-                        if is_mem2mem {
-                            //Double buffer is the source in mem2mem mode
-                            transfer.stream.set_peripheral_address(db.as_ptr() as u32);
-                        } else {
-                            transfer.stream.set_memory_double_buffer_address(db.as_ptr() as u32);
-                        }
-                    } else {
-                        // Double buffer mode must not be enabled if we haven't been given a second buffer
-                        assert!(!config.double_buffer);
-                    }
-
-                    transfer.apply_config(config);
-                    f(&mut transfer.peripheral);
-                    unsafe { transfer.stream.enable(); }
-
-                    transfer
-                }
-
-                /// Stops the stream and returns the underlying Resources
-                pub fn split(mut self) -> ($Stream, $Peripheral, BUF, Option<BUF>) {
-                    self.stream.disable();
-                    let Self { stream, peripheral, buf, double_buf, ..} = self;
-                    (stream, peripheral, buf, double_buf)
-                }
-            }
+            impl Sealed for ($Stream, $channel, $Peripheral, $dir) {}
         )+
     };
 }
