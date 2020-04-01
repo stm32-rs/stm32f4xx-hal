@@ -93,6 +93,7 @@ use core::{
     marker::{PhantomData, Sized},
     mem,
     ops::{Deref, DerefMut},
+    sync::atomic::{compiler_fence, Ordering},
 };
 
 /// Errors
@@ -1084,7 +1085,7 @@ pub mod config {
     pub struct DmaConfig {
         pub(crate) memory_size: TransferSize,
         pub(crate) peripheral_size: TransferSize,
-        pub(crate) number_of_transfers: u16,
+        pub(crate) number_of_transfers: Option<u16>,
         pub(crate) priority: Priority,
         pub(crate) memory_increment: bool,
         pub(crate) peripheral_increment: bool,
@@ -1107,7 +1108,7 @@ pub mod config {
             Self {
                 memory_size: TransferSize::HalfWord,
                 peripheral_size: TransferSize::HalfWord,
-                number_of_transfers: 1,
+                number_of_transfers: None,
                 priority: Priority::Medium,
                 memory_increment: false,
                 peripheral_increment: false,
@@ -1144,6 +1145,20 @@ pub mod config {
         #[inline]
         pub fn priority(mut self, priority: Priority) -> Self {
             self.priority = priority;
+            self
+        }
+        /// Set the number of transfers, the default number of transfers is the size of the buffer
+        /// passed to the [`Transfer::init`] method.
+        ///
+        /// # Safety
+        ///
+        /// The user must ensure that the number of transfers fits in the buffer length, otherwise
+        /// the DMA will overwrite arbitrary memory.
+        ///
+        /// [`Transfer::init`]: ../struct.Transfer.html#method.init
+        #[inline]
+        pub unsafe fn number_of_transfers(mut self, n_transfers: u16) -> Self {
+            self.number_of_transfers = Some(n_transfers);
             self
         }
         /// Set the memory_increment
@@ -1352,10 +1367,17 @@ where
             assert!(!config.double_buffer);
         }
 
-        transfer
-            .stream
-            .set_number_of_transfers(transfer.buf.len() as u16);
+        let n_transfers = if let Some(n) = config.number_of_transfers {
+            n
+        } else {
+            transfer.buf.len() as u16
+        };
+        transfer.stream.set_number_of_transfers(n_transfers);
         transfer.apply_config(config);
+
+        // "Preceding reads and writes cannot be moved past subsequent writes"
+        compiler_fence(Ordering::Release);
+
         f(&mut transfer.peripheral);
         unsafe {
             transfer.stream.enable();
@@ -1378,19 +1400,35 @@ where
                 if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
                     self.stream.set_memory_address(new_buf.as_ptr() as u32);
                     let old_buf = mem::replace(&mut self.buf, new_buf);
+
+                    // "Subsequent reads and writes cannot be moved ahead of preceding reads"
+                    compiler_fence(Ordering::Acquire);
+
                     return Ok(old_buf);
                 } else {
                     self.stream
                         .set_memory_double_buffer_address(new_buf.as_ptr() as u32);
                     let old_buf = mem::replace(db, new_buf);
+
+                    // "Subsequent reads and writes cannot be moved ahead of preceding reads"
+                    compiler_fence(Ordering::Acquire);
+
                     return Ok(old_buf);
                 }
             }
         }
         self.stream.disable();
+
+        // "No re-ordering of reads and writes across this point is allowed"
+        compiler_fence(Ordering::SeqCst);
+
         self.stream.set_memory_address(new_buf.as_ptr() as u32);
         self.stream.set_number_of_transfers(new_buf.len() as u16);
         let old_buf = mem::replace(&mut self.buf, new_buf);
+
+        // "Preceding reads and writes cannot be moved past subsequent writes"
+        compiler_fence(Ordering::Release);
+
         unsafe {
             self.stream.enable();
         }
@@ -1401,6 +1439,7 @@ where
     /// Stops the stream and returns the underlying Resources
     pub fn free(mut self) -> (STREAM, PERIPHERAL, BUF, Option<BUF>) {
         self.stream.disable();
+        self.stream.clear_interrupts();
         let Self {
             stream,
             peripheral,
