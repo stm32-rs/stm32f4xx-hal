@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Wait 16 cycles after setting prescalers for some clock domains to follow manual.
+
 ## [v0.7.0] - 2020-03-07
 
 ### Changed

@@ -353,7 +353,7 @@ impl CFGR {
             while rcc.cr.read().pllrdy().bit_is_clear() {}
         }
 
-        // Set scaling factors and select system clock source
+        // Set scaling factors
         rcc.cfgr.modify(|_, w| unsafe {
             w.ppre2()
                 .bits(ppre2_bits)
@@ -361,14 +361,21 @@ impl CFGR {
                 .bits(ppre1_bits)
                 .hpre()
                 .variant(hpre_bits)
-                .sw()
-                .variant(if sysclk_on_pll {
-                    SW_A::PLL
-                } else if self.hse.is_some() {
-                    SW_A::HSE
-                } else {
-                    SW_A::HSI
-                })
+        });
+
+        // Wait for the new prescalers to kick in
+        // "The clocks are divided with the new prescaler factor from 1 to 16 AHB cycles after write"
+        cortex_m::asm::delay(16);
+
+        // Select system clock source
+        rcc.cfgr.modify(|_, w| {
+            w.sw().variant(if sysclk_on_pll {
+                SW_A::PLL
+            } else if self.hse.is_some() {
+                SW_A::HSE
+            } else {
+                SW_A::HSI
+            })
         });
 
         let clocks = Clocks {
