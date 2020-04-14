@@ -59,6 +59,10 @@ ssd1306 = "0.2.6"
 embedded-graphics = "0.4.9"
 usb-device = "0.2.5"
 usbd-serial = "0.1.0"
+usbd_scsi = "0.1.0"
+usbd_mass_storage = "0.1.0"
+rtt-target = {version = "0.1.1", features = ["cortex-m"]}
+panic-rtt-target = { version = "0.1", features = ["cortex-m"] }
 
 [features]
 device-selected = []
@@ -96,6 +100,10 @@ opt-level = "s"
 [[example]]
 name = "usb_serial"
 required-features = ["rt", "stm32f401", "usb_fs"]
+
+[[example]]
+name = "sdio-usb-block"
+required-features = ["rt", "stm32f405", "usb_fs"]
 
 [[example]]
 name = "delay-blinky"
