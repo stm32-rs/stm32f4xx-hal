@@ -99,6 +99,7 @@ pub mod i2c;
         feature = "stm32f401",
         feature = "stm32f405",
         feature = "stm32f407",
+        feature = "stm32f411",
         feature = "stm32f415",
         feature = "stm32f417",
         feature = "stm32f427",
