@@ -22,11 +22,8 @@ jobs:
           target: thumbv7em-none-eabihf
           override: true
  
-      - name: Regular build
+      - name: Regular build for all supported MCU models
         run: python tools/check.py
-
-      - name: Size check
-        run: python tools/check.py size_check
 
       - uses: actions-rs/cargo@v1
         with:
