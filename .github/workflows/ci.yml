@@ -1,0 +1,34 @@
+on: [push, pull_request]
+
+name: Continuous integration
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+        include:
+          - rust: nightly
+            experimental: true
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: thumbv7em-none-eabihf
+          override: true
+ 
+      - name: Regular build
+        run: python tools/check.py
+
+      - name: Size check
+        run: python tools/check.py size_check
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --examples --features=stm32f401,rt,usb_fs --release
