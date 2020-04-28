@@ -3,7 +3,6 @@ use core::ptr;
 
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
-use nb;
 
 #[cfg(any(
     feature = "stm32f401",
