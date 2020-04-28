@@ -24,9 +24,9 @@ fn main() -> ! {
 
         let pwm = pwm::tim1(dp.TIM1, channels, clocks, 20u32.khz());
         let (mut ch1, _ch2) = pwm;
-        let max_duty = ch1.get_max_duty();
-        ch1.set_duty(max_duty / 2);
-        ch1.enable();
+        let max_duty = ch1.try_get_max_duty().unwrap();
+        ch1.try_set_duty(max_duty / 2);
+        ch1.try_enable();
     }
 
     loop {

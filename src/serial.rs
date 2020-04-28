@@ -1544,18 +1544,18 @@ macro_rules! halUsartImpl {
             impl<PINS> serial::Read<u8> for Serial<$USARTX, PINS> {
                 type Error = Error;
 
-                fn read(&mut self) -> nb::Result<u8, Error> {
+                fn try_read(&mut self) -> nb::Result<u8, Error> {
                     let mut rx: Rx<$USARTX> = Rx {
                         _usart: PhantomData,
                     };
-                    rx.read()
+                    rx.try_read()
                 }
             }
 
             impl serial::Read<u8> for Rx<$USARTX> {
                 type Error = Error;
 
-                fn read(&mut self) -> nb::Result<u8, Error> {
+                fn try_read(&mut self) -> nb::Result<u8, Error> {
                     // NOTE(unsafe) atomic read with no side effects
                     let sr = unsafe { (*$USARTX::ptr()).sr.read() };
 
@@ -1597,18 +1597,18 @@ macro_rules! halUsartImpl {
             impl<PINS> serial::Write<u8> for Serial<$USARTX, PINS> {
                 type Error = Error;
 
-                fn flush(&mut self) -> nb::Result<(), Self::Error> {
+                fn try_flush(&mut self) -> nb::Result<(), Self::Error> {
                     let mut tx: Tx<$USARTX> = Tx {
                         _usart: PhantomData,
                     };
-                    tx.flush()
+                    tx.try_flush()
                 }
 
-                fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
+                fn try_write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
                     let mut tx: Tx<$USARTX> = Tx {
                         _usart: PhantomData,
                     };
-                    tx.write(byte)
+                    tx.try_write(byte)
                 }
             }
 
@@ -1624,7 +1624,7 @@ macro_rules! halUsartImpl {
             impl serial::Write<u8> for Tx<$USARTX> {
                 type Error = Error;
 
-                fn flush(&mut self) -> nb::Result<(), Self::Error> {
+                fn try_flush(&mut self) -> nb::Result<(), Self::Error> {
                     // NOTE(unsafe) atomic read with no side effects
                     let sr = unsafe { (*$USARTX::ptr()).sr.read() };
 
@@ -1635,7 +1635,7 @@ macro_rules! halUsartImpl {
                     }
                 }
 
-                fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
+                fn try_write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
                     // NOTE(unsafe) atomic read with no side effects
                     let sr = unsafe { (*$USARTX::ptr()).sr.read() };
 
@@ -1653,10 +1653,10 @@ macro_rules! halUsartImpl {
             impl blocking::serial::Write<u8> for Tx<$USARTX> {
                 type Error = Error;
 
-                fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+                fn try_bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
                     for &b in bytes {
                         loop {
-                            match self.write(b) {
+                            match self.try_write(b) {
                                 Err(nb::Error::WouldBlock) => continue,
                                 Err(nb::Error::Other(err)) => return Err(err),
                                 Ok(()) => break,
@@ -1666,9 +1666,9 @@ macro_rules! halUsartImpl {
                     Ok(())
                 }
 
-                fn bflush(&mut self) -> Result<(), Self::Error> {
+                fn try_bflush(&mut self) -> Result<(), Self::Error> {
                     loop {
-                        match self.flush() {
+                        match self.try_flush() {
                             Ok(()) => return Ok(()),
                             Err(nb::Error::WouldBlock) => continue,
                             Err(nb::Error::Other(err)) => return Err(err),
@@ -1680,18 +1680,18 @@ macro_rules! halUsartImpl {
             impl<PINS> blocking::serial::Write<u8> for Serial<$USARTX, PINS> {
                 type Error = Error;
 
-                fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+                fn try_bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
                     let mut tx: Tx<$USARTX> = Tx {
                         _usart: PhantomData,
                     };
-                    tx.bwrite_all(bytes)
+                    tx.try_bwrite_all(bytes)
                 }
 
-                fn bflush(&mut self) -> Result<(), Self::Error> {
+                fn try_bflush(&mut self) -> Result<(), Self::Error> {
                     let mut tx: Tx<$USARTX> = Tx {
                         _usart: PhantomData,
                     };
-                    tx.bflush()
+                    tx.try_bflush()
                 }
             }
         )+
@@ -1864,7 +1864,11 @@ where
     Tx<USART>: serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        let _ = s.as_bytes().iter().map(|c| block!(self.write(*c))).last();
+        let _ = s
+            .as_bytes()
+            .iter()
+            .map(|c| block!(self.try_write(*c)))
+            .last();
         Ok(())
     }
 }

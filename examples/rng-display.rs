@@ -99,7 +99,7 @@ fn main() -> ! {
             }
             disp.flush().unwrap();
             //delay a little while between refreshes so the display is readable
-            delay_source.delay_ms(100u8);
+            delay_source.try_delay_ms(100u8).unwrap();
         }
     }
 

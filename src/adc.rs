@@ -26,7 +26,7 @@ macro_rules! adc_pins {
         $(
             impl Channel<stm32::$adc> for $pin {
                 type ID = u8;
-                fn channel() -> u8 { $chan }
+                const CHANNEL: Self::ID = $chan;
             }
         )+
     };
@@ -665,7 +665,7 @@ macro_rules! adc {
                     }
 
                     let vref_cal = VrefCal::get().read();
-                    let vref_samp = self.read(&mut Vref).unwrap(); //This can't actually fail, it's just in a result to satisfy hal trait
+                    let vref_samp = self.try_read(&mut Vref).unwrap(); //This can't actually fail, it's just in a result to satisfy hal trait
 
                     self.calibrated_vdda = (VDDA_CALIB * u32::from(vref_cal)) / u32::from(vref_samp);
                     if !vref_en {
@@ -873,7 +873,7 @@ macro_rules! adc {
                         }
                     });
 
-                    let channel = CHANNEL::channel();
+                    let channel = CHANNEL::CHANNEL;
 
                     //Set the channel in the right sequence field
                     match sequence {
@@ -976,7 +976,7 @@ macro_rules! adc {
             {
                 type Error = ();
 
-                fn read(&mut self, pin: &mut PIN) -> nb::Result<u16, Self::Error> {
+                fn try_read(&mut self, pin: &mut PIN) -> nb::Result<u16, Self::Error> {
                     let enabled = self.is_enabled();
                     if !enabled {
                         self.enable();

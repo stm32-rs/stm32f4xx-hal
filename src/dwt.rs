@@ -1,8 +1,11 @@
 //! Debug and trace and stuff
 
+use core::convert::Infallible;
+
 use crate::rcc::Clocks;
 use crate::time::Hertz;
 use cortex_m::peripheral::{DCB, DWT};
+
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
 pub trait DwtExt {
@@ -65,13 +68,13 @@ pub struct Delay {
 }
 impl Delay {
     /// Delay for `ClockDuration::ticks`
-    pub fn delay(duration: ClockDuration) {
+    pub fn try_delay(duration: ClockDuration) -> Result<(), Infallible> {
         let ticks = duration.ticks as u64;
-        Delay::delay_ticks(DWT::get_cycle_count(), ticks);
+        Delay::try_delay_ticks(DWT::get_cycle_count(), ticks)
     }
     /// Delay ticks
     /// NOTE DCB and DWT need to be set up for this to work, so it is private
-    fn delay_ticks(mut start: u32, ticks: u64) {
+    fn try_delay_ticks(mut start: u32, ticks: u64) -> Result<(), Infallible> {
         if ticks < (core::u32::MAX / 2) as u64 {
             // Simple delay
             let ticks = ticks as u32;
@@ -96,24 +99,30 @@ impl Delay {
                 while (DWT::get_cycle_count().wrapping_sub(start)) > ticks {}
             }
         }
+
+        Ok(())
     }
 }
 
 // Implement DelayUs/DelayMs for various integer types
 impl<T: Into<u64>> DelayUs<T> for Delay {
-    fn delay_us(&mut self, us: T) {
+    type Error = Infallible;
+
+    fn try_delay_us(&mut self, us: T) -> Result<(), Self::Error> {
         // Convert us to ticks
         let start = DWT::get_cycle_count();
         let ticks = (us.into() * self.clock.0 as u64) / 1_000_000;
-        Delay::delay_ticks(start, ticks);
+        Delay::try_delay_ticks(start, ticks)
     }
 }
 impl<T: Into<u64>> DelayMs<T> for Delay {
-    fn delay_ms(&mut self, ms: T) {
+    type Error = Infallible;
+
+    fn try_delay_ms(&mut self, ms: T) -> Result<(), Self::Error> {
         // Convert ms to ticks
         let start = DWT::get_cycle_count();
         let ticks = (ms.into() * self.clock.0 as u64) / 1_000;
-        Delay::delay_ticks(start, ticks);
+        Delay::try_delay_ticks(start, ticks)
     }
 }
 

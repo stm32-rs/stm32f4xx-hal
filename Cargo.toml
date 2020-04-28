@@ -48,8 +48,7 @@ default-features = false
 version = "1.0.2"
 
 [dependencies.embedded-hal]
-features = ["unproven"]
-version = "0.2.3"
+version = "=1.0.0-alpha.1"
 
 [dev-dependencies]
 panic-semihosting = "0.5.3"

@@ -1,6 +1,7 @@
 //! # Quadrature Encoder Interface
-use crate::hal::{self, Direction};
+use crate::hal::{self, qei::Direction};
 use crate::stm32::RCC;
+use core::convert::Infallible;
 
 #[cfg(any(
     feature = "stm32f401",
@@ -126,18 +127,19 @@ macro_rules! hal {
                 }
             }
 
-            impl<PINS> hal::Qei for Qei<$TIM, PINS> {
+            impl<PINS> hal::qei::Qei for Qei<$TIM, PINS> {
+                type Error = Infallible;
                 type Count = $bits;
 
-                fn count(&self) -> $bits {
-                    self.tim.cnt.read().bits() as $bits
+                fn try_count(&self) -> Result<Self::Count, Self::Error> {
+                    Ok(self.tim.cnt.read().bits() as $bits)
                 }
 
-                fn direction(&self) -> Direction {
+                fn try_direction(&self) -> Result<Direction, Self::Error> {
                     if self.tim.cr1.read().dir().bit_is_clear() {
-                        hal::Direction::Upcounting
+                        Ok(Direction::Upcounting)
                     } else {
-                        hal::Direction::Downcounting
+                        Ok(Direction::Downcounting)
                     }
                 }
             }

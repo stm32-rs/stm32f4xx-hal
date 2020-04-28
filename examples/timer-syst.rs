@@ -1,4 +1,4 @@
-//! Start and stop a periodic system timer.
+//! Start and stop a periodic system timer.try_
 //!
 //! This example should run on all stm32f4xx boards but it was tested with
 //! stm32f4-discovery board (model STM32F407G-DISC1).
@@ -36,29 +36,29 @@ fn main() -> ! {
 
     hprintln!("hello!").unwrap();
     // wait until timer expires
-    nb::block!(timer.wait()).unwrap();
+    nb::block!(timer.try_wait()).unwrap();
     hprintln!("timer expired 1").unwrap();
 
     // the function syst() creates a periodic timer, so it is automatically
     // restarted
-    nb::block!(timer.wait()).unwrap();
+    nb::block!(timer.try_wait()).unwrap();
     hprintln!("timer expired 2").unwrap();
 
     // cancel current timer
-    timer.cancel().unwrap();
+    timer.try_cancel().unwrap();
 
     // start it again
-    timer.start(24.hz());
-    nb::block!(timer.wait()).unwrap();
+    timer.try_start(24.hz());
+    nb::block!(timer.try_wait()).unwrap();
     hprintln!("timer expired 3").unwrap();
 
-    timer.cancel().unwrap();
-    let cancel_outcome = timer.cancel();
+    timer.try_cancel().unwrap();
+    let cancel_outcome = timer.try_cancel();
     assert_eq!(cancel_outcome, Err(timer::Error::Disabled));
     hprintln!("ehy, you cannot cancel a timer two times!").unwrap();
     // this time the timer was not restarted, therefore this function should
     // wait forever
-    nb::block!(timer.wait()).unwrap();
+    nb::block!(timer.try_wait()).unwrap();
     // you should never see this print
     hprintln!("if you see this there is something wrong").unwrap();
     panic!();

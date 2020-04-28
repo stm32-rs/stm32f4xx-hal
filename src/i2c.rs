@@ -905,9 +905,14 @@ where
 {
     type Error = Error;
 
-    fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.write_bytes(addr, bytes)?;
-        self.read(addr, buffer)?;
+    fn try_write_read(
+        &mut self,
+        addr: u8,
+        bytes: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<(), Self::Error> {
+        self.try_write(addr, bytes)?;
+        self.try_read(addr, buffer)?;
 
         Ok(())
     }
@@ -919,7 +924,7 @@ where
 {
     type Error = Error;
 
-    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+    fn try_write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
         self.write_bytes(addr, bytes)?;
 
         // Send a STOP condition
@@ -939,7 +944,7 @@ where
 {
     type Error = Error;
 
-    fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
+    fn try_read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         if let Some((last, buffer)) = buffer.split_last_mut() {
             // Send a START condition and set ACK bit
             self.i2c
