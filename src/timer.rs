@@ -4,7 +4,6 @@ use cast::{u16, u32};
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 use embedded_hal::timer::{CountDown, Periodic};
-use nb;
 use void::Void;
 
 use crate::stm32::RCC;

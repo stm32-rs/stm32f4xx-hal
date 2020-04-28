@@ -478,13 +478,11 @@ pub mod config {
 ///   },
 /// };
 ///
-/// fn main() {
-///     let mut adc = Adc::adc1(device.ADC1, true, AdcConfig::default());
-///     let pa3 = gpioa.pa3.into_analog();
-///     let sample = adc.convert(&pa3, SampleTime::Cycles_480);
-///     let millivolts = adc.sample_to_millivolts(sample);
-///     info!("pa3: {}mV", millivolts);
-/// }
+/// let mut adc = Adc::adc1(device.ADC1, true, AdcConfig::default());
+/// let pa3 = gpioa.pa3.into_analog();
+/// let sample = adc.convert(&pa3, SampleTime::Cycles_480);
+/// let millivolts = adc.sample_to_millivolts(sample);
+/// info!("pa3: {}mV", millivolts);
 /// ```
 ///
 /// ## Sequence conversion
@@ -502,27 +500,25 @@ pub mod config {
 ///   },
 /// };
 ///
-/// fn main() {
-///     let config = AdcConfig::default()
-///         //We'll either need DMA or an interrupt per conversion to convert
-///         //multiple values in a sequence
-///         .end_of_conversion_interrupt(Eoc::Conversion);
-///         //Scan mode is also required to convert a sequence
-///         .scan(Scan::Enabled)
-///         //And since we're looking for one interrupt per conversion the
-///         //clock will need to be fairly slow to avoid overruns breaking
-///         //the sequence. If you are running in debug mode and logging in
-///         //the interrupt, good luck... try setting pclk2 really low.
-///         //(Better yet use DMA)
-///         .clock(Clock::Pclk2_div_8);
-///     let mut adc = Adc::adc1(device.ADC1, true, config);
-///     let pa0 = gpioa.pa0.into_analog();
-///     let pa3 = gpioa.pa3.into_analog();
-///     adc.configure_channel(&pa0, Sequence::One, SampleTime::Cycles_112);
-///     adc.configure_channel(&pa3, Sequence::Two, SampleTime::Cycles_480);
-///     adc.configure_channel(&pa0, Sequence::Three, SampleTime::Cycles_112);
-///     adc.start_conversion();
-/// }
+/// let config = AdcConfig::default()
+///     //We'll either need DMA or an interrupt per conversion to convert
+///     //multiple values in a sequence
+///     .end_of_conversion_interrupt(Eoc::Conversion);
+///     //Scan mode is also required to convert a sequence
+///     .scan(Scan::Enabled)
+///     //And since we're looking for one interrupt per conversion the
+///     //clock will need to be fairly slow to avoid overruns breaking
+///     //the sequence. If you are running in debug mode and logging in
+///     //the interrupt, good luck... try setting pclk2 really low.
+///     //(Better yet use DMA)
+///     .clock(Clock::Pclk2_div_8);
+/// let mut adc = Adc::adc1(device.ADC1, true, config);
+/// let pa0 = gpioa.pa0.into_analog();
+/// let pa3 = gpioa.pa3.into_analog();
+/// adc.configure_channel(&pa0, Sequence::One, SampleTime::Cycles_112);
+/// adc.configure_channel(&pa3, Sequence::Two, SampleTime::Cycles_480);
+/// adc.configure_channel(&pa0, Sequence::Three, SampleTime::Cycles_112);
+/// adc.start_conversion();
 /// ```
 ///
 /// ## External trigger
@@ -550,47 +546,46 @@ pub mod config {
 ///   },
 /// };
 ///
-/// fn main() {
-///     let config = AdcConfig::default()
-///         //Set the trigger you want
-///         .external_trigger(TriggerMode::RisingEdge, ExternalTrigger::Tim_1_cc_1);
-///     let mut adc = Adc::adc1(device.ADC1, true, config);
-///     let pa0 = gpioa.pa0.into_analog();
-///     adc.configure_channel(&pa0, Sequence::One, SampleTime::Cycles_112);
-///     //Make sure it's enabled but don't start the conversion
-///     adc.enable();
+///  let config = AdcConfig::default()
+///      //Set the trigger you want
+///      .external_trigger(TriggerMode::RisingEdge, ExternalTrigger::Tim_1_cc_1);
+///  let mut adc = Adc::adc1(device.ADC1, true, config);
+///  let pa0 = gpioa.pa0.into_analog();
+///  adc.configure_channel(&pa0, Sequence::One, SampleTime::Cycles_112);
+///  //Make sure it's enabled but don't start the conversion
+///  adc.enable();
 ///
-///    //Configure the timer
-///    let mut tim = Timer::tim1(device.TIM1, 1.hz(), clocks);
-///    unsafe {
-///        let tim = &(*TIM1::ptr());
+/// //Configure the timer
+/// let mut tim = Timer::tim1(device.TIM1, 1.hz(), clocks);
+/// unsafe {
+///     let tim = &(*TIM1::ptr());
 ///
-///        //This is pwm mode 1, the default mode is "frozen" which won't work
-///        let mode = 0b0110;
+///     //This is pwm mode 1, the default mode is "frozen" which won't work
+///     let mode = 0b0110;
 ///
-///        //Channel 1
-///        //Disable the channel before configuring it
-///        tim.ccer.modify(|_, w| w.cc1e().clear_bit());
+///     //Channel 1
+///     //Disable the channel before configuring it
+///     tim.ccer.modify(|_, w| w.cc1e().clear_bit());
 ///
-///        tim.ccmr1_output.modify(|_, w| w
-///          //Preload enable for channel
-///          .oc1pe().set_bit()
+///     tim.ccmr1_output.modify(|_, w| w
+///       //Preload enable for channel
+///       .oc1pe().set_bit()
 ///
-///          //Set mode for channel
-///          .oc1m().bits(mode)
-///        );
+///       //Set mode for channel
+///       .oc1m().bits(mode)
+///     );
 ///
-///        //Set the duty cycle, 0 won't work in pwm mode but might be ok in
-///        //toggle mode or match mode
-///        let max_duty = tim.arr.read().arr().bits() as u16;
-///        tim.ccr1.modify(|_, w| w.ccr1().bits(max_duty / 2));
+///     //Set the duty cycle, 0 won't work in pwm mode but might be ok in
+///     //toggle mode or match mode
+///     let max_duty = tim.arr.read().arr().bits() as u16;
+///     tim.ccr1.modify(|_, w| w.ccr1().bits(max_duty / 2));
 ///
-///        //Enable the channel
-///        tim.ccer.modify(|_, w| w.cc1e().set_bit());
+///     //Enable the channel
+///     tim.ccer.modify(|_, w| w.cc1e().set_bit());
 ///
-///        //Enable the TIM main Output
-///        tim.bdtr.modify(|_, w| w.moe().set_bit());
-///    }
+///     //Enable the TIM main Output
+///     tim.bdtr.modify(|_, w| w.moe().set_bit());
+/// }
 /// ```
 #[derive(Clone, Copy)]
 pub struct Adc<ADC> {

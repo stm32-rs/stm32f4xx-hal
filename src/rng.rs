@@ -52,7 +52,7 @@ impl RngExt for RNG {
 
             // verify the clock configuration is valid
             let hclk = clocks.hclk();
-            let rng_clk = clocks.pll48clk().unwrap_or(0u32.hz());
+            let rng_clk = clocks.pll48clk().unwrap_or_else(|| 0u32.hz());
             assert!(rng_clk.0 >= (hclk.0 / 16));
 
             // enable the RNG peripheral
