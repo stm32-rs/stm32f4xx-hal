@@ -3,7 +3,7 @@
 use cast::{u16, u32};
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
-use embedded_hal::timer::{CountDown, Periodic};
+use embedded_hal::timer::{Cancel, CountDown, Periodic};
 use void::Void;
 
 use crate::stm32::RCC;
@@ -97,6 +97,12 @@ pub enum Event {
     TimeOut,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    /// Timer is disabled
+    Disabled,
+}
+
 impl Timer<SYST> {
     /// Configures the SYST clock as a periodic count down timer
     pub fn syst<T>(mut syst: SYST, timeout: T, clocks: Clocks) -> Self
@@ -146,6 +152,19 @@ impl CountDown for Timer<SYST> {
         } else {
             Err(nb::Error::WouldBlock)
         }
+    }
+}
+
+impl Cancel for Timer<SYST> {
+    type Error = Error;
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        if !self.tim.is_counter_enabled() {
+            return Err(Self::Error::Disabled);
+        }
+
+        self.tim.disable_counter();
+        Ok(())
     }
 }
 
