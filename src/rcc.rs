@@ -19,6 +19,7 @@ impl RccExt for RCC {
                 pclk2: None,
                 sysclk: None,
                 pll48clk: false,
+                plli2sclk: None,
             },
         }
     }
@@ -124,6 +125,7 @@ pub struct CFGR {
     pclk2: Option<u32>,
     sysclk: Option<u32>,
     pll48clk: bool,
+    plli2sclk: Option<u32>,
 }
 
 impl CFGR {
@@ -174,13 +176,21 @@ impl CFGR {
         self
     }
 
+    pub fn plli2sclk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.plli2sclk = Some(freq.into().0);
+        self
+    }
+
     #[inline(always)]
-    fn pll_setup(&self) -> (bool, bool, u32, Option<Hertz>) {
+    fn pll_setup(&self) -> (bool, bool, u32, Option<Hertz>, Option<Hertz>) {
         let pllsrcclk = self.hse.unwrap_or(HSI);
         let sysclk = self.sysclk.unwrap_or(pllsrcclk);
         let sysclk_on_pll = sysclk != pllsrcclk;
-        if !sysclk_on_pll && !self.pll48clk {
-            return (false, false, sysclk, None);
+        if !sysclk_on_pll && !self.pll48clk && !self.plli2sclk.is_some() {
+            return (false, false, sysclk, None, None);
         }
 
         // Sysclk output divisor must be one of 2, 4, 6 or 8
@@ -240,12 +250,34 @@ impl CFGR {
             w.pllsrc().bit(self.hse.is_some())
         });
 
+        // NOTE: Hardcoded for 48KHz audio sampling rate with VCO at 2MHz.
+        // plli2sclk = 2MHz * 258 / 6 = 86MHz
+        // I2S uses DIV=3, ODD=true to achive a 12.285714 MHz MCKL.
+        // TODO: Calculate PLLI2S N an R values from desired frequency.
+        let plli2sn = 258;
+        let plli2sr = 6;
+        let plli2sclk = vco_in * plli2sn / plli2sr;
+        if self.plli2sclk.is_some() {
+            unsafe { &*RCC::ptr() }.plli2scfgr.write(|w| unsafe {
+                w.plli2sn()
+                    .bits(plli2sn as u16)
+                    .plli2sr()
+                    .bits(plli2sr as u8)
+            });
+        }
+
         let real_sysclk = if sysclk_on_pll {
             vco_in * plln / sysclk_div
         } else {
             sysclk
         };
-        (true, sysclk_on_pll, real_sysclk, Some(Hertz(pll48clk)))
+        (
+            true,
+            sysclk_on_pll,
+            real_sysclk,
+            Some(Hertz(pll48clk)),
+            Some(Hertz(plli2sclk)),
+        )
     }
 
     fn flash_setup(sysclk: u32) {
@@ -288,7 +320,7 @@ impl CFGR {
     pub fn freeze(self) -> Clocks {
         let rcc = unsafe { &*RCC::ptr() };
 
-        let (use_pll, sysclk_on_pll, sysclk, pll48clk) = self.pll_setup();
+        let (use_pll, sysclk_on_pll, sysclk, pll48clk, plli2sclk) = self.pll_setup();
 
         assert!(!sysclk_on_pll || sysclk <= SYSCLK_MAX && sysclk >= SYSCLK_MIN);
 
@@ -346,13 +378,13 @@ impl CFGR {
         Self::flash_setup(sysclk);
 
         if self.hse.is_some() {
-            // enable HSE and wait for it to be ready
+            // Enable HSE and wait for it to be ready.
             rcc.cr.modify(|_, w| w.hseon().set_bit());
             while rcc.cr.read().hserdy().bit_is_clear() {}
         }
 
         if use_pll {
-            // Enable PLL
+            // Enable PLL and wait for it to be ready.
             rcc.cr.modify(|_, w| w.pllon().set_bit());
 
             // Enable voltage regulator overdrive if HCLK is above the limit
@@ -378,6 +410,12 @@ impl CFGR {
 
             // Wait for PLL to stabilise
             while rcc.cr.read().pllrdy().bit_is_clear() {}
+        }
+
+        if self.plli2sclk.is_some() {
+            // Enable PLLI2S and wait for it to be ready.
+            rcc.cr.modify(|_, w| w.plli2son().set_bit());
+            while rcc.cr.read().plli2srdy().bit_is_clear() {}
         }
 
         // Set scaling factors
@@ -413,6 +451,7 @@ impl CFGR {
             ppre2,
             sysclk: Hertz(sysclk),
             pll48clk,
+            plli2sclk,
         };
 
         if self.pll48clk {
@@ -435,6 +474,7 @@ pub struct Clocks {
     ppre2: u8,
     sysclk: Hertz,
     pll48clk: Option<Hertz>,
+    plli2sclk: Option<Hertz>,
 }
 
 impl Clocks {
@@ -471,6 +511,11 @@ impl Clocks {
     /// Returns the frequency of the PLL48 clock line
     pub fn pll48clk(&self) -> Option<Hertz> {
         self.pll48clk
+    }
+
+    /// Returns the frequency of the PLLI2S clock
+    pub fn plli2sclk(&self) -> Option<Hertz> {
+        self.plli2sclk
     }
 
     /// Returns true if the PLL48 clock is within USB
