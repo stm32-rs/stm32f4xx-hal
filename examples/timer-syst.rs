@@ -16,11 +16,11 @@ use cortex_m;
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 
-use stm32f4xx_hal as hal;
+use embedded_hal::timer::Cancel;
 use hal::timer;
 use hal::timer::Timer;
 use nb;
-use embedded_hal::timer::Cancel;
+use stm32f4xx_hal as hal;
 
 use crate::hal::{prelude::*, stm32};
 
