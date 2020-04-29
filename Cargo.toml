@@ -19,7 +19,7 @@ license = "0BSD"
 name = "stm32f4xx-hal"
 readme = "README.md"
 repository = "https://github.com/stm32-rs/stm32f4xx-hal"
-version = "0.7.0"
+version = "0.8.0"
 
 [package.metadata.docs.rs]
 features = ["stm32f429", "rt", "usb_fs"]
@@ -31,7 +31,7 @@ cortex-m = ">=0.5.8,<0.7"
 cortex-m-rt = "0.6.10"
 nb = "0.1.2"
 rand_core = "0.5.1"
-stm32f4 = "0.10.0"
+stm32f4 = "0.11"
 synopsys-usb-otg = { version = "0.1.0", features = ["cortex-m"], optional = true }
 
 [dependencies.bare-metal]
