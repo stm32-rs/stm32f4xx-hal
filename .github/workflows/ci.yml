@@ -7,10 +7,29 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        mcu:
+          - stm32f401
+          - stm32f405
+          - stm32f407
+          - stm32f410
+          - stm32f411
+          - stm32f412
+          - stm32f413
+          - stm32f415
+          - stm32f417
+          - stm32f423
+          - stm32f427
+          - stm32f429
+          - stm32f437
+          - stm32f439
+          - stm32f446
+          - stm32f469
+          - stm32f479
         rust:
           - stable
         include:
           - rust: nightly
+            mcu: stm32f479
             experimental: true
 
     steps:
@@ -21,11 +40,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: thumbv7em-none-eabihf
           override: true
- 
-      - name: Regular build for all supported MCU models
-        run: python tools/check.py
-
       - uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --examples --features=stm32f401,rt,usb_fs --release
+          args: --features=${{ matrix.mcu }},rt,usb_fs
