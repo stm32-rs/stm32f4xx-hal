@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Implement `timer::Cancel` trait for `Timer<TIM>`.
+
 ## [v0.8.0] - 2020-04-30
 
 ### Changed
@@ -17,7 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Implement `timer::Cancel` trait for `Timer`.
+- Implement `timer::Cancel` trait for `Timer<SYST>`.
 - Added PWM support and example.
 
 ## [v0.7.0] - 2020-03-07
