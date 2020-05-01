@@ -274,6 +274,22 @@ macro_rules! hal {
                 }
             }
 
+            impl Cancel for Timer<$TIM>
+            {
+                type Error = Error;
+
+                fn cancel(&mut self) -> Result<(), Self::Error> {
+                    let is_counter_enabled = self.tim.cr1.read().cen().is_enabled();
+                    if !is_counter_enabled {
+                        return Err(Self::Error::Disabled);
+                    }
+
+                    // disable counter
+                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
+                    Ok(())
+                }
+            }
+
             impl Periodic for Timer<$TIM> {}
         )+
     }

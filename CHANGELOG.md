@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Implement `timer::Cancel` trait for `Timer<TIM>`.
+
 ## [v0.8.0] - 2020-04-30
 
 ### Changed
