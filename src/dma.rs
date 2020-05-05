@@ -5,9 +5,8 @@
 //! This implementation currently only provides convenience methods for configuration and clearing of interrupts. No attempt has been made
 //! (yet) to provide a safe api for dealing with buffers or ongoing transfers.
 //!
-//! DmaStream::init is an attempt at providing compile time checking of peripheral-stream-channel-direction combinations.
-//! DmaStream::init is implemented for valid combinations. [DmaStream](struct.DmaStream.html) shows a list of valid combinations.
-//! You can also directly configure the DMA via the StreamX<DMA> structs but this won't give you any protection from invalid combinations.
+//! Transfer::init is an attempt at providing compile time checking of peripheral-stream-channel-direction combinations.
+//! Transfer::init is implemented for valid combinations. [Transfer](struct.Transfer.html) shows a list of valid combinations.
 //!
 //! ## Implemented and tested
 //! * ADC
@@ -44,23 +43,23 @@
 //! static mut ADC_DMA_BUFFER1: [u16; 3] = [0; 3]
 //! static mut ADC_DMA_BUFFER2: [u16; 3] = [0; 3]
 //! fn main() {
-//!     let adc_config = AdcConfig::default()
-//!         .scan(Scan::Enabled)
-//!         .dma(Dma::Continuous);
-//!
 //!     let dma_config = DmaConfig::default()
 //!         .circular(true)
 //!         .transfer_complete_interrupt(true)
 //!         .double_buffer(true);
 //!
 //!     unsafe {
-//!         let dma_stream = DmaStream::<DMA2, Stream0<DMA2>, Channel0, ADC1, PeripheralToMemory>::init(
-//!             &mut device.DMA2,
-//!             &device.ADC1,
-//!             &ADC_DMA_BUFFER1 as &[u16],
-//!             Some(&ADC_DMA_BUFFER2 as &[u16]),
-//!             dma_config);
-//!         //you can keep the returned dma_stream reference around for updating config/clearing interrupts/etc.
+//!          //TODO: the hal Dma traits should take the hal Adc structs or Deref<RegisterBlock> instead of
+//!          //      an owned ADC peripheral
+//!          let adc = stm32f4xx_hal::stm32::Peripherals::steal().ADC1;
+//!          let transfer = Transfer::<Stream0<DMA2>, Channel0, ADC1, PeripheralToMemory, &mut [u16; 3]>::init(
+//!             dma2.0,
+//!             adc,
+//!             cx.resources.adc_buffer,
+//!             None,
+//!             dma_config,
+//!          );
+//!         //you can keep the returned transfer reference around for updating config/clearing interrupts/etc.
 //!     }
 //!
 //!     let mut adc = Adc::adc1(device.ADC1, true, adc_config);
@@ -70,14 +69,9 @@
 //!
 //! #[interrupt]
 //! fn DMA2_STREAM0() {
-//!     //... get dma_stream and the dma peripheral from where we stashed them (resources if using rtfm, a static if not) ...
-//!     let cb = dma_stream.current_buffer(dma);
-//!     dma_stream.clear_interrupts(dma);
-//!
-//!     //If we didn't keep the DmaStream around, can use this instead
-//!     unsafe {
-//!         Stream0::<DMA2>::clear_interrupts_unsafe();
-//!     }
+//!     //... get transfer and the dma peripheral from where we stashed them (resources if using rtfm, a static if not) ...
+//!     let cb = transfer.current_buffer(dma);
+//!     transfer.clear_interrupts(dma);
 //!
 //!     info!("DMA: {:?} {:?} {:?}", cb, ADC_DMA_BUFFER1, ADC_DMA_BUFFER2);
 //! }
@@ -196,6 +190,9 @@ pub trait Stream: Sealed {
 
     /// Enable/disable peripheral increment (pinc) for the DMA stream
     fn set_peripheral_increment(&mut self, increment: bool);
+
+    /// Enable/disable circular mode (circ) for the DMA stream
+    fn set_circular(&mut self, circular: bool);
 
     /// Set the direction (dir) of the DMA stream
     fn set_direction<D: Direction>(&mut self, direction: D);
@@ -782,6 +779,14 @@ macro_rules! dma_stream {
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.pinc().bit(increment));
                 }
 
+                /// Enable/disable circular mode (circ) for the DMA stream
+                #[inline]
+                fn set_circular(&mut self, circular: bool) {
+                    //NOTE(unsafe) We only access the registers that belongs to the StreamX
+                    let dma = unsafe { &*I::ptr() };
+                    dma.st[Self::NUMBER].cr.modify(|_, w| w.circ().bit(circular));
+                }
+
                 #[inline]
                 fn set_direction<D: Direction>(&mut self, direction: D) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
@@ -1077,6 +1082,7 @@ pub mod config {
         pub(crate) priority: Priority,
         pub(crate) memory_increment: bool,
         pub(crate) peripheral_increment: bool,
+        pub(crate) circular: bool,
         pub(crate) transfer_complete_interrupt: bool,
         pub(crate) half_transfer_interrupt: bool,
         pub(crate) transfer_error_interrupt: bool,
@@ -1099,6 +1105,7 @@ pub mod config {
                 priority: Priority::Medium,
                 memory_increment: false,
                 peripheral_increment: false,
+                circular: false,
                 transfer_complete_interrupt: false,
                 half_transfer_interrupt: false,
                 transfer_error_interrupt: false,
@@ -1157,6 +1164,12 @@ pub mod config {
         #[inline]
         pub fn peripheral_increment(mut self, peripheral_increment: bool) -> Self {
             self.peripheral_increment = peripheral_increment;
+            self
+        }
+        /// Set the circular
+        #[inline]
+        pub fn circular(mut self, circular: bool) -> Self {
+            self.circular = circular;
             self
         }
         /// Set the transfer_complete_interrupt
@@ -1284,6 +1297,7 @@ where
         self.stream.set_memory_burst(config.memory_burst);
         self.stream.set_peripheral_burst(config.peripheral_burst);
         self.stream.set_flow_controller(config.flow_controller);
+        self.stream.set_circular(config.circular);
 
         if was_enabled {
             unsafe {
