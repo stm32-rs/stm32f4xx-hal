@@ -1,8 +1,7 @@
 on:
   push:
-    branches: [ master ]
+    branches: [ staging, trying, master ]
   pull_request:
-    branches: [ master ]
 
 name: Continuous integration
 
