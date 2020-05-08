@@ -180,6 +180,7 @@ pub enum Error {
 }
 
 pub struct Sdio {
+    sdio: SDIO,
     bw: Buswidth,
     card: Option<Card>,
 }
@@ -238,8 +239,8 @@ pub struct Card {
 }
 
 impl Sdio {
-    pub fn new<PINS: Pins>(_pins: PINS) -> Self {
-        let sdio = unsafe { &*SDIO::ptr() };
+    pub fn new<PINS: Pins>(sdio: SDIO, _pins: PINS) -> Self {
+        //let sdio = unsafe { &*SDIO::ptr() };
 
         unsafe {
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
@@ -272,6 +273,7 @@ impl Sdio {
             .modify(|_, w| unsafe { w.pwrctrl().bits(PowerCtrl::Off as u8) });
 
         Sdio {
+            sdio,
             bw: PINS::BUSWIDTH,
             card: None,
         }
@@ -282,19 +284,18 @@ impl Sdio {
     }
 
     pub fn init_card(&mut self) -> Result<(), Error> {
-        let sdio = unsafe { &*SDIO::ptr() };
-
         // Enable power to card
-        sdio.power
+        self.sdio
+            .power
             .modify(|_, w| unsafe { w.pwrctrl().bits(PowerCtrl::On as u8) });
 
         // Enable clock
-        sdio.clkcr.modify(|_, w| w.clken().set_bit());
+        self.sdio.clkcr.modify(|_, w| w.clken().set_bit());
 
         self.cmd(Cmd::idle())?;
 
         self.cmd(Cmd::hs_send_ext_csd(0x1AA))?;
-        let r1 = sdio.resp1.read().bits();
+        let r1 = self.sdio.resp1.read().bits();
 
         let mut card = if r1 == 0x1AA {
             /* v2 card */
@@ -315,7 +316,7 @@ impl Sdio {
                 Err(Error::Crc) => (),
                 Err(err) => return Err(err),
             }
-            let ocr = sdio.resp1.read().bits();
+            let ocr = self.sdio.resp1.read().bits();
             if ocr & 0x8000_0000 == 0 {
                 // Still powering up
                 continue;
@@ -334,21 +335,21 @@ impl Sdio {
 
         // Get CID
         self.cmd(Cmd::all_send_cid())?;
-        card.cid[0] = sdio.resp1.read().bits();
-        card.cid[1] = sdio.resp2.read().bits();
-        card.cid[2] = sdio.resp3.read().bits();
-        card.cid[3] = sdio.resp4.read().bits();
+        card.cid[0] = self.sdio.resp1.read().bits();
+        card.cid[1] = self.sdio.resp2.read().bits();
+        card.cid[2] = self.sdio.resp3.read().bits();
+        card.cid[3] = self.sdio.resp4.read().bits();
 
         // Get RCA
         self.cmd(Cmd::send_rel_addr())?;
-        card.rca = sdio.resp1.read().bits() >> 16;
+        card.rca = self.sdio.resp1.read().bits() >> 16;
 
         // Get CSD
         self.cmd(Cmd::send_csd(card.rca << 16))?;
-        card.csd[0] = sdio.resp1.read().bits();
-        card.csd[1] = sdio.resp2.read().bits();
-        card.csd[2] = sdio.resp3.read().bits();
-        card.csd[3] = sdio.resp4.read().bits();
+        card.csd[0] = self.sdio.resp1.read().bits();
+        card.csd[1] = self.sdio.resp2.read().bits();
+        card.csd[2] = self.sdio.resp3.read().bits();
+        card.csd[3] = self.sdio.resp4.read().bits();
 
         self.select_card(Some(&card))?;
 
@@ -362,17 +363,19 @@ impl Sdio {
         Ok(())
     }
 
-    pub fn read_block(&self, addr: u32, buf: &mut [u8]) -> Result<(), Error> {
-        let sdio = unsafe { &*SDIO::ptr() };
+    pub fn read_block(&mut self, addr: u32, buf: &mut [u8]) -> Result<(), Error> {
         let _card = self.card()?;
 
         self.cmd(Cmd::set_blocklen(512))?;
 
         // Setup read command
-        sdio.dtimer
+        self.sdio
+            .dtimer
             .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
-        sdio.dlen.write(|w| unsafe { w.datalength().bits(512) });
-        sdio.dctrl.write(|w| unsafe {
+        self.sdio
+            .dlen
+            .write(|w| unsafe { w.datalength().bits(512) });
+        self.sdio.dctrl.write(|w| unsafe {
             w.dblocksize()
                 .bits(9) //512
                 .dtdir()
@@ -385,7 +388,7 @@ impl Sdio {
         let mut i = 0;
         let mut sta;
         while {
-            sta = sdio.sta.read();
+            sta = self.sdio.sta.read();
             !(sta.rxoverr().bit()
                 || sta.dcrcfail().bit()
                 || sta.dtimeout().bit()
@@ -394,7 +397,7 @@ impl Sdio {
         } {
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
-                    let bytes = sdio.fifo.read().bits().to_le_bytes();
+                    let bytes = self.sdio.fifo.read().bits().to_le_bytes();
                     buf[i..i + 4].copy_from_slice(&bytes);
                     i += 4;
                 }
@@ -416,18 +419,19 @@ impl Sdio {
         Ok(())
     }
 
-    pub fn write_block(&self, addr: u32, buf: &[u8]) -> Result<(), Error> {
-        let sdio = unsafe { &*SDIO::ptr() };
-
+    pub fn write_block(&mut self, addr: u32, buf: &[u8]) -> Result<(), Error> {
         let _card = self.card()?;
 
         self.cmd(Cmd::set_blocklen(512))?;
 
         // Setup write command
-        sdio.dtimer
+        self.sdio
+            .dtimer
             .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
-        sdio.dlen.write(|w| unsafe { w.datalength().bits(512) });
-        sdio.dctrl.write(|w| unsafe {
+        self.sdio
+            .dlen
+            .write(|w| unsafe { w.datalength().bits(512) });
+        self.sdio.dctrl.write(|w| unsafe {
             w.dblocksize()
                 .bits(9) //512
                 .dtdir()
@@ -440,7 +444,7 @@ impl Sdio {
         let mut i = 0;
         let mut sta;
         while {
-            sta = sdio.sta.read();
+            sta = self.sdio.sta.read();
             !(sta.txunderr().bit()
                 || sta.dcrcfail().bit()
                 || sta.dtimeout().bit()
@@ -452,7 +456,7 @@ impl Sdio {
                     let mut wb = [0u8; 4];
                     wb.copy_from_slice(&buf[i..i + 4]);
                     let word = u32::from_le_bytes(wb);
-                    sdio.fifo.write(|w| unsafe { w.bits(word) });
+                    self.sdio.fifo.write(|w| unsafe { w.bits(word) });
                     i += 4;
                 }
             }
@@ -474,8 +478,6 @@ impl Sdio {
     }
 
     fn read_card_status(&mut self) -> Result<(), Error> {
-        let sdio = unsafe { &*SDIO::ptr() };
-
         let card = self.card()?;
 
         self.cmd(Cmd::set_blocklen(64))?;
@@ -483,10 +485,11 @@ impl Sdio {
         self.cmd(Cmd::app_cmd(card.rca << 16))?;
 
         // Prepare the transfer
-        sdio.dtimer
+        self.sdio
+            .dtimer
             .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
-        sdio.dlen.write(|w| unsafe { w.datalength().bits(64) });
-        sdio.dctrl.write(|w| unsafe {
+        self.sdio.dlen.write(|w| unsafe { w.datalength().bits(64) });
+        self.sdio.dctrl.write(|w| unsafe {
             w.dblocksize()
                 .bits(6) // 64
                 .dtdir()
@@ -501,7 +504,7 @@ impl Sdio {
         let mut idx = 0;
         let mut sta;
         while {
-            sta = sdio.sta.read();
+            sta = self.sdio.sta.read();
             !(sta.rxoverr().bit()
                 || sta.dcrcfail().bit()
                 || sta.dtimeout().bit()
@@ -509,7 +512,7 @@ impl Sdio {
         } {
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
-                    status[idx] = sdio.fifo.read().bits();
+                    status[idx] = self.sdio.fifo.read().bits();
                     idx += 1;
                 }
             }
@@ -544,15 +547,15 @@ impl Sdio {
     }
 
     fn get_scr(&self, card: &mut Card) -> Result<(), Error> {
-        let sdio = unsafe { &*SDIO::ptr() };
-
         self.cmd(Cmd::set_blocklen(8))?;
         self.cmd(Cmd::app_cmd(card.rca << 16))?;
 
-        sdio.dtimer
+        self.sdio
+            .dtimer
             .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
-        sdio.dlen.write(|w| unsafe { w.datalength().bits(8) });
-        sdio.dctrl
+        self.sdio.dlen.write(|w| unsafe { w.datalength().bits(8) });
+        self.sdio
+            .dctrl
             .write(|w| unsafe { w.dblocksize().bits(3).dtdir().set_bit().dten().set_bit() });
         self.cmd(Cmd::cmd51())?;
 
@@ -560,7 +563,7 @@ impl Sdio {
         let mut i = 0;
         let mut sta;
         while {
-            sta = sdio.sta.read();
+            sta = self.sdio.sta.read();
 
             !(sta.rxoverr().bit()
                 || sta.dcrcfail().bit()
@@ -568,7 +571,7 @@ impl Sdio {
                 || sta.dbckend().bit())
         } {
             if sta.rxdavl().bit() {
-                scr[i] = sdio.fifo.read().bits();
+                scr[i] = self.sdio.fifo.read().bits();
                 i += 1;
             }
 
@@ -600,8 +603,6 @@ impl Sdio {
 
     /// Set bus width and clock frequency
     fn set_bus(&self, width: Buswidth, freq: ClockFreq, card: &Card) -> Result<(), Error> {
-        let sdio = unsafe { &*SDIO::ptr() };
-
         let (width, acmd_arg) = match width {
             Buswidth::Buswidth4 if card.supports_widebus() => (width, 2),
             _ => (Buswidth::Buswidth1, 1),
@@ -610,7 +611,7 @@ impl Sdio {
         self.cmd(Cmd::app_cmd(card.rca << 16))?;
         self.cmd(Cmd::acmd6(acmd_arg))?;
 
-        sdio.clkcr.modify(|_, w| unsafe {
+        self.sdio.clkcr.modify(|_, w| unsafe {
             w.clkdiv()
                 .bits(freq as u8)
                 .widbus()
@@ -622,10 +623,8 @@ impl Sdio {
     }
 
     fn cmd(&self, cmd: Cmd) -> Result<(), Error> {
-        let sdio = unsafe { &*SDIO::ptr() };
-
         // Clear interrupts
-        sdio.icr.modify(|_, w| {
+        self.sdio.icr.modify(|_, w| {
             w.ccrcfailc()
                 .set_bit()
                 .ctimeoutc()
@@ -655,9 +654,9 @@ impl Sdio {
         });
 
         // Command arg
-        sdio.arg.write(|w| unsafe { w.cmdarg().bits(cmd.arg) });
+        self.sdio.arg.write(|w| unsafe { w.cmdarg().bits(cmd.arg) });
 
-        sdio.cmd.write(|w| unsafe {
+        self.sdio.cmd.write(|w| unsafe {
             w.waitresp()
                 .bits(cmd.resp as u8)
                 .cmdindex()
@@ -674,14 +673,14 @@ impl Sdio {
         if cmd.resp == Response::None {
             // Wait for command sent or a timeout
             while {
-                sta = sdio.sta.read();
+                sta = self.sdio.sta.read();
                 !(sta.ctimeout().bit() || sta.cmdsent().bit()) && timeout > 0
             } {
                 timeout -= 1;
             }
         } else {
             while {
-                sta = sdio.sta.read();
+                sta = self.sdio.sta.read();
                 !(sta.ctimeout().bit() || sta.cmdrend().bit() || sta.ccrcfail().bit())
                     && timeout > 0
             } {

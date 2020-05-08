@@ -30,28 +30,31 @@ static USB_STORAGE: Mutex<RefCell<Option<usbd_scsi::Scsi<UsbBusType, Storage>>>>
     Mutex::new(RefCell::new(None));
 
 struct Storage {
-    sdio: Sdio,
+    sdio: RefCell<Sdio>,
 }
 
 impl BlockDevice for Storage {
     const BLOCK_BYTES: usize = 512;
 
     fn read_block(&self, lba: u32, block: &mut [u8]) -> Result<(), BlockDeviceError> {
-        self.sdio.read_block(lba, block).map_err(|e| {
+        let mut sdio = self.sdio.borrow_mut();
+        sdio.read_block(lba, block).map_err(|e| {
             rprintln!("read error: {:?}", e);
             BlockDeviceError::HardwareError
         })
     }
 
     fn write_block(&mut self, lba: u32, block: &[u8]) -> Result<(), BlockDeviceError> {
-        self.sdio.write_block(lba, block).map_err(|e| {
+        let mut sdio = self.sdio.borrow_mut();
+        sdio.write_block(lba, block).map_err(|e| {
             rprintln!("write error: {:?}", e);
             BlockDeviceError::WriteError
         })
     }
 
     fn max_lba(&self) -> u32 {
-        self.sdio.card().map(|c| c.block_count() - 1).unwrap_or(0)
+        let sdio = self.sdio.borrow();
+        sdio.card().map(|c| c.block_count() - 1).unwrap_or(0)
     }
 }
 
@@ -125,7 +128,7 @@ fn main() -> ! {
             .into_alternate_af12()
             .internal_pull_up(true);
 
-        Sdio::new((clk, cmd, d0, d1, d2, d3))
+        Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3))
     };
 
     rprintln!("Waiting for card...");
@@ -145,7 +148,9 @@ fn main() -> ! {
 
     rprintln!("blocks: {:?}", sdio.card().map(|c| c.block_count()));
 
-    let sdhc = Storage { sdio };
+    let sdhc = Storage {
+        sdio: RefCell::new(sdio),
+    };
 
     unsafe {
         let usb = USB {
