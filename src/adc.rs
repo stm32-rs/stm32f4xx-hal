@@ -560,25 +560,22 @@ pub mod config {
 /// unsafe {
 ///     let tim = &(*TIM1::ptr());
 ///
-///     //This is pwm mode 1, the default mode is "frozen" which won't work
-///     let mode = 0b0110;
-///
 ///     //Channel 1
 ///     //Disable the channel before configuring it
 ///     tim.ccer.modify(|_, w| w.cc1e().clear_bit());
 ///
-///     tim.ccmr1_output.modify(|_, w| w
+///     tim.ccmr1_output().modify(|_, w| w
 ///       //Preload enable for channel
 ///       .oc1pe().set_bit()
 ///
-///       //Set mode for channel
-///       .oc1m().bits(mode)
+///       //Set mode for channel, the default mode is "frozen" which won't work
+///       .oc1m().pwm_mode1()
 ///     );
 ///
 ///     //Set the duty cycle, 0 won't work in pwm mode but might be ok in
 ///     //toggle mode or match mode
 ///     let max_duty = tim.arr.read().arr().bits() as u16;
-///     tim.ccr1.modify(|_, w| w.ccr1().bits(max_duty / 2));
+///     tim.ccr1.modify(|_, w| w.ccr().bits(max_duty / 2));
 ///
 ///     //Enable the channel
 ///     tim.ccer.modify(|_, w| w.cc1e().set_bit());
