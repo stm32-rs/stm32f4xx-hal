@@ -3,5 +3,5 @@ block_labels = ["wip"]
 delete_merged_branches = true
 status = [
     "Rustfmt",
-    "ci (%, stable)",
+    "ci",
 ]
