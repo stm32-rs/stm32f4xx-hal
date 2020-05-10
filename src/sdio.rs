@@ -148,7 +148,7 @@ pub enum CardVersion {
 
 #[derive(Debug, Copy, Clone)]
 pub enum CardType {
-    /// Standard Capacity (< 2Gn)
+    /// Standard Capacity (< 2Gb)
     SDSC,
     /// High capacity (< 32Gb)
     SDHC,
@@ -186,9 +186,9 @@ pub struct Sdio {
 }
 
 struct Cmd {
-    pub cmd: u8,
-    pub arg: u32,
-    pub resp: Response,
+    cmd: u8,
+    arg: u32,
+    resp: Response,
 }
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -214,16 +214,16 @@ pub struct Csd {
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Status {
-    bus_width: u8,
-    secure_mode: u8,
-    card_type: u16,
-    protected_area_size: u32,
-    speed_class: u8,
-    performance_move: u8,
-    allocation_units: u8,
-    erase_size: u16,
-    erase_timeout: u8,
-    erase_offset: u8,
+    pub bus_width: u8,
+    pub secure_mode: u8,
+    pub card_type: u16,
+    pub protected_area_size: u32,
+    pub speed_class: u8,
+    pub performance_move: u8,
+    pub allocation_units: u8,
+    pub erase_size: u16,
+    pub erase_timeout: u8,
+    pub erase_offset: u8,
 }
 
 #[derive(Debug, Default)]
