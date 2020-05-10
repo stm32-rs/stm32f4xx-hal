@@ -136,6 +136,8 @@ pub mod otg_hs;
 pub mod rng;
 
 #[cfg(feature = "device-selected")]
+pub mod dwt;
+#[cfg(feature = "device-selected")]
 pub mod prelude;
 #[cfg(feature = "device-selected")]
 pub mod pwm;

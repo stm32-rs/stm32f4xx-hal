@@ -102,6 +102,10 @@ name = "delay-blinky"
 required-features = ["rt", "stm32f411"]
 
 [[example]]
+name = "dwt-blinky"
+required-features = ["rt", "stm32f429"]
+
+[[example]]
 name = "ssd1306-image"
 required-features = ["rt", "stm32f411"]
 
