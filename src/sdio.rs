@@ -1,3 +1,5 @@
+//! Sdio host
+
 use crate::bb;
 #[allow(unused_imports)]
 use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, AF12};
@@ -135,7 +137,7 @@ enum CmdAppOper {
 }
 
 #[derive(Eq, PartialEq, Copy, Clone)]
-pub enum Response {
+enum Response {
     None = 0,
     Short = 1,
     Long = 3,
@@ -179,6 +181,7 @@ pub enum Error {
     NoCard,
 }
 
+/// Sdio device
 pub struct Sdio {
     sdio: SDIO,
     bw: Buswidth,
@@ -192,6 +195,7 @@ struct Cmd {
 }
 
 #[derive(Debug, Copy, Clone, Default)]
+/// Card identification
 pub struct Cid {
     pub manufacturerid: u8,
     pub oem_applicationid: u16,
@@ -204,6 +208,7 @@ pub struct Cid {
 }
 
 #[derive(Debug, Copy, Clone, Default)]
+/// Card specific data
 pub struct Csd {
     pub sys_spec_version: u8,
     pub max_bus_clk_frec: u8,
@@ -213,6 +218,7 @@ pub struct Csd {
 }
 
 #[derive(Debug, Default, Copy, Clone)]
+/// Sd card status
 pub struct Status {
     pub bus_width: u8,
     pub secure_mode: u8,
@@ -227,6 +233,7 @@ pub struct Status {
 }
 
 #[derive(Debug, Default)]
+/// Sd card
 pub struct Card {
     pub version: CardVersion,
     pub ctype: CardType,
@@ -239,9 +246,8 @@ pub struct Card {
 }
 
 impl Sdio {
+    /// Create and enable the Sdio device
     pub fn new<PINS: Pins>(sdio: SDIO, _pins: PINS) -> Self {
-        //let sdio = unsafe { &*SDIO::ptr() };
-
         unsafe {
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
             let rcc = &*RCC::ptr();
@@ -279,10 +285,7 @@ impl Sdio {
         }
     }
 
-    pub fn card(&self) -> Result<&Card, Error> {
-        self.card.as_ref().ok_or(Error::NoCard)
-    }
-
+    /// initialize card
     pub fn init_card(&mut self) -> Result<(), Error> {
         // Enable power to card
         self.sdio
@@ -294,23 +297,26 @@ impl Sdio {
 
         self.cmd(Cmd::idle())?;
 
+        // Check if cards supports CMD 8 (with pattern)
         self.cmd(Cmd::hs_send_ext_csd(0x1AA))?;
         let r1 = self.sdio.resp1.read().bits();
 
         let mut card = if r1 == 0x1AA {
-            /* v2 card */
+            /* Card echoed back the pattern, we have a v2 card */
             Card::default()
         } else {
             return Err(Error::UnsupportedCardVersion);
         };
 
         let ocr = loop {
+            // Signal that next command is a app command
             self.cmd(Cmd::app_cmd(0))?;
 
             let arg = CmdAppOper::VOLTAGE_WINDOW_SD as u32
                 | CmdAppOper::HIGH_CAPACITY as u32
                 | CmdAppOper::SD_SWITCH_1_8V_CAPACITY as u32;
 
+            // Initialize card
             match self.cmd(Cmd::app_op_cmd(arg)) {
                 Ok(_) => (),
                 Err(Error::Crc) => (),
@@ -363,6 +369,12 @@ impl Sdio {
         Ok(())
     }
 
+    /// Get a reference to the initialized card
+    pub fn card(&self) -> Result<&Card, Error> {
+        self.card.as_ref().ok_or(Error::NoCard)
+    }
+
+    /// Read block from card. buf must be at least 512 bytes
     pub fn read_block(&mut self, addr: u32, buf: &mut [u8]) -> Result<(), Error> {
         let _card = self.card()?;
 
@@ -419,6 +431,7 @@ impl Sdio {
         Ok(())
     }
 
+    /// Write block to card. buf must be at least 512 bytes
     pub fn write_block(&mut self, addr: u32, buf: &[u8]) -> Result<(), Error> {
         let _card = self.card()?;
 
@@ -622,6 +635,7 @@ impl Sdio {
         Ok(())
     }
 
+    /// Send command to card
     fn cmd(&self, cmd: Cmd) -> Result<(), Error> {
         // Clear interrupts
         self.sdio.icr.modify(|_, w| {
@@ -787,17 +801,14 @@ impl Cmd {
         Cmd::new(8, arg, Response::Short)
     }
 
-    // SEND_CSD
     const fn send_csd(rca: u32) -> Cmd {
         Cmd::new(9, rca, Response::Long)
     }
 
-    /// Set Status (13)
     const fn send_card_status() -> Cmd {
         Cmd::new(13, 0, Response::Short)
     }
 
-    /// Set block length
     const fn set_blocklen(blocklen: u32) -> Cmd {
         Cmd::new(16, blocklen, Response::Short)
     }
