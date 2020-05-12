@@ -21,6 +21,7 @@ impl DwtExt for DWT {
     }
 }
 
+/// DWT (Data Watchpoint and Trace) unit
 pub struct Dwt {
     dwt: DWT,
     dcb: DCB,
@@ -45,7 +46,11 @@ impl Dwt {
     pub fn stopwatch<'i>(&self, times: &'i mut [u32]) -> StopWatch<'i> {
         StopWatch::new(times, self.clocks.hclk())
     }
-    /// Measure cycles it takes to execute f
+    /// Measure cycles it takes to execute closure `f`.
+    ///
+    /// Since DWT Cycle Counter is a 32-bit counter that wraps around to 0 on overflow,
+    /// users should be aware that `Dwt::measure` cannot correctly measure running time of
+    /// closures which take longer than `u32::MAX` cycles
     pub fn measure<F: FnOnce()>(&self, f: F) -> ClockDuration {
         let mut times: [u32; 2] = [0; 2];
         let mut sw = self.stopwatch(&mut times);
@@ -59,7 +64,7 @@ pub struct Delay {
     clock: Hertz,
 }
 impl Delay {
-    /// Delay for ClockDuration::ticks
+    /// Delay for `ClockDuration::ticks`
     pub fn delay(duration: ClockDuration) {
         let ticks = duration.ticks as u64;
         Delay::delay_ticks(DWT::get_cycle_count(), ticks);
@@ -112,7 +117,11 @@ impl<T: Into<u64>> DelayMs<T> for Delay {
     }
 }
 
-/// Very simple stopwatch
+/// Very simple stopwatch which reads from DWT Cycle Counter to record timing.
+///
+/// Since DWT Cycle Counter is a 32-bit counter that wraps around to 0 on overflow,
+/// users should be aware that `StopWatch` cannot correctly measure laps
+/// which take longer than `u32::MAX` cycles
 pub struct StopWatch<'l> {
     times: &'l mut [u32],
     timei: usize,
@@ -142,8 +151,9 @@ impl<'l> StopWatch<'l> {
         self.timei = 0;
         self.times[0] = DWT::get_cycle_count();
     }
-    /// Record a new lap
-    /// NOTE If lap count exceeds maximum, the last lap is updated
+    /// Record a new lap.
+    ///
+    /// If lap count exceeds maximum, the last lap is updated
     pub fn lap(&mut self) -> &mut Self {
         let c = DWT::get_cycle_count();
         if self.timei < self.times.len() {
@@ -152,8 +162,9 @@ impl<'l> StopWatch<'l> {
         self.times[self.timei] = c;
         self
     }
-    /// Calculate the time of lap n (n starting with 1)
-    /// NOTE Returns None if 'n' is out of range
+    /// Calculate the time of lap n (n starting with 1).
+    ///
+    /// Returns None if `n` is out of range
     pub fn lap_time(&self, n: usize) -> Option<ClockDuration> {
         if (n < 1) || (self.timei < n) {
             None
