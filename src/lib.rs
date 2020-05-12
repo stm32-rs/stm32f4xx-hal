@@ -145,6 +145,11 @@ pub mod pwm;
 pub mod qei;
 #[cfg(feature = "device-selected")]
 pub mod rcc;
+#[cfg(all(
+    feature = "device-selected",
+    not(any(feature = "stm32f410", feature = "stm32f446",))
+))]
+pub mod sdio;
 #[cfg(feature = "device-selected")]
 pub mod serial;
 #[cfg(feature = "device-selected")]

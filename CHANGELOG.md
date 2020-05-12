@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Implement `timer::Cancel` trait for `Timer<TIM>`.
 - Added DWT cycle counter based delay and stopwatch, including an example.
+- Added sdio driver
 
 ## [v0.8.0] - 2020-04-30
 

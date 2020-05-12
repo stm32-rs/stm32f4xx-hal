@@ -97,6 +97,10 @@ name = "usb_serial"
 required-features = ["rt", "stm32f401", "usb_fs"]
 
 [[example]]
+name = "sd"
+required-features = ["rt", "stm32f405"]
+
+[[example]]
 name = "delay-blinky"
 required-features = ["rt", "stm32f411"]
 
