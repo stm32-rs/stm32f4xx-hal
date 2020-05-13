@@ -37,10 +37,12 @@ use core::ops::DerefMut;
 use cortex_m::interrupt::{free, CriticalSection, Mutex};
 use cortex_m_rt::entry;
 use embedded_graphics::{
-    fonts::{Font12x16, Font6x12},
+    fonts::{Font12x16, Font6x12, Text},
+    pixelcolor::BinaryColor,
     prelude::*,
+    style::TextStyleBuilder,
 };
-use ssd1306::{prelude::*, Builder as SSD1306Builder};
+use ssd1306::{mode::GraphicsMode, Builder as SSD1306Builder};
 
 // Set up global state. It's all mutexed up for concurrency safety.
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
@@ -116,15 +118,24 @@ fn main() -> ! {
                 StopwatchState::Running => "",
                 StopwatchState::Stopped => "Stopped",
             };
-            let state_text = Font6x12::render_str(state_msg)
-                .with_stroke(Some(1u8.into()))
-                .translate(Coord::new(0, 0));
-            disp.draw(state_text.into_iter());
 
-            let elapsed_text = Font12x16::render_str(format_buf.as_str())
-                .with_stroke(Some(1u8.into()))
-                .translate(Coord::new(0, 14));
-            disp.draw(elapsed_text.into_iter());
+            let text_style = TextStyleBuilder::new(Font6x12)
+                .text_color(BinaryColor::On)
+                .build();
+
+            let text_style_format_buf = TextStyleBuilder::new(Font12x16)
+                .text_color(BinaryColor::On)
+                .build();
+
+            Text::new(state_msg, Point::new(0, 0))
+                .into_styled(text_style)
+                .draw(&mut disp)
+                .unwrap();
+
+            Text::new(format_buf.as_str(), Point::new(0, 14))
+                .into_styled(text_style_format_buf)
+                .draw(&mut disp)
+                .unwrap();
 
             disp.flush().unwrap();
 

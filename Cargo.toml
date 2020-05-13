@@ -54,10 +54,11 @@ panic-semihosting = "0.5.3"
 cortex-m-semihosting = "0.3.3"
 arrayvec = { version = "0.5.1", default-features = false }
 panic-halt = "0.2.0"
-ssd1306 = "0.2.6"
-embedded-graphics = "0.4.9"
+ssd1306 = "0.3.1"
+embedded-graphics = "0.6.2"
 usb-device = "0.2.5"
 usbd-serial = "0.1.0"
+micromath = "1.0.0"
 
 [features]
 device-selected = []
@@ -115,6 +116,10 @@ required-features = ["rt", "stm32f411"]
 [[example]]
 name = "stopwatch-with-ssd1306-and-interrupts"
 required-features = ["rt", "stm32f411"]
+
+[[example]]
+name = "analog-stopwatch-with-spi-ssd1306"
+required-features = ["rt", "stm32f429"]
 
 [[example]]
 name = "rng-display"
