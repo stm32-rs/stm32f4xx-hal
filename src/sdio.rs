@@ -115,8 +115,9 @@ enum PowerCtrl {
     On = 0b11,
 }
 
+/// Clock frequency of a SDIO bus.
 #[allow(dead_code)]
-enum ClockFreq {
+pub enum ClockFreq {
     F24Mhz = 0,
     F16Mhz = 1,
     F12Mhz = 2,
@@ -285,8 +286,8 @@ impl Sdio {
         }
     }
 
-    /// initialize card
-    pub fn init_card(&mut self) -> Result<(), Error> {
+    /// Initializes card (if present) and sets the bus at the specified frequency.
+    pub fn init_card(&mut self, freq: ClockFreq) -> Result<(), Error> {
         // Enable power to card
         self.sdio
             .power
@@ -361,7 +362,7 @@ impl Sdio {
 
         self.get_scr(&mut card)?;
 
-        self.set_bus(self.bw, ClockFreq::F24Mhz, &card)?;
+        self.set_bus(self.bw, freq, &card)?;
 
         self.card.replace(card);
         self.read_card_status()?;
