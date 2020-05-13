@@ -22,7 +22,7 @@ use panic_semihosting as _;
 
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
-use embedded_graphics::{fonts::Font6x8, prelude::*};
+use embedded_graphics::{fonts::Font6x8, fonts::Text, pixelcolor::BinaryColor, style::TextStyleBuilder, prelude::*};
 
 use ssd1306::{prelude::*, Builder as SSD1306Builder};
 
@@ -78,17 +78,22 @@ fn main() -> ! {
         let mut rand_source = dp.RNG.constrain(clocks);
         let mut format_buf = ArrayString::<[u8; 20]>::new();
         loop {
+            //display clear
+            disp.clear();
+        
             //this will continuously report an error if RNG_CLK < HCLK/16
             let rand_val = rand_source.next_u32();
 
             format_buf.clear();
             if fmt::write(&mut format_buf, format_args!("{}", rand_val)).is_ok() {
-                disp.draw(
-                    Font6x8::render_str(format_buf.as_str())
-                        .with_stroke(Some(1u8.into()))
-                        .translate(Coord::new(HINSET_PIX, VCENTER_PIX))
-                        .into_iter(),
-                );
+                   
+                let text_style = TextStyleBuilder::new(Font6x8)
+                    .text_color(BinaryColor::On)
+                    .build();
+            
+                Text::new(format_buf.as_str(), Point::new(HINSET_PIX, VCENTER_PIX))
+                    .into_styled(text_style)
+                    .draw(&mut disp).unwrap();                  
             }
             disp.flush().unwrap();
             //delay a little while between refreshes so the display is readable
