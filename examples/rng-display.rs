@@ -22,7 +22,9 @@ use panic_semihosting as _;
 
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
-use embedded_graphics::{fonts::Font6x8, fonts::Text, pixelcolor::BinaryColor, style::TextStyleBuilder, prelude::*};
+use embedded_graphics::{
+    fonts::Font6x8, fonts::Text, pixelcolor::BinaryColor, prelude::*, style::TextStyleBuilder,
+};
 
 use ssd1306::{prelude::*, Builder as SSD1306Builder};
 
@@ -80,20 +82,20 @@ fn main() -> ! {
         loop {
             //display clear
             disp.clear();
-        
+
             //this will continuously report an error if RNG_CLK < HCLK/16
             let rand_val = rand_source.next_u32();
 
             format_buf.clear();
             if fmt::write(&mut format_buf, format_args!("{}", rand_val)).is_ok() {
-                   
                 let text_style = TextStyleBuilder::new(Font6x8)
                     .text_color(BinaryColor::On)
                     .build();
-            
+
                 Text::new(format_buf.as_str(), Point::new(HINSET_PIX, VCENTER_PIX))
                     .into_styled(text_style)
-                    .draw(&mut disp).unwrap();                  
+                    .draw(&mut disp)
+                    .unwrap();
             }
             disp.flush().unwrap();
             //delay a little while between refreshes so the display is readable

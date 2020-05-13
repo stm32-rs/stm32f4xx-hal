@@ -53,7 +53,8 @@ fn main() -> ! {
         disp.flush().unwrap();
 
         // Display the rustacean
-        let raw_image: ImageRaw<BinaryColor> = ImageRaw::new(include_bytes!("./ssd1306-image.data"), 128, 64);
+        let raw_image: ImageRaw<BinaryColor> =
+            ImageRaw::new(include_bytes!("./ssd1306-image.data"), 128, 64);
         let image: Image<_, BinaryColor> = Image::new(&raw_image, Point::zero());
         image.draw(&mut disp).unwrap();
         disp.flush().unwrap();

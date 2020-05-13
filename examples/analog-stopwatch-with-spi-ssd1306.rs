@@ -13,13 +13,13 @@ extern crate panic_semihosting;
 extern crate stm32f4xx_hal as hal;
 
 use crate::hal::{
-    prelude::*,
-    spi::Spi, 
-    interrupt,
     gpio::{gpioa::PA0, Edge, ExtiPin, Input, PullDown},
-    timer::{Event, Timer},
+    interrupt,
+    prelude::*,
     rcc::{Clocks, Rcc},
+    spi::Spi,
     stm32,
+    timer::{Event, Timer},
 };
 
 use arrayvec::ArrayString;
@@ -30,21 +30,21 @@ use cortex_m::interrupt::{free, CriticalSection, Mutex};
 
 use hal::spi::{Mode, Phase, Polarity};
 
-use micromath::F32Ext;
-use cortex_m_rt::{ExceptionFrame, entry, exception};
+use core::f32::consts::{FRAC_PI_2, PI};
+use cortex_m_rt::{entry, exception, ExceptionFrame};
 use embedded_graphics::{
     egcircle,
+    fonts::{Font6x8, Text},
+    pixelcolor::BinaryColor,
     prelude::*,
-    fonts::{Font6x8, Text}, 
     primitive_style,
     primitives::{Circle, Line},
-    pixelcolor::BinaryColor,  
     style::TextStyleBuilder,
     style::{PrimitiveStyle, PrimitiveStyleBuilder},
 };
-use core::f32::consts::{FRAC_PI_2, PI};
+use micromath::F32Ext;
 
-use ssd1306::{ mode::GraphicsMode, Builder as SSD1306Builder};
+use ssd1306::{mode::GraphicsMode, Builder as SSD1306Builder};
 use stm32f4::stm32f429;
 
 // Set up global state. It's all mutexed up for concurrency safety.
@@ -72,9 +72,8 @@ enum StopwatchState {
 
 #[entry]
 fn main() -> ! {
-
     let mut dp = stm32f429::Peripherals::take().unwrap();
-    let cp = cortex_m::peripheral::Peripherals::take().unwrap();    
+    let cp = cortex_m::peripheral::Peripherals::take().unwrap();
     dp.RCC.apb2enr.write(|w| w.syscfgen().enabled());
 
     let rcc = dp.RCC.constrain();
@@ -82,7 +81,7 @@ fn main() -> ! {
     let clocks = setup_clocks(rcc);
 
     let gpioa = dp.GPIOA.split();
-    let gpioe = dp.GPIOE.split();    
+    let gpioe = dp.GPIOE.split();
 
     let mut board_btn = gpioa.pa0.into_pull_down_input();
     board_btn.make_interrupt_source(&mut dp.SYSCFG);
@@ -100,10 +99,16 @@ fn main() -> ! {
     let miso = gpioe.pe5.into_alternate_af5();
     let mosi = gpioe.pe6.into_alternate_af5();
 
-    let spi = Spi::spi4(dp.SPI4, (sck, miso, mosi), Mode {
-        polarity: Polarity::IdleLow,
-        phase: Phase::CaptureOnFirstTransition,
-    }, stm32f4xx_hal::time::KiloHertz(2000).into(),clocks);
+    let spi = Spi::spi4(
+        dp.SPI4,
+        (sck, miso, mosi),
+        Mode {
+            polarity: Polarity::IdleLow,
+            phase: Phase::CaptureOnFirstTransition,
+        },
+        stm32f4xx_hal::time::KiloHertz(2000).into(),
+        clocks,
+    );
 
     // Set up the LEDs. On the stm32f429i-disco they are connected to pin PG13 and PG14.
     let gpiog = dp.GPIOG.split();
@@ -123,25 +128,24 @@ fn main() -> ! {
     disp.init().unwrap();
     disp.flush().unwrap();
 
-     // Create a 1ms periodic interrupt from TIM2
-     let mut timer = Timer::tim2(dp.TIM2, 1.khz(), clocks);
-     timer.listen(Event::TimeOut);
+    // Create a 1ms periodic interrupt from TIM2
+    let mut timer = Timer::tim2(dp.TIM2, 1.khz(), clocks);
+    timer.listen(Event::TimeOut);
 
-     free(|cs| {
-         TIMER_TIM2.borrow(cs).replace(Some(timer));
-         BUTTON.borrow(cs).replace(Some(board_btn));
-     });
+    free(|cs| {
+        TIMER_TIM2.borrow(cs).replace(Some(timer));
+        BUTTON.borrow(cs).replace(Some(board_btn));
+    });
 
-     // Enable interrupts
-     stm32::NVIC::unpend(hal::stm32::Interrupt::TIM2);
-     stm32::NVIC::unpend(hal::stm32::Interrupt::EXTI0);
-     unsafe {
-         stm32::NVIC::unmask(hal::stm32::Interrupt::EXTI0);
-     };          
+    // Enable interrupts
+    stm32::NVIC::unpend(hal::stm32::Interrupt::TIM2);
+    stm32::NVIC::unpend(hal::stm32::Interrupt::EXTI0);
+    unsafe {
+        stm32::NVIC::unmask(hal::stm32::Interrupt::EXTI0);
+    };
 
     let mut state_led = false;
-    loop{
-
+    loop {
         let elapsed = free(|cs| ELAPSED_MS.borrow(cs).get());
 
         let mut format_buf = ArrayString::<[u8; 10]>::new();
@@ -162,37 +166,41 @@ fn main() -> ! {
             StopwatchState::Ready => {
                 led3.set_high().unwrap();
                 led4.set_low().unwrap();
-            },
+            }
             StopwatchState::Running => {
                 if state_led {
                     led4.set_low().unwrap();
                     led3.set_high().unwrap();
                 } else {
                     led4.set_low().unwrap();
-                    led3.set_low().unwrap();   
+                    led3.set_low().unwrap();
                 }
-            },
+            }
             StopwatchState::Stopped => {
                 led3.set_low().unwrap();
                 led4.set_high().unwrap();
-            },
+            }
         };
 
         let text_style = TextStyleBuilder::new(Font6x8)
             .text_color(BinaryColor::On)
             .build();
-        
+
         Text::new(state_msg, Point::new(0, 0))
             .into_styled(text_style)
-            .draw(&mut disp).unwrap();
-                
-        Text::new(format_buf.as_str(), Point::new((128 / 2) - 1, 0 ))
+            .draw(&mut disp)
+            .unwrap();
+
+        Text::new(format_buf.as_str(), Point::new((128 / 2) - 1, 0))
             .into_styled(text_style)
-            .draw(&mut disp).unwrap();
+            .draw(&mut disp)
+            .unwrap();
 
         draw_face().draw(&mut disp).unwrap();
-        draw_seconds_hand(elapsed_to_s(elapsed)).draw(&mut disp).unwrap();
-            
+        draw_seconds_hand(elapsed_to_s(elapsed))
+            .draw(&mut disp)
+            .unwrap();
+
         disp.flush().unwrap();
 
         delay.delay_ms(100u32);
@@ -223,7 +231,7 @@ fn EXTI0() {
             // cases but this one only starts and stops TIM2 interrupts
             match state {
                 StopwatchState::Ready => {
-                    ELAPSED_RESET_MS.borrow(cs).replace(0);                    
+                    ELAPSED_RESET_MS.borrow(cs).replace(0);
                     stopwatch_start(cs);
                     STATE.borrow(cs).replace(StopwatchState::Running);
                 }
@@ -236,17 +244,17 @@ fn EXTI0() {
                 StopwatchState::Stopped => {
                     let cell_reset = ELAPSED_RESET_MS.borrow(cs);
                     let val_reset = cell_reset.get();
-                    
-                    if val_reset > 500_u32{
+
+                    if val_reset > 500_u32 {
                         ELAPSED_MS.borrow(cs).replace(0);
                         stopwatch_reset_stop(cs);
                         STATE.borrow(cs).replace(StopwatchState::Ready);
-                    } else{
+                    } else {
                         stopwatch_reset_stop(cs);
                         stopwatch_continue(cs);
                         STATE.borrow(cs).replace(StopwatchState::Running);
-                    }                             
-                }                
+                    }
+                }
             }
         }
     });
@@ -261,22 +269,21 @@ fn TIM2() {
 
         let cell = ELAPSED_MS.borrow(cs);
         let cell_reset = ELAPSED_RESET_MS.borrow(cs);
-        let val = cell.get();        
+        let val = cell.get();
         let val_reset = cell_reset.get();
 
         match STATE.borrow(cs).get() {
-            StopwatchState::Ready => {                    
+            StopwatchState::Ready => {
                 cell.replace(val + 1);
             }
             StopwatchState::Running => {
                 cell.replace(val + 1);
             }
             StopwatchState::Stopped => {
-
                 let mut btn_ref = BUTTON.borrow(cs).borrow_mut();
                 if let Some(ref mut btn) = btn_ref.deref_mut() {
                     if btn.is_high().unwrap() {
-                        cell_reset.replace(val_reset + 1);    
+                        cell_reset.replace(val_reset + 1);
                     }
                 }
             }
@@ -403,4 +410,3 @@ fn draw_seconds_hand(seconds: u32) -> impl Iterator<Item = Pixel<BinaryColor>> {
 fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("{:#?}", ef);
 }
-

@@ -38,8 +38,8 @@ use cortex_m::interrupt::{free, CriticalSection, Mutex};
 use cortex_m_rt::entry;
 use embedded_graphics::{
     fonts::{Font12x16, Font6x12, Text},
+    pixelcolor::BinaryColor,
     prelude::*,
-    pixelcolor::BinaryColor,  
     style::TextStyleBuilder,
 };
 use ssd1306::{mode::GraphicsMode, Builder as SSD1306Builder};
@@ -118,22 +118,24 @@ fn main() -> ! {
                 StopwatchState::Running => "",
                 StopwatchState::Stopped => "Stopped",
             };
-            
+
             let text_style = TextStyleBuilder::new(Font6x12)
                 .text_color(BinaryColor::On)
                 .build();
-            
+
             let text_style_format_buf = TextStyleBuilder::new(Font12x16)
                 .text_color(BinaryColor::On)
                 .build();
-        
+
             Text::new(state_msg, Point::new(0, 0))
-            .into_styled(text_style)
-            .draw(&mut disp).unwrap();            
-            
+                .into_styled(text_style)
+                .draw(&mut disp)
+                .unwrap();
+
             Text::new(format_buf.as_str(), Point::new(0, 14))
                 .into_styled(text_style_format_buf)
-                .draw(&mut disp).unwrap();
+                .draw(&mut disp)
+                .unwrap();
 
             disp.flush().unwrap();
 
