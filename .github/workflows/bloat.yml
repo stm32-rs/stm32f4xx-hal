@@ -19,4 +19,5 @@ jobs:
       - uses: orf/cargo-bloat-action@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          by_function: 1
           bloat_args: --target=thumbv7em-none-eabihf --release -n 0 --message-format=json --features=stm32f429,rt,usb_fs --example dwt-blinky
