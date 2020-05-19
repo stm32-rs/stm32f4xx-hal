@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Added sdio driver
 - Allow specifying the desired SDIO bus speed during initialization
 
 ## [v0.8.1] - 2020-05-10
@@ -15,7 +16,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Implement `timer::Cancel` trait for `Timer<TIM>`.
 - Added DWT cycle counter based delay and stopwatch, including an example.
-- Added sdio driver
 
 ## [v0.8.0] - 2020-04-30
 
