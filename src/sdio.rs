@@ -116,7 +116,6 @@ enum PowerCtrl {
 }
 
 /// Clock frequency of a SDIO bus.
-#[allow(dead_code)]
 pub enum ClockFreq {
     F24Mhz = 0,
     F16Mhz = 1,
