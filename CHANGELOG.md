@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Allow specifying the desired SDIO bus speed during initialization
+
 ## [v0.8.1] - 2020-05-10
 
 ### Added

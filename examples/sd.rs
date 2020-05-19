@@ -5,7 +5,12 @@ use cortex_m_rt::entry;
 use cortex_m_semihosting::{hprint, hprintln};
 use panic_semihosting as _;
 
-use stm32f4xx_hal::{delay, prelude::*, sdio::Sdio, stm32};
+use stm32f4xx_hal::{
+    delay,
+    prelude::*,
+    sdio::{ClockFreq, Sdio},
+    stm32,
+};
 
 #[entry]
 fn main() -> ! {
@@ -42,7 +47,7 @@ fn main() -> ! {
 
     // Wait for card to be ready
     loop {
-        match sdio.init_card() {
+        match sdio.init_card(ClockFreq::F24Mhz) {
             Ok(_) => break,
             Err(_err) => (),
         }
