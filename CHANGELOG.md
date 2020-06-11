@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Make sure that I2C writes are concluded with a STOP condition
+
 ## [v0.8.2] - 2020-05-29
 
 ### Added
