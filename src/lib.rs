@@ -136,6 +136,9 @@ pub mod otg_hs;
 pub mod rng;
 
 #[cfg(feature = "device-selected")]
+pub use stm32 as pac;
+
+#[cfg(feature = "device-selected")]
 pub mod dwt;
 #[cfg(feature = "device-selected")]
 pub mod prelude;
