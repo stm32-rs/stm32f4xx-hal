@@ -1,5 +1,5 @@
 //! # Quadrature Encoder Interface
-use crate::hal::{self, Direction};
+use crate::hal::{self, qei::Direction};
 use crate::stm32::RCC;
 
 #[cfg(any(
@@ -126,18 +126,19 @@ macro_rules! hal {
                 }
             }
 
-            impl<PINS> hal::Qei for Qei<$TIM, PINS> {
+            impl<PINS> hal::qei::Qei for Qei<$TIM, PINS> {
                 type Count = $bits;
+                type Error = core::convert::Infallible;
 
-                fn count(&self) -> $bits {
-                    self.tim.cnt.read().bits() as $bits
+                fn try_count(&self) -> Result<$bits, Self::Error> {
+                    Ok(self.tim.cnt.read().bits() as $bits)
                 }
 
-                fn direction(&self) -> Direction {
+                fn try_direction(&self) -> Result<Direction, Self::Error> {
                     if self.tim.cr1.read().dir().bit_is_clear() {
-                        hal::Direction::Upcounting
+                        Ok(hal::qei::Direction::Upcounting)
                     } else {
-                        hal::Direction::Downcounting
+                        Ok(hal::qei::Direction::Downcounting)
                     }
                 }
             }

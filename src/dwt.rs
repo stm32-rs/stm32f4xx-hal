@@ -2,6 +2,7 @@
 
 use crate::rcc::Clocks;
 use crate::time::Hertz;
+use core::convert::Infallible;
 use cortex_m::peripheral::{DCB, DWT};
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
@@ -101,19 +102,25 @@ impl Delay {
 
 // Implement DelayUs/DelayMs for various integer types
 impl<T: Into<u64>> DelayUs<T> for Delay {
-    fn delay_us(&mut self, us: T) {
+    type Error = Infallible;
+
+    fn try_delay_us(&mut self, us: T) -> Result<(), Infallible> {
         // Convert us to ticks
         let start = DWT::get_cycle_count();
         let ticks = (us.into() * self.clock.0 as u64) / 1_000_000;
         Delay::delay_ticks(start, ticks);
+        Ok(())
     }
 }
 impl<T: Into<u64>> DelayMs<T> for Delay {
-    fn delay_ms(&mut self, ms: T) {
+    type Error = Infallible;
+
+    fn try_delay_ms(&mut self, ms: T) -> Result<(), Infallible> {
         // Convert ms to ticks
         let start = DWT::get_cycle_count();
         let ticks = (ms.into() * self.clock.0 as u64) / 1_000;
         Delay::delay_ticks(start, ticks);
+        Ok(())
     }
 }
 

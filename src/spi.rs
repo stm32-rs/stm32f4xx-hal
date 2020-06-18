@@ -1013,7 +1013,7 @@ where
 {
     type Error = Error;
 
-    fn read(&mut self) -> nb::Result<u8, Error> {
+    fn try_read(&mut self) -> nb::Result<u8, Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
@@ -1031,7 +1031,7 @@ where
         })
     }
 
-    fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+    fn try_send(&mut self, byte: u8) -> nb::Result<(), Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {

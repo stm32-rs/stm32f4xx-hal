@@ -9,6 +9,7 @@
 */
 
 use crate::{gpio::*, signature::VrefCal, signature::VDDA_CALIB, stm32};
+use core::convert::Infallible;
 use core::fmt;
 use embedded_hal::adc::{Channel, OneShot};
 
@@ -26,7 +27,7 @@ macro_rules! adc_pins {
         $(
             impl Channel<stm32::$adc> for $pin {
                 type ID = u8;
-                fn channel() -> u8 { $chan }
+                const CHANNEL: Self::ID = $chan;
             }
         )+
     };
@@ -633,6 +634,7 @@ macro_rules! adc {
 
                     //Probably unnecessary to disable the ADC in most cases but it shouldn't do any harm either
                     s.disable();
+
                     s.apply_config(config);
 
                     s.enable();
@@ -665,7 +667,7 @@ macro_rules! adc {
                     }
 
                     let vref_cal = VrefCal::get().read();
-                    let vref_samp = self.read(&mut Vref).unwrap(); //This can't actually fail, it's just in a result to satisfy hal trait
+                    let vref_samp = self.try_read(&mut Vref).unwrap(); //This can't actually fail, it's just in a result to satisfy hal trait
 
                     self.calibrated_vdda = (VDDA_CALIB * u32::from(vref_cal)) / u32::from(vref_samp);
                     if !vref_en {
@@ -873,7 +875,7 @@ macro_rules! adc {
                         }
                     });
 
-                    let channel = CHANNEL::channel();
+                    let channel = CHANNEL::CHANNEL;
 
                     //Set the channel in the right sequence field
                     match sequence {
@@ -974,9 +976,9 @@ macro_rules! adc {
             where
                 PIN: Channel<stm32::$adc_type, ID=u8>,
             {
-                type Error = ();
+                type Error = Infallible;
 
-                fn read(&mut self, pin: &mut PIN) -> nb::Result<u16, Self::Error> {
+                fn try_read(&mut self, pin: &mut PIN) -> nb::Result<u16, Self::Error> {
                     let enabled = self.is_enabled();
                     if !enabled {
                         self.enable();
