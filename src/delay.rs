@@ -1,6 +1,7 @@
 //! Delays
 
 use cast::u32;
+use core::convert::Infallible;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 
@@ -28,25 +29,36 @@ impl Delay {
 }
 
 impl DelayMs<u32> for Delay {
-    fn delay_ms(&mut self, ms: u32) {
-        self.delay_us(ms * 1_000);
+    type Error = Infallible;
+
+    fn try_delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+        self.try_delay_us(ms * 1_000)?;
+        Ok(())
     }
 }
 
 impl DelayMs<u16> for Delay {
-    fn delay_ms(&mut self, ms: u16) {
-        self.delay_ms(u32(ms));
+    type Error = Infallible;
+
+    fn try_delay_ms(&mut self, ms: u16) -> Result<(), Self::Error> {
+        self.try_delay_ms(u32(ms))?;
+        Ok(())
     }
 }
 
 impl DelayMs<u8> for Delay {
-    fn delay_ms(&mut self, ms: u8) {
-        self.delay_ms(u32(ms));
+    type Error = Infallible;
+
+    fn try_delay_ms(&mut self, ms: u8) -> Result<(), Self::Error> {
+        self.try_delay_ms(u32(ms))?;
+        Ok(())
     }
 }
 
 impl DelayUs<u32> for Delay {
-    fn delay_us(&mut self, us: u32) {
+    type Error = Infallible;
+
+    fn try_delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
         // The SysTick Reload Value register supports values between 1 and 0x00FFFFFF.
         const MAX_RVR: u32 = 0x00FF_FFFF;
 
@@ -70,17 +82,23 @@ impl DelayUs<u32> for Delay {
 
             self.syst.disable_counter();
         }
+
+        Ok(())
     }
 }
 
 impl DelayUs<u16> for Delay {
-    fn delay_us(&mut self, us: u16) {
-        self.delay_us(u32(us))
+    type Error = Infallible;
+
+    fn try_delay_us(&mut self, us: u16) -> Result<(), Self::Error> {
+        self.try_delay_us(u32(us))
     }
 }
 
 impl DelayUs<u8> for Delay {
-    fn delay_us(&mut self, us: u8) {
-        self.delay_us(u32(us))
+    type Error = Infallible;
+
+    fn try_delay_us(&mut self, us: u8) -> Result<(), Self::Error> {
+        self.try_delay_us(u32(us))
     }
 }

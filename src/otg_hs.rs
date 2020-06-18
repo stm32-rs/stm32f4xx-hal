@@ -32,7 +32,7 @@ unsafe impl UsbPeripheral for USB {
     const HIGH_SPEED: bool = true;
     const FIFO_DEPTH_WORDS: usize = 1024;
 
-    fn enable() {
+    fn try_enable() -> Result<(), Infallible> {
         let rcc = unsafe { &*stm32::RCC::ptr() };
 
         cortex_m::interrupt::free(|_| {
@@ -43,6 +43,8 @@ unsafe impl UsbPeripheral for USB {
             rcc.ahb1rstr.modify(|_, w| w.otghsrst().set_bit());
             rcc.ahb1rstr.modify(|_, w| w.otghsrst().clear_bit());
         });
+
+        Ok(())
     }
 }
 

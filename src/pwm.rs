@@ -1,5 +1,5 @@
 use cast::{u16, u32};
-use core::{marker::PhantomData, mem::MaybeUninit};
+use core::{convert::Infallible, marker::PhantomData, mem::MaybeUninit};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -220,119 +220,143 @@ macro_rules! pwm_all_channels {
                 unsafe { MaybeUninit::uninit().assume_init() }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C1> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C1> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Self::Error> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Self::Error> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 }
+                fn try_get_duty(&self) -> Result<u16, Self::Error> {
+                    let v = unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                fn try_get_max_duty(&self) -> Result<u16, Self::Error> {
+                    let v = unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Self::Error> {
                     unsafe { (*$TIMX::ptr()).ccr1.write(|w| w.ccr().bits(duty.into())) }
+                    Ok(())
                 }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C2> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C2> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).ccr2.read().ccr().bits() as u16 }
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
+                    let v = unsafe { (*$TIMX::ptr()).ccr2.read().ccr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
+                    let v = unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr2.write(|w| w.ccr().bits(duty.into())) }
+                    Ok(())
                 }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C3> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C3> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 8) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 8) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).ccr3.read().ccr().bits() as u16 }
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
+                    let v = unsafe { (*$TIMX::ptr()).ccr3.read().ccr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
+                    let v = unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr3.write(|w| w.ccr().bits(duty.into())) }
+                    Ok(())
                 }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C4> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C4> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 12) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 12) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).ccr4.read().ccr().bits() as u16 }
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
+                    let v = unsafe { (*$TIMX::ptr()).ccr4.read().ccr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
+                    let v = unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr4.write(|w| w.ccr().bits(duty.into())) }
+                    Ok(())
                 }
             }
         )+
@@ -397,61 +421,71 @@ macro_rules! pwm_2_channels {
                 unsafe { MaybeUninit::uninit().assume_init() }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C1> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C1> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 }
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
+                    let v = unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
+                    let v = unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 };
+                    Ok(v)
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr1.write(|w| w.ccr().bits(duty.into())) }
+                    Ok(())
                 }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C2> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C2> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).ccr2.read().ccr().bits() as u16 }
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
+                    Ok(unsafe { (*$TIMX::ptr()).ccr2.read().ccr().bits() as u16 })
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
+                    Ok(unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 })
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr2.write(|w| w.ccr().bits(duty.into())) }
+                    Ok(())
                 }
             }
         )+
@@ -509,32 +543,36 @@ macro_rules! pwm_1_channel {
                 unsafe { MaybeUninit::uninit().assume_init() }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C1> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C1> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Self::Error> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Self::Error> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
+                    Ok(())
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 }
+                fn try_get_duty(&self) -> Result<u16, Self::Error> {
+                    Ok(unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 })
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
-                    unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                fn try_get_max_duty(&self) -> Result<u16, Self::Error> {
+                    Ok(unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 })
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Self::Error> {
                     unsafe { (*$TIMX::ptr()).ccr1.write(|w| w.ccr().bits(duty.into())) }
+                    Ok(())
                 }
             }
         )+
@@ -608,118 +646,122 @@ macro_rules! pwm_tim5_f410 {
                 unsafe { MaybeUninit::uninit().assume_init() }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C1> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C1> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr1.read().ccr1_l().bits() as u16 }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
                     unsafe { (*$TIMX::ptr()).arr.read().arr_l().bits() as u16 }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr1.write(|w| w.ccr1_l().bits(duty.into())) }
                 }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C2> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C2> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr2.read().ccr1_l().bits() as u16 }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
                     unsafe { (*$TIMX::ptr()).arr.read().arr_l().bits() as u16 }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr2.write(|w| w.ccr1_l().bits(duty.into())) }
                 }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C3> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C3> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 8) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 8) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr3.read().ccr1_l().bits() as u16 }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
                     unsafe { (*$TIMX::ptr()).arr.read().arr_l().bits() as u16 }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr3.write(|w| w.ccr1_l().bits(duty.into())) }
                 }
             }
 
-            impl hal::PwmPin for PwmChannels<$TIMX, C4> {
+            impl hal::pwm::PwmPin for PwmChannels<$TIMX, C4> {
                 type Duty = u16;
+                type Error = Infallible;
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn disable(&mut self) {
+                fn try_disable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 12) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn enable(&mut self) {
+                fn try_enable(&mut self) -> Result<(), Infallible> {
                     unsafe { bb::set(&(*$TIMX::ptr()).ccer, 12) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_duty(&self) -> u16 {
+                fn try_get_duty(&self) -> Result<u16, Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr4.read().ccr1_l().bits() as u16 }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
-                fn get_max_duty(&self) -> u16 {
+                fn try_get_max_duty(&self) -> Result<u16, Infallible> {
                     unsafe { (*$TIMX::ptr()).arr.read().arr_l().bits() as u16 }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
-                fn set_duty(&mut self, duty: u16) {
+                fn try_set_duty(&mut self, duty: u16) -> Result<(), Infallible> {
                     unsafe { (*$TIMX::ptr()).ccr4.write(|w| w.ccr1_l().bits(duty.into())) }
                 }
             }
