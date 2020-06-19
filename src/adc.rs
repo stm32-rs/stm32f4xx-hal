@@ -8,7 +8,12 @@
     Temperature in °C = (110-30)/(VtempCal110::get().read()-VtempCal30::get().read()) * (adc_sample - VtempCal30::get().read()) + 30
 */
 
-use crate::{gpio::*, signature::VrefCal, signature::VDDA_CALIB, stm32};
+use crate::{
+    gpio::*,
+    signature::VrefCal,
+    signature::VDDA_CALIB,
+    stm32,
+};
 use core::fmt;
 use embedded_hal::adc::{Channel, OneShot};
 
@@ -34,6 +39,12 @@ macro_rules! adc_pins {
 
 /// Contains types related to ADC configuration
 pub mod config {
+    pub use crate::stm32::adc_common::ccr::{
+        MULTI_A as AdcMultiMode,
+        DMA_A as DmaMultiMode,
+        DDS_A as DmaMultiDds,
+    };
+
     /// The place in the sequence a given channel should be captured
     #[derive(Debug, PartialEq, PartialOrd, Copy, Clone)]
     pub enum Sequence {
@@ -381,6 +392,7 @@ pub mod config {
         pub(crate) dma: Dma,
         pub(crate) end_of_conversion_interrupt: Eoc,
         pub(crate) default_sample_time: SampleTime,
+        pub(crate) multi_mode: (AdcMultiMode, DmaMultiDds, DmaMultiMode),
     }
 
     impl AdcConfig {
@@ -433,6 +445,11 @@ pub mod config {
             self.default_sample_time = default_sample_time;
             self
         }
+        /// change the multi_mode field
+        pub fn multi_mode(mut self, multi_mode: (AdcMultiMode, DmaMultiDds, DmaMultiMode)) -> Self {
+            self.multi_mode = multi_mode;
+            self
+        }
     }
 
     impl Default for AdcConfig {
@@ -447,6 +464,11 @@ pub mod config {
                 dma: Dma::Disabled,
                 end_of_conversion_interrupt: Eoc::Disabled,
                 default_sample_time: SampleTime::Cycles_480,
+                multi_mode: (
+                    AdcMultiMode::INDEPENDENT,
+                    DmaMultiDds::SINGLE,
+                    DmaMultiMode::DISABLED,
+                ),
             }
         }
     }
@@ -652,6 +674,7 @@ macro_rules! adc {
                     self.set_dma(config.dma);
                     self.set_end_of_conversion_interrupt(config.end_of_conversion_interrupt);
                     self.set_default_sample_time(config.default_sample_time);
+                    self.set_multi_mode(config.multi_mode);
                 }
 
                 /// Calculates the system VDDA by sampling the internal VREF channel and comparing
@@ -808,6 +831,19 @@ macro_rules! adc {
                         //1 means keep sending DMA requests as long as DMA=1
                         .dds().bit(dds)
                         .dma().bit(en)
+                    );
+                }
+
+                /// Sets the adc multi-mode configuration
+                pub fn set_multi_mode(&mut self,
+                    (adc_multi, dma_dds, dma_mode):
+                    (config::AdcMultiMode, config::DmaMultiDds, config::DmaMultiMode))
+                {
+                    let common = unsafe { &*stm32::$common_type::ptr() };
+                    common.ccr.modify(|_, w| w
+                        .multi().variant(adc_multi)
+                        .dma().variant(dma_mode)
+                        .dds().variant(dma_dds)
                     );
                 }
 

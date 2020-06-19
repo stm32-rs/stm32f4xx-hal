@@ -1971,6 +1971,7 @@ dma_map!(
     (Stream6<DMA1>, Channel4, stm32::USART2, MemoryToPeripheral), //USART2_TX
     (Stream7<DMA1>, Channel7, stm32::I2C2, MemoryToPeripheral), //I2C2_TX
     (Stream0<DMA2>, Channel0, stm32::ADC1, PeripheralToMemory), //ADC1
+    (Stream0<DMA2>, Channel0, stm32::ADC_COMMON, PeripheralToMemory), //ADC_COMMON
     (Stream0<DMA2>, Channel3, stm32::SPI1, PeripheralToMemory), //SPI1_RX
     (Stream1<DMA2>, Channel5, stm32::USART6, PeripheralToMemory), //USART6_RX
     (Stream2<DMA2>, Channel3, stm32::SPI1, PeripheralToMemory), //SPI1_RX
@@ -2157,6 +2158,7 @@ address!(
     (CCR3<stm32::TIM5>, ccr3, u16),
     (CCR4<stm32::TIM5>, ccr4, u16),
     (DMAR<stm32::TIM5>, dmar, u16),
+    (stm32::ADC_COMMON, cdr, u16),
     (stm32::ADC1, dr, u16),
     (stm32::I2C1, dr, u8),
     (stm32::I2C2, dr, u8),
