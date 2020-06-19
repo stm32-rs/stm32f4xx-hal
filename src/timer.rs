@@ -131,7 +131,7 @@ impl Timer<SYST> {
 
 impl CountDown for Timer<SYST> {
     type Time = Hertz;
-    type Error = nb::Error<Error>;
+    type Error = Error;
 
     fn try_start<T>(&mut self, timeout: T) -> Result<(), Self::Error>
     where
@@ -160,7 +160,7 @@ impl CountDown for Timer<SYST> {
 impl Cancel for Timer<SYST> {
     fn try_cancel(&mut self) -> Result<(), Self::Error> {
         if !self.tim.is_counter_enabled() {
-            return Err(nb::Error::Other(Error::Disabled));
+            return Err(Error::Disabled);
         }
 
         self.tim.disable_counter();
