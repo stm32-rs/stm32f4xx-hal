@@ -103,22 +103,22 @@ macro_rules! exti_erased {
                         syscfg.exticr1.modify(|r, w| unsafe {
                             w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                         });
-                    },
+                    }
                     4..=7 => {
                         syscfg.exticr2.modify(|r, w| unsafe {
                             w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                         });
-                    },
+                    }
                     8..=11 => {
                         syscfg.exticr3.modify(|r, w| unsafe {
                             w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                         });
-                    },
+                    }
                     12..=15 => {
                         syscfg.exticr4.modify(|r, w| unsafe {
                             w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
                         });
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -127,36 +127,44 @@ macro_rules! exti_erased {
             fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
                 match edge {
                     Edge::RISING => {
-                        exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
-                        exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
-                    },
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
+                    }
                     Edge::FALLING => {
-                        exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
-                        exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
-                    },
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
+                    }
                     Edge::RISING_FALLING => {
-                        exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
-                        exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
                     }
                 }
             }
 
             /// Enable external interrupts from this pin.
             fn enable_interrupt(&mut self, exti: &mut EXTI) {
-                exti.imr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                exti.imr
+                    .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
             }
 
             /// Disable external interrupts from this pin
             fn disable_interrupt(&mut self, exti: &mut EXTI) {
-                exti.imr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
+                exti.imr
+                    .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
             }
 
             /// Clear the interrupt pending bit for this pin
             fn clear_interrupt_pending_bit(&mut self) {
-                unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << self.i) ) };
+                unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << self.i)) };
             }
         }
-    }
+    };
 }
 
 macro_rules! exti {
@@ -176,36 +184,44 @@ macro_rules! exti {
             fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
                 match edge {
                     Edge::RISING => {
-                        exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
-                        exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
-                    },
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
+                    }
                     Edge::FALLING => {
-                        exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
-                        exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
-                    },
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
+                    }
                     Edge::RISING_FALLING => {
-                        exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
-                        exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
                     }
                 }
             }
 
             /// Enable external interrupts from this pin.
             fn enable_interrupt(&mut self, exti: &mut EXTI) {
-                exti.imr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                exti.imr
+                    .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
             }
 
             /// Disable external interrupts from this pin
             fn disable_interrupt(&mut self, exti: &mut EXTI) {
-                exti.imr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
+                exti.imr
+                    .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
             }
 
             /// Clear the interrupt pending bit for this pin
             fn clear_interrupt_pending_bit(&mut self) {
-                unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << $i) ) };
+                unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << $i)) };
             }
         }
-    }
+    };
 }
 
 macro_rules! gpio {
