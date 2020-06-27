@@ -486,19 +486,19 @@ pub type DMARegisterBlock = stm32::dma2::RegisterBlock;
 pub type DMARegisterBlock = stm32::dma1::RegisterBlock;
 
 /// Trait that represents an instance of a DMA peripheral
-pub trait Instace: Deref<Target = DMARegisterBlock> + Sealed {
+pub trait Instance: Deref<Target = DMARegisterBlock> + Sealed {
     /// Gives a pointer to the RegisterBlock
     fn ptr() -> *const DMARegisterBlock;
 }
 
-impl Instace for DMA1 {
+impl Instance for DMA1 {
     #[inline]
     fn ptr() -> *const DMARegisterBlock {
         DMA1::ptr()
     }
 }
 
-impl Instace for DMA2 {
+impl Instance for DMA2 {
     #[inline]
     fn ptr() -> *const DMARegisterBlock {
         DMA2::ptr()
@@ -614,7 +614,7 @@ macro_rules! dma_stream {
         $feif:ident, $isr:ident, $tcisr:ident, $htisr:ident)),+ $(,)*) => {
         $(
             #[allow(dead_code)]
-            impl<I: Instace> Stream for $name<I> {
+            impl<I: Instance> Stream for $name<I> {
 
                 const NUMBER: usize = $number;
 
