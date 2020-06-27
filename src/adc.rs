@@ -258,6 +258,24 @@ pub mod config {
         Tim_5_cc_2,
         /// TIM5 compare channel 3
         Tim_5_cc_3,
+        #[cfg(any(
+            feature = "stm32f405", feature = "stm32f407", feature = "stm32f412",
+            feature = "stm32f413", feature = "stm32f415", feature = "stm32f417",
+            feature = "stm32f423", feature = "stm32f427", feature = "stm32f429",
+            feature = "stm32f437", feature = "stm32f439", feature = "stm32f446",
+            feature = "stm32f469", feature = "stm32f479"
+        ))]
+        /// TIM8 compare channel 1
+        Tim_8_cc_1,
+        #[cfg(any(
+            feature = "stm32f405", feature = "stm32f407", feature = "stm32f412",
+            feature = "stm32f413", feature = "stm32f415", feature = "stm32f417",
+            feature = "stm32f423", feature = "stm32f427", feature = "stm32f429",
+            feature = "stm32f437", feature = "stm32f439", feature = "stm32f446",
+            feature = "stm32f469", feature = "stm32f479"
+        ))]
+        /// TIM8 trigger out
+        Tim_8_trgo,
         /// External interupt line 11
         Exti_11,
     }
@@ -277,6 +295,24 @@ pub mod config {
                 ExternalTrigger::Tim_5_cc_1 => 0b1010,
                 ExternalTrigger::Tim_5_cc_2 => 0b1011,
                 ExternalTrigger::Tim_5_cc_3 => 0b1100,
+
+                #[cfg(any(
+                    feature = "stm32f405", feature = "stm32f407", feature = "stm32f412",
+                    feature = "stm32f413", feature = "stm32f415", feature = "stm32f417",
+                    feature = "stm32f423", feature = "stm32f427", feature = "stm32f429",
+                    feature = "stm32f437", feature = "stm32f439", feature = "stm32f446",
+                    feature = "stm32f469", feature = "stm32f479"
+                ))]
+                ExternalTrigger::Tim_8_cc_1 => 0b1101,
+                #[cfg(any(
+                    feature = "stm32f405", feature = "stm32f407", feature = "stm32f412",
+                    feature = "stm32f413", feature = "stm32f415", feature = "stm32f417",
+                    feature = "stm32f423", feature = "stm32f427", feature = "stm32f429",
+                    feature = "stm32f437", feature = "stm32f439", feature = "stm32f446",
+                    feature = "stm32f469", feature = "stm32f479"
+                ))]
+                ExternalTrigger::Tim_8_trgo => 0b1110,
+
                 ExternalTrigger::Exti_11 => 0b1111,
             }
         }
@@ -392,7 +428,7 @@ pub mod config {
         pub(crate) dma: Dma,
         pub(crate) end_of_conversion_interrupt: Eoc,
         pub(crate) default_sample_time: SampleTime,
-        pub(crate) multi_mode: (AdcMultiMode, DmaMultiDds, DmaMultiMode),
+        pub(crate) multi_mode: Option<(AdcMultiMode, DmaMultiDds, DmaMultiMode)>,
     }
 
     impl AdcConfig {
@@ -446,7 +482,7 @@ pub mod config {
             self
         }
         /// change the multi_mode field
-        pub fn multi_mode(mut self, multi_mode: (AdcMultiMode, DmaMultiDds, DmaMultiMode)) -> Self {
+        pub fn multi_mode(mut self, multi_mode: Option<(AdcMultiMode, DmaMultiDds, DmaMultiMode)>) -> Self {
             self.multi_mode = multi_mode;
             self
         }
@@ -464,11 +500,7 @@ pub mod config {
                 dma: Dma::Disabled,
                 end_of_conversion_interrupt: Eoc::Disabled,
                 default_sample_time: SampleTime::Cycles_480,
-                multi_mode: (
-                    AdcMultiMode::INDEPENDENT,
-                    DmaMultiDds::SINGLE,
-                    DmaMultiMode::DISABLED,
-                ),
+                multi_mode: None,
             }
         }
     }
@@ -627,11 +659,28 @@ impl<ADC> fmt::Debug for Adc<ADC> {
     }
 }
 
+/// ADC calibration parameters
+#[derive(Debug, Clone, Copy)]
+pub struct Calibration {
+    /// VDDA in millivolts calculated from the factory calibration and vrefint
+    pub calibrated_vdda: u32,
+    // Private construction
+    _reserved: (),
+}
+
 macro_rules! adc {
-    ($($adc_type:ident => ($constructor_fn_name:ident, $common_type:ident, $rcc_enr_reg:ident, $rcc_enr_field: ident, $rcc_rst_reg: ident, $rcc_rst_field: ident)),+ $(,)*) => {
+    ($( $adc_type:ident => (
+        $constructor_fn_name:ident,
+        $common_type:ident,
+        $rcc_enr_reg:ident,
+        $rcc_enr_field: ident,
+        $rcc_rst_reg: ident,
+        $rcc_rst_field: ident
+    )),+ $(,)*) => {
         $(
             impl Adc<stm32::$adc_type> {
-                /// Enables the ADC clock, resets the peripheral (optionally), runs calibration and applies the supplied config
+                /// Enables the ADC clock, resets the peripheral (optionally)  and applies the supplied config
+                ///
                 /// # Arguments
                 /// * `reset` - should a reset be performed. This is provided because on some devices multiple ADCs share the same common reset
                 pub fn $constructor_fn_name(adc: stm32::$adc_type, reset: bool, config: config::AdcConfig) -> Adc<stm32::$adc_type> {
@@ -658,7 +707,6 @@ macro_rules! adc {
                     s.apply_config(config);
 
                     s.enable();
-                    s.calibrate();
 
                     s
                 }
@@ -677,23 +725,14 @@ macro_rules! adc {
                     self.set_multi_mode(config.multi_mode);
                 }
 
-                /// Calculates the system VDDA by sampling the internal VREF channel and comparing
-                /// the result with the value stored at the factory.
-                pub fn calibrate(&mut self) {
-                    self.enable();
+                /// Apply the provided calibration to this ADC
+                pub fn apply_calibration(&mut self, calibration: Calibration) {
+                    self.calibrated_vdda = calibration.calibrated_vdda;
+                }
 
-                    let vref_en = self.temperature_and_vref_enabled();
-                    if !vref_en {
-                        self.enable_temperature_and_vref();
-                    }
-
-                    let vref_cal = VrefCal::get().read();
-                    let vref_samp = self.read(&mut Vref).unwrap(); //This can't actually fail, it's just in a result to satisfy hal trait
-
-                    self.calibrated_vdda = (VDDA_CALIB * u32::from(vref_cal)) / u32::from(vref_samp);
-                    if !vref_en {
-                        self.disable_temperature_and_vref();
-                    }
+                /// Get the current calibrated vdda in milivolts
+                pub fn calibrated_vdda(&self) -> u32 {
+                    self.calibrated_vdda
                 }
 
                 /// Enables the vbat internal channel
@@ -836,15 +875,16 @@ macro_rules! adc {
 
                 /// Sets the adc multi-mode configuration
                 pub fn set_multi_mode(&mut self,
-                    (adc_multi, dma_dds, dma_mode):
-                    (config::AdcMultiMode, config::DmaMultiDds, config::DmaMultiMode))
+                    multi_mode: Option<(config::AdcMultiMode, config::DmaMultiDds, config::DmaMultiMode)>)
                 {
-                    let common = unsafe { &*stm32::$common_type::ptr() };
-                    common.ccr.modify(|_, w| w
-                        .multi().variant(adc_multi)
-                        .dma().variant(dma_mode)
-                        .dds().variant(dma_dds)
-                    );
+                    if let Some((adc_multi, dma_dds, dma_mode)) = multi_mode {
+                        let common = unsafe { &*stm32::$common_type::ptr() };
+                        common.ccr.modify(|_, w| w
+                            .multi().variant(adc_multi)
+                            .dma().variant(dma_mode)
+                            .dds().variant(dma_dds)
+                        );
+                    }
                 }
 
                 /// Sets if the end-of-conversion behaviour.
@@ -959,6 +999,13 @@ macro_rules! adc {
                     ((u32::from(sample) * self.calibrated_vdda) / self.max_sample) as u16
                 }
 
+                /// Converts a f32 sample value to millivolts using calibrated VDDA and configured resolution
+                ///
+                /// Useful when averaging multiple samples
+                pub fn sample_to_millivolts_f(&self, sample: f32) -> f32 {
+                    (sample * (self.calibrated_vdda as f32)) / (self.max_sample as f32)
+                }
+
                 /// Block until the conversion is completed
                 /// # Panics
                 /// Will panic if there is no conversion started and the end-of-conversion bit is not set
@@ -987,6 +1034,12 @@ macro_rules! adc {
                         .scan().clear_bit() //Disable scan mode
                         .eocie().clear_bit() //Disable end of conversion interrupt
                     );
+                    // Disable multi-mode to prevent DMA being triggered
+                    self.set_multi_mode(Some((
+                        config::AdcMultiMode::INDEPENDENT,
+                        config::DmaMultiDds::SINGLE,
+                        config::DmaMultiMode::DISABLED,
+                    )));
 
                     self.reset_sequence();
                     self.configure_channel(pin, config::Sequence::One, sample_time);
@@ -1031,56 +1084,96 @@ macro_rules! adc {
     };
 }
 
+macro_rules! adc_calibrate {
+    ($( $adc_type:ident => (
+        $constructor_fn_name:ident,
+        $common_type:ident,
+        $rcc_enr_reg:ident,
+        $rcc_enr_field: ident,
+        $rcc_rst_reg: ident,
+        $rcc_rst_field: ident
+    )),+ $(,)*) => {
+        $(
+            impl Adc<stm32::$adc_type> {
+                /// Calculates the ADC calibration sampling the internal VREF channel and comparing
+                /// the result with the value stored at the factory.
+                ///
+                /// **Doesn't** apply the calibration to the adc instance. Use [apply_calibration](#method.apply_calibration)
+                /// to apply it.
+                ///
+                /// None that the calibration can only be calculated on ADC1 as the internal VREF isn't hooked
+                /// up to the other ADCs. The factory calibration value is also only a single calibration value.
+                ///
+                /// `samples` parameter determines how many times to sample and average the result
+                pub fn calculate_calibration(&mut self, samples: usize) -> Calibration {
+                    self.enable();
+
+                    if samples == 0 {
+                        return Calibration {
+                            calibrated_vdda: VDDA_CALIB,
+                            _reserved: (),
+                        };
+                    }
+
+                    assert!((samples as u64 * 4096) < core::u64::MAX);
+
+                    // Get the factory stored sample for the internal vref.
+                    // The internal vref is ~1.2V and is sampled with a VDDA of 3.3V.
+                    // Using this and a new sample for the internal vref we can calculate what our
+                    // vdda really is.
+                    let vref_cal = VrefCal::get().read() as u32;
+
+                    let vref_en = self.temperature_and_vref_enabled();
+                    if !vref_en {
+                        self.enable_temperature_and_vref();
+                    }
+
+                    let mut vref_samp = 0;
+                    for _ in 0..samples {
+                        // Unwrap is ok, error type is Infallible
+                        vref_samp += self.read(&mut Vref).unwrap() as u64;
+                    }
+                    let vref_samp = (vref_samp / samples as u64) as u32;
+
+                    if !vref_en {
+                        self.disable_temperature_and_vref();
+                    }
+
+                    Calibration {
+                        calibrated_vdda: (VDDA_CALIB * vref_cal) / vref_samp,
+                        _reserved: (),
+                    }
+                }
+            }
+        )+
+    };
+}
+
 #[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f415",
-    feature = "stm32f407",
-    feature = "stm32f417",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f437",
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
+    feature = "stm32f401", feature = "stm32f405", feature = "stm32f415", feature = "stm32f407",
+    feature = "stm32f417", feature = "stm32f410", feature = "stm32f411", feature = "stm32f412",
+    feature = "stm32f413", feature = "stm32f423", feature = "stm32f427", feature = "stm32f437",
+    feature = "stm32f429", feature = "stm32f439", feature = "stm32f446", feature = "stm32f469",
     feature = "stm32f479",
 ))]
 adc!(ADC1 => (adc1, ADC_COMMON, apb2enr, adc1en, apb2rstr, adcrst));
+adc_calibrate!(ADC1 => (adc1, ADC_COMMON, apb2enr, adc1en, apb2rstr, adcrst));
 
 #[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f415",
-    feature = "stm32f407",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f437",
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
+    feature = "stm32f405", feature = "stm32f415", feature = "stm32f407", feature = "stm32f417",
+    feature = "stm32f427", feature = "stm32f437", feature = "stm32f429", feature = "stm32f439",
+    feature = "stm32f446", feature = "stm32f469", feature = "stm32f479",
 ))]
 adc!(ADC2 => (adc2, ADC_COMMON, apb2enr, adc2en, apb2rstr, adcrst));
 
 #[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f415",
-    feature = "stm32f407",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f437",
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
+    feature = "stm32f405", feature = "stm32f415", feature = "stm32f407", feature = "stm32f417",
+    feature = "stm32f427", feature = "stm32f437", feature = "stm32f429", feature = "stm32f439",
+    feature = "stm32f446", feature = "stm32f469", feature = "stm32f479",
 ))]
 adc!(ADC3 => (adc3, ADC_COMMON, apb2enr, adc3en, apb2rstr, adcrst));
+
+
 
 #[cfg(feature = "stm32f401")]
 adc_pins!(
@@ -1146,14 +1239,8 @@ adc_pins!(
     gpioc::PC3<Analog> => (ADC2, 13),
     gpioc::PC3<Analog> => (ADC3, 13),
     Temperature => (ADC1, 18),
-    Temperature => (ADC2, 18),
-    Temperature => (ADC3, 18),
     Vbat => (ADC1, 18),
-    Vbat => (ADC2, 18),
-    Vbat => (ADC3, 18),
     Vref => (ADC1, 17),
-    Vref => (ADC2, 17),
-    Vref => (ADC3, 17),
 );
 
 // Not available on O variant
@@ -1219,14 +1306,8 @@ adc_pins!(
     gpioc::PC5<Analog> => (ADC1, 15),
     gpioc::PC5<Analog> => (ADC2, 15),
     Temperature => (ADC1, 18),
-    Temperature => (ADC2, 18),
-    Temperature => (ADC3, 18),
     Vbat => (ADC1, 18),
-    Vbat => (ADC2, 18),
-    Vbat => (ADC3, 18),
     Vref => (ADC1, 17),
-    Vref => (ADC2, 17),
-    Vref => (ADC3, 17),
 );
 
 // Not available on V variant
@@ -1397,14 +1478,8 @@ adc_pins!(
     gpioc::PC5<Analog> => (ADC1, 15),
     gpioc::PC5<Analog> => (ADC2, 15),
     Temperature => (ADC1, 18),
-    Temperature => (ADC2, 18),
-    Temperature => (ADC3, 18),
     Vbat => (ADC1, 18),
-    Vbat => (ADC2, 18),
-    Vbat => (ADC3, 18),
     Vref => (ADC1, 17),
-    Vref => (ADC2, 17),
-    Vref => (ADC3, 17),
 );
 
 // Not available on V variant
@@ -1468,14 +1543,8 @@ adc_pins!(
     gpioc::PC5<Analog> => (ADC1, 15),
     gpioc::PC5<Analog> => (ADC2, 15),
     Temperature => (ADC1, 18),
-    Temperature => (ADC2, 18),
-    Temperature => (ADC3, 18),
     Vbat => (ADC1, 18),
-    Vbat => (ADC2, 18),
-    Vbat => (ADC3, 18),
     Vref => (ADC1, 17),
-    Vref => (ADC2, 17),
-    Vref => (ADC3, 17),
 );
 
 // Not available on V variant
@@ -1534,14 +1603,8 @@ adc_pins!(
     gpioc::PC4<Analog> => (ADC1, 14),
     gpioc::PC4<Analog> => (ADC2, 14),
     Temperature => (ADC1, 18),
-    Temperature => (ADC2, 18),
-    Temperature => (ADC3, 18),
     Vbat => (ADC1, 18),
-    Vbat => (ADC2, 18),
-    Vbat => (ADC3, 18),
     Vref => (ADC1, 17),
-    Vref => (ADC2, 17),
-    Vref => (ADC3, 17),
 );
 
 // Not available on M variant
@@ -1601,14 +1664,8 @@ adc_pins!(
     gpioc::PC1<Analog> => (ADC2, 11),
     gpioc::PC1<Analog> => (ADC3, 11),
     Temperature => (ADC1, 18),
-    Temperature => (ADC2, 18),
-    Temperature => (ADC3, 18),
     Vbat => (ADC1, 18),
-    Vbat => (ADC2, 18),
-    Vbat => (ADC3, 18),
     Vref => (ADC1, 17),
-    Vref => (ADC2, 17),
-    Vref => (ADC3, 17),
 );
 
 // Not available on A variant

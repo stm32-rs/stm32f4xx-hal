@@ -4,8 +4,11 @@
 
 use core::str::from_utf8_unchecked;
 
-/// This is the test voltage, in millivolts of the calibration done at the factory
+/// The VDDA in millivolts used at the factory during calibration
 pub const VDDA_CALIB: u32 = 3300;
+
+/// The nominal value of the VREFINT sampled at the factory during calibration
+pub const VREFINT_CALIB: u32 = (1210 * 4095) / VDDA_CALIB;
 
 macro_rules! define_ptr_type {
     ($name: ident, $ptr: expr) => {
