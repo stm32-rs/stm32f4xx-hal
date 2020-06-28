@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Reexport PAC as `pac` for consistency with other crates, consider `stm32` virtually deprecated
 - Added external interrupt (EXTI) support for output pins
 - Added `check_interrupt` method for GPIO pins
+- Basic support for DAC
 
 ## [v0.8.3] - 2020-06-12
 
