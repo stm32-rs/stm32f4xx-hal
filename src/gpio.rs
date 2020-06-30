@@ -90,6 +90,7 @@ pub trait ExtiPin {
     fn enable_interrupt(&mut self, exti: &mut EXTI);
     fn disable_interrupt(&mut self, exti: &mut EXTI);
     fn clear_interrupt_pending_bit(&mut self);
+    fn check_interrupt(&self) -> bool;
 }
 
 macro_rules! exti_erased {
@@ -163,6 +164,11 @@ macro_rules! exti_erased {
             fn clear_interrupt_pending_bit(&mut self) {
                 unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << self.i)) };
             }
+
+            /// Reads the interrupt pending bit for this pin
+            fn check_interrupt(&self) -> bool {
+                unsafe { ((*EXTI::ptr()).pr.read().bits() & (1 << self.i)) != 0 }
+            }
         }
     };
 }
@@ -219,6 +225,11 @@ macro_rules! exti {
             /// Clear the interrupt pending bit for this pin
             fn clear_interrupt_pending_bit(&mut self) {
                 unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << $i)) };
+            }
+
+            /// Reads the interrupt pending bit for this pin
+            fn check_interrupt(&self) -> bool {
+                unsafe { ((*EXTI::ptr()).pr.read().bits() & (1 << $i)) != 0 }
             }
         }
     };
