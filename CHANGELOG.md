@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Reexport PAC as `pac` for consistency with other crates, consider `stm32` virtually deprecated
+- Added external interrupt (EXTI) support for output pins
 
 ## [v0.8.3] - 2020-06-12
 
