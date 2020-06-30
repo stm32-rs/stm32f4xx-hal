@@ -92,6 +92,138 @@ pub trait ExtiPin {
     fn clear_interrupt_pending_bit(&mut self);
 }
 
+macro_rules! exti_erased {
+    ($PIN:ty, $extigpionr:expr) => {
+        impl<MODE> ExtiPin for $PIN {
+            /// Make corresponding EXTI line sensitive to this pin
+            fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
+                let offset = 4 * (self.i % 4);
+                match self.i {
+                    0..=3 => {
+                        syscfg.exticr1.modify(|r, w| unsafe {
+                            w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
+                        });
+                    }
+                    4..=7 => {
+                        syscfg.exticr2.modify(|r, w| unsafe {
+                            w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
+                        });
+                    }
+                    8..=11 => {
+                        syscfg.exticr3.modify(|r, w| unsafe {
+                            w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
+                        });
+                    }
+                    12..=15 => {
+                        syscfg.exticr4.modify(|r, w| unsafe {
+                            w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
+                        });
+                    }
+                    _ => {}
+                }
+            }
+
+            /// Generate interrupt on rising edge, falling edge or both
+            fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
+                match edge {
+                    Edge::RISING => {
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
+                    }
+                    Edge::FALLING => {
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
+                    }
+                    Edge::RISING_FALLING => {
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+                    }
+                }
+            }
+
+            /// Enable external interrupts from this pin.
+            fn enable_interrupt(&mut self, exti: &mut EXTI) {
+                exti.imr
+                    .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
+            }
+
+            /// Disable external interrupts from this pin
+            fn disable_interrupt(&mut self, exti: &mut EXTI) {
+                exti.imr
+                    .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
+            }
+
+            /// Clear the interrupt pending bit for this pin
+            fn clear_interrupt_pending_bit(&mut self) {
+                unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << self.i)) };
+            }
+        }
+    };
+}
+
+macro_rules! exti {
+    ($PIN:ty, $extigpionr:expr, $i:expr, $exticri:ident) => {
+        impl<MODE> ExtiPin for $PIN {
+            /// Configure EXTI Line $i to trigger from this pin.
+            fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
+                let offset = 4 * ($i % 4);
+                syscfg.$exticri.modify(|r, w| unsafe {
+                    let mut exticr = r.bits();
+                    exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
+                    w.bits(exticr)
+                });
+            }
+
+            /// Generate interrupt on rising edge, falling edge or both
+            fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
+                match edge {
+                    Edge::RISING => {
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
+                    }
+                    Edge::FALLING => {
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
+                    }
+                    Edge::RISING_FALLING => {
+                        exti.rtsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                        exti.ftsr
+                            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+                    }
+                }
+            }
+
+            /// Enable external interrupts from this pin.
+            fn enable_interrupt(&mut self, exti: &mut EXTI) {
+                exti.imr
+                    .modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
+            }
+
+            /// Disable external interrupts from this pin
+            fn disable_interrupt(&mut self, exti: &mut EXTI) {
+                exti.imr
+                    .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
+            }
+
+            /// Clear the interrupt pending bit for this pin
+            fn clear_interrupt_pending_bit(&mut self) {
+                unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << $i)) };
+            }
+        }
+    };
+}
+
 macro_rules! gpio {
     ($GPIOX:ident, $gpiox:ident, $iopxenr:ident, $PXx:ident, $extigpionr:expr, [
         $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty, $exticri:ident),)+
@@ -202,68 +334,9 @@ macro_rules! gpio {
                 }
             }
 
-            impl<MODE> ExtiPin for $PXx<Input<MODE>> {
-                /// Make corresponding EXTI line sensitive to this pin
-                fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
-                    let offset = 4 * (self.i % 4);
-                    match self.i {
-                        0..=3 => {
-                            syscfg.exticr1.modify(|r, w| unsafe {
-                                w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
-                            });
-                        },
-                        4..=7 => {
-                            syscfg.exticr2.modify(|r, w| unsafe {
-                                w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
-                            });
-                        },
-                        8..=11 => {
-                            syscfg.exticr3.modify(|r, w| unsafe {
-                                w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
-                            });
-                        },
-                        12..=15 => {
-                            syscfg.exticr4.modify(|r, w| unsafe {
-                                w.bits((r.bits() & !(0xf << offset)) | ($extigpionr << offset))
-                            });
-                        },
-                        _ => {}
-                    }
-                }
+            exti_erased!($PXx<Output<MODE>>, $extigpionr);
 
-                /// Generate interrupt on rising edge, falling edge or both
-                fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
-                    match edge {
-                        Edge::RISING => {
-                            exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
-                            exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
-                        },
-                        Edge::FALLING => {
-                            exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
-                            exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
-                        },
-                        Edge::RISING_FALLING => {
-                            exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
-                            exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
-                        }
-                    }
-                }
-
-                /// Enable external interrupts from this pin.
-                fn enable_interrupt(&mut self, exti: &mut EXTI) {
-                    exti.imr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.i)) });
-                }
-
-                /// Disable external interrupts from this pin
-                fn disable_interrupt(&mut self, exti: &mut EXTI) {
-                    exti.imr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.i)) });
-                }
-
-                /// Clear the interrupt pending bit for this pin
-                fn clear_interrupt_pending_bit(&mut self) {
-                    unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << self.i) ) };
-                }
-            }
+            exti_erased!($PXx<Input<MODE>>, $extigpionr);
 
             fn _set_alternate_mode (index: usize, mode: u32)
             {
@@ -722,50 +795,9 @@ macro_rules! gpio {
                     }
                 }
 
-                impl<MODE> ExtiPin for $PXi<Input<MODE>> {
-                    /// Configure EXTI Line $i to trigger from this pin.
-                    fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
-                        let offset = 4 * ($i % 4);
-                        syscfg.$exticri.modify(|r, w| unsafe {
-                            let mut exticr = r.bits();
-                            exticr = (exticr & !(0xf << offset)) | ($extigpionr << offset);
-                            w.bits(exticr)
-                        });
-                    }
+                exti!($PXi<Output<MODE>>, $extigpionr, $i, $exticri);
 
-                    /// Generate interrupt on rising edge, falling edge or both
-                    fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
-                        match edge {
-                            Edge::RISING => {
-                                exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
-                                exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
-                            },
-                            Edge::FALLING => {
-                                exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
-                                exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
-                            },
-                            Edge::RISING_FALLING => {
-                                exti.rtsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
-                                exti.ftsr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
-                            }
-                        }
-                    }
-
-                    /// Enable external interrupts from this pin.
-                    fn enable_interrupt(&mut self, exti: &mut EXTI) {
-                        exti.imr.modify(|r, w| unsafe { w.bits(r.bits() | (1 << $i)) });
-                    }
-
-                    /// Disable external interrupts from this pin
-                    fn disable_interrupt(&mut self, exti: &mut EXTI) {
-                        exti.imr.modify(|r, w| unsafe { w.bits(r.bits() & !(1 << $i)) });
-                    }
-
-                    /// Clear the interrupt pending bit for this pin
-                    fn clear_interrupt_pending_bit(&mut self) {
-                        unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << $i) ) };
-                    }
-                }
+                exti!($PXi<Input<MODE>>, $extigpionr, $i, $exticri);
 
             )+
         }
