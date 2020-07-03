@@ -32,6 +32,7 @@ nb = "0.1.2"
 rand_core = "0.5.1"
 stm32f4 = "0.11"
 synopsys-usb-otg = { version = "0.2.0", features = ["cortex-m"], optional = true }
+sdio-host = { version = "0.2.0", optional = true }
 
 [dependencies.bare-metal]
 version = "0.2.5"
@@ -84,6 +85,8 @@ stm32f479 = ["stm32f4/stm32f469", "device-selected"]
 usb_fs = ["synopsys-usb-otg", "synopsys-usb-otg/fs"]
 usb_hs = ["synopsys-usb-otg", "synopsys-usb-otg/hs"]
 
+sdio = ["sdio-host"]
+
 [profile.dev]
 debug = true
 lto = true
@@ -99,7 +102,7 @@ required-features = ["rt", "stm32f401", "usb_fs"]
 
 [[example]]
 name = "sd"
-required-features = ["rt", "stm32f405"]
+required-features = ["rt", "stm32f405", "sdio"]
 
 [[example]]
 name = "delay-blinky"

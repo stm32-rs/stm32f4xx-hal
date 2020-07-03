@@ -5,6 +5,8 @@ use crate::bb;
 use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, AF12};
 use crate::stm32::{RCC, SDIO};
 
+pub use sdio_host::{CardCapacity, Cic, Cid, Csd, Ocr, Rca, Scr, SdStatus};
+
 pub trait PinClk {}
 pub trait PinCmd {}
 pub trait PinD0 {}
@@ -144,41 +146,18 @@ enum Response {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub enum CardVersion {
-    V2 = 2,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub enum CardType {
-    /// Standard Capacity (< 2Gb)
-    SDSC,
-    /// High capacity (< 32Gb)
-    SDHC,
-}
-
-impl Default for CardVersion {
-    fn default() -> Self {
-        CardVersion::V2
-    }
-}
-
-impl Default for CardType {
-    fn default() -> Self {
-        CardType::SDSC
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
 pub enum Error {
     Timeout,
     SoftwareTimeout,
     Crc,
     UnsupportedCardVersion,
     UnsupportedCardType,
+    UnsupportedVoltage,
     DataCrcFail,
     RxOverFlow,
     TxUnderErr,
     NoCard,
+    CsdParseError,
 }
 
 /// Sdio device
@@ -194,55 +173,16 @@ struct Cmd {
     resp: Response,
 }
 
-#[derive(Debug, Copy, Clone, Default)]
-/// Card identification
-pub struct Cid {
-    pub manufacturerid: u8,
-    pub oem_applicationid: u16,
-    pub prodname1: u32,
-    pub prodname2: u8,
-    pub prodrev: u8,
-    pub prodsn: u32,
-    pub manufact_date: u16,
-    pub cid_crc: u8,
-}
-
-#[derive(Debug, Copy, Clone, Default)]
-/// Card specific data
-pub struct Csd {
-    pub sys_spec_version: u8,
-    pub max_bus_clk_frec: u8,
-    pub rd_block_en: u8,
-    // V2
-    pub device_size: u32,
-}
-
-#[derive(Debug, Default, Copy, Clone)]
-/// Sd card status
-pub struct Status {
-    pub bus_width: u8,
-    pub secure_mode: u8,
-    pub card_type: u16,
-    pub protected_area_size: u32,
-    pub speed_class: u8,
-    pub performance_move: u8,
-    pub allocation_units: u8,
-    pub erase_size: u16,
-    pub erase_timeout: u8,
-    pub erase_offset: u8,
-}
-
-#[derive(Debug, Default)]
+#[derive(Debug)]
 /// Sd card
 pub struct Card {
-    pub version: CardVersion,
-    pub ctype: CardType,
-    pub ocr: u32,
-    pub rca: u32, // Relative Card Address
-    pub cid: [u32; 4],
-    pub csd: [u32; 4],
-    pub scr: [u32; 2],
-    pub status: [u32; 16],
+    pub capacity: CardCapacity,
+    pub ocr: Ocr,
+    pub rca: Rca, // Relative Card Address
+    pub cid: Cid<[u32; 4]>,
+    pub csd: Csd,
+    pub scr: Scr<[u32; 2]>,
+    pub status: SdStatus<[u32; 16]>,
 }
 
 impl Sdio {
@@ -299,31 +239,32 @@ impl Sdio {
 
         // Check if cards supports CMD 8 (with pattern)
         self.cmd(Cmd::hs_send_ext_csd(0x1AA))?;
-        let r1 = self.sdio.resp1.read().bits();
+        let cic = Cic(self.sdio.resp1.read().bits());
 
-        let mut card = if r1 == 0x1AA {
-            /* Card echoed back the pattern, we have a v2 card */
-            Card::default()
-        } else {
+        // If card did't echo back the pattern, we do not have a v2 card
+        if cic.checkpattern() != 0xAA {
             return Err(Error::UnsupportedCardVersion);
-        };
+        }
+
+        if cic.voltage_accepted() & 0b0001 == 0 {
+            return Err(Error::UnsupportedVoltage);
+        }
 
         let ocr = loop {
-            // Signal that next command is a app command
-            self.cmd(Cmd::app_cmd(0))?;
-
             let arg = CmdAppOper::VOLTAGE_WINDOW_SD as u32
                 | CmdAppOper::HIGH_CAPACITY as u32
                 | CmdAppOper::SD_SWITCH_1_8V_CAPACITY as u32;
 
+            // Signal that next command is a app command
+            self.cmd(Cmd::app_cmd(0))?;
             // Initialize card
             match self.cmd(Cmd::app_op_cmd(arg)) {
                 Ok(_) => (),
                 Err(Error::Crc) => (),
                 Err(err) => return Err(err),
             }
-            let ocr = self.sdio.resp1.read().bits();
-            if ocr & 0x8000_0000 == 0 {
+            let ocr = Ocr(self.sdio.resp1.read().bits());
+            if !ocr.powered() {
                 // Still powering up
                 continue;
             }
@@ -331,40 +272,59 @@ impl Sdio {
             break ocr;
         };
 
-        if ocr & 0x4000_0000 != 0 {
-            card.ctype = CardType::SDHC;
+        // True for SDHC and SDXC False for SDSC
+        let capacity = if ocr.high_capacity() {
+            CardCapacity::SDHC
         } else {
+            // Note: SDSC Not supported yet
             return Err(Error::UnsupportedCardType);
-        }
-
-        card.ocr = ocr;
+        };
 
         // Get CID
         self.cmd(Cmd::all_send_cid())?;
-        card.cid[0] = self.sdio.resp1.read().bits();
-        card.cid[1] = self.sdio.resp2.read().bits();
-        card.cid[2] = self.sdio.resp3.read().bits();
-        card.cid[3] = self.sdio.resp4.read().bits();
+        let mut cid = [0; 4];
+        cid[3] = self.sdio.resp1.read().bits();
+        cid[2] = self.sdio.resp2.read().bits();
+        cid[1] = self.sdio.resp3.read().bits();
+        cid[0] = self.sdio.resp4.read().bits();
 
         // Get RCA
         self.cmd(Cmd::send_rel_addr())?;
-        card.rca = self.sdio.resp1.read().bits() >> 16;
+        let mut rca = Rca(self.sdio.resp1.read().bits());
+        // Zero out the status bits to let us use rca as argument to others commands
+        // The same status bits are available as a R1 response to Card Status CMD13
+        rca.set_status(0);
 
         // Get CSD
-        self.cmd(Cmd::send_csd(card.rca << 16))?;
-        card.csd[0] = self.sdio.resp1.read().bits();
-        card.csd[1] = self.sdio.resp2.read().bits();
-        card.csd[2] = self.sdio.resp3.read().bits();
-        card.csd[3] = self.sdio.resp4.read().bits();
+        self.cmd(Cmd::send_csd(rca.0))?;
+        let mut csd = [0; 4];
+        csd[3] = self.sdio.resp1.read().bits();
+        csd[2] = self.sdio.resp2.read().bits();
+        csd[1] = self.sdio.resp3.read().bits();
+        csd[0] = self.sdio.resp4.read().bits();
+
+        let csd = if let Some(csd) = Csd::parse(csd) {
+            csd
+        } else {
+            return Err(Error::CsdParseError);
+        };
+
+        let mut card = Card {
+            capacity,
+            ocr,
+            rca,
+            cid: Cid(cid),
+            csd,
+            scr: Scr::default(),
+            status: SdStatus::default(),
+        };
 
         self.select_card(Some(&card))?;
-
         self.get_scr(&mut card)?;
-
         self.set_bus(self.bw, freq, &card)?;
 
+        self.read_card_status(&mut card)?;
         self.card.replace(card);
-        self.read_card_status()?;
 
         Ok(())
     }
@@ -490,12 +450,8 @@ impl Sdio {
         Ok(())
     }
 
-    fn read_card_status(&mut self) -> Result<(), Error> {
-        let card = self.card()?;
-
+    fn read_card_status(&mut self, card: &mut Card) -> Result<(), Error> {
         self.cmd(Cmd::set_blocklen(64))?;
-
-        self.cmd(Cmd::app_cmd(card.rca << 16))?;
 
         // Prepare the transfer
         self.sdio
@@ -511,9 +467,10 @@ impl Sdio {
                 .set_bit()
         });
 
+        self.cmd(Cmd::app_cmd(card.rca.0))?;
         self.cmd(Cmd::send_card_status())?;
 
-        let mut status = [0u32; 16];
+        let status = &mut card.status.0;
         let mut idx = 0;
         let mut sta;
         while {
@@ -525,7 +482,7 @@ impl Sdio {
         } {
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
-                    status[idx] = self.sdio.fifo.read().bits();
+                    status[15 - idx] = self.sdio.fifo.read().bits().swap_bytes();
                     idx += 1;
                 }
             }
@@ -543,14 +500,11 @@ impl Sdio {
             return Err(Error::Timeout);
         }
 
-        let card = self.card.as_mut().ok_or(Error::NoCard)?;
-        card.status.copy_from_slice(&status);
-
         Ok(())
     }
 
     fn select_card(&self, card: Option<&Card>) -> Result<(), Error> {
-        let rca = card.map(|c| c.rca << 16).unwrap_or(0);
+        let rca = card.map(|c| c.rca.0).unwrap_or(0);
 
         let r = self.cmd(Cmd::sel_desel_card(rca));
         match (r, rca) {
@@ -561,7 +515,6 @@ impl Sdio {
 
     fn get_scr(&self, card: &mut Card) -> Result<(), Error> {
         self.cmd(Cmd::set_blocklen(8))?;
-        self.cmd(Cmd::app_cmd(card.rca << 16))?;
 
         self.sdio
             .dtimer
@@ -570,9 +523,11 @@ impl Sdio {
         self.sdio
             .dctrl
             .write(|w| unsafe { w.dblocksize().bits(3).dtdir().set_bit().dten().set_bit() });
+
+        self.cmd(Cmd::app_cmd(card.rca.0))?;
         self.cmd(Cmd::cmd51())?;
 
-        let mut scr = [0; 2];
+        let mut buf = [0; 2];
         let mut i = 0;
         let mut sta;
         while {
@@ -584,7 +539,7 @@ impl Sdio {
                 || sta.dbckend().bit())
         } {
             if sta.rxdavl().bit() {
-                scr[i] = self.sdio.fifo.read().bits();
+                buf[i] = self.sdio.fifo.read().bits();
                 i += 1;
             }
 
@@ -601,15 +556,11 @@ impl Sdio {
             return Err(Error::Timeout);
         }
 
-        card.scr[0] = ((scr[1] & 0xff) << 24)
-            | ((scr[1] & 0xff00) << 8)
-            | ((scr[1] & 0x00ff_0000) >> 8)
-            | ((scr[1] & 0xff00_0000) >> 24);
+        let scr = &mut card.scr.0;
 
-        card.scr[1] = ((scr[0] & 0xff) << 24)
-            | ((scr[0] & 0xff00) << 8)
-            | ((scr[0] & 0x00ff_0000) >> 8)
-            | ((scr[0] & 0xff00_0000) >> 24);
+        // The data received is byte swapped so swap it back
+        scr[0] = buf[1].swap_bytes();
+        scr[1] = buf[0].swap_bytes();
 
         Ok(())
     }
@@ -621,7 +572,7 @@ impl Sdio {
             _ => (Buswidth::Buswidth1, 1),
         };
 
-        self.cmd(Cmd::app_cmd(card.rca << 16))?;
+        self.cmd(Cmd::app_cmd(card.rca.0))?;
         self.cmd(Cmd::acmd6(acmd_arg))?;
 
         self.sdio.clkcr.modify(|_, w| unsafe {
@@ -722,53 +673,12 @@ impl Card {
 
     /// Size in blocks
     pub fn block_count(&self) -> u32 {
-        let block_count = ((self.csd[1] & 0x0000_003F) << 16) | (self.csd[2] >> 16);
-        (block_count + 1) * 1024
+        self.csd.blocks()
     }
 
+    /// Card supports wide bus
     fn supports_widebus(&self) -> bool {
-        self.scr[1] & 0x0004_0000 != 0
-    }
-
-    pub fn cid(&self) -> Cid {
-        Cid {
-            manufacturerid: (self.cid[0] >> 24) as u8,
-            oem_applicationid: ((self.cid[0] & 0x00FF_FF00) >> 8) as u16,
-            prodname1: (((self.cid[0] & 0x0000_00FF) << 24) | ((self.cid[1] & 0xFFFF_FF00) >> 8)),
-            prodname2: self.cid[1] as u8,
-            prodrev: (self.cid[2] >> 24) as u8,
-            prodsn: (((self.cid[2] & 0x00FF_FFFF) << 8) | ((self.cid[3] & 0xFF00_0000) >> 24)),
-            manufact_date: ((self.cid[3] & 0x000F_FF00) >> 8) as u16,
-            cid_crc: ((self.cid[3] & 0x0000_00FE) >> 1) as u8,
-        }
-    }
-
-    pub fn csd(&self) -> Csd {
-        Csd {
-            sys_spec_version: ((self.csd[0] & 0x3C00_0000) >> 26) as u8,
-            max_bus_clk_frec: (self.csd[0] & 0x0000_00FF) as u8,
-            rd_block_en: ((self.csd[1] & 0x000F_0000) >> 16) as u8,
-            device_size: (((self.csd[1] & 0x0000_003F) << 16) | (self.csd[2] >> 16)),
-        }
-    }
-
-    pub fn status(&self) -> Status {
-        Status {
-            bus_width: ((self.status[0] & 0xC0) >> 6) as u8,
-            secure_mode: ((self.status[0] & 0x20) >> 5) as u8,
-            card_type: (((self.status[0] & 0x00FF_0000) >> 8)
-                | ((self.status[0] & 0xFF00_0000) >> 24)) as u16,
-            protected_area_size: (((self.status[1] & 0xFF) << 24)
-                | ((self.status[1] & 0x0000_FF00) << 8)
-                | ((self.status[1] & 0x00FF_0000) >> 8)
-                | ((self.status[1] & 0xFF00_0000) >> 24)),
-            speed_class: (self.status[2] & 0xFF) as u8,
-            performance_move: ((self.status[2] & 0xFF00) >> 8) as u8,
-            allocation_units: ((self.status[2] & 0x00F0_0000) >> 20) as u8,
-            erase_size: (((self.status[2] & 0xFF00_0000) >> 16) | (self.status[3] & 0xFF)) as u16,
-            erase_timeout: ((self.status[3] & 0xFC00) >> 10) as u8,
-            erase_offset: ((self.status[3] & 0x0300) >> 8) as u8,
-        }
+        self.scr.bus_widths() & 0b0100 != 0
     }
 }
 
