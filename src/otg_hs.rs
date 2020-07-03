@@ -45,11 +45,7 @@ unsafe impl UsbPeripheral for USB {
         feature = "stm32f439",
     ))]
     const ENDPOINT_COUNT: usize = 6;
-    #[cfg(any(
-        feature = "stm32f446",
-        feature = "stm32f469",
-        feature = "stm32f479",
-    ))]
+    #[cfg(any(feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
     const ENDPOINT_COUNT: usize = 9;
 
     fn enable() {
