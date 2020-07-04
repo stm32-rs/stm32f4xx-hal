@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- [breaking-change] Updated synopsys-usb-otg dependency to v0.2.0.
+
 ### Added
 
 - Reexport PAC as `pac` for consistency with other crates, consider `stm32` virtually deprecated

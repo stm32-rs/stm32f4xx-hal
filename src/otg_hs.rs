@@ -12,6 +12,7 @@ use crate::gpio::{
     gpiob::{PB14, PB15},
     Alternate, AF12,
 };
+use crate::time::Hertz;
 
 pub use synopsys_usb_otg::UsbBus;
 use synopsys_usb_otg::UsbPeripheral;
@@ -22,6 +23,7 @@ pub struct USB {
     pub usb_pwrclk: stm32::OTG_HS_PWRCLK,
     pub pin_dm: PB14<Alternate<AF12>>,
     pub pin_dp: PB15<Alternate<AF12>>,
+    pub hclk: Hertz,
 }
 
 unsafe impl Sync for USB {}
@@ -31,6 +33,20 @@ unsafe impl UsbPeripheral for USB {
 
     const HIGH_SPEED: bool = true;
     const FIFO_DEPTH_WORDS: usize = 1024;
+
+    #[cfg(any(
+        feature = "stm32f405",
+        feature = "stm32f407",
+        feature = "stm32f415",
+        feature = "stm32f417",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+    ))]
+    const ENDPOINT_COUNT: usize = 6;
+    #[cfg(any(feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
+    const ENDPOINT_COUNT: usize = 9;
 
     fn enable() {
         let rcc = unsafe { &*stm32::RCC::ptr() };
@@ -43,6 +59,10 @@ unsafe impl UsbPeripheral for USB {
             rcc.ahb1rstr.modify(|_, w| w.otghsrst().set_bit());
             rcc.ahb1rstr.modify(|_, w| w.otghsrst().clear_bit());
         });
+    }
+
+    fn ahb_frequency_hz(&self) -> u32 {
+        self.hclk.0
     }
 }
 
