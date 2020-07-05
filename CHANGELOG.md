@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - [breaking-change] Updated synopsys-usb-otg dependency to v0.2.0.
+- Cleanups to the Sdio driver, some hw independent functionality moved to the new sdio-host library.
+- [breaking-change] Sdio is disabled by default, enable with the `sdio` feature flag.
 
 ### Added
 
