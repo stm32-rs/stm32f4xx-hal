@@ -93,7 +93,7 @@ impl Rng {
 impl rng::Read for Rng {
     type Error = rand_core::Error;
 
-    fn read(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
+    fn try_read(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
         self.try_fill_bytes(buffer)
     }
 }
