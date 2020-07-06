@@ -30,6 +30,7 @@ unsafe impl UsbPeripheral for USB {
 
     const HIGH_SPEED: bool = false;
     const FIFO_DEPTH_WORDS: usize = 320;
+    const ENDPOINT_COUNT: usize = 4;
 
     fn enable() {
         let rcc = unsafe { &*stm32::RCC::ptr() };
