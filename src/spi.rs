@@ -1059,3 +1059,8 @@ impl<SPI, PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<SPI, PIN
     SPI: Deref<Target = spi1::RegisterBlock>
 {
 }
+
+impl<SPI, PINS> embedded_hal::blocking::spi::transactional::Default<u8> for Spi<SPI, PINS> where
+    SPI: Deref<Target = spi1::RegisterBlock>
+{
+}

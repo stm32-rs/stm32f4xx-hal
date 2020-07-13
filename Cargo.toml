@@ -123,3 +123,6 @@ required-features = ["rt", "stm32f429"]
 [[example]]
 name = "rng-display"
 required-features = ["rt", "stm32f407"]
+
+[patch.crates-io]
+embedded-hal = { git = "https://github.com/ryankurte/embedded-hal.git", branch = "feature/spi-transactions" }
