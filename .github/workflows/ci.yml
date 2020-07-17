@@ -45,5 +45,5 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: build
-          args: --features=${{ matrix.mcu }},rt,usb_fs
+          command: check
+          args: --features=${{ matrix.mcu }},rt,usb_fs --examples
