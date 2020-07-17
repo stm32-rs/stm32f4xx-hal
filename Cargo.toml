@@ -127,3 +127,7 @@ required-features = ["rt", "stm32f429"]
 [[example]]
 name = "rng-display"
 required-features = ["rt", "stm32f407"]
+
+[[example]]
+name = "qei"
+required-features = ["rt", "stm32f411"]
