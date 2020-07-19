@@ -1,8 +1,7 @@
 //! Direct Memory Access.
 
-use crate::pac;
 use core::{
-    marker::{PhantomData, Sized},
+    marker::PhantomData,
     mem, ptr,
     sync::atomic::{compiler_fence, Ordering},
 };
@@ -24,6 +23,8 @@ pub enum DMAError {
     NoSecondBuffer,
     /// FIFO must be enabled if using memory to memory transfers
     FifoDisabled,
+    /// Double buffer must not be enabled if using memory to memory transfers
+    DoubleBufferEnabled,
 }
 
 /// Possible DMA's directions
@@ -207,43 +208,21 @@ impl<DMA> Sealed for Stream6<DMA> {}
 impl<DMA> Sealed for Stream7<DMA> {}
 
 /// Alias for a tuple with all DMA streams.
-pub type StreamsTuple<T> = (
-    Stream0<T>,
-    Stream1<T>,
-    Stream2<T>,
-    Stream3<T>,
-    Stream4<T>,
-    Stream5<T>,
-    Stream6<T>,
-    Stream7<T>,
+pub struct StreamsTuple<T>(
+    pub Stream0<T>,
+    pub Stream1<T>,
+    pub Stream2<T>,
+    pub Stream3<T>,
+    pub Stream4<T>,
+    pub Stream5<T>,
+    pub Stream6<T>,
+    pub Stream7<T>,
 );
 
-/// Extension trait to split the DMA peripheral
-pub trait DMAExt: Sized {
-    /// Splits the DMA into channels
-    fn split(self) -> StreamsTuple<Self>;
-}
-
-impl DMAExt for pac::DMA1 {
-    fn split(self) -> StreamsTuple<Self> {
-        self.rcc_enable();
-        (
-            Stream0 { _dma: PhantomData },
-            Stream1 { _dma: PhantomData },
-            Stream2 { _dma: PhantomData },
-            Stream3 { _dma: PhantomData },
-            Stream4 { _dma: PhantomData },
-            Stream5 { _dma: PhantomData },
-            Stream6 { _dma: PhantomData },
-            Stream7 { _dma: PhantomData },
-        )
-    }
-}
-
-impl DMAExt for pac::DMA2 {
-    fn split(self) -> StreamsTuple<Self> {
-        self.rcc_enable();
-        (
+impl<T: RccEnable> StreamsTuple<T> {
+    pub fn new(regs: T) -> Self {
+        regs.rcc_enable();
+        Self(
             Stream0 { _dma: PhantomData },
             Stream1 { _dma: PhantomData },
             Stream2 { _dma: PhantomData },
@@ -907,6 +886,8 @@ where
             // Fifo must be enabled for memory to memory
             if !config.fifo_enable {
                 return Err(DMAError::FifoDisabled);
+            } else if config.double_buffer {
+                return Err(DMAError::DoubleBufferEnabled);
             }
         } else {
             // Set the peripheral address

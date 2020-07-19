@@ -221,7 +221,7 @@ impl Instance for DMA2 {
 }
 
 /// Things that implement this can have their RCC enabled
-pub(super) trait RccEnable {
+pub trait RccEnable: Sealed {
     fn rcc_enable(&self);
 }
 

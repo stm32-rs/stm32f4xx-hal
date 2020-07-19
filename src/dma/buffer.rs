@@ -1,4 +1,5 @@
 //! Traits that represent a buffer that can be used with DMA.
+//! Copied from ra-kete's dma-poc repository.
 
 use core::{
     mem::{self, MaybeUninit},
@@ -119,8 +120,8 @@ pub unsafe trait ReadTarget {
     type Word: Word;
 
     fn as_read_buffer(&self) -> (*const Self::Word, usize) {
-        let ptr = self as *const _ as *const Self::Word;
         let len = mem::size_of_val(self) / mem::size_of::<Self::Word>();
+        let ptr = self as *const _ as *const Self::Word;
         (ptr, len)
     }
 }
@@ -138,8 +139,8 @@ pub unsafe trait WriteTarget {
     type Word: Word;
 
     fn as_write_buffer(&mut self) -> (*mut Self::Word, usize) {
-        let ptr = self as *mut _ as *mut Self::Word;
         let len = mem::size_of_val(self) / mem::size_of::<Self::Word>();
+        let ptr = self as *mut _ as *mut Self::Word;
         (ptr, len)
     }
 }
