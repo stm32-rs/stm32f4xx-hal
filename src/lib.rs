@@ -155,6 +155,8 @@ pub mod rng;
 pub use stm32 as pac;
 
 #[cfg(feature = "device-selected")]
+pub mod dma;
+#[cfg(feature = "device-selected")]
 pub mod dwt;
 #[cfg(feature = "device-selected")]
 pub mod prelude;
