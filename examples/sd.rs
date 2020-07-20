@@ -41,7 +41,7 @@ fn main() -> ! {
     let d3 = gpioc.pc11.into_alternate_af12().internal_pull_up(true);
     let clk = gpioc.pc12.into_alternate_af12().internal_pull_up(false);
     let cmd = gpiod.pd2.into_alternate_af12().internal_pull_up(true);
-    let mut sdio = Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3));
+    let mut sdio = Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3), clocks);
 
     hprintln!("Waiting for card...").ok();
 

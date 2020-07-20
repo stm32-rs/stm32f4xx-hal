@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] Updated synopsys-usb-otg dependency to v0.2.0.
 - Cleanups to the Sdio driver, some hw independent functionality moved to the new sdio-host library.
 - [breaking-change] Sdio is disabled by default, enable with the `sdio` feature flag.
+- Move SDIO card power handling to its own function.
+- [breaking-change] Add a 2 ms delay after changing SDIO card power setting.
 
 ### Added
 

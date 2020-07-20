@@ -3,6 +3,7 @@
 use crate::bb;
 #[allow(unused_imports)]
 use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, AF12};
+use crate::rcc::Clocks;
 use crate::stm32::{RCC, SDIO};
 
 pub use sdio_host::{CardCapacity, Cic, Cid, Csd, Ocr, Rca, Scr, SdStatus};
@@ -165,6 +166,7 @@ pub struct Sdio {
     sdio: SDIO,
     bw: Buswidth,
     card: Option<Card>,
+    clocks: Clocks,
 }
 
 struct Cmd {
@@ -187,7 +189,7 @@ pub struct Card {
 
 impl Sdio {
     /// Create and enable the Sdio device
-    pub fn new<PINS: Pins>(sdio: SDIO, _pins: PINS) -> Self {
+    pub fn new<PINS: Pins>(sdio: SDIO, _pins: PINS, clocks: Clocks) -> Self {
         unsafe {
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
             let rcc = &*RCC::ptr();
@@ -215,22 +217,23 @@ impl Sdio {
                 .set_bit()
         });
 
-        sdio.power
-            .modify(|_, w| unsafe { w.pwrctrl().bits(PowerCtrl::Off as u8) });
-
-        Sdio {
+        let mut host = Sdio {
             sdio,
             bw: PINS::BUSWIDTH,
             card: None,
-        }
+            clocks,
+        };
+
+        // Make sure card is powered off
+        host.set_power(PowerCtrl::Off);
+
+        host
     }
 
     /// Initializes card (if present) and sets the bus at the specified frequency.
     pub fn init_card(&mut self, freq: ClockFreq) -> Result<(), Error> {
         // Enable power to card
-        self.sdio
-            .power
-            .modify(|_, w| unsafe { w.pwrctrl().bits(PowerCtrl::On as u8) });
+        self.set_power(PowerCtrl::On);
 
         // Enable clock
         self.sdio.clkcr.modify(|_, w| w.clken().set_bit());
@@ -327,6 +330,15 @@ impl Sdio {
         self.card.replace(card);
 
         Ok(())
+    }
+
+    fn set_power(&mut self, pwr: PowerCtrl) {
+        self.sdio
+            .power
+            .modify(|_, w| unsafe { w.pwrctrl().bits(pwr as u8) });
+
+        // Wait for 2 ms after changing power settings
+        cortex_m::asm::delay(2 * (self.clocks.sysclk().0 / 1000));
     }
 
     /// Get a reference to the initialized card
