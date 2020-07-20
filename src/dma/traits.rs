@@ -192,11 +192,21 @@ macro_rules! address {
 impl Sealed for DMA1 {}
 impl Sealed for DMA2 {}
 
-#[cfg(not(any(feature = "stm32f411", feature = "stm32f413", feature = "stm32f423")))]
+#[cfg(not(any(
+    feature = "stm32f411",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f410"
+)))]
 /// Type alias to a DMA RegisterBlock
 pub type DMARegisterBlock = pac::dma2::RegisterBlock;
 
-#[cfg(any(feature = "stm32f411", feature = "stm32f413", feature = "stm32f423"))]
+#[cfg(any(
+    feature = "stm32f411",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f410"
+))]
 /// Type alias to a DMA RegisterBlock
 pub type DMARegisterBlock = pac::dma1::RegisterBlock;
 
