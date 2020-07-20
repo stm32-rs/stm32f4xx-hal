@@ -5,8 +5,9 @@ use crate::bb;
 use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, AF12};
 use crate::rcc::Clocks;
 use crate::stm32::{RCC, SDIO};
-
-pub use sdio_host::{CardCapacity, Cic, Cid, Csd, Ocr, Rca, Scr, SdStatus};
+pub use sdio_host::{
+    CardCapacity, CardStatus, CurrentState, SDStatus, CIC, CID, CSD, OCR, RCA, SCR,
+};
 
 pub trait PinClk {}
 pub trait PinCmd {}
@@ -175,16 +176,15 @@ struct Cmd {
     resp: Response,
 }
 
-#[derive(Debug)]
 /// Sd card
 pub struct Card {
     pub capacity: CardCapacity,
-    pub ocr: Ocr,
-    pub rca: Rca, // Relative Card Address
-    pub cid: Cid<[u32; 4]>,
-    pub csd: Csd,
-    pub scr: Scr<[u32; 2]>,
-    pub status: SdStatus<[u32; 16]>,
+    pub ocr: OCR,
+    pub rca: RCA, // Relative Card Address
+    pub cid: CID,
+    pub csd: CSD,
+    pub scr: SCR,
+    pub status: SDStatus,
 }
 
 impl Sdio {
@@ -242,14 +242,15 @@ impl Sdio {
 
         // Check if cards supports CMD 8 (with pattern)
         self.cmd(Cmd::hs_send_ext_csd(0x1AA))?;
-        let cic = Cic(self.sdio.resp1.read().bits());
+        let cic = CIC::from(self.sdio.resp1.read().bits());
 
         // If card did't echo back the pattern, we do not have a v2 card
-        if cic.checkpattern() != 0xAA {
+
+        if cic.pattern() != 0xAA {
             return Err(Error::UnsupportedCardVersion);
         }
 
-        if cic.voltage_accepted() & 0b0001 == 0 {
+        if cic.voltage_accepted() & 1 == 0 {
             return Err(Error::UnsupportedVoltage);
         }
 
@@ -266,8 +267,8 @@ impl Sdio {
                 Err(Error::Crc) => (),
                 Err(err) => return Err(err),
             }
-            let ocr = Ocr(self.sdio.resp1.read().bits());
-            if !ocr.powered() {
+            let ocr = OCR::from(self.sdio.resp1.read().bits());
+            if ocr.is_busy() {
                 // Still powering up
                 continue;
             }
@@ -293,40 +294,34 @@ impl Sdio {
 
         // Get RCA
         self.cmd(Cmd::send_rel_addr())?;
-        let mut rca = Rca(self.sdio.resp1.read().bits());
-        // Zero out the status bits to let us use rca as argument to others commands
-        // The same status bits are available as a R1 response to Card Status CMD13
-        rca.set_status(0);
+        let rca = RCA::from(self.sdio.resp1.read().bits());
 
         // Get CSD
-        self.cmd(Cmd::send_csd(rca.0))?;
+        self.cmd(Cmd::send_csd((rca.address() as u32) << 16))?;
+
         let mut csd = [0; 4];
         csd[3] = self.sdio.resp1.read().bits();
         csd[2] = self.sdio.resp2.read().bits();
         csd[1] = self.sdio.resp3.read().bits();
         csd[0] = self.sdio.resp4.read().bits();
 
-        let csd = if let Some(csd) = Csd::parse(csd) {
-            csd
-        } else {
-            return Err(Error::CsdParseError);
-        };
+        let csd = CSD::from(csd);
 
         let mut card = Card {
             capacity,
             ocr,
             rca,
-            cid: Cid(cid),
+            cid: CID::from(cid),
             csd,
-            scr: Scr::default(),
-            status: SdStatus::default(),
+            scr: SCR::default(),
+            status: SDStatus::default(),
         };
 
         self.select_card(Some(&card))?;
         self.get_scr(&mut card)?;
         self.set_bus(self.bw, freq, &card)?;
 
-        self.read_card_status(&mut card)?;
+        self.read_sd_status(&mut card)?;
         self.card.replace(card);
 
         Ok(())
@@ -351,33 +346,15 @@ impl Sdio {
         let _card = self.card()?;
 
         self.cmd(Cmd::set_blocklen(512))?;
-
-        // Setup read command
-        self.sdio
-            .dtimer
-            .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
-        self.sdio
-            .dlen
-            .write(|w| unsafe { w.datalength().bits(512) });
-        self.sdio.dctrl.write(|w| unsafe {
-            w.dblocksize()
-                .bits(9) //512
-                .dtdir()
-                .set_bit()
-                .dten()
-                .set_bit()
-        });
+        self.start_datapath_transfer(512, 9, true);
         self.cmd(Cmd::read_single_block(addr))?;
 
         let mut i = 0;
         let mut sta;
+
         while {
             sta = self.sdio.sta.read();
-            !(sta.rxoverr().bit()
-                || sta.dcrcfail().bit()
-                || sta.dtimeout().bit()
-                || sta.dataend().bit()
-                || sta.stbiterr().bit())
+            sta.rxact().bit_is_set()
         } {
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
@@ -400,6 +377,9 @@ impl Sdio {
             return Err(Error::Timeout);
         }
 
+        // Wait for card to be ready
+        while !self.card_ready()? {}
+
         Ok(())
     }
 
@@ -408,33 +388,15 @@ impl Sdio {
         let _card = self.card()?;
 
         self.cmd(Cmd::set_blocklen(512))?;
-
-        // Setup write command
-        self.sdio
-            .dtimer
-            .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
-        self.sdio
-            .dlen
-            .write(|w| unsafe { w.datalength().bits(512) });
-        self.sdio.dctrl.write(|w| unsafe {
-            w.dblocksize()
-                .bits(9) //512
-                .dtdir()
-                .clear_bit()
-                .dten()
-                .set_bit()
-        });
+        self.start_datapath_transfer(512, 9, false);
         self.cmd(Cmd::write_single_block(addr))?;
 
         let mut i = 0;
         let mut sta;
+
         while {
             sta = self.sdio.sta.read();
-            !(sta.txunderr().bit()
-                || sta.dcrcfail().bit()
-                || sta.dtimeout().bit()
-                || sta.dataend().bit()
-                || sta.stbiterr().bit())
+            sta.txact().bit_is_set()
         } {
             if sta.txfifohe().bit() {
                 for _ in 0..8 {
@@ -459,38 +421,69 @@ impl Sdio {
             return Err(Error::Timeout);
         }
 
+        // Wait for card to finish writing data
+        while !self.card_ready()? {}
+
         Ok(())
     }
 
-    fn read_card_status(&mut self, card: &mut Card) -> Result<(), Error> {
-        self.cmd(Cmd::set_blocklen(64))?;
+    fn start_datapath_transfer(&self, length_bytes: u32, block_size: u8, dtdir: bool) {
+        // Block Size up to 2^14 bytes
+        assert!(block_size <= 14);
 
-        // Prepare the transfer
+        // Command AND Data state machines must be idle
+        while self.sdio.sta.read().cmdact().bit_is_set()
+            || self.sdio.sta.read().rxact().bit_is_set()
+            || self.sdio.sta.read().txact().bit_is_set()
+        {}
+
+        // Data timeout, in bus cycles
         self.sdio
             .dtimer
             .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
-        self.sdio.dlen.write(|w| unsafe { w.datalength().bits(64) });
+        // Data length, in bytes
+        self.sdio
+            .dlen
+            .write(|w| unsafe { w.datalength().bits(length_bytes) });
+        // Transfer
         self.sdio.dctrl.write(|w| unsafe {
             w.dblocksize()
-                .bits(6) // 64
+                .bits(block_size) // 2^n bytes block size
                 .dtdir()
-                .set_bit()
+                .bit(dtdir)
                 .dten()
-                .set_bit()
+                .set_bit() // Enable transfer
         });
+    }
 
-        self.cmd(Cmd::app_cmd(card.rca.0))?;
-        self.cmd(Cmd::send_card_status())?;
+    /// Read the state bits of the status
+    fn read_status(&mut self) -> Result<CardStatus, Error> {
+        let card = self.card()?;
 
-        let status = &mut card.status.0;
+        self.cmd(Cmd::cmd13(card.address()))?;
+        let r1 = self.sdio.resp1.read().bits();
+
+        Ok(CardStatus::from(r1))
+    }
+
+    /// Check if card is done writing/reading and back in transfer state
+    fn card_ready(&mut self) -> Result<bool, Error> {
+        Ok(self.read_status()?.state() == CurrentState::Transfer)
+    }
+
+    fn read_sd_status(&mut self, card: &mut Card) -> Result<(), Error> {
+        self.cmd(Cmd::set_blocklen(64))?;
+        self.start_datapath_transfer(64, 6, true);
+        self.cmd(Cmd::app_cmd(card.address()))?;
+        self.cmd(Cmd::acmd13())?;
+
+        let mut status = [0u32; 16];
         let mut idx = 0;
         let mut sta;
+
         while {
             sta = self.sdio.sta.read();
-            !(sta.rxoverr().bit()
-                || sta.dcrcfail().bit()
-                || sta.dtimeout().bit()
-                || sta.dbckend().bit())
+            sta.rxact().bit_is_set()
         } {
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
@@ -512,11 +505,13 @@ impl Sdio {
             return Err(Error::Timeout);
         }
 
+        card.status = SDStatus::from(status);
+
         Ok(())
     }
 
     fn select_card(&self, card: Option<&Card>) -> Result<(), Error> {
-        let rca = card.map(|c| c.rca.0).unwrap_or(0);
+        let rca = card.map(|c| c.address()).unwrap_or(0);
 
         let r = self.cmd(Cmd::sel_desel_card(rca));
         match (r, rca) {
@@ -527,31 +522,20 @@ impl Sdio {
 
     fn get_scr(&self, card: &mut Card) -> Result<(), Error> {
         self.cmd(Cmd::set_blocklen(8))?;
-
-        self.sdio
-            .dtimer
-            .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
-        self.sdio.dlen.write(|w| unsafe { w.datalength().bits(8) });
-        self.sdio
-            .dctrl
-            .write(|w| unsafe { w.dblocksize().bits(3).dtdir().set_bit().dten().set_bit() });
-
-        self.cmd(Cmd::app_cmd(card.rca.0))?;
+        self.start_datapath_transfer(8, 3, true);
+        self.cmd(Cmd::app_cmd(card.address()))?;
         self.cmd(Cmd::cmd51())?;
 
         let mut buf = [0; 2];
         let mut i = 0;
         let mut sta;
+
         while {
             sta = self.sdio.sta.read();
-
-            !(sta.rxoverr().bit()
-                || sta.dcrcfail().bit()
-                || sta.dtimeout().bit()
-                || sta.dbckend().bit())
+            sta.rxact().bit_is_set()
         } {
             if sta.rxdavl().bit() {
-                buf[i] = self.sdio.fifo.read().bits();
+                buf[1 - i] = self.sdio.fifo.read().bits().swap_bytes();
                 i += 1;
             }
 
@@ -568,12 +552,7 @@ impl Sdio {
             return Err(Error::Timeout);
         }
 
-        let scr = &mut card.scr.0;
-
-        // The data received is byte swapped so swap it back
-        scr[0] = buf[1].swap_bytes();
-        scr[1] = buf[0].swap_bytes();
-
+        card.scr = SCR::from(buf);
         Ok(())
     }
 
@@ -584,7 +563,7 @@ impl Sdio {
             _ => (Buswidth::Buswidth1, 1),
         };
 
-        self.cmd(Cmd::app_cmd(card.rca.0))?;
+        self.cmd(Cmd::app_cmd(card.address()))?;
         self.cmd(Cmd::acmd6(acmd_arg))?;
 
         self.sdio.clkcr.modify(|_, w| unsafe {
@@ -600,6 +579,9 @@ impl Sdio {
 
     /// Send command to card
     fn cmd(&self, cmd: Cmd) -> Result<(), Error> {
+        // Command state machines must be idle
+        while self.sdio.sta.read().cmdact().bit_is_set() {}
+
         // Clear interrupts
         self.sdio.icr.modify(|_, w| {
             w.ccrcfailc()
@@ -651,14 +633,17 @@ impl Sdio {
             // Wait for command sent or a timeout
             while {
                 sta = self.sdio.sta.read();
-                !(sta.ctimeout().bit() || sta.cmdsent().bit()) && timeout > 0
+
+                (!(sta.ctimeout().bit() || sta.cmdsent().bit()) || sta.cmdact().bit_is_set())
+                    && timeout > 0
             } {
                 timeout -= 1;
             }
         } else {
             while {
                 sta = self.sdio.sta.read();
-                !(sta.ctimeout().bit() || sta.cmdrend().bit() || sta.ccrcfail().bit())
+                (!(sta.ctimeout().bit() || sta.cmdrend().bit() || sta.ccrcfail().bit())
+                    || sta.cmdact().bit_is_set())
                     && timeout > 0
             } {
                 timeout -= 1;
@@ -678,19 +663,19 @@ impl Sdio {
 }
 
 impl Card {
-    /// Size in bytes
-    pub fn size(&self) -> u64 {
-        u64::from(self.block_count()) * 512
-    }
-
     /// Size in blocks
     pub fn block_count(&self) -> u32 {
-        self.csd.blocks()
+        self.csd.block_count()
     }
 
     /// Card supports wide bus
     fn supports_widebus(&self) -> bool {
-        self.scr.bus_widths() & 0b0100 != 0
+        self.scr.bus_width_four()
+    }
+
+    /// Helper for using the address as a rca argument
+    fn address(&self) -> u32 {
+        (self.rca.address() as u32) << 16
     }
 }
 
@@ -727,7 +712,11 @@ impl Cmd {
         Cmd::new(9, rca, Response::Long)
     }
 
-    const fn send_card_status() -> Cmd {
+    const fn cmd13(rca: u32) -> Cmd {
+        Cmd::new(13, rca, Response::Short)
+    }
+
+    const fn acmd13() -> Cmd {
         Cmd::new(13, 0, Response::Short)
     }
 

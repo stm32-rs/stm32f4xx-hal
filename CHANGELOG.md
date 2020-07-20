@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `check_interrupt` method for GPIO pins
 - Basic support for DAC
 
+### Fixed
+- Stability fixes related to SD card write
+
 ## [v0.8.3] - 2020-06-12
 
 ### Fixed
