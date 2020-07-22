@@ -2,7 +2,9 @@
 
 use core::{
     marker::PhantomData,
-    mem, ptr,
+    mem,
+    ops::Not,
+    ptr,
     sync::atomic::{compiler_fence, Ordering},
 };
 
@@ -15,16 +17,18 @@ use traits::{
 };
 
 /// Errors
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum DMAError {
+#[derive(Debug, PartialEq)]
+pub enum DMAError<T> {
     /// DMA not ready to change buffers
-    NotReady,
+    NotReady(T),
     /// Double Buffering enabled buf second buffer not provided
     NoSecondBuffer,
     /// FIFO must be enabled if using memory to memory transfers
     FifoDisabled,
     /// Double buffer must not be enabled if using memory to memory transfers
     DoubleBufferEnabled,
+    /// The user provided a buffer that is not big enough while double buffering
+    SmallBuffer(T),
 }
 
 /// Possible DMA's directions
@@ -163,6 +167,18 @@ pub enum CurrentBuffer {
     FirstBuffer,
     /// The second buffer (m1ar) is in use
     DoubleBuffer,
+}
+
+impl Not for CurrentBuffer {
+    type Output = CurrentBuffer;
+
+    fn not(self) -> Self::Output {
+        if self == CurrentBuffer::FirstBuffer {
+            CurrentBuffer::DoubleBuffer
+        } else {
+            CurrentBuffer::FirstBuffer
+        }
+    }
 }
 
 /// Stream 0 on the DMA controller
@@ -868,7 +884,7 @@ where
         mut memory: BUF,
         mut double_buf: Option<BUF>,
         config: config::DmaConfig,
-    ) -> Result<Self, DMAError> {
+    ) -> Result<Self, DMAError<BUF>> {
         stream.disable();
 
         // Set the channel
@@ -956,6 +972,123 @@ where
     }
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
+    /// immediately after a transfer complete event. Returns the old buffer together with its
+    /// `CurrentBuffer`, if an error occurs, this methods will return the new buffer with the error.
+    pub fn next_transfer(
+        &mut self,
+        mut new_buf: BUF,
+    ) -> Result<(BUF, CurrentBuffer), DMAError<BUF>> {
+        if !STREAM::get_transfer_complete_flag() {
+            return Err(DMAError::NotReady(new_buf));
+        }
+        self.stream.clear_transfer_complete_interrupt();
+
+        if self.double_buf.is_some() && DIR::direction() != DmaDirection::MemoryToMemory {
+            // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on `new` until
+            // the end of the DMA transfer
+            let (new_buf_ptr, new_buf_len) = unsafe { new_buf.write_buffer() };
+
+            // We can't change the transfer length while double buffering
+            if new_buf_len < usize::from(self.transfer_length) {
+                return Err(DMAError::SmallBuffer(new_buf));
+            }
+
+            if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
+                self.stream.set_memory_address(new_buf_ptr as u32);
+                let old_buf = self.buf.replace(new_buf);
+
+                // "Subsequent reads and writes cannot be moved ahead of preceding reads"
+                compiler_fence(Ordering::Acquire);
+
+                // We always have a buffer, so unwrap can't fail
+                return Ok((old_buf.unwrap(), CurrentBuffer::FirstBuffer));
+            } else {
+                self.stream
+                    .set_memory_double_buffer_address(new_buf_ptr as u32);
+                let old_buf = self.double_buf.replace(new_buf);
+
+                // "Subsequent reads and writes cannot be moved ahead of preceding reads"
+                compiler_fence(Ordering::Acquire);
+
+                // double buffering, unwrap can never fail
+                return Ok((old_buf.unwrap(), CurrentBuffer::DoubleBuffer));
+            }
+        }
+        self.stream.disable();
+
+        // "No re-ordering of reads and writes across this point is allowed"
+        compiler_fence(Ordering::SeqCst);
+
+        // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on `new` until
+        // the end of the DMA transfer
+        let (buf_ptr, buf_len) = unsafe { new_buf.write_buffer() };
+        self.stream.set_memory_address(buf_ptr as u32);
+        self.stream.set_number_of_transfers(buf_len as u16);
+        let old_buf = self.buf.replace(new_buf);
+
+        // "Preceding reads and writes cannot be moved past subsequent writes"
+        compiler_fence(Ordering::Release);
+
+        unsafe {
+            self.stream.enable();
+        }
+
+        Ok((old_buf.unwrap(), CurrentBuffer::FirstBuffer))
+    }
+
+    /// Stops the stream and returns the underlying Resources
+    pub fn free(mut self) -> (STREAM, PERIPHERAL, BUF, Option<BUF>) {
+        self.stream.disable();
+        compiler_fence(Ordering::SeqCst);
+        self.stream.clear_interrupts();
+
+        unsafe {
+            let stream = ptr::read(&self.stream);
+            let peripheral = ptr::read(&self.peripheral);
+            let buf = ptr::read(&self.buf);
+            let double_buf = ptr::read(&self.double_buf);
+            mem::forget(self);
+            (stream, peripheral, buf.unwrap(), double_buf)
+        }
+    }
+
+    /// Clear all interrupts for the DMA stream
+    #[inline]
+    pub fn clear_interrupts(&mut self) {
+        self.stream.clear_interrupts();
+    }
+
+    /// Clear transfer complete interrupt (tcif) for the DMA stream
+    #[inline]
+    pub fn clear_transfer_complete_interrupt(&mut self) {
+        self.stream.clear_transfer_complete_interrupt();
+    }
+
+    /// Clear half transfer interrupt (htif) for the DMA stream
+    #[inline]
+    pub fn clear_half_transfer_interrupt(&mut self) {
+        self.stream.clear_half_transfer_interrupt();
+    }
+
+    /// Clear transfer error interrupt (teif) for the DMA stream
+    #[inline]
+    pub fn clear_transfer_error_interrupt(&mut self) {
+        self.stream.clear_transfer_error_interrupt();
+    }
+
+    /// Clear direct mode error interrupt (dmeif) for the DMA stream
+    #[inline]
+    pub fn clear_direct_mode_error_interrupt(&mut self) {
+        self.stream.clear_direct_mode_error_interrupt();
+    }
+
+    /// Clear fifo error interrupt (feif) for the DMA stream
+    #[inline]
+    pub fn clear_fifo_error_interrupt(&mut self) {
+        self.stream.clear_fifo_error_interrupt();
+    }
+
+    /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
     /// immediately after a transfer complete event. The closure must return `(BUF, T)` where BUF
     /// is the new buffer to be used. The closure will not be called if the transfer is not
     /// completed.
@@ -966,22 +1099,30 @@ where
     ///
     /// * The new buffer's length is smaller than the one used in the `init` method.
     /// * The closure `f` takes too long to return and an buffer overrun occurs.
-    pub fn next_transfer<F, T>(&mut self, f: F) -> Result<T, DMAError>
+    ///
+    /// # Safety
+    /// Memory corruption might occur if the previous buffer, the one passed to the closure, gets
+    /// dropped in the closure and an overrun occurs in double buffering mode.
+    pub unsafe fn next_transfer_with<F, T>(&mut self, f: F) -> Result<T, DMAError<()>>
     where
-        F: FnOnce(BUF) -> (BUF, T),
+        F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
     {
         if !STREAM::get_transfer_complete_flag() {
-            return Err(DMAError::NotReady);
+            return Err(DMAError::NotReady(()));
         }
-        let current_buffer = STREAM::current_buffer();
         self.stream.clear_transfer_complete_interrupt();
 
         if self.double_buf.is_some() && DIR::direction() != DmaDirection::MemoryToMemory {
+            let current_buffer = STREAM::current_buffer();
             // double buffering, unwrap can never fail
-            let db = self.double_buf.take().unwrap();
-            let r = f(db);
+            let db = if current_buffer == CurrentBuffer::DoubleBuffer {
+                self.buf.take().unwrap()
+            } else {
+                self.double_buf.take().unwrap()
+            };
+            let r = f(db, !current_buffer);
             let mut new_buf = r.0;
-            let (new_buf_ptr, new_buf_len) = unsafe { new_buf.write_buffer() };
+            let (new_buf_ptr, new_buf_len) = new_buf.write_buffer();
 
             // We can't change the transfer length while double buffering
             assert!(
@@ -997,7 +1138,7 @@ where
 
             if current_buffer == CurrentBuffer::DoubleBuffer {
                 self.stream.set_memory_address(new_buf_ptr as u32);
-                self.double_buf.replace(new_buf);
+                self.buf.replace(new_buf);
 
                 // "Subsequent reads and writes cannot be moved ahead of preceding reads"
                 compiler_fence(Ordering::Acquire);
@@ -1021,10 +1162,10 @@ where
 
         // Can never fail, we never let the Transfer without a buffer
         let old_buf = self.buf.take().unwrap();
-        let r = f(old_buf);
+        let r = f(old_buf, CurrentBuffer::FirstBuffer);
         let mut new_buf = r.0;
 
-        let (buf_ptr, buf_len) = unsafe { new_buf.write_buffer() };
+        let (buf_ptr, buf_len) = new_buf.write_buffer();
         self.stream.set_memory_address(buf_ptr as u32);
         self.stream.set_number_of_transfers(buf_len as u16);
         self.buf.replace(new_buf);
@@ -1032,27 +1173,9 @@ where
         // "Preceding reads and writes cannot be moved past subsequent writes"
         compiler_fence(Ordering::Release);
 
-        unsafe {
-            self.stream.enable();
-        }
+        self.stream.enable();
 
         Ok(r.1)
-    }
-
-    /// Stops the stream and returns the underlying Resources
-    pub fn free(mut self) -> (STREAM, PERIPHERAL, BUF, Option<BUF>) {
-        self.stream.disable();
-        compiler_fence(Ordering::SeqCst);
-        self.stream.clear_interrupts();
-
-        unsafe {
-            let stream = ptr::read(&self.stream);
-            let peripheral = ptr::read(&self.peripheral);
-            let buf = ptr::read(&self.buf);
-            let double_buf = ptr::read(&self.double_buf);
-            mem::forget(self);
-            (stream, peripheral, buf.unwrap(), double_buf)
-        }
     }
 }
 
