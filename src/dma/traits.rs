@@ -6,76 +6,76 @@ use crate::{
 use core::ops::Deref;
 
 pub(crate) mod sealed {
-    /// Converts value to bits for setting a register value
+    /// Converts value to bits for setting a register value.
     pub trait Bits<T> {
-        /// Returns the bit value
+        /// Returns the bit value.
         fn bits(self) -> T;
     }
     pub trait Sealed {}
 }
 use sealed::{Bits, Sealed};
 
-/// Trait for DMA streams types
+/// Trait for DMA streams types.
 pub trait Stream: Sealed {
-    /// Number of the register stream
+    /// Number of the register stream.
     const NUMBER: usize;
 
-    /// Clear all interrupts for the DMA stream
+    /// Clear all interrupts for the DMA stream.
     fn clear_interrupts(&mut self);
 
-    /// Clear transfer complete interrupt (tcif) for the DMA stream
+    /// Clear transfer complete interrupt (tcif) for the DMA stream.
     fn clear_transfer_complete_interrupt(&mut self);
 
-    /// Clear half transfer interrupt (htif) for the DMA stream
+    /// Clear half transfer interrupt (htif) for the DMA stream.
     fn clear_half_transfer_interrupt(&mut self);
 
-    /// Clear transfer error interrupt (teif) for the DMA stream
+    /// Clear transfer error interrupt (teif) for the DMA stream.
     fn clear_transfer_error_interrupt(&mut self);
 
-    /// Clear direct mode error interrupt (dmeif) for the DMA stream
+    /// Clear direct mode error interrupt (dmeif) for the DMA stream.
     fn clear_direct_mode_error_interrupt(&mut self);
 
-    /// Clear fifo error interrupt (feif) for the DMA stream
+    /// Clear fifo error interrupt (feif) for the DMA stream.
     fn clear_fifo_error_interrupt(&mut self);
 
-    /// Get transfer complete flag
+    /// Get transfer complete flag.
     fn get_transfer_complete_flag() -> bool;
 
-    /// Get half transfer flag
+    /// Get half transfer flag.
     fn get_half_transfer_flag() -> bool;
 
-    /// Set the peripheral address (par) for the DMA stream
+    /// Set the peripheral address (par) for the DMA stream.
     fn set_peripheral_address(&mut self, value: u32);
 
-    /// Set the memory address (m0ar) for the DMA stream
+    /// Set the memory address (m0ar) for the DMA stream.
     fn set_memory_address(&mut self, value: u32);
 
-    /// Set the double buffer address (m1ar) for the DMA stream
+    /// Set the double buffer address (m1ar) for the DMA stream.
     fn set_memory_double_buffer_address(&mut self, value: u32);
 
-    /// Set the number of transfers (ndt) for the DMA stream
+    /// Set the number of transfers (ndt) for the DMA stream.
     fn set_number_of_transfers(&mut self, value: u16);
 
-    /// Enable the DMA stream
+    /// Enable the DMA stream.
     ///
     /// # Safety
     ///
-    /// The user must ensure that all registers are properly configured
+    /// The user must ensure that all registers are properly configured.
     unsafe fn enable(&mut self);
 
-    /// Returns the state of the DMA stream
+    /// Returns the state of the DMA stream.
     fn is_enabled() -> bool;
 
-    /// Disable the DMA stream
+    /// Disable the DMA stream.
     fn disable(&mut self);
 
-    /// Set the channel for the (chsel) the DMA stream
+    /// Set the channel for the (chsel) the DMA stream.
     fn set_channel<C: Channel>(&mut self, channel: C);
 
-    /// Set the priority (pl) the DMA stream
+    /// Set the priority (pl) the DMA stream.
     fn set_priority(&mut self, priority: config::Priority);
 
-    /// Set the memory size (msize) for the DMA stream
+    /// Set the memory size (msize) for the DMA stream.
     ///
     /// # Safety
     /// This must have the same alignment of the buffer used in the transfer.
@@ -85,7 +85,7 @@ pub trait Stream: Sealed {
     ///     * 2 -> word
     unsafe fn set_memory_size(&mut self, size: u8);
 
-    /// Set the peripheral memory size (psize) for the DMA stream
+    /// Set the peripheral memory size (psize) for the DMA stream.
     ///
     /// # Safety
     /// This must have the same alignment of the peripheral data used in the transfer.
@@ -95,16 +95,16 @@ pub trait Stream: Sealed {
     ///     * 2 -> word
     unsafe fn set_peripheral_size(&mut self, size: u8);
 
-    /// Enable/disable memory increment (minc) for the DMA stream
+    /// Enable/disable memory increment (minc) for the DMA stream.
     fn set_memory_increment(&mut self, increment: bool);
 
-    /// Enable/disable peripheral increment (pinc) for the DMA stream
+    /// Enable/disable peripheral increment (pinc) for the DMA stream.
     fn set_peripheral_increment(&mut self, increment: bool);
 
-    /// Set the direction (dir) of the DMA stream
+    /// Set the direction (dir) of the DMA stream.
     fn set_direction<D: Direction>(&mut self, direction: D);
 
-    /// Convenience method to configure the 4 common interrupts for the DMA stream
+    /// Convenience method to configure the 4 common interrupts for the DMA stream.
     fn set_interrupts_enable(
         &mut self,
         transfer_complete: bool,
@@ -113,65 +113,62 @@ pub trait Stream: Sealed {
         direct_mode_error: bool,
     );
 
-    /// Enable/disable the transfer complete interrupt (tcie) of the DMA stream
+    /// Enable/disable the transfer complete interrupt (tcie) of the DMA stream.
     fn set_transfer_complete_interrupt_enable(&mut self, transfer_complete_interrupt: bool);
 
-    /// Enable/disable the half transfer interrupt (htie) of the DMA stream
+    /// Enable/disable the half transfer interrupt (htie) of the DMA stream.
     fn set_half_transfer_interrupt_enable(&mut self, half_transfer_interrupt: bool);
 
-    /// Enable/disable the transfer error interrupt (teie) of the DMA stream
+    /// Enable/disable the transfer error interrupt (teie) of the DMA stream.
     fn set_transfer_error_interrupt_enable(&mut self, transfer_error_interrupt: bool);
 
-    /// Enable/disable the direct mode error interrupt (dmeie) of the DMA stream
+    /// Enable/disable the direct mode error interrupt (dmeie) of the DMA stream.
     fn set_direct_mode_error_interrupt_enable(&mut self, direct_mode_error_interrupt: bool);
 
-    /// Enable/disable the fifo error interrupt (feie) of the DMA stream
+    /// Enable/disable the fifo error interrupt (feie) of the DMA stream.
     fn set_fifo_error_interrupt_enable(&mut self, fifo_error_interrupt: bool);
 
-    /// Enable/disable the double buffer (dbm) of the DMA stream
+    /// Enable/disable the double buffer (dbm) of the DMA stream.
     fn set_double_buffer(&mut self, double_buffer: bool);
 
-    /// Set the fifo threshold (fcr.fth) of the DMA stream
+    /// Set the fifo threshold (fcr.fth) of the DMA stream.
     fn set_fifo_threshold(&mut self, fifo_threshold: config::FifoThreshold);
 
-    /// Enable/disable the fifo (dmdis) of the DMA stream
+    /// Enable/disable the fifo (dmdis) of the DMA stream.
     fn set_fifo_enable(&mut self, fifo_enable: bool);
 
-    /// Set memory burst mode (mburst) of the DMA stream
+    /// Set memory burst mode (mburst) of the DMA stream.
     fn set_memory_burst(&mut self, memory_burst: config::BurstMode);
 
-    /// Set peripheral burst mode (pburst) of the DMA stream
+    /// Set peripheral burst mode (pburst) of the DMA stream.
     fn set_peripheral_burst(&mut self, peripheral_burst: config::BurstMode);
 
-    /// Get the current fifo level (fs) of the DMA stream
+    /// Get the current fifo level (fs) of the DMA stream.
     fn fifo_level() -> FifoLevel;
 
-    /// Set the flow controller (pfctrl) of the DMA stream
-    fn set_flow_controller(&mut self, flow_controller: config::FlowController);
-
-    /// Get which buffer is currently in use
+    /// Get which buffer is currently in use by the DMA.
     fn current_buffer() -> CurrentBuffer;
 }
 
-/// DMA direction
+/// DMA direction.
 pub trait Direction: Bits<u8> {
-    /// Creates a new instance of the type
+    /// Creates a new instance of the type.
     fn new() -> Self;
 
-    /// Returns the `DmaDirection` of the type
+    /// Returns the `DmaDirection` of the type.
     fn direction() -> DmaDirection;
 }
 
-/// Get an address and memory size the DMA can use
+/// Get an address and memory size the DMA can use.
 pub trait PeriAddress: Sealed {
-    /// Memory size of the peripheral
+    /// Memory size of the peripheral.
     type MemSize;
 
-    /// Returns the address to be used by the DMA stream
+    /// Returns the address to be used by the DMA stream.
     fn address(&self) -> u32;
 }
 
-/// Convenience macro for implementing addresses on peripherals
+// Convenience macro for implementing addresses on peripherals
 macro_rules! address {
     ($(($peripheral:ty, $register:ident, $size: ty)),+ $(,)*) => {
         $(
@@ -198,7 +195,7 @@ impl Sealed for DMA2 {}
     feature = "stm32f423",
     feature = "stm32f410"
 )))]
-/// Type alias to a DMA RegisterBlock
+/// Type alias to a DMA RegisterBlock.
 pub type DMARegisterBlock = pac::dma2::RegisterBlock;
 
 #[cfg(any(
@@ -207,12 +204,12 @@ pub type DMARegisterBlock = pac::dma2::RegisterBlock;
     feature = "stm32f423",
     feature = "stm32f410"
 ))]
-/// Type alias to a DMA RegisterBlock
+/// Type alias to a DMA RegisterBlock.
 pub type DMARegisterBlock = pac::dma1::RegisterBlock;
 
-/// Trait that represents an instance of a DMA peripheral
+/// Trait that represents an instance of a DMA peripheral.
 pub trait Instance: Deref<Target = DMARegisterBlock> + Sealed {
-    /// Gives a pointer to the RegisterBlock
+    /// Gives a pointer to the RegisterBlock.
     fn ptr() -> *const DMARegisterBlock;
 }
 
@@ -230,8 +227,9 @@ impl Instance for DMA2 {
     }
 }
 
-/// Things that implement this can have their RCC enabled
+/// Trait for peripheral's clock enabling.
 pub trait RccEnable: Sealed {
+    /// Enable the peripheral's clock in the RCC.
     fn rcc_enable(&self);
 }
 
@@ -264,10 +262,12 @@ impl RccEnable for pac::DMA2 {
 macro_rules! tim_channels {
     ($(($name:ident, $register:ident)),+ $(,)*) => {
         $(
-            /// Wrapper type that indicates which register of the contained timer to use for DMA
+            /// Wrapper type that indicates which register of the contained timer to use for DMA.
             pub struct $name<T> (T);
+
             impl<T> Deref for $name<T> {
                 type Target = T;
+
                 #[inline]
                 fn deref(&self) -> &T {
                     &self.0
@@ -277,9 +277,9 @@ macro_rules! tim_channels {
     };
 }
 
-/// A channel that can be configured on a DMA stream
+/// A channel that can be configured on a DMA stream.
 pub trait Channel: Bits<u8> {
-    /// Returns a new instance of the type
+    /// Returns a new instance of the type.
     fn new() -> Self;
 }
 
@@ -350,10 +350,6 @@ dma_map!(
     (Stream4<DMA1>, Channel3, pac::I2C3, MemoryToPeripheral),       //I2C3_TX
     (Stream5<DMA1>, Channel0, pac::SPI3, MemoryToPeripheral),       //SPI3_TX
     (Stream7<DMA1>, Channel0, pac::SPI3, MemoryToPeripheral),       //SPI3_TX
-                                                                    //(pac::DMA2, Stream3, Channel4, pac::SDIO, MemoryToPeripheral), //SDIO
-                                                                    //(pac::DMA2, Stream3, Channel4, pac::SDIO, PeripheralToMemory), //SDIO
-                                                                    //(pac::DMA2, Stream6, Channel4, pac::SDIO, MemoryToPeripheral), //SDIO
-                                                                    //(pac::DMA2, Stream6, Channel4, pac::SDIO, PeripheralToMemory), //SDIO
 );
 
 #[cfg(any(
@@ -390,6 +386,28 @@ address!(
     (pac::SPI3, dr, u8),
     (pac::I2C3, dr, u8),
 );
+
+#[cfg(not(any(feature = "stm32f410", feature = "stm32f446")))]
+dma_map!(
+    (Stream3<DMA2>, Channel4, pac::SDIO, MemoryToPeripheral), //SDIO
+    (Stream3<DMA2>, Channel4, pac::SDIO, PeripheralToMemory), //SDIO
+    (Stream6<DMA2>, Channel4, pac::SDIO, MemoryToPeripheral), //SDIO
+    (Stream6<DMA2>, Channel4, pac::SDIO, PeripheralToMemory), //SDIO
+);
+
+#[cfg(not(any(feature = "stm32f410", feature = "stm32f446")))]
+address!((pac::SDIO, fifo, u32),);
+
+#[cfg(feature = "stm32f446")]
+dma_map!(
+    (Stream3<DMA2>, Channel4, pac::SDMMC, MemoryToPeripheral), //SDMMC
+    (Stream3<DMA2>, Channel4, pac::SDMMC, PeripheralToMemory), //SDMMC
+    (Stream6<DMA2>, Channel4, pac::SDMMC, MemoryToPeripheral), //SDMMC
+    (Stream6<DMA2>, Channel4, pac::SDMMC, PeripheralToMemory), //SDMMC
+);
+
+#[cfg(feature = "stm32f446")]
+address!((pac::SDMMC, sdmmc_fifor, u32),);
 
 #[cfg(any(
     feature = "stm32f401",
@@ -771,7 +789,7 @@ dma_map!(
     (Stream0<DMA1>, Channel4, pac::UART5, PeripheralToMemory), //UART5_RX
     (Stream2<DMA1>, Channel4, pac::UART4, PeripheralToMemory), //UART4_RX
     (Stream4<DMA1>, Channel4, pac::UART4, MemoryToPeripheral), //UART4_TX
-                                                               //(pac::DMA1, Stream6, Channel7, pac::DAC, MemoryToPeripheral), //DAC2
+                                                               //(pac::DMA1, Stream6, Channel7, pac::DAC2, MemoryToPeripheral), //DAC2
 );
 
 #[cfg(any(
@@ -1037,7 +1055,7 @@ address!(
     (pac::DCMI, dr, u32),
 );
 
-/* FMPI2C missing from peripheral crates
+/* FMPI2C missing from peripheral crates (?)
 #[cfg(any(
     feature = "stm32f410",
     feature = "stm32f412",
@@ -1051,6 +1069,7 @@ dma_map!(
     (pac::DMA1, Stream7, Channel4, pac::FMPI2C1, MemoryToPeripheral), //FMPI2C1_TX:DMA_CHANNEL_4
 );
 
+// TODO: Probably need to create other type for tx_dr and rx_dr
 #[cfg(any(
     feature = "stm32f410",
     feature = "stm32f412",
@@ -1123,26 +1142,94 @@ address!((pac::SPI5, dr, u8),);
 ))]
 dma_map!((Stream4<DMA2>, Channel4, pac::SPI4, PeripheralToMemory),); //SPI4_RX);
 
-/* DFSDM1 appears to be missing from SVD
-#[cfg(any(
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-))]
+/* TODO: DFSDM support
+#[cfg(feature = "stm32f412")]
 dma_map!(
-    (pac::DMA2, Stream0, Channel7, pac::DFSDM1, PeripheralToMemory), //DFSDM1_FLT0
-    (pac::DMA2, Stream1, Channel3, pac::DFSDM1, PeripheralToMemory), //DFSDM1_FLT1
-    (pac::DMA2, Stream4, Channel3, pac::DFSDM1, PeripheralToMemory), //DFSDM1_FLT1
-    (pac::DMA2, Stream6, Channel3, pac::DFSDM1, PeripheralToMemory), //DFSDM1_FLT0:DMA_CHANNEL_3
+    (Stream0<pac::DMA2>, Channel7, pac::DFSDM, PeripheralToMemory), //DFSDM1_FLT0
+    (Stream1<pac::DMA2>, Channel3, pac::DFSDM, PeripheralToMemory), //DFSDM1_FLT1
+    (Stream4<pac::DMA2>, Channel3, pac::DFSDM, PeripheralToMemory), //DFSDM1_FLT1
+    (Stream6<pac::DMA2>, Channel3, pac::DFSDM, PeripheralToMemory), //DFSDM1_FLT0:DMA_CHANNEL_3
 );
-#[cfg(any(
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-))]
-address!(
-    (pac::DFSDM1, dr),
+#[cfg(feature = "stm32f412")]
+address!((pac::DFSDM, dr),);
+
+#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+dma_map!(
+    (
+        Stream0<pac::DMA2>,
+        Channel7,
+        pac::DFSDM1,
+        PeripheralToMemory
+    ), //DFSDM1_FLT0
+    (
+        Stream1<pac::DMA2>,
+        Channel3,
+        pac::DFSDM1,
+        PeripheralToMemory
+    ), //DFSDM1_FLT1
+    (
+        Stream4<pac::DMA2>,
+        Channel3,
+        pac::DFSDM1,
+        PeripheralToMemory
+    ), //DFSDM1_FLT1
+    (
+        Stream6<pac::DMA2>,
+        Channel3,
+        pac::DFSDM1,
+        PeripheralToMemory
+    ), //DFSDM1_FLT0:DMA_CHANNEL_3
+    (
+        Stream0<pac::DMA2>,
+        Channel8,
+        pac::DFSDM2,
+        PeripheralToMemory
+    ), //DFSDM2_FLT0
+    (
+        Stream1<pac::DMA2>,
+        Channel8,
+        pac::DFSDM2,
+        PeripheralToMemory
+    ), //DFSDM2_FLT1
+    (
+        Stream2<pac::DMA2>,
+        Channel8,
+        pac::DFSDM2,
+        PeripheralToMemory
+    ), //DFSDM2_FLT2
+    (
+        Stream3<pac::DMA2>,
+        Channel8,
+        pac::DFSDM2,
+        PeripheralToMemory
+    ), //DFSDM2_FLT3
+    (
+        Stream4<pac::DMA2>,
+        Channel8,
+        pac::DFSDM2,
+        PeripheralToMemory
+    ), //DFSDM2_FLT0
+    (
+        Stream5<pac::DMA2>,
+        Channel8,
+        pac::DFSDM2,
+        PeripheralToMemory
+    ), //DFSDM2_FLT1
+    (
+        Stream6<pac::DMA2>,
+        Channel8,
+        pac::DFSDM2,
+        PeripheralToMemory
+    ), //DFSDM2_FLT2
+    (
+        Stream7<pac::DMA2>,
+        Channel8,
+        pac::DFSDM2,
+        PeripheralToMemory
+    ), //DFSDM2_FLT3
 );
+#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+address!((pac::DFSDM1, dr), (pac::DFSDM2, dr),);
 */
 
 #[cfg(any(
@@ -1206,14 +1293,6 @@ dma_map!(
     (Stream5<DMA2>, Channel9, pac::UART10, MemoryToPeripheral), //UART10_TX
     (Stream7<DMA2>, Channel0, pac::UART9, PeripheralToMemory), //UART9_RX
     (Stream7<DMA2>, Channel6, pac::UART10, MemoryToPeripheral), //UART10_TX:DMA_CHANNEL_6
-                                                               //(pac::DMA2, Stream0, Channel8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT0
-                                                               //(pac::DMA2, Stream1, Channel8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT1
-                                                               //(pac::DMA2, Stream2, Channel8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT2
-                                                               //(pac::DMA2, Stream3, Channel8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT3
-                                                               //(pac::DMA2, Stream4, Channel8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT0
-                                                               //(pac::DMA2, Stream5, Channel8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT1
-                                                               //(pac::DMA2, Stream6, Channel8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT2
-                                                               //(pac::DMA2, Stream7, Channel8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT3
                                                                //(pac::DMA2, Stream6, Channel2, IN<pac::AES>, MemoryToPeripheral), //AES_IN
                                                                //(pac::DMA2, Stream5, Channel2, OUT<pac::AES>, PeripheralToMemory), //AES_OUT
 );

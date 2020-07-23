@@ -1,4 +1,11 @@
 //! Direct Memory Access.
+//!
+//! [Transfer::init](struct.Transfer.html#method.init) is only implemented for valid combinations of
+//! peripheral-stream-channel-direction, providing compile time checking.
+//!
+//! This module implements Memory To Memory, Peripheral To Memory and Memory to Peripheral
+//! transfers, double buffering is supported only for Peripheral To Memory and Memory to Peripheral
+//! transfers.
 
 use core::{
     marker::PhantomData,
@@ -16,41 +23,43 @@ use traits::{
     Channel, Direction, Instance, PeriAddress, RccEnable, Stream,
 };
 
-/// Errors
+/// Errors.
 #[derive(Debug, PartialEq)]
 pub enum DMAError<T> {
-    /// DMA not ready to change buffers
+    /// DMA not ready to change buffers.
     NotReady(T),
-    /// Double Buffering enabled buf second buffer not provided
+    /// Double Buffering enabled but second buffer not provided.
     NoSecondBuffer,
-    /// FIFO must be enabled if using memory to memory transfers
+    /// FIFO must be enabled if using memory to memory transfers.
     FifoDisabled,
-    /// Double buffer must not be enabled if using memory to memory transfers
+    /// Double buffer must not be enabled if using memory to memory transfers.
     DoubleBufferEnabled,
-    /// The user provided a buffer that is not big enough while double buffering
+    /// The user provided a buffer that is not big enough while double buffering.
     SmallBuffer(T),
 }
 
-/// Possible DMA's directions
+/// Possible DMA's directions.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DmaDirection {
-    /// Memory to Memory transfer
+    /// Memory to Memory transfer.
     MemoryToMemory,
-    /// Peripheral to Memory transfer
+    /// Peripheral to Memory transfer.
     PeripheralToMemory,
-    /// Memory to Peripheral transfer
+    /// Memory to Peripheral transfer.
     MemoryToPeripheral,
 }
 
-/// DMA from a peripheral to a memory location
+/// DMA from a peripheral to a memory location.
 #[derive(Debug, Clone, Copy)]
 pub struct PeripheralToMemory;
+
 impl Bits<u8> for PeripheralToMemory {
     #[inline]
     fn bits(self) -> u8 {
         0
     }
 }
+
 impl Direction for PeripheralToMemory {
     fn new() -> Self {
         PeripheralToMemory
@@ -61,7 +70,7 @@ impl Direction for PeripheralToMemory {
     }
 }
 
-/// DMA from one memory location to another memory location
+/// DMA from one memory location to another memory location.
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryToMemory<T> {
     _data: PhantomData<T>,
@@ -84,15 +93,17 @@ impl<T> Direction for MemoryToMemory<T> {
     }
 }
 
-/// DMA from a memory location to a peripheral
+/// DMA from a memory location to a peripheral.
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryToPeripheral;
+
 impl Bits<u8> for MemoryToPeripheral {
     #[inline]
     fn bits(self) -> u8 {
         1
     }
 }
+
 impl Direction for MemoryToPeripheral {
     fn new() -> Self {
         MemoryToPeripheral
@@ -127,22 +138,22 @@ impl PeriAddress for MemoryToMemory<u32> {
     type MemSize = u32;
 }
 
-/// How full the DMA stream's fifo is
+/// How full the DMA stream's fifo is.
 #[derive(Debug, Clone, Copy)]
 pub enum FifoLevel {
-    /// 0 < fifo_level < 1/4
+    /// 0 < fifo_level < 1/4.
     GtZeroLtQuarter,
-    /// 1/4 <= fifo_level < 1/2
+    /// 1/4 <= fifo_level < 1/2.
     GteQuarterLtHalf,
-    /// 1/2 <= fifo_level < 3/4
+    /// 1/2 <= fifo_level < 3/4.
     GteHalfLtThreeQuarter,
-    /// 3/4 <= fifo_level < full
+    /// 3/4 <= fifo_level < full.
     GteThreeQuarterLtFull,
-    /// Fifo is empty
+    /// Fifo is empty.
     Empty,
-    /// Fifo is full
+    /// Fifo is full.
     Full,
-    /// Invalid Value
+    /// Invalid value.
     Invalid,
 }
 
@@ -160,12 +171,12 @@ impl From<u8> for FifoLevel {
     }
 }
 
-/// Which DMA buffer is in use
+/// Which DMA buffer is in use.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CurrentBuffer {
-    /// The first buffer (m0ar) is in use
+    /// The first buffer (m0ar) is in use.
     FirstBuffer,
-    /// The second buffer (m1ar) is in use
+    /// The second buffer (m1ar) is in use.
     DoubleBuffer,
 }
 
@@ -181,35 +192,35 @@ impl Not for CurrentBuffer {
     }
 }
 
-/// Stream 0 on the DMA controller
+/// Stream 0 on the DMA controller.
 pub struct Stream0<DMA> {
     _dma: PhantomData<DMA>,
 }
-/// Stream 1 on the DMA controller. See Stream0 for more info.
+/// Stream 1 on the DMA controller.
 pub struct Stream1<DMA> {
     _dma: PhantomData<DMA>,
 }
-/// Stream 2 on the DMA controller. See Stream0 for more info.
+/// Stream 2 on the DMA controller.
 pub struct Stream2<DMA> {
     _dma: PhantomData<DMA>,
 }
-/// Stream 3 on the DMA controller. See Stream0 for more info.
+/// Stream 3 on the DMA controller.
 pub struct Stream3<DMA> {
     _dma: PhantomData<DMA>,
 }
-/// Stream 4 on the DMA controller. See Stream0 for more info.
+/// Stream 4 on the DMA controller.
 pub struct Stream4<DMA> {
     _dma: PhantomData<DMA>,
 }
-/// Stream 5 on the DMA controller. See Stream0 for more info.
+/// Stream 5 on the DMA controller.
 pub struct Stream5<DMA> {
     _dma: PhantomData<DMA>,
 }
-/// Stream 6 on the DMA controller. See Stream0 for more info.
+/// Stream 6 on the DMA controller.
 pub struct Stream6<DMA> {
     _dma: PhantomData<DMA>,
 }
-/// Stream 7 on the DMA controller. See Stream0 for more info.
+/// Stream 7 on the DMA controller.
 pub struct Stream7<DMA> {
     _dma: PhantomData<DMA>,
 }
@@ -236,6 +247,7 @@ pub struct StreamsTuple<T>(
 );
 
 impl<T: RccEnable> StreamsTuple<T> {
+    /// Splits the DMA peripheral into streams.
     pub fn new(regs: T) -> Self {
         regs.rcc_enable();
         Self(
@@ -251,13 +263,12 @@ impl<T: RccEnable> StreamsTuple<T> {
     }
 }
 
-/// Macro that creates a struct representing a stream on either DMA controller
-/// The implementation does the heavy lifting of mapping to the right fields on the stream
+// Macro that creates a struct representing a stream on either DMA controller
+// The implementation does the heavy lifting of mapping to the right fields on the stream
 macro_rules! dma_stream {
     ($(($name:ident, $number:expr ,$ifcr:ident, $tcif:ident, $htif:ident, $teif:ident, $dmeif:ident,
         $feif:ident, $isr:ident, $tcisr:ident, $htisr:ident)),+ $(,)*) => {
         $(
-            #[allow(dead_code)]
             impl<I: Instance> Stream for $name<I> {
 
                 const NUMBER: usize = $number;
@@ -527,13 +538,6 @@ macro_rules! dma_stream {
                     dma.st[Self::NUMBER].fcr.read().fs().bits().into()
                 }
 
-                #[inline]
-                fn set_flow_controller(&mut self, flow_controller: config::FlowController) {
-                    //NOTE(unsafe) We only access the registers that belongs to the StreamX
-                    let dma = unsafe { &*I::ptr() };
-                    dma.st[Self::NUMBER].cr.modify(|_, w| w.pfctrl().bit(flow_controller.bits()));
-                }
-
                 fn current_buffer() -> CurrentBuffer {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
@@ -559,17 +563,18 @@ dma_stream!(
     (Stream7, 7, hifcr, ctcif7, chtif7, cteif7, cdmeif7, cfeif7, hisr, tcif7, htif7),
 );
 
-/// Macro that defines a channel and it's conversion to u8
+// Macro that defines a channel and it's conversion to u8
 macro_rules! dma_channel {
     ($(($name:ident, $value:expr)),+ $(,)*) => {
         $(
-            /// A Channel that can be configured on a DMA stream
+            /// A Channel that can be configured on a DMA stream.
             #[derive(Debug, Clone, Copy)]
             pub struct $name;
-            impl Bits<u8> for $name {
 
+            impl Bits<u8> for $name {
                 fn bits(self) -> u8 { $value }
             }
+
             impl Channel for $name {
                 fn new() -> Self {
                     $name
@@ -593,21 +598,22 @@ dma_channel!(
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 dma_channel!((Channel8, 8), (Channel9, 9),);
 
-/// Contains types related to DMA configuration
+/// Contains types related to DMA configuration.
 pub mod config {
     use super::Bits;
 
-    /// Priority of the DMA stream. Defaults to Medium. Deadlocks are resolved by
-    /// the lower numbered stream gets priority.
+    /// Priority of the DMA stream, defaults to `Medium`. If two requests have the same software
+    /// priority level, the stream with the lower number takes priority over the stream with the
+    /// higher number. For example, Stream 2 takes priority over Stream 4.
     #[derive(Debug, Clone, Copy)]
     pub enum Priority {
-        /// Low priority
+        /// Low priority.
         Low,
-        /// Medium priority
+        /// Medium priority.
         Medium,
-        /// High priority
+        /// High priority.
         High,
-        /// Very high priority
+        /// Very high priority.
         VeryHigh,
     }
 
@@ -622,16 +628,16 @@ pub mod config {
         }
     }
 
-    /// The level to fill the fifo to before performing the transaction
+    /// The level to fill the fifo to before performing the transaction.
     #[derive(Debug, Clone, Copy)]
     pub enum FifoThreshold {
-        /// 1/4 full
+        /// 1/4 full.
         QuarterFull,
-        /// 1/2 full
+        /// 1/2 full.
         HalfFull,
-        /// 3/4 full
+        /// 3/4 full.
         ThreeQuarterFull,
-        /// Full
+        /// Full.
         Full,
     }
 
@@ -646,16 +652,16 @@ pub mod config {
         }
     }
 
-    /// How burst transfers are done. Requires fifo enabled. Check datasheet for valid combinations.
+    /// How burst transfers are done, requires fifo enabled. Check datasheet for valid combinations.
     #[derive(Debug, Clone, Copy)]
     pub enum BurstMode {
-        /// Single transfer, no burst
+        /// Single transfer, no burst.
         NoBurst,
-        /// Burst transfer of 4 beats
+        /// Burst transfer of 4 beats.
         Burst4,
-        /// Burst transfer of 8 beats
+        /// Burst transfer of 8 beats.
         Burst8,
-        /// Burst transfer of 16 beats
+        /// Burst transfer of 16 beats.
         Burst16,
     }
 
@@ -670,25 +676,7 @@ pub mod config {
         }
     }
 
-    /// Is the DMA controller the flow controller or is the peripheral?
-    #[derive(Debug, Clone, Copy)]
-    pub enum FlowController {
-        /// DMA controller is the flow controller
-        Dma,
-        /// Source or destination peripheral is the flow controller
-        Peripheral,
-    }
-
-    impl Bits<bool> for FlowController {
-        fn bits(self) -> bool {
-            match self {
-                FlowController::Dma => false,
-                FlowController::Peripheral => true,
-            }
-        }
-    }
-
-    /// Contains the complete set of configuration for a DMA stream
+    /// Contains the complete set of configuration for a DMA stream.
     #[derive(Debug, Clone, Copy)]
     pub struct DmaConfig {
         pub(crate) priority: Priority,
@@ -704,7 +692,6 @@ pub mod config {
         pub(crate) fifo_enable: bool,
         pub(crate) memory_burst: BurstMode,
         pub(crate) peripheral_burst: BurstMode,
-        pub(crate) flow_controller: FlowController,
     }
 
     impl Default for DmaConfig {
@@ -723,101 +710,94 @@ pub mod config {
                 fifo_enable: false,
                 memory_burst: BurstMode::NoBurst,
                 peripheral_burst: BurstMode::NoBurst,
-                flow_controller: FlowController::Dma,
             }
         }
     }
 
     impl DmaConfig {
-        /// Set the priority
+        /// Set the priority.
         #[inline]
         pub fn priority(mut self, priority: Priority) -> Self {
             self.priority = priority;
             self
         }
 
-        /// Set the memory_increment
+        /// Set the memory_increment.
         #[inline]
         pub fn memory_increment(mut self, memory_increment: bool) -> Self {
             self.memory_increment = memory_increment;
             self
         }
-        /// Set the peripheral_increment
+        /// Set the peripheral_increment.
         #[inline]
         pub fn peripheral_increment(mut self, peripheral_increment: bool) -> Self {
             self.peripheral_increment = peripheral_increment;
             self
         }
-        /// Set the transfer_complete_interrupt
+        /// Set the transfer_complete_interrupt.
         #[inline]
         pub fn transfer_complete_interrupt(mut self, transfer_complete_interrupt: bool) -> Self {
             self.transfer_complete_interrupt = transfer_complete_interrupt;
             self
         }
-        /// Set the half_transfer_interrupt
+        /// Set the half_transfer_interrupt.
         #[inline]
         pub fn half_transfer_interrupt(mut self, half_transfer_interrupt: bool) -> Self {
             self.half_transfer_interrupt = half_transfer_interrupt;
             self
         }
-        /// Set the transfer_error_interrupt
+        /// Set the transfer_error_interrupt.
         #[inline]
         pub fn transfer_error_interrupt(mut self, transfer_error_interrupt: bool) -> Self {
             self.transfer_error_interrupt = transfer_error_interrupt;
             self
         }
-        /// Set the direct_mode_error_interrupt
+        /// Set the direct_mode_error_interrupt.
         #[inline]
         pub fn direct_mode_error_interrupt(mut self, direct_mode_error_interrupt: bool) -> Self {
             self.direct_mode_error_interrupt = direct_mode_error_interrupt;
             self
         }
-        /// Set the fifo_error_interrupt
+        /// Set the fifo_error_interrupt.
         #[inline]
         pub fn fifo_error_interrupt(mut self, fifo_error_interrupt: bool) -> Self {
             self.fifo_error_interrupt = fifo_error_interrupt;
             self
         }
-        /// Set the double_buffer
+        /// Set the double_buffer.
         #[inline]
         pub fn double_buffer(mut self, double_buffer: bool) -> Self {
             self.double_buffer = double_buffer;
             self
         }
-        /// Set the fifo_threshold
+        /// Set the fifo_threshold.
         #[inline]
         pub fn fifo_threshold(mut self, fifo_threshold: FifoThreshold) -> Self {
             self.fifo_threshold = fifo_threshold;
             self
         }
-        /// Set the fifo_enable
+        /// Set the fifo_enable.
         #[inline]
         pub fn fifo_enable(mut self, fifo_enable: bool) -> Self {
             self.fifo_enable = fifo_enable;
             self
         }
-        /// Set the memory_burst
+        /// Set the memory_burst.
         #[inline]
         pub fn memory_burst(mut self, memory_burst: BurstMode) -> Self {
             self.memory_burst = memory_burst;
             self
         }
-        /// Set the peripheral_burst
+        /// Set the peripheral_burst.
         #[inline]
         pub fn peripheral_burst(mut self, peripheral_burst: BurstMode) -> Self {
             self.peripheral_burst = peripheral_burst;
             self
         }
-        /// Set the flow_controller
-        #[inline]
-        pub fn flow_controller(mut self, flow_controller: FlowController) -> Self {
-            self.flow_controller = flow_controller;
-            self
-        }
     }
 }
 
-/// DMA Stream
+/// DMA Transfer.
 pub struct Transfer<STREAM, CHANNEL, PERIPHERAL, DIRECTION, BUF>
 where
     STREAM: Stream,
@@ -843,9 +823,9 @@ where
     BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize> + 'static,
     (STREAM, CHANNEL, PERIPHERAL, DIR): Sealed,
 {
-    /// Applies all fields in DmaConfig
+    /// Applies all fields in DmaConfig.
     fn apply_config(&mut self, config: config::DmaConfig) {
-        let msize = mem::align_of::<<PERIPHERAL as PeriAddress>::MemSize>() / 4;
+        let msize = mem::align_of::<<PERIPHERAL as PeriAddress>::MemSize>() / 2;
 
         self.stream.clear_interrupts();
         self.stream.set_priority(config.priority);
@@ -872,12 +852,11 @@ where
         self.stream.set_fifo_enable(config.fifo_enable);
         self.stream.set_memory_burst(config.memory_burst);
         self.stream.set_peripheral_burst(config.peripheral_burst);
-        self.stream.set_flow_controller(config.flow_controller);
     }
 
-    /// Configures DMA stream to correct channel for peripheral, configures source and destination
-    /// addresses and applies supplied configuration. In a memory to memory transfer the `double_buf`
-    /// argument is source of the data.
+    /// Configures the DMA stream to the correct channel for the peripheral, configures source and
+    /// destination and applies supplied configuration. In a memory to memory transfer,
+    /// the `double_buf` argument is the source of the data.
     pub fn init(
         mut stream: STREAM,
         peripheral: PERIPHERAL,
@@ -1036,7 +1015,7 @@ where
         Ok((old_buf.unwrap(), CurrentBuffer::FirstBuffer))
     }
 
-    /// Stops the stream and returns the underlying Resources
+    /// Stops the stream and returns the underlying resources.
     pub fn free(mut self) -> (STREAM, PERIPHERAL, BUF, Option<BUF>) {
         self.stream.disable();
         compiler_fence(Ordering::SeqCst);
@@ -1052,44 +1031,44 @@ where
         }
     }
 
-    /// Clear all interrupts for the DMA stream
+    /// Clear all interrupts for the DMA stream.
     #[inline]
     pub fn clear_interrupts(&mut self) {
         self.stream.clear_interrupts();
     }
 
-    /// Clear transfer complete interrupt (tcif) for the DMA stream
+    /// Clear transfer complete interrupt (tcif) for the DMA stream.
     #[inline]
     pub fn clear_transfer_complete_interrupt(&mut self) {
         self.stream.clear_transfer_complete_interrupt();
     }
 
-    /// Clear half transfer interrupt (htif) for the DMA stream
+    /// Clear half transfer interrupt (htif) for the DMA stream.
     #[inline]
     pub fn clear_half_transfer_interrupt(&mut self) {
         self.stream.clear_half_transfer_interrupt();
     }
 
-    /// Clear transfer error interrupt (teif) for the DMA stream
+    /// Clear transfer error interrupt (teif) for the DMA stream.
     #[inline]
     pub fn clear_transfer_error_interrupt(&mut self) {
         self.stream.clear_transfer_error_interrupt();
     }
 
-    /// Clear direct mode error interrupt (dmeif) for the DMA stream
+    /// Clear direct mode error interrupt (dmeif) for the DMA stream.
     #[inline]
     pub fn clear_direct_mode_error_interrupt(&mut self) {
         self.stream.clear_direct_mode_error_interrupt();
     }
 
-    /// Clear fifo error interrupt (feif) for the DMA stream
+    /// Clear fifo error interrupt (feif) for the DMA stream.
     #[inline]
     pub fn clear_fifo_error_interrupt(&mut self) {
         self.stream.clear_fifo_error_interrupt();
     }
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
-    /// immediately after a transfer complete event. The closure must return `(BUF, T)` where BUF
+    /// immediately after a transfer complete event. The closure must return `(BUF, T)` where `BUF`
     /// is the new buffer to be used. The closure will not be called if the transfer is not
     /// completed.
     ///
@@ -1098,7 +1077,7 @@ where
     /// happen:
     ///
     /// * The new buffer's length is smaller than the one used in the `init` method.
-    /// * The closure `f` takes too long to return and an buffer overrun occurs.
+    /// * The closure `f` takes too long to return and a buffer overrun occurs.
     ///
     /// # Safety
     /// Memory corruption might occur if the previous buffer, the one passed to the closure, gets
@@ -1187,5 +1166,6 @@ where
 {
     fn drop(&mut self) {
         self.stream.disable();
+        compiler_fence(Ordering::SeqCst);
     }
 }
