@@ -51,6 +51,12 @@ impl U32Ext for u32 {
     }
 }
 
+impl From<u32> for Hertz {
+    fn from(t: u32) -> Self {
+        t.hz()
+    }
+}
+
 impl Into<Hertz> for KiloHertz {
     fn into(self) -> Hertz {
         Hertz(self.0 * 1_000)
