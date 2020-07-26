@@ -50,8 +50,14 @@ pub trait Stream: Sealed {
     /// Set the memory address (m0ar) for the DMA stream.
     fn set_memory_address(&mut self, value: u32);
 
+    /// Get the memory address (m0ar) for the DMA stream.
+    fn get_memory_address(&self) -> u32;
+
     /// Set the double buffer address (m1ar) for the DMA stream.
     fn set_memory_double_buffer_address(&mut self, value: u32);
+
+    /// Get the double buffer address (m1ar) for the DMA stream.
+    fn get_memory_double_buffer_address(&self) -> u32;
 
     /// Set the number of transfers (ndt) for the DMA stream.
     fn set_number_of_transfers(&mut self, value: u16);
@@ -160,7 +166,12 @@ pub trait Direction: Bits<u8> {
 }
 
 /// Get an address and memory size the DMA can use.
-pub trait PeriAddress: Sealed {
+///
+/// # Safety
+///
+/// Both the memory size and the address must be correct for the specific peripheral and for the
+/// DMA.
+pub unsafe trait PeriAddress: Sealed {
     /// Memory size of the peripheral.
     type MemSize;
 
@@ -174,8 +185,8 @@ macro_rules! address {
         $(
             impl Sealed for $peripheral {}
 
-            impl PeriAddress for $peripheral {
-                #[inline]
+            unsafe impl PeriAddress for $peripheral {
+                #[inline(always)]
                 fn address(&self) -> u32 {
                     &self.$register as *const _ as u32
                 }
@@ -214,14 +225,14 @@ pub trait Instance: Deref<Target = DMARegisterBlock> + Sealed {
 }
 
 impl Instance for DMA1 {
-    #[inline]
+    #[inline(always)]
     fn ptr() -> *const DMARegisterBlock {
         DMA1::ptr()
     }
 }
 
 impl Instance for DMA2 {
-    #[inline]
+    #[inline(always)]
     fn ptr() -> *const DMARegisterBlock {
         DMA2::ptr()
     }
@@ -260,7 +271,7 @@ impl RccEnable for pac::DMA2 {
 }
 
 macro_rules! tim_channels {
-    ($(($name:ident, $register:ident)),+ $(,)*) => {
+    ($($name:ident),+ $(,)*) => {
         $(
             /// Wrapper type that indicates which register of the contained timer to use for DMA.
             pub struct $name<T> (T);
@@ -268,7 +279,7 @@ macro_rules! tim_channels {
             impl<T> Deref for $name<T> {
                 type Target = T;
 
-                #[inline]
+                #[inline(always)]
                 fn deref(&self) -> &T {
                     &self.0
                 }
@@ -283,14 +294,7 @@ pub trait Channel: Bits<u8> {
     fn new() -> Self;
 }
 
-tim_channels!(
-    (CCR1, ccr1),
-    (CCR2, ccr2),
-    (CCR3, ccr3),
-    (CCR4, ccr4),
-    (DMAR, dmar),
-    (ARR, arr),
-);
+tim_channels!(CCR1, CCR2, CCR3, CCR4, DMAR, ARR);
 
 macro_rules! dma_map {
     ($(($Stream:ty, $channel:ty, $Peripheral:ty, $dir:ty)),+ $(,)*) => {

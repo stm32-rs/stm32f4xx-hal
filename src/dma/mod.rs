@@ -28,14 +28,10 @@ use traits::{
 pub enum DMAError<T> {
     /// DMA not ready to change buffers.
     NotReady(T),
-    /// Double Buffering enabled but second buffer not provided.
-    NoSecondBuffer,
-    /// FIFO must be enabled if using memory to memory transfers.
-    FifoDisabled,
-    /// Double buffer must not be enabled if using memory to memory transfers.
-    DoubleBufferEnabled,
     /// The user provided a buffer that is not big enough while double buffering.
     SmallBuffer(T),
+    /// Overrun during a double buffering or circular transfer.
+    Overrun(T),
 }
 
 /// Possible DMA's directions.
@@ -54,7 +50,7 @@ pub enum DmaDirection {
 pub struct PeripheralToMemory;
 
 impl Bits<u8> for PeripheralToMemory {
-    #[inline]
+    #[inline(always)]
     fn bits(self) -> u8 {
         0
     }
@@ -64,7 +60,7 @@ impl Direction for PeripheralToMemory {
     fn new() -> Self {
         PeripheralToMemory
     }
-    #[inline]
+    #[inline(always)]
     fn direction() -> DmaDirection {
         DmaDirection::PeripheralToMemory
     }
@@ -77,7 +73,7 @@ pub struct MemoryToMemory<T> {
 }
 
 impl<T> Bits<u8> for MemoryToMemory<T> {
-    #[inline]
+    #[inline(always)]
     fn bits(self) -> u8 {
         2
     }
@@ -87,7 +83,7 @@ impl<T> Direction for MemoryToMemory<T> {
     fn new() -> Self {
         Self { _data: PhantomData }
     }
-    #[inline]
+    #[inline(always)]
     fn direction() -> DmaDirection {
         DmaDirection::MemoryToMemory
     }
@@ -98,7 +94,7 @@ impl<T> Direction for MemoryToMemory<T> {
 pub struct MemoryToPeripheral;
 
 impl Bits<u8> for MemoryToPeripheral {
-    #[inline]
+    #[inline(always)]
     fn bits(self) -> u8 {
         1
     }
@@ -117,21 +113,21 @@ impl Sealed for MemoryToMemory<u8> {}
 impl Sealed for MemoryToMemory<u16> {}
 impl Sealed for MemoryToMemory<u32> {}
 
-impl PeriAddress for MemoryToMemory<u8> {
+unsafe impl PeriAddress for MemoryToMemory<u8> {
     fn address(&self) -> u32 {
         unimplemented!()
     }
     type MemSize = u8;
 }
 
-impl PeriAddress for MemoryToMemory<u16> {
+unsafe impl PeriAddress for MemoryToMemory<u16> {
     fn address(&self) -> u32 {
         unimplemented!()
     }
     type MemSize = u16;
 }
 
-impl PeriAddress for MemoryToMemory<u32> {
+unsafe impl PeriAddress for MemoryToMemory<u32> {
     fn address(&self) -> u32 {
         unimplemented!()
     }
@@ -273,7 +269,7 @@ macro_rules! dma_stream {
 
                 const NUMBER: usize = $number;
 
-                #[inline]
+                #[inline(always)]
                 fn clear_interrupts(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
@@ -287,7 +283,7 @@ macro_rules! dma_stream {
                     );
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn clear_transfer_complete_interrupt(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
@@ -295,7 +291,7 @@ macro_rules! dma_stream {
                     dma.$ifcr.write(|w| w.$tcif().set_bit());
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn clear_half_transfer_interrupt(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
@@ -303,7 +299,7 @@ macro_rules! dma_stream {
                     dma.$ifcr.write(|w| w.$htif().set_bit());
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn clear_transfer_error_interrupt(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
@@ -311,7 +307,7 @@ macro_rules! dma_stream {
                     dma.$ifcr.write(|w| w.$teif().set_bit());
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn clear_direct_mode_error_interrupt(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
@@ -319,7 +315,7 @@ macro_rules! dma_stream {
                     dma.$ifcr.write(|w| w.$dmeif().set_bit());
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn clear_fifo_error_interrupt(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
@@ -327,70 +323,84 @@ macro_rules! dma_stream {
                     dma.$ifcr.write(|w| w.$feif().set_bit());
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn get_transfer_complete_flag() -> bool {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.$isr.read().$tcisr().bit_is_set()
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn get_half_transfer_flag() -> bool {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.$isr.read().$htisr().bit_is_set()
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_peripheral_address(&mut self, value: u32) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].par.write(|w| w.pa().bits(value));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_memory_address(&mut self, value: u32) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].m0ar.write(|w| w.m0a().bits(value));
                 }
 
-                #[inline]
+                #[inline(always)]
+                fn get_memory_address(&self) -> u32 {
+                    //NOTE(unsafe) We only access the registers that belongs to the StreamX
+                    let dma = unsafe { &*I::ptr() };
+                    dma.st[Self::NUMBER].m0ar.read().m0a().bits()
+                }
+
+                #[inline(always)]
                 fn set_memory_double_buffer_address(&mut self, value: u32) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].m1ar.write(|w| w.m1a().bits(value));
                 }
 
-                #[inline]
+                #[inline(always)]
+                fn get_memory_double_buffer_address(&self) -> u32 {
+                    //NOTE(unsafe) We only access the registers that belongs to the StreamX
+                    let dma = unsafe { &*I::ptr() };
+                    dma.st[Self::NUMBER].m1ar.read().m1a().bits()
+                }
+
+                #[inline(always)]
                 fn set_number_of_transfers(&mut self, value: u16) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].ndtr.write(|w| w.ndt().bits(value));
                 }
 
-                #[inline]
+                #[inline(always)]
                 unsafe fn enable(&mut self) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = &*I::ptr();
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.en().set_bit());
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn is_enabled() -> bool {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.read().en().bit_is_set()
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn disable(&mut self) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.en().clear_bit());
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_channel<C: Channel>(&mut self, channel: C) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
@@ -399,49 +409,49 @@ macro_rules! dma_stream {
                     dma.st[Self::NUMBER].cr.modify(|_, w| unsafe { w.chsel().bits(channel.bits()) });
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_priority(&mut self, priority: config::Priority) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.pl().bits(priority.bits()));
                 }
 
-                #[inline]
+                #[inline(always)]
                 unsafe fn set_memory_size(&mut self, size: u8) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = &*I::ptr();
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.msize().bits(size));
                 }
 
-                #[inline]
+                #[inline(always)]
                 unsafe fn set_peripheral_size(&mut self, size: u8) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = &*I::ptr();
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.psize().bits(size));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_memory_increment(&mut self, increment: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.minc().bit(increment));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_peripheral_increment(&mut self, increment: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.pinc().bit(increment));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_direction<D: Direction>(&mut self, direction: D) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| unsafe { w.dir().bits(direction.bits()) });
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_interrupts_enable(
                     &mut self,
                     transfer_complete: bool,
@@ -460,56 +470,56 @@ macro_rules! dma_stream {
                     );
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_transfer_complete_interrupt_enable(&mut self, transfer_complete_interrupt: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.tcie().bit(transfer_complete_interrupt));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_half_transfer_interrupt_enable(&mut self, half_transfer_interrupt: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.htie().bit(half_transfer_interrupt));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_transfer_error_interrupt_enable(&mut self, transfer_error_interrupt: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.teie().bit(transfer_error_interrupt));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_direct_mode_error_interrupt_enable(&mut self, direct_mode_error_interrupt: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.dmeie().bit(direct_mode_error_interrupt));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_fifo_error_interrupt_enable(&mut self, fifo_error_interrupt: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].fcr.modify(|_, w| w.feie().bit(fifo_error_interrupt));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_double_buffer(&mut self, double_buffer: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.dbm().bit(double_buffer));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_fifo_threshold(&mut self, fifo_threshold: config::FifoThreshold) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].fcr.modify(|_, w| w.fth().bits(fifo_threshold.bits()));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_fifo_enable(&mut self, fifo_enable: bool) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
@@ -517,21 +527,21 @@ macro_rules! dma_stream {
                     dma.st[Self::NUMBER].fcr.modify(|_, w| w.dmdis().bit(fifo_enable));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_memory_burst(&mut self, memory_burst: config::BurstMode) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.mburst().bits(memory_burst.bits()));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn set_peripheral_burst(&mut self, peripheral_burst: config::BurstMode) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.modify(|_, w| w.pburst().bits(peripheral_burst.bits()));
                 }
 
-                #[inline]
+                #[inline(always)]
                 fn fifo_level() -> FifoLevel {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
@@ -716,80 +726,80 @@ pub mod config {
 
     impl DmaConfig {
         /// Set the priority.
-        #[inline]
+        #[inline(always)]
         pub fn priority(mut self, priority: Priority) -> Self {
             self.priority = priority;
             self
         }
 
         /// Set the memory_increment.
-        #[inline]
+        #[inline(always)]
         pub fn memory_increment(mut self, memory_increment: bool) -> Self {
             self.memory_increment = memory_increment;
             self
         }
         /// Set the peripheral_increment.
-        #[inline]
+        #[inline(always)]
         pub fn peripheral_increment(mut self, peripheral_increment: bool) -> Self {
             self.peripheral_increment = peripheral_increment;
             self
         }
         /// Set the transfer_complete_interrupt.
-        #[inline]
+        #[inline(always)]
         pub fn transfer_complete_interrupt(mut self, transfer_complete_interrupt: bool) -> Self {
             self.transfer_complete_interrupt = transfer_complete_interrupt;
             self
         }
         /// Set the half_transfer_interrupt.
-        #[inline]
+        #[inline(always)]
         pub fn half_transfer_interrupt(mut self, half_transfer_interrupt: bool) -> Self {
             self.half_transfer_interrupt = half_transfer_interrupt;
             self
         }
         /// Set the transfer_error_interrupt.
-        #[inline]
+        #[inline(always)]
         pub fn transfer_error_interrupt(mut self, transfer_error_interrupt: bool) -> Self {
             self.transfer_error_interrupt = transfer_error_interrupt;
             self
         }
         /// Set the direct_mode_error_interrupt.
-        #[inline]
+        #[inline(always)]
         pub fn direct_mode_error_interrupt(mut self, direct_mode_error_interrupt: bool) -> Self {
             self.direct_mode_error_interrupt = direct_mode_error_interrupt;
             self
         }
         /// Set the fifo_error_interrupt.
-        #[inline]
+        #[inline(always)]
         pub fn fifo_error_interrupt(mut self, fifo_error_interrupt: bool) -> Self {
             self.fifo_error_interrupt = fifo_error_interrupt;
             self
         }
         /// Set the double_buffer.
-        #[inline]
+        #[inline(always)]
         pub fn double_buffer(mut self, double_buffer: bool) -> Self {
             self.double_buffer = double_buffer;
             self
         }
         /// Set the fifo_threshold.
-        #[inline]
+        #[inline(always)]
         pub fn fifo_threshold(mut self, fifo_threshold: FifoThreshold) -> Self {
             self.fifo_threshold = fifo_threshold;
             self
         }
         /// Set the fifo_enable.
-        #[inline]
+        #[inline(always)]
         pub fn fifo_enable(mut self, fifo_enable: bool) -> Self {
             self.fifo_enable = fifo_enable;
             self
         }
         /// Set the memory_burst.
-        #[inline]
+        #[inline(always)]
         pub fn memory_burst(mut self, memory_burst: BurstMode) -> Self {
             self.memory_burst = memory_burst;
             self
         }
         /// Set the peripheral_burst.
-        #[inline]
+        #[inline(always)]
         pub fn peripheral_burst(mut self, peripheral_burst: BurstMode) -> Self {
             self.peripheral_burst = peripheral_burst;
             self
@@ -856,14 +866,21 @@ where
 
     /// Configures the DMA stream to the correct channel for the peripheral, configures source and
     /// destination and applies supplied configuration. In a memory to memory transfer,
-    /// the `double_buf` argument is the source of the data.
+    /// the `double_buf` argument is the source of the data. If double buffering is enabled, the
+    /// number of transfers will be the minimum length of `memory` and `double_buf`.
+    ///
+    /// # Panics
+    ///
+    /// * When the FIFO is disabled or double buffering is enabled in `DmaConfig` while initializing
+    /// a memory to memory transfer.
+    /// * When double buffering is enabled but the `double_buf` argument is `None`.
     pub fn init(
         mut stream: STREAM,
         peripheral: PERIPHERAL,
         mut memory: BUF,
         mut double_buf: Option<BUF>,
         config: config::DmaConfig,
-    ) -> Result<Self, DMAError<BUF>> {
+    ) -> Self {
         stream.disable();
 
         // Set the channel
@@ -872,7 +889,10 @@ where
         // Set peripheral to memory mode
         stream.set_direction(DIR::new());
 
+        // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on it until the
+        // end of the DMA transfer
         let (buf_ptr, buf_len) = unsafe { memory.write_buffer() };
+
         // Set the memory address
         stream.set_memory_address(buf_ptr as u32);
 
@@ -880,9 +900,9 @@ where
         if is_mem2mem {
             // Fifo must be enabled for memory to memory
             if !config.fifo_enable {
-                return Err(DMAError::FifoDisabled);
+                panic!("Fifo disabled.");
             } else if config.double_buffer {
-                return Err(DMAError::DoubleBufferEnabled);
+                panic!("Double buffering enabled.");
             }
         } else {
             // Set the peripheral address
@@ -890,6 +910,8 @@ where
         }
 
         let db_len = if let Some(ref mut db) = double_buf {
+            // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on it until
+            // the end of the DMA transfer
             let (db_ptr, db_len) = unsafe { db.write_buffer() };
             if is_mem2mem {
                 // Double buffer is the source in mem2mem mode
@@ -901,7 +923,7 @@ where
         } else {
             // Double buffer mode must not be enabled if we haven't been given a second buffer
             if config.double_buffer {
-                return Err(DMAError::NoSecondBuffer);
+                panic!("No second buffer.");
             }
             None
         };
@@ -924,7 +946,7 @@ where
         };
         transfer.apply_config(config);
 
-        Ok(transfer)
+        transfer
     }
 
     /// Starts the transfer, the closure will be executed right after enabling the stream.
@@ -963,7 +985,7 @@ where
         self.stream.clear_transfer_complete_interrupt();
 
         if self.double_buf.is_some() && DIR::direction() != DmaDirection::MemoryToMemory {
-            // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on `new` until
+            // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on it until
             // the end of the DMA transfer
             let (new_buf_ptr, new_buf_len) = unsafe { new_buf.write_buffer() };
 
@@ -974,20 +996,30 @@ where
 
             if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
                 self.stream.set_memory_address(new_buf_ptr as u32);
-                let old_buf = self.buf.replace(new_buf);
+                // Check if an overrun occured, the buffer address won't be updated in that case
+                if self.stream.get_memory_address() != new_buf_ptr as u32 {
+                    return Err(DMAError::Overrun(new_buf));
+                }
 
                 // "Subsequent reads and writes cannot be moved ahead of preceding reads"
                 compiler_fence(Ordering::Acquire);
+
+                let old_buf = self.buf.replace(new_buf);
 
                 // We always have a buffer, so unwrap can't fail
                 return Ok((old_buf.unwrap(), CurrentBuffer::FirstBuffer));
             } else {
                 self.stream
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
-                let old_buf = self.double_buf.replace(new_buf);
+                // Check if an overrun occured, the buffer address won't be updated in that case
+                if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
+                    return Err(DMAError::Overrun(new_buf));
+                }
 
                 // "Subsequent reads and writes cannot be moved ahead of preceding reads"
                 compiler_fence(Ordering::Acquire);
+
+                let old_buf = self.double_buf.replace(new_buf);
 
                 // double buffering, unwrap can never fail
                 return Ok((old_buf.unwrap(), CurrentBuffer::DoubleBuffer));
@@ -998,7 +1030,7 @@ where
         // "No re-ordering of reads and writes across this point is allowed"
         compiler_fence(Ordering::SeqCst);
 
-        // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on `new` until
+        // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on it until
         // the end of the DMA transfer
         let (buf_ptr, buf_len) = unsafe { new_buf.write_buffer() };
         self.stream.set_memory_address(buf_ptr as u32);
@@ -1032,37 +1064,37 @@ where
     }
 
     /// Clear all interrupts for the DMA stream.
-    #[inline]
+    #[inline(always)]
     pub fn clear_interrupts(&mut self) {
         self.stream.clear_interrupts();
     }
 
     /// Clear transfer complete interrupt (tcif) for the DMA stream.
-    #[inline]
+    #[inline(always)]
     pub fn clear_transfer_complete_interrupt(&mut self) {
         self.stream.clear_transfer_complete_interrupt();
     }
 
     /// Clear half transfer interrupt (htif) for the DMA stream.
-    #[inline]
+    #[inline(always)]
     pub fn clear_half_transfer_interrupt(&mut self) {
         self.stream.clear_half_transfer_interrupt();
     }
 
     /// Clear transfer error interrupt (teif) for the DMA stream.
-    #[inline]
+    #[inline(always)]
     pub fn clear_transfer_error_interrupt(&mut self) {
         self.stream.clear_transfer_error_interrupt();
     }
 
     /// Clear direct mode error interrupt (dmeif) for the DMA stream.
-    #[inline]
+    #[inline(always)]
     pub fn clear_direct_mode_error_interrupt(&mut self) {
         self.stream.clear_direct_mode_error_interrupt();
     }
 
     /// Clear fifo error interrupt (feif) for the DMA stream.
-    #[inline]
+    #[inline(always)]
     pub fn clear_fifo_error_interrupt(&mut self) {
         self.stream.clear_fifo_error_interrupt();
     }
@@ -1080,8 +1112,15 @@ where
     /// * The closure `f` takes too long to return and a buffer overrun occurs.
     ///
     /// # Safety
-    /// Memory corruption might occur if the previous buffer, the one passed to the closure, gets
-    /// dropped in the closure and an overrun occurs in double buffering mode.
+    ///
+    /// Memory corruption might occur in the previous buffer, the one passed to the closure, if an
+    /// overrun occurs in double buffering mode. This method will panic if it detects an overrun,
+    /// however, the overrun won't be detected if the closure takes long enough to cause the DMA to
+    /// change buffers twice since the call of this method.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if an overrun is detected while double buffering.
     pub unsafe fn next_transfer_with<F, T>(&mut self, f: F) -> Result<T, DMAError<()>>
     where
         F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
@@ -1109,28 +1148,35 @@ where
                 "Second Buffer not big enough"
             );
 
-            // If this is false, then RAM corruption might have occurred, there's nothing we can do
-            // apart from panicking.
-            // TODO: Is this the best solution ? The closure based approach seems necessary if we
-            // want to support BBqueue.
-            assert!(current_buffer == STREAM::current_buffer(), "Overrun");
-
             if current_buffer == CurrentBuffer::DoubleBuffer {
                 self.stream.set_memory_address(new_buf_ptr as u32);
-                self.buf.replace(new_buf);
+
+                // Check if an overrun occured, the buffer address won't be updated in that case
+                if self.stream.get_memory_address() != new_buf_ptr as u32 {
+                    // If this is true, then RAM corruption might have occurred, there's nothing we
+                    // can do apart from panicking.
+                    // TODO: Is this the best solution ? The closure based approach seems necessary
+                    // if we want to support BBqueue.
+                    panic!("Overrun");
+                }
 
                 // "Subsequent reads and writes cannot be moved ahead of preceding reads"
                 compiler_fence(Ordering::Acquire);
 
+                self.buf.replace(new_buf);
                 return Ok(r.1);
             } else {
                 self.stream
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
-                self.double_buf.replace(new_buf);
+                // Check if an overrun occured, the buffer address won't be updated in that case
+                if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
+                    panic!("Overrun");
+                }
 
                 // "Subsequent reads and writes cannot be moved ahead of preceding reads"
                 compiler_fence(Ordering::Acquire);
 
+                self.double_buf.replace(new_buf);
                 return Ok(r.1);
             }
         }
