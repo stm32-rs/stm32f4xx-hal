@@ -6,7 +6,8 @@ use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, AF12};
 use crate::rcc::Clocks;
 use crate::stm32::{self, RCC, SDIO};
 pub use sdio_host::{
-    CardCapacity, CardStatus, CurrentState, SDStatus, CIC, CID, CSD, OCR, RCA, SCR,
+    cmd, cmd::ResponseLen, CardCapacity, CardStatus, Cmd, CurrentState, SDStatus, CIC, CID, CSD,
+    OCR, RCA, SCR,
 };
 
 pub trait PinClk {}
@@ -108,7 +109,7 @@ pins! {
     D3: [PB5<Alternate<AF12>>]
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Buswidth {
     Buswidth1 = 0,
     Buswidth4 = 1,
@@ -128,23 +129,6 @@ pub enum ClockFreq {
     F4Mhz = 10,
     F1Mhz = 46,
     F400Khz = 118,
-}
-
-#[repr(u32)]
-#[allow(dead_code)]
-enum CmdAppOper {
-    VOLTAGE_WINDOW_SD = 0x8010_0000,
-    HIGH_CAPACITY = 0x4000_0000,
-    SDMMC_STD_CAPACITY = 0x0000_0000,
-    SDMMC_CHECK_PATTERN = 0x0000_01AA,
-    SD_SWITCH_1_8V_CAPACITY = 0x0100_0000,
-}
-
-#[derive(Eq, PartialEq, Copy, Clone)]
-enum Response {
-    None = 0,
-    Short = 1,
-    Long = 3,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -228,11 +212,11 @@ impl Sdio {
 
         // Enable clock
         self.sdio.clkcr.modify(|_, w| w.clken().set_bit());
-
-        self.cmd(Cmd::idle())?;
+        // Send card to idle state
+        self.cmd(cmd::idle())?;
 
         // Check if cards supports CMD 8 (with pattern)
-        self.cmd(Cmd::hs_send_ext_csd(0x1AA))?;
+        self.cmd(cmd::send_if_cond(1, 0xAA))?;
         let cic = CIC::from(self.sdio.resp1.read().bits());
 
         // If card did't echo back the pattern, we do not have a v2 card
@@ -245,14 +229,11 @@ impl Sdio {
         }
 
         let ocr = loop {
-            let arg = CmdAppOper::VOLTAGE_WINDOW_SD as u32
-                | CmdAppOper::HIGH_CAPACITY as u32
-                | CmdAppOper::SD_SWITCH_1_8V_CAPACITY as u32;
-
-            // Signal that next command is a app command
-            self.cmd(Cmd::app_cmd(0))?;
             // Initialize card
-            match self.cmd(Cmd::app_op_cmd(arg)) {
+
+            // 3.2-3.3V
+            let voltage_window = 1 << 20;
+            match self.app_cmd(cmd::sd_send_op_cond(true, false, true, voltage_window)) {
                 Ok(_) => (),
                 Err(Error::Crc) => (),
                 Err(err) => return Err(err),
@@ -274,7 +255,7 @@ impl Sdio {
         };
 
         // Get CID
-        self.cmd(Cmd::all_send_cid())?;
+        self.cmd(cmd::all_send_cid())?;
         let mut cid = [0; 4];
         cid[3] = self.sdio.resp1.read().bits();
         cid[2] = self.sdio.resp2.read().bits();
@@ -283,12 +264,12 @@ impl Sdio {
         let cid = CID::from(cid);
 
         // Get RCA
-        self.cmd(Cmd::send_rel_addr())?;
+        self.cmd(cmd::send_relative_address())?;
         let rca = RCA::from(self.sdio.resp1.read().bits());
-        let card_addr = (rca.address() as u32) << 16;
+        let card_addr = rca.address();
 
         // Get CSD
-        self.cmd(Cmd::send_csd(card_addr))?;
+        self.cmd(cmd::send_csd(card_addr))?;
 
         let mut csd = [0; 4];
         csd[3] = self.sdio.resp1.read().bits();
@@ -309,8 +290,9 @@ impl Sdio {
             scr,
         };
 
-        self.set_bus(self.bw, freq, &card)?;
         self.card.replace(card);
+
+        self.set_bus(self.bw, freq)?;
         Ok(())
     }
 
@@ -332,9 +314,9 @@ impl Sdio {
     pub fn read_block(&mut self, blockaddr: u32, block: &mut [u8; 512]) -> Result<(), Error> {
         let _card = self.card()?;
 
-        self.cmd(Cmd::set_blocklen(512))?;
+        self.cmd(cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, true);
-        self.cmd(Cmd::read_single_block(blockaddr))?;
+        self.cmd(cmd::read_single_block(blockaddr))?;
 
         let mut i = 0;
         let mut sta;
@@ -368,9 +350,9 @@ impl Sdio {
     pub fn write_block(&mut self, blockaddr: u32, block: &[u8; 512]) -> Result<(), Error> {
         let _card = self.card()?;
 
-        self.cmd(Cmd::set_blocklen(512))?;
+        self.cmd(cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, false);
-        self.cmd(Cmd::write_single_block(blockaddr))?;
+        self.cmd(cmd::write_single_block(blockaddr))?;
 
         let mut i = 0;
         let mut sta;
@@ -435,7 +417,8 @@ impl Sdio {
     fn read_status(&mut self) -> Result<CardStatus, Error> {
         let card = self.card()?;
 
-        self.cmd(Cmd::cmd13(card.address()))?;
+        self.cmd(cmd::card_status(card.rca.address(), false))?;
+
         let r1 = self.sdio.resp1.read().bits();
         Ok(CardStatus::from(r1))
     }
@@ -447,11 +430,10 @@ impl Sdio {
 
     /// Read the SDStatus struct
     pub fn read_sd_status(&mut self) -> Result<SDStatus, Error> {
-        let card = self.card()?;
-        self.cmd(Cmd::set_blocklen(64))?;
+        let _card = self.card()?;
+        self.cmd(cmd::set_block_length(64))?;
         self.start_datapath_transfer(64, 6, true);
-        self.cmd(Cmd::app_cmd(card.address()))?;
-        self.cmd(Cmd::acmd13())?;
+        self.app_cmd(cmd::sd_status())?;
 
         let mut status = [0u32; 16];
         let mut idx = 0;
@@ -478,20 +460,20 @@ impl Sdio {
     }
 
     /// Select the card with `address`
-    fn select_card(&self, address: u32) -> Result<(), Error> {
-        let r = self.cmd(Cmd::sel_desel_card(address));
-        match (r, address) {
+    fn select_card(&self, rca: u16) -> Result<(), Error> {
+        let r = self.cmd(cmd::select_card(rca));
+        match (r, rca) {
             (Err(Error::Timeout), 0) => Ok(()),
             _ => r,
         }
     }
 
     /// Get the Card configuration for card at `address`
-    fn get_scr(&self, address: u32) -> Result<SCR, Error> {
-        self.cmd(Cmd::set_blocklen(8))?;
+    fn get_scr(&self, rca: u16) -> Result<SCR, Error> {
+        self.cmd(cmd::set_block_length(8))?;
         self.start_datapath_transfer(8, 3, true);
-        self.cmd(Cmd::app_cmd(address))?;
-        self.cmd(Cmd::cmd51())?;
+        self.cmd(cmd::app_cmd(rca))?;
+        self.cmd(cmd::send_scr())?;
 
         let mut buf = [0; 2];
         let mut i = 0;
@@ -516,14 +498,15 @@ impl Sdio {
     }
 
     /// Set bus width and clock frequency
-    fn set_bus(&self, width: Buswidth, freq: ClockFreq, card: &Card) -> Result<(), Error> {
-        let (width, acmd_arg) = match width {
-            Buswidth::Buswidth4 if card.supports_widebus() => (width, 2),
-            _ => (Buswidth::Buswidth1, 1),
+    fn set_bus(&self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
+        let card_widebus = self.card()?.supports_widebus();
+
+        let width = match width {
+            Buswidth::Buswidth4 if card_widebus => Buswidth::Buswidth4,
+            _ => Buswidth::Buswidth1,
         };
 
-        self.cmd(Cmd::app_cmd(card.address()))?;
-        self.cmd(Cmd::acmd6(acmd_arg))?;
+        self.app_cmd(cmd::set_bus_width(width == Buswidth::Buswidth4))?;
 
         self.sdio.clkcr.modify(|_, w| unsafe {
             w.clkdiv()
@@ -536,20 +519,34 @@ impl Sdio {
         Ok(())
     }
 
+    fn app_cmd<R: cmd::Resp>(&self, acmd: Cmd<R>) -> Result<(), Error> {
+        let rca = self.card().map(|card| card.rca.address()).unwrap_or(0);
+        self.cmd(cmd::app_cmd(rca))?;
+        self.cmd(acmd)
+    }
+
     /// Send command to card
-    fn cmd(&self, cmd: Cmd) -> Result<(), Error> {
+    fn cmd<R: cmd::Resp>(&self, cmd: Cmd<R>) -> Result<(), Error> {
         // Command state machines must be idle
         while self.sdio.sta.read().cmdact().bit_is_set() {}
 
-        // Clear all interrupts
+        // Clear the interrupts before we start
         clear_all_interrupts(&self.sdio.icr);
 
         // Command arg
         self.sdio.arg.write(|w| unsafe { w.cmdarg().bits(cmd.arg) });
 
+        // Determine what kind of response the CPSM should wait for
+        let waitresp = match cmd.response_len() {
+            ResponseLen::Zero => 0b00,
+            ResponseLen::R48 => 0b01,
+            ResponseLen::R136 => 0b11,
+        };
+
+        // Send the command
         self.sdio.cmd.write(|w| unsafe {
             w.waitresp()
-                .bits(cmd.resp as u8)
+                .bits(waitresp)
                 .cmdindex()
                 .bits(cmd.cmd)
                 .waitint()
@@ -561,7 +558,7 @@ impl Sdio {
         let mut timeout: u32 = 0xFFFF_FFFF;
 
         let mut sta;
-        if cmd.resp == Response::None {
+        if cmd.response_len() == ResponseLen::Zero {
             // Wait for command sent or a timeout
             while {
                 sta = self.sdio.sta.read();
@@ -647,83 +644,5 @@ impl Card {
     /// Card supports wide bus
     fn supports_widebus(&self) -> bool {
         self.scr.bus_width_four()
-    }
-
-    /// Helper for using the address as a rca argument
-    fn address(&self) -> u32 {
-        (self.rca.address() as u32) << 16
-    }
-}
-
-struct Cmd {
-    cmd: u8,
-    arg: u32,
-    resp: Response,
-}
-
-impl Cmd {
-    const fn new(cmd: u8, arg: u32, resp: Response) -> Cmd {
-        Cmd { cmd, arg, resp }
-    }
-
-    const fn idle() -> Cmd {
-        Cmd::new(0, 0, Response::None)
-    }
-
-    const fn all_send_cid() -> Cmd {
-        Cmd::new(2, 0, Response::Long)
-    }
-
-    const fn send_rel_addr() -> Cmd {
-        Cmd::new(3, 0, Response::Short)
-    }
-
-    const fn acmd6(arg: u32) -> Cmd {
-        Cmd::new(6, arg, Response::Short)
-    }
-
-    const fn sel_desel_card(rca: u32) -> Cmd {
-        Cmd::new(7, rca, Response::Short)
-    }
-
-    const fn hs_send_ext_csd(arg: u32) -> Cmd {
-        Cmd::new(8, arg, Response::Short)
-    }
-
-    const fn send_csd(rca: u32) -> Cmd {
-        Cmd::new(9, rca, Response::Long)
-    }
-
-    const fn cmd13(rca: u32) -> Cmd {
-        Cmd::new(13, rca, Response::Short)
-    }
-
-    const fn acmd13() -> Cmd {
-        Cmd::new(13, 0, Response::Short)
-    }
-
-    const fn set_blocklen(blocklen: u32) -> Cmd {
-        Cmd::new(16, blocklen, Response::Short)
-    }
-
-    const fn read_single_block(addr: u32) -> Cmd {
-        Cmd::new(17, addr, Response::Short)
-    }
-
-    const fn write_single_block(addr: u32) -> Cmd {
-        Cmd::new(24, addr, Response::Short)
-    }
-
-    const fn app_op_cmd(arg: u32) -> Cmd {
-        Cmd::new(41, arg, Response::Short)
-    }
-
-    const fn cmd51() -> Cmd {
-        Cmd::new(51, 0, Response::Short)
-    }
-
-    /// App Command. Indicates that next command will be a app command
-    const fn app_cmd(rca: u32) -> Cmd {
-        Cmd::new(55, rca, Response::Short)
     }
 }
