@@ -4,7 +4,7 @@ use crate::bb;
 #[allow(unused_imports)]
 use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, AF12};
 use crate::rcc::Clocks;
-use crate::stm32::{RCC, SDIO};
+use crate::stm32::{self, RCC, SDIO};
 pub use sdio_host::{
     CardCapacity, CardStatus, CurrentState, SDStatus, CIC, CID, CSD, OCR, RCA, SCR,
 };
@@ -159,7 +159,6 @@ pub enum Error {
     RxOverFlow,
     TxUnderErr,
     NoCard,
-    CsdParseError,
 }
 
 /// Sdio device
@@ -219,7 +218,6 @@ impl Sdio {
 
         // Make sure card is powered off
         host.set_power(PowerCtrl::Off);
-
         host
     }
 
@@ -264,7 +262,6 @@ impl Sdio {
                 // Still powering up
                 continue;
             }
-
             break ocr;
         };
 
@@ -314,7 +311,6 @@ impl Sdio {
 
         self.set_bus(self.bw, freq, &card)?;
         self.card.replace(card);
-
         Ok(())
     }
 
@@ -360,13 +356,7 @@ impl Sdio {
             }
         }
 
-        if sta.dcrcfail().bit() {
-            return Err(Error::DataCrcFail);
-        } else if sta.rxoverr().bit() {
-            return Err(Error::RxOverFlow);
-        } else if sta.dtimeout().bit() {
-            return Err(Error::Timeout);
-        }
+        status_to_error(sta)?;
 
         // Wait for card to be ready
         while !self.card_ready()? {}
@@ -404,13 +394,7 @@ impl Sdio {
             }
         }
 
-        if sta.dcrcfail().bit() {
-            return Err(Error::DataCrcFail);
-        } else if sta.txunderr().bit() {
-            return Err(Error::TxUnderErr);
-        } else if sta.dtimeout().bit() {
-            return Err(Error::Timeout);
-        }
+        status_to_error(sta)?;
 
         // Wait for card to finish writing data
         while !self.card_ready()? {}
@@ -453,7 +437,6 @@ impl Sdio {
 
         self.cmd(Cmd::cmd13(card.address()))?;
         let r1 = self.sdio.resp1.read().bits();
-
         Ok(CardStatus::from(r1))
     }
 
@@ -490,20 +473,12 @@ impl Sdio {
             }
         }
 
-        if sta.dcrcfail().bit() {
-            return Err(Error::DataCrcFail);
-        } else if sta.rxoverr().bit() {
-            return Err(Error::RxOverFlow);
-        } else if sta.dtimeout().bit() {
-            return Err(Error::Timeout);
-        }
-
+        status_to_error(sta)?;
         Ok(SDStatus::from(status))
     }
 
     /// Select the card with `address`
     fn select_card(&self, address: u32) -> Result<(), Error> {
-
         let r = self.cmd(Cmd::sel_desel_card(address));
         match (r, address) {
             (Err(Error::Timeout), 0) => Ok(()),
@@ -536,14 +511,7 @@ impl Sdio {
             }
         }
 
-        if sta.dcrcfail().bit() {
-            return Err(Error::DataCrcFail);
-        } else if sta.rxoverr().bit() {
-            return Err(Error::RxOverFlow);
-        } else if sta.dtimeout().bit() {
-            return Err(Error::Timeout);
-        }
-
+        status_to_error(sta)?;
         Ok(SCR::from(buf))
     }
 
@@ -573,35 +541,8 @@ impl Sdio {
         // Command state machines must be idle
         while self.sdio.sta.read().cmdact().bit_is_set() {}
 
-        // Clear interrupts
-        self.sdio.icr.modify(|_, w| {
-            w.ccrcfailc()
-                .set_bit()
-                .ctimeoutc()
-                .set_bit()
-                .ceataendc()
-                .set_bit()
-                .cmdrendc()
-                .set_bit()
-                .cmdsentc()
-                .set_bit()
-                .dataendc()
-                .set_bit()
-                .dbckendc()
-                .set_bit()
-                .dcrcfailc()
-                .set_bit()
-                .dtimeoutc()
-                .set_bit()
-                .sdioitc()
-                .set_bit()
-                .stbiterrc()
-                .set_bit()
-                .rxoverrc()
-                .set_bit()
-                .txunderrc()
-                .set_bit()
-        });
+        // Clear all interrupts
+        clear_all_interrupts(&self.sdio.icr);
 
         // Command arg
         self.sdio.arg.write(|w| unsafe { w.cmdarg().bits(cmd.arg) });
@@ -641,16 +582,60 @@ impl Sdio {
             }
         }
 
-        if sta.ctimeout().bit_is_set() {
-            return Err(Error::Timeout);
-        } else if timeout == 0 {
+        if timeout == 0 {
             return Err(Error::SoftwareTimeout);
-        } else if sta.ccrcfail().bit() {
-            return Err(Error::Crc);
         }
 
-        Ok(())
+        status_to_error(sta)
     }
+}
+
+fn status_to_error(sta: stm32::sdio::sta::R) -> Result<(), Error> {
+    if sta.ctimeout().bit_is_set() {
+        return Err(Error::Timeout);
+    } else if sta.ccrcfail().bit() {
+        return Err(Error::Crc);
+    } else if sta.dcrcfail().bit() {
+        return Err(Error::DataCrcFail);
+    } else if sta.rxoverr().bit() {
+        return Err(Error::RxOverFlow);
+    } else if sta.dtimeout().bit() {
+        return Err(Error::Timeout);
+    } else if sta.txunderr().bit() {
+        return Err(Error::TxUnderErr);
+    }
+    Ok(())
+}
+
+fn clear_all_interrupts(icr: &stm32::sdio::ICR) {
+    icr.modify(|_, w| {
+        w.ccrcfailc()
+            .set_bit()
+            .ctimeoutc()
+            .set_bit()
+            .ceataendc()
+            .set_bit()
+            .cmdrendc()
+            .set_bit()
+            .cmdsentc()
+            .set_bit()
+            .dataendc()
+            .set_bit()
+            .dbckendc()
+            .set_bit()
+            .dcrcfailc()
+            .set_bit()
+            .dtimeoutc()
+            .set_bit()
+            .sdioitc()
+            .set_bit()
+            .stbiterrc()
+            .set_bit()
+            .rxoverrc()
+            .set_bit()
+            .txunderrc()
+            .set_bit()
+    });
 }
 
 impl Card {
