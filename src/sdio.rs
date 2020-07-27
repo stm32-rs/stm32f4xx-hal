@@ -170,12 +170,6 @@ pub struct Sdio {
     clocks: Clocks,
 }
 
-struct Cmd {
-    cmd: u8,
-    arg: u32,
-    resp: Response,
-}
-
 /// Sd card
 pub struct Card {
     pub capacity: CardCapacity,
@@ -674,6 +668,12 @@ impl Card {
     fn address(&self) -> u32 {
         (self.rca.address() as u32) << 16
     }
+}
+
+struct Cmd {
+    cmd: u8,
+    arg: u32,
+    resp: Response,
 }
 
 impl Cmd {
