@@ -328,13 +328,13 @@ impl Sdio {
         self.card.as_ref().ok_or(Error::NoCard)
     }
 
-    /// Read block from card. buf must be at least 512 bytes
-    pub fn read_block(&mut self, addr: u32, buf: &mut [u8]) -> Result<(), Error> {
+    /// Read a block from the card
+    pub fn read_block(&mut self, blockaddr: u32, block: &mut [u8; 512]) -> Result<(), Error> {
         let _card = self.card()?;
 
         self.cmd(Cmd::set_blocklen(512))?;
         self.start_datapath_transfer(512, 9, true);
-        self.cmd(Cmd::read_single_block(addr))?;
+        self.cmd(Cmd::read_single_block(blockaddr))?;
 
         let mut i = 0;
         let mut sta;
@@ -346,12 +346,12 @@ impl Sdio {
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
                     let bytes = self.sdio.fifo.read().bits().to_le_bytes();
-                    buf[i..i + 4].copy_from_slice(&bytes);
+                    block[i..i + 4].copy_from_slice(&bytes);
                     i += 4;
                 }
             }
 
-            if i == buf.len() {
+            if i == block.len() {
                 break;
             }
         }
@@ -364,13 +364,13 @@ impl Sdio {
         Ok(())
     }
 
-    /// Write block to card. buf must be at least 512 bytes
-    pub fn write_block(&mut self, addr: u32, buf: &[u8]) -> Result<(), Error> {
+    /// Write a block to card
+    pub fn write_block(&mut self, blockaddr: u32, block: &[u8; 512]) -> Result<(), Error> {
         let _card = self.card()?;
 
         self.cmd(Cmd::set_blocklen(512))?;
         self.start_datapath_transfer(512, 9, false);
-        self.cmd(Cmd::write_single_block(addr))?;
+        self.cmd(Cmd::write_single_block(blockaddr))?;
 
         let mut i = 0;
         let mut sta;
@@ -382,14 +382,14 @@ impl Sdio {
             if sta.txfifohe().bit() {
                 for _ in 0..8 {
                     let mut wb = [0u8; 4];
-                    wb.copy_from_slice(&buf[i..i + 4]);
+                    wb.copy_from_slice(&block[i..i + 4]);
                     let word = u32::from_le_bytes(wb);
                     self.sdio.fifo.write(|w| unsafe { w.bits(word) });
                     i += 4;
                 }
             }
 
-            if i == buf.len() {
+            if i == block.len() {
                 break;
             }
         }
