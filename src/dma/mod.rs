@@ -20,7 +20,7 @@ pub mod traits;
 use buffer::WriteBuffer;
 use traits::{
     sealed::{Bits, Sealed},
-    Channel, Direction, Instance, PeriAddress, RccEnable, Stream,
+    Channel, DMASet, Direction, Instance, PeriAddress, RccEnable, Stream,
 };
 
 /// Errors.
@@ -108,10 +108,6 @@ impl Direction for MemoryToPeripheral {
         DmaDirection::MemoryToPeripheral
     }
 }
-
-impl Sealed for MemoryToMemory<u8> {}
-impl Sealed for MemoryToMemory<u16> {}
-impl Sealed for MemoryToMemory<u32> {}
 
 unsafe impl PeriAddress for MemoryToMemory<u8> {
     fn address(&self) -> u32 {
@@ -404,9 +400,7 @@ macro_rules! dma_stream {
                 fn set_channel<C: Channel>(&mut self, channel: C) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
-                    //Some device crates have this field unsafe, others don't.
-                    #[allow(unused_unsafe)]
-                    dma.st[Self::NUMBER].cr.modify(|_, w| unsafe { w.chsel().bits(channel.bits()) });
+                    dma.st[Self::NUMBER].cr.modify(|_, w| w.chsel().bits(channel.bits()));
                 }
 
                 #[inline(always)]
@@ -831,11 +825,11 @@ where
     DIR: Direction,
     PERIPHERAL: PeriAddress,
     BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize> + 'static,
-    (STREAM, CHANNEL, PERIPHERAL, DIR): Sealed,
+    (STREAM, CHANNEL, PERIPHERAL, DIR): DMASet,
 {
     /// Applies all fields in DmaConfig.
     fn apply_config(&mut self, config: config::DmaConfig) {
-        let msize = mem::align_of::<<PERIPHERAL as PeriAddress>::MemSize>() / 2;
+        let msize = mem::size_of::<<PERIPHERAL as PeriAddress>::MemSize>() / 2;
 
         self.stream.clear_interrupts();
         self.stream.set_priority(config.priority);
@@ -974,7 +968,10 @@ where
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
     /// immediately after a transfer complete event. Returns the old buffer together with its
-    /// `CurrentBuffer`, if an error occurs, this methods will return the new buffer with the error.
+    /// `CurrentBuffer`. If an error occurs, this method will return the new buffer with the error.
+    /// This method will clear the transfer complete flag on entry, it will also clear it again if
+    /// an overrun occurs during its execution. Moreover, if an overrun occurs, the stream will be
+    /// disabled and the transfer error flag will be set.
     pub fn next_transfer(
         &mut self,
         mut new_buf: BUF,
@@ -998,6 +995,7 @@ where
                 self.stream.set_memory_address(new_buf_ptr as u32);
                 // Check if an overrun occured, the buffer address won't be updated in that case
                 if self.stream.get_memory_address() != new_buf_ptr as u32 {
+                    self.stream.clear_transfer_complete_interrupt();
                     return Err(DMAError::Overrun(new_buf));
                 }
 
@@ -1013,6 +1011,7 @@ where
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
                 // Check if an overrun occured, the buffer address won't be updated in that case
                 if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
+                    self.stream.clear_transfer_complete_interrupt();
                     return Err(DMAError::Overrun(new_buf));
                 }
 
@@ -1099,10 +1098,21 @@ where
         self.stream.clear_fifo_error_interrupt();
     }
 
+    /// Get the underlying stream of the transfer.
+    ///
+    /// # Safety
+    ///
+    /// This implementation relies on several configurations points in order to be sound, this
+    /// method can void that. The use of this method is completely discouraged, only use it if you
+    /// know the internals of this API in its entirety.
+    pub unsafe fn get_stream(&mut self) -> &mut STREAM {
+        &mut self.stream
+    }
+
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
     /// immediately after a transfer complete event. The closure must return `(BUF, T)` where `BUF`
     /// is the new buffer to be used. The closure will not be called if the transfer is not
-    /// completed.
+    /// completed. This method clears the transfer complete flag on entry.
     ///
     /// # Panics
     /// This method will panic when double buffering and one or both of the following conditions
@@ -1114,9 +1124,7 @@ where
     /// # Safety
     ///
     /// Memory corruption might occur in the previous buffer, the one passed to the closure, if an
-    /// overrun occurs in double buffering mode. This method will panic if it detects an overrun,
-    /// however, the overrun won't be detected if the closure takes long enough to cause the DMA to
-    /// change buffers twice since the call of this method.
+    /// overrun occurs in double buffering mode.
     ///
     /// # Panics
     ///
@@ -1148,15 +1156,23 @@ where
                 "Second Buffer not big enough"
             );
 
+            // We don't know how long the closure took to complete, we might have changed the
+            // current buffer twice (or any even number of times) and got back to the same buffer
+            // we had in the beginning of the method, check for that
+            if STREAM::get_transfer_complete_flag() {
+                // If this is true, then RAM corruption might have occurred, there's nothing we
+                // can do apart from panicking.
+                // TODO: Is this the best solution ? The closure based approach seems necessary
+                // if we want to support BBqueue.
+                panic!("Overrun");
+            }
+
             if current_buffer == CurrentBuffer::DoubleBuffer {
                 self.stream.set_memory_address(new_buf_ptr as u32);
 
-                // Check if an overrun occured, the buffer address won't be updated in that case
+                // Check again if an overrun occured, the buffer address won't be updated in that
+                // case
                 if self.stream.get_memory_address() != new_buf_ptr as u32 {
-                    // If this is true, then RAM corruption might have occurred, there's nothing we
-                    // can do apart from panicking.
-                    // TODO: Is this the best solution ? The closure based approach seems necessary
-                    // if we want to support BBqueue.
                     panic!("Overrun");
                 }
 
@@ -1168,7 +1184,6 @@ where
             } else {
                 self.stream
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
-                // Check if an overrun occured, the buffer address won't be updated in that case
                 if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
                     panic!("Overrun");
                 }

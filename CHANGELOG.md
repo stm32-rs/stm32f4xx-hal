@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added external interrupt (EXTI) support for output pins
 - Added `check_interrupt` method for GPIO pins
 - Basic support for DAC
+- Add initial DMA support
 
 ### Fixed
 - Stability fixes related to SD card write

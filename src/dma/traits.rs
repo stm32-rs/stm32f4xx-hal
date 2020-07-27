@@ -171,7 +171,7 @@ pub trait Direction: Bits<u8> {
 ///
 /// Both the memory size and the address must be correct for the specific peripheral and for the
 /// DMA.
-pub unsafe trait PeriAddress: Sealed {
+pub unsafe trait PeriAddress {
     /// Memory size of the peripheral.
     type MemSize;
 
@@ -183,8 +183,6 @@ pub unsafe trait PeriAddress: Sealed {
 macro_rules! address {
     ($(($peripheral:ty, $register:ident, $size: ty)),+ $(,)*) => {
         $(
-            impl Sealed for $peripheral {}
-
             unsafe impl PeriAddress for $peripheral {
                 #[inline(always)]
                 fn address(&self) -> u32 {
@@ -294,12 +292,19 @@ pub trait Channel: Bits<u8> {
     fn new() -> Self;
 }
 
+/// Trait to mark a set of Stream, Channel, Peripheral and Direction as correct together.
+///
+/// # Safety
+///
+/// Memory corruption might occur if this trait is implemented for an invalid combination.
+pub unsafe trait DMASet {}
+
 tim_channels!(CCR1, CCR2, CCR3, CCR4, DMAR, ARR);
 
 macro_rules! dma_map {
     ($(($Stream:ty, $channel:ty, $Peripheral:ty, $dir:ty)),+ $(,)*) => {
         $(
-            impl Sealed for ($Stream, $channel, $Peripheral, $dir) {}
+            unsafe impl DMASet for ($Stream, $channel, $Peripheral, $dir) {}
         )+
     };
 }
@@ -793,7 +798,7 @@ dma_map!(
     (Stream0<DMA1>, Channel4, pac::UART5, PeripheralToMemory), //UART5_RX
     (Stream2<DMA1>, Channel4, pac::UART4, PeripheralToMemory), //UART4_RX
     (Stream4<DMA1>, Channel4, pac::UART4, MemoryToPeripheral), //UART4_TX
-                                                               //(pac::DMA1, Stream6, Channel7, pac::DAC2, MemoryToPeripheral), //DAC2
+                                                               //(Stream6<DMA1>, Channel7, pac::DAC2, MemoryToPeripheral), //DAC2
 );
 
 #[cfg(any(

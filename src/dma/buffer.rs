@@ -1,11 +1,21 @@
 //! Traits that represent a buffer that can be used with DMA.
-//! Copied from ra-kete's dma-poc repository.
+//! This is a temporary solution, these traits will be moved to an outside crate in the near future.
+//! See https://github.com/rust-embedded/wg/issues/486 and https://github.com/ra-kete/dma-poc for
+//! more information.
+//! These traits are sealed to avoid breaking changes when changing to the outside crate.
 
 use core::{
     mem::{self, MaybeUninit},
     ops::{Deref, DerefMut},
 };
 use stable_deref_trait::StableDeref;
+
+// Module to avoid breaking changes when changing this traits to an outside crate.
+mod sealed {
+    pub trait SealedRead {}
+    pub trait SealedWrite {}
+}
+use sealed::{SealedRead, SealedWrite};
 
 /// Trait for buffers that can be given to DMA for reading.
 ///
@@ -19,7 +29,7 @@ use stable_deref_trait::StableDeref;
 ///     times.
 ///   - The memory specified by the pointer and size returned by `read_buffer`
 ///     must not be freed as long as `self` is not dropped.
-pub unsafe trait ReadBuffer {
+pub unsafe trait ReadBuffer: SealedRead {
     type Word;
 
     /// Provide a buffer usable for DMA reads.
@@ -50,7 +60,7 @@ pub unsafe trait ReadBuffer {
 ///     times.
 ///   - The memory specified by the pointer and size returned by `write_buffer`
 ///     must not be freed as long as `self` is not dropped.
-pub unsafe trait WriteBuffer {
+pub unsafe trait WriteBuffer: SealedWrite {
     type Word;
 
     /// Provide a buffer usable for DMA writes.
@@ -72,7 +82,7 @@ pub unsafe trait WriteBuffer {
 
 unsafe impl<B, T> ReadBuffer for B
 where
-    B: Deref<Target = T> + StableDeref,
+    B: Deref<Target = T> + StableDeref + SealedRead,
     T: ReadTarget + ?Sized,
 {
     type Word = T::Word;
@@ -84,7 +94,7 @@ where
 
 unsafe impl<B, T> WriteBuffer for B
 where
-    B: DerefMut<Target = T> + StableDeref,
+    B: DerefMut<Target = T> + StableDeref + SealedWrite,
     T: WriteTarget + ?Sized,
 {
     type Word = T::Word;
@@ -94,6 +104,10 @@ where
     }
 }
 
+impl<'a, T: SealedRead> SealedRead for &'a T {}
+impl<'a, T: SealedRead> SealedRead for &'a mut T {}
+impl<'a, T: SealedRead> SealedWrite for &'a mut T {}
+
 /// Trait for DMA word types used by the blanket DMA buffer impls.
 ///
 /// # Safety
@@ -101,7 +115,15 @@ where
 /// Types that implement this trait must be valid for every possible byte
 /// pattern. This is to ensure that, whatever DMA writes into the buffer,
 /// we won't get UB due to invalid values.
-pub unsafe trait Word {}
+pub unsafe trait Word: SealedRead + SealedWrite {}
+
+impl SealedRead for u8 {}
+impl SealedRead for u16 {}
+impl SealedRead for u32 {}
+
+impl SealedWrite for u8 {}
+impl SealedWrite for u16 {}
+impl SealedWrite for u32 {}
 
 unsafe impl Word for u8 {}
 unsafe impl Word for u16 {}
@@ -116,7 +138,7 @@ unsafe impl Word for u32 {}
 ///
 /// - `as_read_buffer` must adhere to the safety requirements
 ///   documented for `DmaReadBuffer::dma_read_buffer`.
-pub unsafe trait ReadTarget {
+pub unsafe trait ReadTarget: SealedRead {
     type Word: Word;
 
     fn as_read_buffer(&self) -> (*const Self::Word, usize) {
@@ -135,7 +157,7 @@ pub unsafe trait ReadTarget {
 ///
 /// - `as_write_buffer` must adhere to the safety requirements
 ///   documented for `DmaWriteBuffer::dma_write_buffer`.
-pub unsafe trait WriteTarget {
+pub unsafe trait WriteTarget: SealedWrite {
     type Word: Word;
 
     fn as_write_buffer(&mut self) -> (*mut Self::Word, usize) {
@@ -145,13 +167,16 @@ pub unsafe trait WriteTarget {
     }
 }
 
-unsafe impl<W: Word> ReadTarget for W {
+unsafe impl<W: Word + SealedRead> ReadTarget for W {
     type Word = W;
 }
 
-unsafe impl<W: Word> WriteTarget for W {
+unsafe impl<W: Word + SealedWrite> WriteTarget for W {
     type Word = W;
 }
+
+impl<T: ReadTarget> SealedRead for [T] {}
+impl<T: WriteTarget> SealedWrite for [T] {}
 
 unsafe impl<T: ReadTarget> ReadTarget for [T] {
     type Word = T::Word;
@@ -164,6 +189,10 @@ unsafe impl<T: WriteTarget> WriteTarget for [T] {
 macro_rules! dma_target_array_impls {
     ( $( $i:expr, )+ ) => {
         $(
+
+            impl<T: ReadTarget> SealedRead for [T; $i] {}
+            impl<T: WriteTarget> SealedWrite for [T; $i] {}
+
             unsafe impl<T: ReadTarget> ReadTarget for [T; $i] {
                 type Word = T::Word;
             }
@@ -213,6 +242,8 @@ dma_target_array_impls!(
    1 << 15,
    1 << 16,
 );
+
+impl<T: WriteTarget> SealedWrite for MaybeUninit<T> {}
 
 unsafe impl<T: WriteTarget> WriteTarget for MaybeUninit<T> {
     type Word = T::Word;
