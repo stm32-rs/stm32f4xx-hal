@@ -184,7 +184,6 @@ pub struct Card {
     pub cid: CID,
     pub csd: CSD,
     pub scr: SCR,
-    pub status: SDStatus,
 }
 
 impl Sdio {
@@ -245,7 +244,6 @@ impl Sdio {
         let cic = CIC::from(self.sdio.resp1.read().bits());
 
         // If card did't echo back the pattern, we do not have a v2 card
-
         if cic.pattern() != 0xAA {
             return Err(Error::UnsupportedCardVersion);
         }
@@ -291,37 +289,36 @@ impl Sdio {
         cid[2] = self.sdio.resp2.read().bits();
         cid[1] = self.sdio.resp3.read().bits();
         cid[0] = self.sdio.resp4.read().bits();
+        let cid = CID::from(cid);
 
         // Get RCA
         self.cmd(Cmd::send_rel_addr())?;
         let rca = RCA::from(self.sdio.resp1.read().bits());
+        let card_addr = (rca.address() as u32) << 16;
 
         // Get CSD
-        self.cmd(Cmd::send_csd((rca.address() as u32) << 16))?;
+        self.cmd(Cmd::send_csd(card_addr))?;
 
         let mut csd = [0; 4];
         csd[3] = self.sdio.resp1.read().bits();
         csd[2] = self.sdio.resp2.read().bits();
         csd[1] = self.sdio.resp3.read().bits();
         csd[0] = self.sdio.resp4.read().bits();
-
         let csd = CSD::from(csd);
 
-        let mut card = Card {
+        self.select_card(card_addr)?;
+        let scr = self.get_scr(card_addr)?;
+
+        let card = Card {
             capacity,
             ocr,
             rca,
-            cid: CID::from(cid),
+            cid,
             csd,
-            scr: SCR::default(),
-            status: SDStatus::default(),
+            scr,
         };
 
-        self.select_card(Some(&card))?;
-        self.get_scr(&mut card)?;
         self.set_bus(self.bw, freq, &card)?;
-
-        self.read_sd_status(&mut card)?;
         self.card.replace(card);
 
         Ok(())
@@ -471,7 +468,9 @@ impl Sdio {
         Ok(self.read_status()?.state() == CurrentState::Transfer)
     }
 
-    fn read_sd_status(&mut self, card: &mut Card) -> Result<(), Error> {
+    /// Read the SDStatus struct
+    pub fn read_sd_status(&mut self) -> Result<SDStatus, Error> {
+        let card = self.card()?;
         self.cmd(Cmd::set_blocklen(64))?;
         self.start_datapath_transfer(64, 6, true);
         self.cmd(Cmd::app_cmd(card.address()))?;
@@ -505,25 +504,24 @@ impl Sdio {
             return Err(Error::Timeout);
         }
 
-        card.status = SDStatus::from(status);
-
-        Ok(())
+        Ok(SDStatus::from(status))
     }
 
-    fn select_card(&self, card: Option<&Card>) -> Result<(), Error> {
-        let rca = card.map(|c| c.address()).unwrap_or(0);
+    /// Select the card with `address`
+    fn select_card(&self, address: u32) -> Result<(), Error> {
 
-        let r = self.cmd(Cmd::sel_desel_card(rca));
-        match (r, rca) {
+        let r = self.cmd(Cmd::sel_desel_card(address));
+        match (r, address) {
             (Err(Error::Timeout), 0) => Ok(()),
             _ => r,
         }
     }
 
-    fn get_scr(&self, card: &mut Card) -> Result<(), Error> {
+    /// Get the Card configuration for card at `address`
+    fn get_scr(&self, address: u32) -> Result<SCR, Error> {
         self.cmd(Cmd::set_blocklen(8))?;
         self.start_datapath_transfer(8, 3, true);
-        self.cmd(Cmd::app_cmd(card.address()))?;
+        self.cmd(Cmd::app_cmd(address))?;
         self.cmd(Cmd::cmd51())?;
 
         let mut buf = [0; 2];
@@ -552,8 +550,7 @@ impl Sdio {
             return Err(Error::Timeout);
         }
 
-        card.scr = SCR::from(buf);
-        Ok(())
+        Ok(SCR::from(buf))
     }
 
     /// Set bus width and clock frequency
