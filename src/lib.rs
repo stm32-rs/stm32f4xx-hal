@@ -95,8 +95,6 @@ pub mod dac;
 #[cfg(feature = "device-selected")]
 pub mod delay;
 #[cfg(feature = "device-selected")]
-pub mod dma;
-#[cfg(feature = "device-selected")]
 pub mod gpio;
 #[cfg(feature = "device-selected")]
 pub mod i2c;
@@ -154,6 +152,8 @@ pub mod rng;
 #[cfg(feature = "device-selected")]
 pub use stm32 as pac;
 
+#[cfg(feature = "device-selected")]
+pub mod dma;
 #[cfg(feature = "device-selected")]
 pub mod dwt;
 #[cfg(feature = "device-selected")]
