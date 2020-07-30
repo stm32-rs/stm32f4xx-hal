@@ -94,8 +94,6 @@ pub mod bb;
 pub mod dac;
 #[cfg(feature = "device-selected")]
 pub mod delay;
-#[cfg(feature = "device-selected")]
-pub mod dma;
 // todo: what else supports FMC?
 #[cfg(all(
     any(feature = "fmc", docsrs),
@@ -165,6 +163,8 @@ pub mod rng;
 #[cfg(feature = "device-selected")]
 pub use stm32 as pac;
 
+#[cfg(feature = "device-selected")]
+pub mod dma;
 #[cfg(feature = "device-selected")]
 pub mod dwt;
 #[cfg(feature = "device-selected")]
