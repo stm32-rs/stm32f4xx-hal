@@ -96,9 +96,7 @@ pub mod dac;
 pub mod delay;
 // todo: what else supports FMC?
 #[cfg(any(
-    feature = "stm32f427",
     feature = "stm32f429",
-    feature = "stm32f437",
     feature = "stm32f439",
     docsrs
 ))]
