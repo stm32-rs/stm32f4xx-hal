@@ -87,6 +87,8 @@ usb_hs = ["synopsys-usb-otg", "synopsys-usb-otg/hs"]
 
 sdio = ["sdio-host"]
 
+fmc = []
+
 [profile.dev]
 debug = true
 lto = true
@@ -131,3 +133,7 @@ required-features = ["rt", "stm32f407"]
 [[example]]
 name = "qei"
 required-features = ["rt", "stm32f411"]
+
+[[example]]
+name = "stm32f429idisco-fmc"
+required-features = ["rt", "fmc", "stm32f429"]
