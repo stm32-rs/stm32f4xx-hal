@@ -227,6 +227,7 @@ impl SDRAMConfig {
         let gpioh = peripherals.GPIOH.split();
         let gpioi = peripherals.GPIOI.split();
 
+        // always configure pin for address lines A0-A10 (minimum address size is 11-bit)
         fmc_gpio!(gpiof.pf0); // PF0 -> A0
         fmc_gpio!(gpiof.pf1); // PF1 -> A1
         fmc_gpio!(gpiof.pf2); // PF2 -> A2
@@ -238,8 +239,6 @@ impl SDRAMConfig {
         fmc_gpio!(gpiof.pf14); // PF14 -> A8
         fmc_gpio!(gpiof.pf15); // PF15 -> A9
         fmc_gpio!(gpiog.pg0); // PG0  -> A10
-
-        // always configure pin for address lines A0-A10 (minimum address size is 11-bit)
 
         // configure gpio line A11 for 12 or 13 bit
         if self.address_width >= SDRAMAddressWidth::AW12 {
