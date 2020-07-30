@@ -5,7 +5,6 @@
 // This example is designed to be run on the STM32F429I-DISCOVERY board
 
 // Halt on panic
-#[allow(unused_extern_crates)] // NOTE(allow) bug rust-lang/rust#53964
 use panic_halt as _; // panic handler
 
 use cortex_m;
