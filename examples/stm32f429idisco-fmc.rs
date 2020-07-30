@@ -6,7 +6,7 @@
 
 // Halt on panic
 #[allow(unused_extern_crates)] // NOTE(allow) bug rust-lang/rust#53964
-extern crate panic_halt; // panic handler
+use panic_halt as _; // panic handler
 
 use cortex_m;
 use cortex_m_rt::entry;
