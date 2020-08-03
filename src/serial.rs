@@ -1471,7 +1471,7 @@ macro_rules! halUsartImpl {
                                     .dmat().enabled()
                             })
                         }
-                        _ => {}
+                        DmaConfig::None => {}
                     }
 
                     Ok(Serial { usart, pins }.config_stop(config))
