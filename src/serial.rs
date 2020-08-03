@@ -374,6 +374,8 @@ use crate::gpio::AF11;
 use crate::gpio::{Alternate, AF7, AF8};
 use crate::rcc::Clocks;
 
+use crate::dma::traits::PeriAddress;
+
 /// Serial error
 #[derive(Debug)]
 pub enum Error {
@@ -425,11 +427,19 @@ pub mod config {
         STOP1P5,
     }
 
+    pub enum DmaConfig {
+        None,
+        Tx,
+        Rx,
+        TxRx,
+    }
+
     pub struct Config {
         pub baudrate: Bps,
         pub wordlength: WordLength,
         pub parity: Parity,
         pub stopbits: StopBits,
+        pub dma: DmaConfig,
     }
 
     impl Config {
@@ -480,6 +490,7 @@ pub mod config {
                 wordlength: WordLength::DataBits8,
                 parity: Parity::ParityNone,
                 stopbits: StopBits::STOP1,
+                dma: DmaConfig::None,
             }
         }
     }
@@ -1442,6 +1453,27 @@ macro_rules! halUsartImpl {
                             })
                     });
 
+                    match config.dma {
+                        DmaConfig::Tx => {
+                            usart.cr3.write(|w| {
+                                w.dmat().enabled()
+                            })
+                        }
+                        DmaConfig::Rx => {
+                            usart.cr3.write(|w| {
+                                w.dmar().enabled()
+                            })
+                        }
+                        DmaConfig::TxRx => {
+                            usart.cr3.write(|w| {
+                                w
+                                    .dmar().enabled()
+                                    .dmat().enabled()
+                            })
+                        }
+                        _ => {}
+                    }
+
                     Ok(Serial { usart, pins }.config_stop(config))
                 }
 
@@ -1549,6 +1581,15 @@ macro_rules! halUsartImpl {
                 }
             }
 
+            unsafe impl PeriAddress for Rx<$USARTX> {
+                #[inline(always)]
+                fn address(&self) -> u32 {
+                    &(unsafe{ &(*$USARTX::ptr()) }.dr) as *const _ as u32
+                }
+
+                type MemSize = u8;
+            }
+
             impl<PINS> serial::Write<u8> for Serial<$USARTX, PINS> {
                 type Error = Error;
 
@@ -1565,6 +1606,15 @@ macro_rules! halUsartImpl {
                     };
                     tx.write(byte)
                 }
+            }
+
+            unsafe impl PeriAddress for Tx<$USARTX> {
+                #[inline(always)]
+                fn address(&self) -> u32 {
+                    &(unsafe{ &(*$USARTX::ptr()) }.dr) as *const _ as u32
+                }
+
+                type MemSize = u8;
             }
 
             impl serial::Write<u8> for Tx<$USARTX> {
