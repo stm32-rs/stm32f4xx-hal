@@ -3,7 +3,7 @@
 #![no_std]
 #![no_main]
 
-use panic_semihosting as _;
+use panic_halt as _;
 
 use cortex_m_rt::entry;
 use stm32f4xx_hal::otg_fs::{UsbBus, USB};
