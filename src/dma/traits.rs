@@ -63,6 +63,9 @@ pub trait Stream: Sealed {
     /// Set the number of transfers (ndt) for the DMA stream.
     fn set_number_of_transfers(&mut self, value: u16);
 
+    /// Get the number of transfers (ndt) for the DMA stream.
+    fn get_number_of_transfers() -> u16;
+
     /// Enable the DMA stream.
     ///
     /// # Safety
@@ -74,6 +77,10 @@ pub trait Stream: Sealed {
     fn is_enabled() -> bool;
 
     /// Disable the DMA stream.
+    ///
+    /// Disabling the stream during an on-going transfer needs to be performed in a certain way to
+    /// prevent problems if the stream is to be re-enabled shortly after, because of that, this
+    /// method will also clear all the stream's interrupt flags if the stream is active.
     fn disable(&mut self);
 
     /// Set the channel for the (chsel) the DMA stream.
@@ -119,6 +126,11 @@ pub trait Stream: Sealed {
         transfer_error: bool,
         direct_mode_error: bool,
     );
+
+    /// Convenience method to get the value of the 4 common interrupts for the DMA stream.
+    /// The order of the returns are: `transfer_complete`, `half_transfer`, `transfer_error` and
+    /// `direct_mode_error`.
+    fn get_interrupts_enable() -> (bool, bool, bool, bool);
 
     /// Enable/disable the transfer complete interrupt (tcie) of the DMA stream.
     fn set_transfer_complete_interrupt_enable(&mut self, transfer_complete_interrupt: bool);

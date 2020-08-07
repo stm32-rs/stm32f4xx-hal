@@ -8,6 +8,7 @@
 //! transfers.
 
 use core::{
+    fmt::{self, Debug, Formatter},
     marker::PhantomData,
     mem,
     ops::Not,
@@ -24,7 +25,7 @@ use traits::{
 };
 
 /// Errors.
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum DMAError<T> {
     /// DMA not ready to change buffers.
     NotReady(T),
@@ -32,6 +33,19 @@ pub enum DMAError<T> {
     SmallBuffer(T),
     /// Overrun during a double buffering or circular transfer.
     Overrun(T),
+}
+
+// Manually implement `Debug`, so we can have debug information even with a buffer `T` that doesn't
+// implement `Debug`. `T` is always a buffer type chosen by the user, because of that the debug
+// information can be helpful even without knowing the inner type
+impl<T> Debug for DMAError<T> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            DMAError::NotReady(_) => f.debug_tuple("NotReady").finish(),
+            DMAError::SmallBuffer(_) => f.debug_tuple("SmalBuffer").finish(),
+            DMAError::Overrun(_) => f.debug_tuple("Overrun").finish(),
+        }
+    }
 }
 
 /// Possible DMA's directions.
@@ -376,6 +390,13 @@ macro_rules! dma_stream {
                 }
 
                 #[inline(always)]
+                fn get_number_of_transfers() -> u16 {
+                    //NOTE(unsafe) We only access the registers that belongs to the StreamX
+                    let dma = unsafe { &*I::ptr() };
+                    dma.st[Self::NUMBER].ndtr.read().ndt().bits()
+                }
+
+                #[inline(always)]
                 unsafe fn enable(&mut self) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = &*I::ptr();
@@ -389,11 +410,23 @@ macro_rules! dma_stream {
                     dma.st[Self::NUMBER].cr.read().en().bit_is_set()
                 }
 
-                #[inline(always)]
                 fn disable(&mut self) {
-                    //NOTE(unsafe) We only access the registers that belongs to the StreamX
-                    let dma = unsafe { &*I::ptr() };
-                    dma.st[Self::NUMBER].cr.modify(|_, w| w.en().clear_bit());
+                    if Self::is_enabled() {
+                        //NOTE(unsafe) We only access the registers that belongs to the StreamX
+                        let dma = unsafe { &*I::ptr() };
+
+                        // Aborting an on-going transfer might cause interrupts to fire, disable
+                        // them
+                        let (tc, ht, te, dm) = Self::get_interrupts_enable();
+                        self
+                            .set_interrupts_enable(false, false, false, false);
+
+                        dma.st[Self::NUMBER].cr.modify(|_, w| w.en().clear_bit());
+                        while Self::is_enabled() {}
+
+                        self.clear_interrupts();
+                        self.set_interrupts_enable(tc, ht, te, dm);
+                    }
                 }
 
                 #[inline(always)]
@@ -462,6 +495,15 @@ macro_rules! dma_stream {
                         .teie().bit(transfer_error)
                         .dmeie().bit(direct_mode_error)
                     );
+                }
+
+                #[inline(always)]
+                fn get_interrupts_enable() -> (bool, bool, bool, bool) {
+                    //NOTE(unsafe) We only access the registers that belongs to the StreamX
+                    let dma = unsafe { &*I::ptr() };
+                    let cr = dma.st[Self::NUMBER].cr.read();
+                    (cr.tcie().bit_is_set(), cr.htie().bit_is_set(),
+                        cr.teie().bit_is_set(), cr.dmeie().bit_is_set())
                 }
 
                 #[inline(always)]
@@ -969,19 +1011,22 @@ where
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
     /// immediately after a transfer complete event. Returns the old buffer together with its
     /// `CurrentBuffer`. If an error occurs, this method will return the new buffer with the error.
+    ///
     /// This method will clear the transfer complete flag on entry, it will also clear it again if
     /// an overrun occurs during its execution. Moreover, if an overrun occurs, the stream will be
-    /// disabled and the transfer error flag will be set.
+    /// disabled and the transfer error flag will be set. This method can be called before the end
+    /// of an ongoing transfer only if not using double buffering, in that case, the current
+    /// transfer will be canceled and a new one will be started. A `NotReady` error will be returned
+    /// if this method is called before the end of a transfer while double buffering.
     pub fn next_transfer(
         &mut self,
         mut new_buf: BUF,
     ) -> Result<(BUF, CurrentBuffer), DMAError<BUF>> {
-        if !STREAM::get_transfer_complete_flag() {
-            return Err(DMAError::NotReady(new_buf));
-        }
-        self.stream.clear_transfer_complete_interrupt();
-
         if self.double_buf.is_some() && DIR::direction() != DmaDirection::MemoryToMemory {
+            if !STREAM::get_transfer_complete_flag() {
+                return Err(DMAError::NotReady(new_buf));
+            }
+            self.stream.clear_transfer_complete_interrupt();
             // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on it until
             // the end of the DMA transfer
             let (new_buf_ptr, new_buf_len) = unsafe { new_buf.write_buffer() };
@@ -993,7 +1038,7 @@ where
 
             if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
                 self.stream.set_memory_address(new_buf_ptr as u32);
-                // Check if an overrun occured, the buffer address won't be updated in that case
+                // Check if an overrun occurred, the buffer address won't be updated in that case
                 if self.stream.get_memory_address() != new_buf_ptr as u32 {
                     self.stream.clear_transfer_complete_interrupt();
                     return Err(DMAError::Overrun(new_buf));
@@ -1009,7 +1054,7 @@ where
             } else {
                 self.stream
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
-                // Check if an overrun occured, the buffer address won't be updated in that case
+                // Check if an overrun occurred, the buffer address won't be updated in that case
                 if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
                     self.stream.clear_transfer_complete_interrupt();
                     return Err(DMAError::Overrun(new_buf));
@@ -1025,8 +1070,9 @@ where
             }
         }
         self.stream.disable();
+        self.stream.clear_transfer_complete_interrupt();
 
-        // "No re-ordering of reads and writes across this point is allowed"
+        // "Subsequent reads and writes cannot be moved ahead of preceding reads."
         compiler_fence(Ordering::SeqCst);
 
         // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on it until
@@ -1111,8 +1157,11 @@ where
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
     /// immediately after a transfer complete event. The closure must return `(BUF, T)` where `BUF`
-    /// is the new buffer to be used. The closure will not be called if the transfer is not
-    /// completed. This method clears the transfer complete flag on entry.
+    /// is the new buffer to be used. This method can be called before the end of an ongoing
+    /// transfer only if not using double buffering, in that case, the current transfer will be
+    /// canceled and a new one will be started. A `NotReady` error will be returned if this method
+    /// is called before the end of a transfer while double buffering and the closure won't be
+    /// executed.
     ///
     /// # Panics
     /// This method will panic when double buffering and one or both of the following conditions
@@ -1133,12 +1182,12 @@ where
     where
         F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
     {
-        if !STREAM::get_transfer_complete_flag() {
-            return Err(DMAError::NotReady(()));
-        }
-        self.stream.clear_transfer_complete_interrupt();
-
         if self.double_buf.is_some() && DIR::direction() != DmaDirection::MemoryToMemory {
+            if !STREAM::get_transfer_complete_flag() {
+                return Err(DMAError::NotReady(()));
+            }
+            self.stream.clear_transfer_complete_interrupt();
+
             let current_buffer = STREAM::current_buffer();
             // double buffering, unwrap can never fail
             let db = if current_buffer == CurrentBuffer::DoubleBuffer {
@@ -1170,7 +1219,7 @@ where
             if current_buffer == CurrentBuffer::DoubleBuffer {
                 self.stream.set_memory_address(new_buf_ptr as u32);
 
-                // Check again if an overrun occured, the buffer address won't be updated in that
+                // Check again if an overrun occurred, the buffer address won't be updated in that
                 // case
                 if self.stream.get_memory_address() != new_buf_ptr as u32 {
                     panic!("Overrun");
@@ -1196,6 +1245,7 @@ where
             }
         }
         self.stream.disable();
+        self.stream.clear_transfer_complete_interrupt();
 
         // "No re-ordering of reads and writes across this point is allowed"
         compiler_fence(Ordering::SeqCst);
