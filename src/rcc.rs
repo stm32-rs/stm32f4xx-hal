@@ -349,6 +349,27 @@ impl CFGR {
             // Enable PLL
             rcc.cr.modify(|_, w| w.pllon().set_bit());
 
+            // Enable voltage regulator overdrive if HCLK is above the limit
+            #[cfg(any(
+                feature = "stm32f427",
+                feature = "stm32f429",
+                feature = "stm32f437",
+                feature = "stm32f439",
+                feature = "stm32f446",
+                feature = "stm32f469",
+                feature = "stm32f479"
+            ))]
+            if hclk > 168_000_000 {
+                // Enable clock for PWR peripheral
+                rcc.apb1enr.modify(|_, w| w.pwren().set_bit());
+
+                let pwr = unsafe { &*crate::stm32::PWR::ptr() };
+                pwr.cr.modify(|_, w| w.oden().set_bit());
+                while pwr.csr.read().odrdy().bit_is_clear() {}
+                pwr.cr.modify(|_, w| w.odswen().set_bit());
+                while pwr.csr.read().odswrdy().bit_is_clear() {}
+            }
+
             // Wait for PLL to stabilise
             while rcc.cr.read().pllrdy().bit_is_clear() {}
         }

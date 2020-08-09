@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move SDIO card power handling to its own function.
 - [breaking-change] Add a 2 ms delay after changing SDIO card power setting.
 - [breaking-change] Changed sdio::{read, write}_block buf argument to &[u8; 512].
+- Voltage regulator overdrive is enabled where supported and required for selected HCLK.
 
 ### Added
 
