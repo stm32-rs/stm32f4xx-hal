@@ -1478,6 +1478,9 @@ macro_rules! halUsartImpl {
                 }
 
                 /// Starts listening for an interrupt event
+                ///
+                /// Note, you will also have to enable the corresponding interrupt
+                /// in the NVIC to start receiving events.
                 pub fn listen(&mut self, event: Event) {
                     match event {
                         Event::Rxne => {
