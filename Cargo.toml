@@ -65,6 +65,8 @@ micromath = "1.0.0"
 [features]
 device-selected = []
 rt = ["stm32f4/rt"]
+# Note: stm32f4 has only one feature for some very similar device families,
+# so it's intended for e.g. stm32f405/415 to both enable stm32f4/stm32f405.
 stm32f401 = ["stm32f4/stm32f401", "device-selected"]
 stm32f405 = ["stm32f4/stm32f405", "device-selected"]
 stm32f407 = ["stm32f4/stm32f407", "device-selected"]
