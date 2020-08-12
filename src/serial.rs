@@ -2,6 +2,7 @@ use core::fmt;
 use core::marker::PhantomData;
 use core::ptr;
 
+use embedded_hal::blocking;
 use embedded_hal::prelude::*;
 use embedded_hal::serial;
 use nb::block;
@@ -1646,6 +1647,51 @@ macro_rules! halUsartImpl {
                     } else {
                         Err(nb::Error::WouldBlock)
                     }
+                }
+            }
+
+            impl blocking::serial::Write<u8> for Tx<$USARTX> {
+                type Error = Error;
+
+                fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+                    for &b in bytes {
+                        loop {
+                            match self.write(b) {
+                                Err(nb::Error::WouldBlock) => continue,
+                                Err(nb::Error::Other(err)) => return Err(err),
+                                Ok(()) => break,
+                            }
+                        }
+                    }
+                    Ok(())
+                }
+
+                fn bflush(&mut self) -> Result<(), Self::Error> {
+                    loop {
+                        match self.flush() {
+                            Ok(()) => return Ok(()),
+                            Err(nb::Error::WouldBlock) => continue,
+                            Err(nb::Error::Other(err)) => return Err(err),
+                        }
+                    }
+                }
+            }
+
+            impl<PINS> blocking::serial::Write<u8> for Serial<$USARTX, PINS> {
+                type Error = Error;
+
+                fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+                    let mut tx: Tx<$USARTX> = Tx {
+                        _usart: PhantomData,
+                    };
+                    tx.bwrite_all(bytes)
+                }
+
+                fn bflush(&mut self) -> Result<(), Self::Error> {
+                    let mut tx: Tx<$USARTX> = Tx {
+                        _usart: PhantomData,
+                    };
+                    tx.bflush()
                 }
             }
         )+
