@@ -772,46 +772,37 @@ where
     }
 
     fn check_and_clear_error_flags(&self) -> Result<(), Error> {
+        // Note that flags should only be cleared once they have been registered. If flags are
+        // cleared otherwise, there may be an inherent race condition and flags may be missed.
         let sr1 = self.i2c.sr1.read();
 
-        // Clear all pending error flags. We have already read the SR1, so it's safe to clear them
-        // before returning the error code.
-        self.i2c.sr1.modify(|_, w| {
-            w.timeout()
-                .clear_bit()
-                .pecerr()
-                .clear_bit()
-                .ovr()
-                .clear_bit()
-                .af()
-                .clear_bit()
-                .arlo()
-                .clear_bit()
-                .berr()
-                .clear_bit()
-        });
-
         if sr1.timeout().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.timeout().clear_bit());
             return Err(Error::TIMEOUT);
         }
 
         if sr1.pecerr().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.pecerr().clear_bit());
             return Err(Error::CRC);
         }
 
         if sr1.ovr().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.ovr().clear_bit());
             return Err(Error::OVERRUN);
         }
 
         if sr1.af().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.af().clear_bit());
             return Err(Error::NACK);
         }
 
         if sr1.arlo().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.arlo().clear_bit());
             return Err(Error::ARBITRATION);
         }
 
         if sr1.berr().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.berr().clear_bit());
             return Err(Error::BUS);
         }
 
