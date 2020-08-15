@@ -803,7 +803,24 @@ where
             .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
 
         // Wait until address was sent
-        while self.i2c.sr1.read().addr().bit_is_clear() {}
+        while {
+            let sr1 = self.i2c.sr1.read();
+
+            // If we received a NACK, then this is an error
+            if sr1.af().bit_is_set() {
+                self.i2c.sr1.modify(|_, w| w.af().clear_bit());
+                return Err(Error::NACK);
+            }
+
+            // Wait for the address to be acknowledged.
+            sr1.addr().bit_is_clear()
+        } {}
+
+        // Check for address faults (NACK received).
+        if self.i2c.sr1.read().af().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.af().clear_bit());
+            return Err(Error::NACK);
+        }
 
         // Clear condition by reading SR2
         self.i2c.sr2.read();
@@ -830,6 +847,7 @@ where
 
             // If we received a NACK, then this is an error
             if sr1.af().bit_is_set() {
+                self.i2c.sr1.modify(|_, w| w.af().clear_bit());
                 return Err(Error::NACK);
             }
 
