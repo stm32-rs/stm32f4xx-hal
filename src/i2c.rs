@@ -550,6 +550,10 @@ impl PinScl<FMPI2C> for PF15<AlternateOD<AF4>> {}
 pub enum Error {
     OVERRUN,
     NACK,
+    TIMEOUT,
+    BUS,
+    CRC,
+    ARBITRATION,
 }
 
 #[cfg(any(
@@ -767,6 +771,44 @@ where
         self.i2c.cr1.modify(|_, w| w.pe().set_bit());
     }
 
+    fn check_and_clear_error_flags(&self) -> Result<(), Error> {
+        // Note that flags should only be cleared once they have been registered. If flags are
+        // cleared otherwise, there may be an inherent race condition and flags may be missed.
+        let sr1 = self.i2c.sr1.read();
+
+        if sr1.timeout().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.timeout().clear_bit());
+            return Err(Error::TIMEOUT);
+        }
+
+        if sr1.pecerr().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.pecerr().clear_bit());
+            return Err(Error::CRC);
+        }
+
+        if sr1.ovr().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.ovr().clear_bit());
+            return Err(Error::OVERRUN);
+        }
+
+        if sr1.af().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.af().clear_bit());
+            return Err(Error::NACK);
+        }
+
+        if sr1.arlo().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.arlo().clear_bit());
+            return Err(Error::ARBITRATION);
+        }
+
+        if sr1.berr().bit_is_set() {
+            self.i2c.sr1.modify(|_, w| w.berr().clear_bit());
+            return Err(Error::BUS);
+        }
+
+        Ok(())
+    }
+
     pub fn release(self) -> (I2C, PINS) {
         (self.i2c, self.pins)
     }
@@ -789,10 +831,15 @@ where
         self.i2c.cr1.modify(|_, w| w.start().set_bit());
 
         // Wait until START condition was generated
-        while self.i2c.sr1.read().sb().bit_is_clear() {}
+        while {
+            self.check_and_clear_error_flags()?;
+            self.i2c.sr1.read().sb().bit_is_clear()
+        } {}
 
         // Also wait until signalled we're master and everything is waiting for us
         while {
+            self.check_and_clear_error_flags()?;
+
             let sr2 = self.i2c.sr2.read();
             sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
         } {}
@@ -803,7 +850,13 @@ where
             .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
 
         // Wait until address was sent
-        while self.i2c.sr1.read().addr().bit_is_clear() {}
+        while {
+            // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
+            self.check_and_clear_error_flags()?;
+
+            // Wait for the address to be acknowledged
+            self.i2c.sr1.read().addr().bit_is_clear()
+        } {}
 
         // Clear condition by reading SR2
         self.i2c.sr2.read();
@@ -819,28 +872,35 @@ where
 
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
-        while self.i2c.sr1.read().tx_e().bit_is_clear() {}
+        while {
+            // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
+            self.check_and_clear_error_flags()?;
+
+            self.i2c.sr1.read().tx_e().bit_is_clear()
+        } {}
 
         // Push out a byte of data
         self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
         // Wait until byte is transferred
         while {
-            let sr1 = self.i2c.sr1.read();
+            // Check for any potential error conditions.
+            self.check_and_clear_error_flags()?;
 
-            // If we received a NACK, then this is an error
-            if sr1.af().bit_is_set() {
-                return Err(Error::NACK);
-            }
-
-            sr1.btf().bit_is_clear()
+            self.i2c.sr1.read().btf().bit_is_clear()
         } {}
 
         Ok(())
     }
 
     fn recv_byte(&self) -> Result<u8, Error> {
-        while self.i2c.sr1.read().rx_ne().bit_is_clear() {}
+        while {
+            // Check for any potential error conditions.
+            self.check_and_clear_error_flags()?;
+
+            self.i2c.sr1.read().rx_ne().bit_is_clear()
+        } {}
+
         let value = self.i2c.dr.read().bits() as u8;
         Ok(value)
     }
