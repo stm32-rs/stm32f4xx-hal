@@ -550,6 +550,10 @@ impl PinScl<FMPI2C> for PF15<AlternateOD<AF4>> {}
 pub enum Error {
     OVERRUN,
     NACK,
+    TIMEOUT,
+    BUS,
+    CRC,
+    ARBITRATION,
 }
 
 #[cfg(any(
@@ -767,6 +771,53 @@ where
         self.i2c.cr1.modify(|_, w| w.pe().set_bit());
     }
 
+    fn check_and_clear_error_flags(&self) -> Result<(), Error> {
+        let sr1 = self.i2c.sr1.read();
+
+        // Clear all pending error flags. We have already read the SR1, so it's safe to clear them
+        // before returning the error code.
+        self.i2c.sr1.modify(|_, w| {
+            w.timeout()
+                .clear_bit()
+                .pecerr()
+                .clear_bit()
+                .ovr()
+                .clear_bit()
+                .af()
+                .clear_bit()
+                .arlo()
+                .clear_bit()
+                .berr()
+                .clear_bit()
+        });
+
+        if sr1.timeout().bit_is_set() {
+            return Err(Error::TIMEOUT);
+        }
+
+        if sr1.pecerr().bit_is_set() {
+            return Err(Error::CRC);
+        }
+
+        if sr1.ovr().bit_is_set() {
+            return Err(Error::OVERRUN);
+        }
+
+        if sr1.af().bit_is_set() {
+            return Err(Error::NACK);
+        }
+
+        if sr1.arlo().bit_is_set() {
+            return Err(Error::ARBITRATION);
+        }
+
+        if sr1.berr().bit_is_set() {
+            return Err(Error::BUS);
+        }
+
+        Ok(())
+    }
+
     pub fn release(self) -> (I2C, PINS) {
         (self.i2c, self.pins)
     }
@@ -804,16 +855,11 @@ where
 
         // Wait until address was sent
         while {
-            let sr1 = self.i2c.sr1.read();
+            // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
+            self.check_and_clear_error_flags()?;
 
-            // If we received a NACK, then this is an error
-            if sr1.af().bit_is_set() {
-                self.i2c.sr1.modify(|_, w| w.af().clear_bit());
-                return Err(Error::NACK);
-            }
-
-            // Wait for the address to be acknowledged.
-            sr1.addr().bit_is_clear()
+            // Wait for the address to be acknowledged
+            self.i2c.sr1.read().addr().bit_is_clear()
         } {}
 
         // Clear condition by reading SR2
@@ -837,22 +883,23 @@ where
 
         // Wait until byte is transferred
         while {
-            let sr1 = self.i2c.sr1.read();
+            // Check for any potential error conditions.
+            self.check_and_clear_error_flags()?;
 
-            // If we received a NACK, then this is an error
-            if sr1.af().bit_is_set() {
-                self.i2c.sr1.modify(|_, w| w.af().clear_bit());
-                return Err(Error::NACK);
-            }
-
-            sr1.btf().bit_is_clear()
+            self.i2c.sr1.read().btf().bit_is_clear()
         } {}
 
         Ok(())
     }
 
     fn recv_byte(&self) -> Result<u8, Error> {
-        while self.i2c.sr1.read().rx_ne().bit_is_clear() {}
+        while {
+            // Check for any potential error conditions.
+            self.check_and_clear_error_flags()?;
+
+            self.i2c.sr1.read().rx_ne().bit_is_clear()
+        } {}
+
         let value = self.i2c.dr.read().bits() as u8;
         Ok(value)
     }
