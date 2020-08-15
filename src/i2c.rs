@@ -816,12 +816,6 @@ where
             sr1.addr().bit_is_clear()
         } {}
 
-        // Check for address faults (NACK received).
-        if self.i2c.sr1.read().af().bit_is_set() {
-            self.i2c.sr1.modify(|_, w| w.af().clear_bit());
-            return Err(Error::NACK);
-        }
-
         // Clear condition by reading SR2
         self.i2c.sr2.read();
 
