@@ -840,10 +840,15 @@ where
         self.i2c.cr1.modify(|_, w| w.start().set_bit());
 
         // Wait until START condition was generated
-        while self.i2c.sr1.read().sb().bit_is_clear() {}
+        while {
+            self.check_and_clear_error_flags()?;
+            self.i2c.sr1.read().sb().bit_is_clear()
+        } {}
 
         // Also wait until signalled we're master and everything is waiting for us
         while {
+            self.check_and_clear_error_flags()?;
+
             let sr2 = self.i2c.sr2.read();
             sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
         } {}
@@ -876,7 +881,12 @@ where
 
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
-        while self.i2c.sr1.read().tx_e().bit_is_clear() {}
+        while {
+            // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
+            self.check_and_clear_error_flags()?;
+
+            self.i2c.sr1.read().tx_e().bit_is_clear()
+        } {}
 
         // Push out a byte of data
         self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
