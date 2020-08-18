@@ -29,7 +29,93 @@ pub struct Rcc {
     pub cfgr: CFGR,
 }
 
-const HSI: u32 = 16_000_000; // Hz
+/// Built-in high speed clock frequency
+pub const HSI: u32 = 16_000_000; // Hz
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+/// Minimum system clock frequency
+pub const SYSCLK_MIN: u32 = 24_000_000;
+
+#[cfg(any(feature = "stm32f446"))]
+/// Minimum system clock frequency
+pub const SYSCLK_MIN: u32 = 12_500_000;
+
+#[cfg(feature = "stm32f401")]
+/// Maximum system clock frequency
+pub const SYSCLK_MAX: u32 = 84_000_000;
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417"
+))]
+/// Maximum system clock frequency
+pub const SYSCLK_MAX: u32 = 168_000_000;
+
+#[cfg(any(
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+/// Maximum system clock frequency
+pub const SYSCLK_MAX: u32 = 100_000_000;
+
+#[cfg(any(
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+/// Maximum system clock frequency
+pub const SYSCLK_MAX: u32 = 180_000_000;
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+/// Maximum APB2 peripheral clock frequency
+pub const PCLK2_MAX: u32 = SYSCLK_MAX;
+
+#[cfg(not(any(
+    feature = "stm32f401",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+)))]
+/// Maximum APB2 peripheral clock frequency
+pub const PCLK2_MAX: u32 = SYSCLK_MAX / 2;
+
+/// Maximum APB1 peripheral clock frequency
+pub const PCLK1_MAX: u32 = PCLK2_MAX / 2;
 
 pub struct CFGR {
     hse: Option<u32>,
@@ -88,6 +174,7 @@ impl CFGR {
         self
     }
 
+    #[inline(always)]
     fn pll_setup(&self) -> (bool, bool, u32, Option<Hertz>) {
         let pllsrcclk = self.hse.unwrap_or(HSI);
         let sysclk = self.sysclk.unwrap_or(pllsrcclk);
@@ -203,61 +290,7 @@ impl CFGR {
 
         let (use_pll, sysclk_on_pll, sysclk, pll48clk) = self.pll_setup();
 
-        #[cfg(any(
-            feature = "stm32f401",
-            feature = "stm32f405",
-            feature = "stm32f407",
-            feature = "stm32f410",
-            feature = "stm32f411",
-            feature = "stm32f412",
-            feature = "stm32f413",
-            feature = "stm32f415",
-            feature = "stm32f417",
-            feature = "stm32f423",
-            feature = "stm32f427",
-            feature = "stm32f429",
-            feature = "stm32f437",
-            feature = "stm32f439",
-            feature = "stm32f469",
-            feature = "stm32f479"
-        ))]
-        let sysclk_min = 24_000_000;
-
-        #[cfg(any(feature = "stm32f446"))]
-        let sysclk_min = 12_500_000;
-
-        #[cfg(feature = "stm32f401")]
-        let sysclk_max = 84_000_000;
-
-        #[cfg(any(
-            feature = "stm32f405",
-            feature = "stm32f407",
-            feature = "stm32f415",
-            feature = "stm32f417"
-        ))]
-        let sysclk_max = 168_000_000;
-
-        #[cfg(any(
-            feature = "stm32f410",
-            feature = "stm32f411",
-            feature = "stm32f412",
-            feature = "stm32f413",
-            feature = "stm32f423"
-        ))]
-        let sysclk_max = 100_000_000;
-
-        #[cfg(any(
-            feature = "stm32f427",
-            feature = "stm32f429",
-            feature = "stm32f437",
-            feature = "stm32f439",
-            feature = "stm32f446",
-            feature = "stm32f469",
-            feature = "stm32f479"
-        ))]
-        let sysclk_max = 180_000_000;
-
-        assert!(!sysclk_on_pll || sysclk <= sysclk_max && sysclk >= sysclk_min);
+        assert!(!sysclk_on_pll || sysclk <= SYSCLK_MAX && sysclk >= SYSCLK_MIN);
 
         let hclk = self.hclk.unwrap_or(sysclk);
         let (hpre_bits, hpre_div) = match (sysclk + hclk - 1) / hclk {
@@ -276,36 +309,9 @@ impl CFGR {
         // Calculate real AHB clock
         let hclk = sysclk / hpre_div;
 
-        #[cfg(any(
-            feature = "stm32f401",
-            feature = "stm32f405",
-            feature = "stm32f407",
-            feature = "stm32f415",
-            feature = "stm32f417"
-        ))]
-        let (pclk1_max, pclk2_max) = (42_000_000, 84_000_000);
-        #[cfg(any(
-            feature = "stm32f427",
-            feature = "stm32f429",
-            feature = "stm32f437",
-            feature = "stm32f439",
-            feature = "stm32f446",
-            feature = "stm32f469",
-            feature = "stm32f479"
-        ))]
-        let (pclk1_max, pclk2_max) = (45_000_000, 90_000_000);
-        #[cfg(any(
-            feature = "stm32f410",
-            feature = "stm32f411",
-            feature = "stm32f412",
-            feature = "stm32f413",
-            feature = "stm32f423"
-        ))]
-        let (pclk1_max, pclk2_max) = (50_000_000, 100_000_000);
-
         let pclk1 = self
             .pclk1
-            .unwrap_or_else(|| core::cmp::min(pclk1_max, hclk));
+            .unwrap_or_else(|| core::cmp::min(PCLK1_MAX, hclk));
         let (ppre1_bits, ppre1) = match (hclk + pclk1 - 1) / pclk1 {
             0 => unreachable!(),
             1 => (0b000, 1),
@@ -318,11 +324,11 @@ impl CFGR {
         // Calculate real APB1 clock
         let pclk1 = hclk / u32::from(ppre1);
 
-        assert!(pclk1 <= pclk1_max);
+        assert!(pclk1 <= PCLK1_MAX);
 
         let pclk2 = self
             .pclk2
-            .unwrap_or_else(|| core::cmp::min(pclk2_max, hclk));
+            .unwrap_or_else(|| core::cmp::min(PCLK2_MAX, hclk));
         let (ppre2_bits, ppre2) = match (hclk + pclk2 - 1) / pclk2 {
             0 => unreachable!(),
             1 => (0b000, 1),
@@ -335,7 +341,7 @@ impl CFGR {
         // Calculate real APB2 clock
         let pclk2 = hclk / u32::from(ppre2);
 
-        assert!(pclk2 <= pclk2_max);
+        assert!(pclk2 <= PCLK2_MAX);
 
         Self::flash_setup(sysclk);
 
@@ -470,9 +476,9 @@ impl Clocks {
     /// Returns true if the PLL48 clock is within USB
     /// specifications. It is required to use the USB functionality.
     pub fn is_pll48clk_valid(&self) -> bool {
-        // USB specification allow +-0.25%
+        // USB specification allows +-0.25%
         self.pll48clk
-            .map(|freq| (48_000_000 - freq.0 as i32).abs() <= 48_000_000 * 25 / 10000)
+            .map(|freq| (48_000_000 - freq.0 as i32).abs() <= 120_000)
             .unwrap_or(false)
     }
 }
