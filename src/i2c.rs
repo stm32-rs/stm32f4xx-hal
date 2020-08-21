@@ -771,7 +771,7 @@ where
         self.i2c.cr1.modify(|_, w| w.pe().set_bit());
     }
 
-    fn check_and_clear_error_flags(&self) -> Result<(), Error> {
+    fn check_and_clear_error_flags(&self) -> Result<i2c1::sr1::R, Error> {
         // Note that flags should only be cleared once they have been registered. If flags are
         // cleared otherwise, there may be an inherent race condition and flags may be missed.
         let sr1 = self.i2c.sr1.read();
@@ -806,7 +806,7 @@ where
             return Err(Error::BUS);
         }
 
-        Ok(())
+        Ok(sr1)
     }
 
     pub fn release(self) -> (I2C, PINS) {
@@ -831,10 +831,7 @@ where
         self.i2c.cr1.modify(|_, w| w.start().set_bit());
 
         // Wait until START condition was generated
-        while {
-            self.check_and_clear_error_flags()?;
-            self.i2c.sr1.read().sb().bit_is_clear()
-        } {}
+        while self.check_and_clear_error_flags()?.sb().bit_is_clear() {}
 
         // Also wait until signalled we're master and everything is waiting for us
         while {
@@ -852,10 +849,10 @@ where
         // Wait until address was sent
         while {
             // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
-            self.check_and_clear_error_flags()?;
+            let sr1 = self.check_and_clear_error_flags()?;
 
             // Wait for the address to be acknowledged
-            self.i2c.sr1.read().addr().bit_is_clear()
+            sr1.addr().bit_is_clear()
         } {}
 
         // Clear condition by reading SR2
@@ -874,9 +871,7 @@ where
         // Wait until we're ready for sending
         while {
             // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
-            self.check_and_clear_error_flags()?;
-
-            self.i2c.sr1.read().tx_e().bit_is_clear()
+            self.check_and_clear_error_flags()?.tx_e().bit_is_clear()
         } {}
 
         // Push out a byte of data
@@ -885,9 +880,7 @@ where
         // Wait until byte is transferred
         while {
             // Check for any potential error conditions.
-            self.check_and_clear_error_flags()?;
-
-            self.i2c.sr1.read().btf().bit_is_clear()
+            self.check_and_clear_error_flags()?.btf().bit_is_clear()
         } {}
 
         Ok(())
