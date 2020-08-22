@@ -932,6 +932,9 @@ where
         // Send a STOP condition
         self.i2c.cr1.modify(|_, w| w.stop().set_bit());
 
+        // Wait for STOP condition to transmit.
+        while self.i2c.cr1.read().stop().bit_is_set() {}
+
         // Fallthrough is success
         Ok(())
     }
@@ -965,7 +968,10 @@ where
                 .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
 
             // Wait until address was sent
-            while self.i2c.sr1.read().addr().bit_is_clear() {}
+            while {
+                self.check_and_clear_error_flags()?;
+                self.i2c.sr1.read().addr().bit_is_clear()
+            } {}
 
             // Clear condition by reading SR2
             self.i2c.sr2.read();
@@ -982,6 +988,9 @@ where
 
             // Receive last byte
             *last = self.recv_byte()?;
+
+            // Wait for the STOP to be sent.
+            while self.i2c.cr1.read().stop().bit_is_set() {}
 
             // Fallthrough is success
             Ok(())
