@@ -15,10 +15,9 @@ use core::{
     ptr,
     sync::atomic::{compiler_fence, Ordering},
 };
+use embedded_dma::WriteBuffer;
 
-pub mod buffer;
 pub mod traits;
-use buffer::WriteBuffer;
 use traits::{
     sealed::{Bits, Sealed},
     Channel, DMASet, Direction, Instance, PeriAddress, RccEnable, Stream,
@@ -1072,7 +1071,7 @@ where
         self.stream.disable();
         self.stream.clear_transfer_complete_interrupt();
 
-        // "Subsequent reads and writes cannot be moved ahead of preceding reads."
+        // "No re-ordering of reads and writes across this point is allowed"
         compiler_fence(Ordering::SeqCst);
 
         // NOTE(unsafe) We now own this buffer and we won't call any &mut methods on it until
