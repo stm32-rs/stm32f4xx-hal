@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] Changed sdio::{read, write}_block buf argument to &[u8; 512].
 - Voltage regulator overdrive is enabled where supported and required for selected HCLK.
 - I2C driver updated to detect and clear all error condition flags.
+- Allow for skipping an ongoing DMA transfer if not using double buffering.
+- Change DMA traits to `embedded-dma`.
 
 ### Added
 
