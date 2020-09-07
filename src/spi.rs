@@ -954,6 +954,64 @@ where
         self
     }
 
+    pub fn set_send_only(&mut self) {
+        self.spi
+            .cr1
+            .modify(|_, w| w.bidimode().set_bit().bidioe().set_bit());
+    }
+
+    fn is_send_only(&mut self) -> bool {
+        self.spi.cr1.read().bidimode().bit_is_set() && self.spi.cr1.read().bidioe().bit_is_set()
+    }
+
+    fn set_bidi(&mut self) {
+        self.spi
+            .cr1
+            .modify(|_, w| w.bidimode().clear_bit().bidioe().clear_bit());
+    }
+
+    fn check_read(&mut self) -> nb::Result<(), Error> {
+        let sr = self.spi.sr.read();
+
+        Err(if sr.ovr().bit_is_set() {
+            nb::Error::Other(Error::Overrun)
+        } else if sr.modf().bit_is_set() {
+            nb::Error::Other(Error::ModeFault)
+        } else if sr.crcerr().bit_is_set() {
+            nb::Error::Other(Error::Crc)
+        } else if sr.rxne().bit_is_set() {
+            return Ok(());
+        } else {
+            nb::Error::WouldBlock
+        })
+    }
+
+    fn check_send(&mut self) -> nb::Result<(), Error> {
+        let sr = self.spi.sr.read();
+
+        Err(if sr.ovr().bit_is_set() {
+            nb::Error::Other(Error::Overrun)
+        } else if sr.modf().bit_is_set() {
+            nb::Error::Other(Error::ModeFault)
+        } else if sr.crcerr().bit_is_set() {
+            nb::Error::Other(Error::Crc)
+        } else if sr.txe().bit_is_set() {
+            return Ok(());
+        } else {
+            nb::Error::WouldBlock
+        })
+    }
+
+    fn read_u8(&mut self) -> u8 {
+        // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows reading a half-word)
+        unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const u8) }
+    }
+
+    fn send_u8(&mut self, byte: u8) {
+        // NOTE(write_volatile) see note above
+        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
+    }
+
     /// Enable interrupts for the given `event`:
     ///  - Received data ready to be read (RXNE)
     ///  - Transmit data register empty (TXE)
@@ -1014,48 +1072,63 @@ where
     type Error = Error;
 
     fn read(&mut self) -> nb::Result<u8, Error> {
-        let sr = self.spi.sr.read();
-
-        Err(if sr.ovr().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
-        } else if sr.modf().bit_is_set() {
-            nb::Error::Other(Error::ModeFault)
-        } else if sr.crcerr().bit_is_set() {
-            nb::Error::Other(Error::Crc)
-        } else if sr.rxne().bit_is_set() {
-            // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
-            // reading a half-word)
-            return Ok(unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const u8) });
+        if !self.is_send_only() {
+            nb::block!(self.check_read())?;
+            Ok(self.read_u8())
         } else {
-            nb::Error::WouldBlock
-        })
+            Ok(0)
+        }
     }
 
     fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
-        let sr = self.spi.sr.read();
+        nb::block!(self.check_send())?;
+        self.send_u8(byte);
 
-        Err(if sr.ovr().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
-        } else if sr.modf().bit_is_set() {
-            nb::Error::Other(Error::ModeFault)
-        } else if sr.crcerr().bit_is_set() {
-            nb::Error::Other(Error::Crc)
-        } else if sr.txe().bit_is_set() {
-            // NOTE(write_volatile) see note above
-            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
-            return Ok(());
-        } else {
-            nb::Error::WouldBlock
-        })
+        Ok(())
     }
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS> where
-    SPI: Deref<Target = spi1::RegisterBlock>
+impl<SPI, PINS> ::embedded_hal::blocking::spi::Transfer<u8> for Spi<SPI, PINS>
+where
+    SPI: Deref<Target = spi1::RegisterBlock>,
 {
+    type Error = Error;
+
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        // We want to transfer bidirectionally, make sure we're in the correct mode
+        self.set_bidi();
+
+        for word in words.iter_mut() {
+            nb::block!(self.check_send())?;
+            self.send_u8(word.clone());
+            nb::block!(self.check_read())?;
+            *word = self.read_u8();
+        }
+
+        Ok(words)
+    }
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<SPI, PINS> where
-    SPI: Deref<Target = spi1::RegisterBlock>
+impl<SPI, PINS> ::embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS>
+where
+    SPI: Deref<Target = spi1::RegisterBlock>,
 {
+    type Error = Error;
+
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        // We only want to send, so we don't need to worry about the receive buffer overflowing
+        self.set_send_only();
+
+        // Make sure we don't continue with an error condition
+        nb::block!(self.check_send())?;
+
+        // We have a 32 bit buffer to work with, so let's fill it before checking the status
+        for word in words {
+            self.send_u8(*word);
+        }
+
+        // Do one last status register check before continuing
+        self.check_send().ok();
+        Ok(())
+    }
 }
