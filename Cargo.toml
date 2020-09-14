@@ -52,8 +52,9 @@ version = "1.0.2"
 # https://github.com/rust-embedded/embedded-hal/pull/204
 features = ["unproven"]
 # version = "0.2.3"
-git = "https://github.com/eldruin/embedded-hal/"
-branch = "i2s-v0.2.x"
+# git = "https://github.com/eldruin/embedded-hal/"
+# branch = "i2s-v0.2.x"
+path = "../embedded-hal"
 
 [dev-dependencies]
 panic-semihosting = "0.5.3"

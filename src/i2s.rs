@@ -1,9 +1,7 @@
 use core::ops::Deref;
 use core::ptr;
 
-// use embedded_hal::spi;
-// pub use embedded_hal::spi::{Mode, Phase, Polarity};
-// use nb;
+use embedded_hal::blocking::i2s::{Read, Write, WriteIter};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -389,42 +387,24 @@ pub struct NoSd;
 /// A filler type for when the SdExt pin is unnecessary
 pub struct NoSdExt;
 
-// NOTE: Manual pins for I2S3 during development.
-// TODO: Should be created with macro.
-impl PinCk<SPI3> for NoCk {}
-impl PinCk<SPI3> for PB3<Alternate<AF6>> {}
-impl PinCk<SPI3> for PC10<Alternate<AF6>> {}
-
-impl PinWs<SPI3> for NoWs {}
-impl PinWs<SPI3> for PA4<Alternate<AF6>> {}
-impl PinWs<SPI3> for PA15<Alternate<AF6>> {}
-
-impl PinSd<SPI3> for NoSd {}
-impl PinSd<SPI3> for PB5<Alternate<AF6>> {}
-impl PinSd<SPI3> for PC12<Alternate<AF6>> {}
-
-impl PinSdExt<SPI3> for NoSdExt {}
-impl PinSdExt<SPI3> for PB4<Alternate<AF7>> {}
-impl PinSdExt<SPI3> for PC11<Alternate<AF5>> {}
-
-// macro_rules! pins {
-//     ($($SPIX:ty: CK: [$($CK:ty),*] WS: [$($WS:ty),*] SD: [$($SD:ty),*] SDEXT: [$($SDEXT:ty),*])+) => {
-//         $(
-//             $(
-//                 impl PinCk<$SPIX> for $CK {}
-//             )*
-//             $(
-//                 impl PinWs<$SPIX> for $WS {}
-//             )*
-//             $(
-//                 impl PinSd<$SPIX> for $SD {}
-//             )*
-//             $(
-//                 impl PinSdExt<$SPIX> for $SDEXT {}
-//             )*
-//         )+
-//     }
-// }
+macro_rules! pins {
+    ($($SPIX:ty: CK: [$($CK:ty),*] WS: [$($WS:ty),*] SD: [$($SD:ty),*] SDEXT: [$($SDEXT:ty),*])+) => {
+        $(
+            $(
+                impl PinCk<$SPIX> for $CK {}
+            )*
+            $(
+                impl PinWs<$SPIX> for $WS {}
+            )*
+            $(
+                impl PinSd<$SPIX> for $SD {}
+            )*
+            $(
+                impl PinSdExt<$SPIX> for $SDEXT {}
+            )*
+        )+
+    }
+}
 
 // #[cfg(any(
 //     feature = "stm32f401",
@@ -483,43 +463,47 @@ impl PinSdExt<SPI3> for PC11<Alternate<AF5>> {}
 //         ]
 // }
 
-// #[cfg(any(
-//     feature = "stm32f401",
-//     feature = "stm32f405",
-//     feature = "stm32f407",
-//     feature = "stm32f411",
-//     feature = "stm32f412",
-//     feature = "stm32f413",
-//     feature = "stm32f415",
-//     feature = "stm32f417",
-//     feature = "stm32f423",
-//     feature = "stm32f427",
-//     feature = "stm32f429",
-//     feature = "stm32f437",
-//     feature = "stm32f439",
-//     feature = "stm32f446",
-//     feature = "stm32f469",
-//     feature = "stm32f479"
-// ))]
-// pins! {
-//     SPI3:
-//         CK: [
-//             NoCk,
-//             PB3<Alternate<AF6>>,
-//             PC10<Alternate<AF6>>
-//         ]
-//         WS: [] // TODO: Fill in.
-//         SD: [
-//             NoSd,
-//             PB5<Alternate<AF6>>,
-//             PC12<Alternate<AF6>>
-//         ]
-//         SDEXT: [
-//             NoSdExt,
-//             PB4<Alternate<AF6>>,
-//             PC11<Alternate<AF6>>
-//         ]
-// }
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+pins! {
+    SPI3:
+        CK: [
+            NoCk,
+            PB3<Alternate<AF6>>,
+            PC10<Alternate<AF6>>
+        ]
+        WS: [
+            NoWs,
+            PA4<Alternate<AF6>>,
+            PA15<Alternate<AF6>>
+        ]
+        SD: [
+            NoSd,
+            PB5<Alternate<AF6>>,
+            PC12<Alternate<AF6>>
+        ]
+        SDEXT: [
+            NoSdExt,
+            PB4<Alternate<AF7>>,
+            PC11<Alternate<AF5>>
+        ]
+}
 
 // #[cfg(any(
 //     feature = "stm32f401",
@@ -832,26 +816,46 @@ pub struct I2s<SPI, PINS> {
 //     }
 // }
 
-// #[cfg(any(
-//     feature = "stm32f401",
-//     feature = "stm32f405",
-//     feature = "stm32f407",
-//     feature = "stm32f411",
-//     feature = "stm32f412",
-//     feature = "stm32f413",
-//     feature = "stm32f415",
-//     feature = "stm32f417",
-//     feature = "stm32f423",
-//     feature = "stm32f427",
-//     feature = "stm32f429",
-//     feature = "stm32f437",
-//     feature = "stm32f439",
-//     feature = "stm32f446",
-//     feature = "stm32f469",
-//     feature = "stm32f479"
-// ))]
-// impl<PINS> Spi<SPI3, PINS> {
-//     pub fn spi3(spi: SPI3, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+impl<PINS> I2s<SPI3, PINS> {
+    pub fn i2s3(spi: SPI3, pins: PINS, freq: Hertz, clocks: Clocks) -> Self
+    where
+        PINS: Pins<SPI3>,
+    {
+        // NOTE(unsafe) This executes only during initialisation
+        let rcc = unsafe { &(*RCC::ptr()) };
+
+        // Enable clock for SPI
+        rcc.apb1enr.modify(|_, w| w.spi3en().set_bit());
+
+        // TODO: Use PLL I2S clock.
+        // if clocks.plli2sclk().is_some() {
+        //     I2s { spi, pins }.init(freq, clocks.plli2sclk())
+        // }
+
+        I2s { spi, pins }.init(freq, freq)
+    }
+}
+
+// impl<PINS> I2s<SPI3, PINS> {
+//     pub fn i2s3(spi: SPI3, pins: PINS, freq: Hertz, clocks: Clocks) -> Self
 //     where
 //         PINS: Pins<SPI3>,
 //     {
@@ -861,7 +865,8 @@ pub struct I2s<SPI, PINS> {
 //         // Enable clock for SPI
 //         rcc.apb1enr.modify(|_, w| w.spi3en().set_bit());
 
-//         Spi { spi, pins }.init(mode, freq, clocks.pclk1())
+//         // TODO: Use Real clock value from  I2S PLL.
+//         I2s { spi, pins }.init(freq, freq)
 //     }
 // }
 
@@ -945,27 +950,11 @@ pub struct I2s<SPI, PINS> {
 //     }
 // }
 
-impl<PINS> I2s<SPI3, PINS> {
-    pub fn i2s3(spi: SPI3, pins: PINS, freq: Hertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<SPI3>,
-    {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
-
-        // Enable clock for SPI
-        rcc.apb1enr.modify(|_, w| w.spi3en().set_bit());
-
-        // TODO: Use Real clock value from  I2S PLL.
-        I2s { spi, pins }.init(freq, freq)
-    }
-}
-
 impl<SPI, PINS> I2s<SPI, PINS>
 where
     SPI: Deref<Target = spi1::RegisterBlock>,
 {
-    pub fn init(self, freq: Hertz, clock: Hertz) -> Self {
+    pub fn init(self, _freq: Hertz, _clock: Hertz) -> Self {
         // disable SS output
         self.spi.cr2.write(|w| w.ssoe().clear_bit());
 
@@ -1049,10 +1038,22 @@ where
     //     }
     // }
 
+    /// Return `true` if the BSY flag is set, indicating that the I2S is busy
+    /// communicating.
+    pub fn is_bsy(&self) -> bool {
+        self.spi.sr.read().bsy().bit_is_set()
+    }
+
     /// Return `true` if the TXE flag is set, i.e. new data to transmit
     /// can be written to the SPI.
     pub fn is_txe(&self) -> bool {
         self.spi.sr.read().txe().bit_is_set()
+    }
+
+    /// Return `true` if the RXNE flag is set, i.e. new data has been received
+    /// and can be read from the SPI.
+    pub fn is_rxne(&self) -> bool {
+        self.spi.sr.read().rxne().bit_is_set()
     }
 
     /// Return the value of the CHSIDE flag, i.e. which channel to transmit next.
@@ -1060,31 +1061,92 @@ where
         self.spi.sr.read().chside().bit_is_set()
     }
 
-    // /// Return `true` if the RXNE flag is set, i.e. new data has been received
-    // /// and can be read from the SPI.
-    // pub fn is_rxne(&self) -> bool {
-    //     self.spi.sr.read().rxne().bit_is_set()
-    // }
+    /// Return `true` if the UDR flag is set, i.e. no new data was available
+    /// for transmission while in slave mode.
+    pub fn is_udr(&self) -> bool {
+        self.spi.sr.read().udr().bit_is_set()
+    }
 
-    // /// Return `true` if the MODF flag is set, i.e. the SPI has experienced a
-    // /// Master Mode Fault. (see chapter 28.3.10 of the STM32F4 Reference Manual)
-    // pub fn is_modf(&self) -> bool {
-    //     self.spi.sr.read().modf().bit_is_set()
-    // }
+    /// Return `true` if the OVR flag is set, i.e. new data has been received
+    /// while the receive data register was already filled.
+    pub fn is_ovr(&self) -> bool {
+        self.spi.sr.read().ovr().bit_is_set()
+    }
 
-    // /// Return `true` if the OVR flag is set, i.e. new data has been received
-    // /// while the receive data register was already filled.
-    // pub fn is_ovr(&self) -> bool {
-    //     self.spi.sr.read().ovr().bit_is_set()
-    // }
+    /// Return `true` if the FRE flag is set, i.e. there was an unexpected change
+    /// in the WS line by the master while in slave mode.
+    pub fn is_fre(&self) -> bool {
+        self.spi.sr.read().fre().bit_is_set()
+    }
 
     pub fn free(self) -> (SPI, PINS) {
         (self.spi, self.pins)
     }
+}
 
-    pub fn send(&mut self, data: u16) -> Result<(), Error> {
-        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u16, data) }
-        while self.spi.sr.read().txe().bit_is_clear() {}
+impl<SPI, PINS, W> Read<W> for I2s<SPI, PINS>
+where
+    SPI: Deref<Target = spi1::RegisterBlock>,
+{
+    type Error = Error;
+
+    fn try_read<'w>(
+        &mut self,
+        left_words: &'w mut [W],
+        right_words: &'w mut [W],
+    ) -> Result<(), Self::Error> {
+        // TODO: Check preconditions, return errors.
+        // NOTE: Not tested.
+        for (lw, rw) in left_words.iter_mut().zip(right_words.iter_mut()) {
+            *lw = unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const W) };
+            *rw = unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const W) };
+        }
+        Ok(())
+    }
+}
+
+impl<SPI, PINS, W> Write<W> for I2s<SPI, PINS>
+where
+    SPI: Deref<Target = spi1::RegisterBlock>,
+    W: Copy,
+{
+    type Error = Error;
+
+    fn try_write<'w>(
+        &mut self,
+        left_words: &'w [W],
+        right_words: &'w [W],
+    ) -> Result<(), Self::Error> {
+        // TODO: Check preconditions, return errors.
+        for (lw, rw) in left_words.iter().zip(right_words.iter()) {
+            while !self.is_txe() {} // Wait for TX enable after the previous word.
+            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut W, *lw) }
+            while !self.is_txe() {} // Wait for TX enable after the left word.
+            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut W, *rw) }
+        }
+        Ok(())
+    }
+}
+
+impl<SPI, PINS, W> WriteIter<W> for I2s<SPI, PINS>
+where
+    SPI: Deref<Target = spi1::RegisterBlock>,
+    // W: Copy,
+{
+    type Error = Error;
+
+    fn try_write_iter<LW, RW>(&mut self, left_words: LW, right_words: RW) -> Result<(), Self::Error>
+    where
+        LW: IntoIterator<Item = W>,
+        RW: IntoIterator<Item = W>,
+    {
+        // TODO: Check preconditions, return errors.
+        for (lw, rw) in left_words.into_iter().zip(right_words.into_iter()) {
+            while !self.is_txe() {} // Wait for TX enable after the previous word.
+            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut W, lw) }
+            while !self.is_txe() {} // Wait for TX enable after the left word.
+            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut W, rw) }
+        }
         Ok(())
     }
 }
