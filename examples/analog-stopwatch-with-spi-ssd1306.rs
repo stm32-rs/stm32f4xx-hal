@@ -14,7 +14,7 @@ extern crate stm32f4xx_hal as hal;
 
 use crate::hal::{
     gpio::{gpioa::PA0, Edge, ExtiPin, Input, PullDown},
-    interrupt,
+    interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
     spi::Spi,
@@ -44,8 +44,7 @@ use embedded_graphics::{
 };
 use micromath::F32Ext;
 
-use ssd1306::{mode::GraphicsMode, Builder as SSD1306Builder};
-use stm32f4::stm32f429;
+use ssd1306::{prelude::*, Builder};
 
 // Set up global state. It's all mutexed up for concurrency safety.
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
@@ -72,7 +71,7 @@ enum StopwatchState {
 
 #[entry]
 fn main() -> ! {
-    let mut dp = stm32f429::Peripherals::take().unwrap();
+    let mut dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
     dp.RCC.apb2enr.write(|w| w.syscfgen().enabled());
 
@@ -124,7 +123,8 @@ fn main() -> ! {
     ss.set_low().unwrap();
 
     // Set up the display
-    let mut disp: GraphicsMode<_> = SSD1306Builder::new().connect_spi(spi, dc).into();
+    let interface = SPIInterfaceNoCS::new(spi, dc);
+    let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
     disp.init().unwrap();
     disp.flush().unwrap();
 

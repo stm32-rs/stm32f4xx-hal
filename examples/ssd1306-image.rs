@@ -20,7 +20,7 @@ extern crate stm32f4xx_hal as hal;
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
 use embedded_graphics::{image::Image, image::ImageRaw, pixelcolor::BinaryColor, prelude::*};
-use ssd1306::{prelude::*, Builder as SSD1306Builder};
+use ssd1306::{prelude::*, Builder, I2CDIBuilder};
 
 use crate::hal::{i2c::I2c, prelude::*, stm32};
 
@@ -48,7 +48,8 @@ fn main() -> ! {
         let btn = gpioc.pc13.into_pull_down_input();
 
         // Set up the display
-        let mut disp: GraphicsMode<_> = SSD1306Builder::new().connect_i2c(i2c).into();
+        let interface = I2CDIBuilder::new().init(i2c);
+        let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
         disp.init().unwrap();
         disp.flush().unwrap();
 
