@@ -6,7 +6,6 @@ use cortex_m::peripheral::SYST;
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
 use void::Void;
 
-use crate::stm32::RCC;
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -81,6 +80,7 @@ use crate::stm32::{TIM10, TIM2, TIM3, TIM4};
     feature = "stm32f479"
 ))]
 use crate::stm32::{TIM12, TIM13, TIM14, TIM7, TIM8};
+use crate::{bb, pac::RCC};
 
 use crate::rcc::Clocks;
 use crate::time::Hertz;
@@ -171,7 +171,7 @@ impl Cancel for Timer<SYST> {
 impl Periodic for Timer<SYST> {}
 
 macro_rules! hal {
-    ($($TIM:ident: ($tim:ident, $timXen:ident, $timXrst:ident, $apbenr:ident, $apbrstr:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIM:ident: ($tim:ident, $en_bit:expr, $reset_bit:expr, $apbenr:ident, $apbrstr:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             impl Timer<$TIM> {
                 /// Configures a TIM peripheral as a periodic count down timer
@@ -179,11 +179,14 @@ macro_rules! hal {
                 where
                     T: Into<Hertz>,
                 {
-                    // enable and reset peripheral to a clean slate state
-                    let rcc = unsafe { &(*RCC::ptr()) };
-                    rcc.$apbenr.modify(|_, w| w.$timXen().set_bit());
-                    rcc.$apbrstr.modify(|_, w| w.$timXrst().set_bit());
-                    rcc.$apbrstr.modify(|_, w| w.$timXrst().clear_bit());
+                    unsafe {
+                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+                        let rcc = &(*RCC::ptr());
+                        // Enable and reset the timer peripheral, it's the same bit position for both registers
+                        bb::set(&rcc.$apbenr, $en_bit);
+                        bb::set(&rcc.$apbrstr, $reset_bit);
+                        bb::clear(&rcc.$apbrstr, $reset_bit);
+                    }
 
                     let mut timer = Timer {
                         clocks,
@@ -315,10 +318,10 @@ macro_rules! hal {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM1: (tim1, tim1en, tim1rst, apb2enr, apb2rstr, pclk2, ppre2),
-    TIM5: (tim5, tim5en, tim5rst, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM9: (tim9, tim9en, tim9rst, apb2enr, apb2rstr, pclk2, ppre2),
-    TIM11: (tim11, tim11en, tim11rst, apb2enr, apb2rstr, pclk2, ppre2),
+    TIM1: (tim1, 0, 0, apb2enr, apb2rstr, pclk2, ppre2),
+    TIM5: (tim5, 3, 3, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM9: (tim9, 16, 16, apb2enr, apb2rstr, pclk2, ppre2),
+    TIM11: (tim11, 18, 18, apb2enr, apb2rstr, pclk2, ppre2),
 }
 
 #[cfg(any(
@@ -340,10 +343,10 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM4: (tim4, tim4en, tim4rst, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM10: (tim10, tim10en, tim10rst, apb2enr, apb2rstr, pclk2, ppre2),
+    TIM2: (tim2, 0, 0, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM3: (tim3, 1, 1, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM4: (tim4, 2, 2, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM10: (tim10, 17, 17, apb2enr, apb2rstr, pclk2, ppre2),
 }
 
 #[cfg(any(
@@ -364,7 +367,7 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM6: (tim6, tim6en, tim6rst, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM6: (tim6, 4, 4, apb1enr, apb1rstr, pclk1, ppre1),
 }
 
 #[cfg(any(
@@ -384,11 +387,11 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM7: (tim7, tim7en, tim7rst, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM8: (tim8, tim8en, tim8rst, apb2enr, apb2rstr, pclk2, ppre2),
-    TIM12: (tim12, tim12en, tim12rst, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM13: (tim13, tim13en, tim13rst, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM14: (tim14, tim14en, tim14rst, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM7: (tim7, 5, 5, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM8: (tim8, 1, 1, apb2enr, apb2rstr, pclk2, ppre2),
+    TIM12: (tim12, 6, 6, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM13: (tim13, 7, 7, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM14: (tim14, 8, 8, apb1enr, apb1rstr, pclk1, ppre1),
 }
 
 #[cfg(any(

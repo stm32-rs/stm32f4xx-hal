@@ -1,6 +1,7 @@
 use core::ops::Deref;
 use core::ptr;
 
+use crate::bb;
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
 
@@ -742,11 +743,14 @@ impl<PINS> Spi<SPI1, PINS> {
     where
         PINS: Pins<SPI1>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 12;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for SPI
-        rcc.apb2enr.modify(|_, w| w.spi1en().set_bit());
+            // Enable clock.
+            bb::set(&rcc.apb2enr, EN_BIT);
+        }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk2())
     }
@@ -776,11 +780,14 @@ impl<PINS> Spi<SPI2, PINS> {
     where
         PINS: Pins<SPI2>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 14;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for SPI
-        rcc.apb1enr.modify(|_, w| w.spi2en().set_bit());
+            // Enable clock.
+            bb::set(&rcc.apb1enr, EN_BIT);
+        }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk1())
     }
@@ -809,11 +816,14 @@ impl<PINS> Spi<SPI3, PINS> {
     where
         PINS: Pins<SPI3>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 15;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for SPI
-        rcc.apb1enr.modify(|_, w| w.spi3en().set_bit());
+            // Enable clock.
+            bb::set(&rcc.apb1enr, EN_BIT);
+        }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk1())
     }
@@ -838,11 +848,14 @@ impl<PINS> Spi<SPI4, PINS> {
     where
         PINS: Pins<SPI4>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 13;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for SPI
-        rcc.apb2enr.modify(|_, w| w.spi4en().set_bit());
+            // Enable clock.
+            bb::set(&rcc.apb2enr, EN_BIT);
+        }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk2())
     }
@@ -866,11 +879,14 @@ impl<PINS> Spi<SPI5, PINS> {
     where
         PINS: Pins<SPI5>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 20;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for SPI
-        rcc.apb2enr.modify(|_, w| w.spi5en().set_bit());
+            // Enable clock.
+            bb::set(&rcc.apb2enr, EN_BIT);
+        }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk2())
     }
@@ -889,11 +905,14 @@ impl<PINS> Spi<SPI6, PINS> {
     where
         PINS: Pins<SPI6>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 21;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for SPI
-        rcc.apb2enr.modify(|_, w| w.spi6en().set_bit());
+            // Enable clock.
+            bb::set(&rcc.apb2enr, EN_BIT);
+        }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk2())
     }

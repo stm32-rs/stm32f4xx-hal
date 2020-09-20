@@ -1,6 +1,9 @@
 //! # Quadrature Encoder Interface
-use crate::hal::{self, Direction};
-use crate::stm32::RCC;
+use crate::{
+    bb,
+    hal::{self, Direction},
+    pac::RCC,
+};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -79,7 +82,7 @@ pub struct Qei<TIM, PINS> {
 }
 
 macro_rules! hal {
-    ($($TIM:ident: ($tim:ident, $timXen:ident, $timXrst:ident, $apbenr:ident, $apbrstr:ident, $bits:ident),)+) => {
+    ($($TIM:ident: ($tim:ident, $en_bit:expr, $reset_bit:expr, $apbenr:ident, $apbrstr:ident, $bits:ident),)+) => {
         $(
             impl<PINS> Qei<$TIM, PINS> {
                 /// Configures a TIM peripheral as a quadrature encoder interface input
@@ -87,11 +90,15 @@ macro_rules! hal {
                 where
                     PINS: Pins<$TIM>
                 {
-                    let rcc = unsafe { &(*RCC::ptr()) };
-                    // enable and reset peripheral to a clean slate state
-                    rcc.$apbenr.modify(|_, w| w.$timXen().set_bit());
-                    rcc.$apbrstr.modify(|_, w| w.$timXrst().set_bit());
-                    rcc.$apbrstr.modify(|_, w| w.$timXrst().clear_bit());
+                    unsafe {
+                        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+                        let rcc = &(*RCC::ptr());
+
+                        // Enable and reset clock.
+                        bb::set(&rcc.$apbenr, $en_bit);
+                        bb::set(&rcc.$apbrstr, $reset_bit);
+                        bb::clear(&rcc.$apbrstr, $reset_bit);
+                    }
 
                     // Configure TxC1 and TxC2 as captures
                     tim.ccmr1_output()
@@ -166,8 +173,8 @@ macro_rules! hal {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM1: (tim1, tim1en, tim1rst, apb2enr, apb2rstr, u16),
-    TIM5: (tim5, tim5en, tim5rst, apb1enr, apb1rstr, u32),
+    TIM1: (tim1, 0, 0, apb2enr, apb2rstr, u16),
+    TIM5: (tim5, 3, 3, apb1enr, apb1rstr, u32),
 }
 
 #[cfg(any(
@@ -189,9 +196,9 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, u32),
-    TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, u16),
-    TIM4: (tim4, tim4en, tim4rst, apb1enr, apb1rstr, u16),
+    TIM2: (tim2, 0, 0, apb1enr, apb1rstr, u32),
+    TIM3: (tim3, 1, 1, apb1enr, apb1rstr, u16),
+    TIM4: (tim4, 2, 2, apb1enr, apb1rstr, u16),
 }
 
 #[cfg(any(
@@ -211,5 +218,5 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM8: (tim8, tim8en, tim8rst, apb2enr, apb2rstr, u16),
+    TIM8: (tim8, 1, 1, apb2enr, apb2rstr, u16),
 }
