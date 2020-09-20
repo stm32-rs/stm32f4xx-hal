@@ -1,7 +1,7 @@
 use core::ops::Deref;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
-use crate::stm32::i2c1;
+use crate::{bb, pac::i2c1};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -580,15 +580,17 @@ impl<PINS> I2c<I2C1, PINS> {
     where
         PINS: Pins<I2C1>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 21;
+            const RESET_BIT: u8 = 21;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for I2C1
-        rcc.apb1enr.modify(|_, w| w.i2c1en().set_bit());
-
-        // Reset I2C1
-        rcc.apb1rstr.modify(|_, w| w.i2c1rst().set_bit());
-        rcc.apb1rstr.modify(|_, w| w.i2c1rst().clear_bit());
+            // Enable and reset clock.
+            bb::set(&rcc.apb1enr, EN_BIT);
+            bb::set(&rcc.apb1rstr, RESET_BIT);
+            bb::clear(&rcc.apb1rstr, RESET_BIT);
+        }
 
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(speed, clocks.pclk1());
@@ -620,15 +622,17 @@ impl<PINS> I2c<I2C2, PINS> {
     where
         PINS: Pins<I2C2>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 22;
+            const RESET_BIT: u8 = 22;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for I2C2
-        rcc.apb1enr.modify(|_, w| w.i2c2en().set_bit());
-
-        // Reset I2C2
-        rcc.apb1rstr.modify(|_, w| w.i2c2rst().set_bit());
-        rcc.apb1rstr.modify(|_, w| w.i2c2rst().clear_bit());
+            // Enable and reset clock.
+            bb::set(&rcc.apb1enr, EN_BIT);
+            bb::set(&rcc.apb1rstr, RESET_BIT);
+            bb::clear(&rcc.apb1rstr, RESET_BIT);
+        }
 
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(speed, clocks.pclk1());
@@ -659,15 +663,17 @@ impl<PINS> I2c<I2C3, PINS> {
     where
         PINS: Pins<I2C3>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 23;
+            const RESET_BIT: u8 = 23;
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Enable clock for I2C3
-        rcc.apb1enr.modify(|_, w| w.i2c3en().set_bit());
-
-        // Reset I2C3
-        rcc.apb1rstr.modify(|_, w| w.i2c3rst().set_bit());
-        rcc.apb1rstr.modify(|_, w| w.i2c3rst().clear_bit());
+            // Enable and reset clock.
+            bb::set(&rcc.apb1enr, EN_BIT);
+            bb::set(&rcc.apb1rstr, RESET_BIT);
+            bb::clear(&rcc.apb1rstr, RESET_BIT);
+        }
 
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(speed, clocks.pclk1());
@@ -681,17 +687,26 @@ impl<PINS> FMPI2c<FMPI2C, PINS> {
     where
         PINS: Pins<FMPI2C>,
     {
-        // NOTE(unsafe) This executes only during initialisation
-        let rcc = unsafe { &(*RCC::ptr()) };
+        unsafe {
+            const EN_BIT: u8 = 24;
+            const RESET_BIT: u8 = 24;
+            const CLKSEL_0: u8 = 22;
+            const CLKSEL_1: u8 = 23;
 
-        // Enable clock for FMPI2C
-        rcc.apb1enr.modify(|_, w| w.i2c4en().set_bit());
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
 
-        // Reset FMPI2C
-        rcc.apb1rstr.modify(|_, w| w.i2c4rst().set_bit());
-        rcc.apb1rstr.modify(|_, w| w.i2c4rst().clear_bit());
+            // Enable and reset clock.
+            bb::set(&rcc.apb1enr, EN_BIT);
+            bb::set(&rcc.apb1rstr, RESET_BIT);
+            bb::clear(&rcc.apb1rstr, RESET_BIT);
 
-        rcc.dckcfgr2.modify(|_, w| w.i2cfmp1sel().hsi());
+            // Select source clock. This is suboptimal, we're doing two writes to select a field,
+            // but we can do this because all combinations are valid and the intermediate state is
+            // already the state we want or the reset state.
+            bb::clear(&rcc.dckcfgr2, CLKSEL_0);
+            bb::set(&rcc.dckcfgr2, CLKSEL_1);
+        }
 
         let i2c = FMPI2c { i2c, pins };
         i2c.i2c_init(speed);

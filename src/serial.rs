@@ -1400,7 +1400,7 @@ pub struct Tx<USART> {
 
 macro_rules! halUsartImpl {
     ($(
-        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident,  $pclkX:ident),
+        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $rcc_bit:expr, $usartXen:ident, $pclkX:ident),
     )+) => {
         $(
             impl<PINS> Serial<$USARTX, PINS> {
@@ -1414,12 +1414,15 @@ macro_rules! halUsartImpl {
                     PINS: Pins<$USARTX>,
                 {
                     use self::config::*;
+                    use crate::bb;
 
-                    // NOTE(unsafe) This executes only during initialisation
-                    let rcc = unsafe { &(*RCC::ptr()) };
+                    unsafe {
+                        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+                        let rcc = &(*RCC::ptr());
 
-                    // Enable clock for USART
-                    rcc.$apbXenr.modify(|_, w| w.$usartXen().set_bit());
+                        // Enable clock.
+                        bb::set(&rcc.$apbXenr, $rcc_bit);
+                    }
 
                     // Calculate correct baudrate divisor on the fly
                     let div = (clocks.$pclkX().0 + config.baudrate.0 / 2)
@@ -1700,7 +1703,7 @@ macro_rules! halUsartImpl {
 
 macro_rules! halUsart {
     ($(
-        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident, $pclkX:ident),
+        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $rcc_bit:expr, $usartXen:ident, $pclkX:ident),
     )+) => {
         $(
         impl<PINS> Serial<$USARTX, PINS> {
@@ -1722,7 +1725,7 @@ macro_rules! halUsart {
         )+
 
         halUsartImpl! {
-            $( $USARTX: ($usartX, $apbXenr, $usartXen, $pclkX), )+
+            $( $USARTX: ($usartX, $apbXenr, $rcc_bit, $usartXen, $pclkX), )+
         }
     }
 }
@@ -1742,7 +1745,7 @@ macro_rules! halUsart {
 ))]
 macro_rules! halUart {
     ($(
-        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident, $pclkX:ident),
+        $USARTX:ident: ($usartX:ident, $apbXenr:ident, $rcc_bit:expr, $usartXen:ident, $pclkX:ident),
     )+) => {
         $(
         impl<PINS> Serial<$USARTX, PINS> {
@@ -1764,7 +1767,7 @@ macro_rules! halUart {
         )+
 
         halUsartImpl! {
-            $( $USARTX: ($usartX, $apbXenr, $usartXen, $pclkX), )+
+            $( $USARTX: ($usartX, $apbXenr, $rcc_bit, $usartXen, $pclkX), )+
         }
     }
 }
@@ -1789,9 +1792,9 @@ macro_rules! halUart {
     feature = "stm32f479"
 ))]
 halUsart! {
-    USART1: (usart1, apb2enr, usart1en, pclk2),
-    USART2: (usart2, apb1enr, usart2en, pclk1),
-    USART6: (usart6, apb2enr, usart6en, pclk2),
+    USART1: (usart1, apb2enr, 4, usart1en, pclk2),
+    USART2: (usart2, apb1enr, 17, usart2en, pclk1),
+    USART6: (usart6, apb2enr, 5, usart6en, pclk2),
 }
 
 #[cfg(any(
@@ -1811,7 +1814,7 @@ halUsart! {
     feature = "stm32f479"
 ))]
 halUsart! {
-    USART3: (usart3, apb1enr, usart3en, pclk1),
+    USART3: (usart3, apb1enr, 18, usart3en, pclk1),
 }
 
 #[cfg(any(
@@ -1828,14 +1831,14 @@ halUsart! {
     feature = "stm32f479"
 ))]
 halUart! {
-    UART4: (uart4, apb1enr, uart4en, pclk1),
-    UART5: (uart5, apb1enr, uart5en, pclk1),
+    UART4: (uart4, apb1enr, 19, uart4en, pclk1),
+    UART5: (uart5, apb1enr, 20, uart5en, pclk1),
 }
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 halUsart! {
-    UART4: (uart4, apb1enr, uart4en, pclk1),
-    UART5: (uart5, apb1enr, uart5en, pclk1),
+    UART4: (uart4, apb1enr, 19, uart4en, pclk1),
+    UART5: (uart5, apb1enr, 20, uart5en, pclk1),
 }
 
 #[cfg(any(
@@ -1849,14 +1852,14 @@ halUsart! {
     feature = "stm32f479"
 ))]
 halUsart! {
-    UART7: (uart7, apb1enr, uart7en, pclk1),
-    UART8: (uart8, apb1enr, uart8en, pclk1),
+    UART7: (uart7, apb1enr, 30, uart7en, pclk1),
+    UART8: (uart8, apb1enr, 31, uart8en, pclk1),
 }
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 halUsart! {
-    UART9: (uart9, apb2enr, uart9en, pclk2),
-    UART10: (uart10, apb2enr, uart10en, pclk2),
+    UART9: (uart9, apb2enr, 6, uart9en, pclk2),
+    UART10: (uart10, apb2enr, 7, uart10en, pclk2),
 }
 
 impl<USART> fmt::Write for Tx<USART>

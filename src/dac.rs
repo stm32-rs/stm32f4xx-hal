@@ -5,10 +5,14 @@
 #![deny(unused_imports)]
 use core::mem;
 
-use crate::gpio::gpioa::{PA4, PA5};
-use crate::gpio::Analog;
-use crate::pac::DAC;
-use crate::stm32::RCC;
+use crate::{
+    bb,
+    gpio::{
+        gpioa::{PA4, PA5},
+        Analog,
+    },
+    pac::{DAC, RCC},
+};
 
 pub struct C1;
 pub struct C2;
@@ -42,17 +46,21 @@ pub fn dac<PINS>(_dac: DAC, _pins: PINS) -> PINS::Output
 where
     PINS: Pins<DAC>,
 {
-    // NOTE(unsafe) This executes only during initialisation
-    let rcc = unsafe { &(*RCC::ptr()) };
+    unsafe {
+        const EN_BIT: u8 = 29;
+        const RESET_BIT: u8 = 29;
 
-    // Enable DAC clocks
-    rcc.apb1enr.modify(|_, w| w.dacen().set_bit());
+        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+        let rcc = &(*RCC::ptr());
 
-    // Reset DAC
-    rcc.apb1rstr.modify(|_, w| w.dacrst().set_bit());
-    rcc.apb1rstr.modify(|_, w| w.dacrst().clear_bit());
+        // Enable and reset clock.
+        bb::set(&rcc.apb1enr, EN_BIT);
+        bb::set(&rcc.apb1rstr, RESET_BIT);
+        bb::clear(&rcc.apb1rstr, RESET_BIT);
 
-    unsafe { mem::MaybeUninit::uninit().assume_init() }
+        // NOTE(unsafe) ZST, doesn't need initialization.
+        mem::MaybeUninit::uninit().assume_init()
+    }
 }
 
 macro_rules! dac {

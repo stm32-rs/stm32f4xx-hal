@@ -8,7 +8,7 @@
     Temperature in °C = (110-30)/(VtempCal110::get().read()-VtempCal30::get().read()) * (adc_sample - VtempCal30::get().read()) + 30
 */
 
-use crate::{gpio::*, signature::VrefCal, signature::VDDA_CALIB, stm32};
+use crate::{bb, gpio::*, pac, signature::VrefCal, signature::VDDA_CALIB};
 use core::fmt;
 use embedded_hal::adc::{Channel, OneShot};
 
@@ -24,7 +24,7 @@ pub struct Temperature;
 macro_rules! adc_pins {
     ($($pin:ty => ($adc:ident, $chan:expr)),+ $(,)*) => {
         $(
-            impl Channel<stm32::$adc> for $pin {
+            impl Channel<pac::$adc> for $pin {
                 type ID = u8;
                 fn channel() -> u8 { $chan }
             }
@@ -606,21 +606,25 @@ impl<ADC> fmt::Debug for Adc<ADC> {
 }
 
 macro_rules! adc {
-    ($($adc_type:ident => ($constructor_fn_name:ident, $common_type:ident, $rcc_enr_reg:ident, $rcc_enr_field: ident, $rcc_rst_reg: ident, $rcc_rst_field: ident)),+ $(,)*) => {
+    ($($adc_type:ident => ($constructor_fn_name:ident, $common_type:ident, $en_bit: expr)),+ $(,)*) => {
         $(
-            impl Adc<stm32::$adc_type> {
+            impl Adc<pac::$adc_type> {
                 /// Enables the ADC clock, resets the peripheral (optionally), runs calibration and applies the supplied config
                 /// # Arguments
                 /// * `reset` - should a reset be performed. This is provided because on some devices multiple ADCs share the same common reset
-                pub fn $constructor_fn_name(adc: stm32::$adc_type, reset: bool, config: config::AdcConfig) -> Adc<stm32::$adc_type> {
+                pub fn $constructor_fn_name(adc: pac::$adc_type, reset: bool, config: config::AdcConfig) -> Adc<pac::$adc_type> {
                     unsafe {
-                        let rcc = &(*stm32::RCC::ptr());
-                        //Enable the common clock
-                        rcc.$rcc_enr_reg.modify(|_, w| w.$rcc_enr_field().set_bit());
+                        // All ADCs share the same reset interface.
+                        const RESET_BIT: u8 = 8;
+                        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+                        let rcc = &(*pac::RCC::ptr());
+
+                        //Enable the clock
+                        bb::set(&rcc.apb2enr, $en_bit);
                         if reset {
                             //Reset the peripheral(s)
-                            rcc.$rcc_rst_reg.modify(|_, w| w.$rcc_rst_field().set_bit());
-                            rcc.$rcc_rst_reg.modify(|_, w| w.$rcc_rst_field().clear_bit());
+                            bb::set(&rcc.apb2rstr, RESET_BIT);
+                            bb::clear(&rcc.apb2rstr, RESET_BIT);
                         }
                     }
 
@@ -676,7 +680,7 @@ macro_rules! adc {
                 /// Enables the vbat internal channel
                 pub fn enable_vbat(&self) {
                     unsafe {
-                        let common = &(*stm32::$common_type::ptr());
+                        let common = &(*pac::$common_type::ptr());
                         common.ccr.modify(|_, w| w.vbate().set_bit());
                     }
                 }
@@ -684,7 +688,7 @@ macro_rules! adc {
                 /// Enables the vbat internal channel
                 pub fn disable_vbat(&self) {
                     unsafe {
-                        let common = &(*stm32::$common_type::ptr());
+                        let common = &(*pac::$common_type::ptr());
                         common.ccr.modify(|_, w| w.vbate().clear_bit());
                     }
                 }
@@ -695,7 +699,7 @@ macro_rules! adc {
                     //VBAT prevents TS and VREF from being sampled
                     self.disable_vbat();
                     unsafe {
-                        let common = &(*stm32::$common_type::ptr());
+                        let common = &(*pac::$common_type::ptr());
                         common.ccr.modify(|_, w| w.tsvrefe().set_bit());
                     }
                 }
@@ -703,7 +707,7 @@ macro_rules! adc {
                 /// Disables the temp and vref internal channels
                 pub fn disable_temperature_and_vref(&mut self) {
                     unsafe {
-                        let common = &(*stm32::$common_type::ptr());
+                        let common = &(*pac::$common_type::ptr());
                         common.ccr.modify(|_, w| w.tsvrefe().clear_bit());
                     }
                 }
@@ -711,7 +715,7 @@ macro_rules! adc {
                 /// Returns if the temp and vref internal channels are enabled
                 pub fn temperature_and_vref_enabled(&mut self) -> bool {
                     unsafe {
-                        let common = &(*stm32::$common_type::ptr());
+                        let common = &(*pac::$common_type::ptr());
                         common.ccr.read().tsvrefe().bit_is_set()
                     }
                 }
@@ -750,7 +754,7 @@ macro_rules! adc {
                 pub fn set_clock(&mut self, clock: config::Clock) {
                     self.config.clock = clock;
                     unsafe {
-                        let common = &(*stm32::$common_type::ptr());
+                        let common = &(*pac::$common_type::ptr());
                         common.ccr.modify(|_, w| w.adcpre().bits(clock.into()));
                     }
                 }
@@ -861,7 +865,7 @@ macro_rules! adc {
                 /// to sample for at a given ADC clock frequency
                 pub fn configure_channel<CHANNEL>(&mut self, _channel: &CHANNEL, sequence: config::Sequence, sample_time: config::SampleTime)
                 where
-                    CHANNEL: Channel<stm32::$adc_type, ID=u8>
+                    CHANNEL: Channel<pac::$adc_type, ID=u8>
                 {
                     //Check the sequence is long enough
                     self.adc_reg.sqr1.modify(|r, w| {
@@ -939,7 +943,7 @@ macro_rules! adc {
                 /// Note that it reconfigures the adc sequence and doesn't restore it
                 pub fn convert<PIN>(&mut self, pin: &PIN, sample_time: config::SampleTime) -> u16
                 where
-                    PIN: Channel<stm32::$adc_type, ID=u8>
+                    PIN: Channel<pac::$adc_type, ID=u8>
                 {
                     self.adc_reg.cr2.modify(|_, w| w
                         .dma().clear_bit() //Disable dma
@@ -970,9 +974,9 @@ macro_rules! adc {
                 }
             }
 
-            impl<PIN> OneShot<stm32::$adc_type, u16, PIN> for Adc<stm32::$adc_type>
+            impl<PIN> OneShot<pac::$adc_type, u16, PIN> for Adc<pac::$adc_type>
             where
-                PIN: Channel<stm32::$adc_type, ID=u8>,
+                PIN: Channel<pac::$adc_type, ID=u8>,
             {
                 type Error = ();
 
@@ -1014,7 +1018,7 @@ macro_rules! adc {
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-adc!(ADC1 => (adc1, ADC_COMMON, apb2enr, adc1en, apb2rstr, adcrst));
+adc!(ADC1 => (adc1, ADC_COMMON, 8));
 
 #[cfg(any(
     feature = "stm32f405",
@@ -1029,7 +1033,7 @@ adc!(ADC1 => (adc1, ADC_COMMON, apb2enr, adc1en, apb2rstr, adcrst));
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-adc!(ADC2 => (adc2, ADC_COMMON, apb2enr, adc2en, apb2rstr, adcrst));
+adc!(ADC2 => (adc2, ADC_COMMON, 9));
 
 #[cfg(any(
     feature = "stm32f405",
@@ -1044,7 +1048,7 @@ adc!(ADC2 => (adc2, ADC_COMMON, apb2enr, adc2en, apb2rstr, adcrst));
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-adc!(ADC3 => (adc3, ADC_COMMON, apb2enr, adc3en, apb2rstr, adcrst));
+adc!(ADC3 => (adc3, ADC_COMMON, 10));
 
 #[cfg(feature = "stm32f401")]
 adc_pins!(

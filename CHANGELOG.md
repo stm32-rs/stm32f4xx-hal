@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - I2C driver updated to detect and clear all error condition flags.
 - Allow for skipping an ongoing DMA transfer if not using double buffering.
 - Change DMA traits to `embedded-dma`.
+- Use bitbanding during clock enabling and peripheral reset to avoid data races.
 
 ### Added
 
