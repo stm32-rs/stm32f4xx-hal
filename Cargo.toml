@@ -56,7 +56,7 @@ panic-semihosting = "0.5.3"
 cortex-m-semihosting = "0.3.3"
 arrayvec = { version = "0.5.1", default-features = false }
 panic-halt = "0.2.0"
-ssd1306 = "0.3.1"
+ssd1306 = "0.4"
 embedded-graphics = "0.6.2"
 usb-device = "0.2.5"
 usbd-serial = "0.1.0"

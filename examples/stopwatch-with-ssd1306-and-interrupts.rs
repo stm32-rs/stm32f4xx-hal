@@ -42,7 +42,7 @@ use embedded_graphics::{
     prelude::*,
     style::TextStyleBuilder,
 };
-use ssd1306::{mode::GraphicsMode, Builder as SSD1306Builder};
+use ssd1306::{prelude::*, Builder, I2CDIBuilder};
 
 // Set up global state. It's all mutexed up for concurrency safety.
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
@@ -82,7 +82,8 @@ fn main() -> ! {
         board_btn.enable_interrupt(&mut dp.EXTI);
         board_btn.trigger_on_edge(&mut dp.EXTI, Edge::FALLING);
 
-        let mut disp: GraphicsMode<_> = SSD1306Builder::new().connect_i2c(i2c).into();
+        let interface = I2CDIBuilder::new().init(i2c);
+        let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
         disp.init().unwrap();
         disp.flush().unwrap();
 

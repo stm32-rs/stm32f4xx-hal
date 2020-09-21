@@ -26,7 +26,7 @@ use embedded_graphics::{
     fonts::Font6x8, fonts::Text, pixelcolor::BinaryColor, prelude::*, style::TextStyleBuilder,
 };
 
-use ssd1306::{prelude::*, Builder as SSD1306Builder};
+use ssd1306::{prelude::*, Builder, I2CDIBuilder};
 
 use hal::{i2c::I2c, prelude::*, stm32};
 use rand_core::RngCore;
@@ -72,7 +72,8 @@ fn main() -> ! {
         let i2c = I2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
         // Set up the display
-        let mut disp: GraphicsMode<_> = SSD1306Builder::new().connect_i2c(i2c).into();
+        let interface = I2CDIBuilder::new().init(i2c);
+        let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
         disp.init().unwrap();
 
         // enable the RNG peripheral and its clock
