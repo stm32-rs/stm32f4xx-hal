@@ -1862,12 +1862,26 @@ halUsart! {
     UART10: (uart10, apb2enr, 7, uart10en, pclk2),
 }
 
+impl<USART, PINS> fmt::Write for Serial<USART, PINS>
+where
+    Serial<USART, PINS>: serial::Write<u8>,
+{
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        s.as_bytes()
+            .iter()
+            .try_for_each(|c| block!(self.write(*c)))
+            .map_err(|_| fmt::Error)
+    }
+}
+
 impl<USART> fmt::Write for Tx<USART>
 where
     Tx<USART>: serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        let _ = s.as_bytes().iter().map(|c| block!(self.write(*c))).last();
-        Ok(())
+        s.as_bytes()
+            .iter()
+            .try_for_each(|c| block!(self.write(*c)))
+            .map_err(|_| fmt::Error)
     }
 }
