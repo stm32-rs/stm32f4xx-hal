@@ -5,6 +5,8 @@ use crate::bb;
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
 
+use crate::prelude::*;
+
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -350,19 +352,6 @@ use crate::gpio::{Alternate, AF5, AF6};
 
 use crate::rcc::Clocks;
 use crate::time::Hertz;
-
-/// SPI error
-#[derive(Debug)]
-pub enum Error {
-    /// Overrun occurred
-    Overrun,
-    /// Mode fault occurred
-    ModeFault,
-    /// CRC error
-    Crc,
-    #[doc(hidden)]
-    _Extensible,
-}
 
 pub trait Pins<SPI> {}
 pub trait PinSck<SPI> {}
@@ -1030,17 +1019,17 @@ impl<SPI, PINS> spi::FullDuplex<u8> for Spi<SPI, PINS>
 where
     SPI: Deref<Target = spi1::RegisterBlock>,
 {
-    type Error = Error;
+    type Error = SpiError;
 
-    fn read(&mut self) -> nb::Result<u8, Error> {
+    fn read(&mut self) -> nb::Result<u8, Self::Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
+            nb::Error::Other(Self::Error::Overrun)
         } else if sr.modf().bit_is_set() {
-            nb::Error::Other(Error::ModeFault)
+            nb::Error::Other(Self::Error::ModeFault)
         } else if sr.crcerr().bit_is_set() {
-            nb::Error::Other(Error::Crc)
+            nb::Error::Other(Self::Error::CRCError)
         } else if sr.rxne().bit_is_set() {
             // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
             // reading a half-word)
@@ -1050,15 +1039,15 @@ where
         })
     }
 
-    fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+    fn send(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
+            nb::Error::Other(Self::Error::Overrun)
         } else if sr.modf().bit_is_set() {
-            nb::Error::Other(Error::ModeFault)
+            nb::Error::Other(Self::Error::ModeFault)
         } else if sr.crcerr().bit_is_set() {
-            nb::Error::Other(Error::Crc)
+            nb::Error::Other(Self::Error::CRCError)
         } else if sr.txe().bit_is_set() {
             // NOTE(write_volatile) see note above
             unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
