@@ -7,6 +7,8 @@ use embedded_hal::prelude::*;
 use embedded_hal::serial;
 use nb::block;
 
+use crate::prelude::*;
+
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -376,21 +378,6 @@ use crate::gpio::{Alternate, AF7, AF8};
 use crate::rcc::Clocks;
 
 use crate::dma::traits::PeriAddress;
-
-/// Serial error
-#[derive(Debug)]
-pub enum Error {
-    /// Framing error
-    Framing,
-    /// Noise error
-    Noise,
-    /// RX buffer overrun
-    Overrun,
-    /// Parity check error
-    Parity,
-    #[doc(hidden)]
-    _Extensible,
-}
 
 /// Interrupt event
 pub enum Event {
@@ -1545,9 +1532,9 @@ macro_rules! halUsartImpl {
             }
 
             impl<PINS> serial::Read<u8> for Serial<$USARTX, PINS> {
-                type Error = Error;
+                type Error = SerialError;
 
-                fn read(&mut self) -> nb::Result<u8, Error> {
+                fn read(&mut self) -> nb::Result<u8, Self::Error> {
                     let mut rx: Rx<$USARTX> = Rx {
                         _usart: PhantomData,
                     };
@@ -1556,9 +1543,9 @@ macro_rules! halUsartImpl {
             }
 
             impl serial::Read<u8> for Rx<$USARTX> {
-                type Error = Error;
+                type Error = SerialError;
 
-                fn read(&mut self) -> nb::Result<u8, Error> {
+                fn read(&mut self) -> nb::Result<u8, Self::Error> {
                     // NOTE(unsafe) atomic read with no side effects
                     let sr = unsafe { (*$USARTX::ptr()).sr.read() };
 
@@ -1572,13 +1559,13 @@ macro_rules! halUsartImpl {
                     }
 
                     Err(if sr.pe().bit_is_set() {
-                        nb::Error::Other(Error::Parity)
+                        nb::Error::Other(Self::Error::Parity)
                     } else if sr.fe().bit_is_set() {
-                        nb::Error::Other(Error::Framing)
+                        nb::Error::Other(Self::Error::FrameFormat)
                     } else if sr.nf().bit_is_set() {
-                        nb::Error::Other(Error::Noise)
+                        nb::Error::Other(Self::Error::Noise)
                     } else if sr.ore().bit_is_set() {
-                        nb::Error::Other(Error::Overrun)
+                        nb::Error::Other(Self::Error::Overrun)
                     } else if sr.rxne().bit_is_set() {
                         // NOTE(read_volatile) see `write_volatile` below
                         return Ok(unsafe { ptr::read_volatile(&(*$USARTX::ptr()).dr as *const _ as *const _) });
@@ -1598,7 +1585,7 @@ macro_rules! halUsartImpl {
             }
 
             impl<PINS> serial::Write<u8> for Serial<$USARTX, PINS> {
-                type Error = Error;
+                type Error = SerialError;
 
                 fn flush(&mut self) -> nb::Result<(), Self::Error> {
                     let mut tx: Tx<$USARTX> = Tx {
@@ -1625,7 +1612,7 @@ macro_rules! halUsartImpl {
             }
 
             impl serial::Write<u8> for Tx<$USARTX> {
-                type Error = Error;
+                type Error = SerialError;
 
                 fn flush(&mut self) -> nb::Result<(), Self::Error> {
                     // NOTE(unsafe) atomic read with no side effects
@@ -1654,7 +1641,7 @@ macro_rules! halUsartImpl {
             }
 
             impl blocking::serial::Write<u8> for Tx<$USARTX> {
-                type Error = Error;
+                type Error = SerialError;
 
                 fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
                     for &b in bytes {
@@ -1681,7 +1668,7 @@ macro_rules! halUsartImpl {
             }
 
             impl<PINS> blocking::serial::Write<u8> for Serial<$USARTX, PINS> {
-                type Error = Error;
+                type Error = SerialError;
 
                 fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
                     let mut tx: Tx<$USARTX> = Tx {
