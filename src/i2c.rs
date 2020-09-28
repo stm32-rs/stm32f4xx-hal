@@ -1,6 +1,8 @@
 use core::ops::Deref;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
+use crate::prelude::*;
+
 use crate::{bb, pac::i2c1};
 
 #[cfg(any(
@@ -546,16 +548,6 @@ impl PinScl<FMPI2C> for PF14<AlternateOD<AF4>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 impl PinScl<FMPI2C> for PF15<AlternateOD<AF4>> {}
 
-#[derive(Debug)]
-pub enum Error {
-    OVERRUN,
-    NACK,
-    TIMEOUT,
-    BUS,
-    CRC,
-    ARBITRATION,
-}
-
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -786,39 +778,39 @@ where
         self.i2c.cr1.modify(|_, w| w.pe().set_bit());
     }
 
-    fn check_and_clear_error_flags(&self) -> Result<i2c1::sr1::R, Error> {
+    fn check_and_clear_error_flags(&self) -> Result<i2c1::sr1::R, I2cError> {
         // Note that flags should only be cleared once they have been registered. If flags are
         // cleared otherwise, there may be an inherent race condition and flags may be missed.
         let sr1 = self.i2c.sr1.read();
 
         if sr1.timeout().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.timeout().clear_bit());
-            return Err(Error::TIMEOUT);
+            return Err(I2cError::Timeout);
         }
 
         if sr1.pecerr().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.pecerr().clear_bit());
-            return Err(Error::CRC);
+            return Err(I2cError::PacketErrorChecking);
         }
 
         if sr1.ovr().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.ovr().clear_bit());
-            return Err(Error::OVERRUN);
+            return Err(I2cError::Overrun);
         }
 
         if sr1.af().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.af().clear_bit());
-            return Err(Error::NACK);
+            return Err(I2cError::NACK);
         }
 
         if sr1.arlo().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.arlo().clear_bit());
-            return Err(Error::ARBITRATION);
+            return Err(I2cError::ArbitrationLoss);
         }
 
         if sr1.berr().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.berr().clear_bit());
-            return Err(Error::BUS);
+            return Err(I2cError::Bus);
         }
 
         Ok(sr1)
@@ -830,18 +822,18 @@ where
 }
 
 trait I2cCommon {
-    fn write_bytes(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error>;
+    fn write_bytes(&mut self, addr: u8, bytes: &[u8]) -> Result<(), I2cError>;
 
-    fn send_byte(&self, byte: u8) -> Result<(), Error>;
+    fn send_byte(&self, byte: u8) -> Result<(), I2cError>;
 
-    fn recv_byte(&self) -> Result<u8, Error>;
+    fn recv_byte(&self) -> Result<u8, I2cError>;
 }
 
 impl<I2C, PINS> I2cCommon for I2c<I2C, PINS>
 where
     I2C: Deref<Target = i2c1::RegisterBlock>,
 {
-    fn write_bytes(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
+    fn write_bytes(&mut self, addr: u8, bytes: &[u8]) -> Result<(), I2cError> {
         // Send a START condition
         self.i2c.cr1.modify(|_, w| w.start().set_bit());
 
@@ -882,7 +874,7 @@ where
         Ok(())
     }
 
-    fn send_byte(&self, byte: u8) -> Result<(), Error> {
+    fn send_byte(&self, byte: u8) -> Result<(), I2cError> {
         // Wait until we're ready for sending
         while {
             // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
@@ -901,7 +893,7 @@ where
         Ok(())
     }
 
-    fn recv_byte(&self) -> Result<u8, Error> {
+    fn recv_byte(&self) -> Result<u8, I2cError> {
         while {
             // Check for any potential error conditions.
             self.check_and_clear_error_flags()?;
@@ -918,7 +910,7 @@ impl<I2C, PINS> WriteRead for I2c<I2C, PINS>
 where
     I2C: Deref<Target = i2c1::RegisterBlock>,
 {
-    type Error = Error;
+    type Error = I2cError;
 
     fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
         self.write_bytes(addr, bytes)?;
@@ -932,7 +924,7 @@ impl<I2C, PINS> Write for I2c<I2C, PINS>
 where
     I2C: Deref<Target = i2c1::RegisterBlock>,
 {
-    type Error = Error;
+    type Error = I2cError;
 
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
         self.write_bytes(addr, bytes)?;
@@ -952,7 +944,7 @@ impl<I2C, PINS> Read for I2c<I2C, PINS>
 where
     I2C: Deref<Target = i2c1::RegisterBlock>,
 {
-    type Error = Error;
+    type Error = I2cError;
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         if let Some((last, buffer)) = buffer.split_last_mut() {
@@ -1003,7 +995,7 @@ where
             // Fallthrough is success
             Ok(())
         } else {
-            Err(Error::OVERRUN)
+            Err(Self::Error::Overrun)
         }
     }
 }
@@ -1073,19 +1065,19 @@ where
         (self.i2c, self.pins)
     }
 
-    fn check_and_clear_error_flags(&self, isr: &fmpi2c::isr::R) -> Result<(), Error> {
+    fn check_and_clear_error_flags(&self, isr: &fmpi2c::isr::R) -> Result<(), I2cError> {
         // If we received a NACK, then this is an error
         if isr.nackf().bit_is_set() {
             self.i2c
                 .icr
                 .write(|w| w.stopcf().set_bit().nackcf().set_bit());
-            return Err(Error::NACK);
+            return Err(I2cError::NACK);
         }
 
         Ok(())
     }
 
-    fn send_byte(&self, byte: u8) -> Result<(), Error> {
+    fn send_byte(&self, byte: u8) -> Result<(), I2cError> {
         // Wait until we're ready for sending
         while {
             let isr = self.i2c.isr.read();
@@ -1100,7 +1092,7 @@ where
         Ok(())
     }
 
-    fn recv_byte(&self) -> Result<u8, Error> {
+    fn recv_byte(&self) -> Result<u8, I2cError> {
         while {
             let isr = self.i2c.isr.read();
             self.check_and_clear_error_flags(&isr)?;
@@ -1117,9 +1109,9 @@ impl<I2C, PINS> WriteRead for FMPI2c<I2C, PINS>
 where
     I2C: Deref<Target = fmpi2c::RegisterBlock>,
 {
-    type Error = Error;
+    type Error = I2cError;
 
-    fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
         // Set up current slave address for writing and disable autoending
         self.i2c.cr2.modify(|_, w| unsafe {
             w.sadd1_7()
@@ -1187,9 +1179,9 @@ impl<I2C, PINS> Read for FMPI2c<I2C, PINS>
 where
     I2C: Deref<Target = fmpi2c::RegisterBlock>,
 {
-    type Error = Error;
+    type Error = I2cError;
 
-    fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Error> {
+    fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         // Set up current address for reading
         self.i2c.cr2.modify(|_, w| unsafe {
             w.sadd1_7()
@@ -1223,9 +1215,9 @@ impl<I2C, PINS> Write for FMPI2c<I2C, PINS>
 where
     I2C: Deref<Target = fmpi2c::RegisterBlock>,
 {
-    type Error = Error;
+    type Error = I2cError;
 
-    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
+    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
         // Set up current slave address for writing and enable autoending
         self.i2c.cr2.modify(|_, w| unsafe {
             w.sadd1_7()
