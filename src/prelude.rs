@@ -1,3 +1,4 @@
+pub use embedded_error::*;
 pub use embedded_hal::digital::v2::InputPin as _embedded_hal_digital_v2_InputPin;
 pub use embedded_hal::digital::v2::OutputPin as _embedded_hal_digital_v2_OutputPin;
 pub use embedded_hal::digital::v2::StatefulOutputPin as _embedded_hal_digital_v2_StatefulOutputPin;
