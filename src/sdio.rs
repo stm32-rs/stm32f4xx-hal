@@ -250,8 +250,7 @@ impl Sdio {
         let capacity = if ocr.high_capacity() {
             CardCapacity::SDHC
         } else {
-            // Note: SDSC Not supported yet
-            return Err(Error::UnsupportedCardType);
+            CardCapacity::SDSC
         };
 
         // Get CID
@@ -291,6 +290,9 @@ impl Sdio {
         };
 
         self.card.replace(card);
+
+        // Wait before setting the bus witdth and frequency to avoid timeouts on SDSC cards
+        while !self.card_ready()? {}
 
         self.set_bus(self.bw, freq)?;
         Ok(())
