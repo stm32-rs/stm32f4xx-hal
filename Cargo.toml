@@ -134,3 +134,7 @@ required-features = ["rt", "stm32f407"]
 [[example]]
 name = "qei"
 required-features = ["rt", "stm32f411"]
+
+[[example]]
+name = "systick-blinky"
+required-features = ["rt", "stm32f429"]
