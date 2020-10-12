@@ -314,8 +314,15 @@ impl Sdio {
 
     /// Read a block from the card
     pub fn read_block(&mut self, blockaddr: u32, block: &mut [u8; 512]) -> Result<(), Error> {
-        let _card = self.card()?;
+        let card = self.card()?;
 
+        // Always write 1 block of 512 bytes
+        // SDSC cards are byte addressed hence the blockaddress is in multiples of 512 bytes
+        let blockaddr = match card.capacity {
+            CardCapacity::SDSC => blockaddr * 512,
+            _ => blockaddr,
+        };
+        
         self.cmd(cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, true);
         self.cmd(cmd::read_single_block(blockaddr))?;
@@ -350,7 +357,14 @@ impl Sdio {
 
     /// Write a block to card
     pub fn write_block(&mut self, blockaddr: u32, block: &[u8; 512]) -> Result<(), Error> {
-        let _card = self.card()?;
+        let card = self.card()?;
+
+        // Always write 1 block of 512 bytes
+        // SDSC cards are byte addressed hence the blockaddress is in multiples of 512 bytes
+        let blockaddr = match card.capacity {
+            CardCapacity::SDSC => blockaddr * 512,
+            _ => blockaddr,
+        };
 
         self.cmd(cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, false);
