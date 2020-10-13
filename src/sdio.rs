@@ -250,8 +250,7 @@ impl Sdio {
         let capacity = if ocr.high_capacity() {
             CardCapacity::SDHC
         } else {
-            // Note: SDSC Not supported yet
-            return Err(Error::UnsupportedCardType);
+            CardCapacity::SDSC
         };
 
         // Get CID
@@ -292,6 +291,9 @@ impl Sdio {
 
         self.card.replace(card);
 
+        // Wait before setting the bus witdth and frequency to avoid timeouts on SDSC cards
+        while !self.card_ready()? {}
+
         self.set_bus(self.bw, freq)?;
         Ok(())
     }
@@ -312,8 +314,14 @@ impl Sdio {
 
     /// Read a block from the card
     pub fn read_block(&mut self, blockaddr: u32, block: &mut [u8; 512]) -> Result<(), Error> {
-        let _card = self.card()?;
+        let card = self.card()?;
 
+        // Always read 1 block of 512 bytes
+        // SDSC cards are byte addressed hence the blockaddress is in multiples of 512 bytes
+        let blockaddr = match card.capacity {
+            CardCapacity::SDSC => blockaddr * 512,
+            _ => blockaddr,
+        };
         self.cmd(cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, true);
         self.cmd(cmd::read_single_block(blockaddr))?;
@@ -348,8 +356,14 @@ impl Sdio {
 
     /// Write a block to card
     pub fn write_block(&mut self, blockaddr: u32, block: &[u8; 512]) -> Result<(), Error> {
-        let _card = self.card()?;
+        let card = self.card()?;
 
+        // Always write 1 block of 512 bytes
+        // SDSC cards are byte addressed hence the blockaddress is in multiples of 512 bytes
+        let blockaddr = match card.capacity {
+            CardCapacity::SDSC => blockaddr * 512,
+            _ => blockaddr,
+        };
         self.cmd(cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, false);
         self.cmd(cmd::write_single_block(blockaddr))?;
