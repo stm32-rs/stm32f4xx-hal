@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Change DMA traits to `embedded-dma`.
 - Use bitbanding during clock enabling and peripheral reset to avoid data races.
 - Add missing `Write` implementation for `Serial` and implemented better error handling.
+- ADC2 and ADC3 no longer allow access to VREF, VBAT, or the internal temperature measurement, as
+  the ADCs do not have an internal connection for these channels.
 
 ### Added
 
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `check_interrupt` method for GPIO pins
 - Basic support for DAC
 - Add initial DMA support
+- Allow specification of ADC reference voltage in ADC configuraton structure
 
 ### Fixed
 - Stability fixes related to SD card write
