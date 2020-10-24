@@ -439,10 +439,6 @@ pub mod config {
         ///
         /// # Args
         /// * `vdda_mv` - The ADC reference voltage in millivolts.
-        ///
-        /// # Note
-        /// Reference voltage configuration will be overridden for ADC1 by an internal calibration
-        /// routine.
         pub fn reference_voltage(mut self, vdda_mv: u32) -> Self {
             self.vdda = Some(vdda_mv);
             self
@@ -716,12 +712,10 @@ macro_rules! adc {
                         }
                     }
 
-                    let vdda = if let Some(vdda) = config.vdda { vdda } else { VDDA_CALIB };
-
                     let mut s = Self {
                         config,
                         adc_reg: adc,
-                        calibrated_vdda: vdda,
+                        calibrated_vdda: VDDA_CALIB,
                         max_sample: 0,
                     };
 
@@ -731,6 +725,11 @@ macro_rules! adc {
 
                     s.enable();
                     s.calibrate();
+
+                    // If the user specified a VDDA, use that over the internally determined value.
+                    if let Some(vdda) = s.config.vdda {
+                        s.calibrated_vdda = vdda;
+                    }
 
                     s
                 }
