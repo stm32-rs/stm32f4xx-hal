@@ -21,8 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Change DMA traits to `embedded-dma`.
 - Use bitbanding during clock enabling and peripheral reset to avoid data races.
 - Add missing `Write` implementation for `Serial` and implemented better error handling.
-- ADC2 and ADC3 no longer allow access to VREF, VBAT, or the internal temperature measurement, as
-  the ADCs do not have an internal connection for these channels.
+- [breaking-change] ADC2 and ADC3 no longer allow access to VREF, VBAT, or the internal
+  temperature measurement (ADC2 and ADC3 do not have an internal connection for these channels)
 
 ### Added
 
