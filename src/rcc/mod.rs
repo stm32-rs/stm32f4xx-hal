@@ -40,7 +40,7 @@
 //! frequencies may substantially deviate from the requested frequencies.
 
 use crate::stm32::rcc::cfgr::{HPRE_A, SW_A};
-use crate::stm32::RCC;
+use crate::stm32::{rcc, RCC};
 
 use crate::time::Hertz;
 
@@ -69,6 +69,8 @@ pub trait RccExt {
 impl RccExt for RCC {
     fn constrain(self) -> Rcc {
         Rcc {
+            apb1: APB1 { _0: () },
+            bdcr: BDCR { _0: () },
             cfgr: CFGR {
                 hse: None,
                 hclk: None,
@@ -138,6 +140,10 @@ impl RccExt for RCC {
 
 /// Constrained RCC peripheral
 pub struct Rcc {
+    /// Advanced Peripheral Bus 1 (APB1) registers
+    pub apb1: APB1,
+    /// RCC Backup Domain
+    pub bdcr: BDCR,
     pub cfgr: CFGR,
 }
 
@@ -228,6 +234,50 @@ pub const PCLK2_MAX: u32 = SYSCLK_MAX / 2;
 
 /// Maximum APB1 peripheral clock frequency
 pub const PCLK1_MAX: u32 = PCLK2_MAX / 2;
+
+/// Advanced Peripheral Bus 1 (APB1) registers
+///
+/// Aquired through the `Rcc` registers:
+///
+/// ```rust
+/// let dp = pac::Peripherals::take().unwrap();
+/// let mut rcc = dp.RCC.constrain();
+/// function_that_uses_apb1(&mut rcc.apb1)
+/// ```
+pub struct APB1 {
+    _0: (),
+}
+
+impl APB1 {
+    pub(crate) fn enr(&mut self) -> &rcc::APB1ENR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).apb1enr }
+    }
+
+    pub(crate) fn rstr(&mut self) -> &rcc::APB1RSTR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).apb1rstr }
+    }
+}
+
+impl APB1 {
+    /// Set power interface clock (PWREN) bit in RCC_APB1ENR
+    pub fn set_pwren(&mut self) {
+        self.enr().modify(|_r, w| w.pwren().set_bit())
+    }
+}
+
+/// Backup Domain Control register (RCC_BDCR)
+pub struct BDCR {
+    _0: (),
+}
+
+impl BDCR {
+    pub(crate) fn bdcr(&mut self) -> &rcc::BDCR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).bdcr }
+    }
+}
 
 pub struct CFGR {
     hse: Option<u32>,
