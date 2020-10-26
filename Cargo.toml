@@ -100,6 +100,10 @@ lto = true
 opt-level = "s"
 
 [[example]]
+name = "blinky-timer-irq"
+required-features = ["rt", "stm32f411"]
+
+[[example]]
 name = "usb_serial"
 required-features = ["rt", "stm32f401", "usb_fs"]
 
