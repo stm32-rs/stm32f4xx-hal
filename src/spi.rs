@@ -1070,7 +1070,9 @@ where
 
         if txe {
             // NOTE(write_volatile) see note above
-            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte); }
+            unsafe {
+                ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte);
+            }
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
