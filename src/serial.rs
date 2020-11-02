@@ -1424,10 +1424,55 @@ macro_rules! halUsartImpl {
                         bb::set(&rcc.$apbXenr, $rcc_bit);
                     }
 
+                    let pclk_freq = clocks.$pclkX().0;
+                    let baud = config.baudrate.0;
+
+                    // The frequency to calculate USARTDIV is this:
+                    //
+                    // (Taken from STM32F411xC/E Reference Manual,
+                    // Section 19.3.4, Equation 1)
+                    //
+                    // 16 bit oversample: OVER8 = 0
+                    // 8 bit oversample:  OVER8 = 1
+                    //
+                    // USARTDIV =          (pclk)
+                    //            ------------------------
+                    //            8 x (2 - OVER8) x (baud)
+                    //
+                    // BUT, the USARTDIV has 4 "fractional" bits, which effectively
+                    // means that we need to "correct" the equation as follows:
+                    //
+                    // USARTDIV =      (pclk) * 16
+                    //            ------------------------
+                    //            8 x (2 - OVER8) x (baud)
+                    //
+                    // When OVER8 is enabled, we can only use the lowest three
+                    // fractional bits, so we'll need to shift those last four bits
+                    // right one bit
+
                     // Calculate correct baudrate divisor on the fly
-                    let div = (clocks.$pclkX().0 + config.baudrate.0 / 2)
-                        / config.baudrate.0;
-                    usart.brr.write(|w| unsafe { w.bits(div) });
+                    let (over8, div) = if (pclk_freq / 16) >= baud {
+                        // We have the ability to oversample to 16 bits, take
+                        // advantage of it.
+                        let div = pclk_freq / baud;
+                        (false, div)
+                    } else if (pclk_freq / 8) >= baud {
+                        // We are close enough to pclk where we can only
+                        // oversample 8.
+                        let div = (pclk_freq * 2) / baud;
+
+                        // Ensure the the fractional bits (only 3) are
+                        // right-aligned.
+                        let frac = (div & 0xF);
+                        let div = (div & !0xF) | (frac >> 1);
+                        (true, div)
+                    } else {
+                        return Err(config::InvalidConfig)
+                    };
+
+                    usart.brr.write(|w| unsafe {
+                        w.bits(div)
+                    });
 
                     // Reset other registers to disable advanced USART features
                     usart.cr2.reset();
@@ -1438,6 +1483,8 @@ macro_rules! halUsartImpl {
                     usart.cr1.write(|w| {
                         w.ue()
                             .set_bit()
+                            .over8()
+                            .bit(over8)
                             .te()
                             .set_bit()
                             .re()
