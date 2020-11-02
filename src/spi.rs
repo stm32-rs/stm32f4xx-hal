@@ -1051,21 +1051,30 @@ where
     }
 
     fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
-        let sr = self.spi.sr.read();
+        // Read from DR register to clear OVR
+        let _ = self.spi.dr.read();
 
-        Err(if sr.ovr().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
-        } else if sr.modf().bit_is_set() {
-            nb::Error::Other(Error::ModeFault)
-        } else if sr.crcerr().bit_is_set() {
-            nb::Error::Other(Error::Crc)
-        } else if sr.txe().bit_is_set() {
+        // Read from SR to clear CRCERR and OVR
+        let mut txe = false;
+        self.spi.sr.modify(|r, w| {
+            txe = r.txe().bit_is_set();
+
+            if r.crcerr().bit_is_set() {
+                w.crcerr().clear_bit();
+            }
+            w
+        });
+
+        // Write to CR1 to clear MODF
+        self.spi.cr1.modify(|_r, w| w);
+
+        if txe {
             // NOTE(write_volatile) see note above
-            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
-            return Ok(());
+            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte); }
+            Ok(())
         } else {
-            nb::Error::WouldBlock
-        })
+            Err(nb::Error::WouldBlock)
+        }
     }
 }
 
