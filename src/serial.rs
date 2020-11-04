@@ -1454,12 +1454,18 @@ macro_rules! halUsartImpl {
                     let (over8, div) = if (pclk_freq / 16) >= baud {
                         // We have the ability to oversample to 16 bits, take
                         // advantage of it.
-                        let div = pclk_freq / baud;
+                        //
+                        // We also add `baud / 2` to the `pclk_freq` to ensure
+                        // rounding of values to the closest scale, rather than the
+                        // floored behavior of normal integer division.
+                        let div = (pclk_freq + (baud / 2)) / baud;
                         (false, div)
                     } else if (pclk_freq / 8) >= baud {
                         // We are close enough to pclk where we can only
                         // oversample 8.
-                        let div = (pclk_freq * 2) / baud;
+                        //
+                        // See note above regarding `baud` and rounding.
+                        let div = ((pclk_freq * 2) + (baud / 2)) / baud;
 
                         // Ensure the the fractional bits (only 3) are
                         // right-aligned.
