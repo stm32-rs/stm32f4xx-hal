@@ -19,17 +19,22 @@ pub struct Crc32 {
 impl Crc32 {
     /// Create a new Crc32 HAL peripheral
     pub fn new(crc: CRC) -> Self {
-        crc.cr.write(|w| w.reset().reset());
-        Self { periph: crc }
+        let mut new = Self { periph: crc };
+        new.init();
+        new
     }
 
-    /// Feed words into the CRC engine without pre-clearing the CRC state.
+    /// Reset the internal CRC32 state to the default value (0xFFFF_FFFF)
+    #[inline(always)]
+    pub fn init(&mut self) {
+        self.periph.cr.write(|w| w.reset().reset());
+    }
+
+    /// Feed words into the CRC engine.
     ///
-    /// The resulting calculated CRC (including this and prior data)
-    /// is returned.
-    ///
-    /// This is useful when using the engine to process multi-part data.
-    pub fn feed_without_clear(&mut self, data: &[u32]) -> u32 {
+    /// The resulting calculated CRC (including this and prior data
+    /// since the last call to `init()` is returned.
+    pub fn update(&mut self, data: &[u32]) -> u32 {
         // Feed each word into the engine
         for word in data {
             self.periph.dr.write(|w| unsafe { w.bits(*word) });
@@ -39,18 +44,10 @@ impl Crc32 {
         self.periph.dr.read().bits()
     }
 
-    /// Feed words into the CRC engine, first clearing the CRC state.
+    /// Feed bytes into the CRC engine.
     ///
-    /// The resulting calculated CRC (of ONLY the given data) is returned.
-    pub fn feed(&mut self, data: &[u32]) -> u32 {
-        self.periph.cr.write(|w| w.reset().reset());
-        self.feed_without_clear(data)
-    }
-
-    /// Feed bytes into the CRC engine without pre-clearing the CRC state.
-    ///
-    /// The resulting calculated CRC (including this and prior data)
-    /// is returned.
+    /// The resulting calculated CRC (including this and prior data
+    /// since the last call to `init()` is returned.
     ///
     /// NOTE: Each four-byte chunk will be copied into a scratch buffer. This
     /// is done to ensure alignment of the data (the CRC engine only processes
@@ -71,9 +68,7 @@ impl Crc32 {
     ///
     /// 1. `0x4433_2211`
     /// 2. `0x0077_6655`
-    ///
-    /// This is useful when using the engine to process multi-part data.
-    pub fn feed_bytes_without_clear(&mut self, data: &[u8]) -> u32 {
+    pub fn update_bytes(&mut self, data: &[u8]) -> u32 {
         let chunks = data.chunks_exact(4);
         let remainder = chunks.remainder();
 
@@ -112,29 +107,6 @@ impl Crc32 {
         }
 
         self.periph.dr.read().bits()
-    }
-
-    /// Feed words into the CRC engine, first clearing the CRC state.
-    ///
-    /// NOTE: Each four-byte chunk will be copied into a scratch buffer. This
-    /// is done to ensure alignment of the data (the CRC engine only processes
-    /// full words at a time). If the number of bytes passed in are not a
-    /// multiple of four, the MOST significant bytes of the remaining word will
-    /// be zeroes.
-    ///
-    /// Example: Given the following 7 bytes:
-    ///
-    /// `[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77]`
-    ///
-    /// The following two words will be fed into the CRC engine:
-    ///
-    /// 1. `0x4433_2211`
-    /// 2. `0x0077_6655`
-    ///
-    /// The resulting calculated CRC (of ONLY the given data) is returned.
-    pub fn feed_bytes(&mut self, data: &[u8]) -> u32 {
-        self.periph.cr.write(|w| w.reset().reset());
-        self.feed_bytes_without_clear(data)
     }
 
     /// Consume the HAL peripheral, returning the PAC peripheral
