@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add missing `Write` implementation for `Serial` and implemented better error handling.
 - [breaking-change] ADC2 and ADC3 no longer allow access to VREF, VBAT, or the internal
   temperature measurement (ADC2 and ADC3 do not have an internal connection for these channels)
+- Improved Serial baudrate calculation to be correct for higher baudrates or lower PCLKs
 
 ### Added
 
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Basic support for DAC
 - Add initial DMA support
 - Allow specification of ADC reference voltage in ADC configuraton structure
+- Added support for hardware-based CRC32 functionality
 
 ### Fixed
 - Stability fixes related to SD card write
