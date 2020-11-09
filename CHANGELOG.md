@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Stability fixes related to SD card write
+- Fixed issue where timer generated a spurious interrupt after start
 
 ## [v0.8.3] - 2020-06-12
 

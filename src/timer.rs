@@ -263,6 +263,11 @@ macro_rules! hal {
                     let arr = u16(ticks / u32(psc + 1)).unwrap();
                     self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
 
+                    // Trigger update event to load the registers
+                    self.tim.cr1.modify(|_, w| w.urs().set_bit());
+                    self.tim.egr.write(|w| w.ug().set_bit());
+                    self.tim.cr1.modify(|_, w| w.urs().clear_bit());
+
                     // start counter
                     self.tim.cr1.modify(|_, w| w.cen().set_bit());
                 }
