@@ -285,12 +285,24 @@ impl CFGR {
         }
     }
 
+    /// Initialises the hardware according to CFGR state returning a Clocks instance.
+    /// Panics if overclocking is attempted.
     pub fn freeze(self) -> Clocks {
+        self.freeze_internal(false)
+    }
+
+    /// Initialises the hardware according to CFGR state returning a Clocks instance.
+    /// Allows overclocking.
+    pub unsafe fn freeze_unchecked(self) -> Clocks {
+        self.freeze_internal(true)
+    }
+
+    pub fn freeze_internal(self, unchecked: bool) -> Clocks {
         let rcc = unsafe { &*RCC::ptr() };
 
         let (use_pll, sysclk_on_pll, sysclk, pll48clk) = self.pll_setup();
 
-        assert!(!sysclk_on_pll || sysclk <= SYSCLK_MAX && sysclk >= SYSCLK_MIN);
+        assert!(unchecked || !sysclk_on_pll || sysclk <= SYSCLK_MAX && sysclk >= SYSCLK_MIN);
 
         let hclk = self.hclk.unwrap_or(sysclk);
         let (hpre_bits, hpre_div) = match (sysclk + hclk - 1) / hclk {
@@ -324,7 +336,7 @@ impl CFGR {
         // Calculate real APB1 clock
         let pclk1 = hclk / u32::from(ppre1);
 
-        assert!(pclk1 <= PCLK1_MAX);
+        assert!(unchecked || pclk1 <= PCLK1_MAX);
 
         let pclk2 = self
             .pclk2
@@ -341,7 +353,7 @@ impl CFGR {
         // Calculate real APB2 clock
         let pclk2 = hclk / u32::from(ppre2);
 
-        assert!(pclk2 <= PCLK2_MAX);
+        assert!(unchecked || pclk2 <= PCLK2_MAX);
 
         Self::flash_setup(sysclk);
 
