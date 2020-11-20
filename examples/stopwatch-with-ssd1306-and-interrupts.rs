@@ -22,7 +22,7 @@ extern crate stm32f4xx_hal as hal;
 
 use crate::hal::{
     delay::Delay,
-    gpio::{gpioc::PC13, Edge, ExtiPin, Input, PullUp},
+    gpio::{gpioc::PC13, Edge, Input, PullUp},
     i2c::I2c,
     interrupt,
     prelude::*,
@@ -60,8 +60,6 @@ enum StopwatchState {
 #[entry]
 fn main() -> ! {
     if let (Some(mut dp), Some(cp)) = (stm32::Peripherals::take(), cortex_m::Peripherals::take()) {
-        dp.RCC.apb2enr.write(|w| w.syscfgen().enabled());
-
         let rcc = dp.RCC.constrain();
         let clocks = setup_clocks(rcc);
         let gpiob = dp.GPIOB.split();
@@ -75,10 +73,12 @@ fn main() -> ! {
             clocks,
         );
 
+        let mut syscfg = dp.SYSCFG.constrain();
+
         // Create a button input with an interrupt
         let gpioc = dp.GPIOC.split();
         let mut board_btn = gpioc.pc13.into_pull_up_input();
-        board_btn.make_interrupt_source(&mut dp.SYSCFG);
+        board_btn.make_interrupt_source(&mut syscfg);
         board_btn.enable_interrupt(&mut dp.EXTI);
         board_btn.trigger_on_edge(&mut dp.EXTI, Edge::FALLING);
 

@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] ADC2 and ADC3 no longer allow access to VREF, VBAT, or the internal
   temperature measurement (ADC2 and ADC3 do not have an internal connection for these channels)
 - Improved Serial baudrate calculation to be correct for higher baudrates or lower PCLKs
+- Added `SysCfg` wrapper to enforce clock enable for `SYSCFG`
+- [breaking-change] gpio::ExtiPin now uses `SysCfg` wrapper instead of `SYSCFG`
 
 ### Added
 

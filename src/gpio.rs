@@ -2,7 +2,8 @@
 
 use core::marker::PhantomData;
 
-use crate::pac::{EXTI, SYSCFG};
+use crate::pac::EXTI;
+use crate::syscfg::SysCfg;
 
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
@@ -85,7 +86,7 @@ pub enum Edge {
 
 /// External Interrupt Pin
 pub trait ExtiPin {
-    fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG);
+    fn make_interrupt_source(&mut self, syscfg: &mut SysCfg);
     fn trigger_on_edge(&mut self, exti: &mut EXTI, level: Edge);
     fn enable_interrupt(&mut self, exti: &mut EXTI);
     fn disable_interrupt(&mut self, exti: &mut EXTI);
@@ -97,7 +98,7 @@ macro_rules! exti_erased {
     ($PIN:ty, $extigpionr:expr) => {
         impl<MODE> ExtiPin for $PIN {
             /// Make corresponding EXTI line sensitive to this pin
-            fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
+            fn make_interrupt_source(&mut self, syscfg: &mut SysCfg) {
                 let offset = 4 * (self.i % 4);
                 match self.i {
                     0..=3 => {
@@ -177,7 +178,7 @@ macro_rules! exti {
     ($PIN:ty, $extigpionr:expr, $i:expr, $exticri:ident) => {
         impl<MODE> ExtiPin for $PIN {
             /// Configure EXTI Line $i to trigger from this pin.
-            fn make_interrupt_source(&mut self, syscfg: &mut SYSCFG) {
+            fn make_interrupt_source(&mut self, syscfg: &mut SysCfg) {
                 let offset = 4 * ($i % 4);
                 syscfg.$exticri.modify(|r, w| unsafe {
                     let mut exticr = r.bits();
@@ -247,7 +248,7 @@ macro_rules! gpio {
             use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, toggleable};
             use crate::pac::$GPIOX;
 
-            use crate::{pac::{RCC, EXTI, SYSCFG}, bb};
+            use crate::{pac::{RCC, EXTI}, bb, syscfg::SysCfg};
             use super::{
                 Alternate, AlternateOD, Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AF0, AF1, AF2, AF3, AF4, AF5, AF6, AF7, AF8, AF9, AF10,
