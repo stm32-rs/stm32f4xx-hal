@@ -1,6 +1,6 @@
-use crate::stm32::{SYSCFG, RCC};
-use core::ops::Deref;
 use crate::bb;
+use crate::stm32::{RCC, SYSCFG};
+use core::ops::Deref;
 
 /// Extension trait that constrains the `SYSCFG` peripheral
 pub trait SysCfgExt {
