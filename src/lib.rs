@@ -178,6 +178,8 @@ pub mod signature;
 #[cfg(feature = "device-selected")]
 pub mod spi;
 #[cfg(feature = "device-selected")]
+pub mod syscfg;
+#[cfg(feature = "device-selected")]
 pub mod time;
 #[cfg(feature = "device-selected")]
 pub mod timer;
