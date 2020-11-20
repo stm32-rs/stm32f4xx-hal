@@ -79,11 +79,13 @@ fn main() -> ! {
 
     let clocks = setup_clocks(rcc);
 
+    let mut syscfg = dp.SYSCFG.constrain();
+
     let gpioa = dp.GPIOA.split();
     let gpioe = dp.GPIOE.split();
 
     let mut board_btn = gpioa.pa0.into_pull_down_input();
-    board_btn.make_interrupt_source(&mut dp.SYSCFG);
+    board_btn.make_interrupt_source(&mut syscfg);
     board_btn.enable_interrupt(&mut dp.EXTI);
     board_btn.trigger_on_edge(&mut dp.EXTI, Edge::FALLING);
 
