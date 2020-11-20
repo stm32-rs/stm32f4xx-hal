@@ -19,9 +19,6 @@ impl RccExt for RCC {
                 pclk2: None,
                 sysclk: None,
                 pll48clk: false,
-                pclk1_overclock: false,
-                pclk2_overclock: false,
-                sysclk_overclock: false,
             },
         }
     }
@@ -127,9 +124,6 @@ pub struct CFGR {
     pclk2: Option<u32>,
     sysclk: Option<u32>,
     pll48clk: bool,
-    pclk1_overclock: bool,
-    pclk2_overclock: bool,
-    sysclk_overclock: bool,
 }
 
 impl CFGR {
@@ -177,21 +171,6 @@ impl CFGR {
 
     pub fn require_pll48clk(mut self) -> Self {
         self.pll48clk = true;
-        self
-    }
-
-    pub unsafe fn pclk1_allow_overclock(mut self) -> Self {
-        self.pclk1_overclock = true;
-        self
-    }
-
-    pub unsafe fn pclk2_allow_overclock(mut self) -> Self {
-        self.pclk2_overclock = true;
-        self
-    }
-
-    pub unsafe fn sysclk_allow_overclock(mut self) -> Self {
-        self.sysclk_overclock = true;
         self
     }
 
@@ -306,14 +285,24 @@ impl CFGR {
         }
     }
 
+    /// Initialises the hardware according to CFGR state returning a Clocks instance.
+    /// Panics if overclocking is attempted.
     pub fn freeze(self) -> Clocks {
+        self.freeze_internal(false)
+    }
+
+    /// Initialises the hardware according to CFGR state returning a Clocks instance.
+    /// Allows overclocking.
+    pub unsafe fn freeze_unchecked(self) -> Clocks {
+        self.freeze_internal(true)
+    }
+
+    pub fn freeze_internal(self, unchecked: bool) -> Clocks {
         let rcc = unsafe { &*RCC::ptr() };
 
         let (use_pll, sysclk_on_pll, sysclk, pll48clk) = self.pll_setup();
 
-        assert!(
-            self.sysclk_overclock || !sysclk_on_pll || sysclk <= SYSCLK_MAX && sysclk >= SYSCLK_MIN
-        );
+        assert!(unchecked || !sysclk_on_pll || sysclk <= SYSCLK_MAX && sysclk >= SYSCLK_MIN);
 
         let hclk = self.hclk.unwrap_or(sysclk);
         let (hpre_bits, hpre_div) = match (sysclk + hclk - 1) / hclk {
@@ -347,7 +336,7 @@ impl CFGR {
         // Calculate real APB1 clock
         let pclk1 = hclk / u32::from(ppre1);
 
-        assert!(self.pclk1_overclock || pclk1 <= PCLK1_MAX);
+        assert!(unchecked || pclk1 <= PCLK1_MAX);
 
         let pclk2 = self
             .pclk2
@@ -364,7 +353,7 @@ impl CFGR {
         // Calculate real APB2 clock
         let pclk2 = hclk / u32::from(ppre2);
 
-        assert!(self.pclk2_overclock || pclk2 <= PCLK2_MAX);
+        assert!(unchecked || pclk2 <= PCLK2_MAX);
 
         Self::flash_setup(sysclk);
 
