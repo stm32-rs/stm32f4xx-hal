@@ -22,7 +22,7 @@ extern crate stm32f4xx_hal as hal;
 
 use crate::hal::{
     delay::Delay,
-    gpio::{gpioc::PC13, Edge, ExtiPin, Input, PullUp},
+    gpio::{gpioc::PC13, Edge, Input, PullUp},
     i2c::I2c,
     interrupt,
     prelude::*,

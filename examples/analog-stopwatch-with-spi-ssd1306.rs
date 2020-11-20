@@ -13,7 +13,7 @@ extern crate panic_semihosting;
 extern crate stm32f4xx_hal as hal;
 
 use crate::hal::{
-    gpio::{gpioa::PA0, Edge, ExtiPin, Input, PullDown},
+    gpio::{gpioa::PA0, Edge, Input, PullDown},
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
