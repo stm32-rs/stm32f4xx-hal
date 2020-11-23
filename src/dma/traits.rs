@@ -285,7 +285,7 @@ macro_rules! tim_channels {
     ($($name:ident),+ $(,)*) => {
         $(
             /// Wrapper type that indicates which register of the contained timer to use for DMA.
-            pub struct $name<T> (T);
+            pub struct $name<T> (pub T);
 
             impl<T> Deref for $name<T> {
                 type Target = T;

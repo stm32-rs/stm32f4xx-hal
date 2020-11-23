@@ -39,8 +39,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for hardware-based CRC32 functionality
 
 ### Fixed
+
 - Stability fixes related to SD card write
 - Fixed issue where timer generated a spurious interrupt after start
+- Allow implementations for DMASet from outside the crate
+- DMA: Make it possible to create the wrapper types for the timers
 
 ## [v0.8.3] - 2020-06-12
 
