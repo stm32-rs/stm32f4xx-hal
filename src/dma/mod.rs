@@ -864,9 +864,8 @@ where
     STREAM: Stream,
     CHANNEL: Channel,
     DIR: Direction,
-    PERIPHERAL: PeriAddress,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
     BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
-    (STREAM, CHANNEL, PERIPHERAL, DIR): DMASet,
 {
     /// Applies all fields in DmaConfig.
     fn apply_config(&mut self, config: config::DmaConfig) {
