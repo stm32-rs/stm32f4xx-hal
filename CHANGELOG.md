@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Improved Serial baudrate calculation to be correct for higher baudrates or lower PCLKs
 - Added `SysCfg` wrapper to enforce clock enable for `SYSCFG`
 - [breaking-change] gpio::ExtiPin now uses `SysCfg` wrapper instead of `SYSCFG`
+- Add `MonoTimer` and `Instant` structs for basic time measurement.
 
 ### Added
 
