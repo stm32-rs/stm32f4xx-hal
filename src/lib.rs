@@ -159,6 +159,8 @@ pub mod dma;
 #[cfg(feature = "device-selected")]
 pub mod dwt;
 #[cfg(feature = "device-selected")]
+pub mod flash;
+#[cfg(feature = "device-selected")]
 pub mod prelude;
 #[cfg(feature = "device-selected")]
 pub mod pwm;
