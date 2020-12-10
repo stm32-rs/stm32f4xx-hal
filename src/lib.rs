@@ -23,9 +23,12 @@ compile_error!(
         stm32f479"
 );
 
+#[cfg(feature = "device-selected")]
 pub use embedded_hal as hal;
 
+#[cfg(feature = "device-selected")]
 pub use nb;
+#[cfg(feature = "device-selected")]
 pub use nb::block;
 
 #[cfg(feature = "stm32f401")]
@@ -141,6 +144,8 @@ pub use pac as stm32;
 pub mod dma;
 #[cfg(feature = "device-selected")]
 pub mod dwt;
+#[cfg(feature = "device-selected")]
+pub mod flash;
 #[cfg(all(
     feature = "device-selected",
     feature = "fsmc_lcd",
@@ -176,7 +181,9 @@ pub mod timer;
 #[cfg(feature = "device-selected")]
 pub mod watchdog;
 
+#[cfg(feature = "device-selected")]
 mod sealed {
     pub trait Sealed {}
 }
+#[cfg(feature = "device-selected")]
 pub(crate) use sealed::Sealed;
