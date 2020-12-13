@@ -42,8 +42,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Stability fixes related to SD card write
 - Fixed issue where timer generated a spurious interrupt after start
-- Allow implementations for DMASet from outside the crate
-- DMA: Make it possible to create the wrapper types for the timers
+- Allow implementations for DMASet from outside the crate [#237]
+- DMA: Make it possible to create the wrapper types for the timers [#237]
+- DMA: Fix some `compiler_fences` [#237]
+
+[#237]: https://github.com/stm32-rs/stm32f4xx-hal/pull/237
 
 ## [v0.8.3] - 2020-06-12
 

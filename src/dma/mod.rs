@@ -1035,7 +1035,10 @@ where
             }
 
             if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
+                // "Preceding reads and writes cannot be moved past subsequent writes"
+                compiler_fence(Ordering::Release);
                 self.stream.set_memory_address(new_buf_ptr as u32);
+
                 // Check if an overrun occurred, the buffer address won't be updated in that case
                 if self.stream.get_memory_address() != new_buf_ptr as u32 {
                     self.stream.clear_transfer_complete_interrupt();
@@ -1050,8 +1053,11 @@ where
                 // We always have a buffer, so unwrap can't fail
                 return Ok((old_buf.unwrap(), CurrentBuffer::FirstBuffer));
             } else {
+                // "Preceding reads and writes cannot be moved past subsequent writes"
+                compiler_fence(Ordering::Release);
                 self.stream
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
+
                 // Check if an overrun occurred, the buffer address won't be updated in that case
                 if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
                     self.stream.clear_transfer_complete_interrupt();
@@ -1079,9 +1085,6 @@ where
         self.stream.set_memory_address(buf_ptr as u32);
         self.stream.set_number_of_transfers(buf_len as u16);
         let old_buf = self.buf.replace(new_buf);
-
-        // "Preceding reads and writes cannot be moved past subsequent writes"
-        compiler_fence(Ordering::Release);
 
         unsafe {
             self.stream.enable();
@@ -1215,6 +1218,8 @@ where
             }
 
             if current_buffer == CurrentBuffer::DoubleBuffer {
+                // "Preceding reads and writes cannot be moved past subsequent writes"
+                compiler_fence(Ordering::Release);
                 self.stream.set_memory_address(new_buf_ptr as u32);
 
                 // Check again if an overrun occurred, the buffer address won't be updated in that
@@ -1229,8 +1234,11 @@ where
                 self.buf.replace(new_buf);
                 return Ok(r.1);
             } else {
+                // "Preceding reads and writes cannot be moved past subsequent writes"
+                compiler_fence(Ordering::Release);
                 self.stream
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
+
                 if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
                     panic!("Overrun");
                 }
@@ -1258,11 +1266,7 @@ where
         self.stream.set_number_of_transfers(buf_len as u16);
         self.buf.replace(new_buf);
 
-        // "Preceding reads and writes cannot be moved past subsequent writes"
-        compiler_fence(Ordering::Release);
-
         self.stream.enable();
-
         Ok(r.1)
     }
 }
