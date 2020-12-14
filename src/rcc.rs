@@ -19,6 +19,8 @@ impl RccExt for RCC {
                 pclk2: None,
                 sysclk: None,
                 pll48clk: false,
+                plli2sclk: None,
+                exti2sclk: None,
             },
         }
     }
@@ -117,6 +119,12 @@ pub const PCLK2_MAX: u32 = SYSCLK_MAX / 2;
 /// Maximum APB1 peripheral clock frequency
 pub const PCLK1_MAX: u32 = PCLK2_MAX / 2;
 
+struct PLLI2SCFGR {
+    r: u8,
+    n: u16,
+    m: u8,
+}
+
 pub struct CFGR {
     hse: Option<u32>,
     hclk: Option<u32>,
@@ -124,6 +132,8 @@ pub struct CFGR {
     pclk2: Option<u32>,
     sysclk: Option<u32>,
     pll48clk: bool,
+    plli2sclk: Option<PLLI2SCFGR>,
+    exti2sclk: Option<u32>,
 }
 
 impl CFGR {
@@ -171,6 +181,21 @@ impl CFGR {
 
     pub fn require_pll48clk(mut self) -> Self {
         self.pll48clk = true;
+        self
+    }
+
+    /// Enable and configure the PLLI2S clock, and select it as i2s clock source
+    pub fn plli2sclk(mut self, r: u8, n: u16, m: u8) -> Self {
+        self.plli2sclk = Some(PLLI2SCFGR { r, n, m });
+        self
+    }
+
+    /// Use external clock of frequency `freq` as i2s clock source
+    pub fn use_exti2sclk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.exti2sclk = Some(freq.into().0);
         self
     }
 
