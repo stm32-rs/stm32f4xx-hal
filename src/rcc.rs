@@ -119,6 +119,50 @@ pub const PCLK2_MAX: u32 = SYSCLK_MAX / 2;
 /// Maximum APB1 peripheral clock frequency
 pub const PCLK1_MAX: u32 = PCLK2_MAX / 2;
 
+/// Maximum I2S clock frequency
+// TODO check actual value across reference manual
+pub const I2SCLK_MAX: u32 = 192_000_000;
+
+/// Minimum division factor for PLLI2S ouptut clock
+// TODO check actual value across reference manual
+pub const PLLI2S_R_MIN: u8 = 2;
+
+/// Maximum division factor for PLLI2S output clock
+// TODO check actual value across reference manual
+pub const PLLI2S_R_MAX: u8 = 7;
+
+/// Minimum PLLI2S multiplication factor for PLLI2S vco
+// TODO check actual value across reference manual
+pub const PLLI2S_N_MIN: u16 = 50;
+
+/// Maximum PLLI2S multiplication factor for PLLI2S vco
+// TODO check actual value across reference manual
+pub const PLLI2S_N_MAX: u16 = 432;
+
+/// Minimum frequency at PLLI2S vco output
+// TODO check actual value across datasheets
+pub const PLLI2S_N_FREQ_MIN: u32 = 100_000_000;
+
+/// Maximum frequency at PLLI2S vco output
+// TODO check actual value across datasheets
+pub const PLLI2S_N_FREQ_MAX: u32 = 432_000_000;
+
+/// Minimum division factor for PLLI2S input clock
+// TODO check actual value across reference manual
+pub const PLLI2S_M_MIN: u8 = 2;
+
+/// Maximum division factor for PLLI2S input clock
+// TODO check actual value across reference manual
+pub const PLLI2S_M_MAX: u8 = 63;
+
+/// Minimum frequency for PLLI2S input clock
+// TODO check actual value across datasheets
+pub const PLLI2S_M_FREQ_MIN: u32 = 950_000;
+
+/// Maximum frequency for PLLI2S input clock
+// TODO check actual value across datasheets
+pub const PLLI2S_M_FREQ_MAX: u32 = 2_100_000;
+
 struct PLLI2SCFGR {
     r: u8,
     n: u16,
@@ -271,6 +315,69 @@ impl CFGR {
             sysclk
         };
         (true, sysclk_on_pll, real_sysclk, Some(Hertz(pll48clk)))
+    }
+
+    // This function setup the hardware for i2s clock:
+    //
+    // Ok(Some(freq)) i2s clock is correctly set and have `freq` frequency
+    // Ok(None) i2s clock wasn't required
+    // Err(_) something is wrong with the provided configuration, the hardware is leave untouched
+    #[inline(always)]
+    fn i2sclk_setup(&self) -> Result<Option<Hertz>, ()> {
+        if let Some(exti2sclk) = self.exti2sclk {
+            if exti2sclk > I2SCLK_MAX {
+                return Err(());
+            }
+            unsafe {
+                let rcc = &*RCC::ptr();
+                rcc.cfgr.modify(|_, w| w.i2ssrc().set_bit());
+            }
+            return Ok(Some(Hertz(exti2sclk)));
+        }
+
+        if let Some(plli2sclk) = self.plli2sclk.as_ref() {
+            //check factors
+            if plli2sclk.r < PLLI2S_R_MIN || plli2sclk.r > PLLI2S_R_MAX {
+                return Err(());
+            }
+            if plli2sclk.n < PLLI2S_N_MIN || plli2sclk.n > PLLI2S_N_MAX {
+                return Err(());
+            }
+            if plli2sclk.m < PLLI2S_M_MIN || plli2sclk.m > PLLI2S_M_MAX {
+                return Err(());
+            }
+
+            //check clocks
+            let pllsrcclk = self.hse.unwrap_or(HSI);
+            let plli2s_m_freq = pllsrcclk / (plli2sclk.m as u32);
+            if plli2s_m_freq < PLLI2S_M_FREQ_MIN || plli2s_m_freq > PLLI2S_M_FREQ_MAX {
+                return Err(());
+            }
+            let plli2s_n_freq = plli2s_m_freq * (plli2sclk.n as u32);
+            if plli2s_n_freq < PLLI2S_N_FREQ_MIN || plli2s_n_freq > PLLI2S_N_FREQ_MAX {
+                return Err(());
+            }
+            let plli2s_freq = plli2s_n_freq / (plli2sclk.r as u32);
+            if plli2s_freq > I2SCLK_MAX {
+                return Err(());
+            }
+
+            //setup the hardware
+            unsafe {
+                let rcc = &*RCC::ptr();
+                rcc.plli2scfgr.modify(|_, w| {
+                    w.plli2sr().bits(plli2sclk.r);
+                    w.plli2sn().bits(plli2sclk.n);
+                    w.plli2sm().bits(plli2sclk.m)
+                });
+                //run the clock
+                rcc.cr.modify(|_, w| w.plli2son().set_bit());
+                //wait a stable clock
+                while rcc.cr.read().plli2srdy().bit_is_clear() {}
+            }
+            return Ok(Some(Hertz(plli2s_freq)));
+        }
+        Ok(None)
     }
 
     fn flash_setup(sysclk: u32) {
