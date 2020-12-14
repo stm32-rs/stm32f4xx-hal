@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Allow implementations for DMASet from outside the crate [#237]
 - DMA: Make it possible to create the wrapper types for the timers [#237]
 - DMA: Fix some `compiler_fences` [#237]
+- DMA: Fix docs [#237]
 
 [#237]: https://github.com/stm32-rs/stm32f4xx-hal/pull/237
 

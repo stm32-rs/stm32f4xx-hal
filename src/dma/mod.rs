@@ -1007,8 +1007,9 @@ where
     }
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
-    /// immediately after a transfer complete event. Returns the old buffer together with its
-    /// `CurrentBuffer`. If an error occurs, this method will return the new buffer with the error.
+    /// immediately after a transfer complete event if using double buffering, otherwise you might
+    /// lose data. Returns the old buffer together with its `CurrentBuffer`. If an error occurs,
+    /// this method will return the new buffer with the error.
     ///
     /// This method will clear the transfer complete flag on entry, it will also clear it again if
     /// an overrun occurs during its execution. Moreover, if an overrun occurs, the stream will be
@@ -1157,15 +1158,15 @@ where
     }
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
-    /// immediately after a transfer complete event. The closure must return `(BUF, T)` where `BUF`
-    /// is the new buffer to be used. This method can be called before the end of an ongoing
-    /// transfer only if not using double buffering, in that case, the current transfer will be
-    /// canceled and a new one will be started. A `NotReady` error will be returned if this method
-    /// is called before the end of a transfer while double buffering and the closure won't be
-    /// executed.
+    /// immediately after a transfer complete event if using double buffering, otherwise you might
+    /// lose data. The closure must return `(BUF, T)` where `BUF` is the new buffer to be used. This
+    /// method can be called before the end of an ongoing transfer only if not using double
+    /// buffering, in that case, the current transfer will be canceled and a new one will be
+    /// started. A `NotReady` error will be returned if this method is called before the end of a
+    /// transfer while double buffering and the closure won't be executed.
     ///
     /// # Panics
-    /// This method will panic when double buffering and one or both of the following conditions
+    /// This method will panic when double buffering if one or both of the following conditions
     /// happen:
     ///
     /// * The new buffer's length is smaller than the one used in the `init` method.
@@ -1175,10 +1176,6 @@ where
     ///
     /// Memory corruption might occur in the previous buffer, the one passed to the closure, if an
     /// overrun occurs in double buffering mode.
-    ///
-    /// # Panics
-    ///
-    /// This method will panic if an overrun is detected while double buffering.
     pub unsafe fn next_transfer_with<F, T>(&mut self, f: F) -> Result<T, DMAError<()>>
     where
         F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
