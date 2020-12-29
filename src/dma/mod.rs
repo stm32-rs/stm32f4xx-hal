@@ -1006,6 +1006,10 @@ where
         f(&mut self.peripheral);
         self.stream.disable()
     }
+    
+    pub fn is_done(&self) -> bool {
+       STREAM::get_transfer_complete_flag()
+    }
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
     /// immediately after a transfer complete event. Returns the old buffer together with its
@@ -1022,7 +1026,7 @@ where
         mut new_buf: BUF,
     ) -> Result<(BUF, CurrentBuffer), DMAError<BUF>> {
         if self.double_buf.is_some() && DIR::direction() != DmaDirection::MemoryToMemory {
-            if !STREAM::get_transfer_complete_flag() {
+            if !self.is_done() {
                 return Err(DMAError::NotReady(new_buf));
             }
             self.stream.clear_transfer_complete_interrupt();
