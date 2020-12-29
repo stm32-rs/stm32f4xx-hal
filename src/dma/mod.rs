@@ -1006,9 +1006,9 @@ where
         f(&mut self.peripheral);
         self.stream.disable()
     }
-    
+
     pub fn is_done(&self) -> bool {
-       STREAM::get_transfer_complete_flag()
+        STREAM::get_transfer_complete_flag()
     }
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
