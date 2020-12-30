@@ -19,6 +19,61 @@ impl RccExt for RCC {
                 pclk2: None,
                 sysclk: None,
                 pll48clk: false,
+                i2s_ckin: None,
+                #[cfg(any(
+                    feature = "stm32f401",
+                    feature = "stm32f405",
+                    feature = "stm32f407",
+                    feature = "stm32f410",
+                    feature = "stm32f411",
+                    feature = "stm32f415",
+                    feature = "stm32f417",
+                    feature = "stm32f427",
+                    feature = "stm32f429",
+                    feature = "stm32f437",
+                    feature = "stm32f439",
+                    feature = "stm32f469",
+                    feature = "stm32f479"
+                ))]
+                i2s_clk: None,
+                #[cfg(any(
+                    feature = "stm32f412",
+                    feature = "stm32f413",
+                    feature = "stm32f423",
+                    feature = "stm32f446",
+                ))]
+                i2s_apb1_clk: None,
+                #[cfg(any(
+                    feature = "stm32f412",
+                    feature = "stm32f413",
+                    feature = "stm32f423",
+                    feature = "stm32f446",
+                ))]
+                i2s_apb2_clk: None,
+                #[cfg(any(
+                    feature = "stm32f413",
+                    feature = "stm32f423",
+                    feature = "stm32f427",
+                    feature = "stm32f429",
+                    feature = "stm32f437",
+                    feature = "stm32f439",
+                    feature = "stm32f446",
+                    feature = "stm32f469",
+                    feature = "stm32f479",
+                ))]
+                sai1_clk: None,
+                #[cfg(any(
+                    feature = "stm32f413",
+                    feature = "stm32f423",
+                    feature = "stm32f427",
+                    feature = "stm32f429",
+                    feature = "stm32f437",
+                    feature = "stm32f439",
+                    feature = "stm32f446",
+                    feature = "stm32f469",
+                    feature = "stm32f479",
+                ))]
+                sai2_clk: None,
             },
         }
     }
@@ -124,6 +179,62 @@ pub struct CFGR {
     pclk2: Option<u32>,
     sysclk: Option<u32>,
     pll48clk: bool,
+
+    i2s_ckin: Option<u32>,
+    #[cfg(any(
+        feature = "stm32f401",
+        feature = "stm32f405",
+        feature = "stm32f407",
+        feature = "stm32f410",
+        feature = "stm32f411",
+        feature = "stm32f415",
+        feature = "stm32f417",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+        feature = "stm32f469",
+        feature = "stm32f479"
+    ))]
+    i2s_clk: Option<u32>,
+    #[cfg(any(
+        feature = "stm32f412",
+        feature = "stm32f413",
+        feature = "stm32f423",
+        feature = "stm32f446",
+    ))]
+    i2s_apb1_clk: Option<u32>,
+    #[cfg(any(
+        feature = "stm32f412",
+        feature = "stm32f413",
+        feature = "stm32f423",
+        feature = "stm32f446",
+    ))]
+    i2s_apb2_clk: Option<u32>,
+    #[cfg(any(
+        feature = "stm32f413",
+        feature = "stm32f423",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+        feature = "stm32f446",
+        feature = "stm32f469",
+        feature = "stm32f479",
+    ))]
+    sai1_clk: Option<u32>,
+    #[cfg(any(
+        feature = "stm32f413",
+        feature = "stm32f423",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+        feature = "stm32f446",
+        feature = "stm32f469",
+        feature = "stm32f479",
+    ))]
+    sai2_clk: Option<u32>,
 }
 
 impl CFGR {
@@ -171,6 +282,130 @@ impl CFGR {
 
     pub fn require_pll48clk(mut self) -> Self {
         self.pll48clk = true;
+        self
+    }
+
+    /// Declares that the selected frequency is available at the I2S clock input pin (I2S_CKIN).
+    ///
+    /// If this frequency matches the requested SAI or I2S frequencies, the external I2S clock is
+    /// used to generate the clocks.
+    pub fn i2s_ckin<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.i2s_ckin = Some(freq.into().0);
+        self
+    }
+
+    /// Selects an I2S clock frequency and enables the I2S clock.
+    #[cfg(any(
+        feature = "stm32f401",
+        feature = "stm32f405",
+        feature = "stm32f407",
+        feature = "stm32f410",
+        feature = "stm32f411",
+        feature = "stm32f415",
+        feature = "stm32f417",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+        feature = "stm32f469",
+        feature = "stm32f479"
+    ))]
+    pub fn i2s_clk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.i2s_clk = Some(freq.into().0);
+        self
+    }
+
+    /// Selects an I2S clock frequency for the first set of I2S instancesand enables the I2S clock.
+    #[cfg(any(
+        feature = "stm32f412",
+        feature = "stm32f413",
+        feature = "stm32f423",
+        feature = "stm32f446",
+    ))]
+    pub fn i2s_apb1_clk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.i2s_apb1_clk = Some(freq.into().0);
+        self
+    }
+
+    /// Selects an I2S clock frequency for the second set of I2S instances and enables the I2S clock.
+    #[cfg(any(
+        feature = "stm32f412",
+        feature = "stm32f413",
+        feature = "stm32f423",
+        feature = "stm32f446",
+    ))]
+    pub fn i2s_apb2_clk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.i2s_apb2_clk = Some(freq.into().0);
+        self
+    }
+
+    /// Selects a SAIA clock frequency and enables the SAIA clock.
+    #[cfg(any(
+        feature = "stm32f413",
+        feature = "stm32f423",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+        feature = "stm32f469",
+        feature = "stm32f479",
+    ))]
+    pub fn saia_clk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.sai1_clk = Some(freq.into().0);
+        self
+    }
+
+    /// Selects a SAIB clock frequency and enables the SAIB clock.
+    #[cfg(any(
+        feature = "stm32f413",
+        feature = "stm32f423",
+        feature = "stm32f427",
+        feature = "stm32f429",
+        feature = "stm32f437",
+        feature = "stm32f439",
+        feature = "stm32f469",
+        feature = "stm32f479",
+    ))]
+    pub fn saib_clk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.sai2_clk = Some(freq.into().0);
+        self
+    }
+
+    /// Selects a SAI1 clock frequency and enables the SAI1 clock.
+    #[cfg(any(feature = "stm32f446",))]
+    pub fn sai1_clk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.sai1_clk = Some(freq.into().0);
+        self
+    }
+
+    /// Selects a SAI2 clock frequency and enables the SAI2 clock.
+    #[cfg(any(feature = "stm32f446",))]
+    pub fn sai2_clk<F>(mut self, freq: F) -> Self
+    where
+        F: Into<Hertz>,
+    {
+        self.sai2_clk = Some(freq.into().0);
         self
     }
 
