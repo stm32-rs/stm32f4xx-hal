@@ -15,7 +15,7 @@ use core::{
     ptr,
     sync::atomic::{compiler_fence, Ordering},
 };
-use embedded_dma::WriteBuffer;
+use embedded_dma::StaticWriteBuffer;
 
 pub mod traits;
 use traits::{
@@ -847,7 +847,7 @@ pub struct Transfer<STREAM, CHANNEL, PERIPHERAL, DIRECTION, BUF>
 where
     STREAM: Stream,
     PERIPHERAL: PeriAddress,
-    BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize> + 'static,
+    BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     stream: STREAM,
     _channel: PhantomData<CHANNEL>,
@@ -865,7 +865,7 @@ where
     CHANNEL: Channel,
     DIR: Direction,
     PERIPHERAL: PeriAddress,
-    BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize> + 'static,
+    BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
     (STREAM, CHANNEL, PERIPHERAL, DIR): DMASet,
 {
     /// Applies all fields in DmaConfig.
@@ -1272,7 +1272,7 @@ impl<STREAM, CHANNEL, PERIPHERAL, DIR, BUF> Drop for Transfer<STREAM, CHANNEL, P
 where
     STREAM: Stream,
     PERIPHERAL: PeriAddress,
-    BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize> + 'static,
+    BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     fn drop(&mut self) {
         self.stream.disable();
