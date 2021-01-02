@@ -157,6 +157,8 @@ pub mod qei;
 pub mod rcc;
 #[cfg(feature = "device-selected")]
 pub mod rtc;
+#[cfg(feature = "sai")]
+pub mod sai;
 #[cfg(all(feature = "device-selected", feature = "sdio-host", feature = "sdio"))]
 pub mod sdio;
 #[cfg(feature = "device-selected")]
