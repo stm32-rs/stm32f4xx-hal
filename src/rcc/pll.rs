@@ -19,6 +19,12 @@ impl MainPll {
     ) -> MainPll {
         let sysclk = pllsysclk.unwrap_or(pllsrcclk);
         if pllsysclk.is_none() && !pll48clk {
+            // Even if we do not use the main PLL, we still need to set the PLL source as that setting
+            // applies to the I2S and SAI PLLs as well.
+            unsafe { &*RCC::ptr() }
+                .pllcfgr
+                .write(|w| w.pllsrc().bit(use_hse));
+
             return MainPll {
                 use_pll: false,
                 pllsysclk: None,
@@ -307,7 +313,8 @@ impl I2sPll {
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
         // "M" may have been written before, but the value is identical.
-        rcc.pllcfgr.write(|w| unsafe { w.pllm().bits(config.m) });
+        rcc.pllcfgr
+            .modify(|_, w| unsafe { w.pllm().bits(config.m) });
         rcc.plli2scfgr
             .modify(|_, w| unsafe { w.plli2sn().bits(config.n).plli2sr().bits(config.outdiv) });
     }
@@ -429,16 +436,19 @@ impl SaiPll {
     #[cfg(not(feature = "stm32f446"))]
     fn apply_config(config: SingleOutputPll, saidiv: u32) {
         let rcc = unsafe { &*RCC::ptr() };
-        rcc.dckcfgr.modify(|_, w| w.pllsaidivq().bits(saidiv as u8));
+        rcc.dckcfgr
+            .modify(|_, w| w.pllsaidivq().bits(saidiv as u8 - 1));
         // "M" may have been written before, but the value is identical.
-        rcc.pllcfgr.write(|w| unsafe { w.pllm().bits(config.m) });
+        rcc.pllcfgr
+            .modify(|_, w| unsafe { w.pllm().bits(config.m) });
         rcc.pllsaicfgr
             .modify(|_, w| unsafe { w.pllsain().bits(config.n).pllsaiq().bits(config.outdiv) });
     }
     #[cfg(feature = "stm32f446")]
     fn apply_config(config: SingleOutputPll, saidiv: u32) {
         let rcc = unsafe { &*RCC::ptr() };
-        rcc.dckcfgr.modify(|_, w| w.pllsaidivq().bits(saidiv as u8));
+        rcc.dckcfgr
+            .modify(|_, w| w.pllsaidivq().bits(saidiv as u8 - 1));
         rcc.pllsaicfgr.modify(|_, w| unsafe {
             w.pllsaim()
                 .bits(config.m)
