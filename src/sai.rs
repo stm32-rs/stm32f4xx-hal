@@ -78,7 +78,7 @@
 //!     // Stereo audio, two slots per frame.
 //!     num_slots: 2,
 //! };
-//! let tx = saia.master_tx(
+//! let mut tx = saia.master_tx(
 //!     (
 //!         gpioe.pe2.into_alternate_af6(),
 //!         gpioe.pe4.into_alternate_af6(),
