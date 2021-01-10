@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add initial DMA support
 - Allow specification of ADC reference voltage in ADC configuraton structure
 - Added support for hardware-based CRC32 functionality
+- Add `MonoTimer` and `Instant` structs for basic time measurement.
 
 ### Fixed
 

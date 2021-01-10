@@ -2,7 +2,7 @@
 
 use cast::{u16, u32};
 use cortex_m::peripheral::syst::SystClkSource;
-use cortex_m::peripheral::SYST;
+use cortex_m::peripheral::{DCB, DWT, SYST};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
 use void::Void;
 
@@ -169,6 +169,57 @@ impl Cancel for Timer<SYST> {
 }
 
 impl Periodic for Timer<SYST> {}
+
+/// A monotonic non-decreasing timer
+///
+/// This uses the timer in the debug watch trace peripheral. This means, that if the
+/// core is stopped, the timer does not count up. This may be relevant if you are using
+/// cortex_m_semihosting::hprintln for debugging in which case the timer will be stopped
+/// while printing
+#[derive(Clone, Copy)]
+pub struct MonoTimer {
+    frequency: Hertz,
+}
+
+impl MonoTimer {
+    /// Creates a new `Monotonic` timer
+    pub fn new(mut dwt: DWT, mut dcb: DCB, clocks: Clocks) -> Self {
+        dcb.enable_trace();
+        dwt.enable_cycle_counter();
+
+        // now the CYCCNT counter can't be stopped or reset
+        drop(dwt);
+
+        MonoTimer {
+            frequency: clocks.hclk(),
+        }
+    }
+
+    /// Returns the frequency at which the monotonic timer is operating at
+    pub fn frequency(self) -> Hertz {
+        self.frequency
+    }
+
+    /// Returns an `Instant` corresponding to "now"
+    pub fn now(self) -> Instant {
+        Instant {
+            now: DWT::get_cycle_count(),
+        }
+    }
+}
+
+/// A measurement of a monotonically non-decreasing clock
+#[derive(Clone, Copy)]
+pub struct Instant {
+    now: u32,
+}
+
+impl Instant {
+    /// Ticks elapsed since the `Instant` was created
+    pub fn elapsed(self) -> u32 {
+        DWT::get_cycle_count().wrapping_sub(self.now)
+    }
+}
 
 macro_rules! hal {
     ($($TIM:ident: ($tim:ident, $en_bit:expr, $reset_bit:expr, $apbenr:ident, $apbrstr:ident, $pclk:ident, $ppre:ident),)+) => {
