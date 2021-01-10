@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `SysCfg` wrapper to enforce clock enable for `SYSCFG`
 - [breaking-change] gpio::ExtiPin now uses `SysCfg` wrapper instead of `SYSCFG`
 - Change `WriteBuffer + 'static` to `StaticWriteBuffer`in the DMA module.
+- [breaking-change] `gpio::Edge::{RISING, FALLING, RISING_FALLING}` are renamed to `Rising`, `Falling`, `RisingFalling`, respectively.
 
 ### Added
 

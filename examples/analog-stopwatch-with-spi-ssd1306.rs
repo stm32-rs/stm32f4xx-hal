@@ -87,7 +87,7 @@ fn main() -> ! {
     let mut board_btn = gpioa.pa0.into_pull_down_input();
     board_btn.make_interrupt_source(&mut syscfg);
     board_btn.enable_interrupt(&mut dp.EXTI);
-    board_btn.trigger_on_edge(&mut dp.EXTI, Edge::FALLING);
+    board_btn.trigger_on_edge(&mut dp.EXTI, Edge::Falling);
 
     //spi4
     //sck  - pe2

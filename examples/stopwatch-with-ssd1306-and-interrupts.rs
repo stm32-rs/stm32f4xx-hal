@@ -80,7 +80,7 @@ fn main() -> ! {
         let mut board_btn = gpioc.pc13.into_pull_up_input();
         board_btn.make_interrupt_source(&mut syscfg);
         board_btn.enable_interrupt(&mut dp.EXTI);
-        board_btn.trigger_on_edge(&mut dp.EXTI, Edge::FALLING);
+        board_btn.trigger_on_edge(&mut dp.EXTI, Edge::Falling);
 
         let interface = I2CDIBuilder::new().init(i2c);
         let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
