@@ -944,7 +944,7 @@ impl CFGR {
             ppre1,
             ppre2,
             sysclk: Hertz(sysclk),
-            pll48clk: plls.pll48clk.map(|clk| Hertz(clk)),
+            pll48clk: plls.pll48clk.map(Hertz),
 
             #[cfg(not(any(
                 feature = "stm32f412",
@@ -952,21 +952,21 @@ impl CFGR {
                 feature = "stm32f423",
                 feature = "stm32f446",
             )))]
-            i2s_clk: plls.i2s.i2s_clk.map(|clk| Hertz(clk)),
+            i2s_clk: plls.i2s.i2s_clk.map(Hertz),
             #[cfg(any(
                 feature = "stm32f412",
                 feature = "stm32f413",
                 feature = "stm32f423",
                 feature = "stm32f446",
             ))]
-            i2s_apb1_clk: plls.i2s.i2s_apb1_clk.map(|clk| Hertz(clk)),
+            i2s_apb1_clk: plls.i2s.i2s_apb1_clk.map(Hertz),
             #[cfg(any(
                 feature = "stm32f412",
                 feature = "stm32f413",
                 feature = "stm32f423",
                 feature = "stm32f446",
             ))]
-            i2s_apb2_clk: plls.i2s.i2s_apb2_clk.map(|clk| Hertz(clk)),
+            i2s_apb2_clk: plls.i2s.i2s_apb2_clk.map(Hertz),
 
             #[cfg(any(
                 feature = "stm32f413",
@@ -978,7 +978,7 @@ impl CFGR {
                 feature = "stm32f469",
                 feature = "stm32f479",
             ))]
-            saia_clk: plls.sai.sai1_clk.map(|clk| Hertz(clk)),
+            saia_clk: plls.sai.sai1_clk.map(Hertz),
             #[cfg(any(
                 feature = "stm32f413",
                 feature = "stm32f423",
@@ -989,11 +989,11 @@ impl CFGR {
                 feature = "stm32f469",
                 feature = "stm32f479",
             ))]
-            saib_clk: plls.sai.sai2_clk.map(|clk| Hertz(clk)),
+            saib_clk: plls.sai.sai2_clk.map(Hertz),
             #[cfg(feature = "stm32f446")]
-            sai1_clk: plls.sai.sai1_clk.map(|clk| Hertz(clk)),
+            sai1_clk: plls.sai.sai1_clk.map(Hertz),
             #[cfg(feature = "stm32f446")]
-            sai2_clk: plls.sai.sai2_clk.map(|clk| Hertz(clk)),
+            sai2_clk: plls.sai.sai2_clk.map(Hertz),
         };
 
         if self.pll48clk {
