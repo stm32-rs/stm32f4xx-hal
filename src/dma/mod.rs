@@ -864,9 +864,8 @@ where
     STREAM: Stream,
     CHANNEL: Channel,
     DIR: Direction,
-    PERIPHERAL: PeriAddress,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
     BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
-    (STREAM, CHANNEL, PERIPHERAL, DIR): DMASet,
 {
     /// Applies all fields in DmaConfig.
     fn apply_config(&mut self, config: config::DmaConfig) {
@@ -1008,8 +1007,9 @@ where
     }
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
-    /// immediately after a transfer complete event. Returns the old buffer together with its
-    /// `CurrentBuffer`. If an error occurs, this method will return the new buffer with the error.
+    /// immediately after a transfer complete event if using double buffering, otherwise you might
+    /// lose data. Returns the old buffer together with its `CurrentBuffer`. If an error occurs,
+    /// this method will return the new buffer with the error.
     ///
     /// This method will clear the transfer complete flag on entry, it will also clear it again if
     /// an overrun occurs during its execution. Moreover, if an overrun occurs, the stream will be
@@ -1036,7 +1036,10 @@ where
             }
 
             if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
+                // "Preceding reads and writes cannot be moved past subsequent writes"
+                compiler_fence(Ordering::Release);
                 self.stream.set_memory_address(new_buf_ptr as u32);
+
                 // Check if an overrun occurred, the buffer address won't be updated in that case
                 if self.stream.get_memory_address() != new_buf_ptr as u32 {
                     self.stream.clear_transfer_complete_interrupt();
@@ -1051,8 +1054,11 @@ where
                 // We always have a buffer, so unwrap can't fail
                 return Ok((old_buf.unwrap(), CurrentBuffer::FirstBuffer));
             } else {
+                // "Preceding reads and writes cannot be moved past subsequent writes"
+                compiler_fence(Ordering::Release);
                 self.stream
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
+
                 // Check if an overrun occurred, the buffer address won't be updated in that case
                 if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
                     self.stream.clear_transfer_complete_interrupt();
@@ -1080,9 +1086,6 @@ where
         self.stream.set_memory_address(buf_ptr as u32);
         self.stream.set_number_of_transfers(buf_len as u16);
         let old_buf = self.buf.replace(new_buf);
-
-        // "Preceding reads and writes cannot be moved past subsequent writes"
-        compiler_fence(Ordering::Release);
 
         unsafe {
             self.stream.enable();
@@ -1155,15 +1158,15 @@ where
     }
 
     /// Changes the buffer and restarts or continues a double buffer transfer. This must be called
-    /// immediately after a transfer complete event. The closure must return `(BUF, T)` where `BUF`
-    /// is the new buffer to be used. This method can be called before the end of an ongoing
-    /// transfer only if not using double buffering, in that case, the current transfer will be
-    /// canceled and a new one will be started. A `NotReady` error will be returned if this method
-    /// is called before the end of a transfer while double buffering and the closure won't be
-    /// executed.
+    /// immediately after a transfer complete event if using double buffering, otherwise you might
+    /// lose data. The closure must return `(BUF, T)` where `BUF` is the new buffer to be used. This
+    /// method can be called before the end of an ongoing transfer only if not using double
+    /// buffering, in that case, the current transfer will be canceled and a new one will be
+    /// started. A `NotReady` error will be returned if this method is called before the end of a
+    /// transfer while double buffering and the closure won't be executed.
     ///
     /// # Panics
-    /// This method will panic when double buffering and one or both of the following conditions
+    /// This method will panic when double buffering if one or both of the following conditions
     /// happen:
     ///
     /// * The new buffer's length is smaller than the one used in the `init` method.
@@ -1173,10 +1176,6 @@ where
     ///
     /// Memory corruption might occur in the previous buffer, the one passed to the closure, if an
     /// overrun occurs in double buffering mode.
-    ///
-    /// # Panics
-    ///
-    /// This method will panic if an overrun is detected while double buffering.
     pub unsafe fn next_transfer_with<F, T>(&mut self, f: F) -> Result<T, DMAError<()>>
     where
         F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
@@ -1216,6 +1215,8 @@ where
             }
 
             if current_buffer == CurrentBuffer::DoubleBuffer {
+                // "Preceding reads and writes cannot be moved past subsequent writes"
+                compiler_fence(Ordering::Release);
                 self.stream.set_memory_address(new_buf_ptr as u32);
 
                 // Check again if an overrun occurred, the buffer address won't be updated in that
@@ -1230,8 +1231,11 @@ where
                 self.buf.replace(new_buf);
                 return Ok(r.1);
             } else {
+                // "Preceding reads and writes cannot be moved past subsequent writes"
+                compiler_fence(Ordering::Release);
                 self.stream
                     .set_memory_double_buffer_address(new_buf_ptr as u32);
+
                 if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
                     panic!("Overrun");
                 }
@@ -1259,11 +1263,7 @@ where
         self.stream.set_number_of_transfers(buf_len as u16);
         self.buf.replace(new_buf);
 
-        // "Preceding reads and writes cannot be moved past subsequent writes"
-        compiler_fence(Ordering::Release);
-
         self.stream.enable();
-
         Ok(r.1)
     }
 }

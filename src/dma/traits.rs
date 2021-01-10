@@ -285,7 +285,7 @@ macro_rules! tim_channels {
     ($($name:ident),+ $(,)*) => {
         $(
             /// Wrapper type that indicates which register of the contained timer to use for DMA.
-            pub struct $name<T> (T);
+            pub struct $name<T> (pub T);
 
             impl<T> Deref for $name<T> {
                 type Target = T;
@@ -305,19 +305,19 @@ pub trait Channel: Bits<u8> {
     fn new() -> Self;
 }
 
-/// Trait to mark a set of Stream, Channel, Peripheral and Direction as correct together.
+/// Trait to mark a set of Stream, Channel and Direction for a Peripheral as correct together.
 ///
 /// # Safety
 ///
 /// Memory corruption might occur if this trait is implemented for an invalid combination.
-pub unsafe trait DMASet {}
+pub unsafe trait DMASet<STREAM, CHANNEL, DIRECTION> {}
 
 tim_channels!(CCR1, CCR2, CCR3, CCR4, DMAR, ARR);
 
 macro_rules! dma_map {
-    ($(($Stream:ty, $channel:ty, $Peripheral:ty, $dir:ty)),+ $(,)*) => {
+    ($(($Stream:ty, $Channel:ty, $Peripheral:ty, $Dir:ty)),+ $(,)*) => {
         $(
-            unsafe impl DMASet for ($Stream, $channel, $Peripheral, $dir) {}
+            unsafe impl DMASet<$Stream, $Channel, $Dir> for $Peripheral {}
         )+
     };
 }
