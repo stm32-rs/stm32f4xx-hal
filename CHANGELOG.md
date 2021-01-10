@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Improved Serial baudrate calculation to be correct for higher baudrates or lower PCLKs
 - Added `SysCfg` wrapper to enforce clock enable for `SYSCFG`
 - [breaking-change] gpio::ExtiPin now uses `SysCfg` wrapper instead of `SYSCFG`
-- Add `MonoTimer` and `Instant` structs for basic time measurement.
+- Change `WriteBuffer + 'static` to `StaticWriteBuffer`in the DMA module.
 
 ### Added
 
@@ -37,10 +37,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add initial DMA support
 - Allow specification of ADC reference voltage in ADC configuraton structure
 - Added support for hardware-based CRC32 functionality
+- Add `MonoTimer` and `Instant` structs for basic time measurement.
 
 ### Fixed
+
 - Stability fixes related to SD card write
 - Fixed issue where timer generated a spurious interrupt after start
+- Allow implementations for DMASet from outside the crate [#237]
+- DMA: Make it possible to create the wrapper types for the timers [#237]
+- DMA: Fix some `compiler_fences` [#237]
+- DMA: Fix docs [#237]
+
+[#237]: https://github.com/stm32-rs/stm32f4xx-hal/pull/237
 
 ## [v0.8.3] - 2020-06-12
 
