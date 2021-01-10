@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Allow specification of ADC reference voltage in ADC configuraton structure
 - Added support for hardware-based CRC32 functionality
 - Add `MonoTimer` and `Instant` structs for basic time measurement.
+- Added support for I2S and SAI clocks
 
 ### Fixed
 
