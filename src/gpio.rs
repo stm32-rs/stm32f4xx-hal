@@ -106,9 +106,9 @@ pub enum Speed {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Edge {
-    RISING,
-    FALLING,
-    RISING_FALLING,
+    Rising,
+    Falling,
+    RisingFalling,
 }
 
 mod sealed {
@@ -171,19 +171,19 @@ where
     fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
         let i = self.pin_id();
         match edge {
-            Edge::RISING => {
+            Edge::Rising => {
                 exti.rtsr
                     .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
                 exti.ftsr
                     .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << i)) });
             }
-            Edge::FALLING => {
+            Edge::Falling => {
                 exti.ftsr
                     .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
                 exti.rtsr
                     .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << i)) });
             }
-            Edge::RISING_FALLING => {
+            Edge::RisingFalling => {
                 exti.rtsr
                     .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
                 exti.ftsr

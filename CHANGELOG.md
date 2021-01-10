@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added open-drain pin mode support for PWM output [#313]
 - Added missing error flags for dma streams [#318]
 - Added PWM input capability to all compatable timers [#271]
+- [breaking-change] `gpio::Edge::{RISING, FALLING, RISING_FALLING}` are renamed to `Rising`, `Falling`, `RisingFalling`, respectively.
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 [#271] https://github.com/stm32-rs/stm32f4xx-hal/pull/271
