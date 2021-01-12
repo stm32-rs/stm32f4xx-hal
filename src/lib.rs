@@ -96,6 +96,9 @@ pub mod crc32;
 pub mod dac;
 #[cfg(feature = "device-selected")]
 pub mod delay;
+// todo: what else supports FMC?
+#[cfg(any(feature = "stm32f429", feature = "stm32f439", docsrs))]
+pub mod fmc;
 #[cfg(feature = "device-selected")]
 pub mod gpio;
 #[cfg(feature = "device-selected")]
