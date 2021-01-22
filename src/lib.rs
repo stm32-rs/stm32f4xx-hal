@@ -87,6 +87,11 @@ pub use crate::stm32::interrupt;
 pub mod adc;
 #[cfg(feature = "device-selected")]
 pub mod bb;
+#[cfg(all(
+    feature = "can",
+    any(feature = "stm32f405", feature = "stm32f407", feature = "stm32f446")
+))]
+pub mod can;
 #[cfg(feature = "device-selected")]
 pub mod crc32;
 #[cfg(all(

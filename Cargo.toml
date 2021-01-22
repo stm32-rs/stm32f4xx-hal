@@ -22,10 +22,11 @@ repository = "https://github.com/stm32-rs/stm32f4xx-hal"
 version = "0.8.3"
 
 [package.metadata.docs.rs]
-features = ["stm32f429", "rt", "usb_fs"]
+features = ["stm32f429", "rt", "usb_fs", "can"]
 targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]
+bxcan = { version = "0.3.0", optional = true }
 cortex-m = ">=0.5.8,<0.7"
 cortex-m-rt = "0.6.10"
 nb = "0.1.2"
@@ -88,6 +89,8 @@ stm32f479 = ["stm32f4/stm32f469", "device-selected"]
 usb_fs = ["synopsys-usb-otg", "synopsys-usb-otg/fs"]
 usb_hs = ["synopsys-usb-otg", "synopsys-usb-otg/hs"]
 
+can = ["bxcan"]
+
 sdio = ["sdio-host"]
 
 [profile.dev]
@@ -138,3 +141,7 @@ required-features = ["rt", "stm32f407"]
 [[example]]
 name = "qei"
 required-features = ["rt", "stm32f411"]
+
+[[example]]
+name = "can-send"
+required-features = ["can", "stm32f405"]
