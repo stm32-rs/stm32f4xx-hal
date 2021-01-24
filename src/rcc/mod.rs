@@ -762,11 +762,16 @@ impl CFGR {
 
     /// Initialises the hardware according to CFGR state returning a Clocks instance.
     /// Allows overclocking.
+    ///
+    /// # Safety
+    ///
+    /// This method does not check if the clocks are bigger or smaller than the officially
+    /// recommended.
     pub unsafe fn freeze_unchecked(self) -> Clocks {
         self.freeze_internal(true)
     }
 
-    pub fn freeze_internal(self, unchecked: bool) -> Clocks {
+    fn freeze_internal(self, unchecked: bool) -> Clocks {
         let rcc = unsafe { &*RCC::ptr() };
 
         //let (use_pll, sysclk_on_pll, sysclk, pll48clk) = self.pll_setup();

@@ -40,6 +40,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add `MonoTimer` and `Instant` structs for basic time measurement.
 - Added support for I2S and SAI clocks
 - Added support for canbus with the bxcan crate.
+- Added a `freeze_unchecked` method [#231]
+
+[#231]: https://github.com/stm32-rs/stm32f4xx-hal/pull/231
 
 ### Fixed
 
