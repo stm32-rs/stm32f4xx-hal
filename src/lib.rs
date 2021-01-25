@@ -171,6 +171,18 @@ pub mod pwm;
 pub mod qei;
 #[cfg(feature = "device-selected")]
 pub mod rcc;
+#[cfg(any(
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f469",
+))]
+pub mod sai;
 #[cfg(all(
     feature = "sdio",
     not(any(feature = "stm32f410", feature = "stm32f446",))
