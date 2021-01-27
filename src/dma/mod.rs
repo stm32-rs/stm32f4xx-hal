@@ -403,7 +403,7 @@ macro_rules! dma_stream {
                 }
 
                 #[inline(always)]
-                fn is_enabled() -> bool {
+                fn is_enabled(&mut self) -> bool {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.st[Self::NUMBER].cr.read().en().bit_is_set()

@@ -74,7 +74,7 @@ pub trait Stream: Sealed {
     unsafe fn enable(&mut self);
 
     /// Returns the state of the DMA stream.
-    fn is_enabled() -> bool;
+    fn is_enabled(&mut self) -> bool;
 
     /// Disable the DMA stream.
     ///
