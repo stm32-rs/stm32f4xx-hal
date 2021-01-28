@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for I2S and SAI clocks
 - Added support for canbus with the bxcan crate.
 - Added a `freeze_unchecked` method [#231]
+- Added support for the Real Time Clock (RTC)
 
 [#231]: https://github.com/stm32-rs/stm32f4xx-hal/pull/231
 
