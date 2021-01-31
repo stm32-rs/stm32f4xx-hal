@@ -5,9 +5,10 @@
 
 /*
     Currently unused but this is the formula for using temperature calibration:
-    Temperature in °C = (110-30)/(VtempCal110::get().read()-VtempCal30::get().read()) * (adc_sample - VtempCal30::get().read()) + 30
+    Temperature in °C = (110-30) * (adc_sample - VtempCal30::get().read()) / (VtempCal110::get().read()-VtempCal30::get().read()) + 30
 */
 
+use crate::dma::traits::PeriAddress;
 use crate::{bb, gpio::*, pac, signature::VrefCal, signature::VDDA_CALIB};
 use core::fmt;
 use embedded_hal::adc::{Channel, OneShot};
@@ -514,7 +515,7 @@ pub mod config {
 /// let config = AdcConfig::default()
 ///     //We'll either need DMA or an interrupt per conversion to convert
 ///     //multiple values in a sequence
-///     .end_of_conversion_interrupt(Eoc::Conversion);
+///     .end_of_conversion_interrupt(Eoc::Conversion)
 ///     //Scan mode is also required to convert a sequence
 ///     .scan(Scan::Enabled)
 ///     //And since we're looking for one interrupt per conversion the
@@ -1030,6 +1031,15 @@ macro_rules! adc {
                     Ok(sample)
                 }
             }
+
+            unsafe impl PeriAddress for Adc<pac::$adc_type> {
+                #[inline(always)]
+                fn address(&self) -> u32 {
+                    &self.adc_reg.dr as *const _ as u32
+                }
+
+                type MemSize = u16;
+            }
         )+
     };
 }
@@ -1148,9 +1158,9 @@ adc_pins!(
     gpioc::PC3<Analog> => (ADC1, 13),
     gpioc::PC3<Analog> => (ADC2, 13),
     gpioc::PC3<Analog> => (ADC3, 13),
-    Temperature => (ADC1, 18),
-    Temperature => (ADC2, 18),
-    Temperature => (ADC3, 18),
+    Temperature => (ADC1, 16),
+    Temperature => (ADC2, 16),
+    Temperature => (ADC3, 16),
     Vbat => (ADC1, 18),
     Vbat => (ADC2, 18),
     Vbat => (ADC3, 18),
