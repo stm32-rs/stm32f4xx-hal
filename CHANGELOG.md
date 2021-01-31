@@ -67,6 +67,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Address ST erratum 2.1.13 (DM00037591) [#278]
 - Implement generics on the qei module.
 - Bump ssd1306 dev-dependency and cleanup examples
+- DMA: Memory to peripheral transfers now only require `StaticReadBuffer` [#257].
+
+[#257]: https://github.com/stm32-rs/stm32f4xx-hal/pull/257
 
 ### Added
 
