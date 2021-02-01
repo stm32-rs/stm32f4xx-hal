@@ -326,8 +326,14 @@ impl I2sPll {
     ))]
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
-        rcc.plli2scfgr
-            .modify(|_, w| unsafe { w.plli2sm().bits(config.m).plli2sr().bits(config.outdiv) });
+        rcc.plli2scfgr.modify(|_, w| unsafe {
+            w.plli2sm()
+                .bits(config.m)
+                .plli2sn()
+                .bits(config.n)
+                .plli2sr()
+                .bits(config.outdiv)
+        });
     }
 }
 
