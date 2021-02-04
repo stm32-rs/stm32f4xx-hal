@@ -71,6 +71,7 @@ impl RccExt for RCC {
         Rcc {
             cfgr: CFGR {
                 hse: None,
+                hse_bypass: false,
                 hclk: None,
                 pclk1: None,
                 pclk2: None,
@@ -231,6 +232,7 @@ pub const PCLK1_MAX: u32 = PCLK2_MAX / 2;
 
 pub struct CFGR {
     hse: Option<u32>,
+    hse_bypass: bool,
     hclk: Option<u32>,
     pclk1: Option<u32>,
     pclk2: Option<u32>,
@@ -303,6 +305,20 @@ impl CFGR {
     {
         self.hse = Some(freq.into().0);
         self
+    }
+
+    /// Bypasses the high-speed external oscillator and uses an external clock input on the OSC_IN
+    /// pin.
+    ///
+    /// For this configuration, the OSC_IN pin should be connected to a clock source with a
+    /// frequency specified in the call to use_hse(), and the OSC_OUT pin should not be connected.
+    ///
+    /// This function has no effect unless use_hse() is also called.
+    pub fn bypass_hse_oscillator(self) -> Self {
+        CFGR {
+            hse_bypass: true,
+            ..self
+        }
     }
 
     pub fn hclk<F>(mut self, freq: F) -> Self
@@ -843,7 +859,12 @@ impl CFGR {
 
         if self.hse.is_some() {
             // enable HSE and wait for it to be ready
-            rcc.cr.modify(|_, w| w.hseon().set_bit());
+            rcc.cr.modify(|_, w| {
+                if self.hse_bypass {
+                    w.hsebyp().bypassed();
+                }
+                w.hseon().set_bit()
+            });
             while rcc.cr.read().hserdy().bit_is_clear() {}
         }
 
