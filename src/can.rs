@@ -140,8 +140,8 @@ macro_rules! bus {
                         // Enable peripheral clock
                         crate::bb::set(&rcc.apb1enr, $peren);
                         // Reset peripheral
-                        crate::bb::set(&rcc.apb2rstr, $peren);
-                        crate::bb::clear(&rcc.apb2rstr, $peren);
+                        crate::bb::set(&rcc.apb1rstr, $peren);
+                        crate::bb::clear(&rcc.apb1rstr, $peren);
                     };
                 }
             }
