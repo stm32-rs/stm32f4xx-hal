@@ -125,7 +125,8 @@ pub trait Enable: sealed::Sealed {
 
 /// Implements sealed::Sealed and Enable for a CAN peripheral (e.g. CAN1)
 ///
-/// $peren is the index in RCC_APB1ENR of the enable bit for the CAN peripheral.
+/// $peren is the index in RCC_APB1ENR of the enable bit for the CAN peripheral, and the
+/// index in RCC_APB1RSTR of the reset bit for the CAN peripheral.
 macro_rules! bus {
     ($($PER:ident => ($peren:literal),)+) => {
         $(
@@ -134,8 +135,13 @@ macro_rules! bus {
                 #[inline(always)]
                 fn enable() {
                     unsafe {
+                        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                         let rcc = &(*crate::pac::RCC::ptr());
-                        crate::bb::set(&rcc.apb1enr, $peren)
+                        // Enable peripheral clock
+                        crate::bb::set(&rcc.apb1enr, $peren);
+                        // Reset peripheral
+                        crate::bb::set(&rcc.apb2rstr, $peren);
+                        crate::bb::clear(&rcc.apb2rstr, $peren);
                     };
                 }
             }
