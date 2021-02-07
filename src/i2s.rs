@@ -429,3 +429,36 @@ where
         self.input_clock
     }
 }
+
+// DMA support: reuse existing mappings for SPI
+mod dma {
+    use super::*;
+    use crate::dma::traits::{DMASet, PeriAddress};
+    use core::ops::Deref;
+
+    /// I2S DMA reads from and writes to the data register
+    unsafe impl<SPI, PINS, MODE> PeriAddress for stm32_i2s_v12x::I2s<I2s<SPI, PINS>, MODE>
+    where
+        I2s<SPI, PINS>: Instance,
+        PINS: Pins<SPI>,
+        SPI: Deref<Target = crate::pac::spi1::RegisterBlock>,
+    {
+        /// SPI_DR is only 16 bits. Multiple transfers are needed for a 24-bit or 32-bit sample,
+        /// as explained in the reference manual.
+        type MemSize = u16;
+
+        fn address(&self) -> u32 {
+            let registers = &*self.instance()._spi;
+            &registers.dr as *const _ as u32
+        }
+    }
+
+    /// DMA is available for I2S based on the underlying implementations for SPI
+    unsafe impl<SPI, PINS, MODE, STREAM, CHANNEL, DIR> DMASet<STREAM, CHANNEL, DIR>
+        for stm32_i2s_v12x::I2s<I2s<SPI, PINS>, MODE>
+    where
+        SPI: DMASet<STREAM, CHANNEL, DIR>,
+        PINS: Pins<SPI>,
+    {
+    }
+}
