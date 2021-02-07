@@ -156,3 +156,7 @@ required-features = ["can", "stm32f405"]
 [[example]]
 name = "i2s-audio-out"
 required-features = ["stm32f411", "rt", "i2s"]
+
+[[example]]
+name = "i2s-audio-out-dma"
+required-features = ["stm32f411", "rt", "i2s"]
