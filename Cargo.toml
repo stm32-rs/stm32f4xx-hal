@@ -53,6 +53,10 @@ version = "1.0.2"
 features = ["unproven"]
 version = "0.2.3"
 
+[dependencies.stm32_i2s_v12x]
+version = "0.1.0"
+optional = true
+
 [dev-dependencies]
 panic-semihosting = "0.5.3"
 cortex-m-semihosting = "0.3.3"
@@ -93,6 +97,8 @@ usb_hs = ["synopsys-usb-otg", "synopsys-usb-otg/hs"]
 can = ["bxcan"]
 
 sdio = ["sdio-host"]
+
+i2s = ["stm32_i2s_v12x"]
 
 [profile.dev]
 debug = true
@@ -146,3 +152,7 @@ required-features = ["rt", "stm32f411"]
 [[example]]
 name = "can-send"
 required-features = ["can", "stm32f405"]
+
+[[example]]
+name = "i2s-audio-out"
+required-features = ["stm32f411", "rt", "i2s"]
