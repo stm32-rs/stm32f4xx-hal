@@ -42,12 +42,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for canbus with the bxcan crate (0.4.0).
 - Added a `freeze_unchecked` method [#231]
 - Added support for the Real Time Clock (RTC)
-- Added support for CAN on STM32F412, STM32F413, STM32F415, STM32F417,
-  STM32F423, STM32F427, STM32F429, STM32F437, STM32F439, STM32F469, and
-  STM32F479 [#262]
+- Added option to bypass the HSE oscillator and use a clock input [#263]
+- Added support for CAN on additional models: STM32F412, STM32F413, STM32F415,
+  STM32F417, STM32F423, STM32F427, STM32F429, STM32F437, STM32F439, STM32F469,
+  and STM32F479 [#262]
 
 [#231]: https://github.com/stm32-rs/stm32f4xx-hal/pull/231
 [#262]: https://github.com/stm32-rs/stm32f4xx-hal/pull/262
+[#263]: https://github.com/stm32-rs/stm32f4xx-hal/pull/263
 
 ### Fixed
 
