@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Internal implementation of GPIO Pin API changed to use Const Generics
 - `PinExt` trait. Make `ExtiPin` implementation generic
 - `Enable`, `LPEnable` and `Reset` traits in `rcc`. Implemented for all used peripherals
 - Features corresponding to peripherals
