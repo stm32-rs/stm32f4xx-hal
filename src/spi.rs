@@ -1054,10 +1054,19 @@ where
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
+            // Read from the DR to clear the OVR bit
+            let _ = self.spi.dr.read();
             nb::Error::Other(Error::Overrun)
         } else if sr.modf().bit_is_set() {
+            // Write to CR1 to clear MODF
+            self.spi.cr1.modify(|_r, w| w);
             nb::Error::Other(Error::ModeFault)
         } else if sr.crcerr().bit_is_set() {
+            // Clear the CRCERR bit
+            self.spi.sr.modify(|_r, w| {
+                w.crcerr().clear_bit();
+                w
+            });
             nb::Error::Other(Error::Crc)
         } else if sr.txe().bit_is_set() {
             // NOTE(write_volatile) see note above
