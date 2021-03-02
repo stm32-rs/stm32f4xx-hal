@@ -873,7 +873,7 @@ where
     /// # Panics
     ///
     /// * When double buffering is enabled but the `double_buf` argument is `None`.
-    pub fn init(
+    pub fn init_memory_to_peripheral(
         mut stream: STREAM,
         peripheral: PERIPHERAL,
         buf: BUF,
@@ -967,7 +967,8 @@ where
                 let (new_buf_ptr, new_buf_len) = new_buf.read_buffer();
                 (new_buf_ptr as u32, new_buf_len as u16)
             };
-            return self.next_transfer_with_common(new_buf, ptr_and_len, true, current_buffer, r.1);
+            self.next_transfer_with_common(new_buf, ptr_and_len, true, current_buffer);
+            return Ok(r.1);
         }
         self.stream.disable();
         self.stream.clear_transfer_complete_interrupt();
@@ -984,7 +985,8 @@ where
             let (new_buf_ptr, new_buf_len) = new_buf.read_buffer();
             (new_buf_ptr as u32, new_buf_len as u16)
         };
-        self.next_transfer_with_common(new_buf, ptr_and_len, false, CurrentBuffer::FirstBuffer, r.1)
+        self.next_transfer_with_common(new_buf, ptr_and_len, false, CurrentBuffer::FirstBuffer);
+        Ok(r.1)
     }
 }
 
@@ -1003,7 +1005,7 @@ where
     /// # Panics
     ///
     /// * When double buffering is enabled but the `double_buf` argument is `None`.
-    pub fn init(
+    pub fn init_peripheral_to_memory(
         mut stream: STREAM,
         peripheral: PERIPHERAL,
         mut buf: BUF,
@@ -1100,7 +1102,8 @@ where
                 let (new_buf_ptr, new_buf_len) = new_buf.write_buffer();
                 (new_buf_ptr as u32, new_buf_len as u16)
             };
-            return self.next_transfer_with_common(new_buf, ptr_and_len, true, current_buffer, r.1);
+            self.next_transfer_with_common(new_buf, ptr_and_len, true, current_buffer);
+            return Ok(r.1);
         }
         self.stream.disable();
         self.stream.clear_transfer_complete_interrupt();
@@ -1117,7 +1120,8 @@ where
             let (new_buf_ptr, new_buf_len) = new_buf.write_buffer();
             (new_buf_ptr as u32, new_buf_len as u16)
         };
-        self.next_transfer_with_common(new_buf, ptr_and_len, false, CurrentBuffer::FirstBuffer, r.1)
+        self.next_transfer_with_common(new_buf, ptr_and_len, false, CurrentBuffer::FirstBuffer);
+        Ok(r.1)
     }
 }
 
@@ -1139,7 +1143,7 @@ where
     ///
     /// * When the FIFO is disabled or double buffering is enabled in `DmaConfig` while initializing
     /// a memory to memory transfer.
-    pub fn init(
+    pub fn init_memory_to_memory(
         mut stream: STREAM,
         peripheral: PERIPHERAL,
         mut buf: BUF,
@@ -1194,7 +1198,7 @@ where
     /// method can be called before the end of an ongoing transfer,
     /// in that case, the current transfer will be canceled and a new one will be
     /// started.
-    pub fn next_transfer_with<F, T>(&mut self, f: F) -> Result<T, DMAError<()>>
+    pub fn next_transfer_with<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
     {
@@ -1215,14 +1219,9 @@ where
         };
         // NOTE(unsafe) We aren't double buffering, so this is fine
         unsafe {
-            self.next_transfer_with_common(
-                new_buf,
-                ptr_and_len,
-                false,
-                CurrentBuffer::FirstBuffer,
-                r.1,
-            )
+            self.next_transfer_with_common(new_buf, ptr_and_len, false, CurrentBuffer::FirstBuffer);
         }
+        r.1
     }
 }
 
@@ -1483,14 +1482,13 @@ where
     ///
     /// Memory corruption might occur in the previous buffer, the one passed to the closure, if an
     /// overrun occurs in double buffering mode.
-    unsafe fn next_transfer_with_common<T>(
+    unsafe fn next_transfer_with_common(
         &mut self,
         new_buf: BUF,
         ptr_and_len: (u32, u16),
         double_buffering: bool,
         current_buffer: CurrentBuffer,
-        user_var: T,
-    ) -> Result<T, DMAError<()>> {
+    ) {
         if double_buffering {
             let (new_buf_ptr, new_buf_len) = ptr_and_len;
 
@@ -1526,7 +1524,7 @@ where
                 compiler_fence(Ordering::Acquire);
 
                 self.buf.replace(new_buf);
-                return Ok(user_var);
+                return;
             } else {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
@@ -1541,7 +1539,7 @@ where
                 compiler_fence(Ordering::Acquire);
 
                 self.double_buf.replace(new_buf);
-                return Ok(user_var);
+                return;
             }
         }
         let (buf_ptr, buf_len) = ptr_and_len;
@@ -1550,7 +1548,6 @@ where
         self.buf.replace(new_buf);
 
         self.stream.enable();
-        Ok(user_var)
     }
 }
 
