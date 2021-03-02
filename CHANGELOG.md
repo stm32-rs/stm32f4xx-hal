@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `SysCfg` wrapper to enforce clock enable for `SYSCFG`
 - [breaking-change] gpio::ExtiPin now uses `SysCfg` wrapper instead of `SYSCFG`
 - Change `WriteBuffer + 'static` to `StaticWriteBuffer`in the DMA module.
+- Fixed a race condition where SPI writes could get stuck in an error state forever (PR #269).
 
 ### Added
 
