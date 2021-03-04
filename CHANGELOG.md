@@ -62,9 +62,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - DMA: Fix some `compiler_fences` [#237]
 - DMA: Fix docs [#237]
 - RCC for F412, F413, F423, F446: Add missing configuration of PLLI2SCFGR.PLLI2SN [#261]
+- RCC for F411: Add missing configuration of PLLI2SCFGR.PLLI2SM [#264]
 
 [#237]: https://github.com/stm32-rs/stm32f4xx-hal/pull/237
 [#261]: https://github.com/stm32-rs/stm32f4xx-hal/pull/261
+[#264]: https://github.com/stm32-rs/stm32f4xx-hal/pull/264
 
 ## [v0.8.3] - 2020-06-12
 
