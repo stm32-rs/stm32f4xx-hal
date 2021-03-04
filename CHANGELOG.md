@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] gpio::ExtiPin now uses `SysCfg` wrapper instead of `SYSCFG`
 - Change `WriteBuffer + 'static` to `StaticWriteBuffer`in the DMA module.
 - Fixed a race condition where SPI writes could get stuck in an error state forever (PR #269).
+- Implement generics on the serial module.
 
 ### Added
 
