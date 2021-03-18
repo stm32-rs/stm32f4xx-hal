@@ -551,6 +551,8 @@ pub enum Error {
     OVERRUN,
     NACK,
     TIMEOUT,
+    // Note: The BUS error type is not currently returned, but is maintained for backwards
+    // compatibility.
     BUS,
     CRC,
     ARBITRATION,
@@ -816,9 +818,10 @@ where
             return Err(Error::ARBITRATION);
         }
 
+        // The errata indicates that BERR may be incorrectly detected. It recommends ignoring and
+        // clearing the BERR bit instead.
         if sr1.berr().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.berr().clear_bit());
-            return Err(Error::BUS);
         }
 
         Ok(sr1)
