@@ -94,16 +94,21 @@ pins! {
     D3: [PC11<Alternate<AF12>>]
 }
 
-#[cfg(any(
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-))]
+#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 pins! {
     CLK: [PB15<Alternate<AF12>>]
     CMD: [PA6<Alternate<AF12>>]
     D0: [PB4<Alternate<AF12>>, PB6<Alternate<AF12>>]
+    D1: [PA8<Alternate<AF12>>]
+    D2: [PA9<Alternate<AF12>>]
+    D3: [PB5<Alternate<AF12>>]
+}
+
+#[cfg(feature = "stm32f411")]
+pins! {
+    CLK: [PB15<Alternate<AF12>>]
+    CMD: [PA6<Alternate<AF12>>]
+    D0: [PB4<Alternate<AF12>>, PB7<Alternate<AF12>>]
     D1: [PA8<Alternate<AF12>>]
     D2: [PA9<Alternate<AF12>>]
     D3: [PB5<Alternate<AF12>>]
