@@ -191,7 +191,7 @@ use crate::rcc::Clocks;
 use crate::time::{Hertz, KiloHertz, U32Ext};
 
 /// I2C abstraction
-pub struct I2c<I2C, PINS> {
+pub struct I2c<I2C: Instance, PINS> {
     i2c: I2C,
     pins: PINS,
 }
@@ -558,45 +558,48 @@ pub enum Error {
     ARBITRATION,
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-impl<PINS> I2c<I2C1, PINS> {
-    pub fn i2c1(i2c: I2C1, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<I2C1>,
-    {
-        unsafe {
-            const EN_BIT: u8 = 21;
-            const RESET_BIT: u8 = 21;
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
+mod private {
+    pub trait Sealed {}
+}
 
-            // Enable and reset clock.
-            bb::set(&rcc.apb1enr, EN_BIT);
-            bb::set(&rcc.apb1rstr, RESET_BIT);
-            bb::clear(&rcc.apb1rstr, RESET_BIT);
-        }
+// Implemented by all I2C instances
+pub trait Instance: private::Sealed + Deref<Target = i2c1::RegisterBlock> {
+    #[doc(hidden)]
+    unsafe fn enable_clock(rcc: &crate::stm32::rcc::RegisterBlock);
+}
 
-        let i2c = I2c { i2c, pins };
-        i2c.i2c_init(speed, clocks.pclk1());
-        i2c
+macro_rules! i2c {
+    ($(
+        $I2C:ident: ($i2c:ident, $apbXenr:ident, $en_bit:expr, $apbxrstr:ident, $reset_bit:expr),
+    )+) => {
+        $(
+            impl private::Sealed for $I2C {}
+            impl Instance for $I2C {
+                unsafe fn enable_clock(rcc: &crate::stm32::rcc::RegisterBlock) {
+                    bb::set(&rcc.$apbXenr, $en_bit);
+                    bb::set(&rcc.$apbxrstr, $reset_bit);
+                    bb::clear(&rcc.$apbxrstr, $reset_bit);
+                }
+            }
+
+            impl<PINS> I2c<$I2C, PINS>
+            where
+                PINS: Pins<$I2C>,
+            {
+                #[deprecated(
+                    since = "0.9.0",
+                    note = "Please use new instead"
+                )]
+                pub fn $i2c(
+                    i2c: $I2C,
+                    pins: PINS,
+                    speed: KiloHertz,
+                    clocks: Clocks,
+                ) -> Self {
+                    Self::new(i2c, pins, speed, clocks)
+                }
+            }
+        )+
     }
 }
 
@@ -619,27 +622,31 @@ impl<PINS> I2c<I2C1, PINS> {
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl<PINS> I2c<I2C2, PINS> {
-    pub fn i2c2(i2c: I2C2, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<I2C2>,
-    {
-        unsafe {
-            const EN_BIT: u8 = 22;
-            const RESET_BIT: u8 = 22;
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
+i2c! {
+    I2C1: (i2c1, apb1enr, 21, apb1rstr, 21),
+}
 
-            // Enable and reset clock.
-            bb::set(&rcc.apb1enr, EN_BIT);
-            bb::set(&rcc.apb1rstr, RESET_BIT);
-            bb::clear(&rcc.apb1rstr, RESET_BIT);
-        }
-
-        let i2c = I2c { i2c, pins };
-        i2c.i2c_init(speed, clocks.pclk1());
-        i2c
-    }
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+i2c! {
+    I2C2: (i2c2, apb1enr, 22, apb1rstr, 22),
 }
 
 #[cfg(any(
@@ -660,27 +667,8 @@ impl<PINS> I2c<I2C2, PINS> {
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl<PINS> I2c<I2C3, PINS> {
-    pub fn i2c3(i2c: I2C3, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<I2C3>,
-    {
-        unsafe {
-            const EN_BIT: u8 = 23;
-            const RESET_BIT: u8 = 23;
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-
-            // Enable and reset clock.
-            bb::set(&rcc.apb1enr, EN_BIT);
-            bb::set(&rcc.apb1rstr, RESET_BIT);
-            bb::clear(&rcc.apb1rstr, RESET_BIT);
-        }
-
-        let i2c = I2c { i2c, pins };
-        i2c.i2c_init(speed, clocks.pclk1());
-        i2c
-    }
+i2c! {
+    I2C3: (i2c3, apb1enr, 23, apb1rstr, 23),
 }
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
@@ -718,8 +706,25 @@ impl<PINS> FMPI2c<FMPI2C, PINS> {
 
 impl<I2C, PINS> I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c1::RegisterBlock>,
+    I2C: Instance,
 {
+    pub fn new(i2c: I2C, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
+    where
+        PINS: Pins<I2C>,
+    {
+        unsafe {
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
+
+            // Enable and reset clock.
+            I2C::enable_clock(&rcc);
+        }
+
+        let i2c = I2c { i2c, pins };
+        i2c.i2c_init(speed, clocks.pclk1());
+        i2c
+    }
+
     fn i2c_init(&self, speed: KiloHertz, pclk: Hertz) {
         let speed: Hertz = speed.into();
 
@@ -842,7 +847,7 @@ trait I2cCommon {
 
 impl<I2C, PINS> I2cCommon for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c1::RegisterBlock>,
+    I2C: Instance,
 {
     fn write_bytes(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
         // Send a START condition
@@ -919,7 +924,7 @@ where
 
 impl<I2C, PINS> WriteRead for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c1::RegisterBlock>,
+    I2C: Instance,
 {
     type Error = Error;
 
@@ -933,7 +938,7 @@ where
 
 impl<I2C, PINS> Write for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c1::RegisterBlock>,
+    I2C: Instance,
 {
     type Error = Error;
 
@@ -953,7 +958,7 @@ where
 
 impl<I2C, PINS> Read for I2c<I2C, PINS>
 where
-    I2C: Deref<Target = i2c1::RegisterBlock>,
+    I2C: Instance,
 {
     type Error = Error;
 

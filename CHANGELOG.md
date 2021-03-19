@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Change `WriteBuffer + 'static` to `StaticWriteBuffer`in the DMA module.
 - Fixed a race condition where SPI writes could get stuck in an error state forever (PR #269).
 - Implement generics on the serial module.
+- Implement generics on the i2c module, not including fast i2c.
 - Updated SDIO_D0 pin to PB7 for stm32f411 [#277]
 
 ### Added
