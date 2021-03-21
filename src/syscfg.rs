@@ -16,6 +16,9 @@ impl SysCfgExt for SYSCFG {
 
             // Enable clock.
             bb::set(&rcc.apb2enr, 14);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
         }
 
         SysCfg(self)

@@ -886,6 +886,9 @@ impl CFGR {
                 // Enable clock for PWR peripheral
                 rcc.apb1enr.modify(|_, w| w.pwren().set_bit());
 
+                // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                cortex_m::asm::dsb();
+
                 let pwr = unsafe { &*crate::stm32::PWR::ptr() };
                 pwr.cr.modify(|_, w| w.oden().set_bit());
                 while pwr.csr.read().odrdy().bit_is_clear() {}

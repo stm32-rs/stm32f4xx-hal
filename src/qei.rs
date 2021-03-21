@@ -96,6 +96,10 @@ macro_rules! hal {
 
                         // Enable and reset clock.
                         bb::set(&rcc.$apbenr, $en_bit);
+
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
+
                         bb::set(&rcc.$apbrstr, $reset_bit);
                         bb::clear(&rcc.$apbrstr, $reset_bit);
                     }

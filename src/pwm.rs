@@ -167,6 +167,10 @@ macro_rules! pwm_all_channels {
                         let rcc = &(*RCC::ptr());
                         // Enable and reset the timer peripheral, it's the same bit position for both registers
                         bb::set(&rcc.$apbenr, $bit);
+
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
+
                         bb::set(&rcc.$apbrstr, $bit);
                         bb::clear(&rcc.$apbrstr, $bit);
                     }
@@ -353,6 +357,10 @@ macro_rules! pwm_2_channels {
                         let rcc = &(*RCC::ptr());
                         // Enable and reset the timer peripheral, it's the same bit position for both registers
                         bb::set(&rcc.$apbenr, $bit);
+
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
+
                         bb::set(&rcc.$apbrstr, $bit);
                         bb::clear(&rcc.$apbrstr, $bit);
                     }
@@ -472,6 +480,10 @@ macro_rules! pwm_1_channel {
                         let rcc = &(*RCC::ptr());
                         // Enable and reset the timer peripheral, it's the same bit position for both registers
                         bb::set(&rcc.$apbenr, $bit);
+
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
+
                         bb::set(&rcc.$apbrstr, $bit);
                         bb::clear(&rcc.$apbrstr, $bit);
                     }
@@ -556,6 +568,10 @@ macro_rules! pwm_tim5_f410 {
                         let rcc = &(*RCC::ptr());
                         // Enable and reset the timer peripheral, it's the same bit position for both registers
                         bb::set(&rcc.$apbenr, $bit);
+
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
+
                         bb::set(&rcc.$apbrstr, $bit);
                         bb::clear(&rcc.$apbrstr, $bit);
                     }

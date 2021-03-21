@@ -139,6 +139,10 @@ macro_rules! bus {
                         let rcc = &(*crate::pac::RCC::ptr());
                         // Enable peripheral clock
                         crate::bb::set(&rcc.apb1enr, $peren);
+
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
+
                         // Reset peripheral
                         crate::bb::set(&rcc.apb1rstr, $peren);
                         crate::bb::clear(&rcc.apb1rstr, $peren);

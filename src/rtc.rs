@@ -463,6 +463,10 @@ fn unlock(rcc: &RegisterBlock, pwr: &mut PWR) {
     unsafe {
         bb::set(&rcc.apb1enr, 28);
     }
+
+    // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+    cortex_m::asm::dsb();
+
     pwr.cr.modify(|_, w| {
         w
             // Enable access to the backup registers

@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Implement generics on the serial module.
 - Implement generics on the i2c module, not including fast i2c.
 - Updated SDIO_D0 pin to PB7 for stm32f411 [#277]
+- Address ST erratum 2.1.13 (DM00037591) [#278]
 
 ### Added
 
@@ -55,6 +56,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#231]: https://github.com/stm32-rs/stm32f4xx-hal/pull/231
 [#262]: https://github.com/stm32-rs/stm32f4xx-hal/pull/262
 [#263]: https://github.com/stm32-rs/stm32f4xx-hal/pull/263
+[#278]: https://github.com/stm32-rs/stm32f4xx-hal/issues/278
 
 ### Fixed
 
