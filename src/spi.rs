@@ -750,6 +750,9 @@ impl<PINS> Spi<SPI1, PINS> {
 
             // Enable clock.
             bb::set(&rcc.apb2enr, EN_BIT);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
         }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk2())
@@ -787,6 +790,9 @@ impl<PINS> Spi<SPI2, PINS> {
 
             // Enable clock.
             bb::set(&rcc.apb1enr, EN_BIT);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
         }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk1())
@@ -823,6 +829,9 @@ impl<PINS> Spi<SPI3, PINS> {
 
             // Enable clock.
             bb::set(&rcc.apb1enr, EN_BIT);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
         }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk1())
@@ -855,6 +864,9 @@ impl<PINS> Spi<SPI4, PINS> {
 
             // Enable clock.
             bb::set(&rcc.apb2enr, EN_BIT);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
         }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk2())
@@ -886,6 +898,9 @@ impl<PINS> Spi<SPI5, PINS> {
 
             // Enable clock.
             bb::set(&rcc.apb2enr, EN_BIT);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
         }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk2())
@@ -912,6 +927,9 @@ impl<PINS> Spi<SPI6, PINS> {
 
             // Enable clock.
             bb::set(&rcc.apb2enr, EN_BIT);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
         }
 
         Spi { spi, pins }.init(mode, freq, clocks.pclk2())

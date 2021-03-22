@@ -273,6 +273,9 @@ macro_rules! gpio {
 
                         // Enable clock.
                         bb::set(&rcc.ahb1enr, $rcc_bit);
+
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
                     }
                     Parts {
                         $(

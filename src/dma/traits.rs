@@ -262,6 +262,10 @@ impl RccEnable for pac::DMA1 {
             let rcc = &(*RCC::ptr());
             // Enable and reset the timer peripheral
             bb::set(&rcc.ahb1enr, 21);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
+
             bb::set(&rcc.ahb1rstr, 21);
             bb::clear(&rcc.ahb1rstr, 21);
         }
@@ -275,6 +279,10 @@ impl RccEnable for pac::DMA2 {
             let rcc = &(*RCC::ptr());
             // Enable and reset the timer peripheral
             bb::set(&rcc.ahb1enr, 22);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
+
             bb::set(&rcc.ahb1rstr, 22);
             bb::clear(&rcc.ahb1rstr, 22);
         }

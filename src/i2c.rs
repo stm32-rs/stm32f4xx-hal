@@ -577,6 +577,10 @@ macro_rules! i2c {
             impl Instance for $I2C {
                 unsafe fn enable_clock(rcc: &crate::stm32::rcc::RegisterBlock) {
                     bb::set(&rcc.$apbXenr, $en_bit);
+
+                    // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                    cortex_m::asm::dsb();
+
                     bb::set(&rcc.$apbxrstr, $reset_bit);
                     bb::clear(&rcc.$apbxrstr, $reset_bit);
                 }
@@ -688,6 +692,10 @@ impl<PINS> FMPI2c<FMPI2C, PINS> {
 
             // Enable and reset clock.
             bb::set(&rcc.apb1enr, EN_BIT);
+
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
+
             bb::set(&rcc.apb1rstr, RESET_BIT);
             bb::clear(&rcc.apb1rstr, RESET_BIT);
 

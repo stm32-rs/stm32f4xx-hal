@@ -1904,6 +1904,9 @@ macro_rules! halUart {
                     use crate::bb;
 
                     bb::set(&rcc.$apbXenr, $rcc_bit);
+
+                    // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                    cortex_m::asm::dsb();
                 }
 
                 fn set_stopbits(&self, bits: config::StopBits) {

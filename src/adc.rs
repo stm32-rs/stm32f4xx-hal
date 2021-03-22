@@ -705,6 +705,10 @@ macro_rules! adc {
 
                         //Enable the clock
                         bb::set(&rcc.apb2enr, $en_bit);
+
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
+
                         if reset {
                             //Reset the peripheral(s)
                             bb::set(&rcc.apb2rstr, RESET_BIT);

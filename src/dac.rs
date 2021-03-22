@@ -55,6 +55,10 @@ where
 
         // Enable and reset clock.
         bb::set(&rcc.apb1enr, EN_BIT);
+
+        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+        cortex_m::asm::dsb();
+
         bb::set(&rcc.apb1rstr, RESET_BIT);
         bb::clear(&rcc.apb1rstr, RESET_BIT);
 
