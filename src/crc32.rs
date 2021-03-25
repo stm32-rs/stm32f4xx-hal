@@ -10,7 +10,6 @@
 use crate::stm32::{CRC, RCC};
 use core::mem::MaybeUninit;
 use core::ptr::copy_nonoverlapping;
-use cortex_m::asm::{nop, delay};
 
 /// A handle to a HAL CRC32 peripheral
 pub struct Crc32 {
@@ -27,7 +26,7 @@ impl Crc32 {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc_raw = unsafe { &(*RCC::ptr()) };
             // Enable CRC clock
-            rcc_raw.ahb1enr.modify(|_, w| {w.crcen().enabled()});
+            rcc_raw.ahb1enr.modify(|_, w| w.crcen().enabled());
         }
 
         new
@@ -123,7 +122,7 @@ impl Crc32 {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc_raw = unsafe { &(*RCC::ptr()) };
             // Disable CRC clock
-            rcc_raw.ahb1enr.modify(|_, w| {w.crcen().disabled()});
+            rcc_raw.ahb1enr.modify(|_, w| w.crcen().disabled());
         }
 
         self.periph
