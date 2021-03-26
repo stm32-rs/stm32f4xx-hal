@@ -2,6 +2,8 @@
 
 use core::marker::PhantomData;
 
+use embedded_hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
+
 use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
 
@@ -756,6 +758,14 @@ macro_rules! gpio {
                             _mode: self._mode,
                         }
                     }
+
+                    /// Erases the pin number and the port from the type
+                    ///
+                    /// This is useful when you want to collect the pins into an array where you
+                    /// need all the elements to have the same type
+                    pub fn downgrade2(self) -> super::Pin<MODE>{
+                        super::Pin::new($rcc_bit, $i)
+                    }
                 }
 
                 impl<MODE> OutputPin for $PXi<Output<MODE>> {
@@ -1199,3 +1209,113 @@ gpio!(GPIOK, gpiok, 10, PK, 10, [
     PK6: (pk6, 6, Input<Floating>, exticr2),
     PK7: (pk7, 7, Input<Floating>, exticr2),
 ]);
+
+/// Fully erased pin
+pub struct Pin<MODE> {
+    // Bits 0-3: Pin, Bits 4-7: Port
+    pin_port: u8,
+    _mode: PhantomData<MODE>,
+}
+
+impl<MODE> Pin<MODE> {
+    fn new(port: u8, pin: u8) -> Self {
+        Self {
+            pin_port: port << 4 | pin,
+            _mode: PhantomData,
+        }
+    }
+
+    #[inline]
+    fn pin_id(&self) -> u8 {
+        self.pin_port & 0x0f
+    }
+
+    #[inline]
+    fn port_id(&self) -> u8 {
+        self.pin_port >> 4
+    }
+
+    #[inline]
+    fn block(&self) -> &crate::pac::gpioa::RegisterBlock {
+        // This function uses pointer arithmetic instead of branching to be more efficient
+
+        // The logic relies on the following assumptions:
+        // - GPIOA register is available on all chips
+        // - all gpio register blocks have the same layout
+        // - consecutive gpio register blocks have the same offset between them, namely 0x0400
+        // - Pin::new was called with a valid port
+
+        // FIXME could be calculated after const_raw_ptr_to_usize_cast stabilization #51910
+        const GPIO_REGISTER_OFFSET: usize = 0x0400;
+
+        let offset = GPIO_REGISTER_OFFSET * self.port_id() as usize;
+        let block_ptr =
+            (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::pac::gpioa::RegisterBlock;
+
+        unsafe { &*block_ptr }
+    }
+}
+
+impl<MODE> OutputPin for Pin<Output<MODE>> {
+    type Error = core::convert::Infallible;
+
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe {
+            self.block()
+                .bsrr
+                .write(|w| w.bits(1 << (self.pin_id() + 16)))
+        };
+        Ok(())
+    }
+
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
+        Ok(())
+    }
+}
+
+impl<MODE> StatefulOutputPin for Pin<Output<MODE>> {
+    fn is_set_high(&self) -> Result<bool, Self::Error> {
+        self.is_set_low().map(|v| !v)
+    }
+
+    fn is_set_low(&self) -> Result<bool, Self::Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        Ok(self.block().odr.read().bits() & (1 << self.pin_id()) == 0)
+    }
+}
+
+impl<MODE> toggleable::Default for Pin<Output<MODE>> {}
+
+impl<MODE> InputPin for Pin<Output<MODE>> {
+    type Error = core::convert::Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(self.block().idr.read().bits() & (1 << self.pin_id()) == 0)
+    }
+}
+
+impl<MODE> InputPin for Pin<Input<MODE>> {
+    type Error = core::convert::Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(self.block().idr.read().bits() & (1 << self.pin_id()) == 0)
+    }
+}
+
+/*
+TODO
+impl<MODE> ExtiPin for Pin<Output<MODE>> {}
+
+impl<MODE> ExtiPin for Pin<Input<MODE>> {}
+*/

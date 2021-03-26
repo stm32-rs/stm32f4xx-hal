@@ -52,11 +52,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for CAN on additional models: STM32F412, STM32F413, STM32F415,
   STM32F417, STM32F423, STM32F427, STM32F429, STM32F437, STM32F439, STM32F469,
   and STM32F479 [#262]
+- Added `gpio::gpiox::Pxi::downgrade2` method [#272]
 
 [#231]: https://github.com/stm32-rs/stm32f4xx-hal/pull/231
 [#262]: https://github.com/stm32-rs/stm32f4xx-hal/pull/262
 [#263]: https://github.com/stm32-rs/stm32f4xx-hal/pull/263
 [#278]: https://github.com/stm32-rs/stm32f4xx-hal/issues/278
+[#272]: https://github.com/stm32-rs/stm32f4xx-hal/issues/272
 
 ### Fixed
 
