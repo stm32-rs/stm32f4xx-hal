@@ -21,16 +21,16 @@ pub struct Crc32 {
 impl Crc32 {
     /// Create a new Crc32 HAL peripheral
     pub fn new(crc: CRC) -> Self {
-        let mut new = Self { periph: crc };
-        new.init();
-
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc_raw =  &(*RCC::ptr());
+            let rcc_raw = &(*RCC::ptr());
             // CRCEN = true; enable CRC clock.
-            bb::clear(&rcc_raw.ahb1enr, 12);
+            bb::set(&rcc_raw.ahb1enr, 12);
             dsb();
         }
+
+        let mut new = Self { periph: crc };
+        new.init();
 
         new
     }
@@ -123,9 +123,9 @@ impl Crc32 {
     pub fn free(self) -> CRC {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc_raw =  &(*RCC::ptr());
+            let rcc_raw = &(*RCC::ptr());
             // Disable CRC clock
-            bb::set(&rcc_raw.ahb1enr, 12);
+            bb::clear(&rcc_raw.ahb1enr, 12);
             dsb();
         }
 
