@@ -7,9 +7,11 @@
 //! It operates word-at-a-time, and takes 4 AHB/HCLK cycles per word
 //! to calculate. This operation stalls the AHB bus for that time.
 
+use crate::bb;
 use crate::stm32::{CRC, RCC};
 use core::mem::MaybeUninit;
 use core::ptr::copy_nonoverlapping;
+use cortex_m::asm::dsb;
 
 /// A handle to a HAL CRC32 peripheral
 pub struct Crc32 {
@@ -25,8 +27,9 @@ impl Crc32 {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc_raw = unsafe { &(*RCC::ptr()) };
-            // Enable CRC clock
-            rcc_raw.ahb1enr.modify(|_, w| w.crcen().enabled());
+            // CRCEN = true; enable CRC clock.
+            bb::write(&rcc_raw.ahb1enr, 12, true);
+            dsb();
         }
 
         new
@@ -122,7 +125,8 @@ impl Crc32 {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc_raw = unsafe { &(*RCC::ptr()) };
             // Disable CRC clock
-            rcc_raw.ahb1enr.modify(|_, w| w.crcen().disabled());
+            bb::write(&rcc_raw.ahb1enr, 12, false);
+            dsb();
         }
 
         self.periph
