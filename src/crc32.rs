@@ -26,9 +26,9 @@ impl Crc32 {
 
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc_raw = unsafe { &(*RCC::ptr()) };
+            let rcc_raw =  &(*RCC::ptr());
             // CRCEN = true; enable CRC clock.
-            bb::write(&rcc_raw.ahb1enr, 12, true);
+            bb::clear(&rcc_raw.ahb1enr, 12);
             dsb();
         }
 
@@ -123,9 +123,9 @@ impl Crc32 {
     pub fn free(self) -> CRC {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc_raw = unsafe { &(*RCC::ptr()) };
+            let rcc_raw =  &(*RCC::ptr());
             // Disable CRC clock
-            bb::write(&rcc_raw.ahb1enr, 12, false);
+            bb::set(&rcc_raw.ahb1enr, 12);
             dsb();
         }
 
