@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Implement generics on the i2c module, not including fast i2c.
 - Updated SDIO_D0 pin to PB7 for stm32f411 [#277]
 - Address ST erratum 2.1.13 (DM00037591) [#278]
+- Implement generics on the qei module.
 
 ### Added
 
