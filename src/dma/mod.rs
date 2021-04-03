@@ -350,14 +350,14 @@ macro_rules! dma_stream {
                 fn set_peripheral_address(&mut self, value: u32) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
-                    dma.st[Self::NUMBER].par.write(|w| w.pa().bits(value));
+                    dma.st[Self::NUMBER].par.write(|w| unsafe { w.pa().bits(value) });
                 }
 
                 #[inline(always)]
                 fn set_memory_address(&mut self, value: u32) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
-                    dma.st[Self::NUMBER].m0ar.write(|w| w.m0a().bits(value));
+                    dma.st[Self::NUMBER].m0ar.write(|w| unsafe { w.m0a().bits(value) });
                 }
 
                 #[inline(always)]
@@ -371,7 +371,7 @@ macro_rules! dma_stream {
                 fn set_memory_double_buffer_address(&mut self, value: u32) {
                     //NOTE(unsafe) We only access the registers that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
-                    dma.st[Self::NUMBER].m1ar.write(|w| w.m1a().bits(value));
+                    dma.st[Self::NUMBER].m1ar.write(|w| unsafe { w.m1a().bits(value) });
                 }
 
                 #[inline(always)]

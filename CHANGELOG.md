@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- [breaking-change] Bump `stm32f4` version to 0.13.
 - Removing error on I2C bus errors due to errata workaround.
 - [breaking-change] Updated synopsys-usb-otg dependency to v0.2.0.
 - Cleanups to the Sdio driver, some hw independent functionality moved to the new sdio-host library.
