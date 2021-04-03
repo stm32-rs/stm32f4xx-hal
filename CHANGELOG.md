@@ -45,7 +45,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for hardware-based CRC32 functionality
 - Add `MonoTimer` and `Instant` structs for basic time measurement.
 - Added support for I2S and SAI clocks
-- Added support for canbus with the bxcan crate (0.5.0).
+- Added support for canbus with the bxcan crate.[#273] The version range is `<=0.4, <0.6`. (Currently 
+  the latest version is `0.5.0`) [#286]
 - Added a `freeze_unchecked` method [#231]
 - Added support for the Real Time Clock (RTC)
 - Added option to bypass the HSE oscillator and use a clock input [#263]
@@ -57,6 +58,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#262]: https://github.com/stm32-rs/stm32f4xx-hal/pull/262
 [#263]: https://github.com/stm32-rs/stm32f4xx-hal/pull/263
 [#278]: https://github.com/stm32-rs/stm32f4xx-hal/issues/278
+[#273]: https://github.com/stm32-rs/stm32f4xx-hal/pull/273
+[#286]: https://github.com/stm32-rs/stm32f4xx-hal/pull/286
 
 ### Fixed
 
