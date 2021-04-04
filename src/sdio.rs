@@ -120,11 +120,6 @@ pub enum Buswidth {
     Buswidth4 = 1,
 }
 
-enum PowerCtrl {
-    Off = 0b00,
-    On = 0b11,
-}
-
 /// Clock frequency of a SDIO bus.
 pub enum ClockFreq {
     F24Mhz = 0,
@@ -185,21 +180,21 @@ impl Sdio {
         }
 
         // Configure clock
-        sdio.clkcr.write(|w| unsafe {
+        sdio.clkcr.write(|w| {
             w.widbus()
-                .bits(Buswidth::Buswidth1 as u8)
+                .bus_width1()
                 .clken()
-                .set_bit()
+                .enabled()
                 .clkdiv()
                 .bits(ClockFreq::F400Khz as u8)
                 .pwrsav()
-                .clear_bit()
+                .disabled()
                 .bypass()
-                .clear_bit()
+                .disabled()
                 .negedge()
-                .clear_bit()
+                .rising()
                 .hwfc_en()
-                .set_bit()
+                .enabled()
         });
 
         let mut host = Sdio {
@@ -210,17 +205,17 @@ impl Sdio {
         };
 
         // Make sure card is powered off
-        host.set_power(PowerCtrl::Off);
+        host.power_card(false);
         host
     }
 
     /// Initializes card (if present) and sets the bus at the specified frequency.
     pub fn init_card(&mut self, freq: ClockFreq) -> Result<(), Error> {
         // Enable power to card
-        self.set_power(PowerCtrl::On);
+        self.power_card(true);
 
         // Enable clock
-        self.sdio.clkcr.modify(|_, w| w.clken().set_bit());
+        self.sdio.clkcr.modify(|_, w| w.clken().enabled());
         // Send card to idle state
         self.cmd(cmd::idle())?;
 
@@ -307,10 +302,16 @@ impl Sdio {
         Ok(())
     }
 
-    fn set_power(&mut self, pwr: PowerCtrl) {
-        self.sdio
-            .power
-            .modify(|_, w| unsafe { w.pwrctrl().bits(pwr as u8) });
+    fn power_card(&mut self, on: bool) {
+        use crate::stm32::sdio::power::PWRCTRL_A;
+
+        self.sdio.power.modify(|_, w| {
+            w.pwrctrl().variant(if on {
+                PWRCTRL_A::POWERON
+            } else {
+                PWRCTRL_A::POWEROFF
+            })
+        });
 
         // Wait for 2 ms after changing power settings
         cortex_m::asm::delay(2 * (self.clocks.sysclk().0 / 1000));
@@ -407,7 +408,9 @@ impl Sdio {
         Ok(())
     }
 
-    fn start_datapath_transfer(&self, length_bytes: u32, block_size: u8, dtdir: bool) {
+    fn start_datapath_transfer(&self, length_bytes: u32, block_size: u8, card_to_controller: bool) {
+        use crate::stm32::sdio::dctrl::DTDIR_A;
+
         // Block Size up to 2^14 bytes
         assert!(block_size <= 14);
 
@@ -417,22 +420,24 @@ impl Sdio {
             || self.sdio.sta.read().txact().bit_is_set()
         {}
 
+        let dtdir = if card_to_controller {
+            DTDIR_A::CARDTOCONTROLLER
+        } else {
+            DTDIR_A::CONTROLLERTOCARD
+        };
+
         // Data timeout, in bus cycles
-        self.sdio
-            .dtimer
-            .write(|w| unsafe { w.datatime().bits(0xFFFF_FFFF) });
+        self.sdio.dtimer.write(|w| w.datatime().bits(0xFFFF_FFFF));
         // Data length, in bytes
-        self.sdio
-            .dlen
-            .write(|w| unsafe { w.datalength().bits(length_bytes) });
+        self.sdio.dlen.write(|w| w.datalength().bits(length_bytes));
         // Transfer
-        self.sdio.dctrl.write(|w| unsafe {
+        self.sdio.dctrl.write(|w| {
             w.dblocksize()
                 .bits(block_size) // 2^n bytes block size
                 .dtdir()
-                .bit(dtdir)
+                .variant(dtdir)
                 .dten()
-                .set_bit() // Enable transfer
+                .enabled() // Enable transfer
         });
     }
 
@@ -522,22 +527,24 @@ impl Sdio {
 
     /// Set bus width and clock frequency
     fn set_bus(&self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
+        use crate::stm32::sdio::clkcr::WIDBUS_A;
+
         let card_widebus = self.card()?.supports_widebus();
 
         let width = match width {
-            Buswidth::Buswidth4 if card_widebus => Buswidth::Buswidth4,
-            _ => Buswidth::Buswidth1,
+            Buswidth::Buswidth4 if card_widebus => WIDBUS_A::BUSWIDTH4,
+            _ => WIDBUS_A::BUSWIDTH1,
         };
 
-        self.app_cmd(cmd::set_bus_width(width == Buswidth::Buswidth4))?;
+        self.app_cmd(cmd::set_bus_width(width == WIDBUS_A::BUSWIDTH4))?;
 
-        self.sdio.clkcr.modify(|_, w| unsafe {
+        self.sdio.clkcr.modify(|_, w| {
             w.clkdiv()
                 .bits(freq as u8)
                 .widbus()
-                .bits(width as u8)
+                .variant(width)
                 .clken()
-                .set_bit()
+                .enabled()
         });
         Ok(())
     }
@@ -550,6 +557,8 @@ impl Sdio {
 
     /// Send command to card
     fn cmd<R: cmd::Resp>(&self, cmd: Cmd<R>) -> Result<(), Error> {
+        use crate::stm32::sdio::cmd::WAITRESP_A;
+
         // Command state machines must be idle
         while self.sdio.sta.read().cmdact().bit_is_set() {}
 
@@ -557,25 +566,25 @@ impl Sdio {
         clear_all_interrupts(&self.sdio.icr);
 
         // Command arg
-        self.sdio.arg.write(|w| unsafe { w.cmdarg().bits(cmd.arg) });
+        self.sdio.arg.write(|w| w.cmdarg().bits(cmd.arg));
 
         // Determine what kind of response the CPSM should wait for
         let waitresp = match cmd.response_len() {
-            ResponseLen::Zero => 0b00,
-            ResponseLen::R48 => 0b01,
-            ResponseLen::R136 => 0b11,
+            ResponseLen::Zero => WAITRESP_A::NORESPONSE,
+            ResponseLen::R48 => WAITRESP_A::SHORTRESPONSE,
+            ResponseLen::R136 => WAITRESP_A::LONGRESPONSE,
         };
 
         // Send the command
-        self.sdio.cmd.write(|w| unsafe {
+        self.sdio.cmd.write(|w| {
             w.waitresp()
-                .bits(waitresp)
+                .variant(waitresp)
                 .cmdindex()
                 .bits(cmd.cmd)
                 .waitint()
-                .clear_bit()
+                .disabled()
                 .cpsmen()
-                .set_bit()
+                .enabled()
         });
 
         let mut timeout: u32 = 0xFFFF_FFFF;
