@@ -506,45 +506,45 @@ use crate::{
         gpiod::{PD12, PD14, PD15},
         gpiof::{PF14, PF15},
     },
-    pac::fmpi2c,
-    pac::FMPI2C,
+    pac::fmpi2c1,
+    pac::FMPI2C1,
 };
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PC6<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PC6<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinSda<FMPI2C> for PC7<AlternateOD<AF4>> {}
+impl PinSda<FMPI2C1> for PC7<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinSda<FMPI2C> for PB3<AlternateOD<AF4>> {}
+impl PinSda<FMPI2C1> for PB3<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PB10<AlternateOD<AF9>> {}
+impl PinScl<FMPI2C1> for PB10<AlternateOD<AF9>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinSda<FMPI2C> for PB14<AlternateOD<AF4>> {}
+impl PinSda<FMPI2C1> for PB14<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PB15<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PB15<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PD12<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PD12<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PB13<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PB13<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PD14<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PD14<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PD15<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PD15<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PF14<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PF14<AlternateOD<AF4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C> for PF15<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PF15<AlternateOD<AF4>> {}
 
 #[derive(Debug)]
 pub enum Error {
@@ -676,10 +676,10 @@ i2c! {
 }
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl<PINS> FMPI2c<FMPI2C, PINS> {
-    pub fn fmpi2c(i2c: FMPI2C, pins: PINS, speed: KiloHertz) -> Self
+impl<PINS> FMPI2c<FMPI2C1, PINS> {
+    pub fn fmpi2c(i2c: FMPI2C1, pins: PINS, speed: KiloHertz) -> Self
     where
-        PINS: Pins<FMPI2C>,
+        PINS: Pins<FMPI2C1>,
     {
         unsafe {
             const EN_BIT: u8 = 24;
@@ -1027,7 +1027,7 @@ where
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 impl<I2C, PINS> FMPI2c<I2C, PINS>
 where
-    I2C: Deref<Target = fmpi2c::RegisterBlock>,
+    I2C: Deref<Target = fmpi2c1::RegisterBlock>,
 {
     fn i2c_init(&self, speed: KiloHertz) {
         use core::cmp;
@@ -1068,7 +1068,7 @@ where
         }
 
         // Enable I2C signal generator, and configure I2C for configured speed
-        self.i2c.timingr.write(|w| unsafe {
+        self.i2c.timingr.write(|w| {
             w.presc()
                 .bits(presc)
                 .scldel()
@@ -1089,7 +1089,7 @@ where
         (self.i2c, self.pins)
     }
 
-    fn check_and_clear_error_flags(&self, isr: &fmpi2c::isr::R) -> Result<(), Error> {
+    fn check_and_clear_error_flags(&self, isr: &fmpi2c1::isr::R) -> Result<(), Error> {
         // If we received a NACK, then this is an error
         if isr.nackf().bit_is_set() {
             self.i2c
@@ -1131,15 +1131,15 @@ where
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 impl<I2C, PINS> WriteRead for FMPI2c<I2C, PINS>
 where
-    I2C: Deref<Target = fmpi2c::RegisterBlock>,
+    I2C: Deref<Target = fmpi2c1::RegisterBlock>,
 {
     type Error = Error;
 
     fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
         // Set up current slave address for writing and disable autoending
-        self.i2c.cr2.modify(|_, w| unsafe {
-            w.sadd1_7()
-                .bits(addr)
+        self.i2c.cr2.modify(|_, w| {
+            w.sadd()
+                .bits(u16::from(addr) << 1)
                 .nbytes()
                 .bits(bytes.len() as u8)
                 .rd_wrn()
@@ -1171,9 +1171,9 @@ where
         } {}
 
         // Set up current address for reading
-        self.i2c.cr2.modify(|_, w| unsafe {
-            w.sadd1_7()
-                .bits(addr)
+        self.i2c.cr2.modify(|_, w| {
+            w.sadd()
+                .bits(u16::from(addr) << 1)
                 .nbytes()
                 .bits(buffer.len() as u8)
                 .rd_wrn()
@@ -1201,15 +1201,15 @@ where
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 impl<I2C, PINS> Read for FMPI2c<I2C, PINS>
 where
-    I2C: Deref<Target = fmpi2c::RegisterBlock>,
+    I2C: Deref<Target = fmpi2c1::RegisterBlock>,
 {
     type Error = Error;
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Error> {
         // Set up current address for reading
-        self.i2c.cr2.modify(|_, w| unsafe {
-            w.sadd1_7()
-                .bits(addr)
+        self.i2c.cr2.modify(|_, w| {
+            w.sadd()
+                .bits(u16::from(addr) << 1)
                 .nbytes()
                 .bits(buffer.len() as u8)
                 .rd_wrn()
@@ -1237,15 +1237,15 @@ where
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 impl<I2C, PINS> Write for FMPI2c<I2C, PINS>
 where
-    I2C: Deref<Target = fmpi2c::RegisterBlock>,
+    I2C: Deref<Target = fmpi2c1::RegisterBlock>,
 {
     type Error = Error;
 
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
         // Set up current slave address for writing and enable autoending
-        self.i2c.cr2.modify(|_, w| unsafe {
-            w.sadd1_7()
-                .bits(addr)
+        self.i2c.cr2.modify(|_, w| {
+            w.sadd()
+                .bits(u16::from(addr) << 1)
                 .nbytes()
                 .bits(bytes.len() as u8)
                 .rd_wrn()

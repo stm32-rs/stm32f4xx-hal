@@ -417,7 +417,7 @@ address!(
     (pac::I2C3, dr, u8),
 );
 
-#[cfg(not(any(feature = "stm32f410", feature = "stm32f446")))]
+#[cfg(not(any(feature = "stm32f410")))]
 dma_map!(
     (Stream3<DMA2>, Channel4, pac::SDIO, MemoryToPeripheral), //SDIO
     (Stream3<DMA2>, Channel4, pac::SDIO, PeripheralToMemory), //SDIO
@@ -425,19 +425,8 @@ dma_map!(
     (Stream6<DMA2>, Channel4, pac::SDIO, PeripheralToMemory), //SDIO
 );
 
-#[cfg(not(any(feature = "stm32f410", feature = "stm32f446")))]
+#[cfg(not(any(feature = "stm32f410")))]
 address!((pac::SDIO, fifo, u32),);
-
-#[cfg(feature = "stm32f446")]
-dma_map!(
-    (Stream3<DMA2>, Channel4, pac::SDMMC, MemoryToPeripheral), //SDMMC
-    (Stream3<DMA2>, Channel4, pac::SDMMC, PeripheralToMemory), //SDMMC
-    (Stream6<DMA2>, Channel4, pac::SDMMC, MemoryToPeripheral), //SDMMC
-    (Stream6<DMA2>, Channel4, pac::SDMMC, PeripheralToMemory), //SDMMC
-);
-
-#[cfg(feature = "stm32f446")]
-address!((pac::SDMMC, sdmmc_fifor, u32),);
 
 #[cfg(any(
     feature = "stm32f401",
