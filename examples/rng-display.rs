@@ -69,11 +69,11 @@ fn main() -> ! {
         let gpiob = dp.GPIOB.split();
         let scl = gpiob.pb8.into_alternate_af4().set_open_drain();
         let sda = gpiob.pb9.into_alternate_af4().set_open_drain();
-        let i2c = I2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), clocks);
+        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
         // Set up the display
         let interface = I2CDIBuilder::new().init(i2c);
-        let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
+        let mut disp: GraphicsMode<_, _> = Builder::new().connect(interface).into();
         disp.init().unwrap();
 
         // enable the RNG peripheral and its clock

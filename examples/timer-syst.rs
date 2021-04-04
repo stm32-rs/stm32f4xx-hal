@@ -10,16 +10,14 @@
 #![no_std]
 #![no_main]
 
-extern crate panic_halt;
+use panic_halt as _;
 
-use cortex_m;
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 
 use embedded_hal::timer::Cancel;
 use hal::timer;
 use hal::timer::Timer;
-use nb;
 use stm32f4xx_hal as hal;
 
 use crate::hal::{prelude::*, stm32};
