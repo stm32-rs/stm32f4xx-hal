@@ -17,8 +17,8 @@
 #![no_std]
 #![no_main]
 
-extern crate panic_semihosting; // logs messages to the host stderr; requires a debugger
-extern crate stm32f4xx_hal as hal;
+use panic_semihosting as _; // logs messages to the host stderr; requires a debugger
+use stm32f4xx_hal as hal;
 
 use crate::hal::{
     delay::Delay,
@@ -63,7 +63,7 @@ fn main() -> ! {
         let rcc = dp.RCC.constrain();
         let clocks = setup_clocks(rcc);
         let gpiob = dp.GPIOB.split();
-        let i2c = I2c::i2c1(
+        let i2c = I2c::new(
             dp.I2C1,
             (
                 gpiob.pb8.into_alternate_af4().set_open_drain(),
@@ -83,7 +83,7 @@ fn main() -> ! {
         board_btn.trigger_on_edge(&mut dp.EXTI, Edge::FALLING);
 
         let interface = I2CDIBuilder::new().init(i2c);
-        let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
+        let mut disp: GraphicsMode<_, _> = Builder::new().connect(interface).into();
         disp.init().unwrap();
         disp.flush().unwrap();
 

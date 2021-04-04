@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Updated SDIO_D0 pin to PB7 for stm32f411 [#277]
 - Address ST erratum 2.1.13 (DM00037591) [#278]
 - Implement generics on the qei module.
+- Bump ssd1306 dev-dependency and cleanup examples
 
 ### Added
 

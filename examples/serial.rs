@@ -3,7 +3,6 @@
 
 use panic_halt as _;
 
-use cortex_m;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 

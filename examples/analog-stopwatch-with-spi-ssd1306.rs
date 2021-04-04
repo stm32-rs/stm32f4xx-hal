@@ -7,10 +7,8 @@
 #![no_std]
 #![no_main]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
-extern crate panic_semihosting;
-extern crate stm32f4xx_hal as hal;
+use panic_semihosting as _;
+use stm32f4xx_hal as hal;
 
 use crate::hal::{
     gpio::{gpioa::PA0, Edge, Input, PullDown},
@@ -126,7 +124,7 @@ fn main() -> ! {
 
     // Set up the display
     let interface = SPIInterfaceNoCS::new(spi, dc);
-    let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
+    let mut disp: GraphicsMode<_, _> = Builder::new().connect(interface).into();
     disp.init().unwrap();
     disp.flush().unwrap();
 
