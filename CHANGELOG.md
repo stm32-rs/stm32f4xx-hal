@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- [breaking-change] Bump `rand_core` dependency to 0.6.
 - [breaking-change] Bump main crate dependencies `cortex-m`, `bare-metal` and `nb`
 - [breaking-change] Bump `stm32f4` version to 0.13.
 - Removing error on I2C bus errors due to errata workaround.
