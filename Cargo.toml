@@ -27,31 +27,19 @@ targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]
 bxcan = { version = ">=0.4, <0.6", optional = true }
-cortex-m = ">=0.5.8,<0.7"
+cortex-m = "0.7"
 cortex-m-rt = "0.6.10"
-nb = "0.1.2"
+nb = "1"
 rand_core = "0.5.1"
 rtcc = "0.2"
 stm32f4 = "0.13"
 synopsys-usb-otg = { version = "0.2.0", features = ["cortex-m"], optional = true }
 sdio-host = { version = "0.5.0", optional = true }
 embedded-dma = "0.1.2"
-
-[dependencies.bare-metal]
-version = "0.2.5"
-features = ["const-fn"]
-
-[dependencies.cast]
-default-features = false
-version = "0.2.2"
-
-[dependencies.void]
-default-features = false
-version = "1.0.2"
-
-[dependencies.embedded-hal]
-features = ["unproven"]
-version = "0.2.3"
+bare-metal = { version = "1" }
+cast = { default-features = false, version = "0.2.2" }
+void = { default-features = false, version = "1.0.2" }
+embedded-hal = { features = ["unproven"], version = "0.2.3" }
 
 [dev-dependencies]
 panic-semihosting = "0.5.3"
