@@ -42,7 +42,7 @@ fn main() -> ! {
         gpioa.pa1.into_alternate_af1(),
     );
     let rotary_encoder_timer = dp.TIM2;
-    let rotary_encoder = Qei::tim2(rotary_encoder_timer, rotary_encoder_pins);
+    let rotary_encoder = Qei::new(rotary_encoder_timer, rotary_encoder_pins);
 
     let mut current_count = rotary_encoder.count();
 

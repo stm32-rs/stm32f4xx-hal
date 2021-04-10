@@ -7,8 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Added support for I2S communication using SPI peripherals [#265]
+
+[#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
+
+## [v0.9.0] - 2021-04-04
+
 ### Changed
 
+- [breaking-change] Bump `rand_core` dependency to 0.6.
+- [breaking-change] Bump main crate dependencies `cortex-m`, `bare-metal` and `nb`
+- [breaking-change] Bump `stm32f4` version to 0.13.
+- Removing error on I2C bus errors due to errata workaround.
 - [breaking-change] Updated synopsys-usb-otg dependency to v0.2.0.
 - Cleanups to the Sdio driver, some hw independent functionality moved to the new sdio-host library.
 - [breaking-change] Sdio is disabled by default, enable with the `sdio` feature flag.
@@ -27,6 +39,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `SysCfg` wrapper to enforce clock enable for `SYSCFG`
 - [breaking-change] gpio::ExtiPin now uses `SysCfg` wrapper instead of `SYSCFG`
 - Change `WriteBuffer + 'static` to `StaticWriteBuffer`in the DMA module.
+- Fixed a race condition where SPI writes could get stuck in an error state forever (PR #269).
+- Implement generics on the serial module.
+- Implement generics on the i2c module, not including fast i2c.
+- Updated SDIO_D0 pin to PB7 for stm32f411 [#277]
+- Address ST erratum 2.1.13 (DM00037591) [#278]
+- Implement generics on the qei module.
+- Bump ssd1306 dev-dependency and cleanup examples
 
 ### Added
 
@@ -39,13 +58,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for hardware-based CRC32 functionality
 - Add `MonoTimer` and `Instant` structs for basic time measurement.
 - Added support for I2S and SAI clocks
-- Added support for canbus with the bxcan crate.
+- Added support for canbus with the bxcan crate.[#273] The version range is `<=0.4, <0.6`. (Currently 
+  the latest version is `0.5.0`) [#286]
 - Added a `freeze_unchecked` method [#231]
 - Added support for the Real Time Clock (RTC)
-- Added support for I2S communication using SPI peripherals [#265]
+- Added option to bypass the HSE oscillator and use a clock input [#263]
+- Added support for CAN on additional models: STM32F412, STM32F413, STM32F415,
+  STM32F417, STM32F423, STM32F427, STM32F429, STM32F437, STM32F439, STM32F469,
+  and STM32F479 [#262]
 
 [#231]: https://github.com/stm32-rs/stm32f4xx-hal/pull/231
-[#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
+[#262]: https://github.com/stm32-rs/stm32f4xx-hal/pull/262
+[#263]: https://github.com/stm32-rs/stm32f4xx-hal/pull/263
+[#278]: https://github.com/stm32-rs/stm32f4xx-hal/issues/278
+[#273]: https://github.com/stm32-rs/stm32f4xx-hal/pull/273
+[#286]: https://github.com/stm32-rs/stm32f4xx-hal/pull/286
 
 ### Fixed
 
@@ -56,9 +83,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - DMA: Fix some `compiler_fences` [#237]
 - DMA: Fix docs [#237]
 - RCC for F412, F413, F423, F446: Add missing configuration of PLLI2SCFGR.PLLI2SN [#261]
+- RCC for F411: Add missing configuration of PLLI2SCFGR.PLLI2SM [#264]
+- CRC: Fixed CRC clock not being enabled [#283]
 
 [#237]: https://github.com/stm32-rs/stm32f4xx-hal/pull/237
 [#261]: https://github.com/stm32-rs/stm32f4xx-hal/pull/261
+[#264]: https://github.com/stm32-rs/stm32f4xx-hal/pull/264
+[#283]: https://github.com/stm32-rs/stm32f4xx-hal/pull/283
 
 ## [v0.8.3] - 2020-06-12
 
@@ -287,7 +318,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.9.0...HEAD
+[v0.9.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.3...v0.9.0
 [v0.8.3]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.2...v0.8.3
 [v0.8.2]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.1...v0.8.2
 [v0.8.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.0...v0.8.1

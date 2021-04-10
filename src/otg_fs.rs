@@ -61,6 +61,9 @@ unsafe impl UsbPeripheral for USB {
             // Enable USB peripheral
             rcc.ahb2enr.modify(|_, w| w.otgfsen().set_bit());
 
+            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+            cortex_m::asm::dsb();
+
             // Reset USB peripheral
             rcc.ahb2rstr.modify(|_, w| w.otgfsrst().set_bit());
             rcc.ahb2rstr.modify(|_, w| w.otgfsrst().clear_bit());

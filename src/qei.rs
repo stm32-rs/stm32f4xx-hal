@@ -81,31 +81,80 @@ pub struct Qei<TIM, PINS> {
     pins: PINS,
 }
 
+impl<TIM: Instance, PINS> Qei<TIM, PINS> {
+    /// Configures a TIM peripheral as a quadrature encoder interface input
+    pub fn new(tim: TIM, pins: PINS) -> Self
+    where
+        PINS: Pins<TIM>,
+    {
+        TIM::setup_clocks();
+
+        tim.setup_qei();
+
+        Qei { tim, pins }
+    }
+
+    /// Releases the TIM peripheral and QEI pins
+    pub fn release(self) -> (TIM, PINS) {
+        (self.tim, self.pins)
+    }
+}
+
+impl<TIM: Instance, PINS> hal::Qei for Qei<TIM, PINS> {
+    type Count = TIM::Count;
+
+    fn count(&self) -> Self::Count {
+        self.tim.read_count() as Self::Count
+    }
+
+    fn direction(&self) -> Direction {
+        if self.tim.read_direction() {
+            hal::Direction::Upcounting
+        } else {
+            hal::Direction::Downcounting
+        }
+    }
+}
+
+mod sealed {
+    pub trait Sealed {}
+}
+
+pub trait Instance: sealed::Sealed {
+    type Count;
+
+    fn setup_clocks();
+    fn setup_qei(&self);
+    fn read_count(&self) -> Self::Count;
+    fn read_direction(&self) -> bool;
+}
+
 macro_rules! hal {
     ($($TIM:ident: ($tim:ident, $en_bit:expr, $reset_bit:expr, $apbenr:ident, $apbrstr:ident, $bits:ident),)+) => {
         $(
-            impl<PINS> Qei<$TIM, PINS> {
-                /// Configures a TIM peripheral as a quadrature encoder interface input
-                pub fn $tim(tim: $TIM, pins: PINS) -> Self
-                where
-                    PINS: Pins<$TIM>
-                {
+            impl sealed::Sealed for $TIM {}
+            impl Instance for $TIM {
+                type Count = $bits;
+
+                fn setup_clocks() {
                     unsafe {
                         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                         let rcc = &(*RCC::ptr());
-
                         // Enable and reset clock.
                         bb::set(&rcc.$apbenr, $en_bit);
+                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                        cortex_m::asm::dsb();
                         bb::set(&rcc.$apbrstr, $reset_bit);
                         bb::clear(&rcc.$apbrstr, $reset_bit);
                     }
+                }
 
+                fn setup_qei(&self) {
                     // Configure TxC1 and TxC2 as captures
-                    tim.ccmr1_output()
+                    self.ccmr1_output()
                         .write(|w| unsafe { w.cc1s().bits(0b01).cc2s().bits(0b01) });
-
                     // enable and configure to capture on rising edge
-                    tim.ccer.write(|w| {
+                    self.ccer.write(|w| {
                         w.cc1e()
                             .set_bit()
                             .cc1p()
@@ -115,40 +164,36 @@ macro_rules! hal {
                             .cc2p()
                             .clear_bit()
                     });
-
                     // configure as quadrature encoder
                     // some chip variants declare `.bits()` as unsafe, some don't
                     #[allow(unused_unsafe)]
-                    tim.smcr.write(|w| unsafe { w.sms().bits(3) });
-
-                    tim.arr.write(|w| unsafe { w.bits(core::u32::MAX) });
-                    tim.cr1.write(|w| w.cen().set_bit());
-
-                    Qei { tim, pins }
+                    self.smcr.write(|w| unsafe { w.sms().bits(3) });
+                    self.arr.write(|w| unsafe { w.bits(core::u32::MAX) });
+                    self.cr1.write(|w| w.cen().set_bit());
                 }
 
-                /// Releases the TIM peripheral and QEI pins
-                pub fn release(self) -> ($TIM, PINS) {
-                    (self.tim, self.pins)
-                }
-            }
-
-            impl<PINS> hal::Qei for Qei<$TIM, PINS> {
-                type Count = $bits;
-
-                fn count(&self) -> $bits {
-                    self.tim.cnt.read().bits() as $bits
+                fn read_count(&self) -> Self::Count {
+                    self.cnt.read().bits() as Self::Count
                 }
 
-                fn direction(&self) -> Direction {
-                    if self.tim.cr1.read().dir().bit_is_clear() {
-                        hal::Direction::Upcounting
-                    } else {
-                        hal::Direction::Downcounting
-                    }
+                fn read_direction(&self) -> bool {
+                    self.cr1.read().dir().bit_is_clear()
                 }
             }
 
+            impl<PINS> Qei<$TIM, PINS> {
+                /// Configures a TIM peripheral as a quadrature encoder interface input
+                #[deprecated(
+                    since = "0.9.0",
+                    note = "Please use new instead"
+                )]
+                pub fn $tim(tim: $TIM, pins: PINS) -> Self
+                where
+                    PINS: Pins<$TIM>,
+                {
+                    Self::new(tim, pins)
+                }
+            }
         )+
     }
 }

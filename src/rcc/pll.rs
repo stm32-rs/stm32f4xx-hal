@@ -305,6 +305,7 @@ impl I2sPll {
     }
 
     #[cfg(not(any(
+        feature = "stm32f411",
         feature = "stm32f412",
         feature = "stm32f413",
         feature = "stm32f423",
@@ -319,6 +320,7 @@ impl I2sPll {
             .modify(|_, w| unsafe { w.plli2sn().bits(config.n).plli2sr().bits(config.outdiv) });
     }
     #[cfg(any(
+        feature = "stm32f411",
         feature = "stm32f412",
         feature = "stm32f413",
         feature = "stm32f423",

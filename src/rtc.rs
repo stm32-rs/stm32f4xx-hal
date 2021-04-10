@@ -57,7 +57,7 @@ impl Rtc {
             // Set 24 Hour
             regs.cr.modify(|_, w| w.fmt().clear_bit());
             // Set prescalers
-            regs.prer.modify(|_, w| unsafe {
+            regs.prer.modify(|_, w| {
                 w.prediv_s().bits(prediv_s);
                 w.prediv_a().bits(prediv_a)
             })
@@ -120,7 +120,7 @@ impl Rtcc for Rtc {
         let (mnt, mnu) = bcd2_encode(time.minute())?;
         let (st, su) = bcd2_encode(time.second())?;
         self.modify(|regs| {
-            regs.tr.write(|w| unsafe {
+            regs.tr.write(|w| {
                 w.ht().bits(ht);
                 w.hu().bits(hu);
                 w.mnt().bits(mnt);
@@ -139,10 +139,7 @@ impl Rtcc for Rtc {
             return Err(Error::InvalidInputData);
         }
         let (st, su) = bcd2_encode(seconds as u32)?;
-        self.modify(|regs| {
-            regs.tr
-                .modify(|_, w| unsafe { w.st().bits(st).su().bits(su) })
-        });
+        self.modify(|regs| regs.tr.modify(|_, w| w.st().bits(st).su().bits(su)));
 
         Ok(())
     }
@@ -152,10 +149,7 @@ impl Rtcc for Rtc {
             return Err(Error::InvalidInputData);
         }
         let (mnt, mnu) = bcd2_encode(minutes as u32)?;
-        self.modify(|regs| {
-            regs.tr
-                .modify(|_, w| unsafe { w.mnt().bits(mnt).mnu().bits(mnu) })
-        });
+        self.modify(|regs| regs.tr.modify(|_, w| w.mnt().bits(mnt).mnu().bits(mnu)));
 
         Ok(())
     }
@@ -167,10 +161,7 @@ impl Rtcc for Rtc {
             Hours::AM(_h) | Hours::PM(_h) => self.set_12h_fmt(),
         }
 
-        self.modify(|regs| {
-            regs.tr
-                .modify(|_, w| unsafe { w.ht().bits(ht).hu().bits(hu) })
-        });
+        self.modify(|regs| regs.tr.modify(|_, w| w.ht().bits(ht).hu().bits(hu)));
 
         Ok(())
     }
@@ -189,10 +180,7 @@ impl Rtcc for Rtc {
             return Err(Error::InvalidInputData);
         }
         let (dt, du) = bcd2_encode(day as u32)?;
-        self.modify(|regs| {
-            regs.dr
-                .modify(|_, w| unsafe { w.dt().bits(dt).du().bits(du) })
-        });
+        self.modify(|regs| regs.dr.modify(|_, w| w.dt().bits(dt).du().bits(du)));
 
         Ok(())
     }
@@ -202,10 +190,7 @@ impl Rtcc for Rtc {
             return Err(Error::InvalidInputData);
         }
         let (mt, mu) = bcd2_encode(month as u32)?;
-        self.modify(|regs| {
-            regs.dr
-                .modify(|_, w| unsafe { w.mt().bit(mt > 0).mu().bits(mu) })
-        });
+        self.modify(|regs| regs.dr.modify(|_, w| w.mt().bit(mt > 0).mu().bits(mu)));
 
         Ok(())
     }
@@ -215,10 +200,7 @@ impl Rtcc for Rtc {
             return Err(Error::InvalidInputData);
         }
         let (yt, yu) = bcd2_encode(year as u32 - 1970)?;
-        self.modify(|regs| {
-            regs.dr
-                .modify(|_, w| unsafe { w.yt().bits(yt).yu().bits(yu) })
-        });
+        self.modify(|regs| regs.dr.modify(|_, w| w.yt().bits(yt).yu().bits(yu)));
 
         Ok(())
     }
@@ -235,7 +217,7 @@ impl Rtcc for Rtc {
         let (dt, du) = bcd2_encode(date.day())?;
 
         self.modify(|regs| {
-            regs.dr.write(|w| unsafe {
+            regs.dr.write(|w| {
                 w.dt().bits(dt);
                 w.du().bits(du);
                 w.mt().bit(mt > 0);
@@ -263,7 +245,7 @@ impl Rtcc for Rtc {
         let (st, su) = bcd2_encode(date.second())?;
 
         self.modify(|regs| {
-            regs.dr.write(|w| unsafe {
+            regs.dr.write(|w| {
                 w.dt().bits(dt);
                 w.du().bits(du);
                 w.mt().bit(mt > 0);
@@ -271,7 +253,7 @@ impl Rtcc for Rtc {
                 w.yt().bits(yt);
                 w.yu().bits(yu)
             });
-            regs.tr.write(|w| unsafe {
+            regs.tr.write(|w| {
                 w.ht().bits(ht);
                 w.hu().bits(hu);
                 w.mnt().bits(mnt);
@@ -463,6 +445,10 @@ fn unlock(rcc: &RegisterBlock, pwr: &mut PWR) {
     unsafe {
         bb::set(&rcc.apb1enr, 28);
     }
+
+    // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+    cortex_m::asm::dsb();
+
     pwr.cr.modify(|_, w| {
         w
             // Enable access to the backup registers

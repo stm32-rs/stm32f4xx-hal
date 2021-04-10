@@ -12,10 +12,8 @@
 #![no_std]
 #![no_main]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
-extern crate panic_semihosting;
-extern crate stm32f4xx_hal as hal;
+use panic_semihosting as _;
+use stm32f4xx_hal as hal;
 
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
@@ -39,7 +37,7 @@ fn main() -> ! {
         let gpiob = dp.GPIOB.split();
         let scl = gpiob.pb8.into_alternate_af4().set_open_drain();
         let sda = gpiob.pb9.into_alternate_af4().set_open_drain();
-        let i2c = I2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), clocks);
+        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor
         // and therefore is active LOW. There's even a 100nF capacitor for debouncing - nice for us
@@ -49,7 +47,7 @@ fn main() -> ! {
 
         // Set up the display
         let interface = I2CDIBuilder::new().init(i2c);
-        let mut disp: GraphicsMode<_> = Builder::new().connect(interface).into();
+        let mut disp: GraphicsMode<_, _> = Builder::new().connect(interface).into();
         disp.init().unwrap();
         disp.flush().unwrap();
 
