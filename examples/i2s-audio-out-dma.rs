@@ -6,7 +6,7 @@
 //!
 //! # Hardware required
 //!
-//! * STM32F411E-DISCO evaluation board
+//! * STM32F407G-DISC1 or STM32F411E-DISCO evaluation board
 //! * Headphones or speakers with a headphone plug
 //!
 //! # Procedure
@@ -63,6 +63,11 @@ use stm32f4xx_hal::prelude::*;
 use stm32f4xx_hal::stm32::{DMA1, SPI3};
 
 use cs43l22::{Cs43L22, Register};
+
+/// Volume in decibels
+///
+/// Depending on your speakers, you may need to adjust this value.
+const VOLUME: i8 = -100;
 
 const SINE_SAMPLES: usize = 64;
 
@@ -164,12 +169,9 @@ fn main() -> ! {
     // Word length 16 bits
     dac.write(Register::InterfaceCtl1, 0b0_0_0_0_01_11).unwrap();
 
-    // Reduce the headphone volume to make the demo less annoying
-    let headphone_volume = -30i8 as u8;
-    dac.write(Register::HeadphoneAVol, headphone_volume)
-        .unwrap();
-    dac.write(Register::HeadphoneBVol, headphone_volume)
-        .unwrap();
+    // Reduce the headphone volume something more comfortable
+    dac.write(Register::HeadphoneAVol, VOLUME as u8).unwrap();
+    dac.write(Register::HeadphoneBVol, VOLUME as u8).unwrap();
 
     // Power up DAC
     dac.write(Register::PowerCtl1, 0b1001_1110).unwrap();
