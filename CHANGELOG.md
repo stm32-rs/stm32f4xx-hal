@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Added an example of integration with RTIC.
+
 ## [v0.9.0] - 2021-04-04
 
 ### Changed
