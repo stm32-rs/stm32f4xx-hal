@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Update the sdio driver to match the changes in the PAC
+
 ### Added
 
 - Added support for I2S communication using SPI peripherals [#265]
