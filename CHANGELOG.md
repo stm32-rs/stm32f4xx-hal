@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Added support for I2S communication using SPI peripherals [#265]
+- Added support for I2S communication using SPI peripherals, and two examples [#265]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 
