@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Added an example of integration with RTIC.
 
+### Changed
+
+- Update the sdio driver to match the changes in the PAC
+- Update README.md with current information
+
 ## [v0.9.0] - 2021-04-04
 
 ### Changed
