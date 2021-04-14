@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Update the sdio driver to match the changes in the PAC
+- Update README.md with current information
 
 ## [v0.9.0] - 2021-04-04
 
