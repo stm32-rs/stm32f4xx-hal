@@ -1,6 +1,5 @@
 use core::fmt;
 use core::marker::PhantomData;
-use core::ptr;
 
 use embedded_hal::blocking;
 use embedded_hal::prelude::*;
@@ -1599,7 +1598,24 @@ where
 {
     type Error = Error;
 
-    fn read(&mut self) -> nb::Result<u8, Error> {
+    fn read(&mut self) -> nb::Result<u8, Self::Error> {
+        // Delegate to the Read<u16> implementation, then truncate to 8 bits
+        <Self as serial::Read<u16>>::read(self).map(|word16| word16 as u8)
+    }
+}
+
+/// Reads 9-bit words from the UART/USART
+///
+/// If the UART/USART was configured with `WordLength::DataBits9`, the returned value will contain
+/// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
+/// 8 received data bits and all other bits set to zero.
+impl<USART> serial::Read<u16> for Rx<USART>
+where
+    USART: Instance,
+{
+    type Error = Error;
+
+    fn read(&mut self) -> nb::Result<u16, Error> {
         // NOTE(unsafe) atomic read with no side effects
         let sr = unsafe { (*USART::ptr()).sr.read() };
 
@@ -1621,8 +1637,8 @@ where
         } else if sr.ore().bit_is_set() {
             nb::Error::Other(Error::Overrun)
         } else if sr.rxne().bit_is_set() {
-            // NOTE(read_volatile) see `write_volatile` below
-            return Ok(unsafe { ptr::read_volatile(&(*USART::ptr()).dr as *const _ as *const _) });
+            // NOTE(unsafe) atomic write to stateless register
+            return Ok(unsafe { &*USART::ptr() }.dr.read().dr().bits());
         } else {
             nb::Error::WouldBlock
         })
@@ -1652,7 +1668,7 @@ where
         let mut tx: Tx<USART> = Tx {
             _usart: PhantomData,
         };
-        tx.flush()
+        <Tx<USART> as serial::Write<u8>>::flush(&mut tx)
     }
 
     fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
@@ -1681,6 +1697,28 @@ where
 {
     type Error = Error;
 
+    fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+        // Delegate to u16 version
+        <Self as serial::Write<u16>>::write(self, u16::from(word))
+    }
+
+    fn flush(&mut self) -> nb::Result<(), Self::Error> {
+        // Delegate to u16 version
+        <Self as serial::Write<u16>>::flush(self)
+    }
+}
+
+/// Writes 9-bit words to the UART/USART
+///
+/// If the UART/USART was configured with `WordLength::DataBits9`, the 9 least significant bits will
+/// be transmitted and the other 7 bits will be ignored. Otherwise, the 8 least significant bits
+/// will be transmitted and the other 8 bits will be ignored.
+impl<USART> serial::Write<u16> for Tx<USART>
+where
+    USART: Instance,
+{
+    type Error = Error;
+
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
         // NOTE(unsafe) atomic read with no side effects
         let sr = unsafe { (*USART::ptr()).sr.read() };
@@ -1692,17 +1730,46 @@ where
         }
     }
 
-    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
+    fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
         // NOTE(unsafe) atomic read with no side effects
         let sr = unsafe { (*USART::ptr()).sr.read() };
 
         if sr.txe().bit_is_set() {
             // NOTE(unsafe) atomic write to stateless register
-            // NOTE(write_volatile) 8-bit write that's not possible through the svd2rust API
-            unsafe { ptr::write_volatile(&(*USART::ptr()).dr as *const _ as *mut _, byte) }
+            unsafe { &*USART::ptr() }.dr.write(|w| w.dr().bits(word));
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
+        }
+    }
+}
+
+impl<USART> blocking::serial::Write<u16> for Tx<USART>
+where
+    USART: Instance,
+{
+    type Error = Error;
+
+    fn bwrite_all(&mut self, buffer: &[u16]) -> Result<(), Self::Error> {
+        for &b in buffer {
+            loop {
+                match self.write(b) {
+                    Err(nb::Error::WouldBlock) => continue,
+                    Err(nb::Error::Other(err)) => return Err(err),
+                    Ok(()) => break,
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn bflush(&mut self) -> Result<(), Self::Error> {
+        loop {
+            match <Self as serial::Write<u16>>::flush(self) {
+                Ok(()) => return Ok(()),
+                Err(nb::Error::WouldBlock) => continue,
+                Err(nb::Error::Other(err)) => return Err(err),
+            }
         }
     }
 }
@@ -1728,7 +1795,7 @@ where
 
     fn bflush(&mut self) -> Result<(), Self::Error> {
         loop {
-            match self.flush() {
+            match <Self as serial::Write<u8>>::flush(self) {
                 Ok(()) => return Ok(()),
                 Err(nb::Error::WouldBlock) => continue,
                 Err(nb::Error::Other(err)) => return Err(err),
@@ -1755,7 +1822,7 @@ where
         let mut tx: Tx<USART> = Tx {
             _usart: PhantomData,
         };
-        tx.bflush()
+        <Tx<USART> as blocking::serial::Write<u8>>::bflush(&mut tx)
     }
 }
 

@@ -153,3 +153,7 @@ required-features = ["stm32f411", "rt", "i2s"]
 [[example]]
 name = "rtic"
 required-features = ["rt", "stm32f407"]
+
+[[example]]
+name = "serial-9bit"
+required-features = ["rt", "stm32f411"]
