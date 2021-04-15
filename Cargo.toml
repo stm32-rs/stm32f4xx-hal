@@ -55,6 +55,7 @@ embedded-graphics = "0.6.2"
 usb-device = "0.2.5"
 usbd-serial = "0.1.0"
 micromath = "1.0.0"
+cortex-m-rtic = "0.5.6"
 
 [features]
 device-selected = []
@@ -148,3 +149,7 @@ required-features = ["stm32f411", "rt", "i2s"]
 [[example]]
 name = "i2s-audio-out-dma"
 required-features = ["stm32f411", "rt", "i2s"]
+
+[[example]]
+name = "rtic"
+required-features = ["rt", "stm32f407"]
