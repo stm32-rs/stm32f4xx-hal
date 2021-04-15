@@ -1591,6 +1591,21 @@ where
     }
 }
 
+impl<USART, PINS> serial::Read<u16> for Serial<USART, PINS>
+where
+    PINS: Pins<USART>,
+    USART: Instance,
+{
+    type Error = Error;
+
+    fn read(&mut self) -> nb::Result<u16, Error> {
+        let mut rx: Rx<USART> = Rx {
+            _usart: PhantomData,
+        };
+        rx.read()
+    }
+}
+
 impl<USART, PINS> serial::Read<u8> for Serial<USART, PINS>
 where
     PINS: Pins<USART>,
@@ -1669,6 +1684,28 @@ where
     }
 
     type MemSize = u8;
+}
+
+impl<USART, PINS> serial::Write<u16> for Serial<USART, PINS>
+where
+    PINS: Pins<USART>,
+    USART: Instance,
+{
+    type Error = Error;
+
+    fn flush(&mut self) -> nb::Result<(), Self::Error> {
+        let mut tx: Tx<USART> = Tx {
+            _usart: PhantomData,
+        };
+        <Tx<USART> as serial::Write<u16>>::flush(&mut tx)
+    }
+
+    fn write(&mut self, byte: u16) -> nb::Result<(), Self::Error> {
+        let mut tx: Tx<USART> = Tx {
+            _usart: PhantomData,
+        };
+        tx.write(byte)
+    }
 }
 
 impl<USART, PINS> serial::Write<u8> for Serial<USART, PINS>
@@ -1815,6 +1852,28 @@ where
                 Err(nb::Error::Other(err)) => return Err(err),
             }
         }
+    }
+}
+
+impl<USART, PINS> blocking::serial::Write<u16> for Serial<USART, PINS>
+where
+    PINS: Pins<USART>,
+    USART: Instance,
+{
+    type Error = Error;
+
+    fn bwrite_all(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
+        let mut tx: Tx<USART> = Tx {
+            _usart: PhantomData,
+        };
+        tx.bwrite_all(bytes)
+    }
+
+    fn bflush(&mut self) -> Result<(), Self::Error> {
+        let mut tx: Tx<USART> = Tx {
+            _usart: PhantomData,
+        };
+        <Tx<USART> as blocking::serial::Write<u16>>::bflush(&mut tx)
     }
 }
 
