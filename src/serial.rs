@@ -1637,7 +1637,7 @@ where
         } else if sr.ore().bit_is_set() {
             nb::Error::Other(Error::Overrun)
         } else if sr.rxne().bit_is_set() {
-            // NOTE(unsafe) atomic write to stateless register
+            // NOTE(unsafe) atomic read from stateless register
             return Ok(unsafe { &*USART::ptr() }.dr.read().dr().bits());
         } else {
             nb::Error::WouldBlock
