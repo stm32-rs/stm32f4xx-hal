@@ -1,3 +1,17 @@
+//!
+//! Asynchronous serial communication using UART/USART peripherals
+//!
+//! # Word length
+//!
+//! By default, the UART/USART uses 8 data bits. The `Serial`, `Rx`, and `Tx` structs implement
+//! the embedded-hal read and write traits with `u8` as the word type.
+//!
+//! You can also configure the hardware to use 9 data bits with the `Config` `wordlength_9()`
+//! function. The `Serial`, `Rx`, and `Tx` structs also implement
+//! the embedded-hal read and write traits with `u16` as the word type. You can use these
+//! implementations for 9-bit words.
+//!
+
 use core::fmt;
 use core::marker::PhantomData;
 
