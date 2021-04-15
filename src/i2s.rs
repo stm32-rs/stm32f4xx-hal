@@ -327,6 +327,10 @@ macro_rules! i2s {
                     let rcc = &(*RCC::ptr());
                     // Enable clock, enable reset, clear, reset
                     bb::set(&rcc.$apbxenr, $rcc_bit);
+
+                    // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
+                    cortex_m::asm::dsb();
+
                     bb::set(&rcc.$apbxrstr, $rcc_bit);
                     bb::clear(&rcc.$apbxrstr, $rcc_bit);
                 }
