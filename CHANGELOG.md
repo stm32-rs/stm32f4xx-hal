@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Added an example of integration with RTIC.
+- Added internal pullup configuaration for the AlternateOD pin type
 - [breaking-change] Added USART support for sending and receiving 9-bit words [#299]
 
 [#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
@@ -38,7 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] Sdio is disabled by default, enable with the `sdio` feature flag.
 - Move SDIO card power handling to its own function.
 - [breaking-change] Add a 2 ms delay after changing SDIO card power setting.
-- [breaking-change] Changed sdio::{read, write}_block buf argument to &[u8; 512].
+- [breaking-change] Changed sdio::{read, write}\_block buf argument to &[u8; 512].
 - Voltage regulator overdrive is enabled where supported and required for selected HCLK.
 - I2C driver updated to detect and clear all error condition flags.
 - Allow for skipping an ongoing DMA transfer if not using double buffering.
@@ -70,7 +71,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for hardware-based CRC32 functionality
 - Add `MonoTimer` and `Instant` structs for basic time measurement.
 - Added support for I2S and SAI clocks
-- Added support for canbus with the bxcan crate.[#273] The version range is `<=0.4, <0.6`. (Currently 
+- Added support for canbus with the bxcan crate.[#273] The version range is `<=0.4, <0.6`. (Currently
   the latest version is `0.5.0`) [#286]
 - Added a `freeze_unchecked` method [#231]
 - Added support for the Real Time Clock (RTC)

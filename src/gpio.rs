@@ -745,6 +745,19 @@ macro_rules! gpio {
                     }
                 }
 
+                impl<MODE> $PXi<AlternateOD<MODE>> {
+                    /// Enables / disables the internal pull up
+                    pub fn internal_pull_up(&mut self, on: bool) {
+                        let offset = 2 * $i;
+                        let value = if on { 0b01 } else { 0b00 };
+                        unsafe {
+                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                                w.bits((r.bits() & !(0b11 << offset)) | (value << offset))
+                            })
+                        };
+                    }
+                }
+
                 impl<MODE> $PXi<MODE> {
                     /// Erases the pin number from the type
                     ///
