@@ -68,7 +68,9 @@ fn main() -> ! {
         Config::default().baudrate(9600.bps()).wordlength_9(),
         clocks,
     )
-    .unwrap();
+    .unwrap()
+    // Make this Serial object use u16s instead of u8s
+    .with_u16_data();
 
     let (mut tx, mut rx) = serial.split();
 
@@ -78,7 +80,6 @@ fn main() -> ! {
         for value in nine_bit_integers.clone() {
             block!(tx.write(value)).unwrap();
             // Receive what we just sent
-            // This type annotation is needed to disambiguate between the u8 and u16 read implementations
             let received: u16 = block!(rx.read()).unwrap();
 
             // Update LEDs to display what was received

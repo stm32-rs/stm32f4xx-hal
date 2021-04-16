@@ -7,7 +7,11 @@
 //! the embedded-hal read and write traits with `u8` as the word type.
 //!
 //! You can also configure the hardware to use 9 data bits with the `Config` `wordlength_9()`
-//! function. The `Serial`, `Rx`, and `Tx` structs also implement
+//! function. After creating a `Serial` with this option, use the `with_u16_data()` function to
+//! convert the `Serial<_, _, u8>` object into a `Serial<_, _, u16>` that can send and receive
+//! `u16`s.
+//!
+//! In this mode, the `Serial<_, _, u16>`, `Rx<_, u16>`, and `Tx<_, u16>` structs instead implement
 //! the embedded-hal read and write traits with `u16` as the word type. You can use these
 //! implementations for 9-bit words.
 //!
@@ -1396,22 +1400,25 @@ impl PinTx<UART10> for PG12<Alternate<AF11>> {}
 impl PinRx<UART10> for PG11<Alternate<AF11>> {}
 
 /// Serial abstraction
-pub struct Serial<USART, PINS> {
+pub struct Serial<USART, PINS, WORD = u8> {
     usart: USART,
     pins: PINS,
+    _word: PhantomData<WORD>,
 }
 
 /// Serial receiver
-pub struct Rx<USART> {
+pub struct Rx<USART, WORD = u8> {
     _usart: PhantomData<USART>,
+    _word: PhantomData<WORD>,
 }
 
 /// Serial transmitter
-pub struct Tx<USART> {
+pub struct Tx<USART, WORD = u8> {
     _usart: PhantomData<USART>,
+    _word: PhantomData<WORD>,
 }
 
-impl<USART, PINS> Serial<USART, PINS>
+impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
 where
     PINS: Pins<USART>,
     USART: Instance,
@@ -1537,7 +1544,12 @@ where
             DmaConfig::None => {}
         }
 
-        Ok(Serial { usart, pins }.config_stop(config))
+        Ok(Serial {
+            usart,
+            pins,
+            _word: PhantomData,
+        }
+        .config_stop(config))
     }
 
     /// Starts listening for an interrupt event
@@ -1576,13 +1588,15 @@ where
         unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
     }
 
-    pub fn split(self) -> (Tx<USART>, Rx<USART>) {
+    pub fn split(self) -> (Tx<USART, WORD>, Rx<USART, WORD>) {
         (
             Tx {
                 _usart: PhantomData,
+                _word: PhantomData,
             },
             Rx {
                 _usart: PhantomData,
+                _word: PhantomData,
             },
         )
     }
@@ -1591,7 +1605,41 @@ where
     }
 }
 
-impl<USART, PINS> serial::Read<u16> for Serial<USART, PINS>
+impl<USART, PINS> Serial<USART, PINS, u8>
+where
+    PINS: Pins<USART>,
+    USART: Instance,
+{
+    /// Converts this Serial into a version that can read and write `u16` values instead of `u8`s
+    ///
+    /// This can be used with a word length of 9 bits.
+    pub fn with_u16_data(self) -> Serial<USART, PINS, u16> {
+        Serial {
+            usart: self.usart,
+            pins: self.pins,
+            _word: PhantomData,
+        }
+    }
+}
+
+impl<USART, PINS> Serial<USART, PINS, u16>
+where
+    PINS: Pins<USART>,
+    USART: Instance,
+{
+    /// Converts this Serial into a version that can read and write `u8` values instead of `u16`s
+    ///
+    /// This can be used with a word length of 8 bits.
+    pub fn with_u8_data(self) -> Serial<USART, PINS, u8> {
+        Serial {
+            usart: self.usart,
+            pins: self.pins,
+            _word: PhantomData,
+        }
+    }
+}
+
+impl<USART, PINS> serial::Read<u16> for Serial<USART, PINS, u16>
 where
     PINS: Pins<USART>,
     USART: Instance,
@@ -1599,14 +1647,15 @@ where
     type Error = Error;
 
     fn read(&mut self) -> nb::Result<u16, Error> {
-        let mut rx: Rx<USART> = Rx {
+        let mut rx: Rx<USART, u16> = Rx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
         rx.read()
     }
 }
 
-impl<USART, PINS> serial::Read<u8> for Serial<USART, PINS>
+impl<USART, PINS> serial::Read<u8> for Serial<USART, PINS, u8>
 where
     PINS: Pins<USART>,
     USART: Instance,
@@ -1614,14 +1663,15 @@ where
     type Error = Error;
 
     fn read(&mut self) -> nb::Result<u8, Error> {
-        let mut rx: Rx<USART> = Rx {
+        let mut rx: Rx<USART, u8> = Rx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
         rx.read()
     }
 }
 
-impl<USART> serial::Read<u8> for Rx<USART>
+impl<USART> serial::Read<u8> for Rx<USART, u8>
 where
     USART: Instance,
 {
@@ -1629,7 +1679,11 @@ where
 
     fn read(&mut self) -> nb::Result<u8, Self::Error> {
         // Delegate to the Read<u16> implementation, then truncate to 8 bits
-        <Self as serial::Read<u16>>::read(self).map(|word16| word16 as u8)
+        let mut rx_u16: Rx<USART, u16> = Rx {
+            _usart: PhantomData,
+            _word: PhantomData,
+        };
+        rx_u16.read().map(|word16| word16 as u8)
     }
 }
 
@@ -1638,7 +1692,7 @@ where
 /// If the UART/USART was configured with `WordLength::DataBits9`, the returned value will contain
 /// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
 /// 8 received data bits and all other bits set to zero.
-impl<USART> serial::Read<u16> for Rx<USART>
+impl<USART> serial::Read<u16> for Rx<USART, u16>
 where
     USART: Instance,
 {
@@ -1674,7 +1728,7 @@ where
     }
 }
 
-unsafe impl<USART> PeriAddress for Rx<USART>
+unsafe impl<USART> PeriAddress for Rx<USART, u8>
 where
     USART: Instance,
 {
@@ -1686,7 +1740,7 @@ where
     type MemSize = u8;
 }
 
-impl<USART, PINS> serial::Write<u16> for Serial<USART, PINS>
+impl<USART, PINS> serial::Write<u16> for Serial<USART, PINS, u16>
 where
     PINS: Pins<USART>,
     USART: Instance,
@@ -1694,21 +1748,23 @@ where
     type Error = Error;
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        let mut tx: Tx<USART> = Tx {
+        let mut tx: Tx<USART, u16> = Tx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
-        <Tx<USART> as serial::Write<u16>>::flush(&mut tx)
+        tx.flush()
     }
 
     fn write(&mut self, byte: u16) -> nb::Result<(), Self::Error> {
-        let mut tx: Tx<USART> = Tx {
+        let mut tx: Tx<USART, u16> = Tx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
         tx.write(byte)
     }
 }
 
-impl<USART, PINS> serial::Write<u8> for Serial<USART, PINS>
+impl<USART, PINS> serial::Write<u8> for Serial<USART, PINS, u8>
 where
     PINS: Pins<USART>,
     USART: Instance,
@@ -1716,21 +1772,23 @@ where
     type Error = Error;
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        let mut tx: Tx<USART> = Tx {
+        let mut tx: Tx<USART, u8> = Tx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
-        <Tx<USART> as serial::Write<u8>>::flush(&mut tx)
+        tx.flush()
     }
 
     fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
-        let mut tx: Tx<USART> = Tx {
+        let mut tx: Tx<USART, u8> = Tx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
         tx.write(byte)
     }
 }
 
-unsafe impl<USART> PeriAddress for Tx<USART>
+unsafe impl<USART> PeriAddress for Tx<USART, u8>
 where
     USART: Instance,
 {
@@ -1742,7 +1800,7 @@ where
     type MemSize = u8;
 }
 
-impl<USART> serial::Write<u8> for Tx<USART>
+impl<USART> serial::Write<u8> for Tx<USART, u8>
 where
     USART: Instance,
 {
@@ -1750,12 +1808,20 @@ where
 
     fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
         // Delegate to u16 version
-        <Self as serial::Write<u16>>::write(self, u16::from(word))
+        let mut tx_u16: Tx<USART, u16> = Tx {
+            _usart: PhantomData,
+            _word: PhantomData,
+        };
+        tx_u16.write(u16::from(word))
     }
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
         // Delegate to u16 version
-        <Self as serial::Write<u16>>::flush(self)
+        let mut tx_u16: Tx<USART, u16> = Tx {
+            _usart: PhantomData,
+            _word: PhantomData,
+        };
+        tx_u16.flush()
     }
 }
 
@@ -1764,7 +1830,7 @@ where
 /// If the UART/USART was configured with `WordLength::DataBits9`, the 9 least significant bits will
 /// be transmitted and the other 7 bits will be ignored. Otherwise, the 8 least significant bits
 /// will be transmitted and the other 8 bits will be ignored.
-impl<USART> serial::Write<u16> for Tx<USART>
+impl<USART> serial::Write<u16> for Tx<USART, u16>
 where
     USART: Instance,
 {
@@ -1795,7 +1861,7 @@ where
     }
 }
 
-impl<USART> blocking::serial::Write<u16> for Tx<USART>
+impl<USART> blocking::serial::Write<u16> for Tx<USART, u16>
 where
     USART: Instance,
 {
@@ -1825,7 +1891,7 @@ where
     }
 }
 
-impl<USART> blocking::serial::Write<u8> for Tx<USART>
+impl<USART> blocking::serial::Write<u8> for Tx<USART, u8>
 where
     USART: Instance,
 {
@@ -1855,7 +1921,7 @@ where
     }
 }
 
-impl<USART, PINS> blocking::serial::Write<u16> for Serial<USART, PINS>
+impl<USART, PINS> blocking::serial::Write<u16> for Serial<USART, PINS, u16>
 where
     PINS: Pins<USART>,
     USART: Instance,
@@ -1863,21 +1929,23 @@ where
     type Error = Error;
 
     fn bwrite_all(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
-        let mut tx: Tx<USART> = Tx {
+        let mut tx: Tx<USART, u16> = Tx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
         tx.bwrite_all(bytes)
     }
 
     fn bflush(&mut self) -> Result<(), Self::Error> {
-        let mut tx: Tx<USART> = Tx {
+        let mut tx: Tx<USART, u16> = Tx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
-        <Tx<USART> as blocking::serial::Write<u16>>::bflush(&mut tx)
+        tx.bflush()
     }
 }
 
-impl<USART, PINS> blocking::serial::Write<u8> for Serial<USART, PINS>
+impl<USART, PINS> blocking::serial::Write<u8> for Serial<USART, PINS, u8>
 where
     PINS: Pins<USART>,
     USART: Instance,
@@ -1885,21 +1953,23 @@ where
     type Error = Error;
 
     fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
-        let mut tx: Tx<USART> = Tx {
+        let mut tx: Tx<USART, u8> = Tx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
         tx.bwrite_all(bytes)
     }
 
     fn bflush(&mut self) -> Result<(), Self::Error> {
-        let mut tx: Tx<USART> = Tx {
+        let mut tx: Tx<USART, u8> = Tx {
             _usart: PhantomData,
+            _word: PhantomData,
         };
-        <Tx<USART> as blocking::serial::Write<u8>>::bflush(&mut tx)
+        tx.bflush()
     }
 }
 
-impl<USART, PINS> Serial<USART, PINS>
+impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
 where
     PINS: Pins<USART>,
     USART: Instance,
