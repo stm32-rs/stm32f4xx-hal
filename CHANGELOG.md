@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Added an example of integration with RTIC.
 - Added internal pullup configuaration for the AlternateOD pin type
-- [breaking-change] Added USART support for sending and receiving 9-bit words [#299]
+- Added USART support for sending and receiving 9-bit words [#299]
 
 [#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
 
