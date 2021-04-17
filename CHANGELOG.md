@@ -15,12 +15,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for I2S communication using SPI peripherals, and two examples [#265]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
-[#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
 
 ### Changed
 
 - Update the sdio driver to match the changes in the PAC
 - Update README.md with current information
+- Updated serial driver to use 32-bit reads and writes when accessing the USART data register [#299]
+
+[#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
 
 ## [v0.9.0] - 2021-04-04
 
