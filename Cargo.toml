@@ -155,5 +155,9 @@ name = "rtic"
 required-features = ["rt", "stm32f407"]
 
 [[example]]
+name = "adc_dma_rtic"
+required-features = ["rt", "stm32f401"]
+
+[[example]]
 name = "serial-9bit"
 required-features = ["rt", "stm32f411"]
