@@ -1,5 +1,6 @@
 use super::*;
 use crate::{
+    adc::Adc,
     bb,
     pac::{self, DMA1, DMA2, RCC},
     serial::{Rx, Tx},
@@ -500,22 +501,23 @@ dma_map!(
     (Stream6<DMA1>, Channel4, Tx<pac::USART2>, MemoryToPeripheral), //USART2_TX
     (Stream7<DMA1>, Channel7, pac::I2C2, MemoryToPeripheral),       //I2C2_TX
     (Stream0<DMA2>, Channel0, pac::ADC1, PeripheralToMemory),       //ADC1
-    (Stream0<DMA2>, Channel3, pac::SPI1, PeripheralToMemory),       //SPI1_RX
-    (Stream1<DMA2>, Channel5, pac::USART6, PeripheralToMemory),     //USART6_RX
+    (Stream0<DMA2>, Channel0, Adc<pac::ADC1>, PeripheralToMemory),
+    (Stream0<DMA2>, Channel3, pac::SPI1, PeripheralToMemory), //SPI1_RX
+    (Stream1<DMA2>, Channel5, pac::USART6, PeripheralToMemory), //USART6_RX
     (Stream1<DMA2>, Channel5, Rx<pac::USART6>, PeripheralToMemory), //USART6_RX
-    (Stream2<DMA2>, Channel3, pac::SPI1, PeripheralToMemory),       //SPI1_RX
-    (Stream2<DMA2>, Channel4, pac::USART1, PeripheralToMemory),     //USART1_RX
+    (Stream2<DMA2>, Channel3, pac::SPI1, PeripheralToMemory), //SPI1_RX
+    (Stream2<DMA2>, Channel4, pac::USART1, PeripheralToMemory), //USART1_RX
     (Stream2<DMA2>, Channel4, Rx<pac::USART1>, PeripheralToMemory), //USART1_RX
-    (Stream2<DMA2>, Channel5, pac::USART6, PeripheralToMemory),     //USART6_RX
+    (Stream2<DMA2>, Channel5, pac::USART6, PeripheralToMemory), //USART6_RX
     (Stream2<DMA2>, Channel5, Rx<pac::USART6>, PeripheralToMemory), //USART6_RX
-    (Stream4<DMA2>, Channel0, pac::ADC1, PeripheralToMemory),       //ADC1
-    (Stream5<DMA2>, Channel4, pac::USART1, PeripheralToMemory),     //USART1_RX
+    (Stream4<DMA2>, Channel0, pac::ADC1, PeripheralToMemory), //ADC1
+    (Stream5<DMA2>, Channel4, pac::USART1, PeripheralToMemory), //USART1_RX
     (Stream5<DMA2>, Channel4, Rx<pac::USART1>, PeripheralToMemory), //USART1_RX
-    (Stream6<DMA2>, Channel5, pac::USART6, MemoryToPeripheral),     //USART6_TX
+    (Stream6<DMA2>, Channel5, pac::USART6, MemoryToPeripheral), //USART6_TX
     (Stream6<DMA2>, Channel5, Tx<pac::USART6>, MemoryToPeripheral), //USART6_TX
-    (Stream7<DMA2>, Channel4, pac::USART1, MemoryToPeripheral),     //USART1_TX
+    (Stream7<DMA2>, Channel4, pac::USART1, MemoryToPeripheral), //USART1_TX
     (Stream7<DMA2>, Channel4, Tx<pac::USART1>, MemoryToPeripheral), //USART1_TX
-    (Stream7<DMA2>, Channel5, pac::USART6, MemoryToPeripheral),     //USART6_TX
+    (Stream7<DMA2>, Channel5, pac::USART6, MemoryToPeripheral), //USART6_TX
     (Stream7<DMA2>, Channel5, Tx<pac::USART6>, MemoryToPeripheral), //USART6_TX
     (
         Stream0<DMA2>,

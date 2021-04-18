@@ -38,11 +38,11 @@ This crate relies on Adam Greigs fantastic [stm32f4][] crate to provide
 appropriate register definitions and implements a partial set of the
 [embedded-hal][] traits.
 
-Some of the implementation was shamelessly adapted from the [stm32f103xx-hal][]
-crate by Jorge Aparicio.
+Some of the implementation was shamelessly adapted from the [stm32f1xx-hal][]
+crate originally started by Jorge Aparicio.
 
 [stm32f4]: https://crates.io/crates/stm32f4
-[stm32f103xx-hal]: https://github.com/japaric/stm32f103xx-hal
+[stm32f1xx-hal]: https://github.com/stm32-rs/stm32f1xx-hal
 [embedded-hal]: https://github.com/rust-embedded/embedded-hal
 
 Setting up your project
@@ -63,14 +63,14 @@ You also need to add some dependencies to your `Cargo.toml`:
 ```toml
 [dependencies]
 embedded-hal = "0.2"
-nb = "0.1.2"
-cortex-m = "0.6"
+nb = "1"
+cortex-m = "0.7"
 cortex-m-rt = "0.6"
 # Panic behaviour, see https://crates.io/keywords/panic-impl for alternatives
 panic-halt = "0.2"
 
 [dependencies.stm32f4xx-hal]
-version = "0.8"
+version = "0.9"
 features = ["rt", "stm32f407"] # replace the model of your microcontroller here
 ```
 
