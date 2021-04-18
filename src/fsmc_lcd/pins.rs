@@ -14,7 +14,6 @@
 //! * Address instead of data/command
 //! * Read enable instead of output enable
 //! * Write enable
-//!
 
 use core::marker::PhantomData;
 
@@ -291,7 +290,6 @@ impl sealed::Conjure for (Lcd<SubBank1>, Lcd<SubBank2>, Lcd<SubBank3>, Lcd<SubBa
 /// * `(ChipSelect1<PD7<Alternate<AF12>>>, ChipSelect2<PG9<Alternate<AF12>>>)`
 /// * `(ChipSelect1<PD7<Alternate<AF12>>>, ChipSelect4<PG4<Alternate<AF12>>>)`
 /// * `(ChipSelect1<PD7<Alternate<AF12>>>, ChipSelect2<PG9<Alternate<AF12>>>, ChipSelect3<PG10<Alternate<AF12>>>, ChipSelect4<PG12<Alternate<AF12>>>)`
-///
 pub trait ChipSelectPins: sealed::Sealed {
     /// One, two, three, or four `Lcd<_>` objects associated with the sub-bank(s) that these pin(s)
     /// control
@@ -564,7 +562,6 @@ pub struct LcdPins<D, AD, NOE, NWE, NE> {
 /// This trait is implemented for the `LcdPins` struct that contains 16 data pins, 1 through 4
 /// address pins, 1 through 4 chip select / bank enable pins, an output enable pin, and a write
 /// enable pin.
-///
 pub trait Pins: sealed::Sealed {
     /// One, two, three, or four `Lcd<_>` objects associated with the sub-bank(s) that the chip
     /// select pin pin(s) control

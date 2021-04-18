@@ -168,7 +168,3 @@ required-features = ["rt", "stm32f411"]
 [[example]]
 name = "st7789-lcd"
 required-features = ["rt", "stm32f412", "fsmc_lcd"]
-
-[[example]]
-name = "st7789-multiple-lcds"
-required-features = ["rt", "stm32f412", "fsmc_lcd"]

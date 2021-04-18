@@ -57,7 +57,6 @@
 //!    This function will return an `FsmcLcd` and one or more `Lcd` objects.
 //!
 //! 4. Use the returned `Lcd` object(s) to configure the controller(s) and display graphics
-//!
 
 mod display_interface_impl;
 mod pins;
@@ -172,6 +171,60 @@ where
     /// objects. Each `Lcd` is associated with one chip select pin, and can be controlled
     /// independently.
     ///
+    /// # Examples
+    ///
+    /// The `stm32f4xx-hal` repository has a `st7789-lcd` example that draws graphics on an LCD
+    /// and runs on the STM32F412G-DISCO board.
+    ///
+    /// Up to four LCDs can be controlled separately using four chip select pins
+    ///
+    /// ```ignore
+    /// let lcd_pins = LcdPins {
+    ///     data: (
+    ///         gpiod.pd14.into_alternate_af12(),
+    ///         gpiod.pd15.into_alternate_af12(),
+    ///         gpiod.pd0.into_alternate_af12(),
+    ///         gpiod.pd1.into_alternate_af12(),
+    ///         gpioe.pe7.into_alternate_af12(),
+    ///         gpioe.pe8.into_alternate_af12(),
+    ///         gpioe.pe9.into_alternate_af12(),
+    ///         gpioe.pe10.into_alternate_af12(),
+    ///         gpioe.pe11.into_alternate_af12(),
+    ///         gpioe.pe12.into_alternate_af12(),
+    ///         gpioe.pe13.into_alternate_af12(),
+    ///         gpioe.pe14.into_alternate_af12(),
+    ///         gpioe.pe15.into_alternate_af12(),
+    ///         gpiod.pd8.into_alternate_af12(),
+    ///         gpiod.pd9.into_alternate_af12(),
+    ///         gpiod.pd10.into_alternate_af12(),
+    ///     ),
+    ///     // Four address pins, one for each LCD
+    ///     // All of them will have the same output
+    ///     address: (
+    ///         gpiof.pf0.into_alternate_af12(),
+    ///         gpioe.pe2.into_alternate_af12(),
+    ///         gpioe.pe3.into_alternate_af12(),
+    ///         gpiof.pf14.into_alternate_af12(),
+    ///     ),
+    ///     read_enable: gpiod.pd4.into_alternate_af12(),
+    ///     write_enable: gpiod.pd5.into_alternate_af12(),
+    ///     // Four chip select pins, one for each LCD, controlled independently
+    ///     chip_select: (
+    ///         ChipSelect1(gpiod.pd7.into_alternate_af12()),
+    ///         ChipSelect2(gpiog.pg9.into_alternate_af12()),
+    ///         ChipSelect3(gpiog.pg10.into_alternate_af12()),
+    ///         ChipSelect4(gpiog.pg12.into_alternate_af12()),
+    ///     ),
+    /// };
+    ///
+    /// let (_fsmc, mut lcds) = FsmcLcd::new(dp.FSMC, lcd_pins, &Timing::default(), &Timing::default());
+    /// // lcds is a tuple of four `Lcd` objects. Each one can be accessed independently.
+    /// // This is just a basic example of some things that can be done.
+    /// lcds.0.write_command(37);
+    /// lcds.1.write_command(38);
+    /// lcds.2.write_command(39);
+    /// lcds.3.write_command(40);
+    /// ```
     pub fn new(
         fsmc: FSMC,
         pins: PINS,
