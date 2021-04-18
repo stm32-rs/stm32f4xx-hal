@@ -21,8 +21,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Update the sdio driver to match the changes in the PAC
 - Update README.md with current information
 - Updated serial driver to use 32-bit reads and writes when accessing the USART data register [#299]
+- Add possibility to use DMA with the ADC abstraction, add example for ADC with DMA [#258]
 
 [#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
+[#258]: https://github.com/stm32-rs/stm32f4xx-hal/pull/258
 
 ## [v0.9.0] - 2021-04-04
 
