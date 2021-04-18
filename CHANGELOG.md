@@ -13,8 +13,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added internal pullup configuaration for the AlternateOD pin type
 - Added USART support for sending and receiving 9-bit words [#299]
 - Added support for I2S communication using SPI peripherals, and two examples [#265]
+- Added support for some LCD controllers using the Flexible Static Memory
+  Controller / Flexible Memory Controller [#297]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
+[#297]: https://github.com/stm32-rs/stm32f4xx-hal/pull/297
 
 ### Changed
 
