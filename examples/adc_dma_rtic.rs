@@ -53,7 +53,7 @@ const APP: () = {
         let config = DmaConfig::default()
             .transfer_complete_interrupt(true)
             .memory_increment(true)
-            .double_buffer(true);
+            .double_buffer(false);
 
         let adc_config = AdcConfig::default()
             .dma(Dma::Continuous)
@@ -71,7 +71,10 @@ const APP: () = {
         let now = cx.start;
         cx.schedule.polling(now + POLLING_PERIOD.cycles()).unwrap();
 
-        init::LateResources { transfer, buffer: second_buffer }
+        init::LateResources {
+            transfer,
+            buffer: second_buffer,
+        }
     }
 
     #[task(resources = [transfer], schedule = [polling])]
@@ -90,7 +93,9 @@ const APP: () = {
     fn dma(cx: dma::Context) {
         let transfer: &mut DMATransfer = cx.resources.transfer;
 
-        let (buffer, _) = transfer.next_transfer(cx.resources.buffer.take().unwrap()).unwrap();
+        let (buffer, _) = transfer
+            .next_transfer(cx.resources.buffer.take().unwrap())
+            .unwrap();
         let raw_temp = buffer[0];
         let raw_volt = buffer[1];
 
