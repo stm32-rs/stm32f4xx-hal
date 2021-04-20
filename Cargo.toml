@@ -57,6 +57,8 @@ usb-device = "0.2.5"
 usbd-serial = "0.1.0"
 micromath = "1.0.0"
 cortex-m-rtic = "0.5.6"
+st7789 = "0.5.0"
+panic-rtt-core = "0.2.1"
 
 [features]
 device-selected = []
@@ -168,3 +170,7 @@ required-features = ["rt", "stm32f411"]
 [[example]]
 name = "st7789-lcd"
 required-features = ["rt", "stm32f412", "fsmc_lcd"]
+
+[[example]]
+name = "f413disco_lcd_ferris"
+required-features = ["rt", "stm32f413", "fsmc_lcd"]

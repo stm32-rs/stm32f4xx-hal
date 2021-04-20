@@ -15,9 +15,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for I2S communication using SPI peripherals, and two examples [#265]
 - Added support for some LCD controllers using the Flexible Static Memory
   Controller / Flexible Memory Controller [#297]
+- Added an example for using the new FSMC interface with the provided
+  `display-interface` driver and the `st7789` driver on a F413Discovery board [#302]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 [#297]: https://github.com/stm32-rs/stm32f4xx-hal/pull/297
+[#302]: https://github.com/stm32-rs/stm32f4xx-hal/pull/302
 
 ### Changed
 
