@@ -27,6 +27,7 @@ type DMATransfer =
 const APP: () = {
     struct Resources {
         transfer: DMATransfer,
+        buffer: Option<&'static mut [u16; 2]>,
     }
 
     #[init(schedule=[polling])]
@@ -52,7 +53,7 @@ const APP: () = {
         let config = DmaConfig::default()
             .transfer_complete_interrupt(true)
             .memory_increment(true)
-            .double_buffer(true);
+            .double_buffer(false);
 
         let adc_config = AdcConfig::default()
             .dma(Dma::Continuous)
@@ -64,13 +65,16 @@ const APP: () = {
         adc.enable_temperature_and_vref();
 
         let first_buffer = cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap();
-        let second_buffer = cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap();
-        let transfer = Transfer::init(dma.0, adc, first_buffer, Some(second_buffer), config);
+        let second_buffer = Some(cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap());
+        let transfer = Transfer::init(dma.0, adc, first_buffer, None, config);
 
         let now = cx.start;
         cx.schedule.polling(now + POLLING_PERIOD.cycles()).unwrap();
 
-        init::LateResources { transfer }
+        init::LateResources {
+            transfer,
+            buffer: second_buffer,
+        }
     }
 
     #[task(resources = [transfer], schedule = [polling])]
@@ -85,24 +89,23 @@ const APP: () = {
             .unwrap();
     }
 
-    #[task(binds = DMA2_STREAM0, resources = [transfer])]
+    #[task(binds = DMA2_STREAM0, resources = [transfer, buffer])]
     fn dma(cx: dma::Context) {
         let transfer: &mut DMATransfer = cx.resources.transfer;
 
-        let result = unsafe {
-            transfer.next_transfer_with(|data, _| {
-                let raw_temp = data[0];
-                let raw_volt = data[1];
-                (data, (raw_temp, raw_volt))
-            })
-        }
-        .unwrap();
+        let (buffer, _) = transfer
+            .next_transfer(cx.resources.buffer.take().unwrap())
+            .unwrap();
+        let raw_temp = buffer[0];
+        let raw_volt = buffer[1];
+
+        *cx.resources.buffer = Some(buffer);
 
         let cal30 = VtempCal30::get().read() as f32;
         let cal110 = VtempCal110::get().read() as f32;
 
-        let temperature = (110.0 - 30.0) * ((result.0 as f32) - cal30) / (cal110 - cal30) + 30.0;
-        let voltage = (result.1 as f32) / ((2_i32.pow(12) - 1) as f32) * 3.3;
+        let temperature = (110.0 - 30.0) * ((raw_temp as f32) - cal30) / (cal110 - cal30) + 30.0;
+        let voltage = (raw_volt as f32) / ((2_i32.pow(12) - 1) as f32) * 3.3;
 
         hprintln!("temperature: {}, voltage: {}", temperature, voltage).unwrap();
     }
