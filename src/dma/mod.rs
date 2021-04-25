@@ -41,7 +41,7 @@ impl<T> Debug for DMAError<T> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             DMAError::NotReady(_) => f.debug_tuple("NotReady").finish(),
-            DMAError::SmallBuffer(_) => f.debug_tuple("SmalBuffer").finish(),
+            DMAError::SmallBuffer(_) => f.debug_tuple("SmallBuffer").finish(),
             DMAError::Overrun(_) => f.debug_tuple("Overrun").finish(),
         }
     }
