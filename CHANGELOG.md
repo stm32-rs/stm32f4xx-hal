@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
-
+- Fixed typo in string representation in DMAError type
 - Added an example of integration with RTIC.
 - Added internal pullup configuaration for the AlternateOD pin type
 - Added USART support for sending and receiving 9-bit words [#299]
