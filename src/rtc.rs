@@ -10,7 +10,7 @@ use core::convert::TryInto;
 use rtcc::{Datelike, Hours, NaiveDate, NaiveDateTime, NaiveTime, Rtcc, Timelike};
 
 /// Invalid input error
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Error {
     InvalidInputData,
 }

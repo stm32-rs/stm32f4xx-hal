@@ -10,7 +10,7 @@ use core::num::NonZeroU32;
 use core::ops::Shl;
 use rand_core::RngCore;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ErrorKind {
     /// The RNG_CLK was not correctly detected (fRNG_CLK< fHCLK/16).
     /// See CECS in RNG peripheral documentation.

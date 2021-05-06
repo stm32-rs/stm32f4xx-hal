@@ -546,7 +546,7 @@ impl PinScl<FMPI2C1> for PF14<AlternateOD<AF4>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 impl PinScl<FMPI2C1> for PF15<AlternateOD<AF4>> {}
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Error {
     OVERRUN,
     NACK,
