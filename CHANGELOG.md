@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   Controller / Flexible Memory Controller [#297]
 - Added an example for using the new FSMC interface with the provided
   `display-interface` driver and the `st7789` driver on a F413Discovery board [#302]
+- Derive `Eq`, `PartialEq`, `Copy` and `Clone` for error types
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 [#297]: https://github.com/stm32-rs/stm32f4xx-hal/pull/297

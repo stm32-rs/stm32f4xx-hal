@@ -395,7 +395,7 @@ use crate::rcc::Clocks;
 use crate::dma::traits::PeriAddress;
 
 /// Serial error
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     /// Framing error
     Framing,

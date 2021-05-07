@@ -97,7 +97,7 @@ pub enum Event {
     TimeOut,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     /// Timer is disabled
     Disabled,
