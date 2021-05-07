@@ -131,7 +131,7 @@ pub enum ClockFreq {
     F400Khz = 118,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     Timeout,
     SoftwareTimeout,

@@ -352,7 +352,7 @@ use crate::rcc::Clocks;
 use crate::time::Hertz;
 
 /// SPI error
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     /// Overrun occurred
     Overrun,
