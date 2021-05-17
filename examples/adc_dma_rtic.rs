@@ -66,7 +66,7 @@ const APP: () = {
 
         let first_buffer = cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap();
         let second_buffer = Some(cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap());
-        let transfer = Transfer::init(dma.0, adc, first_buffer, None, config);
+        let transfer = Transfer::init_peripheral_to_memory(dma.0, adc, first_buffer, None, config);
 
         let now = cx.start;
         cx.schedule.polling(now + POLLING_PERIOD.cycles()).unwrap();

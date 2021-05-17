@@ -194,7 +194,7 @@ fn main() -> ! {
         .memory_increment(true)
         .transfer_complete_interrupt(true);
     let mut dma_transfer: I2sDmaTransfer =
-        Transfer::init(dma1_streams.5, i2s, SINE_750_MUT, None, dma_config);
+        Transfer::init_memory_to_peripheral(dma1_streams.5, i2s, SINE_750_MUT, None, dma_config);
 
     dma_transfer.start(|i2s| i2s.enable());
     // Hand off transfer to interrupt handler
