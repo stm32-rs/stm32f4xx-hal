@@ -30,9 +30,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Updated serial driver to use 32-bit reads and writes when accessing the USART data register [#299]
 - Add possibility to use DMA with the ADC abstraction, add example for ADC with DMA [#258]
 - Remove unsafe code from ADC DMA example
+- [breaking-change] DMA: Memory to peripheral transfers now only require `StaticReadBuffer` [#257].
 
 [#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
 [#258]: https://github.com/stm32-rs/stm32f4xx-hal/pull/258
+[#257]: https://github.com/stm32-rs/stm32f4xx-hal/pull/257
 
 ## [v0.9.0] - 2021-04-04
 
@@ -67,9 +69,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Address ST erratum 2.1.13 (DM00037591) [#278]
 - Implement generics on the qei module.
 - Bump ssd1306 dev-dependency and cleanup examples
-- DMA: Memory to peripheral transfers now only require `StaticReadBuffer` [#257].
-
-[#257]: https://github.com/stm32-rs/stm32f4xx-hal/pull/257
 
 ### Added
 
