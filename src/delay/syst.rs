@@ -1,4 +1,4 @@
-/// System timer (SysTick) as a delay provider
+//! System timer (SysTick) as a delay provider.
 
 use cast::u32;
 use cortex_m::peripheral::syst::SystClkSource;

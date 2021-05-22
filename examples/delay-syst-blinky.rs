@@ -1,3 +1,5 @@
+//! Demonstrate the use of a blocking `Delay` using the SYST (sysclock) timer.
+
 #![deny(unsafe_code)]
 #![no_main]
 #![no_std]

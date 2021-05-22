@@ -336,7 +336,11 @@ name = "sd"
 required-features = ["rt", "stm32f405", "sdio-host"]
 
 [[example]]
-name = "delay-blinky"
+name = "delay-syst-blinky"
+required-features = ["rt", "stm32f411"]
+
+[[example]]
+name = "delay-timer-blinky"
 required-features = ["rt", "stm32f411"]
 
 [[example]]
