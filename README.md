@@ -55,7 +55,7 @@ use the bsp as BSP for your project.
 
 Otherwise, create a new Rust project as you usually do with `cargo init`. The
 "hello world" of embedded development is usually to blink a LED. The code to do
-so is available in [examples/delay-blinky.rs](examples/delay-blinky.rs).
+so is available in [examples/delay-syst-blinky.rs](examples/delay-syst-blinky.rs).
 Copy that file to the `main.rs` of your project.
 
 You also need to add some dependencies to your `Cargo.toml`:
