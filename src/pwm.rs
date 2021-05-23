@@ -1,27 +1,13 @@
+use crate::{
+    hal,
+    pac::RCC,
+    rcc::{Clocks, Enable, Reset},
+    time::Hertz,
+};
 use cast::{u16, u32};
 use core::{marker::PhantomData, mem::MaybeUninit};
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::stm32::{TIM1, TIM11, TIM5, TIM9};
-use crate::{bb, hal, rcc::Clocks, stm32::RCC, time::Hertz};
+use crate::pac::{TIM1, TIM11, TIM5, TIM9};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -41,7 +27,7 @@ use crate::{bb, hal, rcc::Clocks, stm32::RCC, time::Hertz};
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::{TIM10, TIM2, TIM3, TIM4};
+use crate::pac::{TIM10, TIM2, TIM3, TIM4};
 
 #[cfg(any(
     feature = "stm32f405",
@@ -59,7 +45,7 @@ use crate::stm32::{TIM10, TIM2, TIM3, TIM4};
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::{TIM12, TIM13, TIM14, TIM8};
+use crate::pac::{TIM12, TIM13, TIM14, TIM8};
 
 pub trait Pins<TIM, P> {
     const C1: bool = false;
@@ -154,7 +140,7 @@ macro_rules! brk {
 }
 
 macro_rules! pwm_all_channels {
-    ($($TIMX:ident: ($timX:ident, $apbenr:ident, $apbrstr:ident, $bit:expr, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
             where
@@ -165,14 +151,9 @@ macro_rules! pwm_all_channels {
                     unsafe {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral, it's the same bit position for both registers
-                        bb::set(&rcc.$apbenr, $bit);
-
-                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                        cortex_m::asm::dsb();
-
-                        bb::set(&rcc.$apbrstr, $bit);
-                        bb::clear(&rcc.$apbrstr, $bit);
+                        // Enable and reset the timer peripheral
+                        $TIMX::enable(rcc);
+                        $TIMX::reset(rcc);
                     }
                 }
                 if PINS::C1 {
@@ -229,12 +210,12 @@ macro_rules! pwm_all_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -258,12 +239,12 @@ macro_rules! pwm_all_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -287,12 +268,12 @@ macro_rules! pwm_all_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 8) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc3e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 8) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc3e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -316,12 +297,12 @@ macro_rules! pwm_all_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 12) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc4e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 12) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc4e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -344,7 +325,7 @@ macro_rules! pwm_all_channels {
 }
 
 macro_rules! pwm_2_channels {
-    ($($TIMX:ident: ($timX:ident, $apbenr:ident, $apbrstr:ident, $bit:expr, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
             where
@@ -355,14 +336,9 @@ macro_rules! pwm_2_channels {
                     unsafe {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral, it's the same bit position for both registers
-                        bb::set(&rcc.$apbenr, $bit);
-
-                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                        cortex_m::asm::dsb();
-
-                        bb::set(&rcc.$apbrstr, $bit);
-                        bb::clear(&rcc.$apbrstr, $bit);
+                        // Enable and reset the timer peripheral
+                        $TIMX::enable(rcc);
+                        $TIMX::reset(rcc);
                     }
                 }
                 if PINS::C1 {
@@ -410,12 +386,12 @@ macro_rules! pwm_2_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -439,12 +415,12 @@ macro_rules! pwm_2_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -467,7 +443,7 @@ macro_rules! pwm_2_channels {
 }
 
 macro_rules! pwm_1_channel {
-    ($($TIMX:ident: ($timX:ident, $apbenr:ident, $apbrstr:ident, $bit:expr, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
             where
@@ -478,14 +454,9 @@ macro_rules! pwm_1_channel {
                     unsafe {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral, it's the same bit position for both registers
-                        bb::set(&rcc.$apbenr, $bit);
-
-                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                        cortex_m::asm::dsb();
-
-                        bb::set(&rcc.$apbrstr, $bit);
-                        bb::clear(&rcc.$apbrstr, $bit);
+                        // Enable and reset the timer peripheral
+                        $TIMX::enable(rcc);
+                        $TIMX::reset(rcc);
                     }
                 }
                 if PINS::C1 {
@@ -526,12 +497,12 @@ macro_rules! pwm_1_channel {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -555,7 +526,7 @@ macro_rules! pwm_1_channel {
 
 #[cfg(feature = "stm32f410")]
 macro_rules! pwm_tim5_f410 {
-    ($($TIMX:ident: ($timX:ident, $apbenr:ident, $apbrstr:ident, $bit:expr, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
             where
@@ -566,14 +537,9 @@ macro_rules! pwm_tim5_f410 {
                     unsafe {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral, it's the same bit position for both registers
-                        bb::set(&rcc.$apbenr, $bit);
-
-                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                        cortex_m::asm::dsb();
-
-                        bb::set(&rcc.$apbrstr, $bit);
-                        bb::clear(&rcc.$apbrstr, $bit);
+                        // Enable and reset the timer peripheral
+                        $TIMX::enable(rcc);
+                        $TIMX::reset(rcc);
                     }
                 }
                 if PINS::C1 {
@@ -629,12 +595,12 @@ macro_rules! pwm_tim5_f410 {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -658,12 +624,12 @@ macro_rules! pwm_tim5_f410 {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -687,12 +653,12 @@ macro_rules! pwm_tim5_f410 {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 8) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc3e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 8) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc3e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -716,12 +682,12 @@ macro_rules! pwm_tim5_f410 {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 12) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc4e().clear_bit()); }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 12) }
+                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc4e().set_bit()); }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -743,74 +709,11 @@ macro_rules! pwm_tim5_f410 {
     };
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_all_channels!(
-    TIM1: (tim1, apb2enr, apb2rstr, 0u8, pclk2, ppre2),
-);
+pwm_all_channels!(TIM1: (tim1, pclk2, ppre2),);
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_2_channels!(
-    TIM9: (tim9, apb2enr, apb2rstr, 16u8, pclk2, ppre2),
-);
+pwm_2_channels!(TIM9: (tim9, pclk2, ppre2),);
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_1_channel!(
-    TIM11: (tim11, apb2enr, apb2rstr, 18u8, pclk2, ppre2),
-);
+pwm_1_channel!(TIM11: (tim11, pclk2, ppre2),);
 
 #[cfg(any(
     feature = "stm32f401",
@@ -831,10 +734,10 @@ pwm_1_channel!(
     feature = "stm32f479"
 ))]
 pwm_all_channels!(
-    TIM2: (tim2, apb1enr, apb1rstr, 0u8, pclk1, ppre1),
-    TIM3: (tim3, apb1enr, apb1rstr, 1u8, pclk1, ppre1),
-    TIM4: (tim4, apb1enr, apb1rstr, 2u8, pclk1, ppre1),
-    TIM5: (tim5, apb1enr, apb1rstr, 3u8, pclk1, ppre1),
+    TIM2: (tim2, pclk1, ppre1),
+    TIM3: (tim3, pclk1, ppre1),
+    TIM4: (tim4, pclk1, ppre1),
+    TIM5: (tim5, pclk1, ppre1),
 );
 
 #[cfg(any(
@@ -855,9 +758,7 @@ pwm_all_channels!(
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_1_channel!(
-    TIM10: (tim10, apb2enr, apb2rstr, 17u8, pclk2, ppre2),
-);
+pwm_1_channel!(TIM10: (tim10, pclk2, ppre2),);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -875,9 +776,7 @@ pwm_1_channel!(
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_all_channels!(
-    TIM8: (tim8, apb2enr, apb2rstr, 1u8, pclk2, ppre2),
-);
+pwm_all_channels!(TIM8: (tim8, pclk2, ppre2),);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -895,9 +794,7 @@ pwm_all_channels!(
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_2_channels!(
-    TIM12: (tim12, apb1enr, apb1rstr, 6u8, pclk1, ppre1),
-);
+pwm_2_channels!(TIM12: (tim12, pclk1, ppre1),);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -915,12 +812,7 @@ pwm_2_channels!(
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_1_channel!(
-    TIM13: (tim13, apb1enr, apb1rstr, 7u8, pclk1, ppre1),
-    TIM14: (tim14, apb1enr, apb1rstr, 8u8, pclk1, ppre1),
-);
+pwm_1_channel!(TIM13: (tim13, pclk1, ppre1), TIM14: (tim14, pclk1, ppre1),);
 
 #[cfg(feature = "stm32f410")]
-pwm_tim5_f410!(
-    TIM5: (tim5, apb1enr, apb1rstr, 3u8, pclk1, ppre1),
-);
+pwm_tim5_f410!(TIM5: (tim5, pclk1, ppre1),);

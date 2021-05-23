@@ -1,8 +1,8 @@
 //! # Quadrature Encoder Interface
 use crate::{
-    bb,
     hal::{self, Direction},
     pac::RCC,
+    rcc::{Enable, Reset},
 };
 
 #[cfg(any(
@@ -24,7 +24,7 @@ use crate::{
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::{TIM1, TIM5};
+use crate::pac::{TIM1, TIM5};
 
 #[cfg(any(
     feature = "stm32f401",
@@ -44,7 +44,7 @@ use crate::stm32::{TIM1, TIM5};
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::{TIM2, TIM3, TIM4};
+use crate::pac::{TIM2, TIM3, TIM4};
 
 #[cfg(any(
     feature = "stm32f405",
@@ -62,7 +62,7 @@ use crate::stm32::{TIM2, TIM3, TIM4};
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::TIM8;
+use crate::pac::TIM8;
 
 pub trait Pins<TIM> {}
 use crate::timer::PinC1;
@@ -130,7 +130,7 @@ pub trait Instance: sealed::Sealed {
 }
 
 macro_rules! hal {
-    ($($TIM:ident: ($tim:ident, $en_bit:expr, $reset_bit:expr, $apbenr:ident, $apbrstr:ident, $bits:ident),)+) => {
+    ($($TIM:ident: ($tim:ident, $bits:ident),)+) => {
         $(
             impl sealed::Sealed for $TIM {}
             impl Instance for $TIM {
@@ -141,11 +141,8 @@ macro_rules! hal {
                         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                         let rcc = &(*RCC::ptr());
                         // Enable and reset clock.
-                        bb::set(&rcc.$apbenr, $en_bit);
-                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                        cortex_m::asm::dsb();
-                        bb::set(&rcc.$apbrstr, $reset_bit);
-                        bb::clear(&rcc.$apbrstr, $reset_bit);
+                        $TIM::enable(rcc);
+                        $TIM::reset(rcc);
                     }
                 }
 
@@ -198,28 +195,9 @@ macro_rules! hal {
     }
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
 hal! {
-    TIM1: (tim1, 0, 0, apb2enr, apb2rstr, u16),
-    TIM5: (tim5, 3, 3, apb1enr, apb1rstr, u32),
+    TIM1: (tim1, u16),
+    TIM5: (tim5, u32),
 }
 
 #[cfg(any(
@@ -241,9 +219,9 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM2: (tim2, 0, 0, apb1enr, apb1rstr, u32),
-    TIM3: (tim3, 1, 1, apb1enr, apb1rstr, u16),
-    TIM4: (tim4, 2, 2, apb1enr, apb1rstr, u16),
+    TIM2: (tim2, u32),
+    TIM3: (tim3, u16),
+    TIM4: (tim4, u16),
 }
 
 #[cfg(any(
@@ -263,5 +241,5 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM8: (tim8, 1, 1, apb2enr, apb2rstr, u16),
+    TIM8: (tim8, u16),
 }

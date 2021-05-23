@@ -9,7 +9,8 @@
 */
 
 use crate::dma::traits::PeriAddress;
-use crate::{bb, gpio::*, pac, signature::VrefCal, signature::VDDA_CALIB};
+use crate::rcc::{Enable, Reset};
+use crate::{gpio::*, pac, signature::VrefCal, signature::VDDA_CALIB};
 use core::fmt;
 use embedded_hal::adc::{Channel, OneShot};
 
@@ -700,20 +701,15 @@ macro_rules! adc {
                 pub fn $constructor_fn_name(adc: pac::$adc_type, reset: bool, config: config::AdcConfig) -> Adc<pac::$adc_type> {
                     unsafe {
                         // All ADCs share the same reset interface.
-                        const RESET_BIT: u8 = 8;
                         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                         let rcc = &(*pac::RCC::ptr());
 
                         //Enable the clock
-                        bb::set(&rcc.apb2enr, $en_bit);
-
-                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                        cortex_m::asm::dsb();
+                        pac::$adc_type::enable(rcc);
 
                         if reset {
                             //Reset the peripheral(s)
-                            bb::set(&rcc.apb2rstr, RESET_BIT);
-                            bb::clear(&rcc.apb2rstr, RESET_BIT);
+                            pac::$adc_type::reset(rcc);
                         }
                     }
 
@@ -1044,25 +1040,6 @@ macro_rules! adc {
     };
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f415",
-    feature = "stm32f407",
-    feature = "stm32f417",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f437",
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
 adc!(ADC1 => (adc1, ADC_COMMON, 8));
 
 #[cfg(any(

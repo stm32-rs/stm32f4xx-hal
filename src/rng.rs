@@ -2,9 +2,9 @@ use core::cmp;
 use core::mem;
 
 use crate::hal::blocking::rng;
-use crate::rcc::Clocks;
-use crate::stm32;
-use crate::stm32::RNG;
+use crate::pac;
+use crate::pac::RNG;
+use crate::rcc::{Clocks, Enable, Reset};
 use crate::time::U32Ext;
 use core::num::NonZeroU32;
 use core::ops::Shl;
@@ -38,18 +38,12 @@ impl RngExt for RNG {
     /// otherwise all reads of the RNG would return a ClockError (CECS error).
     /// This function will panic if pll48clk < 1/16 hclk.
     fn constrain(self, clocks: Clocks) -> Rng {
-        let rcc = unsafe { &*stm32::RCC::ptr() };
+        let rcc = unsafe { &*pac::RCC::ptr() };
 
         cortex_m::interrupt::free(|_| {
             // enable RNG_CLK (peripheral clock)
-            rcc.ahb2enr.modify(|_, w| w.rngen().enabled());
-
-            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-            cortex_m::asm::dsb();
-
-            // reset the RNG
-            rcc.ahb2rstr.modify(|_, w| w.rngrst().set_bit());
-            rcc.ahb2rstr.modify(|_, w| w.rngrst().clear_bit());
+            RNG::enable(rcc);
+            RNG::reset(rcc);
 
             // verify the clock configuration is valid
             let hclk = clocks.hclk();

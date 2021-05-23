@@ -26,66 +26,48 @@ use void::Void;
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-use crate::stm32::TIM6;
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::stm32::{TIM1, TIM11, TIM5, TIM9};
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::stm32::{TIM10, TIM2, TIM3, TIM4};
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::stm32::{TIM12, TIM13, TIM14, TIM7, TIM8};
-use crate::{bb, pac::RCC};
+use crate::pac::TIM6;
 
-use crate::rcc::Clocks;
+use crate::pac::RCC;
+use crate::pac::{TIM1, TIM11, TIM5, TIM9};
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::pac::{TIM10, TIM2, TIM3, TIM4};
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+use crate::pac::{TIM12, TIM13, TIM14, TIM7, TIM8};
+
+use crate::rcc::{Clocks, Enable, Reset};
 use crate::time::Hertz;
 
 /// Hardware timers
@@ -225,7 +207,7 @@ impl Instant {
 }
 
 macro_rules! hal {
-    ($($TIM:ident: ($tim:ident, $en_bit:expr, $reset_bit:expr, $apbenr:ident, $apbrstr:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIM:ident: ($tim:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             impl Timer<$TIM> {
                 /// Configures a TIM peripheral as a periodic count down timer
@@ -236,14 +218,9 @@ macro_rules! hal {
                     unsafe {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral, it's the same bit position for both registers
-                        bb::set(&rcc.$apbenr, $en_bit);
-
-                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                        cortex_m::asm::dsb();
-
-                        bb::set(&rcc.$apbrstr, $reset_bit);
-                        bb::clear(&rcc.$apbrstr, $reset_bit);
+                        // Enable and reset the timer peripheral
+                        $TIM::enable(rcc);
+                        $TIM::reset(rcc);
                     }
 
                     let mut timer = Timer {
@@ -361,30 +338,11 @@ macro_rules! hal {
     }
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
 hal! {
-    TIM1: (tim1, 0, 0, apb2enr, apb2rstr, pclk2, ppre2),
-    TIM5: (tim5, 3, 3, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM9: (tim9, 16, 16, apb2enr, apb2rstr, pclk2, ppre2),
-    TIM11: (tim11, 18, 18, apb2enr, apb2rstr, pclk2, ppre2),
+    TIM1: (tim1, pclk2, ppre2),
+    TIM5: (tim5, pclk1, ppre1),
+    TIM9: (tim9, pclk2, ppre2),
+    TIM11: (tim11, pclk2, ppre2),
 }
 
 #[cfg(any(
@@ -406,10 +364,10 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM2: (tim2, 0, 0, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM3: (tim3, 1, 1, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM4: (tim4, 2, 2, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM10: (tim10, 17, 17, apb2enr, apb2rstr, pclk2, ppre2),
+    TIM2: (tim2, pclk1, ppre1),
+    TIM3: (tim3, pclk1, ppre1),
+    TIM4: (tim4, pclk1, ppre1),
+    TIM10: (tim10, pclk2, ppre2),
 }
 
 #[cfg(any(
@@ -430,7 +388,7 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM6: (tim6, 4, 4, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM6: (tim6, pclk1, ppre1),
 }
 
 #[cfg(any(
@@ -450,11 +408,11 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM7: (tim7, 5, 5, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM8: (tim8, 1, 1, apb2enr, apb2rstr, pclk2, ppre2),
-    TIM12: (tim12, 6, 6, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM13: (tim13, 7, 7, apb1enr, apb1rstr, pclk1, ppre1),
-    TIM14: (tim14, 8, 8, apb1enr, apb1rstr, pclk1, ppre1),
+    TIM7: (tim7, pclk1, ppre1),
+    TIM8: (tim8, pclk2, ppre2),
+    TIM12: (tim12, pclk1, ppre1),
+    TIM13: (tim13, pclk1, ppre1),
+    TIM14: (tim14, pclk1, ppre1),
 }
 
 #[cfg(any(
@@ -569,47 +527,7 @@ use crate::gpio::gpioh::*;
 ))]
 use crate::gpio::gpioi::*;
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::AF1;
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::AF2;
+use crate::gpio::{AF1, AF2};
 
 #[cfg(any(
     feature = "stm32f405",
@@ -646,25 +564,6 @@ macro_rules! channel_impl {
     };
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
 channel_impl!(
     TIM1, PinC1, PA8, AF1;
     TIM1, PinC2, PA9, AF1;

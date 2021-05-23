@@ -1,10 +1,9 @@
 //! Sdio host
 
-use crate::bb;
 #[allow(unused_imports)]
 use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, AF12};
-use crate::rcc::Clocks;
-use crate::stm32::{self, RCC, SDIO};
+use crate::pac::{self, RCC, SDIO};
+use crate::rcc::{Clocks, Enable, Reset};
 pub use sdio_host::{
     cmd, cmd::ResponseLen, CardCapacity, CardStatus, Cmd, CurrentState, SDStatus, CIC, CID, CSD,
     OCR, RCA, SCR,
@@ -170,13 +169,8 @@ impl Sdio {
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
             let rcc = &*RCC::ptr();
             // Enable and reset the sdio peripheral, it's the same bit position for both registers
-            bb::set(&rcc.apb2enr, 11);
-
-            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-            cortex_m::asm::dsb();
-
-            bb::set(&rcc.apb2rstr, 11);
-            bb::clear(&rcc.apb2rstr, 11);
+            SDIO::enable(rcc);
+            SDIO::reset(rcc);
         }
 
         // Configure clock
@@ -303,7 +297,7 @@ impl Sdio {
     }
 
     fn power_card(&mut self, on: bool) {
-        use crate::stm32::sdio::power::PWRCTRL_A;
+        use crate::pac::sdio::power::PWRCTRL_A;
 
         self.sdio.power.modify(|_, w| {
             w.pwrctrl().variant(if on {
@@ -409,7 +403,7 @@ impl Sdio {
     }
 
     fn start_datapath_transfer(&self, length_bytes: u32, block_size: u8, card_to_controller: bool) {
-        use crate::stm32::sdio::dctrl::DTDIR_A;
+        use crate::pac::sdio::dctrl::DTDIR_A;
 
         // Block Size up to 2^14 bytes
         assert!(block_size <= 14);
@@ -527,7 +521,7 @@ impl Sdio {
 
     /// Set bus width and clock frequency
     fn set_bus(&self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
-        use crate::stm32::sdio::clkcr::WIDBUS_A;
+        use crate::pac::sdio::clkcr::WIDBUS_A;
 
         let card_widebus = self.card()?.supports_widebus();
 
@@ -557,7 +551,7 @@ impl Sdio {
 
     /// Send command to card
     fn cmd<R: cmd::Resp>(&self, cmd: Cmd<R>) -> Result<(), Error> {
-        use crate::stm32::sdio::cmd::WAITRESP_A;
+        use crate::pac::sdio::cmd::WAITRESP_A;
 
         // Command state machines must be idle
         while self.sdio.sta.read().cmdact().bit_is_set() {}
@@ -619,7 +613,7 @@ impl Sdio {
     }
 }
 
-fn status_to_error(sta: stm32::sdio::sta::R) -> Result<(), Error> {
+fn status_to_error(sta: pac::sdio::sta::R) -> Result<(), Error> {
     if sta.ctimeout().bit_is_set() {
         return Err(Error::Timeout);
     } else if sta.ccrcfail().bit() {
@@ -636,7 +630,7 @@ fn status_to_error(sta: stm32::sdio::sta::R) -> Result<(), Error> {
     Ok(())
 }
 
-fn clear_all_interrupts(icr: &stm32::sdio::ICR) {
+fn clear_all_interrupts(icr: &pac::sdio::ICR) {
     icr.modify(|_, w| {
         w.ccrcfailc()
             .set_bit()
