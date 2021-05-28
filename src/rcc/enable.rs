@@ -1,113 +1,124 @@
 use super::*;
+use crate::bb;
 
 macro_rules! bus_enable {
-    ($PER:ident => ($busenr:ident, $peren:ident)) => {
+    ($PER:ident => ($busenr:ident, $enbit:literal)) => {
         impl Enable for crate::pac::$PER {
             #[inline(always)]
             fn enable(rcc: &RccRB) {
-                rcc.$busenr.modify(|_, w| w.$peren().set_bit());
+                unsafe {
+                    bb::set(&rcc.$busenr, $enbit);
+                }
                 // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
             fn disable(rcc: &RccRB) {
-                rcc.$busenr.modify(|_, w| w.$peren().clear_bit());
+                unsafe {
+                    bb::clear(&rcc.$busenr, $enbit);
+                }
             }
         }
     };
 }
 macro_rules! bus_lpenable {
-    ($PER:ident => ($buslpenr:ident, $perlpen:ident)) => {
+    ($PER:ident => ($buslpenr:ident, $lpenbit:literal)) => {
         impl LPEnable for crate::pac::$PER {
             #[inline(always)]
             fn low_power_enable(rcc: &RccRB) {
-                rcc.$buslpenr.modify(|_, w| w.$perlpen().set_bit());
+                unsafe {
+                    bb::set(&rcc.$buslpenr, $lpenbit);
+                }
                 // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
             fn low_power_disable(rcc: &RccRB) {
-                rcc.$buslpenr.modify(|_, w| w.$perlpen().clear_bit());
+                unsafe {
+                    bb::clear(&rcc.$buslpenr, $lpenbit);
+                }
             }
         }
     };
 }
 macro_rules! bus_reset {
-    ($PER:ident => ($busrstr:ident, $perrst:ident)) => {
+    ($PER:ident => ($busrstr:ident, $resetbit:literal)) => {
         impl Reset for crate::pac::$PER {
             #[inline(always)]
             fn reset(rcc: &RccRB) {
-                rcc.$busrstr.modify(|_, w| w.$perrst().set_bit());
-                rcc.$busrstr.modify(|_, w| w.$perrst().clear_bit());
+                unsafe {
+                    bb::set(&rcc.$busrstr, $resetbit);
+                    bb::clear(&rcc.$busrstr, $resetbit);
+                }
             }
         }
     };
 }
 
 macro_rules! bus {
-    ($($PER:ident => ($busenr:ident, $peren:ident, $buslpenr:ident, $perlpen:ident, $busrstr:ident, $perrst:ident),)+) => {
+    ($($PER:ident => ($busenr:ident, $buslpenr:ident, $busrstr:ident, $bit:literal),)+) => {
         $(
             impl private::Sealed for crate::pac::$PER {}
-            bus_enable!($PER => ($busenr, $peren));
-            bus_lpenable!($PER => ($buslpenr, $perlpen));
-            bus_reset!($PER => ($busrstr, $perrst));
+            bus_enable!($PER => ($busenr, $bit));
+            bus_lpenable!($PER => ($buslpenr, $bit));
+            bus_reset!($PER => ($busrstr, $bit));
         )+
     }
 }
 
 bus! {
-    CRC => (ahb1enr, crcen, ahb1lpenr, crclpen, ahb1rstr, crcrst),
-    DMA1 => (ahb1enr, dma1en, ahb1lpenr, dma1lpen, ahb1rstr, dma1rst),
-    DMA2 => (ahb1enr, dma2en, ahb1lpenr, dma2lpen, ahb1rstr, dma2rst),
+    CRC => (ahb1enr, ahb1lpenr, ahb1rstr, 12),
+    DMA1 => (ahb1enr, ahb1lpenr, ahb1rstr, 21),
+    DMA2 => (ahb1enr, ahb1lpenr, ahb1rstr, 22),
 }
 
 bus! {
-    GPIOA => (ahb1enr, gpioaen, ahb1lpenr, gpioalpen, ahb1rstr, gpioarst),
-    GPIOB => (ahb1enr, gpioben, ahb1lpenr, gpioblpen, ahb1rstr, gpiobrst),
-    GPIOC => (ahb1enr, gpiocen, ahb1lpenr, gpioclpen, ahb1rstr, gpiocrst),
-    GPIOH => (ahb1enr, gpiohen, ahb1lpenr, gpiohlpen, ahb1rstr, gpiohrst),
+    GPIOA => (ahb1enr, ahb1lpenr, ahb1rstr, 0),
+    GPIOB => (ahb1enr, ahb1lpenr, ahb1rstr, 1),
+    GPIOC => (ahb1enr, ahb1lpenr, ahb1rstr, 2),
+    GPIOH => (ahb1enr, ahb1lpenr, ahb1rstr, 7),
 }
 
 #[cfg(any(feature = "gpiod", feature = "gpioe"))]
 bus! {
-    GPIOD => (ahb1enr, gpioden, ahb1lpenr, gpiodlpen, ahb1rstr, gpiodrst),
-    GPIOE => (ahb1enr, gpioeen, ahb1lpenr, gpioelpen, ahb1rstr, gpioerst),
+    GPIOD => (ahb1enr, ahb1lpenr, ahb1rstr, 3),
+    GPIOE => (ahb1enr, ahb1lpenr, ahb1rstr, 4),
 }
 #[cfg(any(feature = "gpiof", feature = "gpiog"))]
 bus! {
-    GPIOF => (ahb1enr, gpiofen, ahb1lpenr, gpioflpen, ahb1rstr, gpiofrst),
-    GPIOG => (ahb1enr, gpiogen, ahb1lpenr, gpioglpen, ahb1rstr, gpiogrst),
+    GPIOF => (ahb1enr, ahb1lpenr, ahb1rstr, 5),
+    GPIOG => (ahb1enr, ahb1lpenr, ahb1rstr, 6),
 }
 
 #[cfg(feature = "gpioi")]
 bus! {
-    GPIOI => (ahb1enr, gpioien, ahb1lpenr, gpioilpen, ahb1rstr, gpioirst),
+    GPIOI => (ahb1enr, ahb1lpenr, ahb1rstr, 8),
 }
 
 #[cfg(any(feature = "gpioj", feature = "gpiok"))]
 bus! {
-    GPIOJ => (ahb1enr, gpiojen, ahb1lpenr, gpiojlpen, ahb1rstr, gpiojrst),
-    GPIOK => (ahb1enr, gpioken, ahb1lpenr, gpioklpen, ahb1rstr, gpiokrst),
+    GPIOJ => (ahb1enr, ahb1lpenr, ahb1rstr, 9),
+    GPIOK => (ahb1enr, ahb1lpenr, ahb1rstr, 10),
 }
 
 #[cfg(feature = "rng")]
 bus! {
-    RNG => (ahb2enr, rngen, ahb2lpenr, rnglpen, ahb2rstr, rngrst),
+    RNG => (ahb2enr, ahb2lpenr, ahb2rstr, 6),
 }
 
 #[cfg(feature = "otg-fs")]
 bus! {
-    OTG_FS_GLOBAL => (ahb2enr, otgfsen, ahb2lpenr, otgfslpen, ahb2rstr, otgfsrst),
+    OTG_FS_GLOBAL => (ahb2enr, ahb2lpenr, ahb2rstr, 7),
 }
 
 #[cfg(feature = "otg-hs")]
 bus! {
-    OTG_HS_GLOBAL => (ahb1enr, otghsen, ahb1lpenr, otghslpen, ahb1rstr, otghsrst),
+    OTG_HS_GLOBAL => (ahb1enr, ahb1lpenr, ahb1rstr, 29),
 }
 
 #[cfg(feature = "fmc")]
 bus! {
-    FMC => (ahb3enr, fmcen, ahb3lpenr, fmclpen, ahb3rstr, fmcrst),
+    FMC => (ahb3enr, ahb3lpenr, ahb3rstr, 0),
 }
 
 // TODO: fix absent ahb3lpenr
@@ -115,129 +126,131 @@ bus! {
 impl private::Sealed for crate::pac::FSMC {}
 #[cfg(feature = "fsmc")]
 #[cfg(any(feature = "stm32f427", feature = "stm32f437"))]
-bus_enable!(FSMC => (ahb3enr, fmcen));
+bus_enable!(FSMC => (ahb3enr, 0));
 #[cfg(feature = "fsmc")]
 #[cfg(not(any(feature = "stm32f427", feature = "stm32f437")))]
-bus_enable!(FSMC => (ahb3enr, fsmcen));
+bus_enable!(FSMC => (ahb3enr, 0));
 #[cfg(feature = "fsmc")]
 #[cfg(any(feature = "stm32f427", feature = "stm32f437"))]
-bus_reset!(FSMC => (ahb3rstr, fmcrst));
+bus_reset!(FSMC => (ahb3rstr, 0));
 #[cfg(feature = "fsmc")]
 #[cfg(not(any(feature = "stm32f427", feature = "stm32f437")))]
-bus_reset!(FSMC => (ahb3rstr, fsmcrst));
+bus_reset!(FSMC => (ahb3rstr, 0));
 
 bus! {
-    PWR => (apb1enr, pwren, apb1lpenr, pwrlpen, apb1rstr, pwrrst),
+    PWR => (apb1enr, apb1lpenr, apb1rstr, 28),
 }
 
 bus! {
-    SPI1 => (apb2enr, spi1en, apb2lpenr, spi1lpen, apb2rstr, spi1rst),
-    SPI2 => (apb1enr, spi2en, apb1lpenr, spi2lpen, apb1rstr, spi2rst),
+    SPI1 => (apb2enr, apb2lpenr, apb2rstr, 12),
+    SPI2 => (apb1enr, apb1lpenr, apb1rstr, 14),
 }
 #[cfg(feature = "spi3")]
 bus! {
-    SPI3 => (apb1enr, spi3en, apb1lpenr, spi3lpen, apb1rstr, spi3rst),
+    SPI3 => (apb1enr, apb1lpenr, apb1rstr, 15),
 }
 
 #[cfg(feature = "spi4")]
 bus! {
-    SPI4 => (apb2enr, spi4en, apb2lpenr, spi4lpen, apb2rstr, spi4rst),
+    SPI4 => (apb2enr, apb2lpenr, apb2rstr, 13),
 }
 
 #[cfg(feature = "spi5")]
 bus! {
-    SPI5 => (apb2enr, spi5en, apb2lpenr, spi5lpen, apb2rstr, spi5rst),
+    SPI5 => (apb2enr, apb2lpenr, apb2rstr, 20),
 }
 
 #[cfg(feature = "spi6")]
 bus! {
-    SPI6 => (apb2enr, spi6en, apb2lpenr, spi6lpen, apb2rstr, spi6rst),
+    SPI6 => (apb2enr, apb2lpenr, apb2rstr, 21),
 }
 
 bus! {
-    I2C1 => (apb1enr, i2c1en, apb1lpenr, i2c1lpen, apb1rstr, i2c1rst),
-    I2C2 => (apb1enr, i2c2en, apb1lpenr, i2c2lpen, apb1rstr, i2c2rst),
+    I2C1 => (apb1enr, apb1lpenr, apb1rstr, 21),
+    I2C2 => (apb1enr, apb1lpenr, apb1rstr, 22),
 }
 #[cfg(feature = "i2c3")]
 bus! {
-    I2C3 => (apb1enr, i2c3en, apb1lpenr, i2c3lpen, apb1rstr, i2c3rst),
+    I2C3 => (apb1enr, apb1lpenr, apb1rstr, 23),
 }
 #[cfg(feature = "fmpi2c1")]
 bus! {
-    FMPI2C1 => (apb1enr, fmpi2c1en, apb1lpenr, fmpi2c1lpen, apb1rstr, fmpi2c1rst),
+    FMPI2C1 => (apb1enr, apb1lpenr, apb1rstr, 24),
 }
 
-// TODO: fix uart2rst, uart3rst
 bus! {
-    USART1 => (apb2enr, usart1en, apb2lpenr, usart1lpen, apb2rstr, usart1rst),
-    USART2 => (apb1enr, usart2en, apb1lpenr, usart2lpen, apb1rstr, uart2rst),
-    USART6 => (apb2enr, usart6en, apb2lpenr, usart6lpen, apb2rstr, usart6rst),
+    USART1 => (apb2enr, apb2lpenr, apb2rstr, 4),
+    USART2 => (apb1enr, apb1lpenr, apb1rstr, 17),
+    USART6 => (apb2enr, apb2lpenr, apb2rstr, 5),
 }
 #[cfg(feature = "usart3")]
-#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 bus! {
-    USART3 => (apb1enr, usart3en, apb1lpenr, usart3lpen, apb1rstr, usart3rst),
-}
-#[cfg(feature = "usart3")]
-#[cfg(not(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423")))]
-bus! {
-    USART3 => (apb1enr, usart3en, apb1lpenr, usart3lpen, apb1rstr, uart3rst),
+    USART3 => (apb1enr, apb1lpenr, apb1rstr, 18),
 }
 
-#[cfg(feature = "uart4")]
-impl private::Sealed for crate::pac::UART4 {}
-#[cfg(feature = "uart4")]
-bus_enable!(UART4 => (apb1enr, uart4en));
-#[cfg(feature = "uart5")]
-impl private::Sealed for crate::pac::UART5 {}
-#[cfg(feature = "uart5")]
-bus_enable!(UART5 => (apb1enr, uart5en));
+#[cfg(any(feature = "uart4", feature = "uart5"))]
+bus! {
+    UART4 => (apb1enr, apb1lpenr, apb1rstr, 19),
+    UART5 => (apb1enr, apb1lpenr, apb1rstr, 20),
+}
 
 #[cfg(any(feature = "uart7", feature = "uart8"))]
 bus! {
-    UART7 => (apb1enr, uart7en, apb1lpenr, uart7lpen, apb1rstr, uart7rst),
-    UART8 => (apb1enr, uart8en, apb1lpenr, uart8lpen, apb1rstr, uart8rst),
+    UART7 => (apb1enr, apb1lpenr, apb1rstr, 30),
+    UART8 => (apb1enr, apb1lpenr, apb1rstr, 31),
 }
 #[cfg(any(feature = "uart9", feature = "uart10"))]
 bus! {
-    UART9 => (apb2enr, uart9en, apb2lpenr, uart9lpen, apb2rstr, uart9rst),
-    UART10 => (apb2enr, uart10en, apb2lpenr, uart10lpen, apb2rstr, uart10rst),
+    UART9 => (apb2enr, apb2lpenr, apb2rstr, 6),
+    UART10 => (apb2enr, apb2lpenr, apb2rstr, 7),
 }
 
 #[cfg(any(feature = "can1", feature = "can2"))]
 bus! {
-    CAN1 => (apb1enr, can1en, apb1lpenr, can1lpen, apb1rstr, can1rst),
-    CAN2 => (apb1enr, can2en, apb1lpenr, can2lpen, apb1rstr, can2rst),
+    CAN1 => (apb1enr, apb1lpenr, apb1rstr, 25),
+    CAN2 => (apb1enr, apb1lpenr, apb1rstr, 26),
 }
 #[cfg(feature = "dac")]
 bus! {
-    DAC => (apb1enr, dacen, apb1lpenr, daclpen, apb1rstr, dacrst),
+    DAC => (apb1enr, apb1lpenr, apb1rstr, 29),
 }
 
 bus! {
-    SYSCFG => (apb2enr, syscfgen, apb2lpenr, syscfglpen, apb2rstr, syscfgrst),
+    SYSCFG => (apb2enr, apb2lpenr, apb2rstr, 14),
 }
 
 bus! {
-    ADC1 => (apb2enr, adc1en, apb2lpenr, adc1lpen, apb2rstr, adcrst),
+    ADC1 => (apb2enr, apb2lpenr, apb2rstr, 8),
 }
 
-#[cfg(any(feature = "adc2", feature = "adc3"))]
-bus! {
-    ADC2 => (apb2enr, adc2en, apb2lpenr, adc2lpen, apb2rstr, adcrst),
-    ADC3 => (apb2enr, adc3en, apb2lpenr, adc3lpen, apb2rstr, adcrst),
-}
+#[cfg(feature = "adc2")]
+impl private::Sealed for crate::pac::ADC2 {}
+#[cfg(feature = "adc2")]
+bus_enable!(ADC2 => (apb2enr, 9));
+#[cfg(feature = "adc2")]
+bus_lpenable!(ADC2 => (apb2lpenr, 9));
+#[cfg(feature = "adc2")]
+bus_reset!(ADC2 => (apb2rstr, 8));
+
+#[cfg(feature = "adc3")]
+impl private::Sealed for crate::pac::ADC3 {}
+#[cfg(feature = "adc3")]
+bus_enable!(ADC3 => (apb2enr, 10));
+#[cfg(feature = "adc3")]
+bus_lpenable!(ADC3 => (apb2lpenr, 10));
+#[cfg(feature = "adc3")]
+bus_reset!(ADC3 => (apb2rstr, 8));
 
 #[cfg(feature = "sdio")]
 bus! {
-    SDIO => (apb2enr, sdioen, apb2lpenr, sdiolpen, apb2rstr, sdiorst),
+    SDIO => (apb2enr, apb2lpenr, apb2rstr, 11),
 }
 
 bus! {
-    TIM1 => (apb2enr, tim1en, apb2lpenr, tim1lpen, apb2rstr, tim1rst),
-    TIM5 => (apb1enr, tim5en, apb1lpenr, tim5lpen, apb1rstr, tim5rst),
-    TIM9 => (apb2enr, tim9en, apb2lpenr, tim9lpen, apb2rstr, tim9rst),
-    TIM11 => (apb2enr, tim11en, apb2lpenr, tim11lpen, apb2rstr, tim11rst),
+    TIM1 => (apb2enr, apb2lpenr, apb2rstr, 0),
+    TIM5 => (apb1enr, apb1lpenr, apb1rstr, 3),
+    TIM9 => (apb2enr, apb2lpenr, apb2rstr, 16),
+    TIM11 => (apb2enr, apb2lpenr, apb2rstr, 18),
 }
 
 #[cfg(any(
@@ -259,10 +272,10 @@ bus! {
     feature = "stm32f479"
 ))]
 bus! {
-    TIM2 => (apb1enr, tim2en, apb1lpenr, tim2lpen, apb1rstr, tim2rst),
-    TIM3 => (apb1enr, tim3en, apb1lpenr, tim3lpen, apb1rstr, tim3rst),
-    TIM4 => (apb1enr, tim4en, apb1lpenr, tim4lpen, apb1rstr, tim4rst),
-    TIM10 => (apb2enr, tim10en, apb2lpenr, tim10lpen, apb2rstr, tim10rst),
+    TIM2 => (apb1enr, apb1lpenr, apb1rstr, 0),
+    TIM3 => (apb1enr, apb1lpenr, apb1rstr, 1),
+    TIM4 => (apb1enr, apb1lpenr, apb1rstr, 2),
+    TIM10 => (apb2enr, apb2lpenr, apb2rstr, 17),
 }
 
 #[cfg(any(
@@ -283,7 +296,7 @@ bus! {
     feature = "stm32f479"
 ))]
 bus! {
-    TIM6 => (apb1enr, tim6en, apb1lpenr, tim6lpen, apb1rstr, tim6rst),
+    TIM6 => (apb1enr, apb1lpenr, apb1rstr, 4),
 }
 
 #[cfg(any(
@@ -303,9 +316,9 @@ bus! {
     feature = "stm32f479"
 ))]
 bus! {
-    TIM7 => (apb1enr, tim7en, apb1lpenr, tim7lpen, apb1rstr, tim7rst),
-    TIM8 => (apb2enr, tim8en, apb2lpenr, tim8lpen, apb2rstr, tim8rst),
-    TIM12 => (apb1enr, tim12en, apb1lpenr, tim12lpen, apb1rstr, tim12rst),
-    TIM13 => (apb1enr, tim13en, apb1lpenr, tim13lpen, apb1rstr, tim13rst),
-    TIM14 => (apb1enr, tim14en, apb1lpenr, tim14lpen, apb1rstr, tim14rst),
+    TIM7 => (apb1enr, apb1lpenr, apb1rstr, 5),
+    TIM8 => (apb2enr, apb2lpenr, apb2rstr, 1),
+    TIM12 => (apb1enr, apb1lpenr, apb1rstr, 6),
+    TIM13 => (apb1enr, apb1lpenr, apb1rstr, 7),
+    TIM14 => (apb1enr, apb1lpenr, apb1rstr, 8),
 }
