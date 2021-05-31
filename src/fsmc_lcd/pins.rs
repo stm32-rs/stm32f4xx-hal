@@ -724,9 +724,10 @@ mod extra_pins {
     use crate::gpio::gpioa::{PA2, PA3, PA4, PA5};
     use crate::gpio::gpiob::{PB12, PB14};
     use crate::gpio::gpioc::{PC11, PC12, PC2, PC3, PC4, PC5, PC6};
-    use crate::gpio::{Alternate, AF12};
+    use crate::gpio::gpiod::PD2;
+    use crate::gpio::{Alternate, AF10, AF12};
 
-    // All FSMC/FMC pins use AF12
+    // Most FSMC/FMC pins use AF12, but a few use AF10
     type FmcAlternate = Alternate<AF12>;
 
     impl PinD4 for PA2<FmcAlternate> {}
@@ -734,16 +735,17 @@ mod extra_pins {
     impl PinD6 for PA4<FmcAlternate> {}
     impl PinD7 for PA5<FmcAlternate> {}
     impl PinD13 for PB12<FmcAlternate> {}
-    impl PinD0 for PB14<FmcAlternate> {}
+    impl PinD0 for PB14<Alternate<AF10>> {}
     impl PinWriteEnable for PC2<FmcAlternate> {}
     impl PinAddress for PC3<FmcAlternate> {}
     impl Sealed for PC3<FmcAlternate> {}
     impl PinChipSelect4 for PC4<FmcAlternate> {}
     impl Sealed for PC4<FmcAlternate> {}
     impl PinReadEnable for PC5<FmcAlternate> {}
-    impl PinD1 for PC6<FmcAlternate> {}
-    impl PinD2 for PC11<FmcAlternate> {}
-    impl PinD3 for PC12<FmcAlternate> {}
+    impl PinD1 for PC6<Alternate<AF10>> {}
+    impl PinD2 for PC11<Alternate<AF10>> {}
+    impl PinD3 for PC12<Alternate<AF10>> {}
+    impl PinWriteEnable for PD2<Alternate<AF10>> {}
 
     // Sealed trait boilerplate
     impl Sealed for PA2<FmcAlternate> {}
@@ -751,10 +753,11 @@ mod extra_pins {
     impl Sealed for PA4<FmcAlternate> {}
     impl Sealed for PA5<FmcAlternate> {}
     impl Sealed for PB12<FmcAlternate> {}
-    impl Sealed for PB14<FmcAlternate> {}
+    impl Sealed for PB14<Alternate<AF10>> {}
     impl Sealed for PC2<FmcAlternate> {}
     impl Sealed for PC5<FmcAlternate> {}
-    impl Sealed for PC6<FmcAlternate> {}
-    impl Sealed for PC11<FmcAlternate> {}
-    impl Sealed for PC12<FmcAlternate> {}
+    impl Sealed for PC6<Alternate<AF10>> {}
+    impl Sealed for PC11<Alternate<AF10>> {}
+    impl Sealed for PC12<Alternate<AF10>> {}
+    impl Sealed for PD2<Alternate<AF10>> {}
 }
