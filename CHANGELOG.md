@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#258]: https://github.com/stm32-rs/stm32f4xx-hal/pull/258
 [#257]: https://github.com/stm32-rs/stm32f4xx-hal/pull/257
 
+### Fixed
+
+- Corrected pin definitions for the Flexible Static Memory Controller / Flexible Memory Controller
+  LCD interface [#312]
+
+[#312]: https://github.com/stm32-rs/stm32f4xx-hal/pull/312
+
 ## [v0.9.0] - 2021-04-04
 
 ### Changed
