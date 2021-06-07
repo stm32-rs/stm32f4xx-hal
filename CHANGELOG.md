@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+
 - Fixed typo in string representation in DMAError type
 - Added an example of integration with RTIC.
 - Added internal pullup configuaration for the AlternateOD pin type
@@ -42,6 +43,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Corrected pin definitions for the Flexible Static Memory Controller / Flexible Memory Controller
   LCD interface [#312]
+- Eliminated `channel_impl` macro warnings caused by unused ident
 
 [#312]: https://github.com/stm32-rs/stm32f4xx-hal/pull/312
 
