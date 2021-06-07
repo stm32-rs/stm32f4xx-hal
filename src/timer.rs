@@ -1,4 +1,7 @@
 //! Timers
+//!
+//! Pins can be used for PWM output in both push-pull mode (`Alternate`) and open-drain mode
+//! (`AlternateOD`).
 
 use cast::{u16, u32};
 use cortex_m::peripheral::syst::SystClkSource;
@@ -626,7 +629,7 @@ use crate::gpio::AF2;
 ))]
 use crate::gpio::AF3;
 
-use crate::gpio::{gpioa::*, Alternate};
+use crate::gpio::{gpioa::*, Alternate, AlternateOD};
 
 // Output channels marker traits
 pub trait PinC1<TIM> {}
@@ -637,7 +640,8 @@ pub trait PinC4<TIM> {}
 macro_rules! channel_impl {
     ( $( $TIM:ident, $PINC:ident, $PINX:ident, $MODE:ident<$AF:ident>; )+ ) => {
         $(
-            impl $PINC<$TIM> for $PINX<$MODE<$AF>> {}
+            impl $PINC<$TIM> for $PINX<Alternate<$AF>> {}
+            impl $PINC<$TIM> for $PINX<AlternateOD<$AF>> {}
         )+
     };
 }
