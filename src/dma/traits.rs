@@ -46,6 +46,15 @@ pub trait Stream: Sealed {
     /// Get half transfer flag.
     fn get_half_transfer_flag() -> bool;
 
+    /// Get transfer error flag
+    fn get_transfer_error_flag() -> bool;
+
+    /// Get fifo error flag
+    fn get_fifo_error_flag() -> bool;
+
+    /// Get direct mode error flag
+    fn get_direct_mode_error_flag() -> bool;
+
     /// Set the peripheral address (par) for the DMA stream.
     fn set_peripheral_address(&mut self, value: u32);
 

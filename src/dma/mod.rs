@@ -272,7 +272,8 @@ impl<T: RccEnable> StreamsTuple<T> {
 // The implementation does the heavy lifting of mapping to the right fields on the stream
 macro_rules! dma_stream {
     ($(($name:ident, $number:expr ,$ifcr:ident, $tcif:ident, $htif:ident, $teif:ident, $dmeif:ident,
-        $feif:ident, $isr:ident, $tcisr:ident, $htisr:ident)),+ $(,)*) => {
+        $feif:ident, $isr:ident, $tcisr:ident, $htisr:ident, $teisr:ident, $feisr:ident, $dmeisr:ident)),+
+        $(,)*) => {
         $(
             impl<I: Instance> Stream for $name<I> {
 
@@ -344,6 +345,27 @@ macro_rules! dma_stream {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.$isr.read().$htisr().bit_is_set()
+                }
+
+                #[inline(always)]
+                fn get_transfer_error_flag() -> bool {
+                    //NOTE(unsafe) Atomic read with no side effects
+                    let dma = unsafe { &*I::ptr() };
+                    dma.$isr.read().$teisr().bit_is_set()
+                }
+
+                #[inline(always)]
+                fn get_fifo_error_flag() -> bool {
+                    //NOTE(unsafe) Atomic read with no side effects
+                    let dma = unsafe { &*I::ptr() };
+                    dma.$isr.read().$feisr().bit_is_set()
+                }
+
+                #[inline(always)]
+                fn get_direct_mode_error_flag() -> bool {
+                    //NOTE(unsafe) Atomic read with no side effects
+                    let dma = unsafe { &*I::ptr() };
+                    dma.$isr.read().$dmeisr().bit_is_set()
                 }
 
                 #[inline(always)]
@@ -598,14 +620,38 @@ macro_rules! dma_stream {
 }
 
 dma_stream!(
-    (Stream0, 0, lifcr, ctcif0, chtif0, cteif0, cdmeif0, cfeif0, lisr, tcif0, htif0),
-    (Stream1, 1, lifcr, ctcif1, chtif1, cteif1, cdmeif1, cfeif1, lisr, tcif1, htif1),
-    (Stream2, 2, lifcr, ctcif2, chtif2, cteif2, cdmeif2, cfeif2, lisr, tcif2, htif2),
-    (Stream3, 3, lifcr, ctcif3, chtif3, cteif3, cdmeif3, cfeif3, lisr, tcif3, htif3),
-    (Stream4, 4, hifcr, ctcif4, chtif4, cteif4, cdmeif4, cfeif4, hisr, tcif4, htif4),
-    (Stream5, 5, hifcr, ctcif5, chtif5, cteif5, cdmeif5, cfeif5, hisr, tcif5, htif5),
-    (Stream6, 6, hifcr, ctcif6, chtif6, cteif6, cdmeif6, cfeif6, hisr, tcif6, htif6),
-    (Stream7, 7, hifcr, ctcif7, chtif7, cteif7, cdmeif7, cfeif7, hisr, tcif7, htif7),
+    (
+        Stream0, 0, lifcr, ctcif0, chtif0, cteif0, cdmeif0, cfeif0, lisr, tcif0, htif0, teif0,
+        feif0, dmeif0
+    ),
+    (
+        Stream1, 1, lifcr, ctcif1, chtif1, cteif1, cdmeif1, cfeif1, lisr, tcif1, htif1, teif1,
+        feif1, dmeif1
+    ),
+    (
+        Stream2, 2, lifcr, ctcif2, chtif2, cteif2, cdmeif2, cfeif2, lisr, tcif2, htif2, teif2,
+        feif2, dmeif2
+    ),
+    (
+        Stream3, 3, lifcr, ctcif3, chtif3, cteif3, cdmeif3, cfeif3, lisr, tcif3, htif3, teif3,
+        feif3, dmeif3
+    ),
+    (
+        Stream4, 4, hifcr, ctcif4, chtif4, cteif4, cdmeif4, cfeif4, hisr, tcif4, htif4, teif4,
+        feif4, dmeif4
+    ),
+    (
+        Stream5, 5, hifcr, ctcif5, chtif5, cteif5, cdmeif5, cfeif5, hisr, tcif5, htif5, teif5,
+        feif5, dmeif5
+    ),
+    (
+        Stream6, 6, hifcr, ctcif6, chtif6, cteif6, cdmeif6, cfeif6, hisr, tcif6, htif6, teif6,
+        feif6, dmeif6
+    ),
+    (
+        Stream7, 7, hifcr, ctcif7, chtif7, cteif7, cdmeif7, cfeif7, hisr, tcif7, htif7, teif7,
+        feif7, dmeif7
+    ),
 );
 
 // Macro that defines a channel and it's conversion to u8
