@@ -1,6 +1,8 @@
+use core::marker::PhantomData;
 use core::ops::Deref;
 use core::ptr;
 
+use crate::dma::traits::PeriAddress;
 use crate::gpio::{Const, NoPin, PushPull, SetAlternate};
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
@@ -395,23 +397,35 @@ pub struct Spi<SPI, PINS, TRANSFER_MODE> {
 pub trait Instance:
     crate::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset + rcc::BusClock
 {
+    #[doc(hidden)]
+    fn ptr() -> *const spi1::RegisterBlock;
 }
 
 // Implemented by all SPI instances
-impl Instance for SPI1 {}
-impl Instance for SPI2 {}
+macro_rules! spi {
+    ($SPI:ident: ($spi:ident)) => {
+        impl Instance for $SPI {
+            fn ptr() -> *const spi1::RegisterBlock {
+                <$SPI>::ptr() as *const _
+            }
+        }
+    };
+}
+
+spi! { SPI1: (spi1) }
+spi! { SPI2: (spi2) }
 
 #[cfg(feature = "spi3")]
-impl Instance for SPI3 {}
+spi! { SPI3: (spi3) }
 
 #[cfg(feature = "spi4")]
-impl Instance for SPI4 {}
+spi! { SPI4: (spi4) }
 
 #[cfg(feature = "spi5")]
-impl Instance for SPI5 {}
+spi! { SPI5: (spi5) }
 
 #[cfg(feature = "spi6")]
-impl Instance for SPI6 {}
+spi! { SPI6: (spi6) }
 
 impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
     Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal>
@@ -672,6 +686,10 @@ where
         self.spi.sr.read().ovr().bit_is_set()
     }
 
+    pub fn use_dma(self) -> DmaBuilder<SPI> {
+        DmaBuilder { spi: self.spi }
+    }
+
     #[inline(always)]
     fn check_read(&mut self) -> nb::Result<u8, Error> {
         let sr = self.spi.sr.read();
@@ -727,6 +745,69 @@ where
         // NOTE(write_volatile) see note above
         unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
     }
+}
+
+pub struct DmaBuilder<SPI> {
+    spi: SPI,
+}
+
+pub struct Tx<SPI> {
+    spi: PhantomData<SPI>,
+}
+
+pub struct Rx<SPI> {
+    spi: PhantomData<SPI>,
+}
+
+impl<SPI> DmaBuilder<SPI>
+where
+    SPI: Instance,
+{
+    pub fn tx(self) -> Tx<SPI> {
+        self.new_tx()
+    }
+
+    pub fn rx(self) -> Rx<SPI> {
+        self.new_rx()
+    }
+
+    pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
+        (self.new_tx(), self.new_rx())
+    }
+
+    fn new_tx(&self) -> Tx<SPI> {
+        self.spi.cr2.modify(|_, w| w.txdmaen().enabled());
+        Tx { spi: PhantomData }
+    }
+
+    fn new_rx(self) -> Rx<SPI> {
+        self.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
+        Rx { spi: PhantomData }
+    }
+}
+
+unsafe impl<SPI> PeriAddress for Rx<SPI>
+where
+    SPI: Instance,
+{
+    #[inline(always)]
+    fn address(&self) -> u32 {
+        unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
+    }
+
+    type MemSize = u8;
+}
+
+unsafe impl<SPI> PeriAddress for Tx<SPI>
+where
+    SPI: Instance,
+{
+    #[inline(always)]
+    fn address(&self) -> u32 {
+        unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
+    }
+
+    type MemSize = u8;
 }
 
 impl<SPI, PINS> spi::FullDuplex<u8> for Spi<SPI, PINS, TransferModeNormal>

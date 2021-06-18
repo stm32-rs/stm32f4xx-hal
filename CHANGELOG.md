@@ -80,6 +80,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added function for clearing the idle line interrupt in USART [#357]
 - Added flash driver [#347]
 - Added `gpio::gpiox::Pxi::downgrade2` method [#323]
+- Added DMA support for SPI [#319]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/266
@@ -96,6 +97,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#325]: https://github.com/stm32-rs/stm32f4xx-hal/pull/325
 [#328]: https://github.com/stm32-rs/stm32f4xx-hal/pull/328
 [#318]: https://github.com/stm32-rs/stm32f4xx-hal/pull/318
+[#319]: https://github.com/stm32-rs/stm32f4xx-hal/pull/319
 [#322]: https://github.com/stm32-rs/stm32f4xx-hal/pull/322
 [#323]: https://github.com/stm32-rs/stm32f4xx-hal/pull/323
 [#332]: https://github.com/stm32-rs/stm32f4xx-hal/pull/332
