@@ -20,11 +20,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   `display-interface` driver and the `st7789` driver on a F413Discovery board [#302]
 - Derive `Eq`, `PartialEq`, `Copy` and `Clone` for error types
 - Added open-drain pin mode support for PWM output [#313]
+- Added missing error flags for dma streams [#318]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 [#297]: https://github.com/stm32-rs/stm32f4xx-hal/pull/297
 [#302]: https://github.com/stm32-rs/stm32f4xx-hal/pull/302
 [#313]: https://github.com/stm32-rs/stm32f4xx-hal/pull/313
+[#318]: https://github.com/stm32-rs/stm32f4xx-hal/pull/318
 
 ### Changed
 
