@@ -1,5 +1,5 @@
-use crate::bb;
-use crate::stm32::{RCC, SYSCFG};
+use crate::pac::{RCC, SYSCFG};
+use crate::rcc::Enable;
 use core::ops::Deref;
 
 /// Extension trait that constrains the `SYSCFG` peripheral
@@ -15,10 +15,7 @@ impl SysCfgExt for SYSCFG {
             let rcc = &(*RCC::ptr());
 
             // Enable clock.
-            bb::set(&rcc.apb2enr, 14);
-
-            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-            cortex_m::asm::dsb();
+            SYSCFG::enable(rcc);
         }
 
         SysCfg(self)

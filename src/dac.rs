@@ -6,12 +6,12 @@
 use core::mem;
 
 use crate::{
-    bb,
     gpio::{
         gpioa::{PA4, PA5},
         Analog,
     },
     pac::{DAC, RCC},
+    rcc::{Enable, Reset},
 };
 
 pub struct C1;
@@ -47,20 +47,12 @@ where
     PINS: Pins<DAC>,
 {
     unsafe {
-        const EN_BIT: u8 = 29;
-        const RESET_BIT: u8 = 29;
-
         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
         let rcc = &(*RCC::ptr());
 
         // Enable and reset clock.
-        bb::set(&rcc.apb1enr, EN_BIT);
-
-        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-        cortex_m::asm::dsb();
-
-        bb::set(&rcc.apb1rstr, RESET_BIT);
-        bb::clear(&rcc.apb1rstr, RESET_BIT);
+        DAC::enable(rcc);
+        DAC::reset(rcc);
 
         // NOTE(unsafe) ZST, doesn't need initialization.
         mem::MaybeUninit::uninit().assume_init()

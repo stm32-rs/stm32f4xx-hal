@@ -1,4 +1,4 @@
-use crate::stm32::RCC;
+use crate::pac::RCC;
 
 pub struct MainPll {
     pub use_pll: bool,

@@ -5,8 +5,9 @@
 use stm32_i2s_v12x::{Instance, RegisterBlock};
 
 use crate::pac::RCC;
+use crate::rcc::{Enable, Reset};
 use crate::time::Hertz;
-use crate::{bb, rcc::Clocks, spi};
+use crate::{rcc::Clocks, spi};
 
 // I2S pins are mostly the same as the corresponding SPI pins:
 // MOSI -> SD
@@ -281,14 +282,6 @@ mod ws_pins {
     }
 }
 
-// All STM32F4 models use the same bits in APB1ENR, APB2ENR, APB1RSTR, and APB2RSTR to enable
-// and reset the SPI peripherals.
-// SPI1: APB2 bit 12
-// SPI2: APB1 bit 14
-// SPI3: APB1 bit 15
-// SPI4: APB2 bit 13
-// SPI5: APB2 bit 20
-
 /// Implements Instance for I2s<$SPIX, _> and creates an I2s::$spix function to create and enable
 /// the peripheral
 ///
@@ -297,12 +290,8 @@ mod ws_pins {
 /// function that creates an I2s and enables the peripheral clock.
 /// $clock: The name of the Clocks function that returns the frequency of the I2S clock input
 /// to this SPI peripheral (i2s_cl, i2s_apb1_clk, or i2s2_apb_clk)
-/// $apbxenr: The lowercase name of the RCC peripheral enable register (apb1enr or apb2enr)
-/// $apbxrstr: The lowercase name of the RCC peripheral reset register (apb1rstr or apb2rstr)
-/// $rcc_bit: The index (starting at 0) in $apbxenr and $apbxrstr of the enable and reset bits
-/// for this SPI peripheral
 macro_rules! i2s {
-    ($SPIX:ty, $i2sx:ident, $clock:ident, $apbxenr:ident, $apbxrstr:ident, $rcc_bit:expr) => {
+    ($SPIX:ty, $i2sx:ident, $clock:ident) => {
         impl<PINS> I2s<$SPIX, PINS>
         where
             PINS: Pins<$SPIX>,
@@ -326,13 +315,8 @@ macro_rules! i2s {
                     // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                     let rcc = &(*RCC::ptr());
                     // Enable clock, enable reset, clear, reset
-                    bb::set(&rcc.$apbxenr, $rcc_bit);
-
-                    // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                    cortex_m::asm::dsb();
-
-                    bb::set(&rcc.$apbxrstr, $rcc_bit);
-                    bb::clear(&rcc.$apbxrstr, $rcc_bit);
+                    <$SPIX>::enable(rcc);
+                    <$SPIX>::reset(rcc);
                 }
                 I2s {
                     _spi: spi,
@@ -356,14 +340,14 @@ macro_rules! i2s {
 // have two different I2S clocks while other models have only one.
 
 #[cfg(any(feature = "stm32f410", feature = "stm32f411"))]
-i2s!(crate::pac::SPI1, i2s1, i2s_clk, apb2enr, apb2rstr, 12);
+i2s!(crate::pac::SPI1, i2s1, i2s_clk);
 #[cfg(any(
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423",
     feature = "stm32f446",
 ))]
-i2s!(crate::pac::SPI1, i2s1, i2s_apb2_clk, apb2enr, apb2rstr, 12);
+i2s!(crate::pac::SPI1, i2s1, i2s_apb2_clk);
 
 // All STM32F4 models support SPI2/I2S2
 #[cfg(not(any(
@@ -372,14 +356,14 @@ i2s!(crate::pac::SPI1, i2s1, i2s_apb2_clk, apb2enr, apb2rstr, 12);
     feature = "stm32f423",
     feature = "stm32f446",
 )))]
-i2s!(crate::pac::SPI2, i2s2, i2s_clk, apb1enr, apb1rstr, 14);
+i2s!(crate::pac::SPI2, i2s2, i2s_clk);
 #[cfg(any(
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423",
     feature = "stm32f446",
 ))]
-i2s!(crate::pac::SPI2, i2s2, i2s_apb1_clk, apb1enr, apb1rstr, 14);
+i2s!(crate::pac::SPI2, i2s2, i2s_apb1_clk);
 
 // All STM32F4 models except STM32F410 support SPI3/I2S3
 #[cfg(any(
@@ -396,24 +380,24 @@ i2s!(crate::pac::SPI2, i2s2, i2s_apb1_clk, apb1enr, apb1rstr, 14);
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-i2s!(crate::pac::SPI3, i2s3, i2s_clk, apb1enr, apb1rstr, 15);
+i2s!(crate::pac::SPI3, i2s3, i2s_clk);
 #[cfg(any(
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423",
     feature = "stm32f446",
 ))]
-i2s!(crate::pac::SPI3, i2s3, i2s_apb1_clk, apb1enr, apb1rstr, 15);
+i2s!(crate::pac::SPI3, i2s3, i2s_apb1_clk);
 
 #[cfg(feature = "stm32f411")]
-i2s!(crate::pac::SPI4, i2s4, i2s_clk, apb2enr, apb2rstr, 13);
+i2s!(crate::pac::SPI4, i2s4, i2s_clk);
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
-i2s!(crate::pac::SPI4, i2s4, i2s_apb2_clk, apb2enr, apb2rstr, 13);
+i2s!(crate::pac::SPI4, i2s4, i2s_apb2_clk);
 
 #[cfg(any(feature = "stm32f410", feature = "stm32f411"))]
-i2s!(crate::pac::SPI5, i2s5, i2s_clk, apb2enr, apb2rstr, 20);
+i2s!(crate::pac::SPI5, i2s5, i2s_clk);
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
-i2s!(crate::pac::SPI5, i2s5, i2s_apb2_clk, apb2enr, apb2rstr, 20);
+i2s!(crate::pac::SPI5, i2s5, i2s_apb2_clk);
 
 /// An I2s wrapper around an SPI object and pins
 pub struct I2s<I, PINS> {

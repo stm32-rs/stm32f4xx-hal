@@ -2,7 +2,7 @@
 
 use crate::{
     hal::watchdog::{Watchdog, WatchdogEnable},
-    stm32::{DBGMCU, IWDG},
+    pac::{DBGMCU, IWDG},
     time::MilliSeconds,
 };
 

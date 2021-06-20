@@ -73,41 +73,17 @@ pub use self::pins::{
 };
 pub use self::timing::{AccessMode, Timing};
 
-use crate::bb;
 use crate::pac::RCC;
+use crate::rcc::{Enable, Reset};
 
 // Use the FMC or FSMC, whichever is available, and treat it like an FSMC
-#[cfg(any(
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(feature = "fmc")]
 use crate::pac::fmc as fsmc;
-#[cfg(not(any(
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-)))]
+#[cfg(feature = "fsmc")]
 use crate::pac::fsmc;
-#[cfg(any(
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(feature = "fmc")]
 use crate::pac::FMC as FSMC;
-#[cfg(not(any(
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-)))]
+#[cfg(feature = "fsmc")]
 use crate::pac::FSMC;
 
 /// A sub-bank of bank 1, with its own chip select output
@@ -236,14 +212,8 @@ where
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
             let rcc = &(*RCC::ptr());
             // Enable the FSMC/FMC peripheral
-            // All STM32F4 models with an FSMC or FMC use bit 0 in AHB3ENR and AHB3RSTR.
-            bb::set(&rcc.ahb3enr, 0);
-
-            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-            cortex_m::asm::dsb();
-            // Reset FSMC/FMC
-            bb::set(&rcc.ahb3rstr, 0);
-            bb::clear(&rcc.ahb3rstr, 0);
+            FSMC::enable(rcc);
+            FSMC::reset(rcc);
         }
 
         // Configure memory type and basic interface settings
@@ -277,10 +247,9 @@ where
             let rcc = &(*RCC::ptr());
             // All STM32F4 models with an FSMC or FMC use bit 0 in AHB3ENR and AHB3RSTR.
             // Reset FSMC/FMC
-            bb::set(&rcc.ahb3rstr, 0);
-            bb::clear(&rcc.ahb3rstr, 0);
+            FSMC::reset(rcc);
             // Disable the FSMC/FMC peripheral
-            bb::clear(&rcc.ahb3enr, 0);
+            FSMC::disable(rcc);
         }
 
         (self.fsmc, self.pins)

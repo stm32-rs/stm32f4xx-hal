@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `Enable`, `LPEnable` and `Reset` traits in `rcc`. Implemented for all used peripherals
+- Features corresponding to peripherals
 - Fixed typo in string representation in DMAError type
 - Added an example of integration with RTIC.
 - Added internal pullup configuaration for the AlternateOD pin type

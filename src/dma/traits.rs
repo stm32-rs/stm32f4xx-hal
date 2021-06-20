@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
     adc::Adc,
-    bb,
     pac::{self, DMA1, DMA2, RCC},
+    rcc::{Enable, Reset},
     serial::{Rx, Tx},
 };
 use core::ops::Deref;
@@ -265,36 +265,24 @@ pub trait RccEnable: Sealed {
     fn rcc_enable(&self);
 }
 
-impl RccEnable for pac::DMA1 {
+impl RccEnable for DMA1 {
     fn rcc_enable(&self) {
         unsafe {
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
             let rcc = &(*RCC::ptr());
-            // Enable and reset the timer peripheral
-            bb::set(&rcc.ahb1enr, 21);
-
-            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-            cortex_m::asm::dsb();
-
-            bb::set(&rcc.ahb1rstr, 21);
-            bb::clear(&rcc.ahb1rstr, 21);
+            DMA1::enable(rcc);
+            DMA1::reset(rcc);
         }
     }
 }
 
-impl RccEnable for pac::DMA2 {
+impl RccEnable for DMA2 {
     fn rcc_enable(&self) {
         unsafe {
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
             let rcc = &(*RCC::ptr());
-            // Enable and reset the timer peripheral
-            bb::set(&rcc.ahb1enr, 22);
-
-            // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-            cortex_m::asm::dsb();
-
-            bb::set(&rcc.ahb1rstr, 22);
-            bb::clear(&rcc.ahb1rstr, 22);
+            DMA2::enable(rcc);
+            DMA2::reset(rcc);
         }
     }
 }

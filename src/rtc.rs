@@ -3,9 +3,8 @@
 //! [ST AN4759](https:/www.st.com%2Fresource%2Fen%2Fapplication_note%2Fdm00226326-using-the-hardware-realtime-clock-rtc-and-the-tamper-management-unit-tamp-with-stm32-microcontrollers-stmicroelectronics.pdf&usg=AOvVaw3PzvL2TfYtwS32fw-Uv37h)
 
 use crate::bb;
-use crate::pac::{PWR, RTC};
-use crate::stm32::rcc::RegisterBlock;
-use crate::stm32::RCC;
+use crate::pac::{rcc::RegisterBlock, PWR, RCC, RTC};
+use crate::rcc::Enable;
 use core::convert::TryInto;
 use rtcc::{Datelike, Hours, NaiveDate, NaiveDateTime, NaiveTime, Rtcc, Timelike};
 
@@ -442,12 +441,7 @@ fn enable_lse(rcc: &RegisterBlock, bypass: bool) {
 fn unlock(rcc: &RegisterBlock, pwr: &mut PWR) {
     // Enable the backup interface
     // Set APB1 - Bit 28 (PWREN)
-    unsafe {
-        bb::set(&rcc.apb1enr, 28);
-    }
-
-    // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-    cortex_m::asm::dsb();
+    PWR::enable(rcc);
 
     pwr.cr.modify(|_, w| {
         w
