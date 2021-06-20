@@ -2,6 +2,7 @@
 //! For more details, see
 //! [ST AN4759](https:/www.st.com%2Fresource%2Fen%2Fapplication_note%2Fdm00226326-using-the-hardware-realtime-clock-rtc-and-the-tamper-management-unit-tamp-with-stm32-microcontrollers-stmicroelectronics.pdf&usg=AOvVaw3PzvL2TfYtwS32fw-Uv37h)
 
+use crate::bb;
 use crate::pac::{rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
 use core::convert::TryInto;
@@ -414,15 +415,27 @@ fn hours_to_u8(hours: Hours) -> Result<u8, Error> {
 /// Enable the low frequency external oscillator. This is the only mode currently
 /// supported, to avoid exposing the `CR` and `CRS` registers.
 fn enable_lse(rcc: &RegisterBlock, bypass: bool) {
-    // Force a reset of the backup domain.
-    rcc.bdcr.modify(|_, w| w.bdrst().set_bit());
-    rcc.bdcr.modify(|_, w| w.bdrst().clear_bit());
-    // Enable the LSE.
-    rcc.bdcr
-        .modify(|_, w| w.lseon().set_bit().lsebyp().bit(bypass));
-    while rcc.bdcr.read().lserdy().bit_is_clear() {}
-    // Set clock source to LSE.
-    rcc.bdcr.modify(|_, w| w.rtcsel().lse());
+    unsafe {
+        // Force a reset of the backup domain.
+        // Set BDCR - Bit 16 (BDRST)
+        bb::set(&rcc.bdcr, 16);
+        // Clear BDCR - Bit 16 (BDRST)
+        bb::clear(&rcc.bdcr, 16);
+        // Enable the LSE.
+        // Set BDCR - Bit 0 (LSEON)
+        bb::set(&rcc.bdcr, 0);
+        if bypass {
+            // Set BDCR - Bit 2 (LSEBYP)
+            bb::set(&rcc.bdcr, 2);
+        } else {
+            // Clear BDCR - Bit 2 (LSEBYP)
+            bb::clear(&rcc.bdcr, 2);
+        }
+        while rcc.bdcr.read().lserdy().bit_is_clear() {}
+        // Set clock source to LSE.
+        // Set BDCR - Bit 8 (RTCSEL to value for LSE)
+        bb::set(&rcc.bdcr, 8);
+    }
 }
 
 fn unlock(rcc: &RegisterBlock, pwr: &mut PWR) {
@@ -440,5 +453,8 @@ fn unlock(rcc: &RegisterBlock, pwr: &mut PWR) {
 
 fn enable(rcc: &RegisterBlock) {
     // Start the actual RTC.
-    rcc.bdcr.modify(|_, w| w.rtcen().set_bit());
+    // Set BDCR - Bit 15 (RTCEN)
+    unsafe {
+        bb::set(&rcc.bdcr, 15);
+    }
 }

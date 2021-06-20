@@ -1,5 +1,5 @@
 use crate::{
-    hal,
+    bb, hal,
     pac::RCC,
     rcc::{Clocks, Enable, Reset},
     time::Hertz,
@@ -210,12 +210,12 @@ macro_rules! pwm_all_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -239,12 +239,12 @@ macro_rules! pwm_all_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -268,12 +268,12 @@ macro_rules! pwm_all_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc3e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 8) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc3e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 8) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -297,12 +297,12 @@ macro_rules! pwm_all_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc4e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 12) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc4e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 12) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -386,12 +386,12 @@ macro_rules! pwm_2_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -415,12 +415,12 @@ macro_rules! pwm_2_channels {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -497,12 +497,12 @@ macro_rules! pwm_1_channel {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -595,12 +595,12 @@ macro_rules! pwm_tim5_f410 {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc1e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 0) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -624,12 +624,12 @@ macro_rules! pwm_tim5_f410 {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 4) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc2e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 4) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -653,12 +653,12 @@ macro_rules! pwm_tim5_f410 {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc3e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 8) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc3e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 8) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
@@ -682,12 +682,12 @@ macro_rules! pwm_tim5_f410 {
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn disable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc4e().clear_bit()); }
+                    unsafe { bb::clear(&(*$TIMX::ptr()).ccer, 12) }
                 }
 
                 //NOTE(unsafe) atomic write with no side effects
                 fn enable(&mut self) {
-                    unsafe { (*$TIMX::ptr()).ccer.modify(|_,w| w.cc4e().set_bit()); }
+                    unsafe { bb::set(&(*$TIMX::ptr()).ccer, 12) }
                 }
 
                 //NOTE(unsafe) atomic read with no side effects
