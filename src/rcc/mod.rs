@@ -826,7 +826,7 @@ impl CFGR {
             sysclk
         };
 
-        assert!(unchecked || !sysclk_on_pll || sysclk <= SYSCLK_MAX && sysclk >= SYSCLK_MIN);
+        assert!(unchecked || !sysclk_on_pll || (SYSCLK_MIN..=SYSCLK_MAX).contains(&sysclk));
 
         let hclk = self.hclk.unwrap_or(sysclk);
         let (hpre_bits, hpre_div) = match (sysclk + hclk - 1) / hclk {

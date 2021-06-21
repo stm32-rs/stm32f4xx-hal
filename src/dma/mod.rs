@@ -1449,6 +1449,7 @@ where
         n_transfers
     }
 
+    #[allow(clippy::branches_sharing_code)]
     fn next_transfer_common(
         &mut self,
         new_buf: BUF,
@@ -1528,6 +1529,7 @@ where
     ///
     /// Memory corruption might occur in the previous buffer, the one passed to the closure, if an
     /// overrun occurs in double buffering mode.
+    #[allow(clippy::branches_sharing_code)]
     unsafe fn next_transfer_with_common(
         &mut self,
         new_buf: BUF,
@@ -1570,7 +1572,6 @@ where
                 compiler_fence(Ordering::Acquire);
 
                 self.buf.replace(new_buf);
-                return;
             } else {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
@@ -1585,8 +1586,8 @@ where
                 compiler_fence(Ordering::Acquire);
 
                 self.double_buf.replace(new_buf);
-                return;
             }
+            return;
         }
         let (buf_ptr, buf_len) = ptr_and_len;
         self.stream.set_memory_address(buf_ptr as u32);

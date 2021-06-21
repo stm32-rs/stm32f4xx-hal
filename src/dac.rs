@@ -3,7 +3,6 @@
 //! Currently only supports writing to the DR of the DAC,
 //! just a basic one-shot conversion.
 #![deny(unused_imports)]
-use core::mem;
 
 use crate::{
     gpio::{
@@ -28,18 +27,29 @@ pub trait DacPin {
 
 pub trait Pins<DAC> {
     type Output;
+    #[doc(hidden)]
+    fn init() -> Self::Output;
 }
 
 impl Pins<DAC> for PA4<Analog> {
     type Output = C1;
+    fn init() -> Self::Output {
+        C1
+    }
 }
 
 impl Pins<DAC> for PA5<Analog> {
     type Output = C2;
+    fn init() -> Self::Output {
+        C2
+    }
 }
 
 impl Pins<DAC> for (PA4<Analog>, PA5<Analog>) {
     type Output = (C1, C2);
+    fn init() -> Self::Output {
+        (C1, C2)
+    }
 }
 
 pub fn dac<PINS>(_dac: DAC, _pins: PINS) -> PINS::Output
@@ -54,8 +64,7 @@ where
         DAC::enable(rcc);
         DAC::reset(rcc);
 
-        // NOTE(unsafe) ZST, doesn't need initialization.
-        mem::MaybeUninit::uninit().assume_init()
+        PINS::init()
     }
 }
 

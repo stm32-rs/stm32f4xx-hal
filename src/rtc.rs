@@ -166,7 +166,7 @@ impl Rtcc for Rtc {
     }
 
     fn set_weekday(&mut self, weekday: u8) -> Result<(), Self::Error> {
-        if (weekday < 1) || (weekday > 7) {
+        if !(1..=7).contains(&weekday) {
             return Err(Error::InvalidInputData);
         }
         self.modify(|regs| regs.dr.modify(|_, w| unsafe { w.wdu().bits(weekday) }));
@@ -175,7 +175,7 @@ impl Rtcc for Rtc {
     }
 
     fn set_day(&mut self, day: u8) -> Result<(), Self::Error> {
-        if (day < 1) || (day > 31) {
+        if !(1..=31).contains(&day) {
             return Err(Error::InvalidInputData);
         }
         let (dt, du) = bcd2_encode(day as u32)?;
@@ -185,7 +185,7 @@ impl Rtcc for Rtc {
     }
 
     fn set_month(&mut self, month: u8) -> Result<(), Self::Error> {
-        if (month < 1) || (month > 12) {
+        if !(1..=12).contains(&month) {
             return Err(Error::InvalidInputData);
         }
         let (mt, mu) = bcd2_encode(month as u32)?;
@@ -195,7 +195,7 @@ impl Rtcc for Rtc {
     }
 
     fn set_year(&mut self, year: u16) -> Result<(), Self::Error> {
-        if (year < 1970) || (year > 2038) {
+        if !(1970..=2038).contains(&year) {
             return Err(Error::InvalidInputData);
         }
         let (yt, yu) = bcd2_encode(year as u32 - 1970)?;
