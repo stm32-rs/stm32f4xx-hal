@@ -196,6 +196,7 @@ use crate::rcc::Clocks;
 use crate::time::Hertz;
 
 /// SPI error
+#[non_exhaustive]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     /// Overrun occurred
@@ -204,8 +205,6 @@ pub enum Error {
     ModeFault,
     /// CRC error
     Crc,
-    #[doc(hidden)]
-    _Extensible,
 }
 
 pub trait Pins<SPI> {}

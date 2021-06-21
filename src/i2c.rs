@@ -462,7 +462,7 @@ where
         // Calculate settings for I2C speed modes
         let clock = pclk.0;
         let freq = clock / 1_000_000;
-        assert!(freq >= 2 && freq <= 50);
+        assert!((2..=50).contains(&freq));
 
         // Configure bus frequency into I2C peripheral
         self.i2c.cr2.write(|w| unsafe { w.freq().bits(freq as u8) });

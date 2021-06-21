@@ -58,7 +58,7 @@ impl MainPll {
             .unwrap();
 
         let vco_in = pllsrcclk / pllm;
-        assert!(vco_in >= 1_000_000 && vco_in <= 2_000_000);
+        assert!((1_000_000..=2_000_000).contains(&vco_in));
 
         // Main scaler, must result in >= 100MHz (>= 192MHz for F401)
         // and <= 432MHz, min 50, max 432
@@ -493,7 +493,7 @@ impl SingleOutputPll {
                 let target_vco_out = target * outdiv;
                 let n = (target_vco_out + (vco_in >> 1)) / vco_in;
                 let vco_out = vco_in * n;
-                if vco_out < 100_000_000 || vco_out > 432_000_000 {
+                if !(100_000_000..=432_000_000).contains(&vco_out) {
                     return None;
                 }
                 let output = vco_out / outdiv;

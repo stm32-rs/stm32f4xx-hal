@@ -343,6 +343,7 @@ use crate::rcc::Clocks;
 use crate::dma::traits::PeriAddress;
 
 /// Serial error
+#[non_exhaustive]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     /// Framing error
@@ -353,8 +354,6 @@ pub enum Error {
     Overrun,
     /// Parity check error
     Parity,
-    #[doc(hidden)]
-    _Extensible,
 }
 
 /// Interrupt event
@@ -951,15 +950,9 @@ where
                         WordLength::DataBits9 => true,
                     })
                     .pce()
-                    .bit(match config.parity {
-                        Parity::ParityNone => false,
-                        _ => true,
-                    })
+                    .bit(!matches!(config.parity, Parity::ParityNone))
                     .ps()
-                    .bit(match config.parity {
-                        Parity::ParityOdd => true,
-                        _ => false,
-                    })
+                    .bit(matches!(config.parity, Parity::ParityOdd))
             })
         };
 
