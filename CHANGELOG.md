@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `PinExt` trait. Make `ExtiPin` implementation generic
 - `Enable`, `LPEnable` and `Reset` traits in `rcc`. Implemented for all used peripherals
 - Features corresponding to peripherals
 - Fixed typo in string representation in DMAError type
