@@ -25,22 +25,23 @@ pub trait PinExt {
     fn port_id(&self) -> u8;
 }
 
-pub struct AF0;
-pub struct AF1;
-pub struct AF2;
-pub struct AF3;
-pub struct AF4;
-pub struct AF5;
-pub struct AF6;
-pub struct AF7;
-pub struct AF8;
-pub struct AF9;
-pub struct AF10;
-pub struct AF11;
-pub struct AF12;
-pub struct AF13;
-pub struct AF14;
-pub struct AF15;
+pub struct AF<const A: u8>;
+pub type AF0 = AF<0>;
+pub type AF1 = AF<1>;
+pub type AF2 = AF<2>;
+pub type AF3 = AF<3>;
+pub type AF4 = AF<4>;
+pub type AF5 = AF<5>;
+pub type AF6 = AF<6>;
+pub type AF7 = AF<7>;
+pub type AF8 = AF<8>;
+pub type AF9 = AF<9>;
+pub type AF10 = AF<10>;
+pub type AF11 = AF<11>;
+pub type AF12 = AF<12>;
+pub type AF13 = AF<13>;
+pub type AF14 = AF<14>;
+pub type AF15 = AF<15>;
 
 /// Some alternate mode (type state)
 pub struct Alternate<MODE> {
@@ -281,9 +282,10 @@ impl<MODE, const P: u8> InputPin for PXx<Input<MODE>, P> {
     }
 }
 
-fn _set_alternate_mode<const P: u8, const N: u8>(mode: u32) {
+fn _set_alternate_mode<const P: u8, const N: u8, const A: u8>() {
     let offset = 2 * { N };
     let offset2 = 4 * { N };
+    let mode = A as u32;
     unsafe {
         if offset2 < 32 {
             (*Gpio::<P>::ptr())
@@ -325,195 +327,240 @@ impl<MODE, const P: u8, const N: u8> PinExt for PX<MODE, P, N> {
 }
 
 impl<MODE, const P: u8, const N: u8> PX<MODE, P, N> {
+    /// Configures the pin to operate alternate mode
+    pub fn into_alternate<const A: u8>(self) -> PX<Alternate<AF<A>>, P, N> {
+        assert!(A < 16);
+        _set_alternate_mode::<P, N, A>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in alternate open drain mode
+    pub fn into_alternate_open_drain<const A: u8>(self) -> PX<AlternateOD<AF<A>>, P, N> {
+        assert!(A < 16);
+        _set_alternate_mode::<P, N, A>();
+        PX::new().set_open_drain()
+    }
+
     /// Configures the pin to operate in AF0 mode
-    pub fn into_alternate_af0(self) -> PX<Alternate<AF0>, P, N> {
-        _set_alternate_mode::<P, N>(0);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af0(self) -> PX<Alternate<AF<0>>, P, N> {
+        _set_alternate_mode::<P, N, 0>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF1 mode
-    pub fn into_alternate_af1(self) -> PX<Alternate<AF1>, P, N> {
-        _set_alternate_mode::<P, N>(1);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af1(self) -> PX<Alternate<AF<1>>, P, N> {
+        _set_alternate_mode::<P, N, 1>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF2 mode
-    pub fn into_alternate_af2(self) -> PX<Alternate<AF2>, P, N> {
-        _set_alternate_mode::<P, N>(2);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af2(self) -> PX<Alternate<AF<2>>, P, N> {
+        _set_alternate_mode::<P, N, 2>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF3 mode
-    pub fn into_alternate_af3(self) -> PX<Alternate<AF3>, P, N> {
-        _set_alternate_mode::<P, N>(3);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af3(self) -> PX<Alternate<AF<3>>, P, N> {
+        _set_alternate_mode::<P, N, 3>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF4 mode
-    pub fn into_alternate_af4(self) -> PX<Alternate<AF4>, P, N> {
-        _set_alternate_mode::<P, N>(4);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af4(self) -> PX<Alternate<AF<4>>, P, N> {
+        _set_alternate_mode::<P, N, 4>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF5 mode
-    pub fn into_alternate_af5(self) -> PX<Alternate<AF5>, P, N> {
-        _set_alternate_mode::<P, N>(5);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af5(self) -> PX<Alternate<AF<5>>, P, N> {
+        _set_alternate_mode::<P, N, 5>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF6 mode
-    pub fn into_alternate_af6(self) -> PX<Alternate<AF6>, P, N> {
-        _set_alternate_mode::<P, N>(6);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af6(self) -> PX<Alternate<AF<6>>, P, N> {
+        _set_alternate_mode::<P, N, 6>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF7 mode
-    pub fn into_alternate_af7(self) -> PX<Alternate<AF7>, P, N> {
-        _set_alternate_mode::<P, N>(7);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af7(self) -> PX<Alternate<AF<7>>, P, N> {
+        _set_alternate_mode::<P, N, 7>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF8 mode
-    pub fn into_alternate_af8(self) -> PX<Alternate<AF8>, P, N> {
-        _set_alternate_mode::<P, N>(8);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af8(self) -> PX<Alternate<AF<8>>, P, N> {
+        _set_alternate_mode::<P, N, 8>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF9 mode
-    pub fn into_alternate_af9(self) -> PX<Alternate<AF9>, P, N> {
-        _set_alternate_mode::<P, N>(9);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af9(self) -> PX<Alternate<AF<9>>, P, N> {
+        _set_alternate_mode::<P, N, 9>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF10 mode
-    pub fn into_alternate_af10(self) -> PX<Alternate<AF10>, P, N> {
-        _set_alternate_mode::<P, N>(10);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af10(self) -> PX<Alternate<AF<10>>, P, N> {
+        _set_alternate_mode::<P, N, 10>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF11 mode
-    pub fn into_alternate_af11(self) -> PX<Alternate<AF11>, P, N> {
-        _set_alternate_mode::<P, N>(11);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af11(self) -> PX<Alternate<AF<11>>, P, N> {
+        _set_alternate_mode::<P, N, 11>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF12 mode
-    pub fn into_alternate_af12(self) -> PX<Alternate<AF12>, P, N> {
-        _set_alternate_mode::<P, N>(12);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af12(self) -> PX<Alternate<AF<12>>, P, N> {
+        _set_alternate_mode::<P, N, 12>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF13 mode
-    pub fn into_alternate_af13(self) -> PX<Alternate<AF13>, P, N> {
-        _set_alternate_mode::<P, N>(13);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af13(self) -> PX<Alternate<AF<13>>, P, N> {
+        _set_alternate_mode::<P, N, 13>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF14 mode
-    pub fn into_alternate_af14(self) -> PX<Alternate<AF14>, P, N> {
-        _set_alternate_mode::<P, N>(14);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af14(self) -> PX<Alternate<AF<14>>, P, N> {
+        _set_alternate_mode::<P, N, 14>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF15 mode
-    pub fn into_alternate_af15(self) -> PX<Alternate<AF15>, P, N> {
-        _set_alternate_mode::<P, N>(15);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af15(self) -> PX<Alternate<AF<15>>, P, N> {
+        _set_alternate_mode::<P, N, 15>();
         PX::new()
     }
 
     /// Configures the pin to operate in AF0 open drain mode
-    pub fn into_alternate_af0_open_drain(self) -> PX<AlternateOD<AF0>, P, N> {
-        _set_alternate_mode::<P, N>(0);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af0_open_drain(self) -> PX<AlternateOD<AF<0>>, P, N> {
+        _set_alternate_mode::<P, N, 0>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF1 open drain mode
-    pub fn into_alternate_af1_open_drain(self) -> PX<AlternateOD<AF1>, P, N> {
-        _set_alternate_mode::<P, N>(1);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af1_open_drain(self) -> PX<AlternateOD<AF<1>>, P, N> {
+        _set_alternate_mode::<P, N, 1>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF2 open drain mode
-    pub fn into_alternate_af2_open_drain(self) -> PX<AlternateOD<AF2>, P, N> {
-        _set_alternate_mode::<P, N>(2);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af2_open_drain(self) -> PX<AlternateOD<AF<2>>, P, N> {
+        _set_alternate_mode::<P, N, 2>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF3 open drain mode
-    pub fn into_alternate_af3_open_drain(self) -> PX<AlternateOD<AF3>, P, N> {
-        _set_alternate_mode::<P, N>(3);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af3_open_drain(self) -> PX<AlternateOD<AF<3>>, P, N> {
+        _set_alternate_mode::<P, N, 3>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF4 open drain mode
-    pub fn into_alternate_af4_open_drain(self) -> PX<AlternateOD<AF4>, P, N> {
-        _set_alternate_mode::<P, N>(4);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af4_open_drain(self) -> PX<AlternateOD<AF<4>>, P, N> {
+        _set_alternate_mode::<P, N, 4>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF5 open drain mode
-    pub fn into_alternate_af5_open_drain(self) -> PX<AlternateOD<AF5>, P, N> {
-        _set_alternate_mode::<P, N>(5);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af5_open_drain(self) -> PX<AlternateOD<AF<5>>, P, N> {
+        _set_alternate_mode::<P, N, 5>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF6 open drain mode
-    pub fn into_alternate_af6_open_drain(self) -> PX<AlternateOD<AF6>, P, N> {
-        _set_alternate_mode::<P, N>(6);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af6_open_drain(self) -> PX<AlternateOD<AF<6>>, P, N> {
+        _set_alternate_mode::<P, N, 6>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF7 open drain mode
-    pub fn into_alternate_af7_open_drain(self) -> PX<AlternateOD<AF7>, P, N> {
-        _set_alternate_mode::<P, N>(7);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af7_open_drain(self) -> PX<AlternateOD<AF<7>>, P, N> {
+        _set_alternate_mode::<P, N, 7>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF8 open drain mode
-    pub fn into_alternate_af8_open_drain(self) -> PX<AlternateOD<AF8>, P, N> {
-        _set_alternate_mode::<P, N>(8);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af8_open_drain(self) -> PX<AlternateOD<AF<8>>, P, N> {
+        _set_alternate_mode::<P, N, 8>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF9 open drain mode
-    pub fn into_alternate_af9_open_drain(self) -> PX<AlternateOD<AF9>, P, N> {
-        _set_alternate_mode::<P, N>(9);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af9_open_drain(self) -> PX<AlternateOD<AF<9>>, P, N> {
+        _set_alternate_mode::<P, N, 9>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF10 open drain mode
-    pub fn into_alternate_af10_open_drain(self) -> PX<AlternateOD<AF10>, P, N> {
-        _set_alternate_mode::<P, N>(10);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af10_open_drain(self) -> PX<AlternateOD<AF<10>>, P, N> {
+        _set_alternate_mode::<P, N, 10>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF11 open drain mode
-    pub fn into_alternate_af11_open_drain(self) -> PX<AlternateOD<AF11>, P, N> {
-        _set_alternate_mode::<P, N>(11);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af11_open_drain(self) -> PX<AlternateOD<AF<11>>, P, N> {
+        _set_alternate_mode::<P, N, 11>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF12 open drain mode
-    pub fn into_alternate_af12_open_drain(self) -> PX<AlternateOD<AF12>, P, N> {
-        _set_alternate_mode::<P, N>(12);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af12_open_drain(self) -> PX<AlternateOD<AF<12>>, P, N> {
+        _set_alternate_mode::<P, N, 12>();
         PX::new().set_open_drain()
     }
 
-    /// Configures the pin to operate in AF13 open drain mode
-    pub fn into_alternate_af13_open_drain(self) -> PX<AlternateOD<AF13>, P, N> {
-        _set_alternate_mode::<P, N>(13);
+    /// Configures the pin to operate in AF13 open drain modev
+    pub fn into_alternate_af13_open_drain(self) -> PX<AlternateOD<AF<13>>, P, N> {
+        _set_alternate_mode::<P, N, 13>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF14 open drain mode
-    pub fn into_alternate_af14_open_drain(self) -> PX<AlternateOD<AF14>, P, N> {
-        _set_alternate_mode::<P, N>(14);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af14_open_drain(self) -> PX<AlternateOD<AF<14>>, P, N> {
+        _set_alternate_mode::<P, N, 14>();
         PX::new().set_open_drain()
     }
 
     /// Configures the pin to operate in AF15 open drain mode
-    pub fn into_alternate_af15_open_drain(self) -> PX<AlternateOD<AF15>, P, N> {
-        _set_alternate_mode::<P, N>(15);
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af15_open_drain(self) -> PX<AlternateOD<AF<15>>, P, N> {
+        _set_alternate_mode::<P, N, 15>();
         PX::new().set_open_drain()
     }
 

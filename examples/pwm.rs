@@ -16,10 +16,7 @@ fn main() -> ! {
         let clocks = rcc.cfgr.freeze();
 
         let gpioa = dp.GPIOA.split();
-        let channels = (
-            gpioa.pa8.into_alternate_af1(),
-            gpioa.pa9.into_alternate_af1(),
-        );
+        let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
 
         let pwm = pwm::tim1(dp.TIM1, channels, clocks, 20u32.khz());
         let (mut ch1, _ch2) = pwm;
