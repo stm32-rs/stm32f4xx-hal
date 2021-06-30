@@ -329,14 +329,14 @@ impl<MODE, const P: u8, const N: u8> PinExt for PX<MODE, P, N> {
 impl<MODE, const P: u8, const N: u8> PX<MODE, P, N> {
     /// Configures the pin to operate alternate mode
     pub fn into_alternate<const A: u8>(self) -> PX<Alternate<AF<A>>, P, N> {
-        assert!(A < 16);
+        less_than_16::<A>();
         _set_alternate_mode::<P, N, A>();
         PX::new()
     }
 
     /// Configures the pin to operate in alternate open drain mode
     pub fn into_alternate_open_drain<const A: u8>(self) -> PX<AlternateOD<AF<A>>, P, N> {
-        assert!(A < 16);
+        less_than_16::<A>();
         _set_alternate_mode::<P, N, A>();
         PX::new().set_open_drain()
     }
@@ -1208,4 +1208,16 @@ impl<const P: u8> Gpio<P> {
             _ => 0 as _,
         }
     }
+}
+
+#[allow(path_statements)]
+const fn less_than_16<const A: u8>() {
+    Assert::<A, 16>::LESS;
+}
+
+/// Const assert hack
+struct Assert<const L: u8, const R: u8>;
+
+impl<const L: u8, const R: u8> Assert<L, R> {
+    pub const LESS: u8 = R - L - 1;
 }
