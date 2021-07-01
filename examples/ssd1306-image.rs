@@ -60,13 +60,13 @@ fn main() -> ! {
 
         // Set up state for the loop
         let mut orientation = DisplayRotation::Rotate0;
-        let mut was_pressed = btn.is_low().unwrap();
+        let mut was_pressed = btn.is_low();
 
         // This runs continuously, as fast as possible
         loop {
             // Check if the button has just been pressed.
             // Remember, active low.
-            let is_pressed = btn.is_low().unwrap();
+            let is_pressed = btn.is_low();
             if !was_pressed && is_pressed {
                 // Since the button was pressed, flip the screen upside down
                 orientation = get_next_rotation(orientation);

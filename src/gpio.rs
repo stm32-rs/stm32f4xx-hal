@@ -225,13 +225,13 @@ impl<MODE, const P: char> PinExt for PXx<MODE, P> {
 
 impl<MODE, const P: char> PXx<Output<MODE>, P> {
     #[inline(always)]
-    fn set_high(&mut self) {
+    pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << self.i)) }
     }
 
     #[inline(always)]
-    fn set_low(&mut self) {
+    pub fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe {
             (*Gpio::<P>::ptr())
@@ -241,12 +241,12 @@ impl<MODE, const P: char> PXx<Output<MODE>, P> {
     }
 
     #[inline(always)]
-    fn is_set_high(&self) -> bool {
+    pub fn is_set_high(&self) -> bool {
         !self.is_set_low()
     }
 
     #[inline(always)]
-    fn is_set_low(&self) -> bool {
+    pub fn is_set_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
         unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << self.i) == 0 }
     }
@@ -831,13 +831,13 @@ impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
 
 impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
     #[inline(always)]
-    fn set_high(&mut self) {
+    pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << { N })) }
     }
 
     #[inline(always)]
-    fn set_low(&mut self) {
+    pub fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe {
             (*Gpio::<P>::ptr())
@@ -847,12 +847,12 @@ impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
     }
 
     #[inline(always)]
-    fn is_set_high(&self) -> bool {
+    pub fn is_set_high(&self) -> bool {
         !self.is_set_low()
     }
 
     #[inline(always)]
-    fn is_set_low(&self) -> bool {
+    pub fn is_set_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
         unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << { N }) == 0 }
     }
@@ -1271,13 +1271,13 @@ impl<MODE> Pin<MODE> {
 
 impl<MODE> Pin<Output<MODE>> {
     #[inline(always)]
-    fn set_high(&mut self) {
+    pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
     }
 
     #[inline(always)]
-    fn set_low(&mut self) {
+    pub fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe {
             self.block()
@@ -1287,12 +1287,12 @@ impl<MODE> Pin<Output<MODE>> {
     }
 
     #[inline(always)]
-    fn is_set_high(&self) -> bool {
+    pub fn is_set_high(&self) -> bool {
         !self.is_set_low()
     }
 
     #[inline(always)]
-    fn is_set_low(&self) -> bool {
+    pub fn is_set_low(&self) -> bool {
         self.block().odr.read().bits() & (1 << self.pin_id()) == 0
     }
 

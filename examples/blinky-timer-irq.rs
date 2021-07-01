@@ -20,7 +20,6 @@ use crate::hal::{
 use core::cell::RefCell;
 use cortex_m::{asm::wfi, interrupt::Mutex};
 use cortex_m_rt::entry;
-use embedded_hal::digital::v2::OutputPin;
 use embedded_hal::timer::CountDown;
 
 // NOTE You can uncomment 'hprintln' here and in the code below for a bit more

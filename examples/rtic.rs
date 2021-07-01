@@ -38,6 +38,6 @@ const APP: () = {
     #[task(binds = EXTI0, resources = [button, led])]
     fn button_click(ctx: button_click::Context) {
         ctx.resources.button.clear_interrupt_pending_bit();
-        ctx.resources.led.toggle().unwrap();
+        ctx.resources.led.toggle();
     }
 };

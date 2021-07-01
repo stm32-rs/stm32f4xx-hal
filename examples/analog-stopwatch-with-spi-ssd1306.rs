@@ -118,9 +118,9 @@ fn main() -> ! {
     let mut ss = gpioe.pe4.into_push_pull_output();
     let mut delay = hal::delay::Delay::new(cp.SYST, clocks);
 
-    ss.set_high().unwrap();
+    ss.set_high();
     delay.delay_ms(100_u32);
-    ss.set_low().unwrap();
+    ss.set_low();
 
     // Set up the display
     let interface = SPIInterfaceNoCS::new(spi, dc);
@@ -164,21 +164,21 @@ fn main() -> ! {
 
         match state {
             StopwatchState::Ready => {
-                led3.set_high().unwrap();
-                led4.set_low().unwrap();
+                led3.set_high();
+                led4.set_low();
             }
             StopwatchState::Running => {
                 if state_led {
-                    led4.set_low().unwrap();
-                    led3.set_high().unwrap();
+                    led4.set_low();
+                    led3.set_high();
                 } else {
-                    led4.set_low().unwrap();
-                    led3.set_low().unwrap();
+                    led4.set_low();
+                    led3.set_low();
                 }
             }
             StopwatchState::Stopped => {
-                led3.set_low().unwrap();
-                led4.set_high().unwrap();
+                led3.set_low();
+                led4.set_high();
             }
         };
 
@@ -282,7 +282,7 @@ fn TIM2() {
             StopwatchState::Stopped => {
                 let mut btn_ref = BUTTON.borrow(cs).borrow_mut();
                 if let Some(ref mut btn) = btn_ref.deref_mut() {
-                    if btn.is_high().unwrap() {
+                    if btn.is_high() {
                         cell_reset.replace(val_reset + 1);
                     }
                 }

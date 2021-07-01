@@ -84,24 +84,24 @@ fn main() -> ! {
 
             // Update LEDs to display what was received
             if ((received >> 5) & 1) == 1 {
-                led_bit5.set_high().unwrap();
+                led_bit5.set_high();
             } else {
-                led_bit5.set_low().unwrap();
+                led_bit5.set_low();
             }
             if ((received >> 6) & 1) == 1 {
-                led_bit6.set_high().unwrap();
+                led_bit6.set_high();
             } else {
-                led_bit6.set_low().unwrap();
+                led_bit6.set_low();
             }
             if ((received >> 7) & 1) == 1 {
-                led_bit7.set_high().unwrap();
+                led_bit7.set_high();
             } else {
-                led_bit7.set_low().unwrap();
+                led_bit7.set_low();
             }
             if ((received >> 8) & 1) == 1 {
-                led_bit8.set_high().unwrap();
+                led_bit8.set_high();
             } else {
-                led_bit8.set_low().unwrap();
+                led_bit8.set_low();
             }
 
             delay.delay_ms(10u32);

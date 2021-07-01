@@ -145,7 +145,7 @@ fn main() -> ! {
     // Keep DAC reset low for at least one millisecond
     delay.delay_ms(1u8);
     // Release the DAC from reset
-    dac_reset.set_high().unwrap();
+    dac_reset.set_high();
     // Wait at least 550 ns before starting I2C communication
     delay.delay_us(1u8);
 

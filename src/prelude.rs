@@ -36,11 +36,28 @@
 //! ```
 //! use stm32f4xx_hal::prelude::*;
 //! ```
-pub use embedded_hal::digital::v2::InputPin as _embedded_hal_digital_v2_InputPin;
-pub use embedded_hal::digital::v2::OutputPin as _embedded_hal_digital_v2_OutputPin;
-pub use embedded_hal::digital::v2::StatefulOutputPin as _embedded_hal_digital_v2_StatefulOutputPin;
-pub use embedded_hal::digital::v2::ToggleableOutputPin as _embedded_hal_digital_v2_ToggleableOutputPin;
-pub use embedded_hal::prelude::*;
+pub use embedded_hal::adc::OneShot as _embedded_hal_adc_OneShot;
+pub use embedded_hal::blocking::delay::DelayMs as _embedded_hal_blocking_delay_DelayMs;
+pub use embedded_hal::blocking::delay::DelayUs as _embedded_hal_blocking_delay_DelayUs;
+pub use embedded_hal::blocking::i2c::{
+    Read as _embedded_hal_blocking_i2c_Read, Write as _embedded_hal_blocking_i2c_Write,
+    WriteRead as _embedded_hal_blocking_i2c_WriteRead,
+};
+pub use embedded_hal::blocking::serial::Write as _embedded_hal_blocking_serial_Write;
+pub use embedded_hal::blocking::spi::{
+    Transfer as _embedded_hal_blocking_spi_Transfer, Write as _embedded_hal_blocking_spi_Write,
+};
+pub use embedded_hal::serial::Read as _embedded_hal_serial_Read;
+pub use embedded_hal::serial::Write as _embedded_hal_serial_Write;
+pub use embedded_hal::spi::FullDuplex as _embedded_hal_spi_FullDuplex;
+pub use embedded_hal::timer::CountDown as _embedded_hal_timer_CountDown;
+pub use embedded_hal::watchdog::Watchdog as _embedded_hal_watchdog_Watchdog;
+pub use embedded_hal::watchdog::WatchdogDisable as _embedded_hal_watchdog_WatchdogDisable;
+pub use embedded_hal::watchdog::WatchdogEnable as _embedded_hal_watchdog_WatchdogEnable;
+pub use embedded_hal::Capture as _embedded_hal_Capture;
+pub use embedded_hal::Pwm as _embedded_hal_Pwm;
+pub use embedded_hal::PwmPin as _embedded_hal_PwmPin;
+pub use embedded_hal::Qei as _embedded_hal_Qei;
 
 #[cfg(all(feature = "device-selected", feature = "dac"))]
 pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;

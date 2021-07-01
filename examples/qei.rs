@@ -52,8 +52,8 @@ fn main() -> ! {
             // Light up the LED when turning clockwise, turn it off
             // when turning counter-clockwise.
             match rotary_encoder.direction() {
-                RotaryDirection::Upcounting => led.set_low().unwrap(),
-                RotaryDirection::Downcounting => led.set_high().unwrap(),
+                RotaryDirection::Upcounting => led.set_low(),
+                RotaryDirection::Downcounting => led.set_high(),
             }
 
             current_count = new_count;

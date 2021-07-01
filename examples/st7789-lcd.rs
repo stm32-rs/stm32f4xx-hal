@@ -109,14 +109,14 @@ fn main() -> ! {
     // https://github.com/STMicroelectronics/STM32CubeF4/blob/e084518f363e04344dc37822210a75e87377b200/Drivers/BSP/Components/st7789h2/st7789h2.c
 
     // Reset LCD controller
-    lcd_reset.set_low().unwrap();
+    lcd_reset.set_low();
     delay.delay_ms(5u16);
-    lcd_reset.set_high().unwrap();
+    lcd_reset.set_high();
     delay.delay_ms(10u16);
-    lcd_reset.set_low().unwrap();
+    lcd_reset.set_low();
     delay.delay_ms(20u16);
     // Release from reset
-    lcd_reset.set_high().unwrap();
+    lcd_reset.set_high();
     delay.delay_ms(10u16);
 
     // Add LCD controller driver
@@ -140,7 +140,7 @@ fn main() -> ! {
     lcd.write(0x29, &[]);
 
     // Turn on backlight
-    backlight_control.set_high().unwrap();
+    backlight_control.set_high();
 
     // Draw some circles
     let test_colors = [
