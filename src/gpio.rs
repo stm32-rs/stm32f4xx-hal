@@ -3,7 +3,7 @@
 use core::convert::Infallible;
 use core::marker::PhantomData;
 
-use embedded_hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
+use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
 
 use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
@@ -223,62 +223,130 @@ impl<MODE, const P: char> PinExt for PXx<MODE, P> {
     }
 }
 
-impl<MODE, const P: char> OutputPin for PXx<Output<MODE>, P> {
-    type Error = Infallible;
-
-    fn set_high(&mut self) -> Result<(), Self::Error> {
+impl<MODE, const P: char> PXx<Output<MODE>, P> {
+    #[inline(always)]
+    fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << self.i)) };
-        Ok(())
+        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << self.i)) }
     }
 
-    fn set_low(&mut self) -> Result<(), Self::Error> {
+    #[inline(always)]
+    fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe {
             (*Gpio::<P>::ptr())
                 .bsrr
                 .write(|w| w.bits(1 << (self.i + 16)))
-        };
-        Ok(())
+        }
+    }
+
+    #[inline(always)]
+    fn is_set_high(&self) -> bool {
+        !self.is_set_low()
+    }
+
+    #[inline(always)]
+    fn is_set_low(&self) -> bool {
+        // NOTE(unsafe) atomic read with no side effects
+        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << self.i) == 0 }
+    }
+
+    #[inline(always)]
+    pub fn toggle(&mut self) {
+        if self.is_set_low() {
+            self.set_high()
+        } else {
+            self.set_low()
+        }
+    }
+}
+
+impl<MODE, const P: char> OutputPin for PXx<Output<MODE>, P> {
+    type Error = Infallible;
+
+    #[inline(always)]
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        Ok(self.set_high())
+    }
+
+    #[inline(always)]
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        Ok(self.set_low())
     }
 }
 
 impl<MODE, const P: char> StatefulOutputPin for PXx<Output<MODE>, P> {
+    #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
-        self.is_set_low().map(|v| !v)
+        Ok(self.is_set_high())
     }
 
+    #[inline(always)]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        Ok(unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << self.i) == 0 })
+        Ok(self.is_set_low())
     }
 }
 
-impl<MODE, const P: char> toggleable::Default for PXx<Output<MODE>, P> {}
+impl<MODE, const P: char> ToggleableOutputPin for PXx<Output<MODE>, P> {
+    type Error = Infallible;
+
+    #[inline(always)]
+    fn toggle(&mut self) -> Result<(), Self::Error> {
+        Ok(self.toggle())
+    }
+}
+
+impl<const P: char> PXx<Output<OpenDrain>, P> {
+    #[inline(always)]
+    fn is_high(&self) -> bool {
+        !self.is_low()
+    }
+
+    #[inline(always)]
+    fn is_low(&self) -> bool {
+        // NOTE(unsafe) atomic read with no side effects
+        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 }
+    }
+}
 
 impl<const P: char> InputPin for PXx<Output<OpenDrain>, P> {
     type Error = Infallible;
 
+    #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
-        self.is_low().map(|v| !v)
+        Ok(self.is_high())
     }
 
+    #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(self.is_low())
+    }
+}
+
+impl<MODE, const P: char> PXx<Input<MODE>, P> {
+    #[inline(always)]
+    fn is_high(&self) -> bool {
+        !self.is_low()
+    }
+
+    #[inline(always)]
+    fn is_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        Ok(unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 })
+        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 }
     }
 }
 
 impl<MODE, const P: char> InputPin for PXx<Input<MODE>, P> {
     type Error = Infallible;
 
+    #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
-        self.is_low().map(|v| !v)
+        Ok(self.is_high())
     }
 
+    #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        Ok(unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 })
+        Ok(self.is_low())
     }
 }
 
@@ -329,14 +397,21 @@ impl<MODE, const P: char, const N: u8> PinExt for PX<MODE, P, N> {
 impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
     /// Configures the pin to operate alternate mode
     pub fn into_alternate<const A: u8>(self) -> PX<Alternate<AF<A>>, P, N> {
-        less_than_16::<A>();
+        #[allow(path_statements)]
+        {
+            Assert::<A, 16>::LESS;
+        }
         _set_alternate_mode::<P, N, A>();
         PX::new()
     }
 
     /// Configures the pin to operate in alternate open drain mode
+    #[allow(path_statements)]
     pub fn into_alternate_open_drain<const A: u8>(self) -> PX<AlternateOD<AF<A>>, P, N> {
-        less_than_16::<A>();
+        #[allow(path_statements)]
+        {
+            Assert::<A, 16>::LESS;
+        }
         _set_alternate_mode::<P, N, A>();
         PX::new().set_open_drain()
     }
@@ -754,62 +829,130 @@ impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
-    type Error = Infallible;
-
-    fn set_high(&mut self) -> Result<(), Self::Error> {
+impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
+    #[inline(always)]
+    fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << { N })) };
-        Ok(())
+        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << { N })) }
     }
 
-    fn set_low(&mut self) -> Result<(), Self::Error> {
+    #[inline(always)]
+    fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe {
             (*Gpio::<P>::ptr())
                 .bsrr
                 .write(|w| w.bits(1 << ({ N } + 16)))
-        };
-        Ok(())
+        }
+    }
+
+    #[inline(always)]
+    fn is_set_high(&self) -> bool {
+        !self.is_set_low()
+    }
+
+    #[inline(always)]
+    fn is_set_low(&self) -> bool {
+        // NOTE(unsafe) atomic read with no side effects
+        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << { N }) == 0 }
+    }
+
+    #[inline(always)]
+    pub fn toggle(&mut self) {
+        if self.is_set_low() {
+            self.set_high()
+        } else {
+            self.set_low()
+        }
+    }
+}
+
+impl<MODE, const P: char, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
+    type Error = Infallible;
+
+    #[inline(always)]
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        Ok(self.set_high())
+    }
+
+    #[inline(always)]
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        Ok(self.set_low())
     }
 }
 
 impl<MODE, const P: char, const N: u8> StatefulOutputPin for PX<Output<MODE>, P, N> {
+    #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
-        self.is_set_low().map(|v| !v)
+        Ok(self.is_set_high())
     }
 
+    #[inline(always)]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        Ok(unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << { N }) == 0 })
+        Ok(self.is_set_low())
     }
 }
 
-impl<MODE, const P: char, const N: u8> toggleable::Default for PX<Output<MODE>, P, N> {}
+impl<MODE, const P: char, const N: u8> ToggleableOutputPin for PX<Output<MODE>, P, N> {
+    type Error = Infallible;
+
+    #[inline(always)]
+    fn toggle(&mut self) -> Result<(), Self::Error> {
+        Ok(self.toggle())
+    }
+}
+
+impl<const P: char, const N: u8> PX<Output<OpenDrain>, P, N> {
+    #[inline(always)]
+    pub fn is_high(&self) -> bool {
+        !self.is_low()
+    }
+
+    #[inline(always)]
+    pub fn is_low(&self) -> bool {
+        // NOTE(unsafe) atomic read with no side effects
+        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 }
+    }
+}
 
 impl<const P: char, const N: u8> InputPin for PX<Output<OpenDrain>, P, N> {
     type Error = Infallible;
 
+    #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
-        self.is_low().map(|v| !v)
+        Ok(self.is_high())
     }
 
+    #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(self.is_low())
+    }
+}
+
+impl<MODE, const P: char, const N: u8> PX<Input<MODE>, P, N> {
+    #[inline(always)]
+    pub fn is_high(&self) -> bool {
+        !self.is_low()
+    }
+
+    #[inline(always)]
+    pub fn is_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        Ok(unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 })
+        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 }
     }
 }
 
 impl<MODE, const P: char, const N: u8> InputPin for PX<Input<MODE>, P, N> {
     type Error = Infallible;
 
+    #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
-        self.is_low().map(|v| !v)
+        Ok(self.is_high())
     }
 
+    #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        Ok(unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 })
+        Ok(self.is_low())
     }
 }
 
@@ -1126,60 +1269,127 @@ impl<MODE> Pin<MODE> {
     }
 }
 
-impl<MODE> OutputPin for Pin<Output<MODE>> {
-    type Error = core::convert::Infallible;
+impl<MODE> Pin<Output<MODE>> {
+    #[inline(always)]
+    fn set_high(&mut self) {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
+    }
 
-    fn set_low(&mut self) -> Result<(), Self::Error> {
+    #[inline(always)]
+    fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe {
             self.block()
                 .bsrr
                 .write(|w| w.bits(1 << (self.pin_id() + 16)))
         };
-        Ok(())
     }
 
+    #[inline(always)]
+    fn is_set_high(&self) -> bool {
+        !self.is_set_low()
+    }
+
+    #[inline(always)]
+    fn is_set_low(&self) -> bool {
+        self.block().odr.read().bits() & (1 << self.pin_id()) == 0
+    }
+
+    #[inline(always)]
+    pub fn toggle(&mut self) {
+        if self.is_set_low() {
+            self.set_high()
+        } else {
+            self.set_low()
+        }
+    }
+}
+
+impl<MODE> OutputPin for Pin<Output<MODE>> {
+    type Error = core::convert::Infallible;
+
+    #[inline(always)]
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
-        Ok(())
+        Ok(self.set_high())
+    }
+
+    #[inline(always)]
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        Ok(self.set_low())
     }
 }
 
 impl<MODE> StatefulOutputPin for Pin<Output<MODE>> {
+    #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
-        self.is_set_low().map(|v| !v)
+        Ok(self.is_set_high())
     }
 
+    #[inline(always)]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        Ok(self.block().odr.read().bits() & (1 << self.pin_id()) == 0)
+        Ok(self.is_set_low())
     }
 }
 
-impl<MODE> toggleable::Default for Pin<Output<MODE>> {}
+impl<MODE> ToggleableOutputPin for Pin<Output<MODE>> {
+    type Error = Infallible;
+
+    #[inline(always)]
+    fn toggle(&mut self) -> Result<(), Self::Error> {
+        Ok(self.toggle())
+    }
+}
+
+impl Pin<Output<OpenDrain>> {
+    #[inline(always)]
+    fn is_high(&self) -> bool {
+        !self.is_low()
+    }
+
+    #[inline(always)]
+    fn is_low(&self) -> bool {
+        self.block().idr.read().bits() & (1 << self.pin_id()) == 0
+    }
+}
 
 impl InputPin for Pin<Output<OpenDrain>> {
     type Error = core::convert::Infallible;
 
+    #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
-        self.is_low().map(|v| !v)
+        Ok(self.is_high())
     }
 
+    #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.block().idr.read().bits() & (1 << self.pin_id()) == 0)
+        Ok(self.is_low())
+    }
+}
+
+impl<MODE> Pin<Input<MODE>> {
+    #[inline(always)]
+    fn is_high(&self) -> bool {
+        !self.is_low()
+    }
+
+    #[inline(always)]
+    fn is_low(&self) -> bool {
+        self.block().idr.read().bits() & (1 << self.pin_id()) == 0
     }
 }
 
 impl<MODE> InputPin for Pin<Input<MODE>> {
     type Error = core::convert::Infallible;
 
+    #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
-        self.is_low().map(|v| !v)
+        Ok(self.is_high())
     }
 
+    #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.block().idr.read().bits() & (1 << self.pin_id()) == 0)
+        Ok(self.is_low())
     }
 }
 
@@ -1208,11 +1418,6 @@ impl<const P: char> Gpio<P> {
             _ => crate::pac::GPIOA::ptr(),
         }
     }
-}
-
-#[allow(path_statements)]
-const fn less_than_16<const A: u8>() {
-    Assert::<A, 16>::LESS;
 }
 
 /// Const assert hack
