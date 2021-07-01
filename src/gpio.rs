@@ -256,7 +256,7 @@ impl<MODE, const P: u8> StatefulOutputPin for PXx<Output<MODE>, P> {
 
 impl<MODE, const P: u8> toggleable::Default for PXx<Output<MODE>, P> {}
 
-impl<MODE, const P: u8> InputPin for PXx<Output<MODE>, P> {
+impl<const P: u8> InputPin for PXx<Output<OpenDrain>, P> {
     type Error = Infallible;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -787,7 +787,7 @@ impl<MODE, const P: u8, const N: u8> StatefulOutputPin for PX<Output<MODE>, P, N
 
 impl<MODE, const P: u8, const N: u8> toggleable::Default for PX<Output<MODE>, P, N> {}
 
-impl<MODE, const P: u8, const N: u8> InputPin for PX<Output<MODE>, P, N> {
+impl<const P: u8, const N: u8> InputPin for PX<Output<OpenDrain>, P, N> {
     type Error = Infallible;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -1159,7 +1159,7 @@ impl<MODE> StatefulOutputPin for Pin<Output<MODE>> {
 
 impl<MODE> toggleable::Default for Pin<Output<MODE>> {}
 
-impl<MODE> InputPin for Pin<Output<MODE>> {
+impl InputPin for Pin<Output<OpenDrain>> {
     type Error = core::convert::Infallible;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
