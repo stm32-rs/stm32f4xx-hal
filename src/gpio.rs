@@ -81,6 +81,15 @@ pub struct PushPull;
 /// Analog mode (type state)
 pub struct Analog;
 
+/// Digital output pin state
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum PinState {
+    /// Low pin state
+    Low,
+    /// High pin state
+    High,
+}
+
 /// GPIO Pin speed selection
 pub enum Speed {
     Low = 0,
@@ -237,6 +246,23 @@ impl<MODE, const P: char> PXx<Output<MODE>, P> {
             (*Gpio::<P>::ptr())
                 .bsrr
                 .write(|w| w.bits(1 << (self.i + 16)))
+        }
+    }
+
+    #[inline(always)]
+    pub fn get_state(&self) -> PinState {
+        if self.is_set_low() {
+            PinState::Low
+        } else {
+            PinState::High
+        }
+    }
+
+    #[inline(always)]
+    pub fn set_state(&mut self, state: PinState) {
+        match state {
+            PinState::Low => self.set_low(),
+            PinState::High => self.set_high(),
         }
     }
 
@@ -847,6 +873,23 @@ impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
     }
 
     #[inline(always)]
+    pub fn get_state(&self) -> PinState {
+        if self.is_set_low() {
+            PinState::Low
+        } else {
+            PinState::High
+        }
+    }
+
+    #[inline(always)]
+    pub fn set_state(&mut self, state: PinState) {
+        match state {
+            PinState::Low => self.set_low(),
+            PinState::High => self.set_high(),
+        }
+    }
+
+    #[inline(always)]
     pub fn is_set_high(&self) -> bool {
         !self.is_set_low()
     }
@@ -1284,6 +1327,23 @@ impl<MODE> Pin<Output<MODE>> {
                 .bsrr
                 .write(|w| w.bits(1 << (self.pin_id() + 16)))
         };
+    }
+
+    #[inline(always)]
+    pub fn get_state(&self) -> PinState {
+        if self.is_set_low() {
+            PinState::Low
+        } else {
+            PinState::High
+        }
+    }
+
+    #[inline(always)]
+    pub fn set_state(&mut self, state: PinState) {
+        match state {
+            PinState::Low => self.set_low(),
+            PinState::High => self.set_high(),
+        }
     }
 
     #[inline(always)]
