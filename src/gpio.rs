@@ -91,6 +91,7 @@ pub enum PinState {
 }
 
 /// GPIO Pin speed selection
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Speed {
     Low = 0,
     Medium = 1,
@@ -98,7 +99,7 @@ pub enum Speed {
     VeryHigh = 3,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Edge {
     RISING,
     FALLING,
@@ -292,12 +293,14 @@ impl<MODE, const P: char> OutputPin for PXx<Output<MODE>, P> {
 
     #[inline(always)]
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        Ok(self.set_high())
+        self.set_high();
+        Ok(())
     }
 
     #[inline(always)]
     fn set_low(&mut self) -> Result<(), Self::Error> {
-        Ok(self.set_low())
+        self.set_low();
+        Ok(())
     }
 }
 
@@ -318,7 +321,8 @@ impl<MODE, const P: char> ToggleableOutputPin for PXx<Output<MODE>, P> {
 
     #[inline(always)]
     fn toggle(&mut self) -> Result<(), Self::Error> {
-        Ok(self.toggle())
+        self.toggle();
+        Ok(())
     }
 }
 
@@ -423,7 +427,7 @@ impl<MODE, const P: char, const N: u8> PinExt for PX<MODE, P, N> {
 impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
     /// Configures the pin to operate alternate mode
     pub fn into_alternate<const A: u8>(self) -> PX<Alternate<AF<A>>, P, N> {
-        #[allow(path_statements)]
+        #[allow(path_statements, clippy::no_effect)]
         {
             Assert::<A, 16>::LESS;
         }
@@ -434,7 +438,7 @@ impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
     /// Configures the pin to operate in alternate open drain mode
     #[allow(path_statements)]
     pub fn into_alternate_open_drain<const A: u8>(self) -> PX<AlternateOD<AF<A>>, P, N> {
-        #[allow(path_statements)]
+        #[allow(path_statements, clippy::no_effect)]
         {
             Assert::<A, 16>::LESS;
         }
@@ -915,12 +919,14 @@ impl<MODE, const P: char, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
 
     #[inline(always)]
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        Ok(self.set_high())
+        self.set_high();
+        Ok(())
     }
 
     #[inline(always)]
     fn set_low(&mut self) -> Result<(), Self::Error> {
-        Ok(self.set_low())
+        self.set_low();
+        Ok(())
     }
 }
 
@@ -941,7 +947,8 @@ impl<MODE, const P: char, const N: u8> ToggleableOutputPin for PX<Output<MODE>, 
 
     #[inline(always)]
     fn toggle(&mut self) -> Result<(), Self::Error> {
-        Ok(self.toggle())
+        self.toggle();
+        Ok(())
     }
 }
 
@@ -1371,12 +1378,14 @@ impl<MODE> OutputPin for Pin<Output<MODE>> {
 
     #[inline(always)]
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        Ok(self.set_high())
+        self.set_high();
+        Ok(())
     }
 
     #[inline(always)]
     fn set_low(&mut self) -> Result<(), Self::Error> {
-        Ok(self.set_low())
+        self.set_low();
+        Ok(())
     }
 }
 
@@ -1397,7 +1406,8 @@ impl<MODE> ToggleableOutputPin for Pin<Output<MODE>> {
 
     #[inline(always)]
     fn toggle(&mut self) -> Result<(), Self::Error> {
-        Ok(self.toggle())
+        self.toggle();
+        Ok(())
     }
 }
 
