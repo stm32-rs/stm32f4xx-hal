@@ -424,6 +424,319 @@ impl<MODE, const P: char, const N: u8> PinExt for PX<MODE, P, N> {
     }
 }
 
+impl<MODE, const P: char, const N: u8, const A: u8> From<PX<Input<MODE>, P, N>>
+    for PX<Alternate<AF<A>>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Input<MODE>, P, N>) -> Self {
+        f.into_alternate::<A>()
+    }
+}
+
+impl<MODE, const P: char, const N: u8, const A: u8> From<PX<Output<MODE>, P, N>>
+    for PX<Alternate<AF<A>>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Output<MODE>, P, N>) -> Self {
+        f.into_alternate::<A>()
+    }
+}
+
+impl<const P: char, const N: u8, const A: u8> From<PX<Analog, P, N>>
+    for PX<Alternate<AF<A>>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Analog, P, N>) -> Self {
+        f.into_alternate::<A>()
+    }
+}
+
+impl<const P: char, const N: u8, const A: u8, const B: u8> From<PX<AlternateOD<AF<B>>, P, N>>
+    for PX<Alternate<AF<A>>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<AlternateOD<AF<B>>, P, N>) -> Self {
+        f.into_alternate::<A>()
+    }
+}
+
+impl<MODE, const P: char, const N: u8, const A: u8> From<PX<Input<MODE>, P, N>>
+    for PX<AlternateOD<AF<A>>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Input<MODE>, P, N>) -> Self {
+        f.into_alternate_open_drain::<A>()
+    }
+}
+
+impl<MODE, const P: char, const N: u8, const A: u8> From<PX<Output<MODE>, P, N>>
+    for PX<AlternateOD<AF<A>>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Output<MODE>, P, N>) -> Self {
+        f.into_alternate_open_drain::<A>()
+    }
+}
+
+impl<const P: char, const N: u8, const A: u8> From<PX<Analog, P, N>>
+    for PX<AlternateOD<AF<A>>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Analog, P, N>) -> Self {
+        f.into_alternate_open_drain::<A>()
+    }
+}
+
+impl<const P: char, const N: u8, const A: u8, const B: u8> From<PX<Alternate<AF<B>>, P, N>>
+    for PX<AlternateOD<AF<A>>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Alternate<AF<B>>, P, N>) -> Self {
+        f.into_alternate_open_drain::<A>()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Input<Floating>, P, N>> for PX<Input<PullDown>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<Floating>, P, N>) -> Self {
+        f.into_pull_down_input()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Input<PullUp>, P, N>> for PX<Input<PullDown>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<PullUp>, P, N>) -> Self {
+        f.into_pull_down_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Output<MODE>, P, N>> for PX<Input<PullDown>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Output<MODE>, P, N>) -> Self {
+        f.into_pull_down_input()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Analog, P, N>> for PX<Input<PullDown>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Analog, P, N>) -> Self {
+        f.into_pull_down_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Alternate<MODE>, P, N>>
+    for PX<Input<PullDown>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Alternate<MODE>, P, N>) -> Self {
+        f.into_pull_down_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<AlternateOD<MODE>, P, N>>
+    for PX<Input<PullDown>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<AlternateOD<MODE>, P, N>) -> Self {
+        f.into_pull_down_input()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Input<Floating>, P, N>> for PX<Input<PullUp>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<Floating>, P, N>) -> Self {
+        f.into_pull_up_input()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Input<PullDown>, P, N>> for PX<Input<PullUp>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<PullDown>, P, N>) -> Self {
+        f.into_pull_up_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Output<MODE>, P, N>> for PX<Input<PullUp>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Output<MODE>, P, N>) -> Self {
+        f.into_pull_up_input()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Analog, P, N>> for PX<Input<PullUp>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Analog, P, N>) -> Self {
+        f.into_pull_up_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Alternate<MODE>, P, N>> for PX<Input<PullUp>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Alternate<MODE>, P, N>) -> Self {
+        f.into_pull_up_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<AlternateOD<MODE>, P, N>>
+    for PX<Input<PullUp>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<AlternateOD<MODE>, P, N>) -> Self {
+        f.into_pull_up_input()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Input<PullDown>, P, N>> for PX<Input<Floating>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<PullDown>, P, N>) -> Self {
+        f.into_floating_input()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Input<PullUp>, P, N>> for PX<Input<Floating>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<PullUp>, P, N>) -> Self {
+        f.into_floating_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Output<MODE>, P, N>> for PX<Input<Floating>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Output<MODE>, P, N>) -> Self {
+        f.into_floating_input()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Analog, P, N>> for PX<Input<Floating>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Analog, P, N>) -> Self {
+        f.into_floating_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Alternate<MODE>, P, N>>
+    for PX<Input<Floating>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Alternate<MODE>, P, N>) -> Self {
+        f.into_floating_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<AlternateOD<MODE>, P, N>>
+    for PX<Input<Floating>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<AlternateOD<MODE>, P, N>) -> Self {
+        f.into_floating_input()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Input<MODE>, P, N>> for PX<Output<OpenDrain>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<MODE>, P, N>) -> Self {
+        f.into_open_drain_output()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Output<PushPull>, P, N>> for PX<Output<OpenDrain>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Output<PushPull>, P, N>) -> Self {
+        f.into_open_drain_output()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Analog, P, N>> for PX<Output<OpenDrain>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Analog, P, N>) -> Self {
+        f.into_open_drain_output()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Alternate<MODE>, P, N>>
+    for PX<Output<OpenDrain>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Alternate<MODE>, P, N>) -> Self {
+        f.into_open_drain_output()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<AlternateOD<MODE>, P, N>>
+    for PX<Output<OpenDrain>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<AlternateOD<MODE>, P, N>) -> Self {
+        f.into_open_drain_output()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Input<MODE>, P, N>> for PX<Output<PushPull>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<MODE>, P, N>) -> Self {
+        f.into_push_pull_output()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Output<OpenDrain>, P, N>> for PX<Output<PushPull>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Output<OpenDrain>, P, N>) -> Self {
+        f.into_push_pull_output()
+    }
+}
+
+impl<const P: char, const N: u8> From<PX<Analog, P, N>> for PX<Output<PushPull>, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Analog, P, N>) -> Self {
+        f.into_push_pull_output()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Alternate<MODE>, P, N>>
+    for PX<Output<PushPull>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<Alternate<MODE>, P, N>) -> Self {
+        f.into_push_pull_output()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<AlternateOD<MODE>, P, N>>
+    for PX<Output<PushPull>, P, N>
+{
+    #[inline(always)]
+    fn from(f: PX<AlternateOD<MODE>, P, N>) -> Self {
+        f.into_push_pull_output()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Input<MODE>, P, N>> for PX<Analog, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Input<MODE>, P, N>) -> Self {
+        f.into_analog()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Output<MODE>, P, N>> for PX<Analog, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Output<MODE>, P, N>) -> Self {
+        f.into_analog()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<Alternate<MODE>, P, N>> for PX<Analog, P, N> {
+    #[inline(always)]
+    fn from(f: PX<Alternate<MODE>, P, N>) -> Self {
+        f.into_analog()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> From<PX<AlternateOD<MODE>, P, N>> for PX<Analog, P, N> {
+    #[inline(always)]
+    fn from(f: PX<AlternateOD<MODE>, P, N>) -> Self {
+        f.into_analog()
+    }
+}
 impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
     /// Configures the pin to operate alternate mode
     pub fn into_alternate<const A: u8>(self) -> PX<Alternate<AF<A>>, P, N> {
