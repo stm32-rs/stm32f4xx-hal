@@ -205,12 +205,12 @@ where
 }
 
 /// Partially erased pin
-pub struct PXx<MODE, const P: u8> {
+pub struct PXx<MODE, const P: char> {
     i: u8,
     _mode: PhantomData<MODE>,
 }
 
-impl<MODE, const P: u8> PinExt for PXx<MODE, P> {
+impl<MODE, const P: char> PinExt for PXx<MODE, P> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -219,11 +219,11 @@ impl<MODE, const P: u8> PinExt for PXx<MODE, P> {
     }
     #[inline(always)]
     fn port_id(&self) -> u8 {
-        P
+        P as u8 - 0x41
     }
 }
 
-impl<MODE, const P: u8> OutputPin for PXx<Output<MODE>, P> {
+impl<MODE, const P: char> OutputPin for PXx<Output<MODE>, P> {
     type Error = Infallible;
 
     fn set_high(&mut self) -> Result<(), Self::Error> {
@@ -243,7 +243,7 @@ impl<MODE, const P: u8> OutputPin for PXx<Output<MODE>, P> {
     }
 }
 
-impl<MODE, const P: u8> StatefulOutputPin for PXx<Output<MODE>, P> {
+impl<MODE, const P: char> StatefulOutputPin for PXx<Output<MODE>, P> {
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         self.is_set_low().map(|v| !v)
     }
@@ -254,9 +254,9 @@ impl<MODE, const P: u8> StatefulOutputPin for PXx<Output<MODE>, P> {
     }
 }
 
-impl<MODE, const P: u8> toggleable::Default for PXx<Output<MODE>, P> {}
+impl<MODE, const P: char> toggleable::Default for PXx<Output<MODE>, P> {}
 
-impl<const P: u8> InputPin for PXx<Output<OpenDrain>, P> {
+impl<const P: char> InputPin for PXx<Output<OpenDrain>, P> {
     type Error = Infallible;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -269,7 +269,7 @@ impl<const P: u8> InputPin for PXx<Output<OpenDrain>, P> {
     }
 }
 
-impl<MODE, const P: u8> InputPin for PXx<Input<MODE>, P> {
+impl<MODE, const P: char> InputPin for PXx<Input<MODE>, P> {
     type Error = Infallible;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -282,7 +282,7 @@ impl<MODE, const P: u8> InputPin for PXx<Input<MODE>, P> {
     }
 }
 
-fn _set_alternate_mode<const P: u8, const N: u8, const A: u8>() {
+fn _set_alternate_mode<const P: char, const N: u8, const A: u8>() {
     let offset = 2 * { N };
     let offset2 = 4 * { N };
     let mode = A as u32;
@@ -304,16 +304,16 @@ fn _set_alternate_mode<const P: u8, const N: u8, const A: u8>() {
 }
 
 /// Pin
-pub struct PX<MODE, const P: u8, const N: u8> {
+pub struct PX<MODE, const P: char, const N: u8> {
     _mode: PhantomData<MODE>,
 }
-impl<MODE, const P: u8, const N: u8> PX<MODE, P, N> {
+impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
     const fn new() -> Self {
         Self { _mode: PhantomData }
     }
 }
 
-impl<MODE, const P: u8, const N: u8> PinExt for PX<MODE, P, N> {
+impl<MODE, const P: char, const N: u8> PinExt for PX<MODE, P, N> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -322,11 +322,11 @@ impl<MODE, const P: u8, const N: u8> PinExt for PX<MODE, P, N> {
     }
     #[inline(always)]
     fn port_id(&self) -> u8 {
-        P
+        P as u8 - 0x41
     }
 }
 
-impl<MODE, const P: u8, const N: u8> PX<MODE, P, N> {
+impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
     /// Configures the pin to operate alternate mode
     pub fn into_alternate<const A: u8>(self) -> PX<Alternate<AF<A>>, P, N> {
         less_than_16::<A>();
@@ -663,7 +663,7 @@ impl<MODE, const P: u8, const N: u8> PX<MODE, P, N> {
     }
 }
 
-impl<MODE, const P: u8, const N: u8> PX<Output<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 2 * { N };
@@ -678,7 +678,7 @@ impl<MODE, const P: u8, const N: u8> PX<Output<MODE>, P, N> {
     }
 }
 
-impl<const P: u8, const N: u8> PX<Output<OpenDrain>, P, N> {
+impl<const P: char, const N: u8> PX<Output<OpenDrain>, P, N> {
     /// Enables / disables the internal pull up
     pub fn internal_pull_up(&mut self, on: bool) {
         let offset = 2 * { N };
@@ -691,7 +691,7 @@ impl<const P: u8, const N: u8> PX<Output<OpenDrain>, P, N> {
     }
 }
 
-impl<MODE, const P: u8, const N: u8> PX<Alternate<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> PX<Alternate<MODE>, P, N> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 2 * { N };
@@ -719,7 +719,7 @@ impl<MODE, const P: u8, const N: u8> PX<Alternate<MODE>, P, N> {
     }
 }
 
-impl<MODE, const P: u8, const N: u8> PX<Alternate<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> PX<Alternate<MODE>, P, N> {
     /// Turns pin alternate configuration pin into open drain
     pub fn set_open_drain(self) -> PX<AlternateOD<MODE>, P, N> {
         let offset = { N };
@@ -733,7 +733,7 @@ impl<MODE, const P: u8, const N: u8> PX<Alternate<MODE>, P, N> {
     }
 }
 
-impl<MODE, const P: u8, const N: u8> PX<MODE, P, N> {
+impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
     /// Erases the pin number from the type
     ///
     /// This is useful when you want to collect the pins into an array where you
@@ -750,11 +750,11 @@ impl<MODE, const P: u8, const N: u8> PX<MODE, P, N> {
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
     pub fn downgrade2(self) -> Pin<MODE> {
-        Pin::new(P, N)
+        Pin::new(P as u8 - 0x41, N)
     }
 }
 
-impl<MODE, const P: u8, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
     type Error = Infallible;
 
     fn set_high(&mut self) -> Result<(), Self::Error> {
@@ -774,7 +774,7 @@ impl<MODE, const P: u8, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
     }
 }
 
-impl<MODE, const P: u8, const N: u8> StatefulOutputPin for PX<Output<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> StatefulOutputPin for PX<Output<MODE>, P, N> {
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         self.is_set_low().map(|v| !v)
     }
@@ -785,9 +785,9 @@ impl<MODE, const P: u8, const N: u8> StatefulOutputPin for PX<Output<MODE>, P, N
     }
 }
 
-impl<MODE, const P: u8, const N: u8> toggleable::Default for PX<Output<MODE>, P, N> {}
+impl<MODE, const P: char, const N: u8> toggleable::Default for PX<Output<MODE>, P, N> {}
 
-impl<const P: u8, const N: u8> InputPin for PX<Output<OpenDrain>, P, N> {
+impl<const P: char, const N: u8> InputPin for PX<Output<OpenDrain>, P, N> {
     type Error = Infallible;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -800,7 +800,7 @@ impl<const P: u8, const N: u8> InputPin for PX<Output<OpenDrain>, P, N> {
     }
 }
 
-impl<MODE, const P: u8, const N: u8> InputPin for PX<Input<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> InputPin for PX<Input<MODE>, P, N> {
     type Error = Infallible;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -862,7 +862,7 @@ macro_rules! gpio {
     }
 }
 
-gpio!(GPIOA, gpioa, PA, 0, PAn, [
+gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, Input<Floating>),
     PA1: (pa1, 1, Input<Floating>),
     PA2: (pa2, 2, Input<Floating>),
@@ -881,7 +881,7 @@ gpio!(GPIOA, gpioa, PA, 0, PAn, [
     PA15: (pa15, 15, Input<Floating>),
 ]);
 
-gpio!(GPIOB, gpiob, PB, 1, PBn, [
+gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, Input<Floating>),
     PB1: (pb1, 1, Input<Floating>),
     PB2: (pb2, 2, Input<Floating>),
@@ -900,7 +900,7 @@ gpio!(GPIOB, gpiob, PB, 1, PBn, [
     PB15: (pb15, 15, Input<Floating>),
 ]);
 
-gpio!(GPIOC, gpioc, PC, 2, PCn, [
+gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, Input<Floating>),
     PC1: (pc1, 1, Input<Floating>),
     PC2: (pc2, 2, Input<Floating>),
@@ -920,7 +920,7 @@ gpio!(GPIOC, gpioc, PC, 2, PCn, [
 ]);
 
 #[cfg(feature = "gpiod")]
-gpio!(GPIOD, gpiod, PD, 3, PDn, [
+gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, Input<Floating>),
     PD1: (pd1, 1, Input<Floating>),
     PD2: (pd2, 2, Input<Floating>),
@@ -940,7 +940,7 @@ gpio!(GPIOD, gpiod, PD, 3, PDn, [
 ]);
 
 #[cfg(feature = "gpioe")]
-gpio!(GPIOE, gpioe, PE, 4, PEn, [
+gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, Input<Floating>),
     PE1: (pe1, 1, Input<Floating>),
     PE2: (pe2, 2, Input<Floating>),
@@ -960,7 +960,7 @@ gpio!(GPIOE, gpioe, PE, 4, PEn, [
 ]);
 
 #[cfg(feature = "gpiof")]
-gpio!(GPIOF, gpiof, PF, 5, PFn, [
+gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF0: (pf0, 0, Input<Floating>),
     PF1: (pf1, 1, Input<Floating>),
     PF2: (pf2, 2, Input<Floating>),
@@ -980,7 +980,7 @@ gpio!(GPIOF, gpiof, PF, 5, PFn, [
 ]);
 
 #[cfg(feature = "gpiog")]
-gpio!(GPIOG, gpiog, PG, 6, PGn, [
+gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG0: (pg0, 0, Input<Floating>),
     PG1: (pg1, 1, Input<Floating>),
     PG2: (pg2, 2, Input<Floating>),
@@ -1000,7 +1000,7 @@ gpio!(GPIOG, gpiog, PG, 6, PGn, [
 ]);
 
 #[cfg(not(feature = "stm32f401"))]
-gpio!(GPIOH, gpioh, PH, 7, PHn, [
+gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, Input<Floating>),
     PH1: (ph1, 1, Input<Floating>),
     PH2: (ph2, 2, Input<Floating>),
@@ -1020,13 +1020,13 @@ gpio!(GPIOH, gpioh, PH, 7, PHn, [
 ]);
 
 #[cfg(feature = "stm32f401")]
-gpio!(GPIOH, gpioh, PH, 7, PHn, [
+gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, Input<Floating>),
     PH1: (ph1, 1, Input<Floating>),
 ]);
 
 #[cfg(feature = "gpioi")]
-gpio!(GPIOI, gpioi, PI, 8, PIn, [
+gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI0: (pi0, 0, Input<Floating>),
     PI1: (pi1, 1, Input<Floating>),
     PI2: (pi2, 2, Input<Floating>),
@@ -1046,7 +1046,7 @@ gpio!(GPIOI, gpioi, PI, 8, PIn, [
 ]);
 
 #[cfg(feature = "gpioj")]
-gpio!(GPIOJ, gpioj, PJ, 9, PJn, [
+gpio!(GPIOJ, gpioj, PJ, 'J', PJn, [
     PJ0: (pj0, 0, Input<Floating>),
     PJ1: (pj1, 1, Input<Floating>),
     PJ2: (pj2, 2, Input<Floating>),
@@ -1066,7 +1066,7 @@ gpio!(GPIOJ, gpioj, PJ, 9, PJn, [
 ]);
 
 #[cfg(feature = "gpiok")]
-gpio!(GPIOK, gpiok, PK, 10, PKn, [
+gpio!(GPIOK, gpiok, PK, 'K', PKn, [
     PK0: (pk0, 0, Input<Floating>),
     PK1: (pk1, 1, Input<Floating>),
     PK2: (pk2, 2, Input<Floating>),
@@ -1183,29 +1183,29 @@ impl<MODE> InputPin for Pin<Input<MODE>> {
     }
 }
 
-struct Gpio<const P: u8>;
-impl<const P: u8> Gpio<P> {
+struct Gpio<const P: char>;
+impl<const P: char> Gpio<P> {
     const fn ptr() -> *const crate::pac::gpioa::RegisterBlock {
         match P {
-            0 => crate::pac::GPIOA::ptr(),
-            1 => crate::pac::GPIOB::ptr() as _,
-            2 => crate::pac::GPIOC::ptr() as _,
+            'A' => crate::pac::GPIOA::ptr(),
+            'B' => crate::pac::GPIOB::ptr() as _,
+            'C' => crate::pac::GPIOC::ptr() as _,
             #[cfg(feature = "gpiod")]
-            3 => crate::pac::GPIOD::ptr() as _,
+            'D' => crate::pac::GPIOD::ptr() as _,
             #[cfg(feature = "gpioe")]
-            4 => crate::pac::GPIOE::ptr() as _,
+            'E' => crate::pac::GPIOE::ptr() as _,
             #[cfg(feature = "gpiof")]
-            5 => crate::pac::GPIOF::ptr() as _,
+            'F' => crate::pac::GPIOF::ptr() as _,
             #[cfg(feature = "gpiog")]
-            6 => crate::pac::GPIOG::ptr() as _,
-            7 => crate::pac::GPIOH::ptr() as _,
+            'G' => crate::pac::GPIOG::ptr() as _,
+            'H' => crate::pac::GPIOH::ptr() as _,
             #[cfg(feature = "gpioi")]
-            8 => crate::pac::GPIOI::ptr() as _,
+            'I' => crate::pac::GPIOI::ptr() as _,
             #[cfg(feature = "gpioj")]
-            9 => crate::pac::GPIOJ::ptr() as _,
+            'J' => crate::pac::GPIOJ::ptr() as _,
             #[cfg(feature = "gpiok")]
-            10 => crate::pac::GPIOK::ptr() as _,
-            _ => 0 as _,
+            'K' => crate::pac::GPIOK::ptr() as _,
+            _ => crate::pac::GPIOA::ptr(),
         }
     }
 }
