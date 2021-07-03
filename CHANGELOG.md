@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `PinState` and `get/set_state`.
+- Inherent methods for infallible digital operations.
 - Generic `into_alternate` and `into_alternate_open_drain`. Non-generic ones are deprecated
 - Internal implementation of GPIO Pin API changed to use Const Generics
 - `PinExt` trait. Make `ExtiPin` implementation generic

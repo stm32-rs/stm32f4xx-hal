@@ -743,7 +743,7 @@ fn main() -> ! {
         let mut _te = gpiob.pb14.into_floating_input();
 
         // Enable backlight
-        gpioe.pe5.into_push_pull_output().set_high().ok();
+        gpioe.pe5.into_push_pull_output().set_high();
 
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);

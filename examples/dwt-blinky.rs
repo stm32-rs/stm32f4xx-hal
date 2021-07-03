@@ -38,12 +38,12 @@ fn main() -> ! {
         let mut sw = dwt.stopwatch(&mut lap_times);
         loop {
             // On for 1s, off for 1s.
-            led1.set_high().unwrap();
-            led2.set_low().unwrap();
+            led1.set_high();
+            led2.set_low();
             delay.delay_ms(1000_u32);
             sw.lap();
-            led1.set_low().unwrap();
-            led2.set_high().unwrap();
+            led1.set_low();
+            led2.set_high();
             delay.delay_ms(900_u32);
             // Also you can measure with almost clock precision
             let cd: ClockDuration = dwt.measure(|| delay.delay_ms(100_u32));

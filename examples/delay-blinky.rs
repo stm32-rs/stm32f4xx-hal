@@ -30,9 +30,9 @@ fn main() -> ! {
 
         loop {
             // On for 1s, off for 1s.
-            led.set_high().unwrap();
+            led.set_high();
             delay.delay_ms(1000_u32);
-            led.set_low().unwrap();
+            led.set_low();
             delay.delay_ms(1000_u32);
         }
     }
