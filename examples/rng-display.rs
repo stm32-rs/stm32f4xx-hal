@@ -67,8 +67,8 @@ fn main() -> ! {
         // as per the STM32F407 datasheet. Pin assignment as per the
         // stm32f4-discovery (ST32F407G-DISC1) board.
         let gpiob = dp.GPIOB.split();
-        let scl = gpiob.pb8.into_alternate_af4().set_open_drain();
-        let sda = gpiob.pb9.into_alternate_af4().set_open_drain();
+        let scl = gpiob.pb8.into_alternate().set_open_drain();
+        let sda = gpiob.pb9.into_alternate().set_open_drain();
         let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
         // Set up the display

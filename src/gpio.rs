@@ -1,6 +1,9 @@
 //! General Purpose Input / Output
 
+use core::convert::Infallible;
 use core::marker::PhantomData;
+
+use embedded_hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
 
 use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
@@ -22,22 +25,23 @@ pub trait PinExt {
     fn port_id(&self) -> u8;
 }
 
-pub struct AF0;
-pub struct AF1;
-pub struct AF2;
-pub struct AF3;
-pub struct AF4;
-pub struct AF5;
-pub struct AF6;
-pub struct AF7;
-pub struct AF8;
-pub struct AF9;
-pub struct AF10;
-pub struct AF11;
-pub struct AF12;
-pub struct AF13;
-pub struct AF14;
-pub struct AF15;
+pub struct AF<const A: u8>;
+pub type AF0 = AF<0>;
+pub type AF1 = AF<1>;
+pub type AF2 = AF<2>;
+pub type AF3 = AF<3>;
+pub type AF4 = AF<4>;
+pub type AF5 = AF<5>;
+pub type AF6 = AF<6>;
+pub type AF7 = AF<7>;
+pub type AF8 = AF<8>;
+pub type AF9 = AF<9>;
+pub type AF10 = AF<10>;
+pub type AF11 = AF<11>;
+pub type AF12 = AF<12>;
+pub type AF13 = AF<13>;
+pub type AF14 = AF<14>;
+pub type AF15 = AF<15>;
 
 /// Some alternate mode (type state)
 pub struct Alternate<MODE> {
@@ -200,22 +204,625 @@ where
     }
 }
 
+/// Partially erased pin
+pub struct PXx<MODE, const P: char> {
+    i: u8,
+    _mode: PhantomData<MODE>,
+}
+
+impl<MODE, const P: char> PinExt for PXx<MODE, P> {
+    type Mode = MODE;
+
+    #[inline(always)]
+    fn pin_id(&self) -> u8 {
+        self.i
+    }
+    #[inline(always)]
+    fn port_id(&self) -> u8 {
+        P as u8 - 0x41
+    }
+}
+
+impl<MODE, const P: char> OutputPin for PXx<Output<MODE>, P> {
+    type Error = Infallible;
+
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << self.i)) };
+        Ok(())
+    }
+
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .bsrr
+                .write(|w| w.bits(1 << (self.i + 16)))
+        };
+        Ok(())
+    }
+}
+
+impl<MODE, const P: char> StatefulOutputPin for PXx<Output<MODE>, P> {
+    fn is_set_high(&self) -> Result<bool, Self::Error> {
+        self.is_set_low().map(|v| !v)
+    }
+
+    fn is_set_low(&self) -> Result<bool, Self::Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        Ok(unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << self.i) == 0 })
+    }
+}
+
+impl<MODE, const P: char> toggleable::Default for PXx<Output<MODE>, P> {}
+
+impl<const P: char> InputPin for PXx<Output<OpenDrain>, P> {
+    type Error = Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        Ok(unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 })
+    }
+}
+
+impl<MODE, const P: char> InputPin for PXx<Input<MODE>, P> {
+    type Error = Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        Ok(unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 })
+    }
+}
+
+fn _set_alternate_mode<const P: char, const N: u8, const A: u8>() {
+    let offset = 2 * { N };
+    let offset2 = 4 * { N };
+    let mode = A as u32;
+    unsafe {
+        if offset2 < 32 {
+            (*Gpio::<P>::ptr())
+                .afrl
+                .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2)));
+        } else {
+            let offset2 = offset2 - 32;
+            (*Gpio::<P>::ptr())
+                .afrh
+                .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2)));
+        }
+        (*Gpio::<P>::ptr())
+            .moder
+            .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)));
+    }
+}
+
+/// Pin
+pub struct PX<MODE, const P: char, const N: u8> {
+    _mode: PhantomData<MODE>,
+}
+impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
+    const fn new() -> Self {
+        Self { _mode: PhantomData }
+    }
+}
+
+impl<MODE, const P: char, const N: u8> PinExt for PX<MODE, P, N> {
+    type Mode = MODE;
+
+    #[inline(always)]
+    fn pin_id(&self) -> u8 {
+        N
+    }
+    #[inline(always)]
+    fn port_id(&self) -> u8 {
+        P as u8 - 0x41
+    }
+}
+
+impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
+    /// Configures the pin to operate alternate mode
+    pub fn into_alternate<const A: u8>(self) -> PX<Alternate<AF<A>>, P, N> {
+        less_than_16::<A>();
+        _set_alternate_mode::<P, N, A>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in alternate open drain mode
+    pub fn into_alternate_open_drain<const A: u8>(self) -> PX<AlternateOD<AF<A>>, P, N> {
+        less_than_16::<A>();
+        _set_alternate_mode::<P, N, A>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF0 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af0(self) -> PX<Alternate<AF<0>>, P, N> {
+        _set_alternate_mode::<P, N, 0>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF1 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af1(self) -> PX<Alternate<AF<1>>, P, N> {
+        _set_alternate_mode::<P, N, 1>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF2 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af2(self) -> PX<Alternate<AF<2>>, P, N> {
+        _set_alternate_mode::<P, N, 2>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF3 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af3(self) -> PX<Alternate<AF<3>>, P, N> {
+        _set_alternate_mode::<P, N, 3>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF4 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af4(self) -> PX<Alternate<AF<4>>, P, N> {
+        _set_alternate_mode::<P, N, 4>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF5 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af5(self) -> PX<Alternate<AF<5>>, P, N> {
+        _set_alternate_mode::<P, N, 5>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF6 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af6(self) -> PX<Alternate<AF<6>>, P, N> {
+        _set_alternate_mode::<P, N, 6>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF7 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af7(self) -> PX<Alternate<AF<7>>, P, N> {
+        _set_alternate_mode::<P, N, 7>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF8 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af8(self) -> PX<Alternate<AF<8>>, P, N> {
+        _set_alternate_mode::<P, N, 8>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF9 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af9(self) -> PX<Alternate<AF<9>>, P, N> {
+        _set_alternate_mode::<P, N, 9>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF10 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af10(self) -> PX<Alternate<AF<10>>, P, N> {
+        _set_alternate_mode::<P, N, 10>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF11 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af11(self) -> PX<Alternate<AF<11>>, P, N> {
+        _set_alternate_mode::<P, N, 11>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF12 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af12(self) -> PX<Alternate<AF<12>>, P, N> {
+        _set_alternate_mode::<P, N, 12>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF13 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af13(self) -> PX<Alternate<AF<13>>, P, N> {
+        _set_alternate_mode::<P, N, 13>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF14 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af14(self) -> PX<Alternate<AF<14>>, P, N> {
+        _set_alternate_mode::<P, N, 14>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF15 mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af15(self) -> PX<Alternate<AF<15>>, P, N> {
+        _set_alternate_mode::<P, N, 15>();
+        PX::new()
+    }
+
+    /// Configures the pin to operate in AF0 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af0_open_drain(self) -> PX<AlternateOD<AF<0>>, P, N> {
+        _set_alternate_mode::<P, N, 0>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF1 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af1_open_drain(self) -> PX<AlternateOD<AF<1>>, P, N> {
+        _set_alternate_mode::<P, N, 1>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF2 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af2_open_drain(self) -> PX<AlternateOD<AF<2>>, P, N> {
+        _set_alternate_mode::<P, N, 2>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF3 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af3_open_drain(self) -> PX<AlternateOD<AF<3>>, P, N> {
+        _set_alternate_mode::<P, N, 3>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF4 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af4_open_drain(self) -> PX<AlternateOD<AF<4>>, P, N> {
+        _set_alternate_mode::<P, N, 4>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF5 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af5_open_drain(self) -> PX<AlternateOD<AF<5>>, P, N> {
+        _set_alternate_mode::<P, N, 5>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF6 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af6_open_drain(self) -> PX<AlternateOD<AF<6>>, P, N> {
+        _set_alternate_mode::<P, N, 6>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF7 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af7_open_drain(self) -> PX<AlternateOD<AF<7>>, P, N> {
+        _set_alternate_mode::<P, N, 7>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF8 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af8_open_drain(self) -> PX<AlternateOD<AF<8>>, P, N> {
+        _set_alternate_mode::<P, N, 8>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF9 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af9_open_drain(self) -> PX<AlternateOD<AF<9>>, P, N> {
+        _set_alternate_mode::<P, N, 9>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF10 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af10_open_drain(self) -> PX<AlternateOD<AF<10>>, P, N> {
+        _set_alternate_mode::<P, N, 10>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF11 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af11_open_drain(self) -> PX<AlternateOD<AF<11>>, P, N> {
+        _set_alternate_mode::<P, N, 11>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF12 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af12_open_drain(self) -> PX<AlternateOD<AF<12>>, P, N> {
+        _set_alternate_mode::<P, N, 12>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF13 open drain modev
+    pub fn into_alternate_af13_open_drain(self) -> PX<AlternateOD<AF<13>>, P, N> {
+        _set_alternate_mode::<P, N, 13>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF14 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af14_open_drain(self) -> PX<AlternateOD<AF<14>>, P, N> {
+        _set_alternate_mode::<P, N, 14>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate in AF15 open drain mode
+    #[deprecated(since = "0.10.0")]
+    pub fn into_alternate_af15_open_drain(self) -> PX<AlternateOD<AF<15>>, P, N> {
+        _set_alternate_mode::<P, N, 15>();
+        PX::new().set_open_drain()
+    }
+
+    /// Configures the pin to operate as a floating input pin
+    pub fn into_floating_input(self) -> PX<Input<Floating>, P, N> {
+        let offset = 2 * { N };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset)));
+            (*Gpio::<P>::ptr())
+                .moder
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset)))
+        };
+
+        PX::new()
+    }
+
+    /// Configures the pin to operate as a pulled down input pin
+    pub fn into_pull_down_input(self) -> PX<Input<PullDown>, P, N> {
+        let offset = 2 * { N };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)));
+            (*Gpio::<P>::ptr())
+                .moder
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset)))
+        };
+
+        PX::new()
+    }
+
+    /// Configures the pin to operate as a pulled up input pin
+    pub fn into_pull_up_input(self) -> PX<Input<PullUp>, P, N> {
+        let offset = 2 * { N };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset)));
+            (*Gpio::<P>::ptr())
+                .moder
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset)))
+        };
+
+        PX::new()
+    }
+
+    /// Configures the pin to operate as an open drain output pin
+    pub fn into_open_drain_output(self) -> PX<Output<OpenDrain>, P, N> {
+        let offset = 2 * { N };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset)));
+            (*Gpio::<P>::ptr())
+                .otyper
+                .modify(|r, w| w.bits(r.bits() | (0b1 << { N })));
+            (*Gpio::<P>::ptr())
+                .moder
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset)))
+        };
+
+        PX::new()
+    }
+
+    /// Configures the pin to operate as an push pull output pin
+    pub fn into_push_pull_output(self) -> PX<Output<PushPull>, P, N> {
+        let offset = 2 * { N };
+
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset)));
+            (*Gpio::<P>::ptr())
+                .otyper
+                .modify(|r, w| w.bits(r.bits() & !(0b1 << { N })));
+            (*Gpio::<P>::ptr())
+                .moder
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset)))
+        };
+
+        PX::new()
+    }
+
+    /// Configures the pin to operate as an analog input pin
+    pub fn into_analog(self) -> PX<Analog, P, N> {
+        let offset = 2 * { N };
+
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset)));
+            (*Gpio::<P>::ptr())
+                .moder
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b11 << offset)))
+        };
+
+        PX::new()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
+    /// Set pin speed
+    pub fn set_speed(self, speed: Speed) -> Self {
+        let offset = 2 * { N };
+
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .ospeedr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
+        };
+
+        self
+    }
+}
+
+impl<const P: char, const N: u8> PX<Output<OpenDrain>, P, N> {
+    /// Enables / disables the internal pull up
+    pub fn internal_pull_up(&mut self, on: bool) {
+        let offset = 2 * { N };
+        let value = if on { 0b01 } else { 0b00 };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
+        };
+    }
+}
+
+impl<MODE, const P: char, const N: u8> PX<Alternate<MODE>, P, N> {
+    /// Set pin speed
+    pub fn set_speed(self, speed: Speed) -> Self {
+        let offset = 2 * { N };
+
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .ospeedr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
+        };
+
+        self
+    }
+
+    /// Enables / disables the internal pull up
+    pub fn internal_pull_up(self, on: bool) -> Self {
+        let offset = 2 * { N };
+        let value = if on { 0b01 } else { 0b00 };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
+        };
+
+        self
+    }
+}
+
+impl<MODE, const P: char, const N: u8> PX<Alternate<MODE>, P, N> {
+    /// Turns pin alternate configuration pin into open drain
+    pub fn set_open_drain(self) -> PX<AlternateOD<MODE>, P, N> {
+        let offset = { N };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .otyper
+                .modify(|r, w| w.bits(r.bits() | (1 << offset)))
+        };
+
+        PX::new()
+    }
+}
+
+impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
+    /// Erases the pin number from the type
+    ///
+    /// This is useful when you want to collect the pins into an array where you
+    /// need all the elements to have the same type
+    pub fn downgrade(self) -> PXx<MODE, P> {
+        PXx {
+            i: { N },
+            _mode: self._mode,
+        }
+    }
+
+    /// Erases the pin number and the port from the type
+    ///
+    /// This is useful when you want to collect the pins into an array where you
+    /// need all the elements to have the same type
+    pub fn downgrade2(self) -> Pin<MODE> {
+        Pin::new(P as u8 - 0x41, N)
+    }
+}
+
+impl<MODE, const P: char, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
+    type Error = Infallible;
+
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << { N })) };
+        Ok(())
+    }
+
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .bsrr
+                .write(|w| w.bits(1 << ({ N } + 16)))
+        };
+        Ok(())
+    }
+}
+
+impl<MODE, const P: char, const N: u8> StatefulOutputPin for PX<Output<MODE>, P, N> {
+    fn is_set_high(&self) -> Result<bool, Self::Error> {
+        self.is_set_low().map(|v| !v)
+    }
+
+    fn is_set_low(&self) -> Result<bool, Self::Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        Ok(unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << { N }) == 0 })
+    }
+}
+
+impl<MODE, const P: char, const N: u8> toggleable::Default for PX<Output<MODE>, P, N> {}
+
+impl<const P: char, const N: u8> InputPin for PX<Output<OpenDrain>, P, N> {
+    type Error = Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        Ok(unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 })
+    }
+}
+
+impl<MODE, const P: char, const N: u8> InputPin for PX<Input<MODE>, P, N> {
+    type Error = Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        Ok(unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 })
+    }
+}
+
 macro_rules! gpio {
-    ($GPIOX:ident, $gpiox:ident, $PXx:ident, $port_id:expr, [
+    ($GPIOX:ident, $gpiox:ident, $PXx:ident, $port_id:expr, $PXn:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty),)+
     ]) => {
         /// GPIO
         pub mod $gpiox {
-            use core::marker::PhantomData;
-            use core::convert::Infallible;
-
-            use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, toggleable};
             use crate::pac::{$GPIOX, RCC};
             use crate::rcc::Enable;
             use super::{
-                Alternate, AlternateOD, Floating, GpioExt, Input, OpenDrain, Output, Speed,
-                PullDown, PullUp, PushPull, AF0, AF1, AF2, AF3, AF4, AF5, AF6, AF7, AF8, AF9, AF10,
-                AF11, AF12, AF13, AF14, AF15, Analog, PinExt,
+                Floating, Input,
             };
 
             /// GPIO parts
@@ -226,7 +833,7 @@ macro_rules! gpio {
                 )+
             }
 
-            impl GpioExt for $GPIOX {
+            impl super::GpioExt for $GPIOX {
                 type Parts = Parts;
 
                 fn split(self) -> Parts {
@@ -239,574 +846,23 @@ macro_rules! gpio {
                     }
                     Parts {
                         $(
-                            $pxi: $PXi { _mode: PhantomData },
+                            $pxi: $PXi::new(),
                         )+
                     }
                 }
             }
 
-            /// Partially erased pin
-            pub struct $PXx<MODE> {
-                i: u8,
-                _mode: PhantomData<MODE>,
-            }
-
-            impl<MODE> PinExt for $PXx<MODE> {
-                type Mode = MODE;
-
-                #[inline(always)]
-                fn pin_id(&self) -> u8 {
-                    self.i
-                }
-                #[inline(always)]
-                fn port_id(&self) -> u8 {
-                    $port_id
-                }
-            }
-
-            impl<MODE> OutputPin for $PXx<Output<MODE>> {
-                type Error = Infallible;
-
-                fn set_high(&mut self) -> Result<(), Self::Error> {
-                    // NOTE(unsafe) atomic write to a stateless register
-                    unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << self.i)) };
-                    Ok(())
-                }
-
-                fn set_low(&mut self) -> Result<(), Self::Error> {
-                    // NOTE(unsafe) atomic write to a stateless register
-                    unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << (self.i + 16))) };
-                    Ok(())
-                }
-            }
-
-            impl<MODE> StatefulOutputPin for $PXx<Output<MODE>> {
-                fn is_set_high(&self) -> Result<bool, Self::Error> {
-                    self.is_set_low().map(|v| !v)
-                }
-
-                fn is_set_low(&self) -> Result<bool, Self::Error> {
-                    // NOTE(unsafe) atomic read with no side effects
-                    Ok(unsafe { (*$GPIOX::ptr()).odr.read().bits() & (1 << self.i) == 0 })
-                }
-            }
-
-            impl<MODE> toggleable::Default for $PXx<Output<MODE>> {}
-
-            impl<MODE> InputPin for $PXx<Output<MODE>> {
-                type Error = Infallible;
-
-                fn is_high(&self) -> Result<bool, Self::Error> {
-                    self.is_low().map(|v| !v)
-                }
-
-                fn is_low(&self) -> Result<bool, Self::Error> {
-                    // NOTE(unsafe) atomic read with no side effects
-                    Ok(unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 })
-                }
-            }
-
-            impl<MODE> InputPin for $PXx<Input<MODE>> {
-                type Error = Infallible;
-
-                fn is_high(&self) -> Result<bool, Self::Error> {
-                    self.is_low().map(|v| !v)
-                }
-
-                fn is_low(&self) -> Result<bool, Self::Error> {
-                    // NOTE(unsafe) atomic read with no side effects
-                    Ok(unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 })
-                }
-            }
-
-            fn _set_alternate_mode (index: usize, mode: u32)
-            {
-                let offset = 2 * index;
-                let offset2 = 4 * index;
-                unsafe {
-                    if offset2 < 32 {
-                        &(*$GPIOX::ptr()).afrl.modify(|r, w| {
-                            w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2))
-                        });
-                    } else {
-                        let offset2 = offset2 - 32;
-                        &(*$GPIOX::ptr()).afrh.modify(|r, w| {
-                            w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2))
-                        });
-                    }
-                    &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                        w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset))
-                    });
-                }
-            }
+            pub type $PXn<MODE> = super::PXx<MODE, $port_id>;
 
             $(
-                /// Pin
-                pub struct $PXi<MODE> {
-                    _mode: PhantomData<MODE>,
-                }
-
-                impl<MODE> PinExt for $PXi<MODE> {
-                    type Mode = MODE;
-
-                    #[inline(always)]
-                    fn pin_id(&self) -> u8 {
-                        $i
-                    }
-                    #[inline(always)]
-                    fn port_id(&self) -> u8 {
-                        $port_id
-                    }
-                }
-
-                impl<MODE> $PXi<MODE> {
-                    /// Configures the pin to operate in AF0 mode
-                    pub fn into_alternate_af0(self) -> $PXi<Alternate<AF0>> {
-                        _set_alternate_mode($i, 0);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF1 mode
-                    pub fn into_alternate_af1(self) -> $PXi<Alternate<AF1>> {
-                        _set_alternate_mode($i, 1);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF2 mode
-                    pub fn into_alternate_af2(self) -> $PXi<Alternate<AF2>> {
-                        _set_alternate_mode($i, 2);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF3 mode
-                    pub fn into_alternate_af3(self) -> $PXi<Alternate<AF3>> {
-                        _set_alternate_mode($i, 3);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF4 mode
-                    pub fn into_alternate_af4(self) -> $PXi<Alternate<AF4>> {
-                        _set_alternate_mode($i, 4);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF5 mode
-                    pub fn into_alternate_af5(self) -> $PXi<Alternate<AF5>> {
-                        _set_alternate_mode($i, 5);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF6 mode
-                    pub fn into_alternate_af6(self) -> $PXi<Alternate<AF6>> {
-                        _set_alternate_mode($i, 6);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF7 mode
-                    pub fn into_alternate_af7(self) -> $PXi<Alternate<AF7>> {
-                        _set_alternate_mode($i, 7);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF8 mode
-                    pub fn into_alternate_af8(self) -> $PXi<Alternate<AF8>> {
-                        _set_alternate_mode($i, 8);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF9 mode
-                    pub fn into_alternate_af9(self) -> $PXi<Alternate<AF9>> {
-                        _set_alternate_mode($i, 9);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF10 mode
-                    pub fn into_alternate_af10(self) -> $PXi<Alternate<AF10>> {
-                        _set_alternate_mode($i, 10);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF11 mode
-                    pub fn into_alternate_af11(self) -> $PXi<Alternate<AF11>> {
-                        _set_alternate_mode($i, 11);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF12 mode
-                    pub fn into_alternate_af12(self) -> $PXi<Alternate<AF12>> {
-                        _set_alternate_mode($i, 12);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF13 mode
-                    pub fn into_alternate_af13(self) -> $PXi<Alternate<AF13>> {
-                        _set_alternate_mode($i, 13);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF14 mode
-                    pub fn into_alternate_af14(self) -> $PXi<Alternate<AF14>> {
-                        _set_alternate_mode($i, 14);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF15 mode
-                    pub fn into_alternate_af15(self) -> $PXi<Alternate<AF15>> {
-                        _set_alternate_mode($i, 15);
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate in AF0 open drain mode
-                    pub fn into_alternate_af0_open_drain(self) -> $PXi<AlternateOD<AF0>> {
-                        _set_alternate_mode($i, 0);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF1 open drain mode
-                    pub fn into_alternate_af1_open_drain(self) -> $PXi<AlternateOD<AF1>> {
-                        _set_alternate_mode($i, 1);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF2 open drain mode
-                    pub fn into_alternate_af2_open_drain(self) -> $PXi<AlternateOD<AF2>> {
-                        _set_alternate_mode($i, 2);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF3 open drain mode
-                    pub fn into_alternate_af3_open_drain(self) -> $PXi<AlternateOD<AF3>> {
-                        _set_alternate_mode($i, 3);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF4 open drain mode
-                    pub fn into_alternate_af4_open_drain(self) -> $PXi<AlternateOD<AF4>> {
-                        _set_alternate_mode($i, 4);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF5 open drain mode
-                    pub fn into_alternate_af5_open_drain(self) -> $PXi<AlternateOD<AF5>> {
-                        _set_alternate_mode($i, 5);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF6 open drain mode
-                    pub fn into_alternate_af6_open_drain(self) -> $PXi<AlternateOD<AF6>> {
-                        _set_alternate_mode($i, 6);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF7 open drain mode
-                    pub fn into_alternate_af7_open_drain(self) -> $PXi<AlternateOD<AF7>> {
-                        _set_alternate_mode($i, 7);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF8 open drain mode
-                    pub fn into_alternate_af8_open_drain(self) -> $PXi<AlternateOD<AF8>> {
-                        _set_alternate_mode($i, 8);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF9 open drain mode
-                    pub fn into_alternate_af9_open_drain(self) -> $PXi<AlternateOD<AF9>> {
-                        _set_alternate_mode($i, 9);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF10 open drain mode
-                    pub fn into_alternate_af10_open_drain(self) -> $PXi<AlternateOD<AF10>> {
-                        _set_alternate_mode($i, 10);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF11 open drain mode
-                    pub fn into_alternate_af11_open_drain(self) -> $PXi<AlternateOD<AF11>> {
-                        _set_alternate_mode($i, 11);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF12 open drain mode
-                    pub fn into_alternate_af12_open_drain(self) -> $PXi<AlternateOD<AF12>> {
-                        _set_alternate_mode($i, 12);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF13 open drain mode
-                    pub fn into_alternate_af13_open_drain(self) -> $PXi<AlternateOD<AF13>> {
-                        _set_alternate_mode($i, 13);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF14 open drain mode
-                    pub fn into_alternate_af14_open_drain(self) -> $PXi<AlternateOD<AF14>> {
-                        _set_alternate_mode($i, 14);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate in AF15 open drain mode
-                    pub fn into_alternate_af15_open_drain(self) -> $PXi<AlternateOD<AF15>> {
-                        _set_alternate_mode($i, 15);
-                        $PXi { _mode: PhantomData }.set_open_drain()
-                    }
-
-                    /// Configures the pin to operate as a floating input pin
-                    pub fn into_floating_input(self) -> $PXi<Input<Floating>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            })
-                        };
-
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate as a pulled down input pin
-                    pub fn into_pull_down_input(self) -> $PXi<Input<PullDown>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            })
-                        };
-
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate as a pulled up input pin
-                    pub fn into_pull_up_input(self) -> $PXi<Input<PullUp>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            }
-                        )};
-
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate as an open drain output pin
-                    pub fn into_open_drain_output(self) -> $PXi<Output<OpenDrain>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            });
-                            &(*$GPIOX::ptr()).otyper.modify(|r, w| {
-                                w.bits(r.bits() | (0b1 << $i))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
-                            })
-                        };
-
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate as an push pull output pin
-                    pub fn into_push_pull_output(self) -> $PXi<Output<PushPull>> {
-                        let offset = 2 * $i;
-
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            });
-                            &(*$GPIOX::ptr()).otyper.modify(|r, w| {
-                                w.bits(r.bits() & !(0b1 << $i))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
-                            })
-                        };
-
-                        $PXi { _mode: PhantomData }
-                    }
-
-                    /// Configures the pin to operate as an analog input pin
-                    pub fn into_analog(self) -> $PXi<Analog> {
-                        let offset = 2 * $i;
-
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b11 << offset))
-                            }
-                        )};
-
-                        $PXi { _mode: PhantomData }
-                    }
-                }
-
-                impl<MODE> $PXi<Output<MODE>> {
-                    /// Set pin speed
-                    pub fn set_speed(self, speed: Speed) -> Self {
-                        let offset = 2 * $i;
-
-                        unsafe {
-                            &(*$GPIOX::ptr()).ospeedr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-                            })
-                        };
-
-                        self
-                    }
-                }
-
-                impl $PXi<Output<OpenDrain>> {
-                    /// Enables / disables the internal pull up
-                    pub fn internal_pull_up(&mut self, on: bool) {
-                        let offset = 2 * $i;
-                        let value = if on { 0b01 } else { 0b00 };
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (value << offset))
-                            })
-                        };
-                    }
-                }
-
-                impl<MODE> $PXi<Alternate<MODE>> {
-                    /// Set pin speed
-                    pub fn set_speed(self, speed: Speed) -> Self {
-                        let offset = 2 * $i;
-
-                        unsafe {
-                            &(*$GPIOX::ptr()).ospeedr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-                            })
-                        };
-
-                        self
-                    }
-
-                    /// Enables / disables the internal pull up
-                    pub fn internal_pull_up(self, on: bool) -> Self {
-                        let offset = 2 * $i;
-                        let value = if on { 0b01 } else { 0b00 };
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (value << offset))
-                            })
-                        };
-
-                        self
-                    }
-                }
-
-                impl<MODE> $PXi<Alternate<MODE>> {
-                    /// Turns pin alternate configuration pin into open drain
-                    pub fn set_open_drain(self) -> $PXi<AlternateOD<MODE>> {
-                        let offset = $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).otyper.modify(|r, w| {
-                                w.bits(r.bits() | (1 << offset))
-                            })
-                        };
-
-                        $PXi { _mode: PhantomData }
-                    }
-                }
-
-                impl<MODE> $PXi<AlternateOD<MODE>> {
-                    /// Enables / disables the internal pull up
-                    pub fn internal_pull_up(&mut self, on: bool) {
-                        let offset = 2 * $i;
-                        let value = if on { 0b01 } else { 0b00 };
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (value << offset))
-                            })
-                        };
-                    }
-                }
-
-                impl<MODE> $PXi<MODE> {
-                    /// Erases the pin number from the type
-                    ///
-                    /// This is useful when you want to collect the pins into an array where you
-                    /// need all the elements to have the same type
-                    pub fn downgrade(self) -> $PXx<MODE> {
-                        $PXx {
-                            i: $i,
-                            _mode: self._mode,
-                        }
-                    }
-                }
-
-                impl<MODE> OutputPin for $PXi<Output<MODE>> {
-                    type Error = Infallible;
-
-                    fn set_high(&mut self) -> Result<(), Self::Error> {
-                        // NOTE(unsafe) atomic write to a stateless register
-                        unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << $i)) };
-                        Ok(())
-                    }
-
-                    fn set_low(&mut self) -> Result<(), Self::Error> {
-                        // NOTE(unsafe) atomic write to a stateless register
-                        unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << ($i + 16))) };
-                        Ok(())
-                    }
-                }
-
-                impl<MODE> StatefulOutputPin for $PXi<Output<MODE>> {
-                    fn is_set_high(&self) -> Result<bool, Self::Error> {
-                        self.is_set_low().map(|v| !v)
-                    }
-
-                    fn is_set_low(&self) -> Result<bool, Self::Error> {
-                        // NOTE(unsafe) atomic read with no side effects
-                        Ok(unsafe { (*$GPIOX::ptr()).odr.read().bits() & (1 << $i) == 0 })
-                    }
-                }
-
-                impl<MODE> toggleable::Default for $PXi<Output<MODE>> {}
-
-                impl<MODE> InputPin for $PXi<Output<MODE>> {
-                    type Error = Infallible;
-
-                    fn is_high(&self) -> Result<bool, Self::Error> {
-                        self.is_low().map(|v| !v)
-                    }
-
-                    fn is_low(&self) -> Result<bool, Self::Error> {
-                        // NOTE(unsafe) atomic read with no side effects
-                        Ok(unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << $i) == 0 })
-                    }
-                }
-
-                impl<MODE> InputPin for $PXi<Input<MODE>> {
-                    type Error = Infallible;
-
-                    fn is_high(&self) -> Result<bool, Self::Error> {
-                        self.is_low().map(|v| !v)
-                    }
-
-                    fn is_low(&self) -> Result<bool, Self::Error> {
-                        // NOTE(unsafe) atomic read with no side effects
-                        Ok(unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << $i) == 0 })
-                    }
-                }
+                pub type $PXi<MODE> = super::PX<MODE, $port_id, $i>;
             )+
+
         }
     }
 }
 
-gpio!(GPIOA, gpioa, PA, 0, [
+gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, Input<Floating>),
     PA1: (pa1, 1, Input<Floating>),
     PA2: (pa2, 2, Input<Floating>),
@@ -825,7 +881,7 @@ gpio!(GPIOA, gpioa, PA, 0, [
     PA15: (pa15, 15, Input<Floating>),
 ]);
 
-gpio!(GPIOB, gpiob, PB, 1, [
+gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, Input<Floating>),
     PB1: (pb1, 1, Input<Floating>),
     PB2: (pb2, 2, Input<Floating>),
@@ -844,7 +900,7 @@ gpio!(GPIOB, gpiob, PB, 1, [
     PB15: (pb15, 15, Input<Floating>),
 ]);
 
-gpio!(GPIOC, gpioc, PC, 2, [
+gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, Input<Floating>),
     PC1: (pc1, 1, Input<Floating>),
     PC2: (pc2, 2, Input<Floating>),
@@ -864,7 +920,7 @@ gpio!(GPIOC, gpioc, PC, 2, [
 ]);
 
 #[cfg(feature = "gpiod")]
-gpio!(GPIOD, gpiod, PD, 3, [
+gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, Input<Floating>),
     PD1: (pd1, 1, Input<Floating>),
     PD2: (pd2, 2, Input<Floating>),
@@ -884,7 +940,7 @@ gpio!(GPIOD, gpiod, PD, 3, [
 ]);
 
 #[cfg(feature = "gpioe")]
-gpio!(GPIOE, gpioe, PE, 4, [
+gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, Input<Floating>),
     PE1: (pe1, 1, Input<Floating>),
     PE2: (pe2, 2, Input<Floating>),
@@ -904,7 +960,7 @@ gpio!(GPIOE, gpioe, PE, 4, [
 ]);
 
 #[cfg(feature = "gpiof")]
-gpio!(GPIOF, gpiof, PF, 5, [
+gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF0: (pf0, 0, Input<Floating>),
     PF1: (pf1, 1, Input<Floating>),
     PF2: (pf2, 2, Input<Floating>),
@@ -924,7 +980,7 @@ gpio!(GPIOF, gpiof, PF, 5, [
 ]);
 
 #[cfg(feature = "gpiog")]
-gpio!(GPIOG, gpiog, PG, 6, [
+gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG0: (pg0, 0, Input<Floating>),
     PG1: (pg1, 1, Input<Floating>),
     PG2: (pg2, 2, Input<Floating>),
@@ -943,25 +999,8 @@ gpio!(GPIOG, gpiog, PG, 6, [
     PG15: (pg15, 15, Input<Floating>),
 ]);
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-gpio!(GPIOH, gpioh, PH, 7, [
+#[cfg(not(feature = "stm32f401"))]
+gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, Input<Floating>),
     PH1: (ph1, 1, Input<Floating>),
     PH2: (ph2, 2, Input<Floating>),
@@ -980,14 +1019,14 @@ gpio!(GPIOH, gpioh, PH, 7, [
     PH15: (ph15, 15, Input<Floating>),
 ]);
 
-#[cfg(any(feature = "stm32f401"))]
-gpio!(GPIOH, gpioh, PH, 7, [
+#[cfg(feature = "stm32f401")]
+gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, Input<Floating>),
     PH1: (ph1, 1, Input<Floating>),
 ]);
 
 #[cfg(feature = "gpioi")]
-gpio!(GPIOI, gpioi, PI, 8, [
+gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI0: (pi0, 0, Input<Floating>),
     PI1: (pi1, 1, Input<Floating>),
     PI2: (pi2, 2, Input<Floating>),
@@ -1007,7 +1046,7 @@ gpio!(GPIOI, gpioi, PI, 8, [
 ]);
 
 #[cfg(feature = "gpioj")]
-gpio!(GPIOJ, gpioj, PJ, 9, [
+gpio!(GPIOJ, gpioj, PJ, 'J', PJn, [
     PJ0: (pj0, 0, Input<Floating>),
     PJ1: (pj1, 1, Input<Floating>),
     PJ2: (pj2, 2, Input<Floating>),
@@ -1027,7 +1066,7 @@ gpio!(GPIOJ, gpioj, PJ, 9, [
 ]);
 
 #[cfg(feature = "gpiok")]
-gpio!(GPIOK, gpiok, PK, 10, [
+gpio!(GPIOK, gpiok, PK, 'K', PKn, [
     PK0: (pk0, 0, Input<Floating>),
     PK1: (pk1, 1, Input<Floating>),
     PK2: (pk2, 2, Input<Floating>),
@@ -1037,3 +1076,148 @@ gpio!(GPIOK, gpiok, PK, 10, [
     PK6: (pk6, 6, Input<Floating>),
     PK7: (pk7, 7, Input<Floating>),
 ]);
+
+/// Fully erased pin
+pub struct Pin<MODE> {
+    // Bits 0-3: Pin, Bits 4-7: Port
+    pin_port: u8,
+    _mode: PhantomData<MODE>,
+}
+
+impl<MODE> PinExt for Pin<MODE> {
+    type Mode = MODE;
+
+    #[inline(always)]
+    fn pin_id(&self) -> u8 {
+        self.pin_port & 0x0f
+    }
+    #[inline(always)]
+    fn port_id(&self) -> u8 {
+        self.pin_port >> 4
+    }
+}
+
+impl<MODE> Pin<MODE> {
+    fn new(port: u8, pin: u8) -> Self {
+        Self {
+            pin_port: port << 4 | pin,
+            _mode: PhantomData,
+        }
+    }
+
+    #[inline]
+    fn block(&self) -> &crate::pac::gpioa::RegisterBlock {
+        // This function uses pointer arithmetic instead of branching to be more efficient
+
+        // The logic relies on the following assumptions:
+        // - GPIOA register is available on all chips
+        // - all gpio register blocks have the same layout
+        // - consecutive gpio register blocks have the same offset between them, namely 0x0400
+        // - Pin::new was called with a valid port
+
+        // FIXME could be calculated after const_raw_ptr_to_usize_cast stabilization #51910
+        const GPIO_REGISTER_OFFSET: usize = 0x0400;
+
+        let offset = GPIO_REGISTER_OFFSET * self.port_id() as usize;
+        let block_ptr =
+            (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::pac::gpioa::RegisterBlock;
+
+        unsafe { &*block_ptr }
+    }
+}
+
+impl<MODE> OutputPin for Pin<Output<MODE>> {
+    type Error = core::convert::Infallible;
+
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe {
+            self.block()
+                .bsrr
+                .write(|w| w.bits(1 << (self.pin_id() + 16)))
+        };
+        Ok(())
+    }
+
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
+        Ok(())
+    }
+}
+
+impl<MODE> StatefulOutputPin for Pin<Output<MODE>> {
+    fn is_set_high(&self) -> Result<bool, Self::Error> {
+        self.is_set_low().map(|v| !v)
+    }
+
+    fn is_set_low(&self) -> Result<bool, Self::Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        Ok(self.block().odr.read().bits() & (1 << self.pin_id()) == 0)
+    }
+}
+
+impl<MODE> toggleable::Default for Pin<Output<MODE>> {}
+
+impl InputPin for Pin<Output<OpenDrain>> {
+    type Error = core::convert::Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(self.block().idr.read().bits() & (1 << self.pin_id()) == 0)
+    }
+}
+
+impl<MODE> InputPin for Pin<Input<MODE>> {
+    type Error = core::convert::Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(self.block().idr.read().bits() & (1 << self.pin_id()) == 0)
+    }
+}
+
+struct Gpio<const P: char>;
+impl<const P: char> Gpio<P> {
+    const fn ptr() -> *const crate::pac::gpioa::RegisterBlock {
+        match P {
+            'A' => crate::pac::GPIOA::ptr(),
+            'B' => crate::pac::GPIOB::ptr() as _,
+            'C' => crate::pac::GPIOC::ptr() as _,
+            #[cfg(feature = "gpiod")]
+            'D' => crate::pac::GPIOD::ptr() as _,
+            #[cfg(feature = "gpioe")]
+            'E' => crate::pac::GPIOE::ptr() as _,
+            #[cfg(feature = "gpiof")]
+            'F' => crate::pac::GPIOF::ptr() as _,
+            #[cfg(feature = "gpiog")]
+            'G' => crate::pac::GPIOG::ptr() as _,
+            'H' => crate::pac::GPIOH::ptr() as _,
+            #[cfg(feature = "gpioi")]
+            'I' => crate::pac::GPIOI::ptr() as _,
+            #[cfg(feature = "gpioj")]
+            'J' => crate::pac::GPIOJ::ptr() as _,
+            #[cfg(feature = "gpiok")]
+            'K' => crate::pac::GPIOK::ptr() as _,
+            _ => crate::pac::GPIOA::ptr(),
+        }
+    }
+}
+
+#[allow(path_statements)]
+const fn less_than_16<const A: u8>() {
+    Assert::<A, 16>::LESS;
+}
+
+/// Const assert hack
+struct Assert<const L: u8, const R: u8>;
+
+impl<const L: u8, const R: u8> Assert<L, R> {
+    pub const LESS: u8 = R - L - 1;
+}

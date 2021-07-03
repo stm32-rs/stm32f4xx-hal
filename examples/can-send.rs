@@ -25,8 +25,8 @@ fn main() -> ! {
 
     let gpiob = dp.GPIOB.split();
     let mut can1 = {
-        let rx = gpiob.pb8.into_alternate_af9();
-        let tx = gpiob.pb9.into_alternate_af9();
+        let rx = gpiob.pb8.into_alternate();
+        let tx = gpiob.pb9.into_alternate();
 
         let can = Can::new(dp.CAN1, (tx, rx));
 
@@ -43,8 +43,8 @@ fn main() -> ! {
     filters.enable_bank(0, Mask32::accept_all());
 
     let _can2 = {
-        let tx = gpiob.pb13.into_alternate_af9();
-        let rx = gpiob.pb12.into_alternate_af9();
+        let tx = gpiob.pb13.into_alternate();
+        let rx = gpiob.pb12.into_alternate();
 
         let can = Can::new(dp.CAN2, (tx, rx));
 

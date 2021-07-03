@@ -37,10 +37,7 @@ fn main() -> ! {
     let gpioa = dp.GPIOA.split();
 
     // Connect a rotary encoder to pins A0 and A1.
-    let rotary_encoder_pins = (
-        gpioa.pa0.into_alternate_af1(),
-        gpioa.pa1.into_alternate_af1(),
-    );
+    let rotary_encoder_pins = (gpioa.pa0.into_alternate(), gpioa.pa1.into_alternate());
     let rotary_encoder_timer = dp.TIM2;
     let rotary_encoder = Qei::new(rotary_encoder_timer, rotary_encoder_pins);
 

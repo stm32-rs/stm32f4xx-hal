@@ -35,8 +35,8 @@ fn main() -> ! {
         // Set up I2C - SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F446xC/E datasheet page 60. Pin assignment as per the Nucleo-F446 board.
         let gpiob = dp.GPIOB.split();
-        let scl = gpiob.pb8.into_alternate_af4().set_open_drain();
-        let sda = gpiob.pb9.into_alternate_af4().set_open_drain();
+        let scl = gpiob.pb8.into_alternate().set_open_drain();
+        let sda = gpiob.pb9.into_alternate().set_open_drain();
         let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor

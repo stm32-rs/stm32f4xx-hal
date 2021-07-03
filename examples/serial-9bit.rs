@@ -58,8 +58,8 @@ fn main() -> ! {
     let mut delay = hal::delay::Delay::new(cp.SYST, clocks);
 
     // define RX/TX pins
-    let tx_pin = gpioa.pa2.into_alternate_af7();
-    let rx_pin = gpioa.pa3.into_alternate_af7();
+    let tx_pin = gpioa.pa2.into_alternate();
+    let rx_pin = gpioa.pa3.into_alternate();
 
     // configure serial
     let serial = Serial::usart2(

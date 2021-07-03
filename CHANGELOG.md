@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Generic `into_alternate` and `into_alternate_open_drain`. Non-generic ones are deprecated
+- Internal implementation of GPIO Pin API changed to use Const Generics
 - `PinExt` trait. Make `ExtiPin` implementation generic
 - `Enable`, `LPEnable` and `Reset` traits in `rcc`. Implemented for all used peripherals
 - Features corresponding to peripherals
@@ -106,6 +108,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for CAN on additional models: STM32F412, STM32F413, STM32F415,
   STM32F417, STM32F423, STM32F427, STM32F429, STM32F437, STM32F439, STM32F469,
   and STM32F479 [#262]
+- Added `gpio::gpiox::Pxi::downgrade2` method [#272]
 
 [#231]: https://github.com/stm32-rs/stm32f4xx-hal/pull/231
 [#262]: https://github.com/stm32-rs/stm32f4xx-hal/pull/262
@@ -113,6 +116,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#278]: https://github.com/stm32-rs/stm32f4xx-hal/issues/278
 [#273]: https://github.com/stm32-rs/stm32f4xx-hal/pull/273
 [#286]: https://github.com/stm32-rs/stm32f4xx-hal/pull/286
+[#272]: https://github.com/stm32-rs/stm32f4xx-hal/issues/272
 
 ### Fixed
 

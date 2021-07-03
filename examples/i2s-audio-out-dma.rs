@@ -107,8 +107,8 @@ fn main() -> ! {
     let i2c = I2c::new(
         dp.I2C1,
         (
-            gpiob.pb6.into_alternate_af4_open_drain(),
-            gpiob.pb9.into_alternate_af4_open_drain(),
+            gpiob.pb6.into_alternate_open_drain(),
+            gpiob.pb9.into_alternate_open_drain(),
         ),
         100.khz(),
         clocks,
@@ -120,10 +120,10 @@ fn main() -> ! {
 
     // I2S pins: (WS, CK, MCLK, SD) for I2S3
     let i2s_pins = (
-        gpioa.pa4.into_alternate_af6(),
-        gpioc.pc10.into_alternate_af6(),
-        gpioc.pc7.into_alternate_af6(),
-        gpioc.pc12.into_alternate_af6(),
+        gpioa.pa4.into_alternate(),
+        gpioc.pc10.into_alternate(),
+        gpioc.pc7.into_alternate(),
+        gpioc.pc12.into_alternate(),
     );
     let hal_i2s = I2s::i2s3(dp.SPI3, i2s_pins, clocks);
     let i2s_clock = hal_i2s.input_clock();
