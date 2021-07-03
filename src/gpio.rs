@@ -27,33 +27,11 @@ pub trait PinExt {
     fn port_id(&self) -> u8;
 }
 
-pub struct AF<const A: u8>;
-pub type AF0 = AF<0>;
-pub type AF1 = AF<1>;
-pub type AF2 = AF<2>;
-pub type AF3 = AF<3>;
-pub type AF4 = AF<4>;
-pub type AF5 = AF<5>;
-pub type AF6 = AF<6>;
-pub type AF7 = AF<7>;
-pub type AF8 = AF<8>;
-pub type AF9 = AF<9>;
-pub type AF10 = AF<10>;
-pub type AF11 = AF<11>;
-pub type AF12 = AF<12>;
-pub type AF13 = AF<13>;
-pub type AF14 = AF<14>;
-pub type AF15 = AF<15>;
-
 /// Some alternate mode (type state)
-pub struct Alternate<MODE> {
-    _mode: PhantomData<MODE>,
-}
+pub struct Alternate<const A: u8>;
 
 /// Some alternate mode in open drain configuration (type state)
-pub struct AlternateOD<MODE> {
-    _mode: PhantomData<MODE>,
-}
+pub struct AlternateOD<const A: u8>;
 
 /// Input mode (type state)
 pub struct Input<MODE> {
@@ -454,7 +432,7 @@ impl<const P: char, const N: u8> PX<Output<OpenDrain>, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> PX<Alternate<MODE>, P, N> {
+impl<const P: char, const N: u8, const A: u8> PX<Alternate<A>, P, N> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 2 * { N };
@@ -482,9 +460,9 @@ impl<MODE, const P: char, const N: u8> PX<Alternate<MODE>, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> PX<Alternate<MODE>, P, N> {
+impl<const P: char, const N: u8, const A: u8> PX<Alternate<A>, P, N> {
     /// Turns pin alternate configuration pin into open drain
-    pub fn set_open_drain(self) -> PX<AlternateOD<MODE>, P, N> {
+    pub fn set_open_drain(self) -> PX<AlternateOD<A>, P, N> {
         let offset = { N };
         unsafe {
             (*Gpio::<P>::ptr())

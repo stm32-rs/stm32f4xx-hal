@@ -108,16 +108,7 @@ use crate::gpio::gpiof::{PF0, PF1};
 ))]
 use crate::gpio::gpioh::{PH4, PH5, PH7, PH8};
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-use crate::gpio::AF9;
-use crate::gpio::{AlternateOD, AF4};
+use crate::gpio::AlternateOD;
 
 use crate::rcc::Clocks;
 use crate::time::{Hertz, KiloHertz, U32Ext};
@@ -146,13 +137,13 @@ where
 {
 }
 
-impl PinScl<I2C1> for PB6<AlternateOD<AF4>> {}
-impl PinSda<I2C1> for PB7<AlternateOD<AF4>> {}
-impl PinScl<I2C1> for PB8<AlternateOD<AF4>> {}
-impl PinSda<I2C1> for PB9<AlternateOD<AF4>> {}
+impl PinScl<I2C1> for PB6<AlternateOD<4>> {}
+impl PinSda<I2C1> for PB7<AlternateOD<4>> {}
+impl PinScl<I2C1> for PB8<AlternateOD<4>> {}
+impl PinSda<I2C1> for PB9<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f446"))]
-impl PinSda<I2C2> for PB3<AlternateOD<AF4>> {}
+impl PinSda<I2C2> for PB3<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f410",
@@ -161,7 +152,7 @@ impl PinSda<I2C2> for PB3<AlternateOD<AF4>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C2> for PB3<AlternateOD<AF9>> {}
+impl PinSda<I2C2> for PB3<AlternateOD<9>> {}
 #[cfg(any(
     feature = "stm32f410",
     feature = "stm32f411",
@@ -169,8 +160,8 @@ impl PinSda<I2C2> for PB3<AlternateOD<AF9>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C2> for PB9<AlternateOD<AF9>> {}
-impl PinScl<I2C2> for PB10<AlternateOD<AF4>> {}
+impl PinSda<I2C2> for PB9<AlternateOD<9>> {}
+impl PinScl<I2C2> for PB10<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -189,9 +180,9 @@ impl PinScl<I2C2> for PB10<AlternateOD<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for PB11<AlternateOD<AF4>> {}
+impl PinSda<I2C2> for PB11<AlternateOD<4>> {}
 #[cfg(any(feature = "stm32f446"))]
-impl PinSda<I2C2> for PC12<AlternateOD<AF4>> {}
+impl PinSda<I2C2> for PC12<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -208,7 +199,7 @@ impl PinSda<I2C2> for PC12<AlternateOD<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C2> for PF1<AlternateOD<AF4>> {}
+impl PinScl<I2C2> for PF1<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -225,7 +216,7 @@ impl PinScl<I2C2> for PF1<AlternateOD<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for PF0<AlternateOD<AF4>> {}
+impl PinSda<I2C2> for PF0<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -238,7 +229,7 @@ impl PinSda<I2C2> for PF0<AlternateOD<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C2> for PH4<AlternateOD<AF4>> {}
+impl PinScl<I2C2> for PH4<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -251,12 +242,12 @@ impl PinScl<I2C2> for PH4<AlternateOD<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for PH5<AlternateOD<AF4>> {}
+impl PinSda<I2C2> for PH5<AlternateOD<4>> {}
 
 #[cfg(feature = "i2c3")]
-impl PinScl<I2C3> for PA8<AlternateOD<AF4>> {}
+impl PinScl<I2C3> for PA8<AlternateOD<4>> {}
 #[cfg(any(feature = "stm32f446"))]
-impl PinSda<I2C3> for PB4<AlternateOD<AF4>> {}
+impl PinSda<I2C3> for PB4<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f411",
@@ -264,17 +255,17 @@ impl PinSda<I2C3> for PB4<AlternateOD<AF4>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C3> for PB4<AlternateOD<AF9>> {}
+impl PinSda<I2C3> for PB4<AlternateOD<9>> {}
 #[cfg(any(
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C3> for PB8<AlternateOD<AF9>> {}
+impl PinSda<I2C3> for PB8<AlternateOD<9>> {}
 
 #[cfg(feature = "i2c3")]
-impl PinSda<I2C3> for PC9<AlternateOD<AF4>> {}
+impl PinSda<I2C3> for PC9<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -287,7 +278,7 @@ impl PinSda<I2C3> for PC9<AlternateOD<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C3> for PH7<AlternateOD<AF4>> {}
+impl PinScl<I2C3> for PH7<AlternateOD<4>> {}
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -300,7 +291,7 @@ impl PinScl<I2C3> for PH7<AlternateOD<AF4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C3> for PH8<AlternateOD<AF4>> {}
+impl PinSda<I2C3> for PH8<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 use crate::{
@@ -315,40 +306,40 @@ use crate::{
 };
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PC6<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PC6<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinSda<FMPI2C1> for PC7<AlternateOD<AF4>> {}
+impl PinSda<FMPI2C1> for PC7<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinSda<FMPI2C1> for PB3<AlternateOD<AF4>> {}
+impl PinSda<FMPI2C1> for PB3<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PB10<AlternateOD<AF9>> {}
+impl PinScl<FMPI2C1> for PB10<AlternateOD<9>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinSda<FMPI2C1> for PB14<AlternateOD<AF4>> {}
+impl PinSda<FMPI2C1> for PB14<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PB15<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PB15<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PD12<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PD12<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PB13<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PB13<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PD14<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PD14<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PD15<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PD15<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PF14<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PF14<AlternateOD<4>> {}
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-impl PinScl<FMPI2C1> for PF15<AlternateOD<AF4>> {}
+impl PinScl<FMPI2C1> for PF15<AlternateOD<4>> {}
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {

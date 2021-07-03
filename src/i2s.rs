@@ -53,7 +53,7 @@ where
 /// Master clock (MCK) pins
 mod mck_pins {
     macro_rules! pin_mck {
-        ($($PER:ident => $pin:ident<$af:ident>,)+) => {
+        ($($PER:ident => $pin:ident<$af:literal>,)+) => {
             $(
                 impl crate::i2s::sealed::Sealed for $pin<crate::gpio::Alternate<$af>> {}
                 impl crate::i2s::PinMck<$PER> for $pin<crate::gpio::Alternate<$af>> {}
@@ -62,10 +62,10 @@ mod mck_pins {
     }
 
     mod common {
-        use crate::gpio::{gpioc::PC6, AF5};
+        use crate::gpio::gpioc::PC6;
         use crate::pac::SPI2;
-        // All STM32F4 models support PC6<AF5> for SPI2/I2S2
-        pin_mck! { SPI2 => PC6<AF5>, }
+        // All STM32F4 models support PC6<5> for SPI2/I2S2
+        pin_mck! { SPI2 => PC6<5>, }
     }
 
     #[cfg(any(
@@ -78,13 +78,12 @@ mod mck_pins {
         use crate::gpio::{
             gpioa::{PA3, PA6},
             gpiob::PB10,
-            AF5, AF6,
         };
         use crate::pac::{SPI2, SPI3};
         pin_mck! {
-            SPI2 => PA3<AF5>,
-            SPI2 => PA6<AF6>,
-            SPI3 => PB10<AF6>,
+            SPI2 => PA3<5>,
+            SPI2 => PA6<6>,
+            SPI3 => PB10<6>,
         }
     }
 
@@ -95,12 +94,12 @@ mod mck_pins {
         feature = "stm32f446",
     ))]
     mod pc4_af5 {
-        use crate::gpio::{gpioc::PC4, AF5};
+        use crate::gpio::gpioc::PC4;
         use crate::pac::SPI1;
-        pin_mck! { SPI1 => PC4<AF5>, }
+        pin_mck! { SPI1 => PC4<5>, }
     }
 
-    // On all models except the STM32F410, PC7<AF6> is the master clock output from I2S3.
+    // On all models except the STM32F410, PC7<6> is the master clock output from I2S3.
     #[cfg(any(
         feature = "stm32f401",
         feature = "stm32f405",
@@ -120,20 +119,20 @@ mod mck_pins {
         feature = "stm32f479",
     ))]
     mod i2s3_pc7_af6 {
-        use crate::gpio::{gpioc::PC7, AF6};
+        use crate::gpio::gpioc::PC7;
         use crate::pac::SPI3;
-        pin_mck! { SPI3 => PC7<AF6>, }
+        pin_mck! { SPI3 => PC7<6>, }
     }
 
-    // On the STM32F410, PC7<AF6> is the master clock output from I2S1 instead of I2S3.
-    // Also, PB10<AF6> is the master clock output from I2S1 instead of I2S3.
+    // On the STM32F410, PC7<6> is the master clock output from I2S1 instead of I2S3.
+    // Also, PB10<6> is the master clock output from I2S1 instead of I2S3.
     #[cfg(feature = "stm32f410")]
     mod i2s1_pc7_af6 {
-        use crate::gpio::{gpiob::PB10, gpioc::PC7, AF6};
+        use crate::gpio::{gpiob::PB10, gpioc::PC7};
         use crate::pac::SPI1;
         pin_mck! {
-            SPI1 => PC7<AF6>,
-            SPI1 => PB10<AF6>,
+            SPI1 => PC7<6>,
+            SPI1 => PB10<6>,
         }
     }
 }
@@ -141,7 +140,7 @@ mod mck_pins {
 /// Word select (WS) pins
 mod ws_pins {
     macro_rules! pin_ws {
-        ($($PER:ident => $pin:ident<$af:ident>,)+) => {
+        ($($PER:ident => $pin:ident<$af:literal>,)+) => {
             $(
                 impl crate::i2s::sealed::Sealed for $pin<crate::gpio::Alternate<$af>> {}
                 impl crate::i2s::PinWs<$PER> for $pin<crate::gpio::Alternate<$af>> {}
@@ -150,15 +149,12 @@ mod ws_pins {
     }
 
     mod common {
-        use crate::gpio::{
-            gpiob::{PB12, PB9},
-            AF5,
-        };
+        use crate::gpio::gpiob::{PB12, PB9};
         use crate::pac::SPI2;
         // All STM32F4 models support these pins
         pin_ws! {
-            SPI2 => PB9<AF5>,
-            SPI2 => PB12<AF5>,
+            SPI2 => PB9<5>,
+            SPI2 => PB12<5>,
         }
     }
 
@@ -182,14 +178,11 @@ mod ws_pins {
         feature = "stm32f479",
     ))]
     mod not_f410 {
-        use crate::gpio::{
-            gpioa::{PA15, PA4},
-            AF6,
-        };
+        use crate::gpio::gpioa::{PA15, PA4};
         use crate::pac::SPI3;
         pin_ws! {
-            SPI3 => PA4<AF6>,
-            SPI3 => PA15<AF6>,
+            SPI3 => PA4<6>,
+            SPI3 => PA15<6>,
         }
     }
     #[cfg(any(
@@ -201,14 +194,11 @@ mod ws_pins {
         feature = "stm32f446",
     ))]
     mod pa4_af5_pa15_af5 {
-        use crate::gpio::{
-            gpioa::{PA15, PA4},
-            AF5,
-        };
+        use crate::gpio::gpioa::{PA15, PA4};
         use crate::pac::SPI1;
         pin_ws! {
-            SPI1 => PA4<AF5>,
-            SPI1 => PA15<AF5>,
+            SPI1 => PA4<5>,
+            SPI1 => PA15<5>,
         }
     }
     #[cfg(any(
@@ -221,23 +211,22 @@ mod ws_pins {
         use crate::gpio::{
             gpiob::PB12,
             gpioe::{PE11, PE4},
-            AF5, AF6,
         };
         use crate::pac::{SPI4, SPI5};
         pin_ws! {
-            SPI4 => PB12<AF6>,
-            SPI4 => PE4<AF5>,
-            SPI4 => PE11<AF5>,
-            SPI5 => PE4<AF6>,
-            SPI5 => PE11<AF6>,
+            SPI4 => PB12<6>,
+            SPI4 => PE4<5>,
+            SPI4 => PE11<5>,
+            SPI5 => PE4<6>,
+            SPI5 => PE11<6>,
         }
     }
 
     #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
     mod pa11 {
-        use crate::gpio::{gpioa::PA11, AF5};
+        use crate::gpio::gpioa::PA11;
         use crate::pac::SPI2;
-        pin_ws! { SPI2 => PA11<AF5>, }
+        pin_ws! { SPI2 => PA11<5>, }
     }
 
     #[cfg(any(
@@ -248,18 +237,18 @@ mod ws_pins {
         feature = "stm32f423",
     ))]
     mod pb1 {
-        use crate::gpio::{gpiob::PB1, AF6};
+        use crate::gpio::gpiob::PB1;
         use crate::pac::SPI5;
-        pin_ws! { SPI5 => PB1<AF6>, }
+        pin_ws! { SPI5 => PB1<6>, }
     }
 
     #[cfg(feature = "stm32f446")]
     mod pb4_pd1 {
-        use crate::gpio::{gpiob::PB4, gpiod::PD1, AF7};
+        use crate::gpio::{gpiob::PB4, gpiod::PD1};
         use crate::pac::SPI2;
         pin_ws! {
-            SPI2 => PB4<AF7>,
-            SPI2 => PD1<AF7>,
+            SPI2 => PB4<7>,
+            SPI2 => PD1<7>,
         }
     }
 
@@ -276,9 +265,9 @@ mod ws_pins {
         feature = "stm32f479",
     ))]
     mod pi0 {
-        use crate::gpio::{gpioi::PI0, AF5};
+        use crate::gpio::gpioi::PI0;
         use crate::pac::SPI2;
-        pin_ws! { SPI2 => PI0<AF5>, }
+        pin_ws! { SPI2 => PI0<5>, }
     }
 }
 

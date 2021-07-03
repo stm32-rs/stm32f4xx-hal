@@ -181,16 +181,7 @@ use crate::gpio::gpioh::{PH6, PH7};
 ))]
 use crate::gpio::gpioi::{PI1, PI2, PI3};
 
-#[cfg(any(
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446"
-))]
-use crate::gpio::AF7;
-
-use crate::gpio::{Alternate, AF5, AF6};
+use crate::gpio::Alternate;
 
 use crate::rcc::Clocks;
 use crate::time::Hertz;
@@ -247,35 +238,35 @@ pins! {
     SPI1:
         SCK: [
             NoSck,
-            PA5<Alternate<AF5>>,
-            PB3<Alternate<AF5>>
+            PA5<Alternate<5>>,
+            PB3<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PA6<Alternate<AF5>>,
-            PB4<Alternate<AF5>>
+            PA6<Alternate<5>>,
+            PB4<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PA7<Alternate<AF5>>,
-            PB5<Alternate<AF5>>
+            PA7<Alternate<5>>,
+            PB5<Alternate<5>>
         ]
 
     SPI2:
         SCK: [
             NoSck,
-            PB10<Alternate<AF5>>,
-            PB13<Alternate<AF5>>
+            PB10<Alternate<5>>,
+            PB13<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PB14<Alternate<AF5>>,
-            PC2<Alternate<AF5>>
+            PB14<Alternate<5>>,
+            PC2<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PB15<Alternate<AF5>>,
-            PC3<Alternate<AF5>>
+            PB15<Alternate<5>>,
+            PC3<Alternate<5>>
         ]
 }
 
@@ -284,18 +275,18 @@ pins! {
     SPI3:
         SCK: [
             NoSck,
-            PB3<Alternate<AF6>>,
-            PC10<Alternate<AF6>>
+            PB3<Alternate<6>>,
+            PC10<Alternate<6>>
         ]
         MISO: [
             NoMiso,
-            PB4<Alternate<AF6>>,
-            PC11<Alternate<AF6>>
+            PB4<Alternate<6>>,
+            PC11<Alternate<6>>
         ]
         MOSI: [
             NoMosi,
-            PB5<Alternate<AF6>>,
-            PC12<Alternate<AF6>>
+            PB5<Alternate<6>>,
+            PC12<Alternate<6>>
         ]
 }
 
@@ -315,28 +306,28 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [PD3<Alternate<AF5>>]
+        SCK: [PD3<Alternate<5>>]
         MISO: []
         MOSI: []
     SPI3:
         SCK: []
         MISO: []
-        MOSI: [PD6<Alternate<AF5>>]
+        MOSI: [PD6<Alternate<5>>]
     SPI4:
         SCK: [
             NoSck,
-            PE2<Alternate<AF5>>,
-            PE12<Alternate<AF5>>
+            PE2<Alternate<5>>,
+            PE12<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PE5<Alternate<AF5>>,
-            PE13<Alternate<AF5>>
+            PE5<Alternate<5>>,
+            PE13<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PE6<Alternate<AF5>>,
-            PE14<Alternate<AF5>>
+            PE6<Alternate<5>>,
+            PE14<Alternate<5>>
         ]
 }
 
@@ -354,9 +345,9 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [PI1<Alternate<AF5>>]
-        MISO: [PI2<Alternate<AF5>>]
-        MOSI: [PI3<Alternate<AF5>>]
+        SCK: [PI1<Alternate<5>>]
+        MISO: [PI2<Alternate<5>>]
+        MOSI: [PI3<Alternate<5>>]
 }
 
 #[cfg(any(
@@ -369,7 +360,7 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [PC7<Alternate<AF5>>]
+        SCK: [PC7<Alternate<5>>]
         MISO: []
         MOSI: []
 }
@@ -385,16 +376,16 @@ pins! {
     SPI5:
         SCK: [
             NoSck,
-            PB0<Alternate<AF6>>
+            PB0<Alternate<6>>
         ]
         MISO: [
             NoMiso,
-            PA12<Alternate<AF6>>
+            PA12<Alternate<6>>
         ]
         MOSI: [
             NoMosi,
-            PA10<Alternate<AF6>>,
-            PB8<Alternate<AF6>>
+            PA10<Alternate<6>>,
+            PB8<Alternate<6>>
         ]
 }
 
@@ -406,34 +397,34 @@ pins! {
 ))]
 pins! {
     SPI3:
-        SCK: [PB12<Alternate<AF7>>]
+        SCK: [PB12<Alternate<7>>]
         MISO: []
         MOSI: []
     SPI4:
-        SCK: [PB13<Alternate<AF6>>]
-        MISO: [PA11<Alternate<AF6>>]
-        MOSI: [PA1<Alternate<AF5>>]
+        SCK: [PB13<Alternate<6>>]
+        MISO: [PA11<Alternate<6>>]
+        MOSI: [PA1<Alternate<5>>]
     SPI5:
         SCK: [
-            PE2<Alternate<AF6>>,
-            PE12<Alternate<AF6>>
+            PE2<Alternate<6>>,
+            PE12<Alternate<6>>
         ]
         MISO: [
-            PE5<Alternate<AF6>>,
-            PE13<Alternate<AF6>>
+            PE5<Alternate<6>>,
+            PE13<Alternate<6>>
         ]
         MOSI: [
-            PE6<Alternate<AF6>>,
-            PE14<Alternate<AF6>>
+            PE6<Alternate<6>>,
+            PE14<Alternate<6>>
         ]
 }
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 pins! {
     SPI2:
-        SCK: [PA9<Alternate<AF5>>]
-        MISO: [PA12<Alternate<AF5>>]
-        MOSI: [PA10<Alternate<AF5>>]
+        SCK: [PA9<Alternate<5>>]
+        MISO: [PA12<Alternate<5>>]
+        MOSI: [PA10<Alternate<5>>]
 }
 
 #[cfg(any(
@@ -448,66 +439,66 @@ pins! {
     SPI5:
         SCK: [
             NoSck,
-            PF7<Alternate<AF5>>,
-            PH6<Alternate<AF5>>
+            PF7<Alternate<5>>,
+            PH6<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PF8<Alternate<AF5>>,
-            PH7<Alternate<AF5>>
+            PF8<Alternate<5>>,
+            PH7<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PF9<Alternate<AF5>>,
-            PF11<Alternate<AF5>>
+            PF9<Alternate<5>>,
+            PF11<Alternate<5>>
         ]
 
     SPI6:
         SCK: [
             NoSck,
-            PG13<Alternate<AF5>>
+            PG13<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PG12<Alternate<AF5>>
+            PG12<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PG14<Alternate<AF5>>
+            PG14<Alternate<5>>
         ]
 }
 
 #[cfg(any(feature = "stm32f446"))]
 pins! {
     SPI2:
-        SCK: [PA9<Alternate<AF5>>]
+        SCK: [PA9<Alternate<5>>]
         MISO: []
-        MOSI: [PC1<Alternate<AF7>>]
+        MOSI: [PC1<Alternate<7>>]
 
     SPI3:
         SCK: []
         MISO: []
         MOSI: [
-            PB0<Alternate<AF7>>,
-            PB2<Alternate<AF7>>,
-            PD0<Alternate<AF6>>
+            PB0<Alternate<7>>,
+            PB2<Alternate<7>>,
+            PD0<Alternate<6>>
         ]
 
     SPI4:
-        SCK: [PG11<Alternate<AF6>>]
+        SCK: [PG11<Alternate<6>>]
         MISO: [
-            PG12<Alternate<AF6>>,
-            PD0<Alternate<AF5>>
+            PG12<Alternate<6>>,
+            PD0<Alternate<5>>
         ]
-        MOSI: [PG13<Alternate<AF6>>]
+        MOSI: [PG13<Alternate<6>>]
 }
 
 #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
 pins! {
     SPI2:
-        SCK: [PA9<Alternate<AF5>>]
+        SCK: [PA9<Alternate<5>>]
         MISO: []
-        MOSI: [PC1<Alternate<AF5>>]
+        MOSI: [PC1<Alternate<5>>]
 }
 
 /// Interrupt events

@@ -527,26 +527,6 @@ use crate::gpio::gpioh::*;
 ))]
 use crate::gpio::gpioi::*;
 
-use crate::gpio::{AF1, AF2};
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::AF3;
-
 use crate::gpio::{gpioa::*, Alternate, AlternateOD};
 
 // Output channels marker traits
@@ -556,7 +536,7 @@ pub trait PinC3<TIM> {}
 pub trait PinC4<TIM> {}
 
 macro_rules! channel_impl {
-    ( $( $TIM:ident, $PINC:ident, $PINX:ident, $AF:ident; )+ ) => {
+    ( $( $TIM:ident, $PINC:ident, $PINX:ident, $AF:literal; )+ ) => {
         $(
             impl $PINC<$TIM> for $PINX<Alternate<$AF>> {}
             impl $PINC<$TIM> for $PINX<AlternateOD<$AF>> {}
@@ -565,15 +545,15 @@ macro_rules! channel_impl {
 }
 
 channel_impl!(
-    TIM1, PinC1, PA8, AF1;
-    TIM1, PinC2, PA9, AF1;
-    TIM1, PinC3, PA10, AF1;
-    TIM1, PinC4, PA11, AF1;
+    TIM1, PinC1, PA8, 1;
+    TIM1, PinC2, PA9, 1;
+    TIM1, PinC3, PA10, 1;
+    TIM1, PinC4, PA11, 1;
 
-    TIM5, PinC1, PA0, AF2;
-    TIM5, PinC2, PA1, AF2;
-    TIM5, PinC3, PA2, AF2;
-    TIM5, PinC4, PA3, AF2;
+    TIM5, PinC1, PA0, 2;
+    TIM5, PinC2, PA1, 2;
+    TIM5, PinC3, PA2, 2;
+    TIM5, PinC4, PA3, 2;
 );
 
 #[cfg(any(
@@ -595,45 +575,45 @@ channel_impl!(
     feature = "stm32f479"
 ))]
 channel_impl!(
-    TIM1, PinC1, PE9, AF1;
-    TIM1, PinC2, PE11, AF1;
-    TIM1, PinC3, PE13, AF1;
-    TIM1, PinC4, PE14, AF1;
+    TIM1, PinC1, PE9, 1;
+    TIM1, PinC2, PE11, 1;
+    TIM1, PinC3, PE13, 1;
+    TIM1, PinC4, PE14, 1;
 
-    TIM2, PinC1, PA0, AF1;
-    TIM2, PinC2, PA1, AF1;
-    TIM2, PinC3, PA2, AF1;
-    TIM2, PinC4, PA3, AF1;
+    TIM2, PinC1, PA0, 1;
+    TIM2, PinC2, PA1, 1;
+    TIM2, PinC3, PA2, 1;
+    TIM2, PinC4, PA3, 1;
 
-    TIM2, PinC2, PB3, AF1;
-    TIM2, PinC3, PB10, AF1;
-    TIM2, PinC4, PB11, AF1;
+    TIM2, PinC2, PB3, 1;
+    TIM2, PinC3, PB10, 1;
+    TIM2, PinC4, PB11, 1;
 
-    TIM2, PinC1, PA5, AF1;
-    TIM2, PinC1, PA15, AF1;
+    TIM2, PinC1, PA5, 1;
+    TIM2, PinC1, PA15, 1;
 
-    TIM3, PinC1, PA6, AF2;
-    TIM3, PinC2, PA7, AF2;
-    TIM3, PinC3, PB0, AF2;
-    TIM3, PinC4, PB1, AF2;
+    TIM3, PinC1, PA6, 2;
+    TIM3, PinC2, PA7, 2;
+    TIM3, PinC3, PB0, 2;
+    TIM3, PinC4, PB1, 2;
 
-    TIM3, PinC1, PB4, AF2;
-    TIM3, PinC2, PB5, AF2;
+    TIM3, PinC1, PB4, 2;
+    TIM3, PinC2, PB5, 2;
 
-    TIM3, PinC1, PC6, AF2;
-    TIM3, PinC2, PC7, AF2;
-    TIM3, PinC3, PC8, AF2;
-    TIM3, PinC4, PC9, AF2;
+    TIM3, PinC1, PC6, 2;
+    TIM3, PinC2, PC7, 2;
+    TIM3, PinC3, PC8, 2;
+    TIM3, PinC4, PC9, 2;
 
-    TIM4, PinC1, PB6, AF2;
-    TIM4, PinC2, PB7, AF2;
-    TIM4, PinC3, PB8, AF2;
-    TIM4, PinC4, PB9, AF2;
+    TIM4, PinC1, PB6, 2;
+    TIM4, PinC2, PB7, 2;
+    TIM4, PinC3, PB8, 2;
+    TIM4, PinC4, PB9, 2;
 
-    TIM4, PinC1, PD12, AF2;
-    TIM4, PinC2, PD13, AF2;
-    TIM4, PinC3, PD14, AF2;
-    TIM4, PinC4, PD15, AF2;
+    TIM4, PinC1, PD12, 2;
+    TIM4, PinC2, PD13, 2;
+    TIM4, PinC3, PD14, 2;
+    TIM4, PinC4, PD15, 2;
 );
 
 #[cfg(any(
@@ -653,10 +633,10 @@ channel_impl!(
     feature = "stm32f479"
 ))]
 channel_impl!(
-    TIM8, PinC1, PC6, AF3;
-    TIM8, PinC2, PC7, AF3;
-    TIM8, PinC3, PC8, AF3;
-    TIM8, PinC4, PC9, AF3;
+    TIM8, PinC1, PC6, 3;
+    TIM8, PinC2, PC7, 3;
+    TIM8, PinC3, PC8, 3;
+    TIM8, PinC4, PC9, 3;
 );
 
 #[cfg(any(
@@ -672,37 +652,37 @@ channel_impl!(
     feature = "stm32f479"
 ))]
 channel_impl!(
-    TIM5, PinC1, PH10, AF2;
-    TIM5, PinC2, PH11, AF2;
-    TIM5, PinC3, PH12, AF2;
-    TIM5, PinC4, PI0, AF2;
+    TIM5, PinC1, PH10, 2;
+    TIM5, PinC2, PH11, 2;
+    TIM5, PinC3, PH12, 2;
+    TIM5, PinC4, PI0, 2;
 
-    TIM8, PinC1, PI5, AF3;
-    TIM8, PinC2, PI6, AF3;
-    TIM8, PinC3, PI7, AF3;
-    TIM8, PinC4, PI2, AF3;
+    TIM8, PinC1, PI5, 3;
+    TIM8, PinC2, PI6, 3;
+    TIM8, PinC3, PI7, 3;
+    TIM8, PinC4, PI2, 3;
 );
 
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 channel_impl!(
-    TIM5, PinC1, PF3, AF2;
-    TIM5, PinC2, PF4, AF2;
-    TIM5, PinC3, PF5, AF2;
-    TIM5, PinC4, PF10, AF2;
+    TIM5, PinC1, PF3, 2;
+    TIM5, PinC2, PF4, 2;
+    TIM5, PinC3, PF5, 2;
+    TIM5, PinC4, PF10, 2;
 );
 
 #[cfg(feature = "stm32f410")]
 channel_impl!(
-    TIM5, PinC1, PB12, AF2;
-    //TIM5, PinC2, PC10, AF2;
-    //TIM5, PinC3, PC11, AF2;
-    TIM5, PinC4, PB11, AF2;
+    TIM5, PinC1, PB12, 2;
+    //TIM5, PinC2, PC10, 2;
+    //TIM5, PinC3, PC11, 2;
+    TIM5, PinC4, PB11, 2;
 );
 
 #[cfg(feature = "stm32f446")]
 channel_impl!(
-    TIM2, PinC1, PB8, AF1;
-    TIM2, PinC2, PB9, AF1;
+    TIM2, PinC1, PB8, 1;
+    TIM2, PinC2, PB9, 1;
 
-    TIM2, PinC4, PB2, AF1;
+    TIM2, PinC4, PB2, 1;
 );
