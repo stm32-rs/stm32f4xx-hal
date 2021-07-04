@@ -25,18 +25,15 @@ fn main() -> ! {
 
     // define RX/TX pins
     let tx_pin = gpioa.pa2.into_alternate();
-    let rx_pin = gpioa.pa3.into_alternate();
 
     // configure serial
-    let serial = Serial::usart2(
+    let mut tx = Serial::tx(
         dp.USART2,
-        (tx_pin, rx_pin),
+        tx_pin,
         Config::default().baudrate(9600.bps()),
         clocks,
     )
     .unwrap();
-
-    let (mut tx, mut _rx) = serial.split();
 
     let mut value: u8 = 0;
 

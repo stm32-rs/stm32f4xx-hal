@@ -62,7 +62,7 @@ fn main() -> ! {
     let rx_pin = gpioa.pa3.into_alternate();
 
     // configure serial
-    let serial = Serial::usart2(
+    let serial = Serial::new(
         dp.USART2,
         (tx_pin, rx_pin),
         Config::default().baudrate(9600.bps()).wordlength_9(),
