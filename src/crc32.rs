@@ -117,8 +117,12 @@ impl Crc32 {
         self.periph.dr.read().bits()
     }
 
-    /// Consume the HAL peripheral, returning the PAC peripheral
+    #[deprecated(since = "0.10.0", note = "Please use release instead")]
     pub fn free(self) -> CRC {
+        self.release()
+    }
+    /// Consume the HAL peripheral, returning the PAC peripheral
+    pub fn release(self) -> CRC {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());

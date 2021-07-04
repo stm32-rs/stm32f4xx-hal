@@ -714,6 +714,11 @@ where
         self.spi.sr.read().ovr().bit_is_set()
     }
 
+    pub fn release(self) -> (SPI, PINS) {
+        (self.spi, self.pins)
+    }
+
+    #[deprecated(since = "0.10.0", note = "Please use release instead")]
     pub fn free(self) -> (SPI, PINS) {
         (self.spi, self.pins)
     }

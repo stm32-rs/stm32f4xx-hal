@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Deprecate `free` in favour of `release`
 - Clean features in `serial`
 - Internal implementation of GPIO Pin API changed to use Const Generics
 - Update the sdio driver to match the changes in the PAC
