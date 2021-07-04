@@ -25,51 +25,21 @@ use embedded_hal::prelude::*;
 use embedded_hal::serial;
 use nb::block;
 
+use crate::gpio::PX;
 #[cfg(feature = "gpiod")]
 use crate::gpio::gpiod;
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpioe")]
 use crate::gpio::gpioe;
-use crate::gpio::{gpioa, gpiob, gpioc};
-use crate::pac::{RCC, USART1, USART2, USART6};
-
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpiof")]
 use crate::gpio::gpiof;
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpiog")]
 use crate::gpio::gpiog;
+use crate::gpio::{gpioa, gpiob, gpioc};
+
+use crate::pac::{RCC, USART1, USART2, USART6};
 
 #[cfg(feature = "usart3")]
 use crate::pac::USART3;
@@ -598,9 +568,19 @@ pub struct Tx<USART, WORD = u8> {
     _word: PhantomData<WORD>,
 }
 
-impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
+impl<
+        USART,
+        TX_M,
+        RX_M,
+        WORD,
+        const TX_P: char,
+        const TX_N: u8,
+        const RX_P: char,
+        const RX_N: u8,
+    > Serial<USART, (PX<TX_M, TX_P, TX_N>, PX<RX_M, RX_P, RX_N>), WORD>
 where
-    PINS: Pins<USART>,
+    PX<TX_M, TX_P, TX_N>: PinTx<USART>,
+    PX<RX_M, RX_P, RX_N>: PinRx<USART>,
     USART: Instance,
 {
     /*
@@ -608,12 +588,16 @@ where
 
         STOP_A::STOP1 and STOP_A::STOP2 will be used, respectively
     */
-    pub fn new(
+    pub fn new<TX_BASEM, RX_BASEM>(
         usart: USART,
-        pins: PINS,
+        pins: (PX<TX_BASEM, TX_P, TX_N>, PX<RX_BASEM, RX_P, RX_N>),
         config: config::Config,
         clocks: Clocks,
-    ) -> Result<Self, config::InvalidConfig> {
+    ) -> Result<Self, config::InvalidConfig>
+    where
+        PX<TX_BASEM, TX_P, TX_N>: Into<PX<TX_M, TX_P, TX_N>>,
+        PX<RX_BASEM, RX_P, RX_N>: Into<PX<RX_M, RX_P, RX_N>>,
+    {
         use self::config::*;
 
         unsafe {
@@ -719,7 +703,7 @@ where
 
         Ok(Serial {
             usart,
-            pins,
+            pins: (pins.0.into(), pins.1.into()), // convert pins in expected mode
             _word: PhantomData,
         }
         .config_stop(config))
@@ -1256,18 +1240,23 @@ macro_rules! halUsart {
             }
         }
 
-        impl<USART, PINS> Serial<USART, PINS>
+        impl<TX_M, RX_M, const TX_P: char, const TX_N: u8, const RX_P: char, const RX_N: u8>
+            Serial<$USARTX, (PX<TX_M, TX_P, TX_N>, PX<RX_M, RX_P, RX_N>)>
         where
-            PINS: Pins<USART>,
-            USART: Instance,
+            PX<TX_M, TX_P, TX_N>: PinTx<$USARTX>,
+            PX<RX_M, RX_P, RX_N>: PinRx<$USARTX>,
         {
             #[deprecated(since = "0.10.0")]
-            pub fn $usartX(
-                usart: USART,
-                pins: PINS,
+            pub fn $usartX<TX_BASEM, RX_BASEM>(
+                usart: $USARTX,
+                pins: (PX<TX_BASEM, TX_P, TX_N>, PX<RX_BASEM, RX_P, RX_N>),
                 config: config::Config,
                 clocks: Clocks,
-            ) -> Result<Self, config::InvalidConfig> {
+            ) -> Result<Self, config::InvalidConfig>
+            where
+                PX<TX_BASEM, TX_P, TX_N>: Into<PX<TX_M, TX_P, TX_N>>,
+                PX<RX_BASEM, RX_P, RX_N>: Into<PX<RX_M, RX_P, RX_N>>,
+            {
                 Self::new(usart, pins, config, clocks)
             }
         }
@@ -1315,18 +1304,23 @@ macro_rules! halUart {
             }
         }
 
-        impl<USART, PINS> Serial<USART, PINS>
+        impl<TX_M, RX_M, const TX_P: char, const TX_N: u8, const RX_P: char, const RX_N: u8>
+            Serial<$USARTX, (PX<TX_M, TX_P, TX_N>, PX<RX_M, RX_P, RX_N>)>
         where
-            PINS: Pins<USART>,
-            USART: Instance,
+            PX<TX_M, TX_P, TX_N>: PinTx<$USARTX>,
+            PX<RX_M, RX_P, RX_N>: PinRx<$USARTX>,
         {
             #[deprecated(since = "0.10.0")]
-            pub fn $usartX(
-                usart: USART,
-                pins: PINS,
+            pub fn $usartX<TX_BASEM, RX_BASEM>(
+                usart: $USARTX,
+                pins: (PX<TX_BASEM, TX_P, TX_N>, PX<RX_BASEM, RX_P, RX_N>),
                 config: config::Config,
                 clocks: Clocks,
-            ) -> Result<Self, config::InvalidConfig> {
+            ) -> Result<Self, config::InvalidConfig>
+            where
+                PX<TX_BASEM, TX_P, TX_N>: Into<PX<TX_M, TX_P, TX_N>>,
+                PX<RX_BASEM, RX_P, RX_N>: Into<PX<RX_M, RX_P, RX_N>>,
+            {
                 Self::new(usart, pins, config, clocks)
             }
         }
