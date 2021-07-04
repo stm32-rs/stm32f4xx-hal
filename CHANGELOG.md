@@ -9,11 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Instead of `Alternate<AF1>` use just `Alternate<1>`.
+- Instead of `Alternate<AF1>` you can just use `Alternate<1>`.
 - `PinState` and `get/set_state`.
 - Inherent methods for infallible digital operations.
 - Generic `into_alternate` and `into_alternate_open_drain`. Non-generic ones are deprecated
-- Internal implementation of GPIO Pin API changed to use Const Generics
 - `PinExt` trait. Make `ExtiPin` implementation generic
 - `Enable`, `LPEnable` and `Reset` traits in `rcc`. Implemented for all used peripherals
 - Features corresponding to peripherals
@@ -39,6 +38,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Internal implementation of GPIO Pin API changed to use Const Generics
 - Update the sdio driver to match the changes in the PAC
 - Update README.md with current information
 - Updated serial driver to use 32-bit reads and writes when accessing the USART data register [#299]

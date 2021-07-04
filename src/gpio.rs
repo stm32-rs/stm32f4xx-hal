@@ -33,6 +33,24 @@ pub struct Alternate<const A: u8>;
 /// Some alternate mode in open drain configuration (type state)
 pub struct AlternateOD<const A: u8>;
 
+// Compatibility constants
+pub const AF0: u8 = 0;
+pub const AF1: u8 = 1;
+pub const AF2: u8 = 2;
+pub const AF3: u8 = 3;
+pub const AF4: u8 = 4;
+pub const AF5: u8 = 5;
+pub const AF6: u8 = 6;
+pub const AF7: u8 = 7;
+pub const AF8: u8 = 8;
+pub const AF9: u8 = 9;
+pub const AF10: u8 = 10;
+pub const AF11: u8 = 11;
+pub const AF12: u8 = 12;
+pub const AF13: u8 = 13;
+pub const AF14: u8 = 14;
+pub const AF15: u8 = 15;
+
 /// Input mode (type state)
 pub struct Input<MODE> {
     _mode: PhantomData<MODE>,
