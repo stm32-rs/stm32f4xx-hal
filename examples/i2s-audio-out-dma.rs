@@ -55,6 +55,7 @@ use stm32f4xx_hal::dma::{Channel0, Stream5, StreamsTuple, Transfer};
 use stm32f4xx_hal::gpio::gpioa::PA4;
 use stm32f4xx_hal::gpio::gpioc::{PC10, PC12, PC7};
 use stm32f4xx_hal::gpio::Alternate;
+use stm32f4xx_hal::gpio::AF6;
 use stm32f4xx_hal::i2c::I2c;
 use stm32f4xx_hal::i2s::I2s;
 use stm32f4xx_hal::pac::{interrupt, Interrupt};
@@ -216,10 +217,10 @@ type I2sDmaTransfer = Transfer<
         I2s<
             SPI3,
             (
-                PA4<Alternate<6>>,
-                PC10<Alternate<6>>,
-                PC7<Alternate<6>>,
-                PC12<Alternate<6>>,
+                PA4<Alternate<AF6>>,
+                PC10<Alternate<AF6>>,
+                PC7<Alternate<AF6>>,
+                PC12<Alternate<AF6>>,
             ),
         >,
         TransmitMode<Data16Frame16>,
