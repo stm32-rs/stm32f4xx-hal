@@ -28,13 +28,13 @@ fn main() -> ! {
         let clocks = rcc.cfgr.sysclk(48.mhz()).freeze();
 
         // Create a delay abstraction based on general-pupose 32-bit timer TIM5
-        let mut delay = hal::delay::Tim5Delay::new(dp.TIM5, clocks);
+        let mut delay = hal::delay::Delay::tim5(dp.TIM5, clocks);
 
         loop {
             // On for 1s, off for 1s.
-            led.set_high().unwrap();
+            led.set_high();
             delay.delay_ms(1_000_u32);
-            led.set_low().unwrap();
+            led.set_low();
             delay.delay_us(1_000_000_u32);
         }
     }

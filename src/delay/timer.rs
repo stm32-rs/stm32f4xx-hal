@@ -9,21 +9,16 @@ use cast::{u16, u32};
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
 use crate::{
-    bb,
     pac::{self, RCC},
-    rcc::Clocks,
+    rcc::{Clocks, Enable, Reset},
 };
 
-macro_rules! hal {
-    ($($TIM:ident: ($struct:ident, $waitfn:ident, $en_bit:expr, $apbenr:ident, $apbrstr:ident, $pclk:ident, $ppre:ident),)+) => {
-        $(
-            /// General purpose timer as delay provider
-            pub struct $struct {
-                clocks: Clocks,
-                tim: pac::$TIM,
-            }
+use super::Delay;
 
-            fn $waitfn(tim: &mut pac::$TIM, prescaler: u16, auto_reload_register: u32) {
+macro_rules! hal {
+    ($($TIM:ty: ($tim:ident, $waitfn:ident),)+) => {
+        $(
+            fn $waitfn(tim: &mut $TIM, prescaler: u16, auto_reload_register: u32) {
                 // Write Prescaler (PSC)
                 tim.psc.write(|w| w.psc().bits(prescaler));
 
@@ -46,22 +41,15 @@ macro_rules! hal {
                 while tim.cr1.read().cen().is_enabled() { /* wait */ }
             }
 
-            impl $struct {
+            impl Delay<$TIM> {
                 /// Configures the timer as a delay provider
-                pub fn new(tim: pac::$TIM, clocks: Clocks) -> Self {
+                pub fn $tim(tim: $TIM, clocks: Clocks) -> Self {
                     unsafe {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
 
-                        // Enable timer peripheral in RCC
-                        bb::set(&rcc.$apbenr, $en_bit);
-
-                        // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
-                        cortex_m::asm::dsb();
-
-                        // Reset timer
-                        bb::set(&rcc.$apbrstr, $en_bit);
-                        bb::clear(&rcc.$apbrstr, $en_bit);
+                        <$TIM>::enable(rcc);
+                        <$TIM>::reset(rcc);
                     }
 
                     // Enable one-pulse mode (counter stops counting at the next update
@@ -72,12 +60,12 @@ macro_rules! hal {
                 }
 
                 /// Releases the timer resource
-                pub fn free(self) -> pac::$TIM {
+                pub fn free(self) -> $TIM {
                     self.tim
                 }
             }
 
-            impl DelayUs<u32> for $struct {
+            impl DelayUs<u32> for Delay<$TIM> {
                 /// Sleep for up to 2^32-1 microseconds (~71 minutes).
                 fn delay_us(&mut self, us: u32) {
                     // Set up prescaler so that a tick takes exactly 1 µs.
@@ -92,7 +80,7 @@ macro_rules! hal {
                 }
             }
 
-            impl DelayUs<u16> for $struct {
+            impl DelayUs<u16> for Delay<$TIM> {
                 /// Sleep for up to 2^16-1 microseconds (~65 milliseconds).
                 fn delay_us(&mut self, us: u16) {
                     // See DelayUs<u32> for explanations.
@@ -103,7 +91,7 @@ macro_rules! hal {
                 }
             }
 
-            impl DelayMs<u32> for $struct {
+            impl DelayMs<u32> for Delay<$TIM> {
                 /// Sleep for up to (2^32)/2-1 milliseconds (~24 days).
                 /// If the `ms` value is larger than 2147483647, the code will panic.
                 fn delay_ms(&mut self, ms: u32) {
@@ -132,7 +120,7 @@ macro_rules! hal {
                 }
             }
 
-            impl DelayMs<u16> for $struct {
+            impl DelayMs<u16> for Delay<$TIM> {
                 /// Sleep for up to (2^16)-1 milliseconds (~65 seconds).
                 fn delay_ms(&mut self, ms: u16) {
                     // See DelayMs<u32> for explanations. Since the value range is only 16 bit,
@@ -147,27 +135,8 @@ macro_rules! hal {
     }
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
 hal! {
-    TIM5: (Tim5Delay, wait_tim5, 3, apb1enr, apb1rstr, pclk1, ppre1),
+    pac::TIM5: (tim5, wait_tim5),
 }
 
 #[cfg(any(
@@ -189,5 +158,5 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM2: (Tim2Delay, wait_tim2, 0, apb1enr, apb1rstr, pclk1, ppre1),
+    pac::TIM2: (tim2, wait_tim2),
 }
