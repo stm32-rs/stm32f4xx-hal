@@ -293,7 +293,7 @@ impl PinScl<I2C3> for PH7<AlternateOD<4>> {}
 ))]
 impl PinSda<I2C3> for PH8<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 use crate::{
     gpio::{
         gpiob::{PB13, PB14, PB15},
@@ -305,40 +305,40 @@ use crate::{
     pac::FMPI2C1,
 };
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PC6<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinSda<FMPI2C1> for PC7<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinSda<FMPI2C1> for PB3<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PB10<AlternateOD<9>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinSda<FMPI2C1> for PB14<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PB15<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PD12<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PB13<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PD14<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PD15<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PF14<AlternateOD<4>> {}
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl PinScl<FMPI2C1> for PF15<AlternateOD<4>> {}
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -359,52 +359,22 @@ mod private {
 
 pub trait Instance: private::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {}
 
-// Implemented by all I2C instances
-macro_rules! i2c {
-    ($(
-        $I2C:ident: ($i2c:ident, $apbXenr:ident, $en_bit:expr, $apbxrstr:ident, $reset_bit:expr),
-    )+) => {
-        $(
-            impl private::Sealed for $I2C {}
-            impl Instance for $I2C {}
-
-            impl<PINS> I2c<$I2C, PINS>
-            where
-                PINS: Pins<$I2C>,
-            {
-                #[deprecated(
-                    since = "0.9.0",
-                    note = "Please use new instead"
-                )]
-                pub fn $i2c(
-                    i2c: $I2C,
-                    pins: PINS,
-                    speed: KiloHertz,
-                    clocks: Clocks,
-                ) -> Self {
-                    Self::new(i2c, pins, speed, clocks)
-                }
-            }
-        )+
-    }
-}
-
-i2c! {
-    I2C1: (i2c1, apb1enr, 21, apb1rstr, 21),
-    I2C2: (i2c2, apb1enr, 22, apb1rstr, 22),
-}
+impl private::Sealed for I2C1 {}
+impl Instance for I2C1 {}
+impl private::Sealed for I2C2 {}
+impl Instance for I2C2 {}
 
 #[cfg(feature = "i2c3")]
-i2c! {
-    I2C3: (i2c3, apb1enr, 23, apb1rstr, 23),
-}
+impl private::Sealed for I2C3 {}
+#[cfg(feature = "i2c3")]
+impl Instance for I2C3 {}
 
 #[cfg(feature = "fmpi2c1")]
-impl<PINS> FMPI2c<FMPI2C1, PINS> {
-    pub fn fmpi2c(i2c: FMPI2C1, pins: PINS, speed: KiloHertz) -> Self
-    where
-        PINS: Pins<FMPI2C1>,
-    {
+impl<PINS> FMPI2c<FMPI2C1, PINS>
+where
+    PINS: Pins<FMPI2C1>,
+{
+    pub fn new(i2c: FMPI2C1, pins: PINS, speed: KiloHertz) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -425,11 +395,9 @@ impl<PINS> FMPI2c<FMPI2C1, PINS> {
 impl<I2C, PINS> I2c<I2C, PINS>
 where
     I2C: Instance,
+    PINS: Pins<I2C>,
 {
-    pub fn new(i2c: I2C, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<I2C>,
-    {
+    pub fn new(i2c: I2C, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -443,7 +411,12 @@ where
         i2c.i2c_init(speed, clocks.pclk1());
         i2c
     }
+}
 
+impl<I2C, PINS> I2c<I2C, PINS>
+where
+    I2C: Instance,
+{
     fn i2c_init(&self, speed: KiloHertz, pclk: Hertz) {
         let speed: Hertz = speed.into();
 
@@ -735,7 +708,7 @@ where
     }
 }
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl<I2C, PINS> FMPI2c<I2C, PINS>
 where
     I2C: Deref<Target = fmpi2c1::RegisterBlock>,
@@ -839,7 +812,7 @@ where
     }
 }
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl<I2C, PINS> WriteRead for FMPI2c<I2C, PINS>
 where
     I2C: Deref<Target = fmpi2c1::RegisterBlock>,
@@ -909,7 +882,7 @@ where
     }
 }
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl<I2C, PINS> Read for FMPI2c<I2C, PINS>
 where
     I2C: Deref<Target = fmpi2c1::RegisterBlock>,
@@ -945,7 +918,7 @@ where
     }
 }
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
+#[cfg(feature = "fmpi2c1")]
 impl<I2C, PINS> Write for FMPI2c<I2C, PINS>
 where
     I2C: Deref<Target = fmpi2c1::RegisterBlock>,

@@ -815,7 +815,6 @@ where
 
 impl<USART, PINS> Serial<USART, PINS, u8>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     /// Converts this Serial into a version that can read and write `u16` values instead of `u8`s
@@ -832,7 +831,6 @@ where
 
 impl<USART, PINS> Serial<USART, PINS, u16>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     /// Converts this Serial into a version that can read and write `u8` values instead of `u16`s
@@ -849,7 +847,6 @@ where
 
 impl<USART, PINS> serial::Read<u16> for Serial<USART, PINS, u16>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     type Error = Error;
@@ -865,7 +862,6 @@ where
 
 impl<USART, PINS> serial::Read<u8> for Serial<USART, PINS, u8>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     type Error = Error;
@@ -950,7 +946,6 @@ where
 
 impl<USART, PINS> serial::Write<u16> for Serial<USART, PINS, u16>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     type Error = Error;
@@ -974,7 +969,6 @@ where
 
 impl<USART, PINS> serial::Write<u8> for Serial<USART, PINS, u8>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     type Error = Error;
@@ -1131,7 +1125,6 @@ where
 
 impl<USART, PINS> blocking::serial::Write<u16> for Serial<USART, PINS, u16>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     type Error = Error;
@@ -1155,7 +1148,6 @@ where
 
 impl<USART, PINS> blocking::serial::Write<u8> for Serial<USART, PINS, u8>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     type Error = Error;
@@ -1179,7 +1171,6 @@ where
 
 impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
 where
-    PINS: Pins<USART>,
     USART: Instance,
 {
     fn config_stop(self, config: config::Config) -> Self {
@@ -1235,57 +1226,52 @@ pub trait Instance: private::Sealed {
 }
 
 macro_rules! halUsart {
-    ($(
-        $USARTX:ident: ($usartX:ident, $pclkX:ident),
-    )+) => {
-        $(
-            impl private::Sealed for $USARTX {}
-            impl Instance for $USARTX {
-                fn ptr() -> *const uart_base::RegisterBlock {
-                    $USARTX::ptr() as *const _
-                }
-
-                fn pclk_freq(clocks: &Clocks) -> u32 {
-                    clocks.$pclkX().0
-                }
-
-                unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock) {
-                    $USARTX::enable(rcc);
-                }
-
-                fn set_stopbits(&self, bits: config::StopBits) {
-                    use crate::pac::usart1::cr2::STOP_A;
-                    use config::StopBits;
-
-                    self
-                        .cr2
-                        .write(|w| w.stop().variant(
-                            match bits {
-                                StopBits::STOP0P5 => STOP_A::STOP0P5,
-                                StopBits::STOP1 => STOP_A::STOP1,
-                                StopBits::STOP1P5 => STOP_A::STOP1P5,
-                                StopBits::STOP2 => STOP_A::STOP2,
-                            }
-                        ));
-                }
+    ($USARTX:ident: ($usartX:ident, $pclkX:ident)) => {
+        impl private::Sealed for $USARTX {}
+        impl Instance for $USARTX {
+            fn ptr() -> *const uart_base::RegisterBlock {
+                $USARTX::ptr() as *const _
             }
 
-            impl<USART, PINS> Serial<USART, PINS>
-            where
-                PINS: Pins<USART>,
-                USART: Instance,
-            {
-                pub fn $usartX(
-                    usart: USART,
-                    pins: PINS,
-                    config: config::Config,
-                    clocks: Clocks,
-                ) -> Result<Self, config::InvalidConfig> {
-                    Self::new(usart, pins, config, clocks)
-                }
+            fn pclk_freq(clocks: &Clocks) -> u32 {
+                clocks.$pclkX().0
             }
-        )+
-    }
+
+            unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock) {
+                $USARTX::enable(rcc);
+            }
+
+            fn set_stopbits(&self, bits: config::StopBits) {
+                use crate::pac::usart1::cr2::STOP_A;
+                use config::StopBits;
+
+                self.cr2.write(|w| {
+                    w.stop().variant(match bits {
+                        StopBits::STOP0P5 => STOP_A::STOP0P5,
+                        StopBits::STOP1 => STOP_A::STOP1,
+                        StopBits::STOP1P5 => STOP_A::STOP1P5,
+                        StopBits::STOP2 => STOP_A::STOP2,
+                    })
+                });
+            }
+        }
+
+        impl<USART, PINS> Serial<USART, PINS>
+        where
+            PINS: Pins<USART>,
+            USART: Instance,
+        {
+            #[deprecated(since = "0.10.0")]
+            pub fn $usartX(
+                usart: USART,
+                pins: PINS,
+                config: config::Config,
+                clocks: Clocks,
+            ) -> Result<Self, config::InvalidConfig> {
+                Self::new(usart, pins, config, clocks)
+            }
+        }
+    };
 }
 
 // TODO: fix stm32f413 UARTs
@@ -1299,94 +1285,83 @@ macro_rules! halUsart {
 ))]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
-    ($(
-        $USARTX:ident: ($usartX:ident, $pclkX:ident),
-    )+) => {
-        $(
-            impl private::Sealed for $USARTX {}
-            impl Instance for $USARTX {
-                fn ptr() -> *const uart_base::RegisterBlock {
-                    $USARTX::ptr() as *const _
-                }
-
-                fn pclk_freq(clocks: &Clocks) -> u32 {
-                    clocks.$pclkX().0
-                }
-
-                unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock) {
-                    $USARTX::enable(rcc);
-                }
-
-                fn set_stopbits(&self, bits: config::StopBits) {
-                    use crate::pac::uart4::cr2::STOP_A;
-                    use config::StopBits;
-
-                    self
-                        .cr2
-                        .write(|w| w.stop().variant(
-                            match bits {
-                                StopBits::STOP0P5 => STOP_A::STOP1,
-                                StopBits::STOP1 => STOP_A::STOP1,
-                                StopBits::STOP1P5 => STOP_A::STOP2,
-                                StopBits::STOP2 => STOP_A::STOP2,
-                            }
-                        ));
-                }
+    ($USARTX:ident: ($usartX:ident, $pclkX:ident)) => {
+        impl private::Sealed for $USARTX {}
+        impl Instance for $USARTX {
+            fn ptr() -> *const uart_base::RegisterBlock {
+                $USARTX::ptr() as *const _
             }
 
-            impl<USART, PINS> Serial<USART, PINS>
-            where
-                PINS: Pins<USART>,
-                USART: Instance,
-            {
-                pub fn $usartX(
-                    usart: USART,
-                    pins: PINS,
-                    config: config::Config,
-                    clocks: Clocks,
-                ) -> Result<Self, config::InvalidConfig> {
-                    Self::new(usart, pins, config, clocks)
-                }
+            fn pclk_freq(clocks: &Clocks) -> u32 {
+                clocks.$pclkX().0
             }
-        )+
-    }
+
+            unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock) {
+                $USARTX::enable(rcc);
+            }
+
+            fn set_stopbits(&self, bits: config::StopBits) {
+                use crate::pac::uart4::cr2::STOP_A;
+                use config::StopBits;
+
+                self.cr2.write(|w| {
+                    w.stop().variant(match bits {
+                        StopBits::STOP0P5 => STOP_A::STOP1,
+                        StopBits::STOP1 => STOP_A::STOP1,
+                        StopBits::STOP1P5 => STOP_A::STOP2,
+                        StopBits::STOP2 => STOP_A::STOP2,
+                    })
+                });
+            }
+        }
+
+        impl<USART, PINS> Serial<USART, PINS>
+        where
+            PINS: Pins<USART>,
+            USART: Instance,
+        {
+            #[deprecated(since = "0.10.0")]
+            pub fn $usartX(
+                usart: USART,
+                pins: PINS,
+                config: config::Config,
+                clocks: Clocks,
+            ) -> Result<Self, config::InvalidConfig> {
+                Self::new(usart, pins, config, clocks)
+            }
+        }
+    };
 }
 
-halUsart! {
-    USART1: (usart1, pclk2),
-    USART2: (usart2, pclk1),
-    USART6: (usart6, pclk2),
-}
+halUsart! { USART1: (usart1, pclk2) }
+halUsart! { USART2: (usart2, pclk1) }
+halUsart! { USART6: (usart6, pclk2) }
 
 #[cfg(feature = "usart3")]
-halUsart! {
-    USART3: (usart3, pclk1),
-}
+halUsart! { USART3: (usart3, pclk1) }
 
-#[cfg(any(feature = "uart4", feature = "uart5"))]
-#[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
-halUart! {
-    UART4: (uart4, pclk1),
-    UART5: (uart5, pclk1),
-}
+#[cfg(feature = "uart4")]
+#[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
+halUart! { UART4: (uart4, pclk1) }
+#[cfg(feature = "uart5")]
+#[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
+halUart! { UART5: (uart5, pclk1) }
 
-#[cfg(any(feature = "uart4", feature = "uart5"))]
-#[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
-halUsart! {
-    UART4: (uart4, pclk1),
-    UART5: (uart5, pclk1),
-}
+#[cfg(feature = "uart4")]
+#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+halUsart! { UART4: (uart4, pclk1) }
+#[cfg(feature = "uart5")]
+#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+halUsart! { UART5: (uart5, pclk1) }
 
-#[cfg(any(feature = "uart7", feature = "uart8"))]
-halUsart! {
-    UART7: (uart7, pclk1),
-    UART8: (uart8, pclk1),
-}
-#[cfg(any(feature = "uart9", feature = "uart10"))]
-halUsart! {
-    UART9: (uart9, pclk2),
-    UART10: (uart10, pclk2),
-}
+#[cfg(feature = "uart7")]
+halUsart! { UART7: (uart7, pclk1) }
+#[cfg(feature = "uart8")]
+halUsart! { UART8: (uart8, pclk1) }
+#[cfg(feature = "uart9")]
+halUsart! { UART9: (uart9, pclk2) }
+#[cfg(feature = "uart10")]
+halUsart! { UART10: (uart10, pclk2) }
 
 impl<USART, PINS> fmt::Write for Serial<USART, PINS>
 where

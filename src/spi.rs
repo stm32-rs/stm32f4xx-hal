@@ -517,99 +517,43 @@ pub struct Spi<SPI, PINS> {
     pins: PINS,
 }
 
-impl<PINS> Spi<SPI1, PINS> {
-    pub fn spi1(spi: SPI1, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<SPI1>,
-    {
-        unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI1::enable(rcc);
-        }
+// Implemented by all I2C instances
+macro_rules! spi {
+    ($SPI:ident: ($spi:ident, $pclk:ident)) => {
+        impl<PINS> Spi<$SPI, PINS>
+        where
+            PINS: Pins<$SPI>,
+        {
+            pub fn $spi(spi: $SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
+                Self::new(spi, pins, mode, freq, clocks)
+            }
+            pub fn new(spi: $SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
+                unsafe {
+                    // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+                    let rcc = &(*RCC::ptr());
+                    $SPI::enable(rcc);
+                }
 
-        Spi { spi, pins }.init(mode, freq, clocks.pclk2())
-    }
+                Spi { spi, pins }.init(mode, freq, clocks.$pclk())
+            }
+        }
+    };
 }
 
-impl<PINS> Spi<SPI2, PINS> {
-    pub fn spi2(spi: SPI2, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<SPI2>,
-    {
-        unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI2::enable(rcc);
-        }
-
-        Spi { spi, pins }.init(mode, freq, clocks.pclk1())
-    }
-}
+spi! { SPI1: (spi1, pclk2) }
+spi! { SPI2: (spi2, pclk1) }
 
 #[cfg(feature = "spi3")]
-impl<PINS> Spi<SPI3, PINS> {
-    pub fn spi3(spi: SPI3, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<SPI3>,
-    {
-        unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI3::enable(rcc);
-        }
-
-        Spi { spi, pins }.init(mode, freq, clocks.pclk1())
-    }
-}
+spi! { SPI3: (spi3, pclk1) }
 
 #[cfg(feature = "spi4")]
-impl<PINS> Spi<SPI4, PINS> {
-    pub fn spi4(spi: SPI4, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<SPI4>,
-    {
-        unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI4::enable(rcc);
-        }
-
-        Spi { spi, pins }.init(mode, freq, clocks.pclk2())
-    }
-}
+spi! { SPI4: (spi4, pclk2) }
 
 #[cfg(feature = "spi5")]
-impl<PINS> Spi<SPI5, PINS> {
-    pub fn spi5(spi: SPI5, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<SPI5>,
-    {
-        unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI5::enable(rcc);
-        }
-
-        Spi { spi, pins }.init(mode, freq, clocks.pclk2())
-    }
-}
+spi! { SPI5: (spi5, pclk2) }
 
 #[cfg(feature = "spi6")]
-impl<PINS> Spi<SPI6, PINS> {
-    pub fn spi6(spi: SPI6, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self
-    where
-        PINS: Pins<SPI6>,
-    {
-        unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI6::enable(rcc);
-        }
-
-        Spi { spi, pins }.init(mode, freq, clocks.pclk2())
-    }
-}
+spi! { SPI6: (spi6, pclk2) }
 
 impl<SPI, PINS> Spi<SPI, PINS>
 where
