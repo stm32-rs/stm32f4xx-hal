@@ -27,49 +27,18 @@ use nb::block;
 
 #[cfg(feature = "gpiod")]
 use crate::gpio::gpiod;
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpioe")]
 use crate::gpio::gpioe;
-use crate::gpio::{gpioa, gpiob, gpioc};
-use crate::pac::{RCC, USART1, USART2, USART6};
-
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpiof")]
 use crate::gpio::gpiof;
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpiog")]
 use crate::gpio::gpiog;
+use crate::gpio::{gpioa, gpiob, gpioc};
+
+use crate::pac::{RCC, USART1, USART2, USART6};
 
 #[cfg(feature = "usart3")]
 use crate::pac::USART3;
