@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Instead of `Alternate<AF1>` use just `Alternate<1>`.
 - `PinState` and `get/set_state`.
 - Inherent methods for infallible digital operations.
 - Generic `into_alternate` and `into_alternate_open_drain`. Non-generic ones are deprecated

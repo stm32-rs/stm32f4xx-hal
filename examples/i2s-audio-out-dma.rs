@@ -216,10 +216,10 @@ type I2sDmaTransfer = Transfer<
         I2s<
             SPI3,
             (
-                PA4<Alternate<stm32f4xx_hal::gpio::AF6>>,
-                PC10<Alternate<stm32f4xx_hal::gpio::AF6>>,
-                PC7<Alternate<stm32f4xx_hal::gpio::AF6>>,
-                PC12<Alternate<stm32f4xx_hal::gpio::AF6>>,
+                PA4<Alternate<6>>,
+                PC10<Alternate<6>>,
+                PC7<Alternate<6>>,
+                PC12<Alternate<6>>,
             ),
         >,
         TransmitMode<Data16Frame16>,

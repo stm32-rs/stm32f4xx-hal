@@ -1,7 +1,7 @@
 //! Sdio host
 
 #[allow(unused_imports)]
-use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, AF12};
+use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate};
 use crate::pac::{self, RCC, SDIO};
 use crate::rcc::{Clocks, Enable, Reset};
 pub use sdio_host::{
@@ -85,32 +85,32 @@ macro_rules! pins {
     feature = "stm32f479"
 ))]
 pins! {
-    CLK: [PC12<Alternate<AF12>>]
-    CMD: [PD2<Alternate<AF12>>]
-    D0: [PC8<Alternate<AF12>>]
-    D1: [PC9<Alternate<AF12>>]
-    D2: [PC10<Alternate<AF12>>]
-    D3: [PC11<Alternate<AF12>>]
+    CLK: [PC12<Alternate<12>>]
+    CMD: [PD2<Alternate<12>>]
+    D0: [PC8<Alternate<12>>]
+    D1: [PC9<Alternate<12>>]
+    D2: [PC10<Alternate<12>>]
+    D3: [PC11<Alternate<12>>]
 }
 
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 pins! {
-    CLK: [PB15<Alternate<AF12>>]
-    CMD: [PA6<Alternate<AF12>>]
-    D0: [PB4<Alternate<AF12>>, PB6<Alternate<AF12>>]
-    D1: [PA8<Alternate<AF12>>]
-    D2: [PA9<Alternate<AF12>>]
-    D3: [PB5<Alternate<AF12>>]
+    CLK: [PB15<Alternate<12>>]
+    CMD: [PA6<Alternate<12>>]
+    D0: [PB4<Alternate<12>>, PB6<Alternate<12>>]
+    D1: [PA8<Alternate<12>>]
+    D2: [PA9<Alternate<12>>]
+    D3: [PB5<Alternate<12>>]
 }
 
 #[cfg(feature = "stm32f411")]
 pins! {
-    CLK: [PB15<Alternate<AF12>>]
-    CMD: [PA6<Alternate<AF12>>]
-    D0: [PB4<Alternate<AF12>>, PB7<Alternate<AF12>>]
-    D1: [PA8<Alternate<AF12>>]
-    D2: [PA9<Alternate<AF12>>]
-    D3: [PB5<Alternate<AF12>>]
+    CLK: [PB15<Alternate<12>>]
+    CMD: [PA6<Alternate<12>>]
+    D0: [PB4<Alternate<12>>, PB7<Alternate<12>>]
+    D1: [PA8<Alternate<12>>]
+    D2: [PA9<Alternate<12>>]
+    D3: [PB5<Alternate<12>>]
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
