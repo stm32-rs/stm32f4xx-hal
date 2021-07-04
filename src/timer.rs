@@ -9,63 +9,7 @@ use cortex_m::peripheral::{DCB, DWT, SYST};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
 use void::Void;
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::pac::TIM6;
-
 use crate::pac::RCC;
-use crate::pac::{TIM1, TIM11, TIM5, TIM9};
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::pac::{TIM10, TIM2, TIM3, TIM4};
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::pac::{TIM12, TIM13, TIM14, TIM7, TIM8};
 
 use crate::rcc::{Clocks, Enable, Reset};
 use crate::time::Hertz;
@@ -207,7 +151,7 @@ impl Instant {
 }
 
 macro_rules! hal {
-    ($($TIM:ident: ($tim:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIM:ty: ($tim:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             impl Timer<$TIM> {
                 /// Configures a TIM peripheral as a periodic count down timer
@@ -219,8 +163,8 @@ macro_rules! hal {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
                         // Enable and reset the timer peripheral
-                        $TIM::enable(rcc);
-                        $TIM::reset(rcc);
+                        <$TIM>::enable(rcc);
+                        <$TIM>::reset(rcc);
                     }
 
                     let mut timer = Timer {
@@ -339,10 +283,10 @@ macro_rules! hal {
 }
 
 hal! {
-    TIM1: (tim1, pclk2, ppre2),
-    TIM5: (tim5, pclk1, ppre1),
-    TIM9: (tim9, pclk2, ppre2),
-    TIM11: (tim11, pclk2, ppre2),
+    crate::pac::TIM1: (tim1, pclk2, ppre2),
+    crate::pac::TIM5: (tim5, pclk1, ppre1),
+    crate::pac::TIM9: (tim9, pclk2, ppre2),
+    crate::pac::TIM11: (tim11, pclk2, ppre2),
 }
 
 #[cfg(any(
@@ -364,10 +308,10 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM2: (tim2, pclk1, ppre1),
-    TIM3: (tim3, pclk1, ppre1),
-    TIM4: (tim4, pclk1, ppre1),
-    TIM10: (tim10, pclk2, ppre2),
+    crate::pac::TIM2: (tim2, pclk1, ppre1),
+    crate::pac::TIM3: (tim3, pclk1, ppre1),
+    crate::pac::TIM4: (tim4, pclk1, ppre1),
+    crate::pac::TIM10: (tim10, pclk2, ppre2),
 }
 
 #[cfg(any(
@@ -388,7 +332,7 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM6: (tim6, pclk1, ppre1),
+    crate::pac::TIM6: (tim6, pclk1, ppre1),
 }
 
 #[cfg(any(
@@ -408,32 +352,13 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM7: (tim7, pclk1, ppre1),
-    TIM8: (tim8, pclk2, ppre2),
-    TIM12: (tim12, pclk1, ppre1),
-    TIM13: (tim13, pclk1, ppre1),
-    TIM14: (tim14, pclk1, ppre1),
+    crate::pac::TIM7: (tim7, pclk1, ppre1),
+    crate::pac::TIM8: (tim8, pclk2, ppre2),
+    crate::pac::TIM12: (tim12, pclk1, ppre1),
+    crate::pac::TIM13: (tim13, pclk1, ppre1),
+    crate::pac::TIM14: (tim14, pclk1, ppre1),
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
 use crate::gpio::gpiob::*;
 
 #[cfg(any(
@@ -538,8 +463,8 @@ pub trait PinC4<TIM> {}
 macro_rules! channel_impl {
     ( $( $TIM:ident, $PINC:ident, $PINX:ident, $AF:literal; )+ ) => {
         $(
-            impl $PINC<$TIM> for $PINX<Alternate<$AF>> {}
-            impl $PINC<$TIM> for $PINX<AlternateOD<$AF>> {}
+            impl $PINC<crate::pac::$TIM> for $PINX<Alternate<$AF>> {}
+            impl $PINC<crate::pac::$TIM> for $PINX<AlternateOD<$AF>> {}
         )+
     };
 }

@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Add `Spi::new` and deprecate `Spi:spix`, deprecate `Serial::usartx`, remove deprecated `I2c::i2cx`
 - Deprecate `free` in favour of `release`
-- Clean features in `serial`
+- Clean features in `serial`, `spi`, `i2c`, `timer`
 - Internal implementation of GPIO Pin API changed to use Const Generics
 - Update the sdio driver to match the changes in the PAC
 - Update README.md with current information

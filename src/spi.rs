@@ -376,7 +376,7 @@ pub struct Spi<SPI, PINS> {
 
 // Implemented by all I2C instances
 macro_rules! spi {
-    ($SPI:ident: ($spi:ident, $pclk:ident)) => {
+    ($SPI:ty: ($spi:ident, $pclk:ident)) => {
         impl<PINS> Spi<$SPI, PINS>
         where
             PINS: Pins<$SPI>,
@@ -388,7 +388,7 @@ macro_rules! spi {
                 unsafe {
                     // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                     let rcc = &(*RCC::ptr());
-                    $SPI::enable(rcc);
+                    <$SPI>::enable(rcc);
                 }
 
                 Spi { spi, pins }.init(mode, freq, clocks.$pclk())

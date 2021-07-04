@@ -5,65 +5,6 @@ use crate::{
     rcc::{Enable, Reset},
 };
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::pac::{TIM1, TIM5};
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::pac::{TIM2, TIM3, TIM4};
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::pac::TIM8;
-
 pub trait Pins<TIM> {}
 use crate::timer::PinC1;
 use crate::timer::PinC2;
@@ -130,7 +71,7 @@ pub trait Instance: sealed::Sealed {
 }
 
 macro_rules! hal {
-    ($($TIM:ident: ($tim:ident, $bits:ident),)+) => {
+    ($($TIM:ty: ($tim:ident, $bits:ident),)+) => {
         $(
             impl sealed::Sealed for $TIM {}
             impl Instance for $TIM {
@@ -141,8 +82,8 @@ macro_rules! hal {
                         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                         let rcc = &(*RCC::ptr());
                         // Enable and reset clock.
-                        $TIM::enable(rcc);
-                        $TIM::reset(rcc);
+                        <$TIM>::enable(rcc);
+                        <$TIM>::reset(rcc);
                     }
                 }
 
@@ -196,8 +137,8 @@ macro_rules! hal {
 }
 
 hal! {
-    TIM1: (tim1, u16),
-    TIM5: (tim5, u32),
+    crate::pac::TIM1: (tim1, u16),
+    crate::pac::TIM5: (tim5, u32),
 }
 
 #[cfg(any(
@@ -219,9 +160,9 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM2: (tim2, u32),
-    TIM3: (tim3, u16),
-    TIM4: (tim4, u16),
+    crate::pac::TIM2: (tim2, u32),
+    crate::pac::TIM3: (tim3, u16),
+    crate::pac::TIM4: (tim4, u16),
 }
 
 #[cfg(any(
@@ -241,5 +182,5 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    TIM8: (tim8, u16),
+    crate::pac::TIM8: (tim8, u16),
 }

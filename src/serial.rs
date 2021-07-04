@@ -590,7 +590,7 @@ where
             let rcc = &(*RCC::ptr());
 
             // Enable clock.
-            USART::enable_clock(rcc);
+            USART::enable(rcc);
         }
 
         let pclk_freq = USART::pclk_freq(&clocks);
@@ -1183,31 +1183,25 @@ mod private {
 }
 
 // Implemented by all USART instances
-pub trait Instance: private::Sealed {
+pub trait Instance: private::Sealed + Enable {
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
     #[doc(hidden)]
     fn pclk_freq(clocks: &Clocks) -> u32;
     #[doc(hidden)]
-    unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock);
-    #[doc(hidden)]
     fn set_stopbits(&self, bits: config::StopBits);
 }
 
 macro_rules! halUsart {
-    ($USARTX:ident: ($usartX:ident, $pclkX:ident)) => {
+    ($USARTX:ty: ($usartX:ident, $pclkX:ident)) => {
         impl private::Sealed for $USARTX {}
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
-                $USARTX::ptr() as *const _
+                <$USARTX>::ptr() as *const _
             }
 
             fn pclk_freq(clocks: &Clocks) -> u32 {
                 clocks.$pclkX().0
-            }
-
-            unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock) {
-                $USARTX::enable(rcc);
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
@@ -1254,19 +1248,15 @@ macro_rules! halUsart {
 ))]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
-    ($USARTX:ident: ($usartX:ident, $pclkX:ident)) => {
+    ($USARTX:ty: ($usartX:ident, $pclkX:ident)) => {
         impl private::Sealed for $USARTX {}
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
-                $USARTX::ptr() as *const _
+                <$USARTX>::ptr() as *const _
             }
 
             fn pclk_freq(clocks: &Clocks) -> u32 {
                 clocks.$pclkX().0
-            }
-
-            unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock) {
-                $USARTX::enable(rcc);
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {

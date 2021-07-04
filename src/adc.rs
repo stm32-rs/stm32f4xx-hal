@@ -1042,34 +1042,10 @@ macro_rules! adc {
 
 adc!(ADC1 => (adc1, ADC_COMMON, 8));
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f415",
-    feature = "stm32f407",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f437",
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
+#[cfg(feature = "adc2")]
 adc!(ADC2 => (adc2, ADC_COMMON, 9));
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f415",
-    feature = "stm32f407",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f437",
-    feature = "stm32f429",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
+#[cfg(feature = "adc3")]
 adc!(ADC3 => (adc3, ADC_COMMON, 10));
 
 #[cfg(feature = "stm32f401")]
