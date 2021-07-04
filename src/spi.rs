@@ -1,6 +1,7 @@
 use core::ops::Deref;
 use core::ptr;
 
+use crate::gpio::PX;
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
 
@@ -377,21 +378,77 @@ pub struct Spi<SPI, PINS> {
 // Implemented by all I2C instances
 macro_rules! spi {
     ($SPI:ident: ($spi:ident, $pclk:ident)) => {
-        impl<PINS> Spi<$SPI, PINS>
+        impl<
+                SCK_M,
+                MISO_M,
+                MOSI_M,
+                const SCK_P: char,
+                const SCK_N: u8,
+                const MISO_P: char,
+                const MISO_N: u8,
+                const MOSI_P: char,
+                const MOSI_N: u8,
+            >
+            Spi<
+                $SPI,
+                (
+                    PX<SCK_M, SCK_P, SCK_N>,
+                    PX<MISO_M, MISO_P, MISO_N>,
+                    PX<MOSI_M, MOSI_P, MOSI_N>,
+                ),
+            >
         where
-            PINS: Pins<$SPI>,
+            PX<SCK_M, SCK_P, SCK_N>: PinSck<$SPI>,
+            PX<MISO_M, MISO_P, MISO_N>: PinMiso<$SPI>,
+            PX<MOSI_M, MOSI_P, MOSI_N>: PinMosi<$SPI>,
         {
-            pub fn $spi(spi: $SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
+            #[deprecated(since = "0.10.0")]
+            pub fn $spi<SCK_BASEM, MISO_BASEM, MOSI_BASEM>(
+                spi: $SPI,
+                pins: (
+                    PX<SCK_BASEM, SCK_P, SCK_N>,
+                    PX<MISO_BASEM, MISO_P, MISO_N>,
+                    PX<MOSI_BASEM, MOSI_P, MOSI_N>,
+                ),
+                mode: Mode,
+                freq: Hertz,
+                clocks: Clocks,
+            ) -> Self
+            where
+                PX<SCK_BASEM, SCK_P, SCK_N>: Into<PX<SCK_M, SCK_P, SCK_N>>,
+                PX<MISO_BASEM, MISO_P, MISO_N>: Into<PX<MISO_M, MISO_P, MISO_N>>,
+                PX<MOSI_BASEM, MOSI_P, MOSI_N>: Into<PX<MOSI_M, MOSI_P, MOSI_N>>,
+            {
                 Self::new(spi, pins, mode, freq, clocks)
             }
-            pub fn new(spi: $SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
+
+            pub fn new<SCK_BASEM, MISO_BASEM, MOSI_BASEM>(
+                spi: $SPI,
+                pins: (
+                    PX<SCK_BASEM, SCK_P, SCK_N>,
+                    PX<MISO_BASEM, MISO_P, MISO_N>,
+                    PX<MOSI_BASEM, MOSI_P, MOSI_N>,
+                ),
+                mode: Mode,
+                freq: Hertz,
+                clocks: Clocks,
+            ) -> Self
+            where
+                PX<SCK_BASEM, SCK_P, SCK_N>: Into<PX<SCK_M, SCK_P, SCK_N>>,
+                PX<MISO_BASEM, MISO_P, MISO_N>: Into<PX<MISO_M, MISO_P, MISO_N>>,
+                PX<MOSI_BASEM, MOSI_P, MOSI_N>: Into<PX<MOSI_M, MOSI_P, MOSI_N>>,
+            {
                 unsafe {
                     // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                     let rcc = &(*RCC::ptr());
                     $SPI::enable(rcc);
                 }
 
-                Spi { spi, pins }.init(mode, freq, clocks.$pclk())
+                Spi {
+                    spi,
+                    pins: (pins.0.into(), pins.1.into(), pins.2.into()),
+                }
+                .init(mode, freq, clocks.$pclk())
             }
         }
     };

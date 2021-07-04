@@ -1,6 +1,7 @@
 use core::ops::Deref;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
+use crate::gpio::PX;
 use crate::pac::i2c1;
 use crate::rcc::{Enable, Reset};
 
@@ -268,11 +269,21 @@ impl private::Sealed for I2C3 {}
 impl Instance for I2C3 {}
 
 #[cfg(feature = "fmpi2c1")]
-impl<PINS> FMPI2c<FMPI2C1, PINS>
+impl<SCL_M, SDA_M, const SCL_P: char, const SCL_N: u8, const SDA_P: char, const SDA_N: u8>
+    FMPI2c<FMPI2C1, (PX<SCL_M, SCL_P, SCL_N>, PX<SDA_M, SDA_P, SDA_N>)>
 where
-    PINS: Pins<FMPI2C1>,
+    PX<SCL_M, SCL_P, SCL_N>: PinScl<FMPI2C1>,
+    PX<SDA_M, SDA_P, SDA_N>: PinSda<FMPI2C1>,
 {
-    pub fn new(i2c: FMPI2C1, pins: PINS, speed: KiloHertz) -> Self {
+    pub fn fmpi2c<SCL_BASEM, SDA_BASEM>(
+        i2c: FMPI2C1,
+        pins: (PX<SCL_BASEM, SCL_P, SCL_N>, PX<SDA_BASEM, SDA_P, SDA_N>),
+        speed: KiloHertz,
+    ) -> Self
+    where
+        PX<SCL_BASEM, SCL_P, SCL_N>: Into<PX<SCL_M, SCL_P, SCL_N>>,
+        PX<SDA_BASEM, SDA_P, SDA_N>: Into<PX<SDA_M, SDA_P, SDA_N>>,
+    {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -284,18 +295,32 @@ where
             rcc.dckcfgr2.modify(|_, w| w.fmpi2c1sel().hsi());
         }
 
-        let i2c = FMPI2c { i2c, pins };
+        let i2c = FMPI2c {
+            i2c,
+            pins: (pins.0.into(), pins.1.into()),
+        };
         i2c.i2c_init(speed);
         i2c
     }
 }
 
-impl<I2C, PINS> I2c<I2C, PINS>
+impl<I2C, SCL_M, SDA_M, const SCL_P: char, const SCL_N: u8, const SDA_P: char, const SDA_N: u8>
+    I2c<I2C, (PX<SCL_M, SCL_P, SCL_N>, PX<SDA_M, SDA_P, SDA_N>)>
 where
     I2C: Instance,
-    PINS: Pins<I2C>,
+    PX<SCL_M, SCL_P, SCL_N>: PinScl<I2C>,
+    PX<SDA_M, SDA_P, SDA_N>: PinSda<I2C>,
 {
-    pub fn new(i2c: I2C, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self {
+    pub fn new<SCL_BASEM, SDA_BASEM>(
+        i2c: I2C,
+        pins: (PX<SCL_BASEM, SCL_P, SCL_N>, PX<SDA_BASEM, SDA_P, SDA_N>),
+        speed: KiloHertz,
+        clocks: Clocks,
+    ) -> Self
+    where
+        PX<SCL_BASEM, SCL_P, SCL_N>: Into<PX<SCL_M, SCL_P, SCL_N>>,
+        PX<SDA_BASEM, SDA_P, SDA_N>: Into<PX<SDA_M, SDA_P, SDA_N>>,
+    {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -305,7 +330,10 @@ where
             I2C::reset(rcc);
         }
 
-        let i2c = I2c { i2c, pins };
+        let i2c = I2c {
+            i2c,
+            pins: (pins.0.into(), pins.1.into()),
+        };
         i2c.i2c_init(speed, clocks.pclk1());
         i2c
     }
