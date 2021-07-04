@@ -724,7 +724,42 @@ where
         }
         .config_stop(config))
     }
+}
 
+impl<USART, TX, WORD> Serial<USART, (TX, NoRx), WORD>
+where
+    (TX, NoRx): Pins<USART>,
+    USART: Instance,
+{
+    pub fn tx(
+        usart: USART,
+        tx_pin: TX,
+        config: config::Config,
+        clocks: Clocks,
+    ) -> Result<Tx<USART, WORD>, config::InvalidConfig> {
+        Self::new(usart, (tx_pin, NoRx), config, clocks).map(|s| s.split().0)
+    }
+}
+
+impl<USART, RX, WORD> Serial<USART, (NoTx, RX), WORD>
+where
+    (NoTx, RX): Pins<USART>,
+    USART: Instance,
+{
+    pub fn rx(
+        usart: USART,
+        rx_pin: RX,
+        config: config::Config,
+        clocks: Clocks,
+    ) -> Result<Rx<USART, WORD>, config::InvalidConfig> {
+        Self::new(usart, (NoTx, rx_pin), config, clocks).map(|s| s.split().1)
+    }
+}
+
+impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
+where
+    USART: Instance,
+{
     /// Starts listening for an interrupt event
     ///
     /// Note, you will also have to enable the corresponding interrupt
@@ -1358,9 +1393,8 @@ where
     Serial<USART, PINS>: serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        s.as_bytes()
-            .iter()
-            .try_for_each(|c| block!(self.write(*c)))
+        s.bytes()
+            .try_for_each(|c| block!(self.write(c)))
             .map_err(|_| fmt::Error)
     }
 }
@@ -1370,9 +1404,8 @@ where
     Tx<USART>: serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        s.as_bytes()
-            .iter()
-            .try_for_each(|c| block!(self.write(*c)))
+        s.bytes()
+            .try_for_each(|c| block!(self.write(c)))
             .map_err(|_| fmt::Error)
     }
 }
