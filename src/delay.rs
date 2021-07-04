@@ -21,8 +21,13 @@ impl Delay {
         Delay { clocks, syst }
     }
 
-    /// Releases the system timer (SysTick) resource
+    #[deprecated(since = "0.10.0", note = "Please use release instead")]
     pub fn free(self) -> SYST {
+        self.release()
+    }
+
+    /// Releases the system timer (SysTick) resource
+    pub fn release(self) -> SYST {
         self.syst
     }
 }
