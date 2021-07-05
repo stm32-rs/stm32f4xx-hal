@@ -374,24 +374,33 @@ pub struct Spi<SPI, PINS> {
     pins: PINS,
 }
 
-// Implemented by all I2C instances
+mod private {
+    pub trait Sealed {}
+}
+
+// Implemented by all SPI instances
+pub trait Instance: private::Sealed + Deref<Target = spi1::RegisterBlock> + Enable {
+    #[doc(hidden)]
+    fn pclk_freq(clocks: &Clocks) -> Hertz;
+}
+
+// Implemented by all SPI instances
 macro_rules! spi {
-    ($SPI:ty: ($spi:ident, $pclk:ident)) => {
+    ($SPI:ident: ($spi:ident, $pclk:ident)) => {
+        impl private::Sealed for $SPI {}
+        impl Instance for $SPI {
+            fn pclk_freq(clocks: &Clocks) -> Hertz {
+                clocks.$pclk()
+            }
+        }
+
         impl<PINS> Spi<$SPI, PINS>
         where
             PINS: Pins<$SPI>,
         {
+            #[deprecated(since = "0.10.0", note = "Please use new instead")]
             pub fn $spi(spi: $SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
                 Self::new(spi, pins, mode, freq, clocks)
-            }
-            pub fn new(spi: $SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
-                unsafe {
-                    // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-                    let rcc = &(*RCC::ptr());
-                    <$SPI>::enable(rcc);
-                }
-
-                Spi { spi, pins }.init(mode, freq, clocks.$pclk())
             }
         }
     };
@@ -414,7 +423,23 @@ spi! { SPI6: (spi6, pclk2) }
 
 impl<SPI, PINS> Spi<SPI, PINS>
 where
-    SPI: Deref<Target = spi1::RegisterBlock>,
+    SPI: Instance,
+    PINS: Pins<SPI>,
+{
+    pub fn new(spi: SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
+        unsafe {
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
+            SPI::enable(rcc);
+        }
+
+        Spi { spi, pins }.init(mode, freq, SPI::pclk_freq(&clocks))
+    }
+}
+
+impl<SPI, PINS> Spi<SPI, PINS>
+where
+    SPI: Instance,
 {
     pub fn init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self {
         // disable SS output
@@ -527,7 +552,7 @@ where
 
 impl<SPI, PINS> spi::FullDuplex<u8> for Spi<SPI, PINS>
 where
-    SPI: Deref<Target = spi1::RegisterBlock>,
+    SPI: Instance,
 {
     type Error = Error;
 
@@ -578,11 +603,11 @@ where
 }
 
 impl<SPI, PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS> where
-    SPI: Deref<Target = spi1::RegisterBlock>
+    SPI: Instance
 {
 }
 
 impl<SPI, PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<SPI, PINS> where
-    SPI: Deref<Target = spi1::RegisterBlock>
+    SPI: Instance
 {
 }
