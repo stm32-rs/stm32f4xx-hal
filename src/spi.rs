@@ -4,6 +4,25 @@ use core::ptr;
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
 
+#[allow(unused)]
+#[cfg(feature = "gpiod")]
+use crate::gpio::gpiod;
+#[allow(unused)]
+#[cfg(feature = "gpioe")]
+use crate::gpio::gpioe;
+#[allow(unused)]
+#[cfg(feature = "gpiof")]
+use crate::gpio::gpiof;
+#[allow(unused)]
+#[cfg(feature = "gpiog")]
+use crate::gpio::gpiog;
+#[allow(unused)]
+use crate::gpio::gpioh;
+#[allow(unused)]
+#[cfg(feature = "gpioi")]
+use crate::gpio::gpioi;
+use crate::gpio::{gpioa, gpiob, gpioc};
+
 use crate::pac::{spi1, RCC, SPI1, SPI2};
 use crate::rcc::Enable;
 
@@ -18,168 +37,6 @@ use crate::pac::SPI5;
 
 #[cfg(feature = "spi6")]
 use crate::pac::SPI6;
-
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioa::PA9;
-#[cfg(any(
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-use crate::gpio::gpioa::{PA1, PA11};
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-use crate::gpio::gpioa::{PA10, PA12};
-
-use crate::gpio::gpioa::{PA5, PA6, PA7};
-
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446"
-))]
-use crate::gpio::gpiob::PB0;
-#[cfg(any(
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-use crate::gpio::gpiob::PB12;
-#[cfg(any(feature = "stm32f446"))]
-use crate::gpio::gpiob::PB2;
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-use crate::gpio::gpiob::PB8;
-
-use crate::gpio::gpiob::{PB10, PB13, PB14, PB15, PB3, PB4, PB5};
-
-#[cfg(any(feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
-use crate::gpio::gpioc::PC1;
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446"
-))]
-use crate::gpio::gpioc::PC7;
-
-#[cfg(feature = "spi3")]
-use crate::gpio::gpioc::{PC10, PC11, PC12};
-
-use crate::gpio::gpioc::{PC2, PC3};
-
-#[cfg(any(feature = "stm32f446"))]
-use crate::gpio::gpiod::PD0;
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpiod::{PD3, PD6};
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioe::{PE12, PE13, PE14, PE2, PE5, PE6};
-
-#[cfg(any(
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpiof::{PF11, PF7, PF8, PF9};
-
-#[cfg(any(feature = "stm32f446"))]
-use crate::gpio::gpiog::PG11;
-#[cfg(any(
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpiog::PG14;
-#[cfg(any(
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpiog::{PG12, PG13};
-
-#[cfg(any(
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioh::{PH6, PH7};
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioi::{PI1, PI2, PI3};
 
 use crate::gpio::Alternate;
 
@@ -238,35 +95,35 @@ pins! {
     SPI1:
         SCK: [
             NoSck,
-            PA5<Alternate<5>>,
-            PB3<Alternate<5>>
+            gpioa::PA5<Alternate<5>>,
+            gpiob::PB3<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PA6<Alternate<5>>,
-            PB4<Alternate<5>>
+            gpioa::PA6<Alternate<5>>,
+            gpiob::PB4<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PA7<Alternate<5>>,
-            PB5<Alternate<5>>
+            gpioa::PA7<Alternate<5>>,
+            gpiob::PB5<Alternate<5>>
         ]
 
     SPI2:
         SCK: [
             NoSck,
-            PB10<Alternate<5>>,
-            PB13<Alternate<5>>
+            gpiob::PB10<Alternate<5>>,
+            gpiob::PB13<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PB14<Alternate<5>>,
-            PC2<Alternate<5>>
+            gpiob::PB14<Alternate<5>>,
+            gpioc::PC2<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PB15<Alternate<5>>,
-            PC3<Alternate<5>>
+            gpiob::PB15<Alternate<5>>,
+            gpioc::PC3<Alternate<5>>
         ]
 }
 
@@ -275,18 +132,18 @@ pins! {
     SPI3:
         SCK: [
             NoSck,
-            PB3<Alternate<6>>,
-            PC10<Alternate<6>>
+            gpiob::PB3<Alternate<6>>,
+            gpioc::PC10<Alternate<6>>
         ]
         MISO: [
             NoMiso,
-            PB4<Alternate<6>>,
-            PC11<Alternate<6>>
+            gpiob::PB4<Alternate<6>>,
+            gpioc::PC11<Alternate<6>>
         ]
         MOSI: [
             NoMosi,
-            PB5<Alternate<6>>,
-            PC12<Alternate<6>>
+            gpiob::PB5<Alternate<6>>,
+            gpioc::PC12<Alternate<6>>
         ]
 }
 
@@ -306,28 +163,28 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [PD3<Alternate<5>>]
+        SCK: [gpiod::PD3<Alternate<5>>]
         MISO: []
         MOSI: []
     SPI3:
         SCK: []
         MISO: []
-        MOSI: [PD6<Alternate<5>>]
+        MOSI: [gpiod::PD6<Alternate<5>>]
     SPI4:
         SCK: [
             NoSck,
-            PE2<Alternate<5>>,
-            PE12<Alternate<5>>
+            gpioe::PE2<Alternate<5>>,
+            gpioe::PE12<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PE5<Alternate<5>>,
-            PE13<Alternate<5>>
+            gpioe::PE5<Alternate<5>>,
+            gpioe::PE13<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PE6<Alternate<5>>,
-            PE14<Alternate<5>>
+            gpioe::PE6<Alternate<5>>,
+            gpioe::PE14<Alternate<5>>
         ]
 }
 
@@ -345,9 +202,9 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [PI1<Alternate<5>>]
-        MISO: [PI2<Alternate<5>>]
-        MOSI: [PI3<Alternate<5>>]
+        SCK: [gpioi::PI1<Alternate<5>>]
+        MISO: [gpioi::PI2<Alternate<5>>]
+        MOSI: [gpioi::PI3<Alternate<5>>]
 }
 
 #[cfg(any(
@@ -360,7 +217,7 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [PC7<Alternate<5>>]
+        SCK: [gpioc::PC7<Alternate<5>>]
         MISO: []
         MOSI: []
 }
@@ -376,16 +233,16 @@ pins! {
     SPI5:
         SCK: [
             NoSck,
-            PB0<Alternate<6>>
+            gpiob::PB0<Alternate<6>>
         ]
         MISO: [
             NoMiso,
-            PA12<Alternate<6>>
+            gpioa::PA12<Alternate<6>>
         ]
         MOSI: [
             NoMosi,
-            PA10<Alternate<6>>,
-            PB8<Alternate<6>>
+            gpioa::PA10<Alternate<6>>,
+            gpiob::PB8<Alternate<6>>
         ]
 }
 
@@ -397,34 +254,34 @@ pins! {
 ))]
 pins! {
     SPI3:
-        SCK: [PB12<Alternate<7>>]
+        SCK: [gpiob::PB12<Alternate<7>>]
         MISO: []
         MOSI: []
     SPI4:
-        SCK: [PB13<Alternate<6>>]
-        MISO: [PA11<Alternate<6>>]
-        MOSI: [PA1<Alternate<5>>]
+        SCK: [gpiob::PB13<Alternate<6>>]
+        MISO: [gpioa::PA11<Alternate<6>>]
+        MOSI: [gpioa::PA1<Alternate<5>>]
     SPI5:
         SCK: [
-            PE2<Alternate<6>>,
-            PE12<Alternate<6>>
+            gpioe::PE2<Alternate<6>>,
+            gpioe::PE12<Alternate<6>>
         ]
         MISO: [
-            PE5<Alternate<6>>,
-            PE13<Alternate<6>>
+            gpioe::PE5<Alternate<6>>,
+            gpioe::PE13<Alternate<6>>
         ]
         MOSI: [
-            PE6<Alternate<6>>,
-            PE14<Alternate<6>>
+            gpioe::PE6<Alternate<6>>,
+            gpioe::PE14<Alternate<6>>
         ]
 }
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 pins! {
     SPI2:
-        SCK: [PA9<Alternate<5>>]
-        MISO: [PA12<Alternate<5>>]
-        MOSI: [PA10<Alternate<5>>]
+        SCK: [gpioa::PA9<Alternate<5>>]
+        MISO: [gpioa::PA12<Alternate<5>>]
+        MOSI: [gpioa::PA10<Alternate<5>>]
 }
 
 #[cfg(any(
@@ -439,66 +296,66 @@ pins! {
     SPI5:
         SCK: [
             NoSck,
-            PF7<Alternate<5>>,
-            PH6<Alternate<5>>
+            gpiof::PF7<Alternate<5>>,
+            gpioh::PH6<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PF8<Alternate<5>>,
-            PH7<Alternate<5>>
+            gpiof::PF8<Alternate<5>>,
+            gpioh::PH7<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PF9<Alternate<5>>,
-            PF11<Alternate<5>>
+            gpiof::PF9<Alternate<5>>,
+            gpiof::PF11<Alternate<5>>
         ]
 
     SPI6:
         SCK: [
             NoSck,
-            PG13<Alternate<5>>
+            gpiog::PG13<Alternate<5>>
         ]
         MISO: [
             NoMiso,
-            PG12<Alternate<5>>
+            gpiog::PG12<Alternate<5>>
         ]
         MOSI: [
             NoMosi,
-            PG14<Alternate<5>>
+            gpiog::PG14<Alternate<5>>
         ]
 }
 
 #[cfg(any(feature = "stm32f446"))]
 pins! {
     SPI2:
-        SCK: [PA9<Alternate<5>>]
+        SCK: [gpioa::PA9<Alternate<5>>]
         MISO: []
-        MOSI: [PC1<Alternate<7>>]
+        MOSI: [gpioc::PC1<Alternate<7>>]
 
     SPI3:
         SCK: []
         MISO: []
         MOSI: [
-            PB0<Alternate<7>>,
-            PB2<Alternate<7>>,
-            PD0<Alternate<6>>
+            gpiob::PB0<Alternate<7>>,
+            gpiob::PB2<Alternate<7>>,
+            gpiod::PD0<Alternate<6>>
         ]
 
     SPI4:
-        SCK: [PG11<Alternate<6>>]
+        SCK: [gpiog::PG11<Alternate<6>>]
         MISO: [
-            PG12<Alternate<6>>,
-            PD0<Alternate<5>>
+            gpiog::PG12<Alternate<6>>,
+            gpiod::PD0<Alternate<5>>
         ]
-        MOSI: [PG13<Alternate<6>>]
+        MOSI: [gpiog::PG13<Alternate<6>>]
 }
 
 #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
 pins! {
     SPI2:
-        SCK: [PA9<Alternate<5>>]
+        SCK: [gpioa::PA9<Alternate<5>>]
         MISO: []
-        MOSI: [PC1<Alternate<5>>]
+        MOSI: [gpioc::PC1<Alternate<5>>]
 }
 
 /// Interrupt events
@@ -519,7 +376,7 @@ pub struct Spi<SPI, PINS> {
 
 // Implemented by all I2C instances
 macro_rules! spi {
-    ($SPI:ident: ($spi:ident, $pclk:ident)) => {
+    ($SPI:ty: ($spi:ident, $pclk:ident)) => {
         impl<PINS> Spi<$SPI, PINS>
         where
             PINS: Pins<$SPI>,
@@ -531,7 +388,7 @@ macro_rules! spi {
                 unsafe {
                     // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
                     let rcc = &(*RCC::ptr());
-                    $SPI::enable(rcc);
+                    <$SPI>::enable(rcc);
                 }
 
                 Spi { spi, pins }.init(mode, freq, clocks.$pclk())

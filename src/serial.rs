@@ -27,49 +27,18 @@ use nb::block;
 
 #[cfg(feature = "gpiod")]
 use crate::gpio::gpiod;
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpioe")]
 use crate::gpio::gpioe;
-use crate::gpio::{gpioa, gpiob, gpioc};
-use crate::pac::{RCC, USART1, USART2, USART6};
-
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpiof")]
 use crate::gpio::gpiof;
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpiog")]
 use crate::gpio::gpiog;
+use crate::gpio::{gpioa, gpiob, gpioc};
+
+use crate::pac::{RCC, USART1, USART2, USART6};
 
 #[cfg(feature = "usart3")]
 use crate::pac::USART3;
@@ -621,7 +590,7 @@ where
             let rcc = &(*RCC::ptr());
 
             // Enable clock.
-            USART::enable_clock(rcc);
+            USART::enable(rcc);
         }
 
         let pclk_freq = USART::pclk_freq(&clocks);
@@ -1214,31 +1183,25 @@ mod private {
 }
 
 // Implemented by all USART instances
-pub trait Instance: private::Sealed {
+pub trait Instance: private::Sealed + Enable {
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
     #[doc(hidden)]
     fn pclk_freq(clocks: &Clocks) -> u32;
     #[doc(hidden)]
-    unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock);
-    #[doc(hidden)]
     fn set_stopbits(&self, bits: config::StopBits);
 }
 
 macro_rules! halUsart {
-    ($USARTX:ident: ($usartX:ident, $pclkX:ident)) => {
+    ($USARTX:ty: ($usartX:ident, $pclkX:ident)) => {
         impl private::Sealed for $USARTX {}
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
-                $USARTX::ptr() as *const _
+                <$USARTX>::ptr() as *const _
             }
 
             fn pclk_freq(clocks: &Clocks) -> u32 {
                 clocks.$pclkX().0
-            }
-
-            unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock) {
-                $USARTX::enable(rcc);
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
@@ -1285,19 +1248,15 @@ macro_rules! halUsart {
 ))]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
-    ($USARTX:ident: ($usartX:ident, $pclkX:ident)) => {
+    ($USARTX:ty: ($usartX:ident, $pclkX:ident)) => {
         impl private::Sealed for $USARTX {}
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
-                $USARTX::ptr() as *const _
+                <$USARTX>::ptr() as *const _
             }
 
             fn pclk_freq(clocks: &Clocks) -> u32 {
                 clocks.$pclkX().0
-            }
-
-            unsafe fn enable_clock(rcc: &crate::pac::rcc::RegisterBlock) {
-                $USARTX::enable(rcc);
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
