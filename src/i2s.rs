@@ -5,7 +5,7 @@
 use stm32_i2s_v12x::{Instance, RegisterBlock};
 
 use crate::pac::RCC;
-use crate::rcc::{Enable, Reset};
+use crate::rcc;
 use crate::time::Hertz;
 use crate::{rcc::Clocks, spi};
 
@@ -271,6 +271,10 @@ mod ws_pins {
     }
 }
 
+pub trait I2sFreq {
+    fn i2s_freq(clocks: &Clocks) -> Hertz;
+}
+
 /// Implements Instance for I2s<$SPIX, _> and creates an I2s::$spix function to create and enable
 /// the peripheral
 ///
@@ -281,47 +285,61 @@ mod ws_pins {
 /// to this SPI peripheral (i2s_cl, i2s_apb1_clk, or i2s2_apb_clk)
 macro_rules! i2s {
     ($SPIX:ty, $i2sx:ident, $clock:ident) => {
+        impl I2sFreq for $SPIX {
+            fn i2s_freq(clocks: &Clocks) -> Hertz {
+                clocks
+                    .$clock()
+                    .expect("I2S clock input for SPI not enabled")
+            }
+        }
+
         impl<PINS> I2s<$SPIX, PINS>
         where
             PINS: Pins<$SPIX>,
         {
-            /// Creates an I2s object around an SPI peripheral and pins
-            ///
-            /// This function enables and resets the SPI peripheral, but does not configure it.
-            ///
-            /// The returned I2s object implements [stm32_i2s_v12x::Instance], so it can be used
-            /// to configure the peripheral and communicate.
-            ///
-            /// # Panics
-            ///
-            /// This function panics if the I2S clock input (from the I2S PLL or similar)
-            /// is not configured.
+            #[deprecated(since = "0.10.0", note = "Please use new instead")]
             pub fn $i2sx(spi: $SPIX, pins: PINS, clocks: Clocks) -> Self {
-                let input_clock = clocks
-                    .$clock()
-                    .expect("I2S clock input for SPI not enabled");
-                unsafe {
-                    // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-                    let rcc = &(*RCC::ptr());
-                    // Enable clock, enable reset, clear, reset
-                    <$SPIX>::enable(rcc);
-                    <$SPIX>::reset(rcc);
-                }
-                I2s {
-                    _spi: spi,
-                    _pins: pins,
-                    input_clock,
-                }
+                Self::new(spi, pins, clocks)
             }
         }
         impl PinMck<$SPIX> for NoMasterClock {}
-        unsafe impl<PINS> Instance for I2s<$SPIX, PINS>
-        where
-            PINS: Pins<$SPIX>,
-        {
+        unsafe impl<PINS> Instance for I2s<$SPIX, PINS> {
             const REGISTERS: *mut RegisterBlock = <$SPIX>::ptr() as *mut _;
         }
     };
+}
+
+impl<SPI, PINS> I2s<SPI, PINS>
+where
+    SPI: I2sFreq + rcc::Enable + rcc::Reset,
+    PINS: Pins<SPI>,
+{
+    /// Creates an I2s object around an SPI peripheral and pins
+    ///
+    /// This function enables and resets the SPI peripheral, but does not configure it.
+    ///
+    /// The returned I2s object implements [stm32_i2s_v12x::Instance], so it can be used
+    /// to configure the peripheral and communicate.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if the I2S clock input (from the I2S PLL or similar)
+    /// is not configured.
+    pub fn new(spi: SPI, pins: PINS, clocks: Clocks) -> Self {
+        let input_clock = SPI::i2s_freq(&clocks);
+        unsafe {
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
+            // Enable clock, enable reset, clear, reset
+            SPI::enable(rcc);
+            SPI::reset(rcc);
+        }
+        I2s {
+            _spi: spi,
+            _pins: pins,
+            input_clock,
+        }
+    }
 }
 
 // Actually define the SPI instances that can be used for I2S
@@ -396,10 +414,7 @@ pub struct I2s<I, PINS> {
     input_clock: Hertz,
 }
 
-impl<I, PINS> I2s<I, PINS>
-where
-    PINS: Pins<I>,
-{
+impl<I, PINS> I2s<I, PINS> {
     /// Returns the frequency of the clock signal that the SPI peripheral is receiving from the
     /// I2S PLL or similar source
     pub fn input_clock(&self) -> Hertz {
@@ -435,7 +450,6 @@ mod dma {
         for stm32_i2s_v12x::I2s<I2s<SPI, PINS>, MODE>
     where
         SPI: DMASet<STREAM, CHANNEL, DIR>,
-        PINS: Pins<SPI>,
     {
     }
 }

@@ -41,7 +41,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Add `Spi::new`, `spi::Instance` and deprecate `Spi:spix`, deprecate `Serial::usartx`, remove deprecated `I2c::i2cx`
+- Add `Spi::new`, `I2s::new, `spi::Instance` and deprecate `Spi:spix`,
+  deprecate `Serial::usartx`, remove deprecated `I2c::i2cx`
 - Deprecate `free` in favour of `release`
 - Clean features in `serial`, `spi`, `i2c`, `timer`
 - Internal implementation of GPIO Pin API changed to use Const Generics
