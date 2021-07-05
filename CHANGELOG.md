@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Update readme, clippy fixes
 
+- `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
+
+### Added
+
+[#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
+
 ## [v0.14.0] - 2022-12-12
 
 ### Changed

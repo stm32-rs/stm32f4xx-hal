@@ -7,7 +7,7 @@ pub type PEPin<const P: char, MODE> = PartiallyErasedPin<P, MODE>;
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 /// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
 pub struct PartiallyErasedPin<const P: char, MODE> {
-    i: u8,
+    pub(crate) i: u8,
     _mode: PhantomData<MODE>,
 }
 
