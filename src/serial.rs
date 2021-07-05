@@ -19,7 +19,7 @@
 use core::fmt;
 use core::marker::PhantomData;
 
-use crate::rcc::Enable;
+use crate::rcc;
 use embedded_hal::blocking;
 use embedded_hal::prelude::*;
 use embedded_hal::serial;
@@ -591,6 +591,7 @@ where
 
             // Enable clock.
             USART::enable(rcc);
+            USART::reset(rcc);
         }
 
         let pclk_freq = USART::pclk_freq(&clocks);
@@ -1183,7 +1184,7 @@ mod private {
 }
 
 // Implemented by all USART instances
-pub trait Instance: private::Sealed + Enable {
+pub trait Instance: private::Sealed + rcc::Enable + rcc::Reset {
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
     #[doc(hidden)]

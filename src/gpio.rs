@@ -667,7 +667,7 @@ macro_rules! gpio {
         /// GPIO
         pub mod $gpiox {
             use crate::pac::{$GPIOX, RCC};
-            use crate::rcc::Enable;
+            use crate::rcc::{Enable, Reset};
             use super::{
                 Floating, Input,
             };
@@ -690,6 +690,7 @@ macro_rules! gpio {
 
                         // Enable clock.
                         $GPIOX::enable(rcc);
+                        $GPIOX::reset(rcc);
                     }
                     Parts {
                         $(

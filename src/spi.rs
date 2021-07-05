@@ -24,7 +24,7 @@ use crate::gpio::gpioi;
 use crate::gpio::{gpioa, gpiob, gpioc};
 
 use crate::pac::{spi1, RCC, SPI1, SPI2};
-use crate::rcc::Enable;
+use crate::rcc;
 
 #[cfg(feature = "spi3")]
 use crate::pac::SPI3;
@@ -379,7 +379,9 @@ mod private {
 }
 
 // Implemented by all SPI instances
-pub trait Instance: private::Sealed + Deref<Target = spi1::RegisterBlock> + Enable {
+pub trait Instance:
+    private::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset
+{
     #[doc(hidden)]
     fn pclk_freq(clocks: &Clocks) -> Hertz;
 }
@@ -431,6 +433,7 @@ where
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
             SPI::enable(rcc);
+            SPI::reset(rcc);
         }
 
         Spi { spi, pins }.init(mode, freq, SPI::pclk_freq(&clocks))
