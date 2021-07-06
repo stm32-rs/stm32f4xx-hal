@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add inherent impl of `PwmPin` methods on `PwmChannel`s.
 - `Serial:tx` and `Serial::rx` that take only 1 pin
 - Instead of `Alternate<AF1>` you can just use `Alternate<1>`.
 - `PinState` and `get/set_state`.

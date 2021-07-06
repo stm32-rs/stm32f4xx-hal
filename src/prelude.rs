@@ -56,7 +56,6 @@ pub use embedded_hal::watchdog::WatchdogDisable as _embedded_hal_watchdog_Watchd
 pub use embedded_hal::watchdog::WatchdogEnable as _embedded_hal_watchdog_WatchdogEnable;
 pub use embedded_hal::Capture as _embedded_hal_Capture;
 pub use embedded_hal::Pwm as _embedded_hal_Pwm;
-pub use embedded_hal::PwmPin as _embedded_hal_PwmPin;
 pub use embedded_hal::Qei as _embedded_hal_Qei;
 
 #[cfg(all(feature = "device-selected", feature = "dac"))]

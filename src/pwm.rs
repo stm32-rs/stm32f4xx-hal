@@ -144,31 +144,31 @@ macro_rules! pwm_pin {
         impl PwmChannels<$TIMX, $C> {
             //NOTE(unsafe) atomic write with no side effects
             #[inline]
-            fn disable(&mut self) {
+            pub fn disable(&mut self) {
                 unsafe { bb::clear(&(*<$TIMX>::ptr()).ccer, $bit) }
             }
 
             //NOTE(unsafe) atomic write with no side effects
             #[inline]
-            fn enable(&mut self) {
+            pub fn enable(&mut self) {
                 unsafe { bb::set(&(*<$TIMX>::ptr()).ccer, $bit) }
             }
 
             //NOTE(unsafe) atomic read with no side effects
             #[inline]
-            fn get_duty(&self) -> u16 {
+            pub fn get_duty(&self) -> u16 {
                 unsafe { (*<$TIMX>::ptr()).$ccr.read().ccr().bits() as u16 }
             }
 
             //NOTE(unsafe) atomic read with no side effects
             #[inline]
-            fn get_max_duty(&self) -> u16 {
+            pub fn get_max_duty(&self) -> u16 {
                 unsafe { (*<$TIMX>::ptr()).arr.read().arr().bits() as u16 }
             }
 
             //NOTE(unsafe) atomic write with no side effects
             #[inline]
-            fn set_duty(&mut self, duty: u16) {
+            pub fn set_duty(&mut self, duty: u16) {
                 unsafe { (*<$TIMX>::ptr()).$ccr.write(|w| w.ccr().bits(duty.into())) }
             }
         }
@@ -191,7 +191,7 @@ macro_rules! pwm_pin {
                 self.set_duty(duty)
             }
         }
-    }
+    };
 }
 
 macro_rules! pwm_all_channels {
@@ -269,7 +269,7 @@ macro_rules! pwm_all_channels {
 }
 
 macro_rules! pwm_2_channels {
-    ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
             where
@@ -281,8 +281,8 @@ macro_rules! pwm_2_channels {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
                         // Enable and reset the timer peripheral
-                        $TIMX::enable(rcc);
-                        $TIMX::reset(rcc);
+                        <$TIMX>::enable(rcc);
+                        <$TIMX>::reset(rcc);
                     }
                 }
                 if PINS::C1 {
@@ -332,7 +332,7 @@ macro_rules! pwm_2_channels {
 }
 
 macro_rules! pwm_1_channel {
-    ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
             where
@@ -344,8 +344,8 @@ macro_rules! pwm_1_channel {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
                         // Enable and reset the timer peripheral
-                        $TIMX::enable(rcc);
-                        $TIMX::reset(rcc);
+                        <$TIMX>::enable(rcc);
+                        <$TIMX>::reset(rcc);
                     }
                 }
                 if PINS::C1 {
@@ -392,32 +392,36 @@ macro_rules! pwm_pin_tim5 {
         impl PwmChannels<$TIMX, $C> {
             //NOTE(unsafe) atomic write with no side effects
             #[inline]
-            fn disable(&mut self) {
+            pub fn disable(&mut self) {
                 unsafe { bb::clear(&(*<$TIMX>::ptr()).ccer, 0) }
             }
 
             //NOTE(unsafe) atomic write with no side effects
             #[inline]
-            fn enable(&mut self) {
+            pub fn enable(&mut self) {
                 unsafe { bb::set(&(*<$TIMX>::ptr()).ccer, 0) }
             }
 
             //NOTE(unsafe) atomic read with no side effects
             #[inline]
-            fn get_duty(&self) -> u16 {
+            pub fn get_duty(&self) -> u16 {
                 unsafe { (*<$TIMX>::ptr()).$ccr.read().ccr1_l().bits() as u16 }
             }
 
             //NOTE(unsafe) atomic read with no side effects
             #[inline]
-            fn get_max_duty(&self) -> u16 {
+            pub fn get_max_duty(&self) -> u16 {
                 unsafe { (*<$TIMX>::ptr()).arr.read().arr_l().bits() as u16 }
             }
 
             //NOTE(unsafe) atomic write with no side effects
             #[inline]
-            fn set_duty(&mut self, duty: u16) {
-                unsafe { (*<$TIMX>::ptr()).$ccr.write(|w| w.ccr1_l().bits(duty.into())) }
+            pub fn set_duty(&mut self, duty: u16) {
+                unsafe {
+                    (*<$TIMX>::ptr())
+                        .$ccr
+                        .write(|w| w.ccr1_l().bits(duty.into()))
+                }
             }
         }
 
@@ -439,12 +443,12 @@ macro_rules! pwm_pin_tim5 {
                 self.set_duty(duty)
             }
         }
-    }
+    };
 }
 
 #[cfg(feature = "stm32f410")]
 macro_rules! pwm_tim5_f410 {
-    ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
             where
@@ -456,8 +460,8 @@ macro_rules! pwm_tim5_f410 {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
                         // Enable and reset the timer peripheral
-                        $TIMX::enable(rcc);
-                        $TIMX::reset(rcc);
+                        <$TIMX>::enable(rcc);
+                        <$TIMX>::reset(rcc);
                     }
                 }
                 if PINS::C1 {
