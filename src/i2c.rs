@@ -12,8 +12,7 @@ use crate::pac::{I2C1, I2C2, RCC};
 #[cfg(feature = "gpiof")]
 use crate::gpio::gpiof;
 #[allow(unused)]
-use crate::gpio::gpioh;
-use crate::gpio::{gpioa, gpiob, gpioc};
+use crate::gpio::{gpioa, gpiob, gpioc, gpioh};
 
 use crate::gpio::AlternateOD;
 
