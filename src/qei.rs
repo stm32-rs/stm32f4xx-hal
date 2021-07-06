@@ -1,9 +1,13 @@
 //! # Quadrature Encoder Interface
 use crate::{
-    hal::{self, Direction},
     pac::RCC,
     rcc::{Enable, Reset},
 };
+
+#[cfg(not(feature = "ehal1"))]
+use crate::hal as qei;
+#[cfg(feature = "ehal1")]
+use crate::hal::blocking::qei;
 
 pub trait Pins<TIM> {}
 use crate::timer::PinC1;
@@ -41,19 +45,37 @@ impl<TIM: Instance, PINS> Qei<TIM, PINS> {
     }
 }
 
-impl<TIM: Instance, PINS> hal::Qei for Qei<TIM, PINS> {
+#[cfg(not(feature = "ehal1"))]
+impl<TIM: Instance, PINS> qei::Qei for Qei<TIM, PINS> {
     type Count = TIM::Count;
 
     fn count(&self) -> Self::Count {
         self.tim.read_count() as Self::Count
     }
 
-    fn direction(&self) -> Direction {
+    fn direction(&self) -> qei::Direction {
         if self.tim.read_direction() {
-            hal::Direction::Upcounting
+            qei::Direction::Upcounting
         } else {
-            hal::Direction::Downcounting
+            qei::Direction::Downcounting
         }
+    }
+}
+#[cfg(feature = "ehal1")]
+impl<TIM: Instance, PINS> qei::Qei for Qei<TIM, PINS> {
+    type Error = core::convert::Infallible;
+    type Count = TIM::Count;
+
+    fn count(&self) -> Result<Self::Count, Self::Error> {
+        Ok(self.tim.read_count() as Self::Count)
+    }
+
+    fn direction(&self) -> Result<qei::Direction, Self::Error> {
+        Ok(if self.tim.read_direction() {
+            qei::Direction::Upcounting
+        } else {
+            qei::Direction::Downcounting
+        })
     }
 }
 

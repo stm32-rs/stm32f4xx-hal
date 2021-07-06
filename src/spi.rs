@@ -1,8 +1,8 @@
 use core::ops::Deref;
 use core::ptr;
 
-use embedded_hal::spi;
-pub use embedded_hal::spi::{Mode, Phase, Polarity};
+use crate::hal_nb::spi;
+pub use crate::hal_nb::spi::{Mode, Phase, Polarity};
 
 #[allow(unused)]
 #[cfg(feature = "gpiod")]
@@ -549,7 +549,36 @@ where
         })
     }
 
+    #[cfg(not(feature = "ehal1"))]
     fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+        let sr = self.spi.sr.read();
+
+        Err(if sr.ovr().bit_is_set() {
+            // Read from the DR to clear the OVR bit
+            let _ = self.spi.dr.read();
+            nb::Error::Other(Error::Overrun)
+        } else if sr.modf().bit_is_set() {
+            // Write to CR1 to clear MODF
+            self.spi.cr1.modify(|_r, w| w);
+            nb::Error::Other(Error::ModeFault)
+        } else if sr.crcerr().bit_is_set() {
+            // Clear the CRCERR bit
+            self.spi.sr.modify(|_r, w| {
+                w.crcerr().clear_bit();
+                w
+            });
+            nb::Error::Other(Error::Crc)
+        } else if sr.txe().bit_is_set() {
+            // NOTE(write_volatile) see note above
+            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
+            return Ok(());
+        } else {
+            nb::Error::WouldBlock
+        })
+    }
+
+    #[cfg(feature = "ehal1")]
+    fn write(&mut self, byte: u8) -> nb::Result<(), Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
@@ -577,12 +606,12 @@ where
     }
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS> where
+impl<SPI, PINS> crate::hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS> where
     SPI: Deref<Target = spi1::RegisterBlock>
 {
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<SPI, PINS> where
+impl<SPI, PINS> crate::hal::blocking::spi::write::Default<u8> for Spi<SPI, PINS> where
     SPI: Deref<Target = spi1::RegisterBlock>
 {
 }

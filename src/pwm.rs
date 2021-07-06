@@ -1,11 +1,16 @@
 use crate::{
-    bb, hal as pwm,
+    bb,
     pac::RCC,
     rcc::{Clocks, Enable, Reset},
     time::Hertz,
 };
 use cast::{u16, u32};
 use core::{marker::PhantomData, mem::MaybeUninit};
+
+#[cfg(not(feature = "ehal1"))]
+use crate::hal as pwm;
+#[cfg(feature = "ehal1")]
+use crate::hal::blocking::pwm;
 
 use crate::pac::{TIM1, TIM11, TIM5, TIM9};
 
@@ -173,6 +178,7 @@ macro_rules! pwm_pin {
             }
         }
 
+        #[cfg(not(feature = "ehal1"))]
         impl pwm::PwmPin for PwmChannels<$TIMX, $C> {
             type Duty = u16;
             fn disable(&mut self) {
@@ -189,6 +195,31 @@ macro_rules! pwm_pin {
             }
             fn set_duty(&mut self, duty: Self::Duty) {
                 self.set_duty(duty)
+            }
+        }
+
+        #[cfg(feature = "ehal1")]
+        impl pwm::PwmPin for PwmChannels<$TIMX, $C> {
+            type Error = core::convert::Infallible;
+            type Duty = u16;
+
+            fn disable(&mut self) -> Result<(), Self::Error> {
+                self.disable();
+                Ok(())
+            }
+            fn enable(&mut self) -> Result<(), Self::Error> {
+                self.enable();
+                Ok(())
+            }
+            fn get_duty(&self) -> Result<Self::Duty, Self::Error> {
+                Ok(self.get_duty())
+            }
+            fn get_max_duty(&self) -> Result<Self::Duty, Self::Error> {
+                Ok(self.get_max_duty())
+            }
+            fn set_duty(&mut self, duty: Self::Duty) -> Result<(), Self::Error> {
+                self.set_duty(duty);
+                Ok(())
             }
         }
     };
@@ -425,6 +456,7 @@ macro_rules! pwm_pin_tim5 {
             }
         }
 
+        #[cfg(not(feature = "ehal1"))]
         impl pwm::PwmPin for PwmChannels<$TIMX, $C> {
             type Duty = u16;
             fn disable(&mut self) {
@@ -441,6 +473,31 @@ macro_rules! pwm_pin_tim5 {
             }
             fn set_duty(&mut self, duty: Self::Duty) {
                 self.set_duty(duty)
+            }
+        }
+
+        #[cfg(feature = "ehal1")]
+        impl pwm::PwmPin for PwmChannels<$TIMX, $C> {
+            type Error = core::convert::Infallible;
+            type Duty = u16;
+
+            fn disable(&mut self) -> Result<(), Self::Error> {
+                self.disable();
+                Ok(())
+            }
+            fn enable(&mut self) -> Result<(), Self::Error> {
+                self.enable();
+                Ok(())
+            }
+            fn get_duty(&self) -> Result<Self::Duty, Self::Error> {
+                Ok(self.get_duty())
+            }
+            fn get_max_duty(&self) -> Result<Self::Duty, Self::Error> {
+                Ok(self.get_max_duty())
+            }
+            fn set_duty(&mut self, duty: Self::Duty) -> Result<(), Self::Error> {
+                self.set_duty(duty);
+                Ok(())
             }
         }
     };

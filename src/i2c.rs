@@ -1,5 +1,5 @@
+use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 use core::ops::Deref;
-use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
 use crate::pac::i2c1;
 use crate::rcc::{Enable, Reset};

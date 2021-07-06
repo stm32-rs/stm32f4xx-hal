@@ -1,10 +1,11 @@
 //! Watchdog peripherals
 
 use crate::{
-    hal::watchdog::{Watchdog, WatchdogEnable},
     pac::{DBGMCU, IWDG},
     time::MilliSeconds,
 };
+
+use crate::hal_blocking::watchdog;
 
 /// Wraps the Independent Watchdog (IWDG) peripheral
 pub struct IndependentWatchdog {
@@ -87,7 +88,8 @@ impl IndependentWatchdog {
     }
 }
 
-impl WatchdogEnable for IndependentWatchdog {
+#[cfg(not(feature = "ehal1"))]
+impl watchdog::WatchdogEnable for IndependentWatchdog {
     type Time = MilliSeconds;
 
     fn start<T: Into<Self::Time>>(&mut self, period: T) {
@@ -97,8 +99,31 @@ impl WatchdogEnable for IndependentWatchdog {
     }
 }
 
-impl Watchdog for IndependentWatchdog {
+#[cfg(feature = "ehal1")]
+impl watchdog::Enable for IndependentWatchdog {
+    type Error = core::convert::Infallible;
+    type Time = MilliSeconds;
+    type Target = IndependentWatchdog;
+
+    fn start<T: Into<Self::Time>>(self, period: T) -> Result<Self::Target, Self::Error> {
+        self.setup(period.into().0);
+
+        self.iwdg.kr.write(|w| unsafe { w.key().bits(KR_START) });
+        Ok(self)
+    }
+}
+
+#[cfg(not(feature = "ehal1"))]
+impl watchdog::Watchdog for IndependentWatchdog {
     fn feed(&mut self) {
         self.iwdg.kr.write(|w| unsafe { w.key().bits(KR_RELOAD) });
+    }
+}
+#[cfg(feature = "ehal1")]
+impl watchdog::Watchdog for IndependentWatchdog {
+    type Error = core::convert::Infallible;
+    fn feed(&mut self) -> Result<(), Self::Error> {
+        self.iwdg.kr.write(|w| unsafe { w.key().bits(KR_RELOAD) });
+        Ok(())
     }
 }

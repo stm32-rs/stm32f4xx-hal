@@ -3,7 +3,10 @@
 use core::convert::Infallible;
 use core::marker::PhantomData;
 
-use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
+#[cfg(feature = "ehal1")]
+use crate::hal::blocking::digital::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
+#[cfg(not(feature = "ehal1"))]
+use crate::hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
 
 use crate::pac::EXTI;
 use crate::syscfg::SysCfg;

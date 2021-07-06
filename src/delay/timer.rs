@@ -5,8 +5,8 @@
 
 use core::cmp::max;
 
+use super::infallible::{DelayMs, DelayUs};
 use cast::{u16, u32};
-use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
 use crate::{
     pac::{self, RCC},

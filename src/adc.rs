@@ -9,10 +9,10 @@
 */
 
 use crate::dma::traits::PeriAddress;
+use crate::hal_nb::adc::{Channel, OneShot};
 use crate::rcc::{Enable, Reset};
 use crate::{gpio::*, pac, signature::VrefCal, signature::VDDA_CALIB};
 use core::fmt;
-use embedded_hal::adc::{Channel, OneShot};
 
 /// Vref internal signal, used for calibration
 pub struct Vref;
@@ -28,7 +28,10 @@ macro_rules! adc_pins {
         $(
             impl Channel<pac::$adc> for $pin {
                 type ID = u8;
+                #[cfg(not(feature = "ehal1"))]
                 fn channel() -> u8 { $chan }
+                #[cfg(feature = "ehal1")]
+                fn channel(&self) -> u8 { $chan }
             }
         )+
     };
@@ -909,7 +912,10 @@ macro_rules! adc {
                         }
                     });
 
+                    #[cfg(not(feature = "ehal1"))]
                     let channel = CHANNEL::channel();
+                    #[cfg(feature = "ehal1")]
+                    let channel = _channel.channel();
 
                     //Set the channel in the right sequence field
                     match sequence {
