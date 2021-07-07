@@ -14,39 +14,57 @@ use crate::pac::RCC;
 use crate::rcc::{Clocks, Enable, Reset};
 use crate::time::Hertz;
 
-/// Hardware timers
+/// Timer wrapper
 pub struct Timer<TIM> {
+    pub(crate) tim: TIM,
+    pub(crate) clk: Hertz,
+}
+
+/// Hardware timers
+pub struct CountDownTimer<TIM> {
     clk: Hertz,
     tim: TIM,
 }
 
 /// Interrupt events
 pub enum Event {
-    /// Timer timed out / count down ended
+    /// CountDownTimer timed out / count down ended
     TimeOut,
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
-    /// Timer is disabled
+    /// CountDownTimer is disabled
     Disabled,
 }
 
 impl Timer<SYST> {
+    /// Initialize timer
+    pub fn syst(mut syst: SYST, clocks: &Clocks) -> Self {
+        syst.set_clock_source(SystClkSource::Core);
+        Self {
+            tim: syst,
+            clk: clocks.sysclk(),
+        }
+    }
+
     /// Configures the SYST clock as a periodic count down timer
-    pub fn syst<T>(mut syst: SYST, timeout: T, clocks: &Clocks) -> Self
+    pub fn start_count_down<T>(self, timeout: T) -> CountDownTimer<SYST>
     where
         T: Into<Hertz>,
     {
-        syst.set_clock_source(SystClkSource::Core);
-        let mut timer = Self {
-            tim: syst,
-            clk: clocks.sysclk(),
-        };
+        let Self { tim, clk } = self;
+        let mut timer = CountDownTimer { tim, clk };
         timer.start(timeout);
         timer
     }
 
+    pub fn release(self) -> SYST {
+        self.tim
+    }
+}
+
+impl CountDownTimer<SYST> {
     /// Starts listening for an `event`
     pub fn listen(&mut self, event: Event) {
         match event {
@@ -62,7 +80,7 @@ impl Timer<SYST> {
     }
 }
 
-impl CountDown for Timer<SYST> {
+impl CountDown for CountDownTimer<SYST> {
     type Time = Hertz;
 
     fn start<T>(&mut self, timeout: T)
@@ -87,7 +105,7 @@ impl CountDown for Timer<SYST> {
     }
 }
 
-impl Cancel for Timer<SYST> {
+impl Cancel for CountDownTimer<SYST> {
     type Error = Error;
 
     fn cancel(&mut self) -> Result<(), Self::Error> {
@@ -100,7 +118,7 @@ impl Cancel for Timer<SYST> {
     }
 }
 
-impl Periodic for Timer<SYST> {}
+impl Periodic for CountDownTimer<SYST> {}
 
 /// A monotonic non-decreasing timer
 ///
@@ -157,11 +175,8 @@ macro_rules! hal {
     ($($TIM:ty: ($tim:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
             impl Timer<$TIM> {
-                /// Configures a TIM peripheral as a periodic count down timer
-                pub fn $tim<T>(tim: $TIM, timeout: T, clocks: &Clocks) -> Self
-                where
-                    T: Into<Hertz>,
-                {
+                /// Initialize timer
+                pub fn $tim(tim: $TIM, clocks: &Clocks) -> Self {
                     unsafe {
                         //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
                         let rcc = &(*RCC::ptr());
@@ -172,15 +187,25 @@ macro_rules! hal {
 
                     let pclk_mul = if clocks.$ppre() == 1 { 1 } else { 2 };
 
-                    let mut timer = Self {
+                    Self {
                         clk: Hertz(clocks.$pclk().0 * pclk_mul),
                         tim,
-                    };
-                    timer.start(timeout);
+                    }
+                }
 
+                /// Starts timer in count down mode at a given frequency
+                pub fn start_count_down<T>(self, timeout: T) -> CountDownTimer<$TIM>
+                where
+                    T: Into<Hertz>,
+                {
+                    let Self { tim, clk } = self;
+                    let mut timer = CountDownTimer { tim, clk };
+                    timer.start(timeout);
                     timer
                 }
 
+            }
+            impl CountDownTimer<$TIM> {
                 /// Starts listening for an `event`
                 ///
                 /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
@@ -225,7 +250,7 @@ macro_rules! hal {
                 }
             }
 
-            impl CountDown for Timer<$TIM> {
+            impl CountDown for CountDownTimer<$TIM> {
                 type Time = Hertz;
 
                 fn start<T>(&mut self, timeout: T)
@@ -265,7 +290,7 @@ macro_rules! hal {
                 }
             }
 
-            impl Cancel for Timer<$TIM>
+            impl Cancel for CountDownTimer<$TIM>
             {
                 type Error = Error;
 
@@ -281,7 +306,7 @@ macro_rules! hal {
                 }
             }
 
-            impl Periodic for Timer<$TIM> {}
+            impl Periodic for CountDownTimer<$TIM> {}
         )+
     }
 }
