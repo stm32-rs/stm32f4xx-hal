@@ -16,7 +16,7 @@ use crate::time::Hertz;
 
 /// Hardware timers
 pub struct Timer<TIM> {
-    clocks: Clocks,
+    clk: Hertz,
     tim: TIM,
 }
 
@@ -34,12 +34,15 @@ pub enum Error {
 
 impl Timer<SYST> {
     /// Configures the SYST clock as a periodic count down timer
-    pub fn syst<T>(mut syst: SYST, timeout: T, clocks: Clocks) -> Self
+    pub fn syst<T>(mut syst: SYST, timeout: T, clocks: &Clocks) -> Self
     where
         T: Into<Hertz>,
     {
         syst.set_clock_source(SystClkSource::Core);
-        let mut timer = Timer { tim: syst, clocks };
+        let mut timer = Self {
+            tim: syst,
+            clk: clocks.sysclk(),
+        };
         timer.start(timeout);
         timer
     }
@@ -66,7 +69,7 @@ impl CountDown for Timer<SYST> {
     where
         T: Into<Hertz>,
     {
-        let rvr = self.clocks.sysclk().0 / timeout.into().0 - 1;
+        let rvr = self.clk.0 / timeout.into().0 - 1;
 
         assert!(rvr < (1 << 24));
 
@@ -112,7 +115,7 @@ pub struct MonoTimer {
 
 impl MonoTimer {
     /// Creates a new `Monotonic` timer
-    pub fn new(mut dwt: DWT, mut dcb: DCB, clocks: Clocks) -> Self {
+    pub fn new(mut dwt: DWT, mut dcb: DCB, clocks: &Clocks) -> Self {
         dcb.enable_trace();
         dwt.enable_cycle_counter();
 
@@ -155,7 +158,7 @@ macro_rules! hal {
         $(
             impl Timer<$TIM> {
                 /// Configures a TIM peripheral as a periodic count down timer
-                pub fn $tim<T>(tim: $TIM, timeout: T, clocks: Clocks) -> Self
+                pub fn $tim<T>(tim: $TIM, timeout: T, clocks: &Clocks) -> Self
                 where
                     T: Into<Hertz>,
                 {
@@ -167,8 +170,10 @@ macro_rules! hal {
                         <$TIM>::reset(rcc);
                     }
 
-                    let mut timer = Timer {
-                        clocks,
+                    let pclk_mul = if clocks.$ppre() == 1 { 1 } else { 2 };
+
+                    let mut timer = Self {
+                        clk: Hertz(clocks.$pclk().0 * pclk_mul),
                         tim,
                     };
                     timer.start(timeout);
@@ -233,8 +238,7 @@ macro_rules! hal {
                     self.tim.cnt.reset();
 
                     let frequency = timeout.into().0;
-                    let pclk_mul = if self.clocks.$ppre() == 1 { 1 } else { 2 };
-                    let ticks = self.clocks.$pclk().0 * pclk_mul / frequency;
+                    let ticks = self.clk.0 / frequency;
 
                     let psc = u16((ticks - 1) / (1 << 16)).unwrap();
                     self.tim.psc.write(|w| w.psc().bits(psc) );

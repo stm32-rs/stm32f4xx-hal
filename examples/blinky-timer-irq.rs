@@ -79,7 +79,7 @@ fn main() -> ! {
     cortex_m::interrupt::free(|cs| *G_LED.borrow(cs).borrow_mut() = Some(led));
 
     // Set up a timer expiring after 1s
-    let mut timer = Timer::tim2(dp.TIM2, 1.hz(), clocks);
+    let mut timer = Timer::tim2(dp.TIM2, 1.hz(), &clocks);
 
     // Generate an interrupt when the timer expires
     timer.listen(Event::TimeOut);
