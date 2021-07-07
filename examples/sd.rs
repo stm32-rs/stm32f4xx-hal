@@ -30,7 +30,7 @@ fn main() -> ! {
 
     assert!(clocks.is_pll48clk_valid());
 
-    let mut delay = delay::Delay::new(core.SYST, clocks);
+    let mut delay = delay::Delay::new(core.SYST, &clocks);
 
     let gpioc = device.GPIOC.split();
     let gpiod = device.GPIOD.split();

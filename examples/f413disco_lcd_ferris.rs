@@ -746,7 +746,7 @@ fn main() -> ! {
         gpioe.pe5.into_push_pull_output().set_high();
 
         // Get delay provider
-        let mut delay = Delay::new(cp.SYST, clocks);
+        let mut delay = Delay::new(cp.SYST, &clocks);
 
         // Set up timing
         let write_timing = Timing::default().data(3).address_setup(3).bus_turnaround(0);

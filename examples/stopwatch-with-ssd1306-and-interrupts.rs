@@ -104,7 +104,7 @@ fn main() -> ! {
             stm32::NVIC::unmask(hal::stm32::Interrupt::EXTI15_10);
         };
 
-        let mut delay = Delay::new(cp.SYST, clocks);
+        let mut delay = Delay::new(cp.SYST, &clocks);
 
         loop {
             let elapsed = free(|cs| ELAPSED_MS.borrow(cs).get());

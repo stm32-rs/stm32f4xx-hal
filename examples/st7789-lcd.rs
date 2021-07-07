@@ -49,7 +49,7 @@ fn main() -> ! {
     // Make HCLK faster to allow updating the display more quickly
     let clocks = rcc.cfgr.hclk(100.mhz()).freeze();
 
-    let mut delay = Delay::new(cp.SYST, clocks);
+    let mut delay = Delay::new(cp.SYST, &clocks);
 
     let gpiod = dp.GPIOD.split();
     let gpioe = dp.GPIOE.split();

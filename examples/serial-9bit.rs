@@ -55,7 +55,7 @@ fn main() -> ! {
 
     let clocks = rcc.cfgr.use_hse(8.mhz()).freeze();
 
-    let mut delay = hal::delay::Delay::new(cp.SYST, clocks);
+    let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
 
     // define RX/TX pins
     let tx_pin = gpioa.pa2.into_alternate();

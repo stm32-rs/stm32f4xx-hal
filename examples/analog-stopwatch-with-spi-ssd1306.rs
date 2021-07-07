@@ -117,7 +117,7 @@ fn main() -> ! {
 
     let dc = gpioe.pe3.into_push_pull_output();
     let mut ss = gpioe.pe4.into_push_pull_output();
-    let mut delay = hal::delay::Delay::new(cp.SYST, clocks);
+    let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
 
     ss.set_high();
     delay.delay_ms(100_u32);
