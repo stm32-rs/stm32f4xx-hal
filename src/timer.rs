@@ -22,8 +22,8 @@ pub struct Timer<TIM> {
 
 /// Hardware timers
 pub struct CountDownTimer<TIM> {
-    clk: Hertz,
     tim: TIM,
+    clk: Hertz,
 }
 
 /// Interrupt events
