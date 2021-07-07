@@ -11,7 +11,7 @@ use void::Void;
 
 use crate::pac::RCC;
 
-use crate::rcc::{Clocks, Enable, Reset};
+use crate::rcc::{self, Clocks};
 use crate::time::Hertz;
 
 /// Timer wrapper
@@ -25,6 +25,24 @@ pub struct CountDownTimer<TIM> {
     tim: TIM,
     clk: Hertz,
 }
+
+impl<TIM> Timer<TIM>
+where
+    CountDownTimer<TIM>: CountDown<Time = Hertz>,
+{
+    /// Starts timer in count down mode at a given frequency
+    pub fn start_count_down<T>(self, timeout: T) -> CountDownTimer<TIM>
+    where
+        T: Into<Hertz>,
+    {
+        let Self { tim, clk } = self;
+        let mut timer = CountDownTimer { tim, clk };
+        timer.start(timeout);
+        timer
+    }
+}
+
+impl<TIM> Periodic for CountDownTimer<TIM> {}
 
 /// Interrupt events
 pub enum Event {
@@ -46,17 +64,6 @@ impl Timer<SYST> {
             tim: syst,
             clk: clocks.sysclk(),
         }
-    }
-
-    /// Configures the SYST clock as a periodic count down timer
-    pub fn start_count_down<T>(self, timeout: T) -> CountDownTimer<SYST>
-    where
-        T: Into<Hertz>,
-    {
-        let Self { tim, clk } = self;
-        let mut timer = CountDownTimer { tim, clk };
-        timer.start(timeout);
-        timer
     }
 
     pub fn release(self) -> SYST {
@@ -118,8 +125,6 @@ impl Cancel for CountDownTimer<SYST> {
     }
 }
 
-impl Periodic for CountDownTimer<SYST> {}
-
 /// A monotonic non-decreasing timer
 ///
 /// This uses the timer in the debug watch trace peripheral. This means, that if the
@@ -171,40 +176,47 @@ impl Instant {
     }
 }
 
+mod private {
+    pub trait Sealed {}
+}
+
+pub trait Instance: private::Sealed + rcc::Enable + rcc::Reset {
+    #[doc(hidden)]
+    fn pclk_freq(clocks: &Clocks) -> Hertz;
+}
+
+impl<TIM> Timer<TIM>
+where
+    TIM: Instance,
+{
+    /// Initialize timer
+    pub fn new(tim: TIM, clocks: &Clocks) -> Self {
+        unsafe {
+            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+            let rcc = &(*RCC::ptr());
+            // Enable and reset the timer peripheral
+            TIM::enable(rcc);
+            TIM::reset(rcc);
+        }
+
+        Self {
+            clk: TIM::pclk_freq(clocks),
+            tim,
+        }
+    }
+}
+
 macro_rules! hal {
     ($($TIM:ty: ($tim:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
-            impl Timer<$TIM> {
-                /// Initialize timer
-                pub fn $tim(tim: $TIM, clocks: &Clocks) -> Self {
-                    unsafe {
-                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                        let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral
-                        <$TIM>::enable(rcc);
-                        <$TIM>::reset(rcc);
-                    }
-
+            impl private::Sealed for $TIM {}
+            impl Instance for $TIM {
+                fn pclk_freq(clocks: &Clocks) -> Hertz {
                     let pclk_mul = if clocks.$ppre() == 1 { 1 } else { 2 };
-
-                    Self {
-                        clk: Hertz(clocks.$pclk().0 * pclk_mul),
-                        tim,
-                    }
+                    Hertz(clocks.$pclk().0 * pclk_mul)
                 }
-
-                /// Starts timer in count down mode at a given frequency
-                pub fn start_count_down<T>(self, timeout: T) -> CountDownTimer<$TIM>
-                where
-                    T: Into<Hertz>,
-                {
-                    let Self { tim, clk } = self;
-                    let mut timer = CountDownTimer { tim, clk };
-                    timer.start(timeout);
-                    timer
-                }
-
             }
+
             impl CountDownTimer<$TIM> {
                 /// Starts listening for an `event`
                 ///
@@ -305,8 +317,6 @@ macro_rules! hal {
                     Ok(())
                 }
             }
-
-            impl Periodic for CountDownTimer<$TIM> {}
         )+
     }
 }
@@ -388,100 +398,21 @@ hal! {
     crate::pac::TIM14: (tim14, pclk1, ppre1),
 }
 
-use crate::gpio::gpiob::*;
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioc::*;
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpiod")]
 use crate::gpio::gpiod::*;
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpioe")]
 use crate::gpio::gpioe::*;
-
-#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+#[allow(unused)]
+#[cfg(feature = "gpiof")]
 use crate::gpio::gpiof::*;
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::gpio::gpioh::*;
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[allow(unused)]
+#[cfg(feature = "gpioi")]
 use crate::gpio::gpioi::*;
-
-use crate::gpio::{gpioa::*, Alternate, AlternateOD};
+use crate::gpio::{gpioa::*, gpiob::*, Alternate, AlternateOD};
+#[allow(unused)]
+use crate::gpio::{gpioc::*, gpioh::*};
 
 // Output channels marker traits
 pub trait PinC1<TIM> {}
