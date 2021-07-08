@@ -1,9 +1,9 @@
 //! Debug and trace and stuff
 
+use crate::hal::blocking::delay::{DelayMs, DelayUs};
 use crate::rcc::Clocks;
 use crate::time::Hertz;
 use cortex_m::peripheral::{DCB, DWT};
-use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
 pub trait DwtExt {
     fn constrain(self, dcb: DCB, clocks: Clocks) -> Dwt;
@@ -100,6 +100,7 @@ impl Delay {
 }
 
 // Implement DelayUs/DelayMs for various integer types
+#[cfg(not(feature = "ehal1"))]
 impl<T: Into<u64>> DelayUs<T> for Delay {
     fn delay_us(&mut self, us: T) {
         // Convert us to ticks
@@ -108,12 +109,35 @@ impl<T: Into<u64>> DelayUs<T> for Delay {
         Delay::delay_ticks(start, ticks);
     }
 }
+#[cfg(feature = "ehal1")]
+impl<T: Into<u64>> DelayUs<T> for Delay {
+    type Error = core::convert::Infallible;
+    fn delay_us(&mut self, us: T) -> Result<(), Self::Error> {
+        // Convert us to ticks
+        let start = DWT::get_cycle_count();
+        let ticks = (us.into() * self.clock.0 as u64) / 1_000_000;
+        Delay::delay_ticks(start, ticks);
+        Ok(())
+    }
+}
+#[cfg(not(feature = "ehal1"))]
 impl<T: Into<u64>> DelayMs<T> for Delay {
     fn delay_ms(&mut self, ms: T) {
         // Convert ms to ticks
         let start = DWT::get_cycle_count();
         let ticks = (ms.into() * self.clock.0 as u64) / 1_000;
         Delay::delay_ticks(start, ticks);
+    }
+}
+#[cfg(feature = "ehal1")]
+impl<T: Into<u64>> DelayMs<T> for Delay {
+    type Error = core::convert::Infallible;
+    fn delay_ms(&mut self, ms: T) -> Result<(), Self::Error> {
+        // Convert ms to ticks
+        let start = DWT::get_cycle_count();
+        let ticks = (ms.into() * self.clock.0 as u64) / 1_000;
+        Delay::delay_ticks(start, ticks);
+        Ok(())
     }
 }
 

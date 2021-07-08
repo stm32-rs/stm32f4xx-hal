@@ -19,10 +19,9 @@
 use core::fmt;
 use core::marker::PhantomData;
 
+use crate::hal::blocking;
+use crate::hal_nb::serial;
 use crate::rcc::Enable;
-use embedded_hal::blocking;
-use embedded_hal::prelude::*;
-use embedded_hal::serial;
 use nb::block;
 
 #[cfg(feature = "gpiod")]
@@ -1038,10 +1037,11 @@ where
 {
     type Error = Error;
 
+    #[cfg(not(feature = "ehal1"))]
     fn bwrite_all(&mut self, buffer: &[u16]) -> Result<(), Self::Error> {
         for &b in buffer {
             loop {
-                match self.write(b) {
+                match serial::Write::write(self, b) {
                     Err(nb::Error::WouldBlock) => continue,
                     Err(nb::Error::Other(err)) => return Err(err),
                     Ok(()) => break,
@@ -1051,9 +1051,35 @@ where
         Ok(())
     }
 
+    #[cfg(feature = "ehal1")]
+    fn write(&mut self, buffer: &[u16]) -> Result<(), Self::Error> {
+        for &b in buffer {
+            loop {
+                match serial::Write::write(self, b) {
+                    Err(nb::Error::WouldBlock) => continue,
+                    Err(nb::Error::Other(err)) => return Err(err),
+                    Ok(()) => break,
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(not(feature = "ehal1"))]
     fn bflush(&mut self) -> Result<(), Self::Error> {
         loop {
-            match <Self as serial::Write<u16>>::flush(self) {
+            match serial::Write::flush(self) {
+                Ok(()) => return Ok(()),
+                Err(nb::Error::WouldBlock) => continue,
+                Err(nb::Error::Other(err)) => return Err(err),
+            }
+        }
+    }
+
+    #[cfg(feature = "ehal1")]
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        loop {
+            match serial::Write::flush(self) {
                 Ok(()) => return Ok(()),
                 Err(nb::Error::WouldBlock) => continue,
                 Err(nb::Error::Other(err)) => return Err(err),
@@ -1068,10 +1094,11 @@ where
 {
     type Error = Error;
 
+    #[cfg(not(feature = "ehal1"))]
     fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
         for &b in bytes {
             loop {
-                match self.write(b) {
+                match serial::Write::write(self, b) {
                     Err(nb::Error::WouldBlock) => continue,
                     Err(nb::Error::Other(err)) => return Err(err),
                     Ok(()) => break,
@@ -1081,9 +1108,35 @@ where
         Ok(())
     }
 
+    #[cfg(feature = "ehal1")]
+    fn write(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+        for &b in bytes {
+            loop {
+                match serial::Write::write(self, b) {
+                    Err(nb::Error::WouldBlock) => continue,
+                    Err(nb::Error::Other(err)) => return Err(err),
+                    Ok(()) => break,
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(not(feature = "ehal1"))]
     fn bflush(&mut self) -> Result<(), Self::Error> {
         loop {
-            match <Self as serial::Write<u8>>::flush(self) {
+            match serial::Write::flush(self) {
+                Ok(()) => return Ok(()),
+                Err(nb::Error::WouldBlock) => continue,
+                Err(nb::Error::Other(err)) => return Err(err),
+            }
+        }
+    }
+
+    #[cfg(feature = "ehal1")]
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        loop {
+            match serial::Write::flush(self) {
                 Ok(()) => return Ok(()),
                 Err(nb::Error::WouldBlock) => continue,
                 Err(nb::Error::Other(err)) => return Err(err),
@@ -1098,6 +1151,7 @@ where
 {
     type Error = Error;
 
+    #[cfg(not(feature = "ehal1"))]
     fn bwrite_all(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
         let mut tx: Tx<USART, u16> = Tx {
             _usart: PhantomData,
@@ -1106,12 +1160,31 @@ where
         tx.bwrite_all(bytes)
     }
 
+    #[cfg(feature = "ehal1")]
+    fn write(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
+        let mut tx: Tx<USART, u16> = Tx {
+            _usart: PhantomData,
+            _word: PhantomData,
+        };
+        tx.write(bytes)
+    }
+
+    #[cfg(not(feature = "ehal1"))]
     fn bflush(&mut self) -> Result<(), Self::Error> {
         let mut tx: Tx<USART, u16> = Tx {
             _usart: PhantomData,
             _word: PhantomData,
         };
         tx.bflush()
+    }
+
+    #[cfg(feature = "ehal1")]
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        let mut tx: Tx<USART, u16> = Tx {
+            _usart: PhantomData,
+            _word: PhantomData,
+        };
+        tx.flush()
     }
 }
 
@@ -1121,6 +1194,7 @@ where
 {
     type Error = Error;
 
+    #[cfg(not(feature = "ehal1"))]
     fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
         let mut tx: Tx<USART, u8> = Tx {
             _usart: PhantomData,
@@ -1129,12 +1203,31 @@ where
         tx.bwrite_all(bytes)
     }
 
+    #[cfg(feature = "ehal1")]
+    fn write(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+        let mut tx: Tx<USART, u8> = Tx {
+            _usart: PhantomData,
+            _word: PhantomData,
+        };
+        tx.write(bytes)
+    }
+
+    #[cfg(not(feature = "ehal1"))]
     fn bflush(&mut self) -> Result<(), Self::Error> {
         let mut tx: Tx<USART, u8> = Tx {
             _usart: PhantomData,
             _word: PhantomData,
         };
         tx.bflush()
+    }
+
+    #[cfg(feature = "ehal1")]
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        let mut tx: Tx<USART, u8> = Tx {
+            _usart: PhantomData,
+            _word: PhantomData,
+        };
+        tx.flush()
     }
 }
 
@@ -1328,7 +1421,7 @@ where
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         s.bytes()
-            .try_for_each(|c| block!(self.write(c)))
+            .try_for_each(|c| block!(serial::Write::write(self, c)))
             .map_err(|_| fmt::Error)
     }
 }
@@ -1339,7 +1432,7 @@ where
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         s.bytes()
-            .try_for_each(|c| block!(self.write(c)))
+            .try_for_each(|c| block!(serial::Write::write(self, c)))
             .map_err(|_| fmt::Error)
     }
 }

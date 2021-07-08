@@ -4,8 +4,8 @@ use cast::u32;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 
+use super::infallible::{DelayMs, DelayUs};
 use crate::rcc::Clocks;
-use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
 use super::Delay;
 

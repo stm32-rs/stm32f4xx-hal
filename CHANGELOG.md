@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Use both `0.2.x` and `1.0` `embedded-hal` crates.
+  With `ehal1` option enabled traits of `1.0` version are used. 
 - Add `Spi::new` and deprecate `Spi:spix`, deprecate `Serial::usartx`, remove deprecated `I2c::i2cx`
 - Deprecate `free` in favour of `release`
 - Clean features in `serial`, `spi`, `i2c`, `timer`

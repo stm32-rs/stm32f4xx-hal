@@ -3,11 +3,10 @@
 //! Pins can be used for PWM output in both push-pull mode (`Alternate`) and open-drain mode
 //! (`AlternateOD`).
 
+use crate::hal_nb::timer::{Cancel, CountDown, Periodic};
 use cast::{u16, u32};
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::{DCB, DWT, SYST};
-use embedded_hal::timer::{Cancel, CountDown, Periodic};
-use void::Void;
 
 use crate::pac::RCC;
 
@@ -40,7 +39,10 @@ impl Timer<SYST> {
     {
         syst.set_clock_source(SystClkSource::Core);
         let mut timer = Timer { tim: syst, clocks };
+        #[cfg(not(feature = "ehal1"))]
         timer.start(timeout);
+        #[cfg(feature = "ehal1")]
+        timer.start(timeout).unwrap();
         timer
     }
 
@@ -59,10 +61,21 @@ impl Timer<SYST> {
     }
 }
 
+#[cfg(not(feature = "ehal1"))]
+type CDStartResult = ();
+#[cfg(feature = "ehal1")]
+type CDStartResult = Result<(), Error>;
+#[cfg(not(feature = "ehal1"))]
+type CDWaitResult = nb::Result<(), void::Void>;
+#[cfg(feature = "ehal1")]
+type CDWaitResult = nb::Result<(), Error>;
+
 impl CountDown for Timer<SYST> {
+    #[cfg(feature = "ehal1")]
+    type Error = Error;
     type Time = Hertz;
 
-    fn start<T>(&mut self, timeout: T)
+    fn start<T>(&mut self, timeout: T) -> CDStartResult
     where
         T: Into<Hertz>,
     {
@@ -73,9 +86,11 @@ impl CountDown for Timer<SYST> {
         self.tim.set_reload(rvr);
         self.tim.clear_current();
         self.tim.enable_counter();
+        #[cfg(feature = "ehal1")]
+        Ok(())
     }
 
-    fn wait(&mut self) -> nb::Result<(), Void> {
+    fn wait(&mut self) -> CDWaitResult {
         if self.tim.has_wrapped() {
             Ok(())
         } else {
@@ -85,6 +100,7 @@ impl CountDown for Timer<SYST> {
 }
 
 impl Cancel for Timer<SYST> {
+    #[cfg(not(feature = "ehal1"))]
     type Error = Error;
 
     fn cancel(&mut self) -> Result<(), Self::Error> {
@@ -171,7 +187,10 @@ macro_rules! hal {
                         clocks,
                         tim,
                     };
+                    #[cfg(not(feature = "ehal1"))]
                     timer.start(timeout);
+                    #[cfg(feature = "ehal1")]
+                    timer.start(timeout).unwrap();
 
                     timer
                 }
@@ -221,9 +240,11 @@ macro_rules! hal {
             }
 
             impl CountDown for Timer<$TIM> {
+                #[cfg(feature = "ehal1")]
+                type Error = Error;
                 type Time = Hertz;
 
-                fn start<T>(&mut self, timeout: T)
+                fn start<T>(&mut self, timeout: T) -> CDStartResult
                 where
                     T: Into<Hertz>,
                 {
@@ -249,9 +270,11 @@ macro_rules! hal {
 
                     // start counter
                     self.tim.cr1.modify(|_, w| w.cen().set_bit());
+                    #[cfg(feature = "ehal1")]
+                    Ok(())
                 }
 
-                fn wait(&mut self) -> nb::Result<(), Void> {
+                fn wait(&mut self) -> CDWaitResult {
                     if self.tim.sr.read().uif().bit_is_clear() {
                         Err(nb::Error::WouldBlock)
                     } else {
@@ -263,6 +286,7 @@ macro_rules! hal {
 
             impl Cancel for Timer<$TIM>
             {
+                #[cfg(not(feature = "ehal1"))]
                 type Error = Error;
 
                 fn cancel(&mut self) -> Result<(), Self::Error> {

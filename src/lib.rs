@@ -23,7 +23,19 @@ compile_error!(
         stm32f479"
 );
 
+#[cfg(feature = "ehal1")]
+pub use ehal1 as hal;
+#[cfg(not(feature = "ehal1"))]
 pub use embedded_hal as hal;
+
+#[cfg(not(feature = "ehal1"))]
+use crate::hal as hal_blocking;
+#[cfg(not(feature = "ehal1"))]
+use crate::hal as hal_nb;
+#[cfg(feature = "ehal1")]
+use crate::hal::blocking as hal_blocking;
+#[cfg(feature = "ehal1")]
+use crate::hal::nb as hal_nb;
 
 pub use nb;
 pub use nb::block;
