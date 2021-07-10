@@ -28,7 +28,7 @@ use crate::hal::{
     prelude::*,
     rcc::{Clocks, Rcc},
     stm32,
-    timer::{Event, Timer},
+    timer::{CountDownTimer, Event, Timer},
 };
 use arrayvec::ArrayString;
 use core::cell::{Cell, RefCell};
@@ -46,7 +46,8 @@ use ssd1306::{prelude::*, Builder, I2CDIBuilder};
 
 // Set up global state. It's all mutexed up for concurrency safety.
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
-static TIMER_TIM2: Mutex<RefCell<Option<Timer<stm32::TIM2>>>> = Mutex::new(RefCell::new(None));
+static TIMER_TIM2: Mutex<RefCell<Option<CountDownTimer<stm32::TIM2>>>> =
+    Mutex::new(RefCell::new(None));
 static STATE: Mutex<Cell<StopwatchState>> = Mutex::new(Cell::new(StopwatchState::Ready));
 static BUTTON: Mutex<RefCell<Option<PC13<Input<PullUp>>>>> = Mutex::new(RefCell::new(None));
 
@@ -88,7 +89,7 @@ fn main() -> ! {
         disp.flush().unwrap();
 
         // Create a 1ms periodic interrupt from TIM2
-        let mut timer = Timer::tim2(dp.TIM2, 1.khz(), clocks);
+        let mut timer = Timer::new(dp.TIM2, &clocks).start_count_down(1.hz());
         timer.listen(Event::TimeOut);
 
         free(|cs| {
@@ -103,7 +104,7 @@ fn main() -> ! {
             stm32::NVIC::unmask(hal::stm32::Interrupt::EXTI15_10);
         };
 
-        let mut delay = Delay::new(cp.SYST, clocks);
+        let mut delay = Delay::new(cp.SYST, &clocks);
 
         loop {
             let elapsed = free(|cs| ELAPSED_MS.borrow(cs).get());

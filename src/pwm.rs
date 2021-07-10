@@ -1,9 +1,4 @@
-use crate::{
-    bb, hal as pwm,
-    pac::RCC,
-    rcc::{Clocks, Enable, Reset},
-    time::Hertz,
-};
+use crate::{bb, hal as pwm, time::Hertz, timer::Timer};
 use cast::{u16, u32};
 use core::{marker::PhantomData, mem::MaybeUninit};
 
@@ -197,67 +192,60 @@ macro_rules! pwm_pin {
 macro_rules! pwm_all_channels {
     ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
-            pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
-            where
-                PINS: Pins<$TIMX, P>,
-                T: Into<Hertz>,
-            {
+            impl Timer<$TIMX> {
+                pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
+                where
+                    PINS: Pins<$TIMX, P>,
+                    T: Into<Hertz>,
                 {
-                    unsafe {
-                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                        let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral
-                        $TIMX::enable(rcc);
-                        $TIMX::reset(rcc);
+                    if PINS::C1 {
+                        self.tim.ccmr1_output()
+                            .modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1() );
                     }
-                }
-                if PINS::C1 {
-                    tim.ccmr1_output()
-                        .modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1() );
-                }
-                if PINS::C2 {
-                    tim.ccmr1_output()
-                        .modify(|_, w| w.oc2pe().set_bit().oc2m().pwm_mode1() );
-                }
-                if PINS::C3 {
-                    tim.ccmr2_output()
-                        .modify(|_, w| w.oc3pe().set_bit().oc3m().pwm_mode1() );
-                }
-                if PINS::C4 {
-                    tim.ccmr2_output()
-                        .modify(|_, w| w.oc4pe().set_bit().oc4m().pwm_mode1() );
-                }
+                    if PINS::C2 {
+                        self.tim.ccmr1_output()
+                            .modify(|_, w| w.oc2pe().set_bit().oc2m().pwm_mode1() );
+                    }
+                    if PINS::C3 {
+                        self.tim.ccmr2_output()
+                            .modify(|_, w| w.oc3pe().set_bit().oc3m().pwm_mode1() );
+                    }
+                    if PINS::C4 {
+                        self.tim.ccmr2_output()
+                            .modify(|_, w| w.oc4pe().set_bit().oc4m().pwm_mode1() );
+                    }
 
-                // The reference manual is a bit ambiguous about when enabling this bit is really
-                // necessary, but since we MUST enable the preload for the output channels then we
-                // might as well enable for the auto-reload too
-                tim.cr1.modify(|_, w| w.arpe().set_bit());
+                    // The reference manual is a bit ambiguous about when enabling this bit is really
+                    // necessary, but since we MUST enable the preload for the output channels then we
+                    // might as well enable for the auto-reload too
+                    self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                let clk = clocks.$pclk().0 * if clocks.$ppre() == 1 { 1 } else { 2 };
-                let ticks = clk / freq.into().0;
-                let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                tim.psc.write(|w| w.psc().bits(psc) );
-                let arr = u16(ticks / u32(psc + 1)).unwrap();
-                tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
+                    let ticks = self.clk.0 / freq.into().0;
+                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
+                    self.tim.psc.write(|w| w.psc().bits(psc) );
+                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
 
-                // Trigger update event to load the registers
-                tim.cr1.modify(|_, w| w.urs().set_bit());
-                tim.egr.write(|w| w.ug().set_bit());
-                tim.cr1.modify(|_, w| w.urs().clear_bit());
+                    // Trigger update event to load the registers
+                    self.tim.cr1.modify(|_, w| w.urs().set_bit());
+                    self.tim.egr.write(|w| w.ug().set_bit());
+                    self.tim.cr1.modify(|_, w| w.urs().clear_bit());
 
-                brk!($TIMX, tim);
-                tim.cr1.write(|w|
-                    w.cms()
-                        .bits(0b00)
-                        .dir()
-                        .clear_bit()
-                        .opm()
-                        .clear_bit()
-                        .cen()
-                        .set_bit()
-                );
-                //NOTE(unsafe) `PINS::Channels` is a ZST
-                unsafe { MaybeUninit::uninit().assume_init() }
+                    let _tim = &self.tim;
+                    brk!($TIMX, _tim);
+                    self.tim.cr1.write(|w|
+                        w.cms()
+                            .bits(0b00)
+                            .dir()
+                            .clear_bit()
+                            .opm()
+                            .clear_bit()
+                            .cen()
+                            .set_bit()
+                    );
+                    //NOTE(unsafe) `PINS::Channels` is a ZST
+                    unsafe { MaybeUninit::uninit().assume_init() }
+                }
             }
 
             pwm_pin!($TIMX, C1, ccr1, 0);
@@ -271,58 +259,50 @@ macro_rules! pwm_all_channels {
 macro_rules! pwm_2_channels {
     ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
-            pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
-            where
-                PINS: Pins<$TIMX, P>,
-                T: Into<Hertz>,
-            {
+            impl Timer<$TIMX> {
+                pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
+                where
+                    PINS: Pins<$TIMX, P>,
+                    T: Into<Hertz>,
                 {
-                    unsafe {
-                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                        let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral
-                        <$TIMX>::enable(rcc);
-                        <$TIMX>::reset(rcc);
+                    if PINS::C1 {
+                        //NOTE(unsafe) 6 is a valid value to write to oc1m
+                        unsafe {
+                            self.tim.ccmr1_output().modify(|_, w| w.oc1pe().set_bit().oc1m().bits(6));
+                        }
                     }
-                }
-                if PINS::C1 {
-                    //NOTE(unsafe) 6 is a valid value to write to oc1m
-                    unsafe {
-                        tim.ccmr1_output().modify(|_, w| w.oc1pe().set_bit().oc1m().bits(6));
+                    if PINS::C2 {
+                        //NOTE(unsafe) 6 is a valid value to write to oc2m
+                        unsafe {
+                            self.tim.ccmr1_output().modify(|_, w| w.oc2pe().set_bit().oc2m().bits(6));
+                        }
                     }
+
+                    // The reference manual is a bit ambiguous about when enabling this bit is really
+                    // necessary, but since we MUST enable the preload for the output channels then we
+                    // might as well enable for the auto-reload too
+                    self.tim.cr1.modify(|_, w| w.arpe().set_bit());
+
+                    let ticks = self.clk.0 / freq.into().0;
+                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
+                    self.tim.psc.write(|w| w.psc().bits(psc) );
+                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
+
+                    // Trigger update event to load the registers
+                    self.tim.cr1.modify(|_, w| w.urs().set_bit());
+                    self.tim.egr.write(|w| w.ug().set_bit());
+                    self.tim.cr1.modify(|_, w| w.urs().clear_bit());
+
+                    self.tim.cr1.write(|w|
+                        w.opm()
+                            .clear_bit()
+                            .cen()
+                            .set_bit()
+                    );
+                    //NOTE(unsafe) `PINS::Channels` is a ZST
+                    unsafe { MaybeUninit::uninit().assume_init() }
                 }
-                if PINS::C2 {
-                    //NOTE(unsafe) 6 is a valid value to write to oc2m
-                    unsafe {
-                        tim.ccmr1_output().modify(|_, w| w.oc2pe().set_bit().oc2m().bits(6));
-                    }
-                }
-
-                // The reference manual is a bit ambiguous about when enabling this bit is really
-                // necessary, but since we MUST enable the preload for the output channels then we
-                // might as well enable for the auto-reload too
-                tim.cr1.modify(|_, w| w.arpe().set_bit());
-
-                let clk = clocks.$pclk().0 * if clocks.$ppre() == 1 { 1 } else { 2 };
-                let ticks = clk / freq.into().0;
-                let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                tim.psc.write(|w| w.psc().bits(psc) );
-                let arr = u16(ticks / u32(psc + 1)).unwrap();
-                tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
-
-                // Trigger update event to load the registers
-                tim.cr1.modify(|_, w| w.urs().set_bit());
-                tim.egr.write(|w| w.ug().set_bit());
-                tim.cr1.modify(|_, w| w.urs().clear_bit());
-
-                tim.cr1.write(|w|
-                    w.opm()
-                        .clear_bit()
-                        .cen()
-                        .set_bit()
-                );
-                //NOTE(unsafe) `PINS::Channels` is a ZST
-                unsafe { MaybeUninit::uninit().assume_init() }
             }
 
             pwm_pin!($TIMX, C1, ccr1, 0);
@@ -334,51 +314,43 @@ macro_rules! pwm_2_channels {
 macro_rules! pwm_1_channel {
     ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
-            pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
-            where
-                PINS: Pins<$TIMX, P>,
-                T: Into<Hertz>,
-            {
+            impl Timer<$TIMX> {
+                pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
+                where
+                    PINS: Pins<$TIMX, P>,
+                    T: Into<Hertz>,
                 {
-                    unsafe {
-                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                        let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral
-                        <$TIMX>::enable(rcc);
-                        <$TIMX>::reset(rcc);
+                    if PINS::C1 {
+                        //NOTE(unsafe) 6 is a valid value to write to oc1m
+                        unsafe {
+                            self.tim.ccmr1_output()
+                                .modify(|_, w| w.oc1pe().set_bit().oc1m().bits(6));
+                        }
                     }
+
+                    // The reference manual is a bit ambiguous about when enabling this bit is really
+                    // necessary, but since we MUST enable the preload for the output channels then we
+                    // might as well enable for the auto-reload too
+                    self.tim.cr1.modify(|_, w| w.arpe().set_bit());
+
+                    let ticks = self.clk.0 / freq.into().0;
+                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
+                    self.tim.psc.write(|w| w.psc().bits(psc) );
+                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
+
+                    // Trigger update event to load the registers
+                    self.tim.cr1.modify(|_, w| w.urs().set_bit());
+                    self.tim.egr.write(|w| w.ug().set_bit());
+                    self.tim.cr1.modify(|_, w| w.urs().clear_bit());
+
+                    self.tim.cr1.write(|w|
+                        w.cen()
+                            .set_bit()
+                    );
+                    //NOTE(unsafe) `PINS::Channels` is a ZST
+                    unsafe { MaybeUninit::uninit().assume_init() }
                 }
-                if PINS::C1 {
-                    //NOTE(unsafe) 6 is a valid value to write to oc1m
-                    unsafe {
-                        tim.ccmr1_output()
-                            .modify(|_, w| w.oc1pe().set_bit().oc1m().bits(6));
-                    }
-                }
-
-                // The reference manual is a bit ambiguous about when enabling this bit is really
-                // necessary, but since we MUST enable the preload for the output channels then we
-                // might as well enable for the auto-reload too
-                tim.cr1.modify(|_, w| w.arpe().set_bit());
-
-                let clk = clocks.$pclk().0 * if clocks.$ppre() == 1 { 1 } else { 2 };
-                let ticks = clk / freq.into().0;
-                let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                tim.psc.write(|w| w.psc().bits(psc) );
-                let arr = u16(ticks / u32(psc + 1)).unwrap();
-                tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
-
-                // Trigger update event to load the registers
-                tim.cr1.modify(|_, w| w.urs().set_bit());
-                tim.egr.write(|w| w.ug().set_bit());
-                tim.cr1.modify(|_, w| w.urs().clear_bit());
-
-                tim.cr1.write(|w|
-                    w.cen()
-                        .set_bit()
-                );
-                //NOTE(unsafe) `PINS::Channels` is a ZST
-                unsafe { MaybeUninit::uninit().assume_init() }
             }
 
             pwm_pin!($TIMX, C1, ccr1, 0);
@@ -450,66 +422,58 @@ macro_rules! pwm_pin_tim5 {
 macro_rules! pwm_tim5_f410 {
     ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
         $(
-            pub fn $timX<P, PINS, T>(tim: $TIMX, _pins: PINS, clocks: Clocks, freq: T) -> PINS::Channels
-            where
-                PINS: Pins<$TIMX, P>,
-                T: Into<Hertz>,
-            {
+            impl Timer<$TIMX> {
+                pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
+                where
+                    PINS: Pins<$TIMX, P>,
+                    T: Into<Hertz>,
                 {
-                    unsafe {
-                        //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-                        let rcc = &(*RCC::ptr());
-                        // Enable and reset the timer peripheral
-                        <$TIMX>::enable(rcc);
-                        <$TIMX>::reset(rcc);
+                    if PINS::C1 {
+                        self.tim.ccmr1_output()
+                            .modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1() );
                     }
-                }
-                if PINS::C1 {
-                    tim.ccmr1_output()
-                        .modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1() );
-                }
-                if PINS::C2 {
-                    tim.ccmr1_output()
-                        .modify(|_, w| w.oc2pe().set_bit().oc2m().pwm_mode1() );
-                }
-                if PINS::C3 {
-                    tim.ccmr2_output()
-                        .modify(|_, w| w.oc3pe().set_bit().oc3m().pwm_mode1() );
-                }
-                if PINS::C4 {
-                    tim.ccmr2_output()
-                        .modify(|_, w| w.oc4pe().set_bit().oc4m().pwm_mode1() );
-                }
+                    if PINS::C2 {
+                        self.tim.ccmr1_output()
+                            .modify(|_, w| w.oc2pe().set_bit().oc2m().pwm_mode1() );
+                    }
+                    if PINS::C3 {
+                        self.tim.ccmr2_output()
+                            .modify(|_, w| w.oc3pe().set_bit().oc3m().pwm_mode1() );
+                    }
+                    if PINS::C4 {
+                        self.tim.ccmr2_output()
+                            .modify(|_, w| w.oc4pe().set_bit().oc4m().pwm_mode1() );
+                    }
 
-                // The reference manual is a bit ambiguous about when enabling this bit is really
-                // necessary, but since we MUST enable the preload for the output channels then we
-                // might as well enable for the auto-reload too
-                tim.cr1.modify(|_, w| w.arpe().set_bit());
+                    // The reference manual is a bit ambiguous about when enabling this bit is really
+                    // necessary, but since we MUST enable the preload for the output channels then we
+                    // might as well enable for the auto-reload too
+                    self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                let clk = clocks.$pclk().0 * if clocks.$ppre() == 1 { 1 } else { 2 };
-                let ticks = clk / freq.into().0;
-                let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                tim.psc.write(|w| w.psc().bits(psc) );
-                let arr = u16(ticks / u32(psc + 1)).unwrap();
-                tim.arr.write(|w| unsafe { w.arr_l().bits(arr) });
+                    let ticks = self.clk.0 / freq.into().0;
+                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
+                    self.tim.psc.write(|w| w.psc().bits(psc) );
+                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    self.tim.arr.write(|w| unsafe { w.arr_l().bits(arr) });
 
-                // Trigger update event to load the registers
-                tim.cr1.modify(|_, w| w.urs().set_bit());
-                tim.egr.write(|w| w.ug().set_bit());
-                tim.cr1.modify(|_, w| w.urs().clear_bit());
+                    // Trigger update event to load the registers
+                    self.tim.cr1.modify(|_, w| w.urs().set_bit());
+                    self.tim.egr.write(|w| w.ug().set_bit());
+                    self.tim.cr1.modify(|_, w| w.urs().clear_bit());
 
-                tim.cr1.write(|w|
-                    w.cms()
-                        .bits(0b00)
-                        .dir()
-                        .clear_bit()
-                        .opm()
-                        .clear_bit()
-                        .cen()
-                        .set_bit()
-                );
-                //NOTE(unsafe) `PINS::Channels` is a ZST
-                unsafe { MaybeUninit::uninit().assume_init() }
+                    self.tim.cr1.write(|w|
+                        w.cms()
+                            .bits(0b00)
+                            .dir()
+                            .clear_bit()
+                            .opm()
+                            .clear_bit()
+                            .cen()
+                            .set_bit()
+                    );
+                    //NOTE(unsafe) `PINS::Channels` is a ZST
+                    unsafe { MaybeUninit::uninit().assume_init() }
+                }
             }
 
             pwm_pin_tim5!($TIMX, C1, ccr1, 0);

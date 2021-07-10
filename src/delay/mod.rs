@@ -4,12 +4,12 @@ mod syst;
 
 use cortex_m::peripheral::SYST;
 
-use crate::rcc::Clocks;
+use crate::time::Hertz;
 
 /// Timer as a delay provider (SysTick by default)
 pub struct Delay<T = SYST> {
     tim: T,
-    clocks: Clocks,
+    clk: Hertz,
 }
 
 impl<T> Delay<T> {

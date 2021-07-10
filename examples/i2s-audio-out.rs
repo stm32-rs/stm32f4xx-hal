@@ -100,7 +100,7 @@ fn main() -> ! {
     // The 86 MHz frequency can be divided to get a sample rate very close to 48 kHz.
     let clocks = rcc.cfgr.use_hse(8.mhz()).i2s_clk(86.mhz()).freeze();
 
-    let mut delay = Delay::new(cp.SYST, clocks);
+    let mut delay = Delay::new(cp.SYST, &clocks);
 
     let i2c = I2c::new(
         dp.I2C1,

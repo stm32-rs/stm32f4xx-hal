@@ -61,7 +61,7 @@ fn main() -> ! {
             .sysclk(128.mhz())
             .freeze();
 
-        let mut delay_source = hal::delay::Delay::new(cp.SYST, clocks);
+        let mut delay_source = hal::delay::Delay::new(cp.SYST, &clocks);
 
         // Set up I2C1: SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F407 datasheet. Pin assignment as per the

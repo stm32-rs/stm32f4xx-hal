@@ -103,7 +103,7 @@ fn main() -> ! {
     let gpioc = dp.GPIOC.split();
     let gpiod = dp.GPIOD.split();
 
-    let mut delay = Delay::new(cp.SYST, clocks);
+    let mut delay = Delay::new(cp.SYST, &clocks);
 
     let i2c = I2c::new(
         dp.I2C1,

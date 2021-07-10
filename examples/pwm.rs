@@ -6,11 +6,11 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
-use stm32f4xx_hal::{prelude::*, pwm, stm32};
+use stm32f4xx_hal::{pac, prelude::*, timer::Timer};
 
 #[entry]
 fn main() -> ! {
-    if let Some(dp) = stm32::Peripherals::take() {
+    if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
         let rcc = dp.RCC.constrain();
         let clocks = rcc.cfgr.freeze();
@@ -18,7 +18,7 @@ fn main() -> ! {
         let gpioa = dp.GPIOA.split();
         let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
 
-        let pwm = pwm::tim1(dp.TIM1, channels, clocks, 20u32.khz());
+        let pwm = Timer::new(dp.TIM1, &clocks).pwm(channels, 20u32.khz());
         let (mut ch1, _ch2) = pwm;
         let max_duty = ch1.get_max_duty();
         ch1.set_duty(max_duty / 2);

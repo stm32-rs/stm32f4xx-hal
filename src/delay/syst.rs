@@ -11,9 +11,12 @@ use super::Delay;
 
 impl Delay<SYST> {
     /// Configures the system timer (SysTick) as a delay provider
-    pub fn new(mut tim: SYST, clocks: Clocks) -> Self {
+    pub fn new(mut tim: SYST, clocks: &Clocks) -> Self {
         tim.set_clock_source(SystClkSource::External);
-        Self { tim, clocks }
+        Self {
+            tim,
+            clk: clocks.hclk(),
+        }
     }
 
     #[deprecated(since = "0.10.0", note = "Please use release instead")]
@@ -45,7 +48,7 @@ impl DelayUs<u32> for Delay<SYST> {
         // The SysTick Reload Value register supports values between 1 and 0x00FFFFFF.
         const MAX_RVR: u32 = 0x00FF_FFFF;
 
-        let mut total_rvr = us * (self.clocks.hclk().0 / 8_000_000);
+        let mut total_rvr = us * (self.clk.0 / 8_000_000);
 
         while total_rvr != 0 {
             let current_rvr = if total_rvr <= MAX_RVR {

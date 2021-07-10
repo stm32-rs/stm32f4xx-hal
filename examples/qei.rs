@@ -32,7 +32,7 @@ fn main() -> ! {
     let clocks = rcc.cfgr.freeze();
 
     // Create a delay abstraction based on SysTick.
-    let mut delay = Delay::new(cp.SYST, clocks);
+    let mut delay = Delay::new(cp.SYST, &clocks);
 
     let gpioa = dp.GPIOA.split();
 
