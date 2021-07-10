@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add possibility to use DMA with the ADC abstraction, add example for ADC with DMA [#258]
 - Remove unsafe code from ADC DMA example
 - [breaking-change] DMA: Memory to peripheral transfers now only require `StaticReadBuffer` [#257].
+- Rename erased `Pin` to `EPin`, partially erased `PXx` to `PEPin`, `PX` to `Pin`.
 
 [#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
 [#258]: https://github.com/stm32-rs/stm32f4xx-hal/pull/258
