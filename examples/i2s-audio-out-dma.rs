@@ -126,7 +126,7 @@ fn main() -> ! {
         gpioc.pc7.into_alternate(),
         gpioc.pc12.into_alternate(),
     );
-    let hal_i2s = I2s::i2s3(dp.SPI3, i2s_pins, clocks);
+    let hal_i2s = I2s::new(dp.SPI3, i2s_pins, clocks);
     let i2s_clock = hal_i2s.input_clock();
 
     // Audio timing configuration:

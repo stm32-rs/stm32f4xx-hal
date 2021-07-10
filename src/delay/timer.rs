@@ -58,11 +58,6 @@ macro_rules! hal {
 
                     Self { tim, clocks }
                 }
-
-                /// Releases the timer resource
-                pub fn free(self) -> $TIM {
-                    self.tim
-                }
             }
 
             impl DelayUs<u32> for Delay<$TIM> {

@@ -12,4 +12,11 @@ pub struct Delay<T = SYST> {
     clocks: Clocks,
 }
 
+impl<T> Delay<T> {
+    /// Releases the timer resource
+    pub fn release(self) -> T {
+        self.tim
+    }
+}
+
 mod timer;

@@ -20,11 +20,6 @@ impl Delay<SYST> {
     pub fn free(self) -> SYST {
         self.release()
     }
-
-    /// Releases the system timer (SysTick) resource
-    pub fn release(self) -> SYST {
-        self.tim
-    }
 }
 
 impl DelayMs<u32> for Delay<SYST> {

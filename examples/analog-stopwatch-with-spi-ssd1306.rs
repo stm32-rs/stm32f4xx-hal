@@ -98,7 +98,7 @@ fn main() -> ! {
     let miso = gpioe.pe5.into_alternate();
     let mosi = gpioe.pe6.into_alternate();
 
-    let spi = Spi::spi4(
+    let spi = Spi::new(
         dp.SPI4,
         (sck, miso, mosi),
         Mode {

@@ -8,7 +8,7 @@
 //! to calculate. This operation stalls the AHB bus for that time.
 
 use crate::pac::{CRC, RCC};
-use crate::rcc::Enable;
+use crate::rcc::{Enable, Reset};
 use core::mem::MaybeUninit;
 use core::ptr::copy_nonoverlapping;
 
@@ -25,6 +25,7 @@ impl Crc32 {
             let rcc = &(*RCC::ptr());
             // enable CRC clock.
             CRC::enable(rcc);
+            CRC::reset(rcc);
         }
 
         let mut new = Self { periph: crc };
