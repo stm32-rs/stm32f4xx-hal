@@ -1,5 +1,12 @@
 use super::*;
 
+/// Const assert hack
+struct Assert<const L: u8, const R: u8>;
+
+impl<const L: u8, const R: u8> Assert<L, R> {
+    pub const LESS: u8 = R - L - 1;
+}
+
 fn _set_alternate_mode<const P: char, const N: u8, const A: u8>() {
     let offset = 2 * { N };
     let offset2 = 4 * { N };
