@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- [breaking-change] `Timer::new` now just initializes periphery.
+- [breaking-change] `Timer::new` now just initializes peripheral.
   Use `.start_count_down` to start count, `pwm` or `delay` on `Timer` struct.
 - Add `Spi::new`, `I2s::new, `spi::Instance` and deprecate `Spi:spix`,
   deprecate `Serial::usartx`, remove deprecated `I2c::i2cx`
