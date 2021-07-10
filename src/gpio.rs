@@ -9,6 +9,10 @@ use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
 
 mod convert;
+mod partially_erased;
+pub use partially_erased::PEPin;
+mod erased;
+pub use erased::EPin;
 
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
@@ -212,204 +216,17 @@ where
     }
 }
 
-/// Partially erased pin
-pub struct PXx<MODE, const P: char> {
-    i: u8,
-    _mode: PhantomData<MODE>,
-}
-
-impl<MODE, const P: char> PinExt for PXx<MODE, P> {
-    type Mode = MODE;
-
-    #[inline(always)]
-    fn pin_id(&self) -> u8 {
-        self.i
-    }
-    #[inline(always)]
-    fn port_id(&self) -> u8 {
-        P as u8 - 0x41
-    }
-}
-
-impl<MODE, const P: char> PXx<Output<MODE>, P> {
-    #[inline(always)]
-    pub fn set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << self.i)) }
-    }
-
-    #[inline(always)]
-    pub fn set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .bsrr
-                .write(|w| w.bits(1 << (self.i + 16)))
-        }
-    }
-
-    #[inline(always)]
-    pub fn get_state(&self) -> PinState {
-        if self.is_set_low() {
-            PinState::Low
-        } else {
-            PinState::High
-        }
-    }
-
-    #[inline(always)]
-    pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
-    }
-
-    #[inline(always)]
-    pub fn is_set_high(&self) -> bool {
-        !self.is_set_low()
-    }
-
-    #[inline(always)]
-    pub fn is_set_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << self.i) == 0 }
-    }
-
-    #[inline(always)]
-    pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
-    }
-}
-
-impl<MODE, const P: char> OutputPin for PXx<Output<MODE>, P> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn set_high(&mut self) -> Result<(), Self::Error> {
-        self.set_high();
-        Ok(())
-    }
-
-    #[inline(always)]
-    fn set_low(&mut self) -> Result<(), Self::Error> {
-        self.set_low();
-        Ok(())
-    }
-}
-
-impl<MODE, const P: char> StatefulOutputPin for PXx<Output<MODE>, P> {
-    #[inline(always)]
-    fn is_set_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_high())
-    }
-
-    #[inline(always)]
-    fn is_set_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_low())
-    }
-}
-
-impl<MODE, const P: char> ToggleableOutputPin for PXx<Output<MODE>, P> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn toggle(&mut self) -> Result<(), Self::Error> {
-        self.toggle();
-        Ok(())
-    }
-}
-
-impl<const P: char> PXx<Output<OpenDrain>, P> {
-    #[inline(always)]
-    fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 }
-    }
-}
-
-impl<const P: char> InputPin for PXx<Output<OpenDrain>, P> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl<MODE, const P: char> PXx<Input<MODE>, P> {
-    #[inline(always)]
-    fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 }
-    }
-}
-
-impl<MODE, const P: char> InputPin for PXx<Input<MODE>, P> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-fn _set_alternate_mode<const P: char, const N: u8, const A: u8>() {
-    let offset = 2 * { N };
-    let offset2 = 4 * { N };
-    let mode = A as u32;
-    unsafe {
-        if offset2 < 32 {
-            (*Gpio::<P>::ptr())
-                .afrl
-                .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2)));
-        } else {
-            let offset2 = offset2 - 32;
-            (*Gpio::<P>::ptr())
-                .afrh
-                .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2)));
-        }
-        (*Gpio::<P>::ptr())
-            .moder
-            .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)));
-    }
-}
-
 /// Pin
-pub struct PX<MODE, const P: char, const N: u8> {
+pub struct Pin<MODE, const P: char, const N: u8> {
     _mode: PhantomData<MODE>,
 }
-impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
+impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     const fn new() -> Self {
         Self { _mode: PhantomData }
     }
 }
 
-impl<MODE, const P: char, const N: u8> PinExt for PX<MODE, P, N> {
+impl<MODE, const P: char, const N: u8> PinExt for Pin<MODE, P, N> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -422,7 +239,7 @@ impl<MODE, const P: char, const N: u8> PinExt for PX<MODE, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 2 * { N };
@@ -437,7 +254,7 @@ impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
     }
 }
 
-impl<const P: char, const N: u8> PX<Output<OpenDrain>, P, N> {
+impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
     /// Enables / disables the internal pull up
     pub fn internal_pull_up(&mut self, on: bool) {
         let offset = 2 * { N };
@@ -450,7 +267,7 @@ impl<const P: char, const N: u8> PX<Output<OpenDrain>, P, N> {
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> PX<Alternate<A>, P, N> {
+impl<const P: char, const N: u8, const A: u8> Pin<Alternate<A>, P, N> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 2 * { N };
@@ -478,9 +295,9 @@ impl<const P: char, const N: u8, const A: u8> PX<Alternate<A>, P, N> {
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> PX<Alternate<A>, P, N> {
+impl<const P: char, const N: u8, const A: u8> Pin<Alternate<A>, P, N> {
     /// Turns pin alternate configuration pin into open drain
-    pub fn set_open_drain(self) -> PX<AlternateOD<A>, P, N> {
+    pub fn set_open_drain(self) -> Pin<AlternateOD<A>, P, N> {
         let offset = { N };
         unsafe {
             (*Gpio::<P>::ptr())
@@ -488,32 +305,37 @@ impl<const P: char, const N: u8, const A: u8> PX<Alternate<A>, P, N> {
                 .modify(|r, w| w.bits(r.bits() | (1 << offset)))
         };
 
-        PX::new()
+        Pin::new()
     }
 }
 
-impl<MODE, const P: char, const N: u8> PX<MODE, P, N> {
+impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     /// Erases the pin number from the type
     ///
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
-    pub fn downgrade(self) -> PXx<MODE, P> {
-        PXx {
-            i: { N },
-            _mode: self._mode,
-        }
+    pub fn erase_number(self) -> PEPin<MODE, P> {
+        PEPin::new(N)
+    }
+    #[deprecated(since = "0.10.0", note = "Please use erase_number instead")]
+    pub fn downgrade(self) -> PEPin<MODE, P> {
+        self.erase_number()
     }
 
     /// Erases the pin number and the port from the type
     ///
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
-    pub fn downgrade2(self) -> Pin<MODE> {
-        Pin::new(P as u8 - 0x41, N)
+    pub fn erase(self) -> EPin<MODE> {
+        EPin::new(P as u8 - 0x41, N)
+    }
+    #[deprecated(since = "0.10.0", note = "Please use erase instead")]
+    pub fn downgrade2(self) -> EPin<MODE> {
+        self.erase()
     }
 }
 
-impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
     #[inline(always)]
     pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
@@ -568,7 +390,7 @@ impl<MODE, const P: char, const N: u8> PX<Output<MODE>, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> OutputPin for Pin<Output<MODE>, P, N> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -584,7 +406,7 @@ impl<MODE, const P: char, const N: u8> OutputPin for PX<Output<MODE>, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> StatefulOutputPin for PX<Output<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> StatefulOutputPin for Pin<Output<MODE>, P, N> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_set_high())
@@ -596,7 +418,7 @@ impl<MODE, const P: char, const N: u8> StatefulOutputPin for PX<Output<MODE>, P,
     }
 }
 
-impl<MODE, const P: char, const N: u8> ToggleableOutputPin for PX<Output<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> ToggleableOutputPin for Pin<Output<MODE>, P, N> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -606,7 +428,7 @@ impl<MODE, const P: char, const N: u8> ToggleableOutputPin for PX<Output<MODE>, 
     }
 }
 
-impl<const P: char, const N: u8> PX<Output<OpenDrain>, P, N> {
+impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -619,7 +441,7 @@ impl<const P: char, const N: u8> PX<Output<OpenDrain>, P, N> {
     }
 }
 
-impl<const P: char, const N: u8> InputPin for PX<Output<OpenDrain>, P, N> {
+impl<const P: char, const N: u8> InputPin for Pin<Output<OpenDrain>, P, N> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -633,7 +455,7 @@ impl<const P: char, const N: u8> InputPin for PX<Output<OpenDrain>, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> PX<Input<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> Pin<Input<MODE>, P, N> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -646,7 +468,7 @@ impl<MODE, const P: char, const N: u8> PX<Input<MODE>, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> InputPin for PX<Input<MODE>, P, N> {
+impl<MODE, const P: char, const N: u8> InputPin for Pin<Input<MODE>, P, N> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -661,7 +483,7 @@ impl<MODE, const P: char, const N: u8> InputPin for PX<Input<MODE>, P, N> {
 }
 
 macro_rules! gpio {
-    ($GPIOX:ident, $gpiox:ident, $PXx:ident, $port_id:expr, $PXn:ident, [
+    ($GPIOX:ident, $gpiox:ident, $PEPin:ident, $port_id:expr, $PXn:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty),)+
     ]) => {
         /// GPIO
@@ -700,10 +522,10 @@ macro_rules! gpio {
                 }
             }
 
-            pub type $PXn<MODE> = super::PXx<MODE, $port_id>;
+            pub type $PXn<MODE> = super::PEPin<MODE, $port_id>;
 
             $(
-                pub type $PXi<MODE> = super::PX<MODE, $port_id, $i>;
+                pub type $PXi<MODE> = super::Pin<MODE, $port_id, $i>;
             )+
 
         }
@@ -925,199 +747,6 @@ gpio!(GPIOK, gpiok, PK, 'K', PKn, [
     PK7: (pk7, 7, Input<Floating>),
 ]);
 
-/// Fully erased pin
-pub struct Pin<MODE> {
-    // Bits 0-3: Pin, Bits 4-7: Port
-    pin_port: u8,
-    _mode: PhantomData<MODE>,
-}
-
-impl<MODE> PinExt for Pin<MODE> {
-    type Mode = MODE;
-
-    #[inline(always)]
-    fn pin_id(&self) -> u8 {
-        self.pin_port & 0x0f
-    }
-    #[inline(always)]
-    fn port_id(&self) -> u8 {
-        self.pin_port >> 4
-    }
-}
-
-impl<MODE> Pin<MODE> {
-    fn new(port: u8, pin: u8) -> Self {
-        Self {
-            pin_port: port << 4 | pin,
-            _mode: PhantomData,
-        }
-    }
-
-    #[inline]
-    fn block(&self) -> &crate::pac::gpioa::RegisterBlock {
-        // This function uses pointer arithmetic instead of branching to be more efficient
-
-        // The logic relies on the following assumptions:
-        // - GPIOA register is available on all chips
-        // - all gpio register blocks have the same layout
-        // - consecutive gpio register blocks have the same offset between them, namely 0x0400
-        // - Pin::new was called with a valid port
-
-        // FIXME could be calculated after const_raw_ptr_to_usize_cast stabilization #51910
-        const GPIO_REGISTER_OFFSET: usize = 0x0400;
-
-        let offset = GPIO_REGISTER_OFFSET * self.port_id() as usize;
-        let block_ptr =
-            (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::pac::gpioa::RegisterBlock;
-
-        unsafe { &*block_ptr }
-    }
-}
-
-impl<MODE> Pin<Output<MODE>> {
-    #[inline(always)]
-    pub fn set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe { self.block().bsrr.write(|w| w.bits(1 << self.pin_id())) };
-    }
-
-    #[inline(always)]
-    pub fn set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            self.block()
-                .bsrr
-                .write(|w| w.bits(1 << (self.pin_id() + 16)))
-        };
-    }
-
-    #[inline(always)]
-    pub fn get_state(&self) -> PinState {
-        if self.is_set_low() {
-            PinState::Low
-        } else {
-            PinState::High
-        }
-    }
-
-    #[inline(always)]
-    pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
-    }
-
-    #[inline(always)]
-    pub fn is_set_high(&self) -> bool {
-        !self.is_set_low()
-    }
-
-    #[inline(always)]
-    pub fn is_set_low(&self) -> bool {
-        self.block().odr.read().bits() & (1 << self.pin_id()) == 0
-    }
-
-    #[inline(always)]
-    pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
-    }
-}
-
-impl<MODE> OutputPin for Pin<Output<MODE>> {
-    type Error = core::convert::Infallible;
-
-    #[inline(always)]
-    fn set_high(&mut self) -> Result<(), Self::Error> {
-        self.set_high();
-        Ok(())
-    }
-
-    #[inline(always)]
-    fn set_low(&mut self) -> Result<(), Self::Error> {
-        self.set_low();
-        Ok(())
-    }
-}
-
-impl<MODE> StatefulOutputPin for Pin<Output<MODE>> {
-    #[inline(always)]
-    fn is_set_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_high())
-    }
-
-    #[inline(always)]
-    fn is_set_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_low())
-    }
-}
-
-impl<MODE> ToggleableOutputPin for Pin<Output<MODE>> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn toggle(&mut self) -> Result<(), Self::Error> {
-        self.toggle();
-        Ok(())
-    }
-}
-
-impl Pin<Output<OpenDrain>> {
-    #[inline(always)]
-    fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> bool {
-        self.block().idr.read().bits() & (1 << self.pin_id()) == 0
-    }
-}
-
-impl InputPin for Pin<Output<OpenDrain>> {
-    type Error = core::convert::Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl<MODE> Pin<Input<MODE>> {
-    #[inline(always)]
-    fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> bool {
-        self.block().idr.read().bits() & (1 << self.pin_id()) == 0
-    }
-}
-
-impl<MODE> InputPin for Pin<Input<MODE>> {
-    type Error = core::convert::Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
 struct Gpio<const P: char>;
 impl<const P: char> Gpio<P> {
     const fn ptr() -> *const crate::pac::gpioa::RegisterBlock {
@@ -1143,11 +772,4 @@ impl<const P: char> Gpio<P> {
             _ => crate::pac::GPIOA::ptr(),
         }
     }
-}
-
-/// Const assert hack
-struct Assert<const L: u8, const R: u8>;
-
-impl<const L: u8, const R: u8> Assert<L, R> {
-    pub const LESS: u8 = R - L - 1;
 }
