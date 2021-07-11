@@ -267,11 +267,12 @@ impl private::Sealed for I2C3 {}
 impl Instance for I2C3 {}
 
 #[cfg(feature = "fmpi2c1")]
-impl<PINS> FMPI2c<FMPI2C1, PINS>
+impl<SCL, SDA> FMPI2c<FMPI2C1, (SCL, SDA)>
 where
-    PINS: Pins<FMPI2C1>,
+    SCL: PinScl<FMPI2C1>,
+    SDA: PinSda<FMPI2C1>,
 {
-    pub fn new(i2c: FMPI2C1, pins: PINS, speed: KiloHertz) -> Self {
+    pub fn new(i2c: FMPI2C1, pins: (SCL, SDA), speed: KiloHertz) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -289,12 +290,13 @@ where
     }
 }
 
-impl<I2C, PINS> I2c<I2C, PINS>
+impl<I2C, SCL, SDA> I2c<I2C, (SCL, SDA)>
 where
     I2C: Instance,
-    PINS: Pins<I2C>,
+    SCL: PinScl<I2C>,
+    SDA: PinSda<I2C>,
 {
-    pub fn new(i2c: I2C, pins: PINS, speed: KiloHertz, clocks: Clocks) -> Self {
+    pub fn new(i2c: I2C, pins: (SCL, SDA), speed: KiloHertz, clocks: Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());

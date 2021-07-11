@@ -38,7 +38,7 @@ use crate::pac::SPI5;
 #[cfg(feature = "spi6")]
 use crate::pac::SPI6;
 
-use crate::gpio::Alternate;
+use crate::gpio::{Alternate, NoPin};
 
 use crate::rcc::Clocks;
 use crate::time::Hertz;
@@ -69,11 +69,15 @@ where
 }
 
 /// A filler type for when the SCK pin is unnecessary
-pub struct NoSck;
+pub type NoSck = NoPin;
 /// A filler type for when the Miso pin is unnecessary
-pub struct NoMiso;
+pub type NoMiso = NoPin;
 /// A filler type for when the Mosi pin is unnecessary
-pub struct NoMosi;
+pub type NoMosi = NoPin;
+
+impl<SPI> PinSck<SPI> for NoPin where SPI: Instance {}
+impl<SPI> PinMiso<SPI> for NoPin where SPI: Instance {}
+impl<SPI> PinMosi<SPI> for NoPin where SPI: Instance {}
 
 macro_rules! pins {
     ($($SPIX:ty: SCK: [$($SCK:ty),*] MISO: [$($MISO:ty),*] MOSI: [$($MOSI:ty),*])+) => {
@@ -94,34 +98,28 @@ macro_rules! pins {
 pins! {
     SPI1:
         SCK: [
-            NoSck,
             gpioa::PA5<Alternate<5>>,
             gpiob::PB3<Alternate<5>>
         ]
         MISO: [
-            NoMiso,
             gpioa::PA6<Alternate<5>>,
             gpiob::PB4<Alternate<5>>
         ]
         MOSI: [
-            NoMosi,
             gpioa::PA7<Alternate<5>>,
             gpiob::PB5<Alternate<5>>
         ]
 
     SPI2:
         SCK: [
-            NoSck,
             gpiob::PB10<Alternate<5>>,
             gpiob::PB13<Alternate<5>>
         ]
         MISO: [
-            NoMiso,
             gpiob::PB14<Alternate<5>>,
             gpioc::PC2<Alternate<5>>
         ]
         MOSI: [
-            NoMosi,
             gpiob::PB15<Alternate<5>>,
             gpioc::PC3<Alternate<5>>
         ]
@@ -131,17 +129,14 @@ pins! {
 pins! {
     SPI3:
         SCK: [
-            NoSck,
             gpiob::PB3<Alternate<6>>,
             gpioc::PC10<Alternate<6>>
         ]
         MISO: [
-            NoMiso,
             gpiob::PB4<Alternate<6>>,
             gpioc::PC11<Alternate<6>>
         ]
         MOSI: [
-            NoMosi,
             gpiob::PB5<Alternate<6>>,
             gpioc::PC12<Alternate<6>>
         ]
@@ -172,17 +167,14 @@ pins! {
         MOSI: [gpiod::PD6<Alternate<5>>]
     SPI4:
         SCK: [
-            NoSck,
             gpioe::PE2<Alternate<5>>,
             gpioe::PE12<Alternate<5>>
         ]
         MISO: [
-            NoMiso,
             gpioe::PE5<Alternate<5>>,
             gpioe::PE13<Alternate<5>>
         ]
         MOSI: [
-            NoMosi,
             gpioe::PE6<Alternate<5>>,
             gpioe::PE14<Alternate<5>>
         ]
@@ -232,15 +224,12 @@ pins! {
 pins! {
     SPI5:
         SCK: [
-            NoSck,
             gpiob::PB0<Alternate<6>>
         ]
         MISO: [
-            NoMiso,
             gpioa::PA12<Alternate<6>>
         ]
         MOSI: [
-            NoMosi,
             gpioa::PA10<Alternate<6>>,
             gpiob::PB8<Alternate<6>>
         ]
@@ -295,32 +284,26 @@ pins! {
 pins! {
     SPI5:
         SCK: [
-            NoSck,
             gpiof::PF7<Alternate<5>>,
             gpioh::PH6<Alternate<5>>
         ]
         MISO: [
-            NoMiso,
             gpiof::PF8<Alternate<5>>,
             gpioh::PH7<Alternate<5>>
         ]
         MOSI: [
-            NoMosi,
             gpiof::PF9<Alternate<5>>,
             gpiof::PF11<Alternate<5>>
         ]
 
     SPI6:
         SCK: [
-            NoSck,
             gpiog::PG13<Alternate<5>>
         ]
         MISO: [
-            NoMiso,
             gpiog::PG12<Alternate<5>>
         ]
         MOSI: [
-            NoMosi,
             gpiog::PG14<Alternate<5>>
         ]
 }
@@ -396,12 +379,20 @@ macro_rules! spi {
             }
         }
 
-        impl<PINS> Spi<$SPI, PINS>
+        impl<SCK, MISO, MOSI> Spi<$SPI, (SCK, MISO, MOSI)>
         where
-            PINS: Pins<$SPI>,
+            SCK: PinSck<$SPI>,
+            MISO: PinMiso<$SPI>,
+            MOSI: PinMosi<$SPI>,
         {
             #[deprecated(since = "0.10.0", note = "Please use new instead")]
-            pub fn $spi(spi: $SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
+            pub fn $spi(
+                spi: $SPI,
+                pins: (SCK, MISO, MOSI),
+                mode: Mode,
+                freq: Hertz,
+                clocks: Clocks,
+            ) -> Self {
                 Self::new(spi, pins, mode, freq, clocks)
             }
         }
@@ -423,12 +414,14 @@ spi! { SPI5: (spi5, pclk2) }
 #[cfg(feature = "spi6")]
 spi! { SPI6: (spi6, pclk2) }
 
-impl<SPI, PINS> Spi<SPI, PINS>
+impl<SPI, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI)>
 where
     SPI: Instance,
-    PINS: Pins<SPI>,
+    SCK: PinSck<SPI>,
+    MISO: PinMiso<SPI>,
+    MOSI: PinMosi<SPI>,
 {
-    pub fn new(spi: SPI, pins: PINS, mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
+    pub fn new(spi: SPI, pins: (SCK, MISO, MOSI), mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());

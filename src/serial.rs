@@ -1242,15 +1242,16 @@ macro_rules! halUart {
             }
         }
 
-        impl<USART, PINS> Serial<USART, PINS>
+        impl<USART, TX, RX> Serial<USART, (TX, RX)>
         where
-            PINS: Pins<USART>,
+            TX: PinTx<USART>,
+            RX: PinRx<USART>,
             USART: Instance,
         {
             #[deprecated(since = "0.10.0")]
             pub fn $usartX(
                 usart: USART,
-                pins: PINS,
+                pins: (TX, RX),
                 config: config::Config,
                 clocks: Clocks,
             ) -> Result<Self, config::InvalidConfig> {
