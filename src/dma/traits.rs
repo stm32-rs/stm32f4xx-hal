@@ -518,150 +518,30 @@ dma_map!(
     (Stream7<DMA2>, 4, Tx<pac::USART1>, MemoryToPeripheral), //USART1_TX
     (Stream7<DMA2>, 5, pac::USART6, MemoryToPeripheral), //USART6_TX
     (Stream7<DMA2>, 5, Tx<pac::USART6>, MemoryToPeripheral), //USART6_TX
-    (
-        Stream0<DMA2>,
-        0,
-        MemoryToMemory<u8>,
-        MemoryToMemory<u8>
-    ),
-    (
-        Stream1<DMA2>,
-        0,
-        MemoryToMemory<u8>,
-        MemoryToMemory<u8>
-    ),
-    (
-        Stream2<DMA2>,
-        0,
-        MemoryToMemory<u8>,
-        MemoryToMemory<u8>
-    ),
-    (
-        Stream3<DMA2>,
-        0,
-        MemoryToMemory<u8>,
-        MemoryToMemory<u8>
-    ),
-    (
-        Stream4<DMA2>,
-        0,
-        MemoryToMemory<u8>,
-        MemoryToMemory<u8>
-    ),
-    (
-        Stream5<DMA2>,
-        0,
-        MemoryToMemory<u8>,
-        MemoryToMemory<u8>
-    ),
-    (
-        Stream6<DMA2>,
-        0,
-        MemoryToMemory<u8>,
-        MemoryToMemory<u8>
-    ),
-    (
-        Stream7<DMA2>,
-        0,
-        MemoryToMemory<u8>,
-        MemoryToMemory<u8>
-    ),
-    (
-        Stream0<DMA2>,
-        0,
-        MemoryToMemory<u16>,
-        MemoryToMemory<u16>
-    ),
-    (
-        Stream1<DMA2>,
-        0,
-        MemoryToMemory<u16>,
-        MemoryToMemory<u16>
-    ),
-    (
-        Stream2<DMA2>,
-        0,
-        MemoryToMemory<u16>,
-        MemoryToMemory<u16>
-    ),
-    (
-        Stream3<DMA2>,
-        0,
-        MemoryToMemory<u16>,
-        MemoryToMemory<u16>
-    ),
-    (
-        Stream4<DMA2>,
-        0,
-        MemoryToMemory<u16>,
-        MemoryToMemory<u16>
-    ),
-    (
-        Stream5<DMA2>,
-        0,
-        MemoryToMemory<u16>,
-        MemoryToMemory<u16>
-    ),
-    (
-        Stream6<DMA2>,
-        0,
-        MemoryToMemory<u16>,
-        MemoryToMemory<u16>
-    ),
-    (
-        Stream7<DMA2>,
-        0,
-        MemoryToMemory<u16>,
-        MemoryToMemory<u16>
-    ),
-    (
-        Stream0<DMA2>,
-        0,
-        MemoryToMemory<u32>,
-        MemoryToMemory<u32>
-    ),
-    (
-        Stream1<DMA2>,
-        0,
-        MemoryToMemory<u32>,
-        MemoryToMemory<u32>
-    ),
-    (
-        Stream2<DMA2>,
-        0,
-        MemoryToMemory<u32>,
-        MemoryToMemory<u32>
-    ),
-    (
-        Stream3<DMA2>,
-        0,
-        MemoryToMemory<u32>,
-        MemoryToMemory<u32>
-    ),
-    (
-        Stream4<DMA2>,
-        0,
-        MemoryToMemory<u32>,
-        MemoryToMemory<u32>
-    ),
-    (
-        Stream5<DMA2>,
-        0,
-        MemoryToMemory<u32>,
-        MemoryToMemory<u32>
-    ),
-    (
-        Stream6<DMA2>,
-        0,
-        MemoryToMemory<u32>,
-        MemoryToMemory<u32>
-    ),
-    (
-        Stream7<DMA2>,
-        0,
-        MemoryToMemory<u32>,
-        MemoryToMemory<u32>
-    ),
+    (Stream0<DMA2>, 0, MemoryToMemory<u8>, MemoryToMemory<u8>),
+    (Stream1<DMA2>, 0, MemoryToMemory<u8>, MemoryToMemory<u8>),
+    (Stream2<DMA2>, 0, MemoryToMemory<u8>, MemoryToMemory<u8>),
+    (Stream3<DMA2>, 0, MemoryToMemory<u8>, MemoryToMemory<u8>),
+    (Stream4<DMA2>, 0, MemoryToMemory<u8>, MemoryToMemory<u8>),
+    (Stream5<DMA2>, 0, MemoryToMemory<u8>, MemoryToMemory<u8>),
+    (Stream6<DMA2>, 0, MemoryToMemory<u8>, MemoryToMemory<u8>),
+    (Stream7<DMA2>, 0, MemoryToMemory<u8>, MemoryToMemory<u8>),
+    (Stream0<DMA2>, 0, MemoryToMemory<u16>, MemoryToMemory<u16>),
+    (Stream1<DMA2>, 0, MemoryToMemory<u16>, MemoryToMemory<u16>),
+    (Stream2<DMA2>, 0, MemoryToMemory<u16>, MemoryToMemory<u16>),
+    (Stream3<DMA2>, 0, MemoryToMemory<u16>, MemoryToMemory<u16>),
+    (Stream4<DMA2>, 0, MemoryToMemory<u16>, MemoryToMemory<u16>),
+    (Stream5<DMA2>, 0, MemoryToMemory<u16>, MemoryToMemory<u16>),
+    (Stream6<DMA2>, 0, MemoryToMemory<u16>, MemoryToMemory<u16>),
+    (Stream7<DMA2>, 0, MemoryToMemory<u16>, MemoryToMemory<u16>),
+    (Stream0<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
+    (Stream1<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
+    (Stream2<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
+    (Stream3<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
+    (Stream4<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
+    (Stream5<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
+    (Stream6<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
+    (Stream7<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
 );
 
 #[cfg(any(
@@ -818,7 +698,7 @@ dma_map!(
     (Stream0<DMA1>, 4, pac::UART5, PeripheralToMemory), //UART5_RX
     (Stream2<DMA1>, 4, pac::UART4, PeripheralToMemory), //UART4_RX
     (Stream4<DMA1>, 4, pac::UART4, MemoryToPeripheral), //UART4_TX
-                                                               //(Stream6<DMA1>, 7, pac::DAC2, MemoryToPeripheral), //DAC2
+    //(Stream6<DMA1>, 7, pac::DAC2, MemoryToPeripheral), //DAC2
 );
 
 #[cfg(any(
@@ -1184,78 +1064,18 @@ address!((pac::DFSDM, dr),);
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 dma_map!(
-    (
-        Stream0<pac::DMA2>,
-        7,
-        pac::DFSDM1,
-        PeripheralToMemory
-    ), //DFSDM1_FLT0
-    (
-        Stream1<pac::DMA2>,
-        3,
-        pac::DFSDM1,
-        PeripheralToMemory
-    ), //DFSDM1_FLT1
-    (
-        Stream4<pac::DMA2>,
-        3,
-        pac::DFSDM1,
-        PeripheralToMemory
-    ), //DFSDM1_FLT1
-    (
-        Stream6<pac::DMA2>,
-        3,
-        pac::DFSDM1,
-        PeripheralToMemory
-    ), //DFSDM1_FLT0:DMA_CHANNEL_3
-    (
-        Stream0<pac::DMA2>,
-        8,
-        pac::DFSDM2,
-        PeripheralToMemory
-    ), //DFSDM2_FLT0
-    (
-        Stream1<pac::DMA2>,
-        8,
-        pac::DFSDM2,
-        PeripheralToMemory
-    ), //DFSDM2_FLT1
-    (
-        Stream2<pac::DMA2>,
-        8,
-        pac::DFSDM2,
-        PeripheralToMemory
-    ), //DFSDM2_FLT2
-    (
-        Stream3<pac::DMA2>,
-        8,
-        pac::DFSDM2,
-        PeripheralToMemory
-    ), //DFSDM2_FLT3
-    (
-        Stream4<pac::DMA2>,
-        8,
-        pac::DFSDM2,
-        PeripheralToMemory
-    ), //DFSDM2_FLT0
-    (
-        Stream5<pac::DMA2>,
-        8,
-        pac::DFSDM2,
-        PeripheralToMemory
-    ), //DFSDM2_FLT1
-    (
-        Stream6<pac::DMA2>,
-        8,
-        pac::DFSDM2,
-        PeripheralToMemory
-    ), //DFSDM2_FLT2
-    (
-        Stream7<pac::DMA2>,
-        8,
-        pac::DFSDM2,
-        PeripheralToMemory
-    ), //DFSDM2_FLT3
+    (Stream0<pac::DMA2>, 7, pac::DFSDM1, PeripheralToMemory), //DFSDM1_FLT0
+    (Stream1<pac::DMA2>, 3, pac::DFSDM1, PeripheralToMemory), //DFSDM1_FLT1
+    (Stream4<pac::DMA2>, 3, pac::DFSDM1, PeripheralToMemory), //DFSDM1_FLT1
+    (Stream6<pac::DMA2>, 3, pac::DFSDM1, PeripheralToMemory), //DFSDM1_FLT0:DMA_CHANNEL_3
+    (Stream0<pac::DMA2>, 8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT0
+    (Stream1<pac::DMA2>, 8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT1
+    (Stream2<pac::DMA2>, 8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT2
+    (Stream3<pac::DMA2>, 8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT3
+    (Stream4<pac::DMA2>, 8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT0
+    (Stream5<pac::DMA2>, 8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT1
+    (Stream6<pac::DMA2>, 8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT2
+    (Stream7<pac::DMA2>, 8, pac::DFSDM2, PeripheralToMemory), //DFSDM2_FLT3
 );
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 address!((pac::DFSDM1, dr), (pac::DFSDM2, dr),);
@@ -1322,8 +1142,8 @@ dma_map!(
     (Stream5<DMA2>, 9, pac::UART10, MemoryToPeripheral), //UART10_TX
     (Stream7<DMA2>, 0, pac::UART9, PeripheralToMemory), //UART9_RX
     (Stream7<DMA2>, 6, pac::UART10, MemoryToPeripheral), //UART10_TX:DMA_CHANNEL_6
-                                                               //(pac::DMA2, Stream6, 2, IN<pac::AES>, MemoryToPeripheral), //AES_IN
-                                                               //(pac::DMA2, Stream5, 2, OUT<pac::AES>, PeripheralToMemory), //AES_OUT
+    //(pac::DMA2, Stream6, 2, IN<pac::AES>, MemoryToPeripheral), //AES_IN
+    //(pac::DMA2, Stream5, 2, OUT<pac::AES>, PeripheralToMemory), //AES_OUT
 );
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
