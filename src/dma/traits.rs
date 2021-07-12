@@ -17,11 +17,8 @@ pub(crate) mod sealed {
 }
 use sealed::{Bits, Sealed};
 
-/// Trait for DMA streams types.
-pub trait Stream: Sealed {
-    /// Number of the register stream.
-    const NUMBER: usize;
-
+/// Trait for DMA stream interrupt handling.
+pub trait StreamISR: Sealed {
     /// Clear all interrupts for the DMA stream.
     fn clear_interrupts(&mut self);
 
@@ -54,7 +51,12 @@ pub trait Stream: Sealed {
 
     /// Get direct mode error flag
     fn get_direct_mode_error_flag() -> bool;
+}
 
+/// Trait for DMA streams types.
+pub trait Stream: StreamISR + Sealed {
+    /// Number of the register stream.
+    const NUMBER: usize;
     /// Set the peripheral address (par) for the DMA stream.
     fn set_peripheral_address(&mut self, value: u32);
 
