@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Derive `Eq`, `PartialEq`, `Copy` and `Clone` for error types
 - Added open-drain pin mode support for PWM output [#313]
 - Added missing error flags for dma streams [#318]
+- Added DMA support for SPI [#319]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 [#297]: https://github.com/stm32-rs/stm32f4xx-hal/pull/297
@@ -39,6 +40,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#309]: https://github.com/stm32-rs/stm32f4xx-hal/pull/309
 [#313]: https://github.com/stm32-rs/stm32f4xx-hal/pull/313
 [#318]: https://github.com/stm32-rs/stm32f4xx-hal/pull/318
+[#319]: https://github.com/stm32-rs/stm32f4xx-hal/pull/319
 
 ### Changed
 

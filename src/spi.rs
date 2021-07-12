@@ -1,6 +1,8 @@
+use core::marker::PhantomData;
 use core::ops::Deref;
 use core::ptr;
 
+use crate::dma::traits::PeriAddress;
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
 
@@ -358,6 +360,43 @@ pins! {
         MOSI: [gpioc::PC1<Alternate<5>>]
 }
 
+mod private {
+    pub trait Sealed {}
+}
+
+pub trait Instance: private::Sealed {
+    fn dr() -> u32;
+}
+
+macro_rules! instance {
+    ($SPI:ident) => {
+        impl private::Sealed for $SPI {}
+        impl Instance for $SPI {
+            fn dr() -> u32 {
+                unsafe {
+                    let reg = &(*$SPI::ptr());
+                    &(reg.dr) as *const _ as u32
+                }
+            }
+        }
+    };
+}
+
+instance!(SPI1);
+instance!(SPI2);
+
+#[cfg(any(feature = "spi3"))]
+instance!(SPI3);
+
+#[cfg(any(feature = "spi4"))]
+instance!(SPI4);
+
+#[cfg(any(feature = "spi5"))]
+instance!(SPI5);
+
+#[cfg(any(feature = "spi6"))]
+instance!(SPI6);
+
 /// Interrupt events
 pub enum Event {
     /// New data has been received
@@ -551,6 +590,10 @@ where
     pub fn free(self) -> (SPI, PINS) {
         (self.spi, self.pins)
     }
+
+    pub fn use_dma(self) -> DmaBuilder<SPI> {
+        DmaBuilder { spi: self.spi }
+    }
 }
 
 impl<SPI, PINS> spi::FullDuplex<u8> for Spi<SPI, PINS>
@@ -603,6 +646,69 @@ where
             nb::Error::WouldBlock
         })
     }
+}
+
+pub struct DmaBuilder<SPI> {
+    spi: SPI,
+}
+
+pub struct Tx<SPI> {
+    spi: PhantomData<SPI>,
+}
+
+pub struct Rx<SPI> {
+    spi: PhantomData<SPI>,
+}
+
+impl<SPI> DmaBuilder<SPI>
+where
+    SPI: Deref<Target = spi1::RegisterBlock>,
+{
+    pub fn tx(self) -> Tx<SPI> {
+        self.new_tx()
+    }
+
+    pub fn rx(self) -> Rx<SPI> {
+        self.new_rx()
+    }
+
+    pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
+        (self.new_tx(), self.new_rx())
+    }
+
+    fn new_tx(&self) -> Tx<SPI> {
+        self.spi.cr2.write(|w| w.txdmaen().enabled());
+        Tx { spi: PhantomData }
+    }
+
+    fn new_rx(self) -> Rx<SPI> {
+        self.spi.cr2.write(|w| w.rxdmaen().enabled());
+        Rx { spi: PhantomData }
+    }
+}
+
+unsafe impl<SPI> PeriAddress for Rx<SPI>
+where
+    SPI: Deref<Target = spi1::RegisterBlock> + Instance,
+{
+    #[inline(always)]
+    fn address(&self) -> u32 {
+        SPI::dr()
+    }
+
+    type MemSize = u8;
+}
+
+unsafe impl<SPI> PeriAddress for Tx<SPI>
+where
+    SPI: Deref<Target = spi1::RegisterBlock> + Instance,
+{
+    #[inline(always)]
+    fn address(&self) -> u32 {
+        SPI::dr()
+    }
+
+    type MemSize = u8;
 }
 
 impl<SPI, PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS> where
