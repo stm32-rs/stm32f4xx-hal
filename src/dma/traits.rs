@@ -1,8 +1,7 @@
 use super::*;
 use crate::{
     adc::Adc,
-    pac::{self, DMA1, DMA2, RCC},
-    rcc::{Enable, Reset},
+    pac::{self, DMA1, DMA2},
     serial::{Rx, Tx},
 };
 use core::ops::Deref;
@@ -258,34 +257,6 @@ impl Instance for DMA2 {
     #[inline(always)]
     fn ptr() -> *const DMARegisterBlock {
         DMA2::ptr()
-    }
-}
-
-/// Trait for peripheral's clock enabling.
-pub trait RccEnable: Sealed {
-    /// Enable the peripheral's clock in the RCC.
-    fn rcc_enable(&self);
-}
-
-impl RccEnable for DMA1 {
-    fn rcc_enable(&self) {
-        unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &(*RCC::ptr());
-            DMA1::enable(rcc);
-            DMA1::reset(rcc);
-        }
-    }
-}
-
-impl RccEnable for DMA2 {
-    fn rcc_enable(&self) {
-        unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &(*RCC::ptr());
-            DMA2::enable(rcc);
-            DMA2::reset(rcc);
-        }
     }
 }
 

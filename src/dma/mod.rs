@@ -17,10 +17,13 @@ use core::{
 };
 use embedded_dma::{StaticReadBuffer, StaticWriteBuffer};
 
+use crate::pac::RCC;
+use crate::rcc;
+
 pub mod traits;
 use traits::{
     sealed::{Bits, Sealed},
-    Channel, DMASet, Direction, Instance, PeriAddress, RccEnable, Stream, StreamISR,
+    Channel, DMASet, Direction, Instance, PeriAddress, Stream, StreamISR,
 };
 
 /// Errors.
@@ -202,6 +205,12 @@ pub struct StreamX<DMA, const S: u8> {
     _dma: PhantomData<DMA>,
 }
 
+impl<DMA, const S: u8> StreamX<DMA, S> {
+    fn new() -> Self {
+        Self { _dma: PhantomData }
+    }
+}
+
 /// Stream 0 on the DMA controller.
 pub type Stream0<DMA> = StreamX<DMA, 0>;
 /// Stream 1 on the DMA controller.
@@ -240,19 +249,24 @@ pub struct StreamsTuple<T>(
     pub StreamX<T, 7>,
 );
 
-impl<T: RccEnable> StreamsTuple<T> {
+impl<T: rcc::Enable + rcc::Reset> StreamsTuple<T> {
     /// Splits the DMA peripheral into streams.
-    pub fn new(regs: T) -> Self {
-        regs.rcc_enable();
+    pub fn new(_regs: T) -> Self {
+        unsafe {
+            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+            let rcc = &(*RCC::ptr());
+            T::enable(rcc);
+            T::reset(rcc);
+        }
         Self(
-            StreamX { _dma: PhantomData },
-            StreamX { _dma: PhantomData },
-            StreamX { _dma: PhantomData },
-            StreamX { _dma: PhantomData },
-            StreamX { _dma: PhantomData },
-            StreamX { _dma: PhantomData },
-            StreamX { _dma: PhantomData },
-            StreamX { _dma: PhantomData },
+            StreamX::new(),
+            StreamX::new(),
+            StreamX::new(),
+            StreamX::new(),
+            StreamX::new(),
+            StreamX::new(),
+            StreamX::new(),
+            StreamX::new(),
         )
     }
 }
