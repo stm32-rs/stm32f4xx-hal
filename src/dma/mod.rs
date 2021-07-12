@@ -682,19 +682,19 @@ impl<const C: u8> Channel for ChannelX<C> {
         Self
     }
 }
-type Channel0 = ChannelX<0>;
-type Channel1 = ChannelX<1>;
-type Channel2 = ChannelX<2>;
-type Channel3 = ChannelX<3>;
-type Channel4 = ChannelX<4>;
-type Channel5 = ChannelX<5>;
-type Channel6 = ChannelX<6>;
-type Channel7 = ChannelX<7>;
+pub type Channel0 = ChannelX<0>;
+pub type Channel1 = ChannelX<1>;
+pub type Channel2 = ChannelX<2>;
+pub type Channel3 = ChannelX<3>;
+pub type Channel4 = ChannelX<4>;
+pub type Channel5 = ChannelX<5>;
+pub type Channel6 = ChannelX<6>;
+pub type Channel7 = ChannelX<7>;
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-type Channel8 = ChannelX<8>;
+pub type Channel8 = ChannelX<8>;
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-type Channel9 = ChannelX<9>;
+pub type Channel9 = ChannelX<9>;
 
 /// Contains types related to DMA configuration.
 pub mod config {
