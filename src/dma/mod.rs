@@ -367,10 +367,11 @@ where
     }
 
     #[inline(always)]
-    fn set_channel<C: Channel>(&mut self, channel: C) {
-        unsafe { Self::st() }
-            .cr
-            .modify(|_, w| w.chsel().bits(channel.bits()));
+    fn set_channel<const C: u8>(&mut self)
+    where
+        ChannelX<C>: Channel,
+    {
+        unsafe { Self::st() }.cr.modify(|_, w| w.chsel().bits(C));
     }
 
     #[inline(always)]
@@ -645,30 +646,28 @@ dma_stream!(
 #[derive(Debug, Clone, Copy)]
 pub struct ChannelX<const C: u8>;
 
-impl<const C: u8> Bits<u8> for ChannelX<C> {
-    fn bits(self) -> u8 {
-        C
-    }
+macro_rules! dma_channel {
+    ($(($name:ident, $value:literal)),+ $(,)*) => {
+        $(
+            impl Channel for ChannelX<$value> {}
+            pub type $name = ChannelX<$value>;
+        )+
+    };
 }
 
-impl<const C: u8> Channel for ChannelX<C> {
-    fn new() -> Self {
-        Self
-    }
-}
-pub type Channel0 = ChannelX<0>;
-pub type Channel1 = ChannelX<1>;
-pub type Channel2 = ChannelX<2>;
-pub type Channel3 = ChannelX<3>;
-pub type Channel4 = ChannelX<4>;
-pub type Channel5 = ChannelX<5>;
-pub type Channel6 = ChannelX<6>;
-pub type Channel7 = ChannelX<7>;
+dma_channel!(
+    (Channel0, 0),
+    (Channel1, 1),
+    (Channel2, 2),
+    (Channel3, 3),
+    (Channel4, 4),
+    (Channel5, 5),
+    (Channel6, 6),
+    (Channel7, 7),
+);
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pub type Channel8 = ChannelX<8>;
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pub type Channel9 = ChannelX<9>;
+dma_channel!((Channel8, 8), (Channel9, 9),);
 
 /// Contains types related to DMA configuration.
 pub mod config {
@@ -870,13 +869,12 @@ pub mod config {
 }
 
 /// DMA Transfer.
-pub struct Transfer<STREAM, CHANNEL, PERIPHERAL, DIRECTION, BUF>
+pub struct Transfer<STREAM, PERIPHERAL, DIRECTION, BUF, const CHANNEL: u8>
 where
     STREAM: Stream,
     PERIPHERAL: PeriAddress,
 {
     stream: STREAM,
-    _channel: PhantomData<CHANNEL>,
     peripheral: PERIPHERAL,
     _direction: PhantomData<DIRECTION>,
     buf: Option<BUF>,
@@ -885,12 +883,12 @@ where
     transfer_length: u16,
 }
 
-impl<STREAM, CHANNEL, PERIPHERAL, BUF>
-    Transfer<STREAM, CHANNEL, PERIPHERAL, MemoryToPeripheral, BUF>
+impl<STREAM, PERIPHERAL, BUF, const CHANNEL: u8>
+    Transfer<STREAM, PERIPHERAL, MemoryToPeripheral, BUF, CHANNEL>
 where
     STREAM: Stream,
-    CHANNEL: Channel,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, MemoryToPeripheral>,
+    ChannelX<CHANNEL>: Channel,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, MemoryToPeripheral, CHANNEL>,
     BUF: StaticReadBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Configures the DMA stream to the correct channel for the peripheral, configures source and
@@ -922,7 +920,6 @@ where
 
         Self {
             stream,
-            _channel: PhantomData,
             peripheral,
             _direction: PhantomData,
             buf: Some(buf),
@@ -1017,12 +1014,12 @@ where
     }
 }
 
-impl<STREAM, CHANNEL, PERIPHERAL, BUF>
-    Transfer<STREAM, CHANNEL, PERIPHERAL, PeripheralToMemory, BUF>
+impl<STREAM, PERIPHERAL, BUF, const CHANNEL: u8>
+    Transfer<STREAM, PERIPHERAL, PeripheralToMemory, BUF, CHANNEL>
 where
     STREAM: Stream,
-    CHANNEL: Channel,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, PeripheralToMemory>,
+    ChannelX<CHANNEL>: Channel,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, PeripheralToMemory, CHANNEL>,
     BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Configures the DMA stream to the correct channel for the peripheral, configures source and
@@ -1054,7 +1051,6 @@ where
 
         Self {
             stream,
-            _channel: PhantomData,
             peripheral,
             _direction: PhantomData,
             buf: Some(buf),
@@ -1152,12 +1148,12 @@ where
     }
 }
 
-impl<STREAM, CHANNEL, PERIPHERAL, BUF, S>
-    Transfer<STREAM, CHANNEL, PERIPHERAL, MemoryToMemory<S>, BUF>
+impl<STREAM, PERIPHERAL, BUF, S, const CHANNEL: u8>
+    Transfer<STREAM, PERIPHERAL, MemoryToMemory<S>, BUF, CHANNEL>
 where
     STREAM: Stream,
-    CHANNEL: Channel,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, MemoryToMemory<S>>,
+    ChannelX<CHANNEL>: Channel,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, MemoryToMemory<S>, CHANNEL>,
     MemoryToMemory<S>: PeriAddress,
     BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
@@ -1192,7 +1188,6 @@ where
 
         Self {
             stream,
-            _channel: PhantomData,
             peripheral,
             _direction: PhantomData,
             buf: Some(buf),
@@ -1252,12 +1247,13 @@ where
     }
 }
 
-impl<STREAM, CHANNEL, PERIPHERAL, DIR, BUF> Transfer<STREAM, CHANNEL, PERIPHERAL, DIR, BUF>
+impl<STREAM, PERIPHERAL, DIR, BUF, const CHANNEL: u8>
+    Transfer<STREAM, PERIPHERAL, DIR, BUF, CHANNEL>
 where
     STREAM: Stream,
-    CHANNEL: Channel,
+    ChannelX<CHANNEL>: Channel,
     DIR: Direction,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, DIR, CHANNEL>,
 {
     /// Starts the transfer, the closure will be executed right after enabling the stream.
     pub fn start<F>(&mut self, f: F)
@@ -1385,7 +1381,7 @@ where
         stream.disable();
 
         // Set the channel
-        stream.set_channel(CHANNEL::new());
+        stream.set_channel::<CHANNEL>();
 
         // Set peripheral to memory mode
         stream.set_direction(DIR::new());
@@ -1583,7 +1579,8 @@ where
     }
 }
 
-impl<STREAM, CHANNEL, PERIPHERAL, DIR, BUF> Drop for Transfer<STREAM, CHANNEL, PERIPHERAL, DIR, BUF>
+impl<STREAM, PERIPHERAL, DIR, BUF, const CHANNEL: u8> Drop
+    for Transfer<STREAM, PERIPHERAL, DIR, BUF, CHANNEL>
 where
     STREAM: Stream,
     PERIPHERAL: PeriAddress,

@@ -95,7 +95,9 @@ pub trait Stream: StreamISR + Sealed {
     fn disable(&mut self);
 
     /// Set the channel for the (chsel) the DMA stream.
-    fn set_channel<C: Channel>(&mut self, channel: C);
+    fn set_channel<const C: u8>(&mut self)
+    where
+        ChannelX<C>: Channel;
 
     /// Set the priority (pl) the DMA stream.
     fn set_priority(&mut self, priority: config::Priority);
@@ -279,24 +281,21 @@ macro_rules! tim_channels {
 }
 
 /// A channel that can be configured on a DMA stream.
-pub trait Channel: Bits<u8> {
-    /// Returns a new instance of the type.
-    fn new() -> Self;
-}
+pub trait Channel {}
 
 /// Trait to mark a set of Stream, Channel and Direction for a Peripheral as correct together.
 ///
 /// # Safety
 ///
 /// Memory corruption might occur if this trait is implemented for an invalid combination.
-pub unsafe trait DMASet<STREAM, CHANNEL, DIRECTION> {}
+pub unsafe trait DMASet<STREAM, DIRECTION, const CHANNEL: u8> {}
 
 tim_channels!(CCR1, CCR2, CCR3, CCR4, DMAR, ARR);
 
 macro_rules! dma_map {
     ($(($Stream:ty, $C:literal, $Peripheral:ty, $Dir:ty)),+ $(,)*) => {
         $(
-            unsafe impl DMASet<$Stream, ChannelX<$C>, $Dir> for $Peripheral {}
+            unsafe impl DMASet<$Stream, $Dir, $C> for $Peripheral {}
         )+
     };
 }

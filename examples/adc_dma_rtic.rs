@@ -11,7 +11,7 @@ use stm32f4xx_hal::{
         config::{AdcConfig, Dma, SampleTime, Scan, Sequence},
         Adc, Temperature,
     },
-    dma::{config::DmaConfig, Channel0, PeripheralToMemory, Stream0, StreamsTuple, Transfer},
+    dma::{config::DmaConfig, PeripheralToMemory, Stream0, StreamsTuple, Transfer},
     prelude::*,
     signature::{VtempCal110, VtempCal30},
     stm32,
@@ -20,8 +20,7 @@ use stm32f4xx_hal::{
 
 const POLLING_PERIOD: u32 = 168_000_000 / 2;
 
-type DMATransfer =
-    Transfer<Stream0<DMA2>, Channel0, Adc<ADC1>, PeripheralToMemory, &'static mut [u16; 2]>;
+type DMATransfer = Transfer<Stream0<DMA2>, Adc<ADC1>, PeripheralToMemory, &'static mut [u16; 2], 0>;
 
 #[rtic::app(device = stm32f4xx_hal::stm32, peripherals = true, monotonic = rtic::cyccnt::CYCCNT)]
 const APP: () = {
