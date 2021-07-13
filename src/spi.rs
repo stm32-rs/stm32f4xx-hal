@@ -357,13 +357,9 @@ pub struct Spi<SPI, PINS> {
     pins: PINS,
 }
 
-mod private {
-    pub trait Sealed {}
-}
-
 // Implemented by all SPI instances
 pub trait Instance:
-    private::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset
+    crate::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset
 {
     #[doc(hidden)]
     fn pclk_freq(clocks: &Clocks) -> Hertz;
@@ -372,7 +368,6 @@ pub trait Instance:
 // Implemented by all SPI instances
 macro_rules! spi {
     ($SPI:ident: ($spi:ident, $pclk:ident)) => {
-        impl private::Sealed for $SPI {}
         impl Instance for $SPI {
             fn pclk_freq(clocks: &Clocks) -> Hertz {
                 clocks.$pclk()

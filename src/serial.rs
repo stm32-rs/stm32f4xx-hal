@@ -1145,12 +1145,8 @@ use crate::pac::uart4 as uart_base;
 )))]
 use crate::pac::usart1 as uart_base;
 
-mod private {
-    pub trait Sealed {}
-}
-
 // Implemented by all USART instances
-pub trait Instance: private::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
     #[doc(hidden)]
@@ -1159,7 +1155,6 @@ pub trait Instance: private::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq
 
 macro_rules! halUsart {
     ($USARTX:ty: ($usartX:ident)) => {
-        impl private::Sealed for $USARTX {}
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
                 <$USARTX>::ptr() as *const _
@@ -1211,7 +1206,6 @@ macro_rules! halUsart {
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
     ($USARTX:ty: ($usartX:ident)) => {
-        impl private::Sealed for $USARTX {}
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
                 <$USARTX>::ptr() as *const _

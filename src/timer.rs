@@ -176,11 +176,7 @@ impl Instant {
     }
 }
 
-mod private {
-    pub trait Sealed {}
-}
-
-pub trait Instance: private::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {}
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {}
 
 impl<TIM> Timer<TIM>
 where
@@ -206,7 +202,6 @@ where
 macro_rules! hal {
     ($($TIM:ty: ($tim:ident),)+) => {
         $(
-            impl private::Sealed for $TIM {}
             impl Instance for $TIM { }
 
             impl CountDownTimer<$TIM> {

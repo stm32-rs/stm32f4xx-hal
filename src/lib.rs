@@ -175,3 +175,8 @@ pub mod time;
 pub mod timer;
 #[cfg(feature = "device-selected")]
 pub mod watchdog;
+
+mod sealed {
+    pub trait Sealed {}
+}
+pub(crate) use sealed::Sealed;

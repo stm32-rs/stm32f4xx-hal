@@ -57,11 +57,7 @@ impl<TIM: Instance, PINS> hal::Qei for Qei<TIM, PINS> {
     }
 }
 
-mod sealed {
-    pub trait Sealed {}
-}
-
-pub trait Instance: sealed::Sealed {
+pub trait Instance: crate::Sealed {
     type Count;
 
     fn setup_clocks();
@@ -73,7 +69,6 @@ pub trait Instance: sealed::Sealed {
 macro_rules! hal {
     ($($TIM:ty: ($tim:ident, $bits:ident),)+) => {
         $(
-            impl sealed::Sealed for $TIM {}
             impl Instance for $TIM {
                 type Count = $bits;
 

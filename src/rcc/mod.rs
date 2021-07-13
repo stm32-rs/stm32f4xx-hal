@@ -63,13 +63,8 @@ mod pll;
 mod enable;
 use crate::pac::rcc::RegisterBlock as RccRB;
 
-pub mod sealed {
-    pub trait Sealed {}
-}
-pub(crate) use sealed::Sealed;
-
 /// Bus associated to peripheral
-pub trait RccBus {
+pub trait RccBus: crate::Sealed {
     /// Bus type;
     type Bus;
 }
@@ -138,10 +133,12 @@ impl AHB1 {
 }
 
 /// AMBA High-performance Bus 2 (AHB2) registers
+#[cfg(not(feature = "stm32f410"))]
 pub struct AHB2 {
     _0: (),
 }
 
+#[cfg(not(feature = "stm32f410"))]
 impl AHB2 {
     #[inline(always)]
     fn enr(rcc: &RccRB) -> &rcc::AHB2ENR {
@@ -158,16 +155,21 @@ impl AHB2 {
 }
 
 /// AMBA High-performance Bus 3 (AHB3) registers
-#[cfg(feature = "fsmc")]
+#[cfg(any(feature = "fsmc", feature = "fmc"))]
 pub struct AHB3 {
     _0: (),
 }
 
-#[cfg(feature = "fsmc")]
+#[cfg(any(feature = "fsmc", feature = "fmc"))]
 impl AHB3 {
     #[inline(always)]
     fn enr(rcc: &RccRB) -> &rcc::AHB3ENR {
         &rcc.ahb3enr
+    }
+    #[cfg(feature = "fmc")]
+    #[inline(always)]
+    fn lpenr(rcc: &RccRB) -> &rcc::AHB3LPENR {
+        &rcc.ahb3lpenr
     }
     #[inline(always)]
     fn rstr(rcc: &RccRB) -> &rcc::AHB3RSTR {
@@ -221,13 +223,14 @@ impl GetBusFreq for AHB1 {
     }
 }
 
+#[cfg(not(feature = "stm32f410"))]
 impl GetBusFreq for AHB2 {
     fn get_frequency(clocks: &Clocks) -> Hertz {
         clocks.hclk
     }
 }
 
-#[cfg(feature = "fsmc")]
+#[cfg(any(feature = "fsmc", feature = "fmc"))]
 impl GetBusFreq for AHB3 {
     fn get_frequency(clocks: &Clocks) -> Hertz {
         clocks.hclk
