@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `RccBus` & `GetBusFreq` traits. `AHBx`, `APBx` structures.
 - Filler `NoPin` type 
 - Add inherent impl of `PwmPin` methods on `PwmChannel`s.
 - `Serial:tx` and `Serial::rx` that take only 1 pin

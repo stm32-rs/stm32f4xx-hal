@@ -190,7 +190,7 @@ macro_rules! pwm_pin {
 }
 
 macro_rules! pwm_all_channels {
-    ($($TIMX:ident: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ident: ($timX:ident),)+) => {
         $(
             impl Timer<$TIMX> {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
@@ -257,7 +257,7 @@ macro_rules! pwm_all_channels {
 }
 
 macro_rules! pwm_2_channels {
-    ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ty: ($timX:ident),)+) => {
         $(
             impl Timer<$TIMX> {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
@@ -312,7 +312,7 @@ macro_rules! pwm_2_channels {
 }
 
 macro_rules! pwm_1_channel {
-    ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ty: ($timX:ident),)+) => {
         $(
             impl Timer<$TIMX> {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
@@ -420,7 +420,7 @@ macro_rules! pwm_pin_tim5 {
 
 #[cfg(feature = "stm32f410")]
 macro_rules! pwm_tim5_f410 {
-    ($($TIMX:ty: ($timX:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIMX:ty: ($timX:ident),)+) => {
         $(
             impl Timer<$TIMX> {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
@@ -484,36 +484,11 @@ macro_rules! pwm_tim5_f410 {
     };
 }
 
-pwm_all_channels!(TIM1: (tim1, pclk2, ppre2),);
+pwm_all_channels!(TIM1: (tim1),);
 
-pwm_2_channels!(TIM9: (tim9, pclk2, ppre2),);
+pwm_2_channels!(TIM9: (tim9),);
 
-pwm_1_channel!(TIM11: (tim11, pclk2, ppre2),);
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_all_channels!(
-    TIM2: (tim2, pclk1, ppre1),
-    TIM3: (tim3, pclk1, ppre1),
-    TIM4: (tim4, pclk1, ppre1),
-    TIM5: (tim5, pclk1, ppre1),
-);
+pwm_1_channel!(TIM11: (tim11),);
 
 #[cfg(any(
     feature = "stm32f401",
@@ -533,7 +508,27 @@ pwm_all_channels!(
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_1_channel!(TIM10: (tim10, pclk2, ppre2),);
+pwm_all_channels!(TIM2: (tim2), TIM3: (tim3), TIM4: (tim4), TIM5: (tim5),);
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+pwm_1_channel!(TIM10: (tim10),);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -551,7 +546,7 @@ pwm_1_channel!(TIM10: (tim10, pclk2, ppre2),);
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_all_channels!(TIM8: (tim8, pclk2, ppre2),);
+pwm_all_channels!(TIM8: (tim8),);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -569,7 +564,7 @@ pwm_all_channels!(TIM8: (tim8, pclk2, ppre2),);
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_2_channels!(TIM12: (tim12, pclk1, ppre1),);
+pwm_2_channels!(TIM12: (tim12),);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -587,7 +582,7 @@ pwm_2_channels!(TIM12: (tim12, pclk1, ppre1),);
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_1_channel!(TIM13: (tim13, pclk1, ppre1), TIM14: (tim14, pclk1, ppre1),);
+pwm_1_channel!(TIM13: (tim13), TIM14: (tim14),);
 
 #[cfg(feature = "stm32f410")]
-pwm_tim5_f410!(TIM5: (tim5, pclk1, ppre1),);
+pwm_tim5_f410!(TIM5: (tim5),);

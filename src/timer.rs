@@ -180,10 +180,7 @@ mod private {
     pub trait Sealed {}
 }
 
-pub trait Instance: private::Sealed + rcc::Enable + rcc::Reset {
-    #[doc(hidden)]
-    fn pclk_freq(clocks: &Clocks) -> Hertz;
-}
+pub trait Instance: private::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {}
 
 impl<TIM> Timer<TIM>
 where
@@ -200,22 +197,17 @@ where
         }
 
         Self {
-            clk: TIM::pclk_freq(clocks),
+            clk: TIM::get_timer_frequency(clocks),
             tim,
         }
     }
 }
 
 macro_rules! hal {
-    ($($TIM:ty: ($tim:ident, $pclk:ident, $ppre:ident),)+) => {
+    ($($TIM:ty: ($tim:ident),)+) => {
         $(
             impl private::Sealed for $TIM {}
-            impl Instance for $TIM {
-                fn pclk_freq(clocks: &Clocks) -> Hertz {
-                    let pclk_mul = if clocks.$ppre() == 1 { 1 } else { 2 };
-                    Hertz(clocks.$pclk().0 * pclk_mul)
-                }
-            }
+            impl Instance for $TIM { }
 
             impl CountDownTimer<$TIM> {
                 /// Starts listening for an `event`
@@ -322,10 +314,10 @@ macro_rules! hal {
 }
 
 hal! {
-    crate::pac::TIM1: (tim1, pclk2, ppre2),
-    crate::pac::TIM5: (tim5, pclk1, ppre1),
-    crate::pac::TIM9: (tim9, pclk2, ppre2),
-    crate::pac::TIM11: (tim11, pclk2, ppre2),
+    crate::pac::TIM1: (tim1),
+    crate::pac::TIM5: (tim5),
+    crate::pac::TIM9: (tim9),
+    crate::pac::TIM11: (tim11),
 }
 
 #[cfg(any(
@@ -347,10 +339,10 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    crate::pac::TIM2: (tim2, pclk1, ppre1),
-    crate::pac::TIM3: (tim3, pclk1, ppre1),
-    crate::pac::TIM4: (tim4, pclk1, ppre1),
-    crate::pac::TIM10: (tim10, pclk2, ppre2),
+    crate::pac::TIM2: (tim2),
+    crate::pac::TIM3: (tim3),
+    crate::pac::TIM4: (tim4),
+    crate::pac::TIM10: (tim10),
 }
 
 #[cfg(any(
@@ -371,7 +363,7 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    crate::pac::TIM6: (tim6, pclk1, ppre1),
+    crate::pac::TIM6: (tim6),
 }
 
 #[cfg(any(
@@ -391,11 +383,11 @@ hal! {
     feature = "stm32f479"
 ))]
 hal! {
-    crate::pac::TIM7: (tim7, pclk1, ppre1),
-    crate::pac::TIM8: (tim8, pclk2, ppre2),
-    crate::pac::TIM12: (tim12, pclk1, ppre1),
-    crate::pac::TIM13: (tim13, pclk1, ppre1),
-    crate::pac::TIM14: (tim14, pclk1, ppre1),
+    crate::pac::TIM7: (tim7),
+    crate::pac::TIM8: (tim8),
+    crate::pac::TIM12: (tim12),
+    crate::pac::TIM13: (tim13),
+    crate::pac::TIM14: (tim14),
 }
 
 #[allow(unused)]
