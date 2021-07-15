@@ -359,20 +359,14 @@ pub struct Spi<SPI, PINS> {
 
 // Implemented by all SPI instances
 pub trait Instance:
-    crate::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset
+    crate::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset + rcc::GetBusFreq
 {
-    #[doc(hidden)]
-    fn pclk_freq(clocks: &Clocks) -> Hertz;
 }
 
 // Implemented by all SPI instances
 macro_rules! spi {
-    ($SPI:ident: ($spi:ident, $pclk:ident)) => {
-        impl Instance for $SPI {
-            fn pclk_freq(clocks: &Clocks) -> Hertz {
-                clocks.$pclk()
-            }
-        }
+    ($SPI:ident: ($spi:ident)) => {
+        impl Instance for $SPI {}
 
         impl<SCK, MISO, MOSI> Spi<$SPI, (SCK, MISO, MOSI)>
         where
@@ -394,20 +388,20 @@ macro_rules! spi {
     };
 }
 
-spi! { SPI1: (spi1, pclk2) }
-spi! { SPI2: (spi2, pclk1) }
+spi! { SPI1: (spi1) }
+spi! { SPI2: (spi2) }
 
 #[cfg(feature = "spi3")]
-spi! { SPI3: (spi3, pclk1) }
+spi! { SPI3: (spi3) }
 
 #[cfg(feature = "spi4")]
-spi! { SPI4: (spi4, pclk2) }
+spi! { SPI4: (spi4) }
 
 #[cfg(feature = "spi5")]
-spi! { SPI5: (spi5, pclk2) }
+spi! { SPI5: (spi5) }
 
 #[cfg(feature = "spi6")]
-spi! { SPI6: (spi6, pclk2) }
+spi! { SPI6: (spi6) }
 
 impl<SPI, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI)>
 where
@@ -424,7 +418,7 @@ where
             SPI::reset(rcc);
         }
 
-        Spi { spi, pins }.init(mode, freq, SPI::pclk_freq(&clocks))
+        Spi { spi, pins }.init(mode, freq, SPI::get_frequency(&clocks))
     }
 }
 
@@ -448,34 +442,34 @@ where
             _ => 0b111,
         };
 
-        // mstr: master configuration
-        // lsbfirst: MSB first
-        // ssm: enable software slave management (NSS pin free for other uses)
-        // ssi: set nss high = master mode
-        // dff: 8 bit frames
-        // bidimode: 2-line unidirectional
-        // spe: enable the SPI bus
         self.spi.cr1.write(|w| {
             w.cpha()
                 .bit(mode.phase == Phase::CaptureOnSecondTransition)
                 .cpol()
                 .bit(mode.polarity == Polarity::IdleHigh)
+                // mstr: master configuration
                 .mstr()
                 .set_bit()
                 .br()
                 .bits(br)
+                // lsbfirst: MSB first
                 .lsbfirst()
                 .clear_bit()
+                // ssm: enable software slave management (NSS pin free for other uses)
                 .ssm()
                 .set_bit()
+                // ssi: set nss high = master mode
                 .ssi()
                 .set_bit()
                 .rxonly()
                 .clear_bit()
+                // dff: 8 bit frames
                 .dff()
                 .clear_bit()
+                // bidimode: 2-line unidirectional
                 .bidimode()
                 .clear_bit()
+                // spe: enable the SPI bus
                 .spe()
                 .set_bit()
         });
@@ -551,11 +545,11 @@ where
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
+            Error::Overrun.into()
         } else if sr.modf().bit_is_set() {
-            nb::Error::Other(Error::ModeFault)
+            Error::ModeFault.into()
         } else if sr.crcerr().bit_is_set() {
-            nb::Error::Other(Error::Crc)
+            Error::Crc.into()
         } else if sr.rxne().bit_is_set() {
             // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
             // reading a half-word)
@@ -571,18 +565,18 @@ where
         Err(if sr.ovr().bit_is_set() {
             // Read from the DR to clear the OVR bit
             let _ = self.spi.dr.read();
-            nb::Error::Other(Error::Overrun)
+            Error::Overrun.into()
         } else if sr.modf().bit_is_set() {
             // Write to CR1 to clear MODF
             self.spi.cr1.modify(|_r, w| w);
-            nb::Error::Other(Error::ModeFault)
+            Error::ModeFault.into()
         } else if sr.crcerr().bit_is_set() {
             // Clear the CRCERR bit
             self.spi.sr.modify(|_r, w| {
                 w.crcerr().clear_bit();
                 w
             });
-            nb::Error::Other(Error::Crc)
+            Error::Crc.into()
         } else if sr.txe().bit_is_set() {
             // NOTE(write_volatile) see note above
             unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
