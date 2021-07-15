@@ -560,7 +560,7 @@ where
             USART::reset(rcc);
         }
 
-        let pclk_freq = USART::pclk_freq(&clocks);
+        let pclk_freq = USART::get_frequency(&clocks).0;
         let baud = config.baudrate.0;
 
         // The frequency to calculate USARTDIV is this:
@@ -1145,30 +1145,19 @@ use crate::pac::uart4 as uart_base;
 )))]
 use crate::pac::usart1 as uart_base;
 
-mod private {
-    pub trait Sealed {}
-}
-
 // Implemented by all USART instances
-pub trait Instance: private::Sealed + rcc::Enable + rcc::Reset {
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
-    #[doc(hidden)]
-    fn pclk_freq(clocks: &Clocks) -> u32;
     #[doc(hidden)]
     fn set_stopbits(&self, bits: config::StopBits);
 }
 
 macro_rules! halUsart {
-    ($USARTX:ty: ($usartX:ident, $pclkX:ident)) => {
-        impl private::Sealed for $USARTX {}
+    ($USARTX:ty: ($usartX:ident)) => {
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
                 <$USARTX>::ptr() as *const _
-            }
-
-            fn pclk_freq(clocks: &Clocks) -> u32 {
-                clocks.$pclkX().0
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
@@ -1216,15 +1205,10 @@ macro_rules! halUsart {
 ))]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
-    ($USARTX:ty: ($usartX:ident, $pclkX:ident)) => {
-        impl private::Sealed for $USARTX {}
+    ($USARTX:ty: ($usartX:ident)) => {
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
                 <$USARTX>::ptr() as *const _
-            }
-
-            fn pclk_freq(clocks: &Clocks) -> u32 {
-                clocks.$pclkX().0
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
@@ -1261,35 +1245,35 @@ macro_rules! halUart {
     };
 }
 
-halUsart! { USART1: (usart1, pclk2) }
-halUsart! { USART2: (usart2, pclk1) }
-halUsart! { USART6: (usart6, pclk2) }
+halUsart! { USART1: (usart1) }
+halUsart! { USART2: (usart2) }
+halUsart! { USART6: (usart6) }
 
 #[cfg(feature = "usart3")]
-halUsart! { USART3: (usart3, pclk1) }
+halUsart! { USART3: (usart3) }
 
 #[cfg(feature = "uart4")]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
-halUart! { UART4: (uart4, pclk1) }
+halUart! { UART4: (uart4) }
 #[cfg(feature = "uart5")]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
-halUart! { UART5: (uart5, pclk1) }
+halUart! { UART5: (uart5) }
 
 #[cfg(feature = "uart4")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { UART4: (uart4, pclk1) }
+halUsart! { UART4: (uart4) }
 #[cfg(feature = "uart5")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { UART5: (uart5, pclk1) }
+halUsart! { UART5: (uart5) }
 
 #[cfg(feature = "uart7")]
-halUsart! { UART7: (uart7, pclk1) }
+halUsart! { UART7: (uart7) }
 #[cfg(feature = "uart8")]
-halUsart! { UART8: (uart8, pclk1) }
+halUsart! { UART8: (uart8) }
 #[cfg(feature = "uart9")]
-halUsart! { UART9: (uart9, pclk2) }
+halUsart! { UART9: (uart9) }
 #[cfg(feature = "uart10")]
-halUsart! { UART10: (uart10, pclk2) }
+halUsart! { UART10: (uart10) }
 
 impl<USART, PINS> fmt::Write for Serial<USART, PINS>
 where

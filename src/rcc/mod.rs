@@ -40,7 +40,7 @@
 //! frequencies may substantially deviate from the requested frequencies.
 
 use crate::pac::rcc::cfgr::{HPRE_A, SW_A};
-use crate::pac::RCC;
+use crate::pac::{rcc, RCC};
 
 use crate::time::Hertz;
 
@@ -63,24 +63,26 @@ mod pll;
 mod enable;
 use crate::pac::rcc::RegisterBlock as RccRB;
 
-mod private {
-    pub trait Sealed {}
+/// Bus associated to peripheral
+pub trait RccBus: crate::Sealed {
+    /// Bus type;
+    type Bus;
 }
 
 /// Enable/disable peripheral
-pub trait Enable: private::Sealed {
+pub trait Enable: RccBus {
     fn enable(rcc: &RccRB);
     fn disable(rcc: &RccRB);
 }
 
 /// Low power enable/disable peripheral
-pub trait LPEnable: private::Sealed {
+pub trait LPEnable: RccBus {
     fn low_power_enable(rcc: &RccRB);
     fn low_power_disable(rcc: &RccRB);
 }
 
 /// Reset peripheral
-pub trait Reset: private::Sealed {
+pub trait Reset: RccBus {
     fn reset(rcc: &RccRB);
 }
 
@@ -88,6 +90,171 @@ pub trait Reset: private::Sealed {
 pub trait RccExt {
     /// Constrains the `RCC` peripheral so it plays nicely with the other abstractions
     fn constrain(self) -> Rcc;
+}
+
+pub trait GetBusFreq {
+    fn get_frequency(clocks: &Clocks) -> Hertz;
+    fn get_timer_frequency(clocks: &Clocks) -> Hertz {
+        Self::get_frequency(clocks)
+    }
+}
+
+impl<T> GetBusFreq for T
+where
+    T: RccBus,
+    T::Bus: GetBusFreq,
+{
+    fn get_frequency(clocks: &Clocks) -> Hertz {
+        T::Bus::get_frequency(clocks)
+    }
+    fn get_timer_frequency(clocks: &Clocks) -> Hertz {
+        T::Bus::get_timer_frequency(clocks)
+    }
+}
+
+/// AMBA High-performance Bus 1 (AHB1) registers
+pub struct AHB1 {
+    _0: (),
+}
+
+impl AHB1 {
+    #[inline(always)]
+    fn enr(rcc: &RccRB) -> &rcc::AHB1ENR {
+        &rcc.ahb1enr
+    }
+    #[inline(always)]
+    fn lpenr(rcc: &RccRB) -> &rcc::AHB1LPENR {
+        &rcc.ahb1lpenr
+    }
+    #[inline(always)]
+    fn rstr(rcc: &RccRB) -> &rcc::AHB1RSTR {
+        &rcc.ahb1rstr
+    }
+}
+
+/// AMBA High-performance Bus 2 (AHB2) registers
+#[cfg(not(feature = "stm32f410"))]
+pub struct AHB2 {
+    _0: (),
+}
+
+#[cfg(not(feature = "stm32f410"))]
+impl AHB2 {
+    #[inline(always)]
+    fn enr(rcc: &RccRB) -> &rcc::AHB2ENR {
+        &rcc.ahb2enr
+    }
+    #[inline(always)]
+    fn lpenr(rcc: &RccRB) -> &rcc::AHB2LPENR {
+        &rcc.ahb2lpenr
+    }
+    #[inline(always)]
+    fn rstr(rcc: &RccRB) -> &rcc::AHB2RSTR {
+        &rcc.ahb2rstr
+    }
+}
+
+/// AMBA High-performance Bus 3 (AHB3) registers
+#[cfg(any(feature = "fsmc", feature = "fmc"))]
+pub struct AHB3 {
+    _0: (),
+}
+
+#[cfg(any(feature = "fsmc", feature = "fmc"))]
+impl AHB3 {
+    #[inline(always)]
+    fn enr(rcc: &RccRB) -> &rcc::AHB3ENR {
+        &rcc.ahb3enr
+    }
+    #[cfg(feature = "fmc")]
+    #[inline(always)]
+    fn lpenr(rcc: &RccRB) -> &rcc::AHB3LPENR {
+        &rcc.ahb3lpenr
+    }
+    #[inline(always)]
+    fn rstr(rcc: &RccRB) -> &rcc::AHB3RSTR {
+        &rcc.ahb3rstr
+    }
+}
+
+/// Advanced Peripheral Bus 1 (APB1) registers
+pub struct APB1 {
+    _0: (),
+}
+
+impl APB1 {
+    #[inline(always)]
+    fn enr(rcc: &RccRB) -> &rcc::APB1ENR {
+        &rcc.apb1enr
+    }
+    #[inline(always)]
+    fn lpenr(rcc: &RccRB) -> &rcc::APB1LPENR {
+        &rcc.apb1lpenr
+    }
+    #[inline(always)]
+    fn rstr(rcc: &RccRB) -> &rcc::APB1RSTR {
+        &rcc.apb1rstr
+    }
+}
+
+/// Advanced Peripheral Bus 2 (APB2) registers
+pub struct APB2 {
+    _0: (),
+}
+
+impl APB2 {
+    #[inline(always)]
+    fn enr(rcc: &RccRB) -> &rcc::APB2ENR {
+        &rcc.apb2enr
+    }
+    #[inline(always)]
+    fn lpenr(rcc: &RccRB) -> &rcc::APB2LPENR {
+        &rcc.apb2lpenr
+    }
+    #[inline(always)]
+    fn rstr(rcc: &RccRB) -> &rcc::APB2RSTR {
+        &rcc.apb2rstr
+    }
+}
+
+impl GetBusFreq for AHB1 {
+    fn get_frequency(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+#[cfg(not(feature = "stm32f410"))]
+impl GetBusFreq for AHB2 {
+    fn get_frequency(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+#[cfg(any(feature = "fsmc", feature = "fmc"))]
+impl GetBusFreq for AHB3 {
+    fn get_frequency(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+impl GetBusFreq for APB1 {
+    fn get_frequency(clocks: &Clocks) -> Hertz {
+        clocks.pclk1
+    }
+    fn get_timer_frequency(clocks: &Clocks) -> Hertz {
+        let pclk_mul = if clocks.ppre1 == 1 { 1 } else { 2 };
+        Hertz(clocks.pclk1.0 * pclk_mul)
+    }
+}
+
+impl GetBusFreq for APB2 {
+    fn get_frequency(clocks: &Clocks) -> Hertz {
+        clocks.pclk2
+    }
+    fn get_timer_frequency(clocks: &Clocks) -> Hertz {
+        let pclk_mul = if clocks.ppre2 == 1 { 1 } else { 2 };
+        Hertz(clocks.pclk2.0 * pclk_mul)
+    }
 }
 
 impl RccExt for RCC {

@@ -250,19 +250,11 @@ pub enum Error {
     ARBITRATION,
 }
 
-mod private {
-    pub trait Sealed {}
-}
+pub trait Instance: crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {}
 
-pub trait Instance: private::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {}
-
-impl private::Sealed for I2C1 {}
 impl Instance for I2C1 {}
-impl private::Sealed for I2C2 {}
 impl Instance for I2C2 {}
 
-#[cfg(feature = "i2c3")]
-impl private::Sealed for I2C3 {}
 #[cfg(feature = "i2c3")]
 impl Instance for I2C3 {}
 
