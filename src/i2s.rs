@@ -446,10 +446,10 @@ mod dma {
     }
 
     /// DMA is available for I2S based on the underlying implementations for SPI
-    unsafe impl<SPI, PINS, MODE, STREAM, CHANNEL, DIR> DMASet<STREAM, CHANNEL, DIR>
+    unsafe impl<SPI, PINS, MODE, STREAM, DIR, const CHANNEL: u8> DMASet<STREAM, DIR, CHANNEL>
         for stm32_i2s_v12x::I2s<I2s<SPI, PINS>, MODE>
     where
-        SPI: DMASet<STREAM, CHANNEL, DIR>,
+        SPI: DMASet<STREAM, DIR, CHANNEL>,
     {
     }
 }

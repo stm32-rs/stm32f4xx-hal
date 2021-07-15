@@ -51,7 +51,7 @@ use stm32_i2s_v12x::{MasterClock, MasterConfig, Polarity, TransmitMode};
 use stm32f4xx_hal::delay::Delay;
 use stm32f4xx_hal::dma::config::DmaConfig;
 use stm32f4xx_hal::dma::MemoryToPeripheral;
-use stm32f4xx_hal::dma::{Channel0, Stream5, StreamsTuple, Transfer};
+use stm32f4xx_hal::dma::{Stream5, StreamsTuple, Transfer};
 use stm32f4xx_hal::gpio::gpioa::PA4;
 use stm32f4xx_hal::gpio::gpioc::{PC10, PC12, PC7};
 use stm32f4xx_hal::gpio::Alternate;
@@ -212,7 +212,6 @@ fn main() -> ! {
 
 type I2sDmaTransfer = Transfer<
     Stream5<DMA1>,
-    Channel0,
     stm32_i2s_v12x::I2s<
         I2s<
             SPI3,
@@ -227,6 +226,7 @@ type I2sDmaTransfer = Transfer<
     >,
     MemoryToPeripheral,
     &'static mut [u16; SINE_SAMPLES * 2],
+    0,
 >;
 
 /// DMA transfer handoff from main() to interrupt handler

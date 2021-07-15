@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Split `Stream` trait on `Stream` and `StreamISR`.
+  Use const generics for `Stream` and `Channel`.
 - [breaking-change] `Timer::new` now just initializes peripheral.
   Use `.start_count_down` to start count, `pwm` or `delay` on `Timer` struct.
 - Add `Spi::new`, `I2s::new, `spi::Instance` and deprecate `Spi:spix`,
