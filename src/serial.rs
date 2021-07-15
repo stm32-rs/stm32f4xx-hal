@@ -56,7 +56,7 @@ use crate::pac::UART8;
 #[cfg(feature = "uart9")]
 use crate::pac::UART9;
 
-use crate::gpio::Alternate;
+use crate::gpio::{Alternate, NoPin};
 use crate::rcc::Clocks;
 
 use crate::dma::traits::PeriAddress;
@@ -192,13 +192,13 @@ where
 }
 
 /// A filler type for when the Tx pin is unnecessary
-pub struct NoTx;
+pub type NoTx = NoPin;
 /// A filler type for when the Rx pin is unnecessary
-pub struct NoRx;
+pub type NoRx = NoPin;
 
-impl PinTx<USART1> for NoTx {}
+impl<USART> PinTx<USART> for NoPin where USART: Instance {}
 
-impl PinRx<USART1> for NoRx {}
+impl<USART> PinRx<USART> for NoPin where USART: Instance {}
 
 impl PinTx<USART1> for gpioa::PA9<Alternate<7>> {}
 
@@ -223,10 +223,6 @@ impl PinRx<USART1> for gpiob::PB3<Alternate<7>> {}
 impl PinTx<USART1> for gpiob::PB6<Alternate<7>> {}
 
 impl PinRx<USART1> for gpiob::PB7<Alternate<7>> {}
-
-impl PinTx<USART2> for NoTx {}
-
-impl PinRx<USART2> for NoRx {}
 
 impl PinTx<USART2> for gpioa::PA2<Alternate<7>> {}
 
@@ -270,10 +266,6 @@ impl PinTx<USART2> for gpiod::PD5<Alternate<7>> {}
 ))]
 impl PinRx<USART2> for gpiod::PD6<Alternate<7>> {}
 
-#[cfg(feature = "usart3")]
-impl PinTx<USART3> for NoTx {}
-#[cfg(feature = "usart3")]
-impl PinRx<USART3> for NoRx {}
 #[cfg(feature = "usart3")]
 impl PinTx<USART3> for gpiob::PB10<Alternate<7>> {}
 #[cfg(feature = "usart3")]
@@ -355,10 +347,6 @@ impl PinTx<USART3> for gpiod::PD8<Alternate<7>> {}
 impl PinRx<USART3> for gpiod::PD9<Alternate<7>> {}
 
 #[cfg(feature = "uart4")]
-impl PinTx<UART4> for NoTx {}
-#[cfg(feature = "uart4")]
-impl PinRx<UART4> for NoRx {}
-#[cfg(feature = "uart4")]
 impl PinTx<UART4> for gpioa::PA0<Alternate<8>> {}
 #[cfg(feature = "uart4")]
 impl PinRx<UART4> for gpioa::PA1<Alternate<8>> {}
@@ -403,10 +391,6 @@ impl PinTx<UART4> for gpiod::PD10<Alternate<8>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 impl PinRx<UART4> for gpioc::PC11<Alternate<8>> {}
 
-#[cfg(feature = "uart5")]
-impl PinTx<UART5> for NoTx {}
-#[cfg(feature = "uart5")]
-impl PinRx<UART5> for NoRx {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 impl PinTx<UART5> for gpiob::PB6<Alternate<11>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
@@ -428,9 +412,6 @@ impl PinTx<UART5> for gpioe::PE8<Alternate<8>> {}
 #[cfg(any(feature = "stm32f446"))]
 impl PinRx<UART5> for gpioe::PE7<Alternate<8>> {}
 
-impl PinTx<USART6> for NoTx {}
-
-impl PinRx<USART6> for NoRx {}
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f410",
@@ -488,10 +469,6 @@ impl PinTx<USART6> for gpiog::PG14<Alternate<8>> {}
 ))]
 impl PinRx<USART6> for gpiog::PG9<Alternate<8>> {}
 
-#[cfg(feature = "uart7")]
-impl PinTx<UART7> for NoTx {}
-#[cfg(feature = "uart7")]
-impl PinRx<UART7> for NoRx {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 impl PinTx<UART7> for gpioa::PA15<Alternate<8>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
@@ -509,10 +486,6 @@ impl PinTx<UART7> for gpiof::PF7<Alternate<8>> {}
 #[cfg(all(feature = "uart7", feature = "gpiof"))]
 impl PinRx<UART7> for gpiof::PF6<Alternate<8>> {}
 
-#[cfg(feature = "uart8")]
-impl PinTx<UART8> for NoTx {}
-#[cfg(feature = "uart8")]
-impl PinRx<UART8> for NoRx {}
 #[cfg(all(feature = "uart8", feature = "gpioe"))]
 impl PinTx<UART8> for gpioe::PE1<Alternate<8>> {}
 #[cfg(all(feature = "uart8", feature = "gpioe"))]
@@ -522,10 +495,6 @@ impl PinTx<UART8> for gpiof::PF9<Alternate<8>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 impl PinRx<UART8> for gpiof::PF8<Alternate<8>> {}
 
-#[cfg(feature = "uart9")]
-impl PinTx<UART9> for NoTx {}
-#[cfg(feature = "uart9")]
-impl PinRx<UART9> for NoRx {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 impl PinTx<UART9> for gpiod::PD15<Alternate<11>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
@@ -535,10 +504,6 @@ impl PinTx<UART9> for gpiog::PG1<Alternate<11>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 impl PinRx<UART9> for gpiog::PG0<Alternate<11>> {}
 
-#[cfg(feature = "uart10")]
-impl PinTx<UART10> for NoTx {}
-#[cfg(feature = "uart10")]
-impl PinRx<UART10> for NoRx {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 impl PinTx<UART10> for gpioe::PE3<Alternate<11>> {}
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
@@ -567,9 +532,10 @@ pub struct Tx<USART, WORD = u8> {
     _word: PhantomData<WORD>,
 }
 
-impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
+impl<USART, TX, RX, WORD> Serial<USART, (TX, RX), WORD>
 where
-    PINS: Pins<USART>,
+    TX: PinTx<USART>,
+    RX: PinRx<USART>,
     USART: Instance,
 {
     /*
@@ -579,7 +545,7 @@ where
     */
     pub fn new(
         usart: USART,
-        pins: PINS,
+        pins: (TX, RX),
         config: config::Config,
         clocks: Clocks,
     ) -> Result<Self, config::InvalidConfig> {
@@ -696,9 +662,9 @@ where
     }
 }
 
-impl<USART, TX, WORD> Serial<USART, (TX, NoRx), WORD>
+impl<USART, TX, WORD> Serial<USART, (TX, NoPin), WORD>
 where
-    (TX, NoRx): Pins<USART>,
+    TX: PinTx<USART>,
     USART: Instance,
 {
     pub fn tx(
@@ -707,13 +673,13 @@ where
         config: config::Config,
         clocks: Clocks,
     ) -> Result<Tx<USART, WORD>, config::InvalidConfig> {
-        Self::new(usart, (tx_pin, NoRx), config, clocks).map(|s| s.split().0)
+        Self::new(usart, (tx_pin, NoPin), config, clocks).map(|s| s.split().0)
     }
 }
 
-impl<USART, RX, WORD> Serial<USART, (NoTx, RX), WORD>
+impl<USART, RX, WORD> Serial<USART, (NoPin, RX), WORD>
 where
-    (NoTx, RX): Pins<USART>,
+    RX: PinRx<USART>,
     USART: Instance,
 {
     pub fn rx(
@@ -722,7 +688,7 @@ where
         config: config::Config,
         clocks: Clocks,
     ) -> Result<Rx<USART, WORD>, config::InvalidConfig> {
-        Self::new(usart, (NoTx, rx_pin), config, clocks).map(|s| s.split().1)
+        Self::new(usart, (NoPin, rx_pin), config, clocks).map(|s| s.split().1)
     }
 }
 
@@ -1220,15 +1186,16 @@ macro_rules! halUsart {
             }
         }
 
-        impl<USART, PINS> Serial<USART, PINS>
+        impl<USART, TX, RX> Serial<USART, (TX, RX)>
         where
-            PINS: Pins<USART>,
+            TX: PinTx<USART>,
+            RX: PinRx<USART>,
             USART: Instance,
         {
             #[deprecated(since = "0.10.0")]
             pub fn $usartX(
                 usart: USART,
-                pins: PINS,
+                pins: (TX, RX),
                 config: config::Config,
                 clocks: Clocks,
             ) -> Result<Self, config::InvalidConfig> {
@@ -1275,15 +1242,16 @@ macro_rules! halUart {
             }
         }
 
-        impl<USART, PINS> Serial<USART, PINS>
+        impl<USART, TX, RX> Serial<USART, (TX, RX)>
         where
-            PINS: Pins<USART>,
+            TX: PinTx<USART>,
+            RX: PinRx<USART>,
             USART: Instance,
         {
             #[deprecated(since = "0.10.0")]
             pub fn $usartX(
                 usart: USART,
-                pins: PINS,
+                pins: (TX, RX),
                 config: config::Config,
                 clocks: Clocks,
             ) -> Result<Self, config::InvalidConfig> {

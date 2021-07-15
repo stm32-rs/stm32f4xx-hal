@@ -293,12 +293,15 @@ macro_rules! i2s {
             }
         }
 
-        impl<PINS> I2s<$SPIX, PINS>
+        impl<PWS, PCK, PMCLK, PSD> I2s<$SPIX, (PWS, PCK, PMCLK, PSD)>
         where
-            PINS: Pins<$SPIX>,
+            PWS: PinWs<$SPIX>,
+            PCK: PinCk<$SPIX>,
+            PMCLK: PinMck<$SPIX>,
+            PSD: PinSd<$SPIX>,
         {
             #[deprecated(since = "0.10.0", note = "Please use new instead")]
-            pub fn $i2sx(spi: $SPIX, pins: PINS, clocks: Clocks) -> Self {
+            pub fn $i2sx(spi: $SPIX, pins: (PWS, PCK, PMCLK, PSD), clocks: Clocks) -> Self {
                 Self::new(spi, pins, clocks)
             }
         }
@@ -309,10 +312,13 @@ macro_rules! i2s {
     };
 }
 
-impl<SPI, PINS> I2s<SPI, PINS>
+impl<SPI, PWS, PCK, PMCLK, PSD> I2s<SPI, (PWS, PCK, PMCLK, PSD)>
 where
     SPI: I2sFreq + rcc::Enable + rcc::Reset,
-    PINS: Pins<SPI>,
+    PWS: PinWs<SPI>,
+    PCK: PinCk<SPI>,
+    PMCLK: PinMck<SPI>,
+    PSD: PinSd<SPI>,
 {
     /// Creates an I2s object around an SPI peripheral and pins
     ///
@@ -325,7 +331,7 @@ where
     ///
     /// This function panics if the I2S clock input (from the I2S PLL or similar)
     /// is not configured.
-    pub fn new(spi: SPI, pins: PINS, clocks: Clocks) -> Self {
+    pub fn new(spi: SPI, pins: (PWS, PCK, PMCLK, PSD), clocks: Clocks) -> Self {
         let input_clock = SPI::i2s_freq(&clocks);
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.

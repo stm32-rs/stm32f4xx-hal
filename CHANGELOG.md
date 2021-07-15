@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Filler `NoPin` type 
 - Add inherent impl of `PwmPin` methods on `PwmChannel`s.
 - `Serial:tx` and `Serial::rx` that take only 1 pin
 - Instead of `Alternate<AF1>` you can just use `Alternate<1>`.

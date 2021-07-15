@@ -14,6 +14,9 @@ pub use partially_erased::PEPin;
 mod erased;
 pub use erased::EPin;
 
+/// A filler pin type
+pub struct NoPin;
+
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
     /// The parts to split the GPIO into
