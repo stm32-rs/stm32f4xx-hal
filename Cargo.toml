@@ -398,3 +398,7 @@ required-features = ["rt", "stm32f412", "fsmc_lcd"]
 [[example]]
 name = "f413disco_lcd_ferris"
 required-features = ["rt", "stm32f413", "fsmc_lcd"]
+
+[[example]]
+name= "pwm-input"
+required-features = ["stm32f446"]

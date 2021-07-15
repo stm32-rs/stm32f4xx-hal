@@ -152,6 +152,8 @@ pub mod prelude;
 #[cfg(feature = "device-selected")]
 pub mod pwm;
 #[cfg(feature = "device-selected")]
+pub mod pwm_input;
+#[cfg(feature = "device-selected")]
 pub mod qei;
 #[cfg(feature = "device-selected")]
 pub mod rcc;

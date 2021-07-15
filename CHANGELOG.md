@@ -32,8 +32,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Derive `Eq`, `PartialEq`, `Copy` and `Clone` for error types
 - Added open-drain pin mode support for PWM output [#313]
 - Added missing error flags for dma streams [#318]
+- Added PWM input capability to all compatable timers [#271]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
+[#271] https://github.com/stm32-rs/stm32f4xx-hal/pull/271
 [#297]: https://github.com/stm32-rs/stm32f4xx-hal/pull/297
 [#302]: https://github.com/stm32-rs/stm32f4xx-hal/pull/302
 [#309]: https://github.com/stm32-rs/stm32f4xx-hal/pull/309
@@ -60,7 +62,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
 [#258]: https://github.com/stm32-rs/stm32f4xx-hal/pull/258
 [#257]: https://github.com/stm32-rs/stm32f4xx-hal/pull/257
-
 ### Fixed
 
 - Corrected pin definitions for the Flexible Static Memory Controller / Flexible Memory Controller
