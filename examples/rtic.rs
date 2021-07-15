@@ -30,7 +30,7 @@ const APP: () = {
         let mut button = gpioa.pa0.into_pull_down_input();
         button.make_interrupt_source(&mut syscfg);
         button.enable_interrupt(&mut ctx.device.EXTI);
-        button.trigger_on_edge(&mut ctx.device.EXTI, Edge::RISING);
+        button.trigger_on_edge(&mut ctx.device.EXTI, Edge::Rising);
 
         init::LateResources { button, led }
     }
