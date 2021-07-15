@@ -852,13 +852,13 @@ where
         }
 
         Err(if sr.pe().bit_is_set() {
-            nb::Error::Other(Error::Parity)
+            Error::Parity.into()
         } else if sr.fe().bit_is_set() {
-            nb::Error::Other(Error::Framing)
+            Error::Framing.into()
         } else if sr.nf().bit_is_set() {
-            nb::Error::Other(Error::Noise)
+            Error::Noise.into()
         } else if sr.ore().bit_is_set() {
-            nb::Error::Other(Error::Overrun)
+            Error::Overrun.into()
         } else if sr.rxne().bit_is_set() {
             // NOTE(unsafe) atomic read from stateless register
             return Ok(unsafe { &*USART::ptr() }.dr.read().dr().bits());
