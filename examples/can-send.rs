@@ -25,7 +25,7 @@ fn main() -> ! {
 
     let gpiob = dp.GPIOB.split();
     let mut can1 = {
-        let rx = gpiob.pb8.into_alternate();
+        let rx = gpiob.pb8.into_alternate::<9>();
         let tx = gpiob.pb9.into_alternate();
 
         let can = Can::new(dp.CAN1, (tx, rx));

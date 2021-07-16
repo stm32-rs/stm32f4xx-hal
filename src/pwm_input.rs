@@ -40,6 +40,7 @@ pub struct PwmInput<TIM, PINS: Pins<TIM>> {
     pins: PINS,
 }
 
+#[cfg(not(feature = "stm32f410"))]
 macro_rules! hal {
     ($($TIM:ident: ($bits:ident),)+) => {
         $(

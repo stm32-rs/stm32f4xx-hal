@@ -12,7 +12,7 @@ use stm32f4xx_hal as hal;
 
 use crate::hal::{
     gpio::{gpioa::PA0, Edge, Input, PullDown},
-    interrupt, pac, pac,
+    interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
     spi::Spi,
