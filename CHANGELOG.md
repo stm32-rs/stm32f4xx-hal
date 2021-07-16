@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- More badges in README
 - `RccBus` & `GetBusFreq` traits. `AHBx`, `APBx` structures.
 - Filler `NoPin` type 
 - Add inherent impl of `PwmPin` methods on `PwmChannel`s.
