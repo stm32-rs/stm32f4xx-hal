@@ -11,12 +11,12 @@ use cortex_m;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{prelude::*, stm32};
+use crate::hal::{pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
     if let (Some(dp), Some(cp)) = (
-        stm32::Peripherals::take(),
+        pac::Peripherals::take(),
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the LED. On the Nucleo-446RE it's connected to pin PA5.

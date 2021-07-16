@@ -12,8 +12,8 @@ use stm32f4xx_hal as hal;
 
 use crate::hal::{
     gpio::{gpioa, Output, PushPull},
+    pac::{interrupt, Interrupt, Peripherals, TIM2},
     prelude::*,
-    stm32::{interrupt, Interrupt, Peripherals, TIM2},
     timer::{CountDownTimer, Event, Timer},
 };
 

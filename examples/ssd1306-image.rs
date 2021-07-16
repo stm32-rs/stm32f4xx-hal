@@ -20,12 +20,12 @@ use cortex_m_rt::{entry, exception};
 use embedded_graphics::{image::Image, image::ImageRaw, pixelcolor::BinaryColor, prelude::*};
 use ssd1306::{prelude::*, Builder, I2CDIBuilder};
 
-use crate::hal::{i2c::I2c, prelude::*, stm32};
+use crate::hal::{i2c::I2c, pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
     if let (Some(dp), Some(_cp)) = (
-        stm32::Peripherals::take(),
+        pac::Peripherals::take(),
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the system clock. We want to run at 48MHz for this one.

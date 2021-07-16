@@ -5,8 +5,8 @@
 // Halt on panic
 use crate::hal::{
     dwt::{ClockDuration, DwtExt},
+    pac,
     prelude::*,
-    stm32,
 };
 use cortex_m;
 use cortex_m_rt::entry;
@@ -16,7 +16,7 @@ use stm32f4xx_hal as hal;
 #[entry]
 fn main() -> ! {
     if let (Some(dp), Some(cp)) = (
-        stm32::Peripherals::take(),
+        pac::Peripherals::take(),
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the LEDs. On the STM32F429I-DISC[O1] they are connected to pin PG13/14.

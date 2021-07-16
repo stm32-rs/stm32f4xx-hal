@@ -20,11 +20,11 @@ use hal::timer;
 use hal::timer::Timer;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{prelude::*, stm32};
+use crate::hal::{pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
     let rcc = dp.RCC.constrain();
     let clocks = rcc.cfgr.sysclk(24.mhz()).freeze();

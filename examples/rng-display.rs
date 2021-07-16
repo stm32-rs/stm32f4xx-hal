@@ -28,7 +28,7 @@ use embedded_graphics::{
 
 use ssd1306::{prelude::*, Builder, I2CDIBuilder};
 
-use hal::{i2c::I2c, prelude::*, stm32};
+use hal::{i2c::I2c, pac, prelude::*};
 use rand_core::RngCore;
 
 use arrayvec::ArrayString;
@@ -45,7 +45,7 @@ pub const HINSET_PIX: i32 = 20;
 #[entry]
 fn main() -> ! {
     if let (Some(dp), Some(cp)) = (
-        stm32::Peripherals::take(),
+        pac::Peripherals::take(),
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the system clock.

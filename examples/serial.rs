@@ -6,13 +6,13 @@ use panic_halt as _;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{prelude::*, serial::config::Config, serial::Serial, stm32};
+use crate::hal::{pac, prelude::*, serial::config::Config, serial::Serial};
 
 use core::fmt::Write; // for pretty formatting of the serial output
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
 
     let gpioa = dp.GPIOA.split();

@@ -15,13 +15,13 @@ impl<TIM, PC1> Pins<TIM> for PC1 where PC1: PinC1<TIM> {}
 /// 2. When the period is captured. the duty cycle will be an observable value.
 /// An example interrupt handler is provided:
 /// ```
-/// use stm32f4xx_hal::stm32::TIM8;
+/// use stm32f4xx_hal::pac::TIM8;
 /// use stm32f4xx_hal::timer::Timer;
 /// use stm32f4xx_hal::pwm_input::PwmInput;
 /// use stm32f4xx_hal::gpio::gpioc::PC6;
 /// use stm32f4xx_hal::gpio::Alternate;
 ///
-/// type Monitor = PwmInput<stm32f4xx_hal::stm32::TIM8, PC6<Alternate<3>>>;
+/// type Monitor = PwmInput<TIM8, PC6<Alternate<3>>>;
 ///
 /// fn tim8_cc2(monitor: &Monitor) {
 ///             let duty_clocks = monitor.get_duty_cycle_clocks();
@@ -46,7 +46,7 @@ macro_rules! hal {
         // Drag the associated TIM object into scope.
         // Note: its drawn in via the macro to avoid duplicating the feature gate this macro is
         //       expecting to be guarded by.
-        use crate::stm32::$TIM;
+        use crate::pac::$TIM;
 
         impl Timer<$TIM> {
             /// Configures this timer for PWM input. Accepts the `best_guess` frequency of the signal

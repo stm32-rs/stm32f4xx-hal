@@ -12,7 +12,7 @@ use stm32f4xx_hal::{
     prelude::*,
 };
 
-#[app(device = stm32f4xx_hal::stm32, peripherals = true)]
+#[app(device = stm32f4xx_hal::pac, peripherals = true)]
 const APP: () = {
     struct Resources {
         button: PA0<Input<PullDown>>,

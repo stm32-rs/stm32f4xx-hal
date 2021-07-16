@@ -12,11 +12,10 @@ use stm32f4xx_hal as hal;
 
 use crate::hal::{
     gpio::{gpioa::PA0, Edge, Input, PullDown},
-    interrupt, pac,
+    interrupt, pac, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
     spi::Spi,
-    stm32,
     timer::{CountDownTimer, Event, Timer},
 };
 
@@ -47,7 +46,7 @@ use ssd1306::{prelude::*, Builder};
 // Set up global state. It's all mutexed up for concurrency safety.
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
 static ELAPSED_RESET_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
-static TIMER_TIM2: Mutex<RefCell<Option<CountDownTimer<stm32::TIM2>>>> =
+static TIMER_TIM2: Mutex<RefCell<Option<CountDownTimer<pac::TIM2>>>> =
     Mutex::new(RefCell::new(None));
 static STATE: Mutex<Cell<StopwatchState>> = Mutex::new(Cell::new(StopwatchState::Ready));
 static BUTTON: Mutex<RefCell<Option<PA0<Input<PullDown>>>>> = Mutex::new(RefCell::new(None));
@@ -139,10 +138,10 @@ fn main() -> ! {
     });
 
     // Enable interrupts
-    stm32::NVIC::unpend(hal::stm32::Interrupt::TIM2);
-    stm32::NVIC::unpend(hal::stm32::Interrupt::EXTI0);
+    pac::NVIC::unpend(hal::pac::Interrupt::TIM2);
+    pac::NVIC::unpend(hal::pac::Interrupt::EXTI0);
     unsafe {
-        stm32::NVIC::unmask(hal::stm32::Interrupt::EXTI0);
+        pac::NVIC::unmask(hal::pac::Interrupt::EXTI0);
     };
 
     let mut state_led = false;
@@ -295,29 +294,29 @@ fn TIM2() {
 fn stopwatch_start<'cs>(cs: &'cs CriticalSection) {
     ELAPSED_MS.borrow(cs).replace(0);
     unsafe {
-        stm32::NVIC::unmask(hal::stm32::Interrupt::TIM2);
+        pac::NVIC::unmask(hal::pac::Interrupt::TIM2);
     }
 }
 
 fn stopwatch_continue<'cs>(_cs: &'cs CriticalSection) {
     unsafe {
-        stm32::NVIC::unmask(hal::stm32::Interrupt::TIM2);
+        pac::NVIC::unmask(hal::pac::Interrupt::TIM2);
     }
 }
 
 fn stopwatch_stop<'cs>(_cs: &'cs CriticalSection) {
-    stm32::NVIC::mask(hal::stm32::Interrupt::TIM2);
+    pac::NVIC::mask(hal::pac::Interrupt::TIM2);
 }
 
 fn stopwatch_reset_start<'cs>(cs: &'cs CriticalSection) {
     ELAPSED_RESET_MS.borrow(cs).replace(0);
     unsafe {
-        stm32::NVIC::unmask(hal::stm32::Interrupt::TIM2);
+        pac::NVIC::unmask(hal::pac::Interrupt::TIM2);
     }
 }
 
 fn stopwatch_reset_stop<'cs>(_cs: &'cs CriticalSection) {
-    stm32::NVIC::mask(hal::stm32::Interrupt::TIM2);
+    pac::NVIC::mask(hal::pac::Interrupt::TIM2);
 }
 
 // Formatting requires the arrayvec crate

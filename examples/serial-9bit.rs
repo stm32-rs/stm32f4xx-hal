@@ -34,13 +34,13 @@ use panic_halt as _;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{block, prelude::*, serial::config::Config, serial::Serial, stm32};
+use crate::hal::{block, pac, prelude::*, serial::config::Config, serial::Serial};
 
 use core::ops::Range;
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
 
     let gpioa = dp.GPIOA.split();

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Deprecate `stm32` alias.
 - Temporary change pin mode
 - More badges in README
 - `RccBus` & `GetBusFreq` traits. `AHBx`, `APBx` structures.

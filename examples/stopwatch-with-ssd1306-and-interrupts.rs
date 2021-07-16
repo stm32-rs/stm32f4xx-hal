@@ -24,10 +24,9 @@ use crate::hal::{
     delay::Delay,
     gpio::{gpioc::PC13, Edge, Input, PullUp},
     i2c::I2c,
-    interrupt,
+    interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
-    stm32,
     timer::{CountDownTimer, Event, Timer},
 };
 use arrayvec::ArrayString;
@@ -46,7 +45,7 @@ use ssd1306::{prelude::*, Builder, I2CDIBuilder};
 
 // Set up global state. It's all mutexed up for concurrency safety.
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
-static TIMER_TIM2: Mutex<RefCell<Option<CountDownTimer<stm32::TIM2>>>> =
+static TIMER_TIM2: Mutex<RefCell<Option<CountDownTimer<pac::TIM2>>>> =
     Mutex::new(RefCell::new(None));
 static STATE: Mutex<Cell<StopwatchState>> = Mutex::new(Cell::new(StopwatchState::Ready));
 static BUTTON: Mutex<RefCell<Option<PC13<Input<PullUp>>>>> = Mutex::new(RefCell::new(None));
@@ -60,7 +59,7 @@ enum StopwatchState {
 
 #[entry]
 fn main() -> ! {
-    if let (Some(mut dp), Some(cp)) = (stm32::Peripherals::take(), cortex_m::Peripherals::take()) {
+    if let (Some(mut dp), Some(cp)) = (pac::Peripherals::take(), cortex_m::Peripherals::take()) {
         let rcc = dp.RCC.constrain();
         let clocks = setup_clocks(rcc);
         let gpiob = dp.GPIOB.split();
@@ -98,10 +97,10 @@ fn main() -> ! {
         });
 
         // Enable interrupts
-        stm32::NVIC::unpend(hal::stm32::Interrupt::TIM2);
-        stm32::NVIC::unpend(hal::stm32::Interrupt::EXTI15_10);
+        pac::NVIC::unpend(hal::pac::Interrupt::TIM2);
+        pac::NVIC::unpend(hal::pac::Interrupt::EXTI15_10);
         unsafe {
-            stm32::NVIC::unmask(hal::stm32::Interrupt::EXTI15_10);
+            pac::NVIC::unmask(hal::pac::Interrupt::EXTI15_10);
         };
 
         let mut delay = Delay::new(cp.SYST, &clocks);
@@ -201,12 +200,12 @@ fn setup_clocks(rcc: Rcc) -> Clocks {
 fn stopwatch_start<'cs>(cs: &'cs CriticalSection) {
     ELAPSED_MS.borrow(cs).replace(0);
     unsafe {
-        stm32::NVIC::unmask(hal::stm32::Interrupt::TIM2);
+        pac::NVIC::unmask(hal::pac::Interrupt::TIM2);
     }
 }
 
 fn stopwatch_stop<'cs>(_cs: &'cs CriticalSection) {
-    stm32::NVIC::mask(hal::stm32::Interrupt::TIM2);
+    pac::NVIC::mask(hal::pac::Interrupt::TIM2);
 }
 
 // Formatting requires the arrayvec crate
