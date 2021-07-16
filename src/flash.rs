@@ -32,6 +32,7 @@ impl Error {
 }
 
 /// Flash methods implemented for `stm32::FLASH`
+#[allow(clippy::len_without_is_empty)]
 pub trait FlashExt {
     /// Memory-mapped address
     fn address(&self) -> usize;

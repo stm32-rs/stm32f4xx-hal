@@ -603,17 +603,17 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     fn mode<M: PinMode>(&mut self) {
         let offset = 2 * N;
         unsafe {
-            &(*Gpio::<P>::ptr()).pupdr.modify(|r, w| {
+            (*Gpio::<P>::ptr()).pupdr.modify(|r, w| {
                 w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::PUPDR) << offset))
             });
 
             if let Some(otyper) = M::OTYPER {
-                &(*Gpio::<P>::ptr())
+                (*Gpio::<P>::ptr())
                     .otyper
                     .modify(|r, w| w.bits(r.bits() & !(0b1 << N) | (u32::from(otyper) << N)));
             }
 
-            &(*Gpio::<P>::ptr()).moder.modify(|r, w| {
+            (*Gpio::<P>::ptr()).moder.modify(|r, w| {
                 w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::MODER) << offset))
             });
         }
