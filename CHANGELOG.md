@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added missing error flags for dma streams [#318]
 - Added PWM input capability to all compatable timers [#271]
 - [breaking-change] `gpio::Edge::{RISING, FALLING, RISING_FALLING}` are renamed to `Rising`, `Falling`, `RisingFalling`, respectively.
+- Bidi mode support for SPI [#349]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 [#271] https://github.com/stm32-rs/stm32f4xx-hal/pull/271
@@ -46,6 +47,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#309]: https://github.com/stm32-rs/stm32f4xx-hal/pull/309
 [#313]: https://github.com/stm32-rs/stm32f4xx-hal/pull/313
 [#318]: https://github.com/stm32-rs/stm32f4xx-hal/pull/318
+[#349]: https://github.com/stm32-rs/stm32f4xx-hal/pull/349
 
 ### Changed
 
