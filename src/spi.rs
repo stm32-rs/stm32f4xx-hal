@@ -587,12 +587,56 @@ where
     }
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS> where
-    SPI: Instance
+impl<SPI, PINS> embedded_hal::blocking::spi::Transfer<u8> for Spi<SPI, PINS>
+where
+    SPI: Instance,
 {
+    type Error = Error;
+
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        use spi::FullDuplex;
+        for word in words.iter_mut() {
+            nb::block!(self.send(*word))?;
+            *word = nb::block!(self.read())?;
+        }
+
+        Ok(words)
+    }
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<SPI, PINS> where
-    SPI: Instance
+impl<SPI, PINS> embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS>
+where
+    SPI: Instance,
 {
+    type Error = Error;
+
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        use spi::FullDuplex;
+        for word in words {
+            nb::block!(self.send(*word))?;
+            nb::block!(self.read())?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<SPI, PINS> embedded_hal::blocking::spi::WriteIter<u8> for Spi<SPI, PINS>
+where
+    SPI: Instance,
+{
+    type Error = Error;
+
+    fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
+    where
+        WI: IntoIterator<Item = u8>,
+    {
+        use spi::FullDuplex;
+        for word in words.into_iter() {
+            nb::block!(self.send(word))?;
+            nb::block!(self.read())?;
+        }
+
+        Ok(())
+    }
 }
