@@ -719,8 +719,7 @@ where
     }
 }
 
-impl<SPI, PINS, TRANSFER_MODE> embedded_hal::blocking::spi::Write<u8>
-    for Spi<SPI, PINS, TRANSFER_MODE>
+impl<SPI, PINS> embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS, TransferModeNormal>
 where
     Self: spi::FullDuplex<u8>,
     SPI: Instance,
@@ -738,8 +737,24 @@ where
     }
 }
 
-impl<SPI, PINS, TRANSFER_MODE> embedded_hal::blocking::spi::WriteIter<u8>
-    for Spi<SPI, PINS, TRANSFER_MODE>
+impl<SPI, PINS> embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS, TransferModeBidi>
+where
+    Self: spi::FullDuplex<u8>,
+    SPI: Instance,
+{
+    type Error = <Self as spi::FullDuplex<u8>>::Error;
+
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        use spi::FullDuplex;
+        for word in words {
+            nb::block!(self.send(*word))?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<SPI, PINS> embedded_hal::blocking::spi::WriteIter<u8> for Spi<SPI, PINS, TransferModeNormal>
 where
     Self: spi::FullDuplex<u8>,
     SPI: Instance,
@@ -754,6 +769,26 @@ where
         for word in words.into_iter() {
             nb::block!(self.send(word))?;
             nb::block!(self.read())?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<SPI, PINS> embedded_hal::blocking::spi::WriteIter<u8> for Spi<SPI, PINS, TransferModeBidi>
+where
+    Self: spi::FullDuplex<u8>,
+    SPI: Instance,
+{
+    type Error = <Self as spi::FullDuplex<u8>>::Error;
+
+    fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
+    where
+        WI: IntoIterator<Item = u8>,
+    {
+        use spi::FullDuplex;
+        for word in words.into_iter() {
+            nb::block!(self.send(word))?;
         }
 
         Ok(())
