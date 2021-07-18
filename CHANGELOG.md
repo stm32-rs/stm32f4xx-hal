@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Use manual impls for blocking spi instead of `Default`.
 - Split `Stream` trait on `Stream` and `StreamISR`.
   Use const generics for `Stream` and `Channel`.
 - [breaking-change] `Timer::new` now just initializes peripheral.
