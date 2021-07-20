@@ -432,6 +432,12 @@ where
         .pre_init(mode, freq, SPI::get_frequency(&clocks))
         .init()
     }
+
+    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi> {
+        let mut dev_w_new_t_mode = self.into_mode(TransferModeBidi {});
+        dev_w_new_t_mode.enable(false);
+        dev_w_new_t_mode.init()
+    }
 }
 
 impl<SPI, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi>
@@ -462,6 +468,12 @@ where
         }
         .pre_init(mode, freq, SPI::get_frequency(&clocks))
         .init()
+    }
+
+    pub fn to_normal_transfer_mode(self) -> Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal> {
+        let mut dev_w_new_t_mode = self.into_mode(TransferModeNormal {});
+        dev_w_new_t_mode.enable(false);
+        dev_w_new_t_mode.init()
     }
 }
 
@@ -509,6 +521,26 @@ impl<SPI, PINS, TRANSFER_MODE> Spi<SPI, PINS, TRANSFER_MODE>
 where
     SPI: Instance,
 {
+    /// Convert the spi to another transfer mode.
+    fn into_mode<TRANSFER_MODE2>(
+        self,
+        transfer_mode: TRANSFER_MODE2,
+    ) -> Spi<SPI, PINS, TRANSFER_MODE2> {
+        Spi {
+            spi: self.spi,
+            pins: self.pins,
+            transfer_mode,
+        }
+    }
+
+    /// Enable/disable spi
+    pub fn enable(&mut self, enable: bool) {
+        self.spi.cr1.modify(|_, w| {
+            // spe: enable the SPI bus
+            w.spe().bit(enable)
+        });
+    }
+
     /// Pre initializing the SPI bus.
     pub fn pre_init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self {
         // disable SS output
