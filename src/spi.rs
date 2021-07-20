@@ -351,10 +351,16 @@ pub enum Event {
     Error,
 }
 
+/// Normal mode - RX and TX pins are independent
+pub struct TransferModeNormal;
+/// BIDI mode - use TX pin as RX then spi receive data
+pub struct TransferModeBidi;
+
 #[derive(Debug)]
-pub struct Spi<SPI, PINS> {
+pub struct Spi<SPI, PINS, TRANSFER_MODE> {
     spi: SPI,
     pins: PINS,
+    transfer_mode: TRANSFER_MODE,
 }
 
 // Implemented by all SPI instances
@@ -368,7 +374,7 @@ macro_rules! spi {
     ($SPI:ident: ($spi:ident)) => {
         impl Instance for $SPI {}
 
-        impl<SCK, MISO, MOSI> Spi<$SPI, (SCK, MISO, MOSI)>
+        impl<SCK, MISO, MOSI> Spi<$SPI, (SCK, MISO, MOSI), TransferModeNormal>
         where
             SCK: PinSck<$SPI>,
             MISO: PinMiso<$SPI>,
@@ -381,7 +387,7 @@ macro_rules! spi {
                 mode: Mode,
                 freq: Hertz,
                 clocks: Clocks,
-            ) -> Self {
+            ) -> Spi<$SPI, (SCK, MISO, MOSI), TransferModeNormal> {
                 Self::new(spi, pins, mode, freq, clocks)
             }
         }
@@ -403,7 +409,7 @@ spi! { SPI5: (spi5) }
 #[cfg(feature = "spi6")]
 spi! { SPI6: (spi6) }
 
-impl<SPI, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI)>
+impl<SPI, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal>
 where
     SPI: Instance,
     SCK: PinSck<SPI>,
@@ -418,15 +424,125 @@ where
             SPI::reset(rcc);
         }
 
-        Spi { spi, pins }.init(mode, freq, SPI::get_frequency(&clocks))
+        Spi {
+            spi,
+            pins,
+            transfer_mode: TransferModeNormal,
+        }
+        .pre_init(mode, freq, SPI::get_frequency(&clocks))
+        .init()
+    }
+
+    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi> {
+        let mut dev_w_new_t_mode = self.into_mode(TransferModeBidi {});
+        dev_w_new_t_mode.enable(false);
+        dev_w_new_t_mode.init()
     }
 }
 
-impl<SPI, PINS> Spi<SPI, PINS>
+impl<SPI, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi>
+where
+    SPI: Instance,
+    SCK: PinSck<SPI>,
+    MISO: PinMiso<SPI>,
+    MOSI: PinMosi<SPI>,
+{
+    pub fn new_bidi(
+        spi: SPI,
+        pins: (SCK, MISO, MOSI),
+        mode: Mode,
+        freq: Hertz,
+        clocks: Clocks,
+    ) -> Self {
+        unsafe {
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
+            SPI::enable(rcc);
+            SPI::reset(rcc);
+        }
+
+        Spi {
+            spi,
+            pins,
+            transfer_mode: TransferModeBidi,
+        }
+        .pre_init(mode, freq, SPI::get_frequency(&clocks))
+        .init()
+    }
+
+    pub fn to_normal_transfer_mode(self) -> Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal> {
+        let mut dev_w_new_t_mode = self.into_mode(TransferModeNormal {});
+        dev_w_new_t_mode.enable(false);
+        dev_w_new_t_mode.init()
+    }
+}
+
+impl<SPI, PINS> Spi<SPI, PINS, TransferModeNormal>
 where
     SPI: Instance,
 {
-    pub fn init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self {
+    pub fn init(self) -> Self {
+        self.spi.cr1.modify(|_, w| {
+            // bidimode: 2-line unidirectional
+            w.bidimode()
+                .clear_bit()
+                .bidioe()
+                .clear_bit()
+                // spe: enable the SPI bus
+                .spe()
+                .set_bit()
+        });
+
+        self
+    }
+}
+
+impl<SPI, PINS> Spi<SPI, PINS, TransferModeBidi>
+where
+    SPI: Instance,
+{
+    pub fn init(self) -> Self {
+        self.spi.cr1.modify(|_, w| {
+            // bidimode: 1-line unidirectional
+            w.bidimode()
+                .set_bit()
+                .bidioe()
+                .set_bit()
+                // spe: enable the SPI bus
+                .spe()
+                .set_bit()
+        });
+
+        self
+    }
+}
+
+impl<SPI, PINS, TRANSFER_MODE> Spi<SPI, PINS, TRANSFER_MODE>
+where
+    SPI: Instance,
+{
+    /// Convert the spi to another transfer mode.
+    fn into_mode<TRANSFER_MODE2>(
+        self,
+        transfer_mode: TRANSFER_MODE2,
+    ) -> Spi<SPI, PINS, TRANSFER_MODE2> {
+        Spi {
+            spi: self.spi,
+            pins: self.pins,
+            transfer_mode,
+        }
+    }
+
+    /// Enable/disable spi
+    pub fn enable(&mut self, enable: bool) {
+        self.spi.cr1.modify(|_, w| {
+            // spe: enable the SPI bus
+            w.spe().bit(enable)
+        });
+    }
+
+    /// Pre initializing the SPI bus.
+    pub fn pre_init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self {
         // disable SS output
         self.spi.cr2.write(|w| w.ssoe().clear_bit());
 
@@ -466,12 +582,6 @@ where
                 // dff: 8 bit frames
                 .dff()
                 .clear_bit()
-                // bidimode: 2-line unidirectional
-                .bidimode()
-                .clear_bit()
-                // spe: enable the SPI bus
-                .spe()
-                .set_bit()
         });
 
         self
@@ -533,15 +643,9 @@ where
     pub fn free(self) -> (SPI, PINS) {
         (self.spi, self.pins)
     }
-}
 
-impl<SPI, PINS> spi::FullDuplex<u8> for Spi<SPI, PINS>
-where
-    SPI: Instance,
-{
-    type Error = Error;
-
-    fn read(&mut self) -> nb::Result<u8, Error> {
+    #[inline(always)]
+    fn check_read(&mut self) -> nb::Result<u8, Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
@@ -551,15 +655,14 @@ where
         } else if sr.crcerr().bit_is_set() {
             Error::Crc.into()
         } else if sr.rxne().bit_is_set() {
-            // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
-            // reading a half-word)
-            return Ok(unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const u8) });
+            return Ok(self.read_u8());
         } else {
             nb::Error::WouldBlock
         })
     }
 
-    fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+    #[inline(always)]
+    fn check_send(&mut self, byte: u8) -> nb::Result<(), Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
@@ -578,21 +681,148 @@ where
             });
             Error::Crc.into()
         } else if sr.txe().bit_is_set() {
-            // NOTE(write_volatile) see note above
-            unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
-            return Ok(());
+            return Ok(self.send_u8(byte));
         } else {
             nb::Error::WouldBlock
         })
     }
+
+    #[inline(always)]
+    fn read_u8(&mut self) -> u8 {
+        // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows reading a half-word)
+        unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const u8) }
+    }
+
+    #[inline(always)]
+    fn send_u8(&mut self, byte: u8) {
+        // NOTE(write_volatile) see note above
+        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
+    }
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::transfer::Default<u8> for Spi<SPI, PINS> where
-    SPI: Instance
+impl<SPI, PINS> spi::FullDuplex<u8> for Spi<SPI, PINS, TransferModeNormal>
+where
+    SPI: Instance,
 {
+    type Error = Error;
+
+    fn read(&mut self) -> nb::Result<u8, Error> {
+        self.check_read()
+    }
+
+    fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+        self.check_send(byte)
+    }
 }
 
-impl<SPI, PINS> embedded_hal::blocking::spi::write::Default<u8> for Spi<SPI, PINS> where
-    SPI: Instance
+impl<SPI, PINS> spi::FullDuplex<u8> for Spi<SPI, PINS, TransferModeBidi>
+where
+    SPI: Instance,
 {
+    type Error = Error;
+
+    fn read(&mut self) -> nb::Result<u8, Error> {
+        self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
+        self.check_read()
+    }
+
+    fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+        self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+        self.check_send(byte)
+    }
+}
+
+impl<SPI, PINS, TRANSFER_MODE> embedded_hal::blocking::spi::Transfer<u8>
+    for Spi<SPI, PINS, TRANSFER_MODE>
+where
+    Self: spi::FullDuplex<u8>,
+    SPI: Instance,
+{
+    type Error = <Self as spi::FullDuplex<u8>>::Error;
+
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        use spi::FullDuplex;
+        for word in words.iter_mut() {
+            nb::block!(self.send(*word))?;
+            *word = nb::block!(self.read())?;
+        }
+
+        Ok(words)
+    }
+}
+
+impl<SPI, PINS> embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS, TransferModeNormal>
+where
+    Self: spi::FullDuplex<u8>,
+    SPI: Instance,
+{
+    type Error = <Self as spi::FullDuplex<u8>>::Error;
+
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        use spi::FullDuplex;
+        for word in words {
+            nb::block!(self.send(*word))?;
+            nb::block!(self.read())?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<SPI, PINS> embedded_hal::blocking::spi::Write<u8> for Spi<SPI, PINS, TransferModeBidi>
+where
+    Self: spi::FullDuplex<u8>,
+    SPI: Instance,
+{
+    type Error = <Self as spi::FullDuplex<u8>>::Error;
+
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        use spi::FullDuplex;
+        for word in words {
+            nb::block!(self.send(*word))?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<SPI, PINS> embedded_hal::blocking::spi::WriteIter<u8> for Spi<SPI, PINS, TransferModeNormal>
+where
+    Self: spi::FullDuplex<u8>,
+    SPI: Instance,
+{
+    type Error = <Self as spi::FullDuplex<u8>>::Error;
+
+    fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
+    where
+        WI: IntoIterator<Item = u8>,
+    {
+        use spi::FullDuplex;
+        for word in words.into_iter() {
+            nb::block!(self.send(word))?;
+            nb::block!(self.read())?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<SPI, PINS> embedded_hal::blocking::spi::WriteIter<u8> for Spi<SPI, PINS, TransferModeBidi>
+where
+    Self: spi::FullDuplex<u8>,
+    SPI: Instance,
+{
+    type Error = <Self as spi::FullDuplex<u8>>::Error;
+
+    fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
+    where
+        WI: IntoIterator<Item = u8>,
+    {
+        use spi::FullDuplex;
+        for word in words.into_iter() {
+            nb::block!(self.send(word))?;
+        }
+
+        Ok(())
+    }
 }
