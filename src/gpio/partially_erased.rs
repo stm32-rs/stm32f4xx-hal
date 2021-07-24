@@ -24,7 +24,7 @@ impl<MODE, const P: char> PinExt for PEPin<MODE, P> {
     }
     #[inline(always)]
     fn port_id(&self) -> u8 {
-        P as u8 - 0x41
+        P as u8 - b'A'
     }
 }
 

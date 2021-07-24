@@ -238,7 +238,7 @@ impl<MODE, const P: char, const N: u8> PinExt for Pin<MODE, P, N> {
     }
     #[inline(always)]
     fn port_id(&self) -> u8 {
-        P as u8 - 0x41
+        P as u8 - b'A'
     }
 }
 
@@ -330,7 +330,7 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
     pub fn erase(self) -> EPin<MODE> {
-        EPin::new(P as u8 - 0x41, N)
+        EPin::new(P as u8 - b'A', N)
     }
     #[deprecated(since = "0.10.0", note = "Please use erase instead")]
     pub fn downgrade2(self) -> EPin<MODE> {
