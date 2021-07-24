@@ -343,18 +343,17 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
             Assert::<A, 16>::LESS;
         }
         let offset = 2 * { N };
-        let offset2 = 4 * { N };
-        let mode = A as u32;
         unsafe {
-            if offset2 < 32 {
+            if N < 8 {
+                let offset2 = 4 * { N };
                 (*Gpio::<P>::ptr())
                     .afrl
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2)));
+                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2)));
             } else {
-                let offset2 = offset2 - 32;
+                let offset2 = 4 * { N - 8 };
                 (*Gpio::<P>::ptr())
                     .afrh
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2)));
+                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2)));
             }
             (*Gpio::<P>::ptr())
                 .moder
