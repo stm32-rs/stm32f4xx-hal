@@ -346,14 +346,14 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
         unsafe {
             if N < 8 {
                 let offset2 = 4 * { N };
-                (*Gpio::<P>::ptr())
-                    .afrl
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2)));
+                (*Gpio::<P>::ptr()).afrl.modify(|r, w| {
+                    w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2))
+                });
             } else {
                 let offset2 = 4 * { N - 8 };
-                (*Gpio::<P>::ptr())
-                    .afrh
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2)));
+                (*Gpio::<P>::ptr()).afrh.modify(|r, w| {
+                    w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2))
+                });
             }
             (*Gpio::<P>::ptr())
                 .moder
@@ -599,22 +599,23 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     ///
     /// This violates the type state constraints from `MODE`, so callers must
     /// ensure they use this properly.
+    #[inline(always)]
     fn mode<M: PinMode>(&mut self) {
         let offset = 2 * N;
         unsafe {
-            (*Gpio::<P>::ptr()).pupdr.modify(|r, w| {
-                w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::PUPDR) << offset))
-            });
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::PUPDR << offset)));
 
             if let Some(otyper) = M::OTYPER {
                 (*Gpio::<P>::ptr())
                     .otyper
-                    .modify(|r, w| w.bits(r.bits() & !(0b1 << N) | (u32::from(otyper) << N)));
+                    .modify(|r, w| w.bits(r.bits() & !(0b1 << N) | (otyper << N)));
             }
 
-            (*Gpio::<P>::ptr()).moder.modify(|r, w| {
-                w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::MODER) << offset))
-            });
+            (*Gpio::<P>::ptr())
+                .moder
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::MODER << offset)));
         }
     }
 }
@@ -721,47 +722,47 @@ pub trait PinMode: crate::Sealed {
     // They are not part of public API.
 
     #[doc(hidden)]
-    const PUPDR: u8;
+    const PUPDR: u32;
     #[doc(hidden)]
-    const MODER: u8;
+    const MODER: u32;
     #[doc(hidden)]
-    const OTYPER: Option<u8> = None;
+    const OTYPER: Option<u32> = None;
 }
 
 impl crate::Sealed for Input<Floating> {}
 impl PinMode for Input<Floating> {
-    const PUPDR: u8 = 0b00;
-    const MODER: u8 = 0b00;
+    const PUPDR: u32 = 0b00;
+    const MODER: u32 = 0b00;
 }
 
 impl crate::Sealed for Input<PullDown> {}
 impl PinMode for Input<PullDown> {
-    const PUPDR: u8 = 0b10;
-    const MODER: u8 = 0b00;
+    const PUPDR: u32 = 0b10;
+    const MODER: u32 = 0b00;
 }
 
 impl crate::Sealed for Input<PullUp> {}
 impl PinMode for Input<PullUp> {
-    const PUPDR: u8 = 0b01;
-    const MODER: u8 = 0b00;
+    const PUPDR: u32 = 0b01;
+    const MODER: u32 = 0b00;
 }
 
 impl crate::Sealed for Analog {}
 impl PinMode for Analog {
-    const PUPDR: u8 = 0b00;
-    const MODER: u8 = 0b11;
+    const PUPDR: u32 = 0b00;
+    const MODER: u32 = 0b11;
 }
 
 impl crate::Sealed for Output<OpenDrain> {}
 impl PinMode for Output<OpenDrain> {
-    const PUPDR: u8 = 0b00;
-    const MODER: u8 = 0b01;
-    const OTYPER: Option<u8> = Some(0b1);
+    const PUPDR: u32 = 0b00;
+    const MODER: u32 = 0b01;
+    const OTYPER: Option<u32> = Some(0b1);
 }
 
 impl crate::Sealed for Output<PushPull> {}
 impl PinMode for Output<PushPull> {
-    const PUPDR: u8 = 0b00;
-    const MODER: u8 = 0b01;
-    const OTYPER: Option<u8> = Some(0b0);
+    const PUPDR: u32 = 0b00;
+    const MODER: u32 = 0b01;
+    const OTYPER: Option<u32> = Some(0b0);
 }
