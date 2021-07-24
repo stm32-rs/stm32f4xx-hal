@@ -1,12 +1,17 @@
 use super::*;
 
+pub type PEPin<MODE, const P: char> = PartiallyErasedPin<MODE, P>;
+
 /// Partially erased pin
-pub struct PEPin<MODE, const P: char> {
+///
+/// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
+/// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
+pub struct PartiallyErasedPin<MODE, const P: char> {
     i: u8,
     _mode: PhantomData<MODE>,
 }
 
-impl<MODE, const P: char> PEPin<MODE, P> {
+impl<MODE, const P: char> PartiallyErasedPin<MODE, P> {
     pub(crate) fn new(i: u8) -> Self {
         Self {
             i,
@@ -15,7 +20,7 @@ impl<MODE, const P: char> PEPin<MODE, P> {
     }
 }
 
-impl<MODE, const P: char> PinExt for PEPin<MODE, P> {
+impl<MODE, const P: char> PinExt for PartiallyErasedPin<MODE, P> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -28,7 +33,7 @@ impl<MODE, const P: char> PinExt for PEPin<MODE, P> {
     }
 }
 
-impl<MODE, const P: char> PEPin<Output<MODE>, P> {
+impl<MODE, const P: char> PartiallyErasedPin<Output<MODE>, P> {
     #[inline(always)]
     pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
@@ -83,7 +88,7 @@ impl<MODE, const P: char> PEPin<Output<MODE>, P> {
     }
 }
 
-impl<MODE, const P: char> OutputPin for PEPin<Output<MODE>, P> {
+impl<MODE, const P: char> OutputPin for PartiallyErasedPin<Output<MODE>, P> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -99,7 +104,7 @@ impl<MODE, const P: char> OutputPin for PEPin<Output<MODE>, P> {
     }
 }
 
-impl<MODE, const P: char> StatefulOutputPin for PEPin<Output<MODE>, P> {
+impl<MODE, const P: char> StatefulOutputPin for PartiallyErasedPin<Output<MODE>, P> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_set_high())
@@ -111,7 +116,7 @@ impl<MODE, const P: char> StatefulOutputPin for PEPin<Output<MODE>, P> {
     }
 }
 
-impl<MODE, const P: char> ToggleableOutputPin for PEPin<Output<MODE>, P> {
+impl<MODE, const P: char> ToggleableOutputPin for PartiallyErasedPin<Output<MODE>, P> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -121,7 +126,7 @@ impl<MODE, const P: char> ToggleableOutputPin for PEPin<Output<MODE>, P> {
     }
 }
 
-impl<const P: char> PEPin<Output<OpenDrain>, P> {
+impl<const P: char> PartiallyErasedPin<Output<OpenDrain>, P> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -134,7 +139,7 @@ impl<const P: char> PEPin<Output<OpenDrain>, P> {
     }
 }
 
-impl<const P: char> InputPin for PEPin<Output<OpenDrain>, P> {
+impl<const P: char> InputPin for PartiallyErasedPin<Output<OpenDrain>, P> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -148,7 +153,7 @@ impl<const P: char> InputPin for PEPin<Output<OpenDrain>, P> {
     }
 }
 
-impl<MODE, const P: char> PEPin<Input<MODE>, P> {
+impl<MODE, const P: char> PartiallyErasedPin<Input<MODE>, P> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -161,7 +166,7 @@ impl<MODE, const P: char> PEPin<Input<MODE>, P> {
     }
 }
 
-impl<MODE, const P: char> InputPin for PEPin<Input<MODE>, P> {
+impl<MODE, const P: char> InputPin for PartiallyErasedPin<Input<MODE>, P> {
     type Error = Infallible;
 
     #[inline(always)]

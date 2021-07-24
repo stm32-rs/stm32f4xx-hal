@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Simple doc in gpio.
 - Weaker constrains for examples.
 - Deprecate `stm32` alias.
 - Temporary change pin mode
