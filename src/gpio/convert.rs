@@ -578,13 +578,38 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     }
 
     /// Configures the pin to operate as an open drain output pin
+    /// Initial state will be low.
     pub fn into_open_drain_output(mut self) -> Pin<Output<OpenDrain>, P, N> {
         self.mode::<Output<OpenDrain>>();
         Pin::new()
     }
 
+    /// Configures the pin to operate as an open-drain output pin.
+    /// `initial_state` specifies whether the pin should be initially high or low.
+    pub fn into_open_drain_output_in_state(
+        mut self,
+        initial_state: PinState,
+    ) -> Pin<Output<OpenDrain>, P, N> {
+        self._set_state(initial_state);
+        self.mode::<Output<OpenDrain>>();
+        Pin::new()
+    }
+
     /// Configures the pin to operate as an push pull output pin
+    /// Initial state will be low.
     pub fn into_push_pull_output(mut self) -> Pin<Output<PushPull>, P, N> {
+        self._set_low();
+        self.mode::<Output<PushPull>>();
+        Pin::new()
+    }
+
+    /// Configures the pin to operate as an push-pull output pin.
+    /// `initial_state` specifies whether the pin should be initially high or low.
+    pub fn into_push_pull_output_in_state(
+        mut self,
+        initial_state: PinState,
+    ) -> Pin<Output<PushPull>, P, N> {
+        self._set_state(initial_state);
         self.mode::<Output<PushPull>>();
         Pin::new()
     }
@@ -685,9 +710,40 @@ where
     ///
     /// The closure `f` is called with the reconfigured pin. After it returns,
     /// the pin will be configured back.
+    /// The value of the pin after conversion is undefined. If you
+    /// want to control it, use `with_open_drain_output_in_state`
     pub fn with_open_drain_output<R>(
         &mut self,
         f: impl FnOnce(&mut Pin<Output<OpenDrain>, P, N>) -> R,
+    ) -> R {
+        self.with_mode(f)
+    }
+
+    /// Temporarily configures this pin as an open drain output .
+    ///
+    /// The closure `f` is called with the reconfigured pin. After it returns,
+    /// the pin will be configured back.
+    /// Note that the new state is set slightly before conversion
+    /// happens. This can cause a short output glitch if switching
+    /// between output modes
+    pub fn with_open_drain_output_in_state<R>(
+        &mut self,
+        state: PinState,
+        f: impl FnOnce(&mut Pin<Output<OpenDrain>, P, N>) -> R,
+    ) -> R {
+        self._set_state(state);
+        self.with_mode(f)
+    }
+
+    /// Temporarily configures this pin as a push-pull output.
+    ///
+    /// The closure `f` is called with the reconfigured pin. After it returns,
+    /// the pin will be configured back.
+    /// The value of the pin after conversion is undefined. If you
+    /// want to control it, use `with_push_pull_output_in_state`
+    pub fn with_push_pull_output<R>(
+        &mut self,
+        f: impl FnOnce(&mut Pin<Output<PushPull>, P, N>) -> R,
     ) -> R {
         self.with_mode(f)
     }
@@ -696,10 +752,15 @@ where
     ///
     /// The closure `f` is called with the reconfigured pin. After it returns,
     /// the pin will be configured back.
-    pub fn with_push_pull_output<R>(
+    /// Note that the new state is set slightly before conversion
+    /// happens. This can cause a short output glitch if switching
+    /// between output modes
+    pub fn with_push_pull_output_in_state<R>(
         &mut self,
+        state: PinState,
         f: impl FnOnce(&mut Pin<Output<PushPull>, P, N>) -> R,
     ) -> R {
+        self._set_state(state);
         self.with_mode(f)
     }
 }

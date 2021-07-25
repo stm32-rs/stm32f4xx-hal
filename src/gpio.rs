@@ -41,7 +41,7 @@
 //! new struct with the correct mode that you can use the input or output functions on.
 //!
 //! If you need a more temporary mode change, and can not use the `into_<mode>` functions for
-//! ownership reasons, you can use the `as_<mode>` functions to temporarily change the pin type, do
+//! ownership reasons, you can use the closure based `with_<mode>` functions to temporarily change the pin type, do
 //! some output or input, and then have it change back once done.
 
 use core::convert::Infallible;
@@ -386,21 +386,49 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     }
 }
 
+impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
+    /// Set the output of the pin regardless of its mode.
+    /// Primarily used to set the output value of the pin
+    /// before changing its mode to an output to avoid
+    /// a short spike of an incorrect value
+    #[inline(always)]
+    fn _set_state(&mut self, state: PinState) {
+        match state {
+            PinState::High => self._set_high(),
+            PinState::Low => self._set_low(),
+        }
+    }
+    #[inline(always)]
+    fn _set_high(&mut self) {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << N)) }
+    }
+    #[inline(always)]
+    fn _set_low(&mut self) {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << (16 + N))) }
+    }
+    #[inline(always)]
+    fn _is_set_low(&self) -> bool {
+        // NOTE(unsafe) atomic read with no side effects
+        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << N) == 0 }
+    }
+    #[inline(always)]
+    fn _is_low(&self) -> bool {
+        // NOTE(unsafe) atomic read with no side effects
+        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << N) == 0 }
+    }
+}
+
 impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
     #[inline(always)]
     pub fn set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << { N })) }
+        self._set_high()
     }
 
     #[inline(always)]
     pub fn set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .bsrr
-                .write(|w| w.bits(1 << ({ N } + 16)))
-        }
+        self._set_low()
     }
 
     #[inline(always)]
@@ -427,8 +455,7 @@ impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
 
     #[inline(always)]
     pub fn is_set_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << { N }) == 0 }
+        self._is_set_low()
     }
 
     #[inline(always)]
@@ -487,8 +514,7 @@ impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
 
     #[inline(always)]
     pub fn is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 }
+        self._is_low()
     }
 }
 
@@ -514,8 +540,7 @@ impl<MODE, const P: char, const N: u8> Pin<Input<MODE>, P, N> {
 
     #[inline(always)]
     pub fn is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 }
+        self._is_low()
     }
 }
 

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Simple doc in gpio.
+- Simple docs in gpio. `into_<output>_in_state`, `with_<output>_in_state`
 - Weaker constrains for examples.
 - Deprecate `stm32` alias.
 - Temporary change pin mode
@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- [breaking-change] `into_<output>` fns set pin in `Low` state by default
 - Use manual impls for blocking spi instead of `Default`.
 - Split `Stream` trait on `Stream` and `StreamISR`.
   Use const generics for `Stream` and `Channel`.
