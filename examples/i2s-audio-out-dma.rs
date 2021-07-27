@@ -60,8 +60,8 @@ use stm32f4xx_hal::i2c::I2c;
 use stm32f4xx_hal::i2s::I2s;
 use stm32f4xx_hal::pac::{interrupt, Interrupt};
 use stm32f4xx_hal::pac::{CorePeripherals, Peripherals};
+use stm32f4xx_hal::pac::{DMA1, SPI3};
 use stm32f4xx_hal::prelude::*;
-use stm32f4xx_hal::stm32::{DMA1, SPI3};
 
 use cs43l22::{Cs43L22, Register};
 

@@ -6,15 +6,14 @@ use cortex_m_semihosting::{hprint, hprintln};
 use panic_semihosting as _;
 
 use stm32f4xx_hal::{
-    delay,
+    delay, pac,
     prelude::*,
     sdio::{ClockFreq, Sdio},
-    stm32,
 };
 
 #[entry]
 fn main() -> ! {
-    let device = stm32::Peripherals::take().unwrap();
+    let device = pac::Peripherals::take().unwrap();
     let core = cortex_m::Peripherals::take().unwrap();
 
     let rcc = device.RCC.constrain();

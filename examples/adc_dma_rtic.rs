@@ -12,17 +12,16 @@ use stm32f4xx_hal::{
         Adc, Temperature,
     },
     dma::{config::DmaConfig, PeripheralToMemory, Stream0, StreamsTuple, Transfer},
+    pac::{self, ADC1, DMA2},
     prelude::*,
     signature::{VtempCal110, VtempCal30},
-    stm32,
-    stm32::{ADC1, DMA2},
 };
 
 const POLLING_PERIOD: u32 = 168_000_000 / 2;
 
 type DMATransfer = Transfer<Stream0<DMA2>, Adc<ADC1>, PeripheralToMemory, &'static mut [u16; 2], 0>;
 
-#[rtic::app(device = stm32f4xx_hal::stm32, peripherals = true, monotonic = rtic::cyccnt::CYCCNT)]
+#[rtic::app(device = stm32f4xx_hal::pac, peripherals = true, monotonic = rtic::cyccnt::CYCCNT)]
 const APP: () = {
     struct Resources {
         transfer: DMATransfer,
@@ -31,7 +30,7 @@ const APP: () = {
 
     #[init(schedule=[polling])]
     fn init(cx: init::Context) -> init::LateResources {
-        let device: stm32::Peripherals = cx.device;
+        let device: pac::Peripherals = cx.device;
 
         let rcc = device.RCC.constrain();
         let _clocks = rcc

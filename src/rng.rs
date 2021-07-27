@@ -12,7 +12,7 @@
 //!
 //! Minimal working example:
 //! ```
-//! let dp = stm32::Peripherals::take().unwrap();
+//! let dp = pac::Peripherals::take().unwrap();
 //! let rcc = dp.RCC.constrain();
 //! let clocks = rcc.cfgr.require_pll48clk().freeze();
 //! let mut rand_source = dp.RNG.constrain(clocks);
@@ -52,12 +52,12 @@ impl From<ErrorKind> for rand_core::Error {
 }
 
 /// Helper trait to implement the `constrain` method for the
-/// [RNG peripheral](crate::stm32::RNG) which is how the [Rng] struct is
+/// [RNG peripheral](crate::pac::RNG) which is how the [Rng] struct is
 /// created.
 ///
 /// Usage:
 /// ```
-/// let dp = stm32::Peripherals::take().unwrap();
+/// let dp = pac::Peripherals::take().unwrap();
 /// let rcc = dp.RCC.constrain();
 /// let clocks = rcc.cfgr.require_pll48clk().freeze();
 /// let mut rand_source = dp.RNG.constrain(clocks);
@@ -138,7 +138,7 @@ impl Rng {
         }
     }
 
-    /// Releases ownership of the [RNG](crate::stm32::RNG) peripheral object
+    /// Releases ownership of the [RNG](crate::pac::RNG) peripheral object
     /// (after which `self` can't be used anymore).
     pub fn release(self) -> RNG {
         self.rb

@@ -488,22 +488,7 @@ channel_impl!(
     TIM4, PinC4, PD15, 2;
 );
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(feature = "tim8")]
 channel_impl!(
     TIM8, PinC1, PC6, 3;
     TIM8, PinC2, PC7, 3;

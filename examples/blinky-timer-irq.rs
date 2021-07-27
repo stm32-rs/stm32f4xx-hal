@@ -12,8 +12,8 @@ use stm32f4xx_hal as hal;
 
 use crate::hal::{
     gpio::{gpioa, Output, PushPull},
+    pac::{interrupt, Interrupt, Peripherals, TIM2},
     prelude::*,
-    stm32::{interrupt, Interrupt, Peripherals, TIM2},
     timer::{CountDownTimer, Event, Timer},
 };
 
@@ -30,10 +30,10 @@ use embedded_hal::timer::CountDown;
 
 // A type definition for the GPIO pin to be used for our LED
 // For the onboard nucleo LED, use gpioa::PA5 or gpiob::PB13 depending your model
-type LEDPIN = gpioa::PA5<Output<PushPull>>;
+type LedPin = gpioa::PA5<Output<PushPull>>;
 
 // Make LED pin globally available
-static G_LED: Mutex<RefCell<Option<LEDPIN>>> = Mutex::new(RefCell::new(None));
+static G_LED: Mutex<RefCell<Option<LedPin>>> = Mutex::new(RefCell::new(None));
 
 // Make timer interrupt registers globally available
 static G_TIM: Mutex<RefCell<Option<CountDownTimer<TIM2>>>> = Mutex::new(RefCell::new(None));
@@ -42,7 +42,7 @@ static G_TIM: Mutex<RefCell<Option<CountDownTimer<TIM2>>>> = Mutex::new(RefCell:
 // This specific interrupt will "trip" when the timer TIM2 times out
 #[interrupt]
 fn TIM2() {
-    static mut LED: Option<LEDPIN> = None;
+    static mut LED: Option<LedPin> = None;
     static mut TIM: Option<CountDownTimer<TIM2>> = None;
 
     let led = LED.get_or_insert_with(|| {

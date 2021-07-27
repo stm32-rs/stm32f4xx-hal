@@ -343,18 +343,17 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
             Assert::<A, 16>::LESS;
         }
         let offset = 2 * { N };
-        let offset2 = 4 * { N };
-        let mode = A as u32;
         unsafe {
-            if offset2 < 32 {
-                (*Gpio::<P>::ptr())
-                    .afrl
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2)));
+            if N < 8 {
+                let offset2 = 4 * { N };
+                (*Gpio::<P>::ptr()).afrl.modify(|r, w| {
+                    w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2))
+                });
             } else {
-                let offset2 = offset2 - 32;
-                (*Gpio::<P>::ptr())
-                    .afrh
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2)));
+                let offset2 = 4 * { N - 8 };
+                (*Gpio::<P>::ptr()).afrh.modify(|r, w| {
+                    w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2))
+                });
             }
             (*Gpio::<P>::ptr())
                 .moder
@@ -579,13 +578,38 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     }
 
     /// Configures the pin to operate as an open drain output pin
+    /// Initial state will be low.
     pub fn into_open_drain_output(mut self) -> Pin<Output<OpenDrain>, P, N> {
         self.mode::<Output<OpenDrain>>();
         Pin::new()
     }
 
+    /// Configures the pin to operate as an open-drain output pin.
+    /// `initial_state` specifies whether the pin should be initially high or low.
+    pub fn into_open_drain_output_in_state(
+        mut self,
+        initial_state: PinState,
+    ) -> Pin<Output<OpenDrain>, P, N> {
+        self._set_state(initial_state);
+        self.mode::<Output<OpenDrain>>();
+        Pin::new()
+    }
+
     /// Configures the pin to operate as an push pull output pin
+    /// Initial state will be low.
     pub fn into_push_pull_output(mut self) -> Pin<Output<PushPull>, P, N> {
+        self._set_low();
+        self.mode::<Output<PushPull>>();
+        Pin::new()
+    }
+
+    /// Configures the pin to operate as an push-pull output pin.
+    /// `initial_state` specifies whether the pin should be initially high or low.
+    pub fn into_push_pull_output_in_state(
+        mut self,
+        initial_state: PinState,
+    ) -> Pin<Output<PushPull>, P, N> {
+        self._set_state(initial_state);
         self.mode::<Output<PushPull>>();
         Pin::new()
     }
@@ -600,22 +624,23 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     ///
     /// This violates the type state constraints from `MODE`, so callers must
     /// ensure they use this properly.
+    #[inline(always)]
     fn mode<M: PinMode>(&mut self) {
         let offset = 2 * N;
         unsafe {
-            (*Gpio::<P>::ptr()).pupdr.modify(|r, w| {
-                w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::PUPDR) << offset))
-            });
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::PUPDR << offset)));
 
             if let Some(otyper) = M::OTYPER {
                 (*Gpio::<P>::ptr())
                     .otyper
-                    .modify(|r, w| w.bits(r.bits() & !(0b1 << N) | (u32::from(otyper) << N)));
+                    .modify(|r, w| w.bits(r.bits() & !(0b1 << N) | (otyper << N)));
             }
 
-            (*Gpio::<P>::ptr()).moder.modify(|r, w| {
-                w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::MODER) << offset))
-            });
+            (*Gpio::<P>::ptr())
+                .moder
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::MODER << offset)));
         }
     }
 }
@@ -685,9 +710,40 @@ where
     ///
     /// The closure `f` is called with the reconfigured pin. After it returns,
     /// the pin will be configured back.
+    /// The value of the pin after conversion is undefined. If you
+    /// want to control it, use `with_open_drain_output_in_state`
     pub fn with_open_drain_output<R>(
         &mut self,
         f: impl FnOnce(&mut Pin<Output<OpenDrain>, P, N>) -> R,
+    ) -> R {
+        self.with_mode(f)
+    }
+
+    /// Temporarily configures this pin as an open drain output .
+    ///
+    /// The closure `f` is called with the reconfigured pin. After it returns,
+    /// the pin will be configured back.
+    /// Note that the new state is set slightly before conversion
+    /// happens. This can cause a short output glitch if switching
+    /// between output modes
+    pub fn with_open_drain_output_in_state<R>(
+        &mut self,
+        state: PinState,
+        f: impl FnOnce(&mut Pin<Output<OpenDrain>, P, N>) -> R,
+    ) -> R {
+        self._set_state(state);
+        self.with_mode(f)
+    }
+
+    /// Temporarily configures this pin as a push-pull output.
+    ///
+    /// The closure `f` is called with the reconfigured pin. After it returns,
+    /// the pin will be configured back.
+    /// The value of the pin after conversion is undefined. If you
+    /// want to control it, use `with_push_pull_output_in_state`
+    pub fn with_push_pull_output<R>(
+        &mut self,
+        f: impl FnOnce(&mut Pin<Output<PushPull>, P, N>) -> R,
     ) -> R {
         self.with_mode(f)
     }
@@ -696,10 +752,15 @@ where
     ///
     /// The closure `f` is called with the reconfigured pin. After it returns,
     /// the pin will be configured back.
-    pub fn with_push_pull_output<R>(
+    /// Note that the new state is set slightly before conversion
+    /// happens. This can cause a short output glitch if switching
+    /// between output modes
+    pub fn with_push_pull_output_in_state<R>(
         &mut self,
+        state: PinState,
         f: impl FnOnce(&mut Pin<Output<PushPull>, P, N>) -> R,
     ) -> R {
+        self._set_state(state);
         self.with_mode(f)
     }
 }
@@ -722,47 +783,47 @@ pub trait PinMode: crate::Sealed {
     // They are not part of public API.
 
     #[doc(hidden)]
-    const PUPDR: u8;
+    const PUPDR: u32;
     #[doc(hidden)]
-    const MODER: u8;
+    const MODER: u32;
     #[doc(hidden)]
-    const OTYPER: Option<u8> = None;
+    const OTYPER: Option<u32> = None;
 }
 
 impl crate::Sealed for Input<Floating> {}
 impl PinMode for Input<Floating> {
-    const PUPDR: u8 = 0b00;
-    const MODER: u8 = 0b00;
+    const PUPDR: u32 = 0b00;
+    const MODER: u32 = 0b00;
 }
 
 impl crate::Sealed for Input<PullDown> {}
 impl PinMode for Input<PullDown> {
-    const PUPDR: u8 = 0b10;
-    const MODER: u8 = 0b00;
+    const PUPDR: u32 = 0b10;
+    const MODER: u32 = 0b00;
 }
 
 impl crate::Sealed for Input<PullUp> {}
 impl PinMode for Input<PullUp> {
-    const PUPDR: u8 = 0b01;
-    const MODER: u8 = 0b00;
+    const PUPDR: u32 = 0b01;
+    const MODER: u32 = 0b00;
 }
 
 impl crate::Sealed for Analog {}
 impl PinMode for Analog {
-    const PUPDR: u8 = 0b00;
-    const MODER: u8 = 0b11;
+    const PUPDR: u32 = 0b00;
+    const MODER: u32 = 0b11;
 }
 
 impl crate::Sealed for Output<OpenDrain> {}
 impl PinMode for Output<OpenDrain> {
-    const PUPDR: u8 = 0b00;
-    const MODER: u8 = 0b01;
-    const OTYPER: Option<u8> = Some(0b1);
+    const PUPDR: u32 = 0b00;
+    const MODER: u32 = 0b01;
+    const OTYPER: Option<u32> = Some(0b1);
 }
 
 impl crate::Sealed for Output<PushPull> {}
 impl PinMode for Output<PushPull> {
-    const PUPDR: u8 = 0b00;
-    const MODER: u8 = 0b01;
-    const OTYPER: Option<u8> = Some(0b0);
+    const PUPDR: u32 = 0b00;
+    const MODER: u32 = 0b01;
+    const OTYPER: Option<u32> = Some(0b0);
 }

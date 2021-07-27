@@ -12,14 +12,13 @@
 // Halt on panic
 use panic_halt as _;
 
-use cortex_m;
 use cortex_m_rt::entry;
 use embedded_hal::Direction as RotaryDirection;
-use stm32f4xx_hal::{delay::Delay, prelude::*, qei::Qei, stm32};
+use stm32f4xx_hal::{delay::Delay, pac, prelude::*, qei::Qei};
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().expect("Failed to get stm32 peripherals");
+    let dp = pac::Peripherals::take().expect("Failed to get stm32 peripherals");
     let cp = cortex_m::peripheral::Peripherals::take().expect("Failed to get cortex_m peripherals");
 
     // Set up the LED. This is pin C13 on the "black pill" USB C board here:

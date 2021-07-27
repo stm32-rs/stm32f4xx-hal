@@ -1,5 +1,5 @@
+use crate::pac::FLASH;
 use crate::signature::FlashSize;
-use crate::stm32::FLASH;
 use core::{ptr, slice};
 
 /// Flash erase/program error
@@ -31,7 +31,7 @@ impl Error {
     }
 }
 
-/// Flash methods implemented for `stm32::FLASH`
+/// Flash methods implemented for `pac::FLASH`
 #[allow(clippy::len_without_is_empty)]
 pub trait FlashExt {
     /// Memory-mapped address

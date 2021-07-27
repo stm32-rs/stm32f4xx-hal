@@ -681,7 +681,8 @@ where
             });
             Error::Crc.into()
         } else if sr.txe().bit_is_set() {
-            return Ok(self.send_u8(byte));
+            self.send_u8(byte);
+            return Ok(());
         } else {
             nb::Error::WouldBlock
         })

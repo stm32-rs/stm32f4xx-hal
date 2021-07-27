@@ -7,14 +7,14 @@ use panic_halt as _;
 
 use cortex_m_rt::entry;
 use stm32f4xx_hal::otg_fs::{UsbBus, USB};
-use stm32f4xx_hal::{prelude::*, stm32};
+use stm32f4xx_hal::{pac, prelude::*};
 use usb_device::prelude::*;
 
 static mut EP_MEMORY: [u32; 1024] = [0; 1024];
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
 
     let rcc = dp.RCC.constrain();
 

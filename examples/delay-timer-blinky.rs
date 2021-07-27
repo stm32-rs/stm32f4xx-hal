@@ -1,22 +1,22 @@
 //! Demonstrate the use of a blocking `Delay` using TIM5 general-purpose timer.
 
 #![deny(unsafe_code)]
+#![allow(clippy::empty_loop)]
 #![no_main]
 #![no_std]
 
 // Halt on panic
 use panic_halt as _; // panic handler
 
-use cortex_m;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{prelude::*, stm32};
+use crate::hal::{pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
     if let (Some(dp), Some(_cp)) = (
-        stm32::Peripherals::take(),
+        pac::Peripherals::take(),
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the LED. On the Mini-F4 it's connected to pin PC13.

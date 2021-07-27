@@ -1,4 +1,48 @@
 //! General Purpose Input / Output
+//!
+//! The GPIO pins are organised into groups of 16 pins which can be accessed through the
+//! `gpioa`, `gpiob`... modules. To get access to the pins, you first need to convert them into a
+//! HAL designed struct from the `pac` struct using the [split](trait.GpioExt.html#tymethod.split) function.
+//! ```rust
+//! // Acquire the GPIOC peripheral
+//! // NOTE: `dp` is the device peripherals from the `PAC` crate
+//! let mut gpioa = dp.GPIOA.split();
+//! ```
+//!
+//! This gives you a struct containing all the pins `px0..px15`.
+//! By default pins are in floating input mode. You can change their modes.
+//! For example, to set `pa5` high, you would call
+//!
+//! ```rust
+//! let output = gpioa.pa5.into_push_pull_output();
+//! output.set_high();
+//! ```
+//!
+//! ## Modes
+//!
+//! Each GPIO pin can be set to various modes:
+//!
+//! - **Alternate**: Pin mode required when the pin is driven by other peripherals
+//! - **AlternateOD**: Pin mode required when the pin is driven by other peripherals and has open drain
+//! - **Analog**: Analog input to be used with ADC.
+//! - Input
+//!     - **PullUp**: Input connected to high with a weak pull up resistor. Will be high when nothing
+//!     is connected
+//!     - **PullDown**: Input connected to high with a weak pull up resistor. Will be low when nothing
+//!     is connected
+//!     - **Floating**: Input not pulled to high or low. Will be undefined when nothing is connected
+//! - Output
+//!     - **PushPull**: Output which either drives the pin high or low
+//!     - **OpenDrain**: Output which leaves the gate floating, or pulls it do ground in drain
+//!     mode. Can be used as an input in the `open` configuration
+//!
+//! ## Changing modes
+//! The simplest way to change the pin mode is to use the `into_<mode>` functions. These return a
+//! new struct with the correct mode that you can use the input or output functions on.
+//!
+//! If you need a more temporary mode change, and can not use the `into_<mode>` functions for
+//! ownership reasons, you can use the closure based `with_<mode>` functions to temporarily change the pin type, do
+//! some output or input, and then have it change back once done.
 
 use core::convert::Infallible;
 use core::marker::PhantomData;
@@ -10,9 +54,9 @@ use crate::syscfg::SysCfg;
 
 mod convert;
 mod partially_erased;
-pub use partially_erased::PEPin;
+pub use partially_erased::{PEPin, PartiallyErasedPin};
 mod erased;
-pub use erased::EPin;
+pub use erased::{EPin, ErasedPin};
 
 /// A filler pin type
 pub struct NoPin;
@@ -219,7 +263,11 @@ where
     }
 }
 
-/// Pin
+/// Generic pin type
+///
+/// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
+/// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
+/// - `N` is pin number: from `0` to `15`.
 pub struct Pin<MODE, const P: char, const N: u8> {
     _mode: PhantomData<MODE>,
 }
@@ -238,7 +286,7 @@ impl<MODE, const P: char, const N: u8> PinExt for Pin<MODE, P, N> {
     }
     #[inline(always)]
     fn port_id(&self) -> u8 {
-        P as u8 - 0x41
+        P as u8 - b'A'
     }
 }
 
@@ -330,7 +378,7 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
     pub fn erase(self) -> EPin<MODE> {
-        EPin::new(P as u8 - 0x41, N)
+        EPin::new(P as u8 - b'A', N)
     }
     #[deprecated(since = "0.10.0", note = "Please use erase instead")]
     pub fn downgrade2(self) -> EPin<MODE> {
@@ -338,21 +386,49 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     }
 }
 
+impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
+    /// Set the output of the pin regardless of its mode.
+    /// Primarily used to set the output value of the pin
+    /// before changing its mode to an output to avoid
+    /// a short spike of an incorrect value
+    #[inline(always)]
+    fn _set_state(&mut self, state: PinState) {
+        match state {
+            PinState::High => self._set_high(),
+            PinState::Low => self._set_low(),
+        }
+    }
+    #[inline(always)]
+    fn _set_high(&mut self) {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << N)) }
+    }
+    #[inline(always)]
+    fn _set_low(&mut self) {
+        // NOTE(unsafe) atomic write to a stateless register
+        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << (16 + N))) }
+    }
+    #[inline(always)]
+    fn _is_set_low(&self) -> bool {
+        // NOTE(unsafe) atomic read with no side effects
+        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << N) == 0 }
+    }
+    #[inline(always)]
+    fn _is_low(&self) -> bool {
+        // NOTE(unsafe) atomic read with no side effects
+        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << N) == 0 }
+    }
+}
+
 impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
     #[inline(always)]
     pub fn set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << { N })) }
+        self._set_high()
     }
 
     #[inline(always)]
     pub fn set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .bsrr
-                .write(|w| w.bits(1 << ({ N } + 16)))
-        }
+        self._set_low()
     }
 
     #[inline(always)]
@@ -379,8 +455,7 @@ impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
 
     #[inline(always)]
     pub fn is_set_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << { N }) == 0 }
+        self._is_set_low()
     }
 
     #[inline(always)]
@@ -439,8 +514,7 @@ impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
 
     #[inline(always)]
     pub fn is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 }
+        self._is_low()
     }
 }
 
@@ -466,8 +540,7 @@ impl<MODE, const P: char, const N: u8> Pin<Input<MODE>, P, N> {
 
     #[inline(always)]
     pub fn is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << { N }) == 0 }
+        self._is_low()
     }
 }
 

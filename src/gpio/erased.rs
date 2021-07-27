@@ -1,13 +1,17 @@
 use super::*;
 
+pub type EPin<MODE> = ErasedPin<MODE>;
+
 /// Fully erased pin
-pub struct EPin<MODE> {
+///
+/// `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
+pub struct ErasedPin<MODE> {
     // Bits 0-3: Pin, Bits 4-7: Port
     pin_port: u8,
     _mode: PhantomData<MODE>,
 }
 
-impl<MODE> PinExt for EPin<MODE> {
+impl<MODE> PinExt for ErasedPin<MODE> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -20,7 +24,7 @@ impl<MODE> PinExt for EPin<MODE> {
     }
 }
 
-impl<MODE> EPin<MODE> {
+impl<MODE> ErasedPin<MODE> {
     pub(crate) fn new(port: u8, pin: u8) -> Self {
         Self {
             pin_port: port << 4 | pin,
@@ -36,7 +40,7 @@ impl<MODE> EPin<MODE> {
         // - GPIOA register is available on all chips
         // - all gpio register blocks have the same layout
         // - consecutive gpio register blocks have the same offset between them, namely 0x0400
-        // - EPin::new was called with a valid port
+        // - ErasedPin::new was called with a valid port
 
         // FIXME could be calculated after const_raw_ptr_to_usize_cast stabilization #51910
         const GPIO_REGISTER_OFFSET: usize = 0x0400;
@@ -49,7 +53,7 @@ impl<MODE> EPin<MODE> {
     }
 }
 
-impl<MODE> EPin<Output<MODE>> {
+impl<MODE> ErasedPin<Output<MODE>> {
     #[inline(always)]
     pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
@@ -103,7 +107,7 @@ impl<MODE> EPin<Output<MODE>> {
     }
 }
 
-impl<MODE> OutputPin for EPin<Output<MODE>> {
+impl<MODE> OutputPin for ErasedPin<Output<MODE>> {
     type Error = core::convert::Infallible;
 
     #[inline(always)]
@@ -119,7 +123,7 @@ impl<MODE> OutputPin for EPin<Output<MODE>> {
     }
 }
 
-impl<MODE> StatefulOutputPin for EPin<Output<MODE>> {
+impl<MODE> StatefulOutputPin for ErasedPin<Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_set_high())
@@ -131,7 +135,7 @@ impl<MODE> StatefulOutputPin for EPin<Output<MODE>> {
     }
 }
 
-impl<MODE> ToggleableOutputPin for EPin<Output<MODE>> {
+impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -141,7 +145,7 @@ impl<MODE> ToggleableOutputPin for EPin<Output<MODE>> {
     }
 }
 
-impl EPin<Output<OpenDrain>> {
+impl ErasedPin<Output<OpenDrain>> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -153,7 +157,7 @@ impl EPin<Output<OpenDrain>> {
     }
 }
 
-impl InputPin for EPin<Output<OpenDrain>> {
+impl InputPin for ErasedPin<Output<OpenDrain>> {
     type Error = core::convert::Infallible;
 
     #[inline(always)]
@@ -167,7 +171,7 @@ impl InputPin for EPin<Output<OpenDrain>> {
     }
 }
 
-impl<MODE> EPin<Input<MODE>> {
+impl<MODE> ErasedPin<Input<MODE>> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -179,7 +183,7 @@ impl<MODE> EPin<Input<MODE>> {
     }
 }
 
-impl<MODE> InputPin for EPin<Input<MODE>> {
+impl<MODE> InputPin for ErasedPin<Input<MODE>> {
     type Error = core::convert::Infallible;
 
     #[inline(always)]
