@@ -168,11 +168,10 @@ fn main() -> ! {
                 led4.set_low();
             }
             StopwatchState::Running => {
+                led4.set_low();
                 if state_led {
-                    led4.set_low();
                     led3.set_high();
                 } else {
-                    led4.set_low();
                     led3.set_low();
                 }
             }
@@ -208,13 +207,12 @@ fn main() -> ! {
 }
 
 fn setup_clocks(rcc: Rcc) -> Clocks {
-    return rcc
-        .cfgr
+    rcc.cfgr
         .hclk(180.mhz())
         .sysclk(180.mhz())
         .pclk1(45.mhz())
         .pclk2(90.mhz())
-        .freeze();
+        .freeze()
 }
 
 #[interrupt]
@@ -291,31 +289,31 @@ fn TIM2() {
     });
 }
 
-fn stopwatch_start<'cs>(cs: &'cs CriticalSection) {
+fn stopwatch_start(cs: &CriticalSection) {
     ELAPSED_MS.borrow(cs).replace(0);
     unsafe {
         pac::NVIC::unmask(hal::pac::Interrupt::TIM2);
     }
 }
 
-fn stopwatch_continue<'cs>(_cs: &'cs CriticalSection) {
+fn stopwatch_continue(_cs: &CriticalSection) {
     unsafe {
         pac::NVIC::unmask(hal::pac::Interrupt::TIM2);
     }
 }
 
-fn stopwatch_stop<'cs>(_cs: &'cs CriticalSection) {
+fn stopwatch_stop(_cs: &CriticalSection) {
     pac::NVIC::mask(hal::pac::Interrupt::TIM2);
 }
 
-fn stopwatch_reset_start<'cs>(cs: &'cs CriticalSection) {
+fn stopwatch_reset_start(cs: &CriticalSection) {
     ELAPSED_RESET_MS.borrow(cs).replace(0);
     unsafe {
         pac::NVIC::unmask(hal::pac::Interrupt::TIM2);
     }
 }
 
-fn stopwatch_reset_stop<'cs>(_cs: &'cs CriticalSection) {
+fn stopwatch_reset_stop(_cs: &CriticalSection) {
     pac::NVIC::mask(hal::pac::Interrupt::TIM2);
 }
 
@@ -332,15 +330,15 @@ fn format_elapsed(buf: &mut ArrayString<[u8; 10]>, elapsed: u32) {
 }
 
 fn elapsed_to_ms(elapsed: u32) -> u32 {
-    return elapsed % 1000;
+    elapsed % 1000
 }
 
 fn elapsed_to_s(elapsed: u32) -> u32 {
-    return (elapsed - elapsed_to_ms(elapsed)) % 60000 / 1000;
+    (elapsed - elapsed_to_ms(elapsed)) % 60000 / 1000
 }
 
 fn elapsed_to_m(elapsed: u32) -> u32 {
-    return elapsed / 60000;
+    elapsed / 60000
 }
 
 /// Convert a polar coordinate (angle/distance) into an (X, Y) coordinate centered around `CENTER`

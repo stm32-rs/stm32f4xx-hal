@@ -1,13 +1,13 @@
 //! Demonstrate the use of a blocking `Delay` using the SYST (sysclock) timer.
 
 #![deny(unsafe_code)]
+#![allow(clippy::empty_loop)]
 #![no_main]
 #![no_std]
 
 // Halt on panic
 use panic_halt as _; // panic handler
 
-use cortex_m;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 

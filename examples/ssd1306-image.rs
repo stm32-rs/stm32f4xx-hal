@@ -9,6 +9,7 @@
 //!
 //! Note that `--release` is required to fix link errors for smaller devices.
 
+#![allow(clippy::empty_loop)]
 #![no_std]
 #![no_main]
 
@@ -87,7 +88,7 @@ fn main() -> ! {
 /// Helper function - what rotation flips the screen upside down from
 /// the rotation we're in now?
 fn get_next_rotation(rotation: DisplayRotation) -> DisplayRotation {
-    return match rotation {
+    match rotation {
         DisplayRotation::Rotate0 => DisplayRotation::Rotate180,
         DisplayRotation::Rotate180 => DisplayRotation::Rotate0,
 
@@ -95,7 +96,7 @@ fn get_next_rotation(rotation: DisplayRotation) -> DisplayRotation {
         // reset to 0 degrees landscape. On most SSD1306 displays, this means down is towards
         // the flat flex coming out of the display (and up is towards the breakout board pins).
         _ => DisplayRotation::Rotate0,
-    };
+    }
 }
 
 #[exception]

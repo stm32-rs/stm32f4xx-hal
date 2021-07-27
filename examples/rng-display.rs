@@ -10,6 +10,7 @@
 //! Note that this example requires the `--release` build flag because it is too
 //! large to fit in the default `memory.x` file provided with this crate.
 
+#![allow(clippy::empty_loop)]
 #![no_std]
 #![no_main]
 

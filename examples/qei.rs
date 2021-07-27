@@ -12,7 +12,6 @@
 // Halt on panic
 use panic_halt as _;
 
-use cortex_m;
 use cortex_m_rt::entry;
 use embedded_hal::Direction as RotaryDirection;
 use stm32f4xx_hal::{delay::Delay, pac, prelude::*, qei::Qei};

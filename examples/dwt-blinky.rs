@@ -1,3 +1,4 @@
+#![allow(clippy::empty_loop)]
 #![deny(unsafe_code)]
 #![no_main]
 #![no_std]
@@ -8,7 +9,6 @@ use crate::hal::{
     pac,
     prelude::*,
 };
-use cortex_m;
 use cortex_m_rt::entry;
 use panic_halt as _;
 use stm32f4xx_hal as hal;

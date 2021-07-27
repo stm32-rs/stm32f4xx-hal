@@ -14,6 +14,7 @@
 //!
 //! Video of this example running: https://imgur.com/a/lQTQFLy
 
+#![allow(clippy::empty_loop)]
 #![no_std]
 #![no_main]
 
@@ -188,23 +189,22 @@ fn EXTI15_10() {
 }
 
 fn setup_clocks(rcc: Rcc) -> Clocks {
-    return rcc
-        .cfgr
+    rcc.cfgr
         .hclk(48.mhz())
         .sysclk(48.mhz())
         .pclk1(24.mhz())
         .pclk2(24.mhz())
-        .freeze();
+        .freeze()
 }
 
-fn stopwatch_start<'cs>(cs: &'cs CriticalSection) {
+fn stopwatch_start(cs: &CriticalSection) {
     ELAPSED_MS.borrow(cs).replace(0);
     unsafe {
         pac::NVIC::unmask(hal::pac::Interrupt::TIM2);
     }
 }
 
-fn stopwatch_stop<'cs>(_cs: &'cs CriticalSection) {
+fn stopwatch_stop(_cs: &CriticalSection) {
     pac::NVIC::mask(hal::pac::Interrupt::TIM2);
 }
 
@@ -221,13 +221,13 @@ fn format_elapsed(buf: &mut ArrayString<[u8; 10]>, elapsed: u32) {
 }
 
 fn elapsed_to_ms(elapsed: u32) -> u32 {
-    return elapsed % 1000;
+    elapsed % 1000
 }
 
 fn elapsed_to_s(elapsed: u32) -> u32 {
-    return (elapsed - elapsed_to_ms(elapsed)) % 60000 / 1000;
+    (elapsed - elapsed_to_ms(elapsed)) % 60000 / 1000
 }
 
 fn elapsed_to_m(elapsed: u32) -> u32 {
-    return elapsed / 60000;
+    elapsed / 60000
 }
