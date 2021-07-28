@@ -17,7 +17,117 @@ use crate::gpio::{gpioa, gpiob, gpioc, gpioh};
 use crate::gpio::AlternateOD;
 
 use crate::rcc::Clocks;
-use crate::time::{Hertz, KiloHertz, U32Ext};
+use crate::time::{Hertz, U32Ext};
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum DutyCycle {
+    Ratio2to1,
+    Ratio16to9,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Mode {
+    Standard {
+        frequency: Hertz,
+    },
+    Fast {
+        frequency: Hertz,
+        duty_cycle: DutyCycle,
+    },
+}
+
+impl Mode {
+    pub fn standard<F: Into<Hertz>>(frequency: F) -> Self {
+        Self::Standard {
+            frequency: frequency.into(),
+        }
+    }
+
+    pub fn fast<F: Into<Hertz>>(frequency: F, duty_cycle: DutyCycle) -> Self {
+        Self::Fast {
+            frequency: frequency.into(),
+            duty_cycle,
+        }
+    }
+
+    pub fn get_frequency(&self) -> Hertz {
+        match *self {
+            Self::Standard { frequency } => frequency,
+            Self::Fast { frequency, .. } => frequency,
+        }
+    }
+}
+
+impl<F> From<F> for Mode
+where
+    F: Into<Hertz>,
+{
+    fn from(frequency: F) -> Self {
+        let frequency: Hertz = frequency.into();
+        if frequency <= 100_000.hz() {
+            Self::Standard { frequency }
+        } else {
+            Self::Fast {
+                frequency,
+                duty_cycle: DutyCycle::Ratio2to1,
+            }
+        }
+    }
+}
+
+#[cfg(feature = "fmpi2c1")]
+#[derive(Debug, PartialEq)]
+pub enum FmpMode {
+    Standard { frequency: Hertz },
+    Fast { frequency: Hertz },
+    FastPlus { frequency: Hertz },
+}
+
+#[cfg(feature = "fmpi2c1")]
+impl FmpMode {
+    pub fn standard<F: Into<Hertz>>(frequency: F) -> Self {
+        Self::Standard {
+            frequency: frequency.into(),
+        }
+    }
+
+    pub fn fast<F: Into<Hertz>>(frequency: F) -> Self {
+        Self::Fast {
+            frequency: frequency.into(),
+        }
+    }
+
+    pub fn fast_plus<F: Into<Hertz>>(frequency: F) -> Self {
+        Self::FastPlus {
+            frequency: frequency.into(),
+        }
+    }
+
+    pub fn get_frequency(&self) -> Hertz {
+        match *self {
+            Self::Standard { frequency } => frequency,
+            Self::Fast { frequency } => frequency,
+            Self::FastPlus { frequency } => frequency,
+        }
+    }
+}
+
+#[cfg(feature = "fmpi2c1")]
+impl<F> From<F> for FmpMode
+where
+    F: Into<Hertz>,
+{
+    fn from(frequency: F) -> Self {
+        let frequency: Hertz = frequency.into();
+        if frequency <= 100_000.hz() {
+            Self::Standard { frequency }
+        } else if frequency <= 400_000.hz() {
+            Self::Fast { frequency }
+        } else {
+            Self::FastPlus { frequency }
+        }
+    }
+}
 
 /// I2C abstraction
 pub struct I2c<I2C: Instance, PINS> {
@@ -264,7 +374,7 @@ where
     SCL: PinScl<FMPI2C1>,
     SDA: PinSda<FMPI2C1>,
 {
-    pub fn new(i2c: FMPI2C1, pins: (SCL, SDA), speed: KiloHertz) -> Self {
+    pub fn new<M: Into<FmpMode>>(i2c: FMPI2C1, pins: (SCL, SDA), mode: M) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -277,7 +387,7 @@ where
         }
 
         let i2c = FMPI2c { i2c, pins };
-        i2c.i2c_init(speed);
+        i2c.i2c_init(mode);
         i2c
     }
 }
@@ -288,7 +398,7 @@ where
     SCL: PinScl<I2C>,
     SDA: PinSda<I2C>,
 {
-    pub fn new(i2c: I2C, pins: (SCL, SDA), speed: KiloHertz, clocks: Clocks) -> Self {
+    pub fn new<M: Into<Mode>>(i2c: I2C, pins: (SCL, SDA), mode: M, clocks: Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -299,7 +409,7 @@ where
         }
 
         let i2c = I2c { i2c, pins };
-        i2c.i2c_init(speed, clocks.pclk1());
+        i2c.i2c_init(mode, clocks.pclk1());
         i2c
     }
 }
@@ -308,67 +418,75 @@ impl<I2C, PINS> I2c<I2C, PINS>
 where
     I2C: Instance,
 {
-    fn i2c_init(&self, speed: KiloHertz, pclk: Hertz) {
-        let speed: Hertz = speed.into();
-
+    fn i2c_init<M: Into<Mode>>(&self, mode: M, pclk: Hertz) {
+        let mode = mode.into();
         // Make sure the I2C unit is disabled so we can configure it
         self.i2c.cr1.modify(|_, w| w.pe().clear_bit());
 
         // Calculate settings for I2C speed modes
         let clock = pclk.0;
-        let freq = clock / 1_000_000;
-        assert!((2..=50).contains(&freq));
+        let clc_mhz = clock / 1_000_000;
+        assert!((2..=50).contains(&clc_mhz));
 
         // Configure bus frequency into I2C peripheral
-        self.i2c.cr2.write(|w| unsafe { w.freq().bits(freq as u8) });
+        self.i2c
+            .cr2
+            .write(|w| unsafe { w.freq().bits(clc_mhz as u8) });
 
-        let trise = if speed <= 100.khz().into() {
-            freq + 1
-        } else {
-            (freq * 300) / 1000 + 1
+        let trise = match mode {
+            Mode::Standard { .. } => clc_mhz + 1,
+            Mode::Fast { .. } => (clc_mhz * 300) / 1000 + 1,
         };
 
         // Configure correct rise times
         self.i2c.trise.write(|w| w.trise().bits(trise as u8));
 
-        // I2C clock control calculation
-        if speed <= 100.khz().into() {
-            let ccr = {
-                let ccr = clock / (speed.0 * 2);
-                if ccr < 4 {
-                    4
-                } else {
-                    ccr
+        match mode {
+            // I2C clock control calculation
+            Mode::Standard { frequency } => {
+                let ccr = {
+                    let ccr = clock / (frequency.0 * 2);
+                    if ccr < 4 {
+                        4
+                    } else {
+                        ccr
+                    }
+                };
+
+                // Set clock to standard mode with appropriate parameters for selected speed
+                self.i2c.ccr.write(|w| unsafe {
+                    w.f_s()
+                        .clear_bit()
+                        .duty()
+                        .clear_bit()
+                        .ccr()
+                        .bits(ccr as u16)
+                });
+            }
+            Mode::Fast {
+                frequency,
+                duty_cycle,
+            } => {
+                match duty_cycle {
+                    DutyCycle::Ratio2to1 => {
+                        let ccr = clock / (frequency.0 * 3);
+                        let ccr = if ccr < 1 { 1 } else { ccr };
+
+                        // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
+                        self.i2c.ccr.write(|w| unsafe {
+                            w.f_s().set_bit().duty().clear_bit().ccr().bits(ccr as u16)
+                        });
+                    }
+                    DutyCycle::Ratio16to9 => {
+                        let ccr = clock / (frequency.0 * 25);
+                        let ccr = if ccr < 1 { 1 } else { ccr };
+
+                        // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
+                        self.i2c.ccr.write(|w| unsafe {
+                            w.f_s().set_bit().duty().set_bit().ccr().bits(ccr as u16)
+                        });
+                    }
                 }
-            };
-
-            // Set clock to standard mode with appropriate parameters for selected speed
-            self.i2c.ccr.write(|w| unsafe {
-                w.f_s()
-                    .clear_bit()
-                    .duty()
-                    .clear_bit()
-                    .ccr()
-                    .bits(ccr as u16)
-            });
-        } else {
-            const DUTYCYCLE: u8 = 0;
-            if DUTYCYCLE == 0 {
-                let ccr = clock / (speed.0 * 3);
-                let ccr = if ccr < 1 { 1 } else { ccr };
-
-                // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
-                self.i2c.ccr.write(|w| unsafe {
-                    w.f_s().set_bit().duty().clear_bit().ccr().bits(ccr as u16)
-                });
-            } else {
-                let ccr = clock / (speed.0 * 25);
-                let ccr = if ccr < 1 { 1 } else { ccr };
-
-                // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
-                self.i2c.ccr.write(|w| unsafe {
-                    w.f_s().set_bit().duty().set_bit().ccr().bits(ccr as u16)
-                });
             }
         }
 
@@ -604,7 +722,8 @@ impl<I2C, PINS> FMPI2c<I2C, PINS>
 where
     I2C: Deref<Target = fmpi2c1::RegisterBlock>,
 {
-    fn i2c_init(&self, speed: KiloHertz) {
+    fn i2c_init<M: Into<FmpMode>>(&self, mode: M) {
+        let mode = mode.into();
         use core::cmp;
 
         // Make sure the I2C unit is disabled so we can configure it
@@ -622,24 +741,28 @@ where
 
         // Normal I2C speeds use a different scaling than fast mode below and fast mode+ even more
         // below
-        if speed <= 100.khz() {
-            presc = 3;
-            scll = cmp::max((((FREQ >> presc) >> 1) / speed.0) - 1, 255) as u8;
-            sclh = scll - 4;
-            sdadel = 2;
-            scldel = 4;
-        } else if speed <= 400.khz() {
-            presc = 1;
-            scll = cmp::max((((FREQ >> presc) >> 1) / speed.0) - 1, 255) as u8;
-            sclh = scll - 6;
-            sdadel = 2;
-            scldel = 3;
-        } else {
-            presc = 0;
-            scll = cmp::max((((FREQ >> presc) >> 1) / speed.0) - 4, 255) as u8;
-            sclh = scll - 2;
-            sdadel = 0;
-            scldel = 2;
+        match mode {
+            FmpMode::Standard { frequency } => {
+                presc = 3;
+                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.0) - 1, 255) as u8;
+                sclh = scll - 4;
+                sdadel = 2;
+                scldel = 4;
+            }
+            FmpMode::Fast { frequency } => {
+                presc = 1;
+                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.0) - 1, 255) as u8;
+                sclh = scll - 6;
+                sdadel = 2;
+                scldel = 3;
+            }
+            FmpMode::FastPlus { frequency } => {
+                presc = 0;
+                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.0) - 4, 255) as u8;
+                sclh = scll - 2;
+                sdadel = 0;
+                scldel = 2;
+            }
         }
 
         // Enable I2C signal generator, and configure I2C for configured speed
