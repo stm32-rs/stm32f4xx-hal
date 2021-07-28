@@ -311,7 +311,7 @@ where
 
         let trise = match mode {
             Mode::Standard { .. } => clc_mhz + 1,
-            Mode::Fast { .. } => (clc_mhz * 300) / 1000 + 1,
+            Mode::Fast { .. } => clc_mhz * 300 / 1000 + 1,
         };
 
         // Configure correct rise times
@@ -320,14 +320,7 @@ where
         match mode {
             // I2C clock control calculation
             Mode::Standard { frequency } => {
-                let ccr = {
-                    let ccr = clock / (frequency.0 * 2);
-                    if ccr < 4 {
-                        4
-                    } else {
-                        ccr
-                    }
-                };
+                let ccr = (clock / (frequency.0 * 2)).max(4);
 
                 // Set clock to standard mode with appropriate parameters for selected speed
                 self.i2c.ccr.write(|w| unsafe {
@@ -342,28 +335,24 @@ where
             Mode::Fast {
                 frequency,
                 duty_cycle,
-            } => {
-                match duty_cycle {
-                    DutyCycle::Ratio2to1 => {
-                        let ccr = clock / (frequency.0 * 3);
-                        let ccr = if ccr < 1 { 1 } else { ccr };
+            } => match duty_cycle {
+                DutyCycle::Ratio2to1 => {
+                    let ccr = (clock / (frequency.0 * 3)).max(1);
 
-                        // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
-                        self.i2c.ccr.write(|w| unsafe {
-                            w.f_s().set_bit().duty().clear_bit().ccr().bits(ccr as u16)
-                        });
-                    }
-                    DutyCycle::Ratio16to9 => {
-                        let ccr = clock / (frequency.0 * 25);
-                        let ccr = if ccr < 1 { 1 } else { ccr };
-
-                        // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
-                        self.i2c.ccr.write(|w| unsafe {
-                            w.f_s().set_bit().duty().set_bit().ccr().bits(ccr as u16)
-                        });
-                    }
+                    // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
+                    self.i2c.ccr.write(|w| unsafe {
+                        w.f_s().set_bit().duty().clear_bit().ccr().bits(ccr as u16)
+                    });
                 }
-            }
+                DutyCycle::Ratio16to9 => {
+                    let ccr = (clock / (frequency.0 * 25)).max(1);
+
+                    // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
+                    self.i2c.ccr.write(|w| unsafe {
+                        w.f_s().set_bit().duty().set_bit().ccr().bits(ccr as u16)
+                    });
+                }
+            },
         }
 
         // Enable the I2C processing
