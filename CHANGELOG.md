@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `AsRef/AsMut<Rx/Tx` for Serial. `listen/unlisten` on `Rx` and `Tx`
 - `spi::Transactional`
 - `IoPin` for `Output<OpenDrain>` and `Output<PushPull>> <-> Input<Floating>>`
 - I2c `Mode` with duty_cycle
@@ -60,7 +61,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+<<<<<<< HEAD
 - Update `embedded-hal` dependendency
+=======
+- Move `Tx`, `Rx` structures into `Serial`
+>>>>>>> 17e6b09... tx, rx in Serial
 - [breaking-change] `into_<output>` fns set pin in `Low` state by default
 - Use manual impls for blocking spi instead of `Default`.
 - Split `Stream` trait on `Stream` and `StreamISR`.

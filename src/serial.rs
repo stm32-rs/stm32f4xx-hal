@@ -517,6 +517,8 @@ impl PinRx<UART10> for gpiog::PG11<Alternate<11>> {}
 pub struct Serial<USART, PINS, WORD = u8> {
     usart: USART,
     pins: PINS,
+    tx: Tx<USART, WORD>,
+    rx: Rx<USART, WORD>,
     _word: PhantomData<WORD>,
 }
 
@@ -615,6 +617,30 @@ where
     /// Return true if the tx register is empty (and can accept data)
     pub fn is_tx_empty(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
+    }
+}
+
+impl<USART, PINS, WORD> AsRef<Tx<USART, WORD>> for Serial<USART, PINS, WORD> {
+    fn as_ref(&self) -> &Tx<USART, WORD> {
+        &self.tx
+    }
+}
+
+impl<USART, PINS, WORD> AsRef<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
+    fn as_ref(&self) -> &Rx<USART, WORD> {
+        &self.rx
+    }
+}
+
+impl<USART, PINS, WORD> AsMut<Tx<USART, WORD>> for Serial<USART, PINS, WORD> {
+    fn as_mut(&mut self) -> &mut Tx<USART, WORD> {
+        &mut self.tx
+    }
+}
+
+impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
+    fn as_mut(&mut self) -> &mut Rx<USART, WORD> {
+        &mut self.rx
     }
 }
 
@@ -742,6 +768,8 @@ where
         Ok(Serial {
             usart,
             pins,
+            tx: Tx::new(),
+            rx: Rx::new(),
             _word: PhantomData,
         }
         .config_stop(config))
@@ -839,7 +867,7 @@ where
     }
 
     pub fn split(self) -> (Tx<USART, WORD>, Rx<USART, WORD>) {
-        (Tx::new(), Rx::new())
+        (self.tx, self.rx)
     }
     pub fn release(self) -> (USART, PINS) {
         (self.usart, self.pins)
@@ -857,6 +885,8 @@ where
         Serial {
             usart: self.usart,
             pins: self.pins,
+            tx: Tx::new(),
+            rx: Rx::new(),
             _word: PhantomData,
         }
     }
@@ -873,30 +903,22 @@ where
         Serial {
             usart: self.usart,
             pins: self.pins,
+            tx: Tx::new(),
+            rx: Rx::new(),
             _word: PhantomData,
         }
     }
 }
 
-impl<USART, PINS> serial::Read<u16> for Serial<USART, PINS, u16>
+impl<USART, PINS, WORD> serial::Read<WORD> for Serial<USART, PINS, WORD>
 where
     USART: Instance,
+    Rx<USART, WORD>: serial::Read<WORD, Error = Error>,
 {
     type Error = Error;
 
-    fn read(&mut self) -> nb::Result<u16, Error> {
-        Rx::<USART, u16>::new().read()
-    }
-}
-
-impl<USART, PINS> serial::Read<u8> for Serial<USART, PINS, u8>
-where
-    USART: Instance,
-{
-    type Error = Error;
-
-    fn read(&mut self) -> nb::Result<u8, Error> {
-        Rx::<USART, u8>::new().read()
+    fn read(&mut self) -> nb::Result<WORD, Error> {
+        self.rx.read()
     }
 }
 
@@ -965,33 +987,19 @@ where
     type MemSize = u8;
 }
 
-impl<USART, PINS> serial::Write<u16> for Serial<USART, PINS, u16>
+impl<USART, PINS, WORD> serial::Write<WORD> for Serial<USART, PINS, WORD>
 where
     USART: Instance,
+    Tx<USART, WORD>: serial::Write<WORD, Error = Error>,
 {
     type Error = Error;
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        Tx::<USART, u16>::new().flush()
+        self.tx.flush()
     }
 
-    fn write(&mut self, byte: u16) -> nb::Result<(), Self::Error> {
-        Tx::<USART, u16>::new().write(byte)
-    }
-}
-
-impl<USART, PINS> serial::Write<u8> for Serial<USART, PINS, u8>
-where
-    USART: Instance,
-{
-    type Error = Error;
-
-    fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        Tx::<USART, u8>::new().flush()
-    }
-
-    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
-        Tx::<USART, u8>::new().write(byte)
+    fn write(&mut self, byte: WORD) -> nb::Result<(), Self::Error> {
+        self.tx.write(byte)
     }
 }
 
@@ -1127,11 +1135,11 @@ where
     type Error = Error;
 
     fn bwrite_all(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
-        Tx::<USART, u16>::new().bwrite_all(bytes)
+        self.tx.bwrite_all(bytes)
     }
 
     fn bflush(&mut self) -> Result<(), Self::Error> {
-        Tx::<USART, u16>::new().bflush()
+        self.tx.bflush()
     }
 }
 
@@ -1142,11 +1150,11 @@ where
     type Error = Error;
 
     fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
-        Tx::<USART, u8>::new().bwrite_all(bytes)
+        self.tx.bwrite_all(bytes)
     }
 
     fn bflush(&mut self) -> Result<(), Self::Error> {
-        Tx::<USART, u8>::new().bflush()
+        self.tx.bflush()
     }
 }
 
@@ -1322,12 +1330,10 @@ halUsart! { UART10: (uart10) }
 
 impl<USART, PINS> fmt::Write for Serial<USART, PINS>
 where
-    Serial<USART, PINS>: serial::Write<u8>,
+    Tx<USART>: serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        s.bytes()
-            .try_for_each(|c| block!(self.write(c)))
-            .map_err(|_| fmt::Error)
+        self.tx.write_str(s)
     }
 }
 
