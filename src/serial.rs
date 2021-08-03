@@ -751,16 +751,7 @@ where
     }
 
     pub fn split(self) -> (Tx<USART, WORD>, Rx<USART, WORD>) {
-        (
-            Tx {
-                _usart: PhantomData,
-                _word: PhantomData,
-            },
-            Rx {
-                _usart: PhantomData,
-                _word: PhantomData,
-            },
-        )
+        (Tx::new(), Rx::new())
     }
     pub fn release(self) -> (USART, PINS) {
         (self.usart, self.pins)
