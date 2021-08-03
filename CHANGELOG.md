@@ -61,11 +61,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-<<<<<<< HEAD
+- [breaking-change] 115_200 bps for Serial by default
 - Update `embedded-hal` dependendency
-=======
 - Move `Tx`, `Rx` structures into `Serial`
->>>>>>> 17e6b09... tx, rx in Serial
 - [breaking-change] `into_<output>` fns set pin in `Low` state by default
 - Use manual impls for blocking spi instead of `Default`.
 - Split `Stream` trait on `Stream` and `StreamISR`.
