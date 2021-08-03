@@ -532,6 +532,24 @@ pub struct Tx<USART, WORD = u8> {
     _word: PhantomData<WORD>,
 }
 
+impl<USART, WORD> Rx<USART, WORD> {
+    fn new() -> Self {
+        Self {
+            _usart: PhantomData,
+            _word: PhantomData,
+        }
+    }
+}
+
+impl<USART, WORD> Tx<USART, WORD> {
+    fn new() -> Self {
+        Self {
+            _usart: PhantomData,
+            _word: PhantomData,
+        }
+    }
+}
+
 impl<USART, TX, RX, WORD> Serial<USART, (TX, RX), WORD>
 where
     TX: PinTx<USART>,
@@ -788,11 +806,7 @@ where
     type Error = Error;
 
     fn read(&mut self) -> nb::Result<u16, Error> {
-        let mut rx: Rx<USART, u16> = Rx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        rx.read()
+        Rx::<USART, u16>::new().read()
     }
 }
 
@@ -803,11 +817,7 @@ where
     type Error = Error;
 
     fn read(&mut self) -> nb::Result<u8, Error> {
-        let mut rx: Rx<USART, u8> = Rx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        rx.read()
+        Rx::<USART, u8>::new().read()
     }
 }
 
@@ -819,11 +829,7 @@ where
 
     fn read(&mut self) -> nb::Result<u8, Self::Error> {
         // Delegate to the Read<u16> implementation, then truncate to 8 bits
-        let mut rx_u16: Rx<USART, u16> = Rx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        rx_u16.read().map(|word16| word16 as u8)
+        Rx::<USART, u16>::new().read().map(|word16| word16 as u8)
     }
 }
 
@@ -887,19 +893,11 @@ where
     type Error = Error;
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        let mut tx: Tx<USART, u16> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx.flush()
+        Tx::<USART, u16>::new().flush()
     }
 
     fn write(&mut self, byte: u16) -> nb::Result<(), Self::Error> {
-        let mut tx: Tx<USART, u16> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx.write(byte)
+        Tx::<USART, u16>::new().write(byte)
     }
 }
 
@@ -910,19 +908,11 @@ where
     type Error = Error;
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        let mut tx: Tx<USART, u8> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx.flush()
+        Tx::<USART, u8>::new().flush()
     }
 
     fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
-        let mut tx: Tx<USART, u8> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx.write(byte)
+        Tx::<USART, u8>::new().write(byte)
     }
 }
 
@@ -946,20 +936,12 @@ where
 
     fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
         // Delegate to u16 version
-        let mut tx_u16: Tx<USART, u16> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx_u16.write(u16::from(word))
+        Tx::<USART, u16>::new().write(u16::from(word))
     }
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
         // Delegate to u16 version
-        let mut tx_u16: Tx<USART, u16> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx_u16.flush()
+        Tx::<USART, u16>::new().flush()
     }
 }
 
@@ -1066,19 +1048,11 @@ where
     type Error = Error;
 
     fn bwrite_all(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
-        let mut tx: Tx<USART, u16> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx.bwrite_all(bytes)
+        Tx::<USART, u16>::new().bwrite_all(bytes)
     }
 
     fn bflush(&mut self) -> Result<(), Self::Error> {
-        let mut tx: Tx<USART, u16> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx.bflush()
+        Tx::<USART, u16>::new().bflush()
     }
 }
 
@@ -1089,19 +1063,11 @@ where
     type Error = Error;
 
     fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
-        let mut tx: Tx<USART, u8> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx.bwrite_all(bytes)
+        Tx::<USART, u8>::new().bwrite_all(bytes)
     }
 
     fn bflush(&mut self) -> Result<(), Self::Error> {
-        let mut tx: Tx<USART, u8> = Tx {
-            _usart: PhantomData,
-            _word: PhantomData,
-        };
-        tx.bflush()
+        Tx::<USART, u8>::new().bflush()
     }
 }
 
