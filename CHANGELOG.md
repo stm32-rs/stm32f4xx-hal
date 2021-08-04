@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `spi::Transactional`
 - `IoPin` for `Output<OpenDrain>` and `Output<PushPull>> <-> Input<Floating>>`
 - I2c `Mode` with duty_cycle
 - Simple docs in gpio. `into_<output>_in_state`, `with_<output>_in_state`
