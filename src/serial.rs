@@ -519,7 +519,6 @@ pub struct Serial<USART, PINS, WORD = u8> {
     pins: PINS,
     tx: Tx<USART, WORD>,
     rx: Rx<USART, WORD>,
-    _word: PhantomData<WORD>,
 }
 
 /// Serial receiver
@@ -770,7 +769,6 @@ where
             pins,
             tx: Tx::new(),
             rx: Rx::new(),
-            _word: PhantomData,
         }
         .config_stop(config))
     }
@@ -887,7 +885,6 @@ where
             pins: self.pins,
             tx: Tx::new(),
             rx: Rx::new(),
-            _word: PhantomData,
         }
     }
 }
@@ -905,7 +902,6 @@ where
             pins: self.pins,
             tx: Tx::new(),
             rx: Rx::new(),
-            _word: PhantomData,
         }
     }
 }
