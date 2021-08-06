@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added PWM input capability to all compatable timers [#271]
 - [breaking-change] `gpio::Edge::{RISING, FALLING, RISING_FALLING}` are renamed to `Rising`, `Falling`, `RisingFalling`, respectively.
 - Bidi mode support for SPI [#349]
+- Added `listen` and `unlisten` for RX- and TX-only USART
+- Added function for clearing the idle line interrupt in USART
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
 [#271] https://github.com/stm32-rs/stm32f4xx-hal/pull/271
