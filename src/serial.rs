@@ -532,21 +532,89 @@ pub struct Tx<USART, WORD = u8> {
     _word: PhantomData<WORD>,
 }
 
-impl<USART, WORD> Rx<USART, WORD> {
+impl<USART, WORD> Rx<USART, WORD>
+where
+    USART: Instance,
+{
     fn new() -> Self {
         Self {
             _usart: PhantomData,
             _word: PhantomData,
         }
     }
+
+    /// Start listening for an rx not empty interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    pub fn listen(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().set_bit()) }
+    }
+
+    /// Stop listening for the rx not empty interrupt event
+    pub fn unlisten(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().clear_bit()) }
+    }
+
+    /// Start listening for a line idle interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    pub fn listen_idle(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().set_bit()) }
+    }
+
+    /// Stop listening for the line idle interrupt event
+    pub fn unlisten_idle(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) }
+    }
+
+    /// Return true if the line idle status is set
+    pub fn is_idle(&self) -> bool {
+        unsafe { (*USART::ptr()).sr.read().idle().bit_is_set() }
+    }
+
+    /// Return true if the rx register is not empty (and can be read)
+    pub fn is_rx_not_empty(&self) -> bool {
+        unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
+    }
+
+    // Clear idle line interrupt flag
+    pub fn clear_idle_interrupt(&self) {
+        unsafe {
+            let _ = (*USART::ptr()).sr.read();
+            let _ = (*USART::ptr()).dr.read();
+        }
+    }
 }
 
-impl<USART, WORD> Tx<USART, WORD> {
+impl<USART, WORD> Tx<USART, WORD>
+where
+    USART: Instance,
+{
     fn new() -> Self {
         Self {
             _usart: PhantomData,
             _word: PhantomData,
         }
+    }
+
+    /// Start listening for a tx empty interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    pub fn listen(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().set_bit()) }
+    }
+
+    /// Stop listening for the tx empty interrupt event
+    pub fn unlisten(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) }
+    }
+
+    /// Return true if the tx register is empty (and can accept data)
+    pub fn is_tx_empty(&self) -> bool {
+        unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
     }
 }
 
@@ -741,13 +809,33 @@ where
     }
 
     /// Return true if the tx register is empty (and can accept data)
+    pub fn is_tx_empty(&self) -> bool {
+        unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
+    }
+
+    /// Return true if the tx register is empty (and can accept data)
+    #[deprecated(since = "0.10.0")]
     pub fn is_txe(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
     }
 
     /// Return true if the rx register is not empty (and can be read)
+    pub fn is_rx_not_empty(&self) -> bool {
+        unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
+    }
+
+    /// Return true if the rx register is not empty (and can be read)
+    #[deprecated(since = "0.10.0")]
     pub fn is_rxne(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
+    }
+
+    // Clear idle line interrupt flag
+    pub fn clear_idle_interrupt(&self) {
+        unsafe {
+            let _ = (*USART::ptr()).sr.read();
+            let _ = (*USART::ptr()).dr.read();
+        }
     }
 
     pub fn split(self) -> (Tx<USART, WORD>, Rx<USART, WORD>) {
