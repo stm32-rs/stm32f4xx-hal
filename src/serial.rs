@@ -543,25 +543,30 @@ where
         }
     }
 
-    /// Start listening for an interrupt event
+    /// Start listening for an rx not empty interrupt event
     ///
     /// Note, you will also have to enable the corresponding interrupt
     /// in the NVIC to start receiving events.
-    pub fn listen(&mut self, event: Event) {
-        match event {
-            Event::Rxne => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().set_bit()) },
-            Event::Txe => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().set_bit()) },
-            Event::Idle => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().set_bit()) },
-        }
+    pub fn listen(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().set_bit()) }
     }
 
-    /// Stop listening for an interrupt event
-    pub fn unlisten(&mut self, event: Event) {
-        match event {
-            Event::Rxne => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().clear_bit()) },
-            Event::Txe => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) },
-            Event::Idle => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) },
-        }
+    /// Stop listening for the rx not empty interrupt event
+    pub fn unlisten(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().clear_bit()) }
+    }
+
+    /// Start listening for a line idle interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    pub fn listen_idle(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().set_bit()) }
+    }
+
+    /// Stop listening for the line idle interrupt event
+    pub fn unlisten_idle(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) }
     }
 
     /// Return true if the line idle status is set
@@ -594,25 +599,17 @@ where
         }
     }
 
-    /// Start listening for an interrupt event
+    /// Start listening for a tx empty interrupt event
     ///
     /// Note, you will also have to enable the corresponding interrupt
     /// in the NVIC to start receiving events.
-    pub fn listen(&mut self, event: Event) {
-        match event {
-            Event::Rxne => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().set_bit()) },
-            Event::Txe => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().set_bit()) },
-            Event::Idle => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().set_bit()) },
-        }
+    pub fn listen(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().set_bit()) }
     }
 
-    /// Stop listening for an interrupt event
-    pub fn unlisten(&mut self, event: Event) {
-        match event {
-            Event::Rxne => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().clear_bit()) },
-            Event::Txe => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) },
-            Event::Idle => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) },
-        }
+    /// Stop listening for the tx empty interrupt event
+    pub fn unlisten(&mut self) {
+        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) }
     }
 
     /// Return true if the tx register is empty (and can accept data)
