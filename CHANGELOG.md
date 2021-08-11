@@ -9,29 +9,29 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- `spi::Transactional`
-- `IoPin` for `Output<OpenDrain>` and `Output<PushPull>> <-> Input<Floating>>`
-- I2c `Mode` with duty_cycle
-- Simple docs in gpio. `into_<output>_in_state`, `with_<output>_in_state`
-- Weaker constrains for examples.
-- Deprecate `stm32` alias.
-- Temporary change pin mode
-- More badges in README
-- `RccBus` & `GetBusFreq` traits. `AHBx`, `APBx` structures.
-- Filler `NoPin` type 
+- `AsRef/AsMut<Rx/Tx` for Serial [#355]
+- `spi::Transactional` [#356]
+- `IoPin` for `Output<OpenDrain>` and `Output<PushPull>> <-> Input<Floating>>` [#356]
+- I2c `Mode` with duty_cycle [#353]
+- Simple docs in gpio. `into_<output>_in_state`, `with_<output>_in_state` [#351]
+- Weaker constrains for examples [#351]
+- Deprecate `stm32` alias. [#351]
+- Temporary change pin mode [#346]
+- More badges in README [#345]
+- `RccBus` & `GetBusFreq` traits. `AHBx`, `APBx` structures [#342]
+- Filler `NoPin` type [#340]
 - Add inherent impl of `PwmPin` methods on `PwmChannel`s.
-- `Serial:tx` and `Serial::rx` that take only 1 pin
-- Instead of `Alternate<AF1>` you can just use `Alternate<1>`.
-- `PinState` and `get/set_state`.
-- Inherent methods for infallible digital operations.
-- Generic `into_alternate` and `into_alternate_open_drain`. Non-generic ones are deprecated
-- `PinExt` trait. Make `ExtiPin` implementation generic
-- `Enable`, `LPEnable` and `Reset` traits in `rcc`. Implemented for all used peripherals
-- Features corresponding to peripherals
-- Fixed typo in string representation in DMAError type
-- Improved documentation of rng and prelude
-- Added an example of integration with RTIC.
-- Added internal pullup configuaration for the AlternateOD pin type
+- `Serial:tx` and `Serial::rx` that take only 1 pin [#332]
+- Instead of `Alternate<AF1>` you can just use `Alternate<1>` [#328]
+- `PinState` and `get/set_state` [#325]
+- Inherent methods for infallible digital operations [#325]
+- Generic `into_alternate` and `into_alternate_open_drain`. Non-generic ones are deprecated [#266]
+- `PinExt` trait. Make `ExtiPin` implementation generic [#323]
+- `Enable`, `LPEnable` and `Reset` traits in `rcc`. Implemented for all used peripherals [#311]
+- Features corresponding to peripherals [#311]
+- Improved documentation of rng and prelude [#303]
+- Added an example of integration with RTIC [#295]
+- Added internal pullup configuaration for the AlternateOD pin type [#298]
 - Added USART support for sending and receiving 9-bit words [#299]
 - Added support for I2S communication using SPI peripherals, and two examples [#265]
 - Added support for some LCD controllers using the Flexible Static Memory
@@ -39,57 +39,101 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `DelayMs` / `DelayUs` impls for TIM2/TIM5 [#309]
 - Added an example for using the new FSMC interface with the provided
   `display-interface` driver and the `st7789` driver on a F413Discovery board [#302]
-- Derive `Eq`, `PartialEq`, `Copy` and `Clone` for error types
+- Derive `Eq`, `PartialEq`, `Copy` and `Clone` for error types [#306]
 - Added open-drain pin mode support for PWM output [#313]
 - Added missing error flags for dma streams [#318]
 - Added PWM input capability to all compatable timers [#271]
-- [breaking-change] `gpio::Edge::{RISING, FALLING, RISING_FALLING}` are renamed to `Rising`, `Falling`, `RisingFalling`, respectively.
 - Bidi mode support for SPI [#349]
 - Added `listen` and `unlisten` for RX- and TX-only USART [#357]
 - Added function for clearing the idle line interrupt in USART [#357]
+- Added flash driver [#347]
+- Added `gpio::gpiox::Pxi::downgrade2` method [#323]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
-[#271] https://github.com/stm32-rs/stm32f4xx-hal/pull/271
+[#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/266
+[#271]: https://github.com/stm32-rs/stm32f4xx-hal/pull/271
+[#295]: https://github.com/stm32-rs/stm32f4xx-hal/pull/295
 [#297]: https://github.com/stm32-rs/stm32f4xx-hal/pull/297
+[#298]: https://github.com/stm32-rs/stm32f4xx-hal/pull/298
 [#302]: https://github.com/stm32-rs/stm32f4xx-hal/pull/302
+[#303]: https://github.com/stm32-rs/stm32f4xx-hal/pull/303
+[#306]: https://github.com/stm32-rs/stm32f4xx-hal/pull/306
 [#309]: https://github.com/stm32-rs/stm32f4xx-hal/pull/309
+[#311]: https://github.com/stm32-rs/stm32f4xx-hal/pull/311
 [#313]: https://github.com/stm32-rs/stm32f4xx-hal/pull/313
+[#325]: https://github.com/stm32-rs/stm32f4xx-hal/pull/325
+[#328]: https://github.com/stm32-rs/stm32f4xx-hal/pull/328
 [#318]: https://github.com/stm32-rs/stm32f4xx-hal/pull/318
+[#322]: https://github.com/stm32-rs/stm32f4xx-hal/pull/322
+[#323]: https://github.com/stm32-rs/stm32f4xx-hal/pull/323
+[#332]: https://github.com/stm32-rs/stm32f4xx-hal/pull/332
+[#340]: https://github.com/stm32-rs/stm32f4xx-hal/pull/340
+[#342]: https://github.com/stm32-rs/stm32f4xx-hal/pull/342
+[#345]: https://github.com/stm32-rs/stm32f4xx-hal/pull/345
+[#346]: https://github.com/stm32-rs/stm32f4xx-hal/pull/346
+[#347]: https://github.com/stm32-rs/stm32f4xx-hal/pull/347
 [#349]: https://github.com/stm32-rs/stm32f4xx-hal/pull/349
+[#351]: https://github.com/stm32-rs/stm32f4xx-hal/pull/351
+[#353]: https://github.com/stm32-rs/stm32f4xx-hal/pull/353
+[#355]: https://github.com/stm32-rs/stm32f4xx-hal/pull/355
+[#356]: https://github.com/stm32-rs/stm32f4xx-hal/pull/356
 [#357]: https://github.com/stm32-rs/stm32f4xx-hal/pull/357
 
 ### Changed
 
-- Update `embedded-hal` dependendency
-- [breaking-change] `into_<output>` fns set pin in `Low` state by default
-- Use manual impls for blocking spi instead of `Default`.
-- Split `Stream` trait on `Stream` and `StreamISR`.
-  Use const generics for `Stream` and `Channel`.
-- [breaking-change] `Timer::new` now just initializes peripheral.
-  Use `.start_count_down` to start count, `pwm` or `delay` on `Timer` struct.
+- [breaking-change] 115_200 bps for Serial by default [#355]
+- Move `Tx`, `Rx` structures into `Serial` [#355]
+- Update `embedded-hal` dependendency [#356]
+- [breaking-change] `into_<output>` fns set pin in `Low` state by default [#351]
+- Use manual impls for blocking spi instead of `Default` [#356]
+- Split `Stream` trait on `Stream` and `StreamISR`,
+  use const generics for `Stream` and `Channel` [#341]
+- [breaking-change] `Timer::new` now just initializes peripheral,
+  use `.start_count_down` to start count, `pwm` or `delay` on `Timer` struct [#337]
 - Add `Spi::new`, `I2s::new, `spi::Instance` and deprecate `Spi:spix`,
-  deprecate `Serial::usartx`, remove deprecated `I2c::i2cx`
-- Deprecate `free` in favour of `release`
-- Clean features in `serial`, `spi`, `i2c`, `timer`
-- Internal implementation of GPIO Pin API changed to use Const Generics
-- Update the sdio driver to match the changes in the PAC
-- Update README.md with current information
+  deprecate `Serial::usartx`, remove deprecated `I2c::i2cx` [#330]
+- Deprecate `free` in favour of `release` [#333]
+- Clean features in `serial`, `spi`, `i2c`, `timer` [#331], [#334]
+- Internal implementation of GPIO Pin API changed to use Const Generics [#266]
+- Update the sdio driver to match the changes in the PAC [#294]
+- Update README.md with current information [#293]
 - Updated serial driver to use 32-bit reads and writes when accessing the USART data register [#299]
 - Add possibility to use DMA with the ADC abstraction, add example for ADC with DMA [#258]
-- Remove unsafe code from ADC DMA example
+- Remove unsafe code from ADC DMA example [#301]
 - [breaking-change] DMA: Memory to peripheral transfers now only require `StaticReadBuffer` [#257].
-- Rename erased `Pin` to `EPin`, partially erased `PXx` to `PEPin`, `PX` to `Pin`.
+- Rename erased `Pin` to `EPin`, partially erased `PXx` to `PEPin`, `PX` to `Pin` [#339]
+- [breaking-change] `gpio::Edge::{RISING, FALLING, RISING_FALLING}` are renamed to `Rising`, `Falling`, `RisingFalling`, respectively [#343] 
 
+[#266]: https://github.com/stm32-rs/stm32f4xx-hal/pull/266
+[#293]: https://github.com/stm32-rs/stm32f4xx-hal/pull/293
+[#294]: https://github.com/stm32-rs/stm32f4xx-hal/pull/294
 [#299]: https://github.com/stm32-rs/stm32f4xx-hal/pull/299
 [#258]: https://github.com/stm32-rs/stm32f4xx-hal/pull/258
 [#257]: https://github.com/stm32-rs/stm32f4xx-hal/pull/257
+[#301]: https://github.com/stm32-rs/stm32f4xx-hal/pull/301
+[#330]: https://github.com/stm32-rs/stm32f4xx-hal/pull/330
+[#331]: https://github.com/stm32-rs/stm32f4xx-hal/pull/331
+[#333]: https://github.com/stm32-rs/stm32f4xx-hal/pull/333
+[#334]: https://github.com/stm32-rs/stm32f4xx-hal/pull/334
+[#337]: https://github.com/stm32-rs/stm32f4xx-hal/pull/337
+[#339]: https://github.com/stm32-rs/stm32f4xx-hal/pull/339
+[#341]: https://github.com/stm32-rs/stm32f4xx-hal/pull/341
+[#343]: https://github.com/stm32-rs/stm32f4xx-hal/pull/343
+[#349]: https://github.com/stm32-rs/stm32f4xx-hal/pull/349
+[#351]: https://github.com/stm32-rs/stm32f4xx-hal/pull/351
+[#355]: https://github.com/stm32-rs/stm32f4xx-hal/pull/355
+[#356]: https://github.com/stm32-rs/stm32f4xx-hal/pull/356
+
 ### Fixed
 
+- Fixed typo in string representation in DMAError type [#305]
 - Corrected pin definitions for the Flexible Static Memory Controller / Flexible Memory Controller
   LCD interface [#312]
-- Eliminated `channel_impl` macro warnings caused by unused ident
+- Eliminated `channel_impl` macro warnings caused by unused ident [#323]
 
+[#305]: https://github.com/stm32-rs/stm32f4xx-hal/pull/305
 [#312]: https://github.com/stm32-rs/stm32f4xx-hal/pull/312
+[#323]: https://github.com/stm32-rs/stm32f4xx-hal/pull/323
 
 ## [v0.9.0] - 2021-04-04
 
@@ -144,8 +188,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for CAN on additional models: STM32F412, STM32F413, STM32F415,
   STM32F417, STM32F423, STM32F427, STM32F429, STM32F437, STM32F439, STM32F469,
   and STM32F479 [#262]
-- Added `gpio::gpiox::Pxi::downgrade2` method [#272]
-- Added flash driver
 
 [#231]: https://github.com/stm32-rs/stm32f4xx-hal/pull/231
 [#262]: https://github.com/stm32-rs/stm32f4xx-hal/pull/262
@@ -153,7 +195,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#278]: https://github.com/stm32-rs/stm32f4xx-hal/issues/278
 [#273]: https://github.com/stm32-rs/stm32f4xx-hal/pull/273
 [#286]: https://github.com/stm32-rs/stm32f4xx-hal/pull/286
-[#272]: https://github.com/stm32-rs/stm32f4xx-hal/issues/272
 
 ### Fixed
 

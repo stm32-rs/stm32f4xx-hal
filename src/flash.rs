@@ -73,7 +73,7 @@ pub struct UnlockedFlash<'a> {
 /// Automatically lock flash erase/program when leaving scope
 impl Drop for UnlockedFlash<'_> {
     fn drop(&mut self) {
-        lock(&self.flash);
+        lock(self.flash);
     }
 }
 
@@ -144,7 +144,7 @@ impl UnlockedFlash<'_> {
     }
 
     fn ok(&self) -> Result<(), Error> {
-        Error::read(&self.flash).map(Err).unwrap_or(Ok(()))
+        Error::read(self.flash).map(Err).unwrap_or(Ok(()))
     }
 
     fn wait_ready(&self) {
