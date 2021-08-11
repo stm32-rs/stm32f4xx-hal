@@ -575,15 +575,15 @@ where
     }
 
     /// Return true if the rx register is not empty (and can be read)
-    pub fn is_rxne(&self) -> bool {
+    pub fn is_rx_not_empty(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
     }
 
     // Clear idle line interrupt flag
     pub fn clear_idle_interrupt(&self) {
         unsafe {
-            let _ = (*USART::ptr()).sr.read().idle();
-            let _ = (*USART::ptr()).dr.read().bits();
+            let _ = (*USART::ptr()).sr.read();
+            let _ = (*USART::ptr()).dr.read();
         }
     }
 }
@@ -613,7 +613,7 @@ where
     }
 
     /// Return true if the tx register is empty (and can accept data)
-    pub fn is_txe(&self) -> bool {
+    pub fn is_tx_empty(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
     }
 }
@@ -809,11 +809,23 @@ where
     }
 
     /// Return true if the tx register is empty (and can accept data)
+    pub fn is_tx_empty(&self) -> bool {
+        unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
+    }
+
+    /// Return true if the tx register is empty (and can accept data)
+    #[deprecated(since = "0.10.0")]
     pub fn is_txe(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
     }
 
     /// Return true if the rx register is not empty (and can be read)
+    pub fn is_rx_not_empty(&self) -> bool {
+        unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
+    }
+
+    /// Return true if the rx register is not empty (and can be read)
+    #[deprecated(since = "0.10.0")]
     pub fn is_rxne(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
     }
@@ -821,8 +833,8 @@ where
     // Clear idle line interrupt flag
     pub fn clear_idle_interrupt(&self) {
         unsafe {
-            let _ = (*USART::ptr()).sr.read().idle();
-            let _ = (*USART::ptr()).dr.read().bits();
+            let _ = (*USART::ptr()).sr.read();
+            let _ = (*USART::ptr()).dr.read();
         }
     }
 
