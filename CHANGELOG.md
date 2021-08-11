@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `spi::Transactional`
+- `IoPin` for `Output<OpenDrain>` and `Output<PushPull>> <-> Input<Floating>>`
 - I2c `Mode` with duty_cycle
 - Simple docs in gpio. `into_<output>_in_state`, `with_<output>_in_state`
 - Weaker constrains for examples.
@@ -58,6 +60,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Update `embedded-hal` dependendency
 - [breaking-change] `into_<output>` fns set pin in `Low` state by default
 - Use manual impls for blocking spi instead of `Default`.
 - Split `Stream` trait on `Stream` and `StreamISR`.

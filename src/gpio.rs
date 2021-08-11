@@ -47,7 +47,10 @@
 use core::convert::Infallible;
 use core::marker::PhantomData;
 
-use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
+pub use embedded_hal::digital::v2::PinState;
+use embedded_hal::digital::v2::{
+    InputPin, IoPin, OutputPin, StatefulOutputPin, ToggleableOutputPin,
+};
 
 use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
@@ -129,15 +132,6 @@ pub struct PushPull;
 
 /// Analog mode (type state)
 pub struct Analog;
-
-/// Digital output pin state
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum PinState {
-    /// Low pin state
-    Low,
-    /// High pin state
-    High,
-}
 
 /// GPIO Pin speed selection
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -555,6 +549,42 @@ impl<MODE, const P: char, const N: u8> InputPin for Pin<Input<MODE>, P, N> {
     #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
         Ok(self.is_low())
+    }
+}
+
+impl<const P: char, const N: u8> IoPin<Self, Self> for Pin<Output<OpenDrain>, P, N> {
+    type Error = Infallible;
+    fn into_input_pin(self) -> Result<Self, Self::Error> {
+        Ok(self)
+    }
+    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
+        self.set_state(state);
+        Ok(self)
+    }
+}
+
+impl<const P: char, const N: u8> IoPin<Pin<Input<Floating>, P, N>, Self>
+    for Pin<Output<PushPull>, P, N>
+{
+    type Error = Infallible;
+    fn into_input_pin(self) -> Result<Pin<Input<Floating>, P, N>, Self::Error> {
+        Ok(self.into_floating_input())
+    }
+    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
+        self.set_state(state);
+        Ok(self)
+    }
+}
+
+impl<const P: char, const N: u8> IoPin<Self, Pin<Output<PushPull>, P, N>>
+    for Pin<Input<Floating>, P, N>
+{
+    type Error = Infallible;
+    fn into_input_pin(self) -> Result<Self, Self::Error> {
+        Ok(self)
+    }
+    fn into_output_pin(self, state: PinState) -> Result<Pin<Output<PushPull>, P, N>, Self::Error> {
+        Ok(self.into_push_pull_output_in_state(state))
     }
 }
 
