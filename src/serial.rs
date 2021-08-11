@@ -580,7 +580,7 @@ where
         unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
     }
 
-    // Clear idle line interrupt flag
+    /// Clear idle line interrupt flag
     pub fn clear_idle_interrupt(&self) {
         unsafe {
             let _ = (*USART::ptr()).sr.read();
@@ -856,7 +856,7 @@ where
         unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
     }
 
-    // Clear idle line interrupt flag
+    /// Clear idle line interrupt flag
     pub fn clear_idle_interrupt(&self) {
         unsafe {
             let _ = (*USART::ptr()).sr.read();
