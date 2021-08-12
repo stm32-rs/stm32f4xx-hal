@@ -24,16 +24,19 @@ use panic_semihosting as _;
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
 use embedded_graphics::{
-    fonts::Font6x8, fonts::Text, pixelcolor::BinaryColor, prelude::*, style::TextStyleBuilder,
+    mono_font::{ascii::FONT_5X8, MonoTextStyleBuilder},
+    pixelcolor::BinaryColor,
+    prelude::*,
+    text::Text,
 };
 
-use ssd1306::{prelude::*, Builder, I2CDIBuilder};
+use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 use hal::{i2c::I2c, pac, prelude::*};
 use rand_core::RngCore;
 
-use arrayvec::ArrayString;
 use core::fmt;
+use heapless::String;
 
 // dimensions of SSD1306 OLED display known to work
 pub const SCREEN_WIDTH: i32 = 128;
@@ -73,14 +76,15 @@ fn main() -> ! {
         let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
         // Set up the display
-        let interface = I2CDIBuilder::new().init(i2c);
-        let mut disp: GraphicsMode<_, _> = Builder::new().connect(interface).into();
+        let interface = I2CDisplayInterface::new(i2c);
+        let mut disp = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+            .into_buffered_graphics_mode();
         disp.init().unwrap();
 
         // enable the RNG peripheral and its clock
         // this will panic if the clock configuration is unsuitable
         let mut rand_source = dp.RNG.constrain(clocks);
-        let mut format_buf = ArrayString::<[u8; 20]>::new();
+        let mut format_buf = String::<20>::new();
         loop {
             //display clear
             disp.clear();
@@ -90,12 +94,12 @@ fn main() -> ! {
 
             format_buf.clear();
             if fmt::write(&mut format_buf, format_args!("{}", rand_val)).is_ok() {
-                let text_style = TextStyleBuilder::new(Font6x8)
+                let text_style = MonoTextStyleBuilder::new()
+                    .font(&FONT_5X8)
                     .text_color(BinaryColor::On)
                     .build();
 
-                Text::new(format_buf.as_str(), Point::new(HINSET_PIX, VCENTER_PIX))
-                    .into_styled(text_style)
+                Text::new(&format_buf, Point::new(HINSET_PIX, VCENTER_PIX), text_style)
                     .draw(&mut disp)
                     .unwrap();
             }

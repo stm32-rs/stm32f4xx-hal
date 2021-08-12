@@ -19,7 +19,7 @@ use stm32f4xx_hal as hal;
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
 use embedded_graphics::{image::Image, image::ImageRaw, pixelcolor::BinaryColor, prelude::*};
-use ssd1306::{prelude::*, Builder, I2CDIBuilder};
+use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 use crate::hal::{i2c::I2c, pac, prelude::*};
 
@@ -36,8 +36,16 @@ fn main() -> ! {
         // Set up I2C - SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F446xC/E datasheet page 60. Pin assignment as per the Nucleo-F446 board.
         let gpiob = dp.GPIOB.split();
-        let scl = gpiob.pb8.into_alternate().set_open_drain();
-        let sda = gpiob.pb9.into_alternate().set_open_drain();
+        let scl = gpiob
+            .pb8
+            .into_alternate()
+            .internal_pull_up(true)
+            .set_open_drain();
+        let sda = gpiob
+            .pb9
+            .into_alternate()
+            .internal_pull_up(true)
+            .set_open_drain();
         let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor
@@ -47,15 +55,16 @@ fn main() -> ! {
         let btn = gpioc.pc13.into_pull_down_input();
 
         // Set up the display
-        let interface = I2CDIBuilder::new().init(i2c);
-        let mut disp: GraphicsMode<_, _> = Builder::new().connect(interface).into();
+        let interface = I2CDisplayInterface::new(i2c);
+        let mut disp = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+            .into_buffered_graphics_mode();
         disp.init().unwrap();
         disp.flush().unwrap();
 
         // Display the rustacean
         let raw_image: ImageRaw<BinaryColor> =
-            ImageRaw::new(include_bytes!("./ssd1306-image.data"), 128, 64);
-        let image: Image<_, BinaryColor> = Image::new(&raw_image, Point::zero());
+            ImageRaw::new(include_bytes!("./ssd1306-image.data"), 128);
+        let image = Image::new(&raw_image, Point::zero());
         image.draw(&mut disp).unwrap();
         disp.flush().unwrap();
 

@@ -19,29 +19,26 @@ use crate::hal::{
     timer::{CountDownTimer, Event, Timer},
 };
 
-use arrayvec::ArrayString;
 use core::cell::{Cell, RefCell};
-use core::fmt;
+use core::fmt::Write;
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, CriticalSection, Mutex};
+use heapless::String;
 
 use hal::spi::{Mode, Phase, Polarity};
 
 use core::f32::consts::{FRAC_PI_2, PI};
 use cortex_m_rt::{entry, exception, ExceptionFrame};
 use embedded_graphics::{
-    egcircle,
-    fonts::{Font6x8, Text},
+    mono_font::{ascii::FONT_5X8, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
     prelude::*,
-    primitive_style,
-    primitives::{Circle, Line},
-    style::TextStyleBuilder,
-    style::{PrimitiveStyle, PrimitiveStyleBuilder},
+    primitives::{Circle, Line, PrimitiveStyle, PrimitiveStyleBuilder},
+    text::Text,
 };
 use micromath::F32Ext;
 
-use ssd1306::{prelude::*, Builder};
+use ssd1306::{prelude::*, Ssd1306};
 
 // Set up global state. It's all mutexed up for concurrency safety.
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
@@ -124,7 +121,8 @@ fn main() -> ! {
 
     // Set up the display
     let interface = SPIInterfaceNoCS::new(spi, dc);
-    let mut disp: GraphicsMode<_, _> = Builder::new().connect(interface).into();
+    let mut disp = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+        .into_buffered_graphics_mode();
     disp.init().unwrap();
     disp.flush().unwrap();
 
@@ -148,7 +146,7 @@ fn main() -> ! {
     loop {
         let elapsed = free(|cs| ELAPSED_MS.borrow(cs).get());
 
-        let mut format_buf = ArrayString::<[u8; 10]>::new();
+        let mut format_buf = String::<10>::new();
         format_elapsed(&mut format_buf, elapsed);
 
         disp.clear();
@@ -181,19 +179,22 @@ fn main() -> ! {
             }
         };
 
-        let text_style = TextStyleBuilder::new(Font6x8)
+        let text_style = MonoTextStyleBuilder::new()
+            .font(&FONT_5X8)
             .text_color(BinaryColor::On)
             .build();
 
-        Text::new(state_msg, Point::new(0, 0))
-            .into_styled(text_style)
+        Text::new(state_msg, Point::new(0, 0), text_style)
             .draw(&mut disp)
             .unwrap();
 
-        Text::new(format_buf.as_str(), Point::new((128 / 2) - 1, 0))
-            .into_styled(text_style)
-            .draw(&mut disp)
-            .unwrap();
+        Text::new(
+            format_buf.as_str(),
+            Point::new((128 / 2) - 1, 0),
+            text_style,
+        )
+        .draw(&mut disp)
+        .unwrap();
 
         draw_face().draw(&mut disp).unwrap();
         draw_seconds_hand(elapsed_to_s(elapsed))
@@ -317,16 +318,12 @@ fn stopwatch_reset_stop(_cs: &CriticalSection) {
     pac::NVIC::mask(hal::pac::Interrupt::TIM2);
 }
 
-// Formatting requires the arrayvec crate
-fn format_elapsed(buf: &mut ArrayString<[u8; 10]>, elapsed: u32) {
+// Formatting requires the heapless crate
+fn format_elapsed(buf: &mut String<10>, elapsed: u32) {
     let minutes = elapsed_to_m(elapsed);
     let seconds = elapsed_to_s(elapsed);
     let millis = elapsed_to_ms(elapsed);
-    fmt::write(
-        buf,
-        format_args!("{}:{:02}.{:03}", minutes, seconds, millis),
-    )
-    .unwrap();
+    write!(buf, "{}:{:02}.{:03}", minutes, seconds, millis).unwrap();
 }
 
 fn elapsed_to_ms(elapsed: u32) -> u32 {
@@ -351,11 +348,8 @@ fn draw_face() -> impl Iterator<Item = Pixel<BinaryColor>> {
     let tic_len = 3.0;
 
     // Use the circle macro to create the outer face
-    let face = egcircle!(
-        center = CENTER,
-        radius = SIZE,
-        style = primitive_style!(stroke_color = BinaryColor::On, stroke_width = 1)
-    );
+    let face =
+        Circle::new(CENTER, SIZE * 2).into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1));
 
     // Create 12 `Line`s starting from the outer edge and drawing inwards by `tic_len` pixels
     let tics = (0..12).into_iter().map(move |index| {
@@ -370,12 +364,12 @@ fn draw_face() -> impl Iterator<Item = Pixel<BinaryColor>> {
 
         Line::new(start, end)
             .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
-            .into_iter()
+            .pixels()
     });
 
     // Create a single iterator of pixels, first iterating over the circle, then over the 12 lines
     // generated
-    face.into_iter().chain(tics.flatten())
+    face.pixels().into_iter().chain(tics.flatten())
 }
 
 /// Draw the seconds hand given a seconds value (0 - 59)
@@ -401,7 +395,9 @@ fn draw_seconds_hand(seconds: u32) -> impl Iterator<Item = Pixel<BinaryColor>> {
     // Add a fancy circle near the end of the hand
     let decoration = Circle::new(decoration_position, 3).into_styled(decoration_style);
 
-    hand.into_iter().chain(&decoration)
+    hand.pixels()
+        .into_iter()
+        .chain(decoration.pixels().into_iter())
 }
 
 #[exception]
