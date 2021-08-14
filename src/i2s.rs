@@ -2,6 +2,7 @@
 //!
 //! This module is only available if the `i2s` feature is enabled.
 
+use crate::gpio::{Const, NoPin, SetAlternate};
 use stm32_i2s_v12x::{Instance, RegisterBlock};
 
 use crate::pac::RCC;
@@ -16,21 +17,46 @@ use crate::{rcc::Clocks, spi};
 // The master clock output is separate.
 
 /// A pin that can be used as SD (serial data)
-pub trait PinSd<SPI> {}
+pub trait PinSd<SPI> {
+    type A;
+}
 /// A pin that can be used as WS (word select, left/right clock)
-pub trait PinWs<SPI> {}
+pub trait PinWs<SPI> {
+    type A;
+}
 /// A pin that can be used as CK (bit clock)
-pub trait PinCk<SPI> {}
+pub trait PinCk<SPI> {
+    type A;
+}
 /// A pin that can be used as MCK (master clock output)
-pub trait PinMck<SPI> {}
+pub trait PinMck<SPI> {
+    type A;
+}
+
+impl<SPI> PinMck<SPI> for NoPin
+where
+    SPI: Instance,
+{
+    type A = Const<0>;
+}
 
 /// Each MOSI pin can also be used as SD
-impl<P, SPI> PinSd<SPI> for P where P: spi::PinMosi<SPI> {}
+impl<P, SPI, const MOSIA: u8> PinSd<SPI> for P
+where
+    P: spi::PinMosi<SPI, A = Const<MOSIA>>,
+{
+    type A = Const<MOSIA>;
+}
 /// Each SCK pin can also be used as CK
-impl<P, SPI> PinCk<SPI> for P where P: spi::PinSck<SPI> {}
+impl<P, SPI, const SCKA: u8> PinCk<SPI> for P
+where
+    P: spi::PinSck<SPI, A = Const<SCKA>>,
+{
+    type A = Const<SCKA>;
+}
 
 /// A placeholder for when the MCLK pin is not needed
-pub struct NoMasterClock;
+pub type NoMasterClock = NoPin;
 
 /// A set of pins configured for I2S communication: (WS, CK, MCLK, SD)
 ///
@@ -51,7 +77,9 @@ mod mck_pins {
     macro_rules! pin_mck {
         ($($PER:ident => $pin:ident<$af:literal>,)+) => {
             $(
-                impl crate::i2s::PinMck<$PER> for $pin<crate::gpio::Alternate<$af>> {}
+                impl<MODE> crate::i2s::PinMck<$PER> for $pin<MODE> {
+                    type A = crate::gpio::Const<$af>;
+                }
             )+
         };
     }
@@ -120,7 +148,9 @@ mod ws_pins {
     macro_rules! pin_ws {
         ($($PER:ident => $pin:ident<$af:literal>,)+) => {
             $(
-                impl crate::i2s::PinWs<$PER> for $pin<crate::gpio::Alternate<$af>> {}
+                impl<MODE> crate::i2s::PinWs<$PER> for $pin<MODE> {
+                    type A = crate::gpio::Const<$af>;
+                }
             )+
         };
     }
@@ -253,32 +283,33 @@ macro_rules! i2s {
             }
         }
 
-        impl<PWS, PCK, PMCLK, PSD> I2s<$SPIX, (PWS, PCK, PMCLK, PSD)>
+        impl<WS, CK, MCLK, SD, const WSA: u8, const CKA: u8, const MCLKA: u8, const SDA: u8>
+            I2s<$SPIX, (WS, CK, MCLK, SD)>
         where
-            PWS: PinWs<$SPIX>,
-            PCK: PinCk<$SPIX>,
-            PMCLK: PinMck<$SPIX>,
-            PSD: PinSd<$SPIX>,
+            WS: PinWs<$SPIX, A = Const<WSA>> + SetAlternate<WSA>,
+            CK: PinCk<$SPIX, A = Const<CKA>> + SetAlternate<CKA>,
+            MCLK: PinMck<$SPIX, A = Const<MCLKA>> + SetAlternate<MCLKA>,
+            SD: PinSd<$SPIX, A = Const<SDA>> + SetAlternate<SDA>,
         {
             #[deprecated(since = "0.10.0", note = "Please use new instead")]
-            pub fn $i2sx(spi: $SPIX, pins: (PWS, PCK, PMCLK, PSD), clocks: Clocks) -> Self {
+            pub fn $i2sx(spi: $SPIX, pins: (WS, CK, MCLK, SD), clocks: Clocks) -> Self {
                 Self::new(spi, pins, clocks)
             }
         }
-        impl PinMck<$SPIX> for NoMasterClock {}
         unsafe impl<PINS> Instance for I2s<$SPIX, PINS> {
             const REGISTERS: *mut RegisterBlock = <$SPIX>::ptr() as *mut _;
         }
     };
 }
 
-impl<SPI, PWS, PCK, PMCLK, PSD> I2s<SPI, (PWS, PCK, PMCLK, PSD)>
+impl<SPI, WS, CK, MCLK, SD, const WSA: u8, const CKA: u8, const MCLKA: u8, const SDA: u8>
+    I2s<SPI, (WS, CK, MCLK, SD)>
 where
     SPI: I2sFreq + rcc::Enable + rcc::Reset,
-    PWS: PinWs<SPI>,
-    PCK: PinCk<SPI>,
-    PMCLK: PinMck<SPI>,
-    PSD: PinSd<SPI>,
+    WS: PinWs<SPI, A = Const<WSA>> + SetAlternate<WSA>,
+    CK: PinCk<SPI, A = Const<CKA>> + SetAlternate<CKA>,
+    MCLK: PinMck<SPI, A = Const<MCLKA>> + SetAlternate<MCLKA>,
+    SD: PinSd<SPI, A = Const<SDA>> + SetAlternate<SDA>,
 {
     /// Creates an I2s object around an SPI peripheral and pins
     ///
@@ -291,7 +322,7 @@ where
     ///
     /// This function panics if the I2S clock input (from the I2S PLL or similar)
     /// is not configured.
-    pub fn new(spi: SPI, pins: (PWS, PCK, PMCLK, PSD), clocks: Clocks) -> Self {
+    pub fn new(spi: SPI, mut pins: (WS, CK, MCLK, SD), clocks: Clocks) -> Self {
         let input_clock = SPI::i2s_freq(&clocks);
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
@@ -300,6 +331,12 @@ where
             SPI::enable(rcc);
             SPI::reset(rcc);
         }
+
+        pins.0.set_alt_mode();
+        pins.1.set_alt_mode();
+        pins.2.set_alt_mode();
+        pins.3.set_alt_mode();
+
         I2s {
             _spi: spi,
             _pins: pins,

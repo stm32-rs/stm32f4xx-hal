@@ -56,6 +56,7 @@ use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
 
 mod convert;
+pub(crate) use convert::{Const, SetAlternate, SetAlternateOD};
 mod partially_erased;
 pub use partially_erased::{PEPin, PartiallyErasedPin};
 mod erased;

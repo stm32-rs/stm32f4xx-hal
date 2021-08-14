@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Update examples with `embedded-graphics`,
   remove deprecated `I2s::i2sx` [#358]
+- `into_alternate()` may be omitted now for `Serial`, `Spi`, `I2s`, `I2c` [#355]
 - [breaking-change] 115_200 bps for Serial by default [#355]
 - Move `Tx`, `Rx` structures into `Serial` [#355]
 - Update `embedded-hal` dependendency [#356]
@@ -125,7 +126,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#351]: https://github.com/stm32-rs/stm32f4xx-hal/pull/351
 [#355]: https://github.com/stm32-rs/stm32f4xx-hal/pull/355
 [#356]: https://github.com/stm32-rs/stm32f4xx-hal/pull/356
+<<<<<<< HEAD
 [#358]: https://github.com/stm32-rs/stm32f4xx-hal/pull/358
+=======
+[#359]: https://github.com/stm32-rs/stm32f4xx-hal/pull/359
+>>>>>>> 162df0e... SetAlternate
 
 ### Fixed
 
