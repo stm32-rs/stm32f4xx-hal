@@ -27,10 +27,10 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.sysclk(24.mhz()).freeze();
+    let clocks = rcc.cfgr.sysclk(24.MHz()).freeze();
 
     // Create a timer based on SysTick
-    let mut timer = Timer::syst(cp.SYST, &clocks).start_count_down(24.hz());
+    let mut timer = Timer::syst(cp.SYST, &clocks).start_count_down(24.Hz());
 
     hprintln!("hello!").unwrap();
     // wait until timer expires
@@ -46,7 +46,7 @@ fn main() -> ! {
     timer.cancel().unwrap();
 
     // start it again
-    timer.start(24.hz());
+    timer.start(24.Hz());
     nb::block!(timer.wait()).unwrap();
     hprintln!("timer expired 3").unwrap();
 

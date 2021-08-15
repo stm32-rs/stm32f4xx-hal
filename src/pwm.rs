@@ -1,5 +1,7 @@
-use crate::{bb, hal as pwm, time::Hertz, timer::Timer};
+use crate::rcc::MAX_HERTZ;
+use crate::{bb, hal as pwm, time::rate::Hertz, timer::Timer};
 use cast::{u16, u32};
+use core::convert::TryInto;
 use core::{marker::PhantomData, mem::MaybeUninit};
 
 use crate::pac::{TIM1, TIM11, TIM5, TIM9};
@@ -196,7 +198,7 @@ macro_rules! pwm_all_channels {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
                 where
                     PINS: Pins<$TIMX, P>,
-                    T: Into<Hertz>,
+                    T: TryInto<Hertz>,
                 {
                     if PINS::C1 {
                         self.tim.ccmr1_output()
@@ -220,7 +222,7 @@ macro_rules! pwm_all_channels {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
+                    let ticks = self.clk.0 / freq.try_into().unwrap_or(MAX_HERTZ).0;
                     let psc = u16((ticks - 1) / (1 << 16)).unwrap();
                     self.tim.psc.write(|w| w.psc().bits(psc) );
                     let arr = u16(ticks / u32(psc + 1)).unwrap();
@@ -263,7 +265,7 @@ macro_rules! pwm_2_channels {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
                 where
                     PINS: Pins<$TIMX, P>,
-                    T: Into<Hertz>,
+                    T: TryInto<Hertz>,
                 {
                     if PINS::C1 {
                         //NOTE(unsafe) 6 is a valid value to write to oc1m
@@ -283,7 +285,7 @@ macro_rules! pwm_2_channels {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
+                    let ticks = self.clk.0 / freq.try_into().unwrap_or(MAX_HERTZ).0;
                     let psc = u16((ticks - 1) / (1 << 16)).unwrap();
                     self.tim.psc.write(|w| w.psc().bits(psc) );
                     let arr = u16(ticks / u32(psc + 1)).unwrap();
@@ -318,7 +320,7 @@ macro_rules! pwm_1_channel {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
                 where
                     PINS: Pins<$TIMX, P>,
-                    T: Into<Hertz>,
+                    T: TryInto<Hertz>,
                 {
                     if PINS::C1 {
                         //NOTE(unsafe) 6 is a valid value to write to oc1m
@@ -333,7 +335,7 @@ macro_rules! pwm_1_channel {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
+                    let ticks = self.clk.0 / freq.try_into().unwrap_or(MAX_HERTZ).0;
                     let psc = u16((ticks - 1) / (1 << 16)).unwrap();
                     self.tim.psc.write(|w| w.psc().bits(psc) );
                     let arr = u16(ticks / u32(psc + 1)).unwrap();
@@ -426,7 +428,7 @@ macro_rules! pwm_tim5_f410 {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
                 where
                     PINS: Pins<$TIMX, P>,
-                    T: Into<Hertz>,
+                    T: TryInto<Hertz>,
                 {
                     if PINS::C1 {
                         self.tim.ccmr1_output()
@@ -450,7 +452,7 @@ macro_rules! pwm_tim5_f410 {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
+                    let ticks = self.clk.0 / freq.try_into().unwrap_or(MAX_HERTZ).0;
                     let psc = u16((ticks - 1) / (1 << 16)).unwrap();
                     self.tim.psc.write(|w| w.psc().bits(psc) );
                     let arr = u16(ticks / u32(psc + 1)).unwrap();

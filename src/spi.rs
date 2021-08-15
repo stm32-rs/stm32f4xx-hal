@@ -2,6 +2,8 @@ use core::ops::Deref;
 use core::ptr;
 
 use crate::gpio::{Const, NoPin, SetAlternate};
+use crate::rcc::MAX_HERTZ;
+use core::convert::TryInto;
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
 
@@ -40,7 +42,7 @@ use crate::pac::SPI5;
 use crate::pac::SPI6;
 
 use crate::rcc::Clocks;
-use crate::time::Hertz;
+use crate::time::rate::Hertz;
 
 /// SPI error
 #[non_exhaustive]
@@ -414,7 +416,7 @@ macro_rules! spi {
                 spi: $SPI,
                 pins: (SCK, MISO, MOSI),
                 mode: Mode,
-                freq: Hertz,
+                freq: impl TryInto<Hertz>,
                 clocks: Clocks,
             ) -> Spi<$SPI, (SCK, MISO, MOSI), TransferModeNormal> {
                 Self::new(spi, pins, mode, freq, clocks)
@@ -450,7 +452,7 @@ where
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
         mode: Mode,
-        freq: Hertz,
+        freq: impl TryInto<Hertz>,
         clocks: Clocks,
     ) -> Self {
         unsafe {
@@ -469,7 +471,11 @@ where
             pins,
             transfer_mode: TransferModeNormal,
         }
-        .pre_init(mode, freq, SPI::get_frequency(&clocks))
+        .pre_init(
+            mode,
+            freq.try_into().unwrap_or(MAX_HERTZ),
+            SPI::get_frequency(&clocks),
+        )
         .init()
     }
 
@@ -492,7 +498,7 @@ where
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
         mode: Mode,
-        freq: Hertz,
+        freq: impl TryInto<Hertz>,
         clocks: Clocks,
     ) -> Self {
         unsafe {
@@ -511,7 +517,11 @@ where
             pins,
             transfer_mode: TransferModeBidi,
         }
-        .pre_init(mode, freq, SPI::get_frequency(&clocks))
+        .pre_init(
+            mode,
+            freq.try_into().unwrap_or(MAX_HERTZ),
+            SPI::get_frequency(&clocks),
+        )
         .init()
     }
 

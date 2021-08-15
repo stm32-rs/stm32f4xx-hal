@@ -4,7 +4,7 @@ mod syst;
 
 use cortex_m::peripheral::SYST;
 
-use crate::time::Hertz;
+use crate::time::rate::Hertz;
 
 /// Timer as a delay provider (SysTick by default)
 pub struct Delay<T = SYST> {

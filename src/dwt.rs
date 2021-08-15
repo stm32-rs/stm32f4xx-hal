@@ -1,7 +1,7 @@
 //! Debug and trace and stuff
 
 use crate::rcc::Clocks;
-use crate::time::Hertz;
+use crate::time::rate::Hertz;
 use cortex_m::peripheral::{DCB, DWT};
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 

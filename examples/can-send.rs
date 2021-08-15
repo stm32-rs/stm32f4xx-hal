@@ -21,7 +21,7 @@ fn main() -> ! {
     // To meet CAN clock accuracy requirements an external crystal or ceramic
     // resonator must be used. The blue pill has a 8MHz external crystal.
     // Other boards might have a crystal with another frequency or none at all.
-    rcc.cfgr.use_hse(8.mhz()).freeze();
+    rcc.cfgr.use_hse(8.MHz()).freeze();
 
     let gpiob = dp.GPIOB.split();
     let mut can1 = {

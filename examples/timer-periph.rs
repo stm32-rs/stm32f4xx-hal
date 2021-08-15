@@ -26,10 +26,10 @@ use crate::hal::{pac, prelude::*};
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.sysclk(24.mhz()).freeze();
+    let clocks = rcc.cfgr.sysclk(24.MHz()).freeze();
 
     // Create a timer based on SysTick
-    let mut timer = Timer::new(dp.TIM1, &clocks).start_count_down(1.hz());
+    let mut timer = Timer::new(dp.TIM1, &clocks).start_count_down(1.Hz());
 
     hprintln!("hello!").unwrap();
     // wait until timer expires
@@ -45,7 +45,7 @@ fn main() -> ! {
     timer.cancel().unwrap();
 
     // start it again
-    timer.start(1.hz());
+    timer.start(1.Hz());
     nb::block!(timer.wait()).unwrap();
     hprintln!("timer expired 3").unwrap();
 

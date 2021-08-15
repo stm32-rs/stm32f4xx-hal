@@ -1,3 +1,5 @@
+use crate::rcc::MAX_HERTZ;
+use core::convert::TryInto;
 use core::ops::Deref;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
@@ -16,7 +18,7 @@ use crate::gpio::gpiof;
 use crate::gpio::{gpioa, gpiob, gpioc, gpioh};
 
 use crate::rcc::Clocks;
-use crate::time::{Hertz, U32Ext};
+use crate::time::rate::{Extensions, Hertz};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum DutyCycle {
@@ -36,15 +38,15 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub fn standard<F: Into<Hertz>>(frequency: F) -> Self {
+    pub fn standard<F: TryInto<Hertz>>(frequency: F) -> Self {
         Self::Standard {
-            frequency: frequency.into(),
+            frequency: frequency.try_into().unwrap_or(MAX_HERTZ),
         }
     }
 
-    pub fn fast<F: Into<Hertz>>(frequency: F, duty_cycle: DutyCycle) -> Self {
+    pub fn fast<F: TryInto<Hertz>>(frequency: F, duty_cycle: DutyCycle) -> Self {
         Self::Fast {
-            frequency: frequency.into(),
+            frequency: frequency.try_into().unwrap_or(MAX_HERTZ),
             duty_cycle,
         }
     }
@@ -59,11 +61,11 @@ impl Mode {
 
 impl<F> From<F> for Mode
 where
-    F: Into<Hertz>,
+    F: TryInto<Hertz>,
 {
     fn from(frequency: F) -> Self {
-        let frequency: Hertz = frequency.into();
-        if frequency <= 100_000.hz() {
+        let frequency: Hertz = frequency.try_into().unwrap_or(MAX_HERTZ);
+        if frequency <= 100_000.Hz() {
             Self::Standard { frequency }
         } else {
             Self::Fast {

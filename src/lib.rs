@@ -25,6 +25,8 @@ compile_error!(
 
 #[cfg(feature = "device-selected")]
 pub use embedded_hal as hal;
+#[cfg(feature = "device-selected")]
+pub use embedded_time as time;
 
 #[cfg(feature = "device-selected")]
 pub use nb;
@@ -179,8 +181,6 @@ pub mod signature;
 pub mod spi;
 #[cfg(feature = "device-selected")]
 pub mod syscfg;
-#[cfg(feature = "device-selected")]
-pub mod time;
 #[cfg(feature = "device-selected")]
 pub mod timer;
 #[cfg(feature = "device-selected")]

@@ -13,7 +13,7 @@ use crate::gpio::{
     Alternate,
 };
 use crate::rcc::{Enable, Reset};
-use crate::time::Hertz;
+use crate::time::rate::Hertz;
 
 pub use synopsys_usb_otg::UsbBus;
 use synopsys_usb_otg::UsbPeripheral;

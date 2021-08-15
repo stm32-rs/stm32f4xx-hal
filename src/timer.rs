@@ -12,7 +12,7 @@ use void::Void;
 use crate::pac::RCC;
 
 use crate::rcc::{self, Clocks};
-use crate::time::Hertz;
+use crate::time::rate::Hertz;
 
 /// Timer wrapper
 pub struct Timer<TIM> {

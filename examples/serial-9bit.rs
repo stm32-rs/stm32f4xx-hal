@@ -53,7 +53,7 @@ fn main() -> ! {
 
     let rcc = dp.RCC.constrain();
 
-    let clocks = rcc.cfgr.use_hse(8.mhz()).freeze();
+    let clocks = rcc.cfgr.use_hse(8.MHz()).freeze();
 
     let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
 

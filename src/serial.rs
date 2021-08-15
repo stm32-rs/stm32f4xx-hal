@@ -88,8 +88,7 @@ pub enum Event {
 }
 
 pub mod config {
-    use crate::time::Bps;
-    use crate::time::U32Ext;
+    use crate::time::rate::{BitsPerSecond, Extensions};
 
     pub enum WordLength {
         DataBits8,
@@ -121,7 +120,7 @@ pub mod config {
     }
 
     pub struct Config {
-        pub baudrate: Bps,
+        pub baudrate: BitsPerSecond,
         pub wordlength: WordLength,
         pub parity: Parity,
         pub stopbits: StopBits,
@@ -129,7 +128,7 @@ pub mod config {
     }
 
     impl Config {
-        pub fn baudrate(mut self, baudrate: Bps) -> Self {
+        pub fn baudrate(mut self, baudrate: BitsPerSecond) -> Self {
             self.baudrate = baudrate;
             self
         }

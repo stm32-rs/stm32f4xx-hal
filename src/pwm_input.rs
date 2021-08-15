@@ -1,8 +1,10 @@
+use crate::rcc::MAX_HERTZ;
 use crate::{
-    time::Hertz,
+    time::rate::Hertz,
     timer::{PinC1, Timer},
 };
 use cast::u16;
+use core::convert::TryInto;
 
 pub trait Pins<TIM> {}
 
@@ -61,7 +63,7 @@ macro_rules! hal {
             #[allow(unused_unsafe)] //for some chips the operations are considered safe.
             pub fn pwm_input<T, PINS>(self, best_guess: T, pins: PINS) -> PwmInput<$TIM, PINS>
             where
-                T: Into<Hertz>,
+                T: TryInto<Hertz>,
                 PINS: Pins<$TIM>,
             {
                 /*
@@ -69,7 +71,7 @@ macro_rules! hal {
                 Sets the TIMer's prescaler such that the TIMer that it ticks at about the best-guess
                  frequency.
                 */
-                let ticks = self.clk.0 / best_guess.into().0;
+                let ticks = self.clk.0 / best_guess.try_into().unwrap_or(MAX_HERTZ).0;
                 let psc = u16((ticks - 1) / (1 << 16)).unwrap();
                 self.tim.psc.write(|w| w.psc().bits(psc));
 

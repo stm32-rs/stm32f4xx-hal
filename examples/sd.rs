@@ -19,12 +19,12 @@ fn main() -> ! {
     let rcc = device.RCC.constrain();
     let clocks = rcc
         .cfgr
-        .use_hse(12.mhz())
+        .use_hse(12.MHz())
         .require_pll48clk()
-        .sysclk(168.mhz())
-        .hclk(168.mhz())
-        .pclk1(42.mhz())
-        .pclk2(84.mhz())
+        .sysclk(168.MHz())
+        .hclk(168.MHz())
+        .pclk1(42.MHz())
+        .pclk2(84.MHz())
         .freeze();
 
     assert!(clocks.is_pll48clk_valid());

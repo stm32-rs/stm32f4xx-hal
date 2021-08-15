@@ -27,7 +27,7 @@ use crate::hal::blocking::rng;
 use crate::pac;
 use crate::pac::RNG;
 use crate::rcc::{Clocks, Enable, Reset};
-use crate::time::U32Ext;
+use crate::time::rate::Extensions;
 use core::num::NonZeroU32;
 use core::ops::Shl;
 use rand_core::RngCore;
@@ -91,7 +91,7 @@ impl RngExt for RNG {
 
             // verify the clock configuration is valid
             let hclk = clocks.hclk();
-            let rng_clk = clocks.pll48clk().unwrap_or_else(|| 0u32.hz());
+            let rng_clk = clocks.pll48clk().unwrap_or_else(|| 0u32.Hz());
             assert!(rng_clk.0 >= (hclk.0 / 16));
 
             // enable the RNG peripheral

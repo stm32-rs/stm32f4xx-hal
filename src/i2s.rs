@@ -7,7 +7,7 @@ use stm32_i2s_v12x::{Instance, RegisterBlock};
 
 use crate::pac::RCC;
 use crate::rcc;
-use crate::time::Hertz;
+use crate::time::rate::Hertz;
 use crate::{rcc::Clocks, spi};
 
 // I2S pins are mostly the same as the corresponding SPI pins:

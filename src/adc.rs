@@ -569,7 +569,7 @@ pub mod config {
 ///  adc.enable();
 ///
 /// //Configure the timer
-/// let mut tim = Timer::tim1(device.TIM1, 1.hz(), clocks);
+/// let mut tim = Timer::tim1(device.TIM1, 1.Hz(), clocks);
 /// unsafe {
 ///     let tim = &(*TIM1::ptr());
 ///

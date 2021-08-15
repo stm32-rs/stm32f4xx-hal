@@ -8,14 +8,14 @@
 //! let dp = pac::Peripherals::take().unwrap();
 //! let clocks = rcc
 //!     .cfgr
-//!     .use_hse(8.mhz())
-//!     .sysclk(168.mhz())
-//!     .pclk1(24.mhz())
-//!     .i2s_clk(86.mhz())
+//!     .use_hse(8.MHz())
+//!     .sysclk(168.MHz())
+//!     .pclk1(24.MHz())
+//!     .i2s_clk(86.MHz())
 //!     .require_pll48clk()
 //!     .freeze();
 //!     // Test that the I2S clock is suitable for 48000KHz audio.
-//!     assert!(clocks.i2s_clk().unwrap() == 48.mhz().into());
+//!     assert!(clocks.i2s_clk().unwrap() == 48.MHz().into());
 //! ```
 //!
 //! # Limitations
@@ -42,7 +42,8 @@
 use crate::pac::rcc::cfgr::{HPRE_A, SW_A};
 use crate::pac::{rcc, RCC};
 
-use crate::time::Hertz;
+use crate::time::rate::Hertz;
+use core::convert::TryInto;
 
 #[cfg(not(feature = "stm32f410"))]
 use pll::I2sPll;
@@ -62,6 +63,8 @@ mod pll;
 
 mod enable;
 use crate::pac::rcc::RegisterBlock as RccRB;
+
+pub(crate) const MAX_HERTZ: Hertz = Hertz(u32::MAX);
 
 /// Bus associated to peripheral
 pub trait RccBus: crate::Sealed {
@@ -492,9 +495,9 @@ impl CFGR {
     /// Will result in a hang if an external oscillator is not connected or it fails to start.
     pub fn use_hse<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.hse = Some(freq.into().0);
+        self.hse = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -514,33 +517,33 @@ impl CFGR {
 
     pub fn hclk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.hclk = Some(freq.into().0);
+        self.hclk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
     pub fn pclk1<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.pclk1 = Some(freq.into().0);
+        self.pclk1 = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
     pub fn pclk2<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.pclk2 = Some(freq.into().0);
+        self.pclk2 = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
     pub fn sysclk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.sysclk = Some(freq.into().0);
+        self.sysclk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -555,9 +558,9 @@ impl CFGR {
     /// used to generate the clocks.
     pub fn i2s_ckin<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.i2s_ckin = Some(freq.into().0);
+        self.i2s_ckin = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -579,9 +582,9 @@ impl CFGR {
     ))]
     pub fn i2s_clk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.i2s_clk = Some(freq.into().0);
+        self.i2s_clk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -594,9 +597,9 @@ impl CFGR {
     ))]
     pub fn i2s_apb1_clk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.i2s_apb1_clk = Some(freq.into().0);
+        self.i2s_apb1_clk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -609,9 +612,9 @@ impl CFGR {
     ))]
     pub fn i2s_apb2_clk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.i2s_apb2_clk = Some(freq.into().0);
+        self.i2s_apb2_clk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -628,9 +631,9 @@ impl CFGR {
     ))]
     pub fn saia_clk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.sai1_clk = Some(freq.into().0);
+        self.sai1_clk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -647,9 +650,9 @@ impl CFGR {
     ))]
     pub fn saib_clk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.sai2_clk = Some(freq.into().0);
+        self.sai2_clk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -657,9 +660,9 @@ impl CFGR {
     #[cfg(any(feature = "stm32f446",))]
     pub fn sai1_clk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.sai1_clk = Some(freq.into().0);
+        self.sai1_clk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
 
@@ -667,9 +670,9 @@ impl CFGR {
     #[cfg(any(feature = "stm32f446",))]
     pub fn sai2_clk<F>(mut self, freq: F) -> Self
     where
-        F: Into<Hertz>,
+        F: TryInto<Hertz>,
     {
-        self.sai2_clk = Some(freq.into().0);
+        self.sai2_clk = Some(freq.try_into().unwrap_or(MAX_HERTZ).0);
         self
     }
     #[cfg(feature = "stm32f410")]

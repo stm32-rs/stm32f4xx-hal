@@ -1,3 +1,5 @@
+use crate::rcc::MAX_HERTZ;
+use core::convert::TryInto;
 use core::ops::Deref;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
@@ -5,7 +7,7 @@ use crate::gpio::{gpiob, gpioc, gpiod, gpiof, Const, SetAlternateOD};
 use crate::i2c::{Error, PinScl, PinSda};
 use crate::pac::{fmpi2c1, FMPI2C1, RCC};
 use crate::rcc::{Enable, Reset};
-use crate::time::{Hertz, U32Ext};
+use crate::time::rate::{Extensions, Hertz};
 
 /// I2C FastMode+ abstraction
 pub struct FMPI2c<I2C, PINS> {
@@ -21,21 +23,21 @@ pub enum FmpMode {
 }
 
 impl FmpMode {
-    pub fn standard<F: Into<Hertz>>(frequency: F) -> Self {
+    pub fn standard<F: TryInto<Hertz>>(frequency: F) -> Self {
         Self::Standard {
-            frequency: frequency.into(),
+            frequency: frequency.try_into().unwrap_or(MAX_HERTZ),
         }
     }
 
-    pub fn fast<F: Into<Hertz>>(frequency: F) -> Self {
+    pub fn fast<F: TryInto<Hertz>>(frequency: F) -> Self {
         Self::Fast {
-            frequency: frequency.into(),
+            frequency: frequency.try_into().unwrap_or(MAX_HERTZ),
         }
     }
 
-    pub fn fast_plus<F: Into<Hertz>>(frequency: F) -> Self {
+    pub fn fast_plus<F: TryInto<Hertz>>(frequency: F) -> Self {
         Self::FastPlus {
-            frequency: frequency.into(),
+            frequency: frequency.try_into().unwrap_or(MAX_HERTZ),
         }
     }
 
@@ -50,13 +52,13 @@ impl FmpMode {
 
 impl<F> From<F> for FmpMode
 where
-    F: Into<Hertz>,
+    F: TryInto<Hertz>,
 {
     fn from(frequency: F) -> Self {
-        let frequency: Hertz = frequency.into();
-        if frequency <= 100_000.hz() {
+        let frequency: Hertz = frequency.try_into().unwrap_or(MAX_HERTZ);
+        if frequency <= 100_000.Hz() {
             Self::Standard { frequency }
-        } else if frequency <= 400_000.hz() {
+        } else if frequency <= 400_000.Hz() {
             Self::Fast { frequency }
         } else {
             Self::FastPlus { frequency }

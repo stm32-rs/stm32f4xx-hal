@@ -45,7 +45,7 @@ fn main() -> ! {
 
     // Change spi transfer mode to Bidi for more efficient operations.
     let spi =
-        Spi::new(dp.SPI1, (sck, miso, mosi), mode, 8_000_000.hz(), clocks).to_bidi_transfer_mode();
+        Spi::new(dp.SPI1, (sck, miso, mosi), mode, 8_000_000.Hz(), clocks).to_bidi_transfer_mode();
 
     let iface = SPIInterface::new(spi, dc, cs);
 

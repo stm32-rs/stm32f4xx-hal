@@ -102,7 +102,7 @@ fn main() -> ! {
             polarity: Polarity::IdleLow,
             phase: Phase::CaptureOnFirstTransition,
         },
-        stm32f4xx_hal::time::KiloHertz(2000).into(),
+        2000.kHz(),
         clocks,
     );
 
@@ -127,7 +127,7 @@ fn main() -> ! {
     disp.flush().unwrap();
 
     // Create a 1ms periodic interrupt from TIM2
-    let mut timer = Timer::new(dp.TIM2, &clocks).start_count_down(1.hz());
+    let mut timer = Timer::new(dp.TIM2, &clocks).start_count_down(1.Hz());
     timer.listen(Event::TimeOut);
 
     free(|cs| {
@@ -209,10 +209,10 @@ fn main() -> ! {
 
 fn setup_clocks(rcc: Rcc) -> Clocks {
     rcc.cfgr
-        .hclk(180.mhz())
-        .sysclk(180.mhz())
-        .pclk1(45.mhz())
-        .pclk2(90.mhz())
+        .hclk(180.MHz())
+        .sysclk(180.MHz())
+        .pclk1(45.MHz())
+        .pclk2(90.MHz())
         .freeze()
 }
 

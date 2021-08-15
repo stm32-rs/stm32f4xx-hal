@@ -35,12 +35,12 @@ const APP: () = {
         let rcc = device.RCC.constrain();
         let _clocks = rcc
             .cfgr
-            .use_hse(25.mhz())
+            .use_hse(25.MHz())
             .require_pll48clk()
-            .sysclk(84.mhz())
-            .hclk(84.mhz())
-            .pclk1(42.mhz())
-            .pclk2(84.mhz())
+            .sysclk(84.MHz())
+            .hclk(84.MHz())
+            .pclk1(42.MHz())
+            .pclk2(84.MHz())
             .freeze();
 
         let gpiob = device.GPIOB.split();

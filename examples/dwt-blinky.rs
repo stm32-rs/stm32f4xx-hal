@@ -26,7 +26,7 @@ fn main() -> ! {
 
         // Set up the system clock. We want to run at 48MHz for this one.
         let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(48.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
 
         // Create a delay abstraction based on DWT cycle counter
         let dwt = cp.DWT.constrain(cp.DCB, clocks);

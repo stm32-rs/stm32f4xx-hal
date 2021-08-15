@@ -31,7 +31,7 @@ fn main() -> ! {
     ) {
         // Set up the system clock. We want to run at 48MHz for this one.
         let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(48.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
 
         // Set up I2C - SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F446xC/E datasheet page 60. Pin assignment as per the Nucleo-F446 board.
@@ -46,7 +46,7 @@ fn main() -> ! {
             .into_alternate()
             .internal_pull_up(true)
             .set_open_drain();
-        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
+        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), clocks);
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor
         // and therefore is active LOW. There's even a 100nF capacitor for debouncing - nice for us

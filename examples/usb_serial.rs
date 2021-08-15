@@ -20,8 +20,8 @@ fn main() -> ! {
 
     let clocks = rcc
         .cfgr
-        .use_hse(25.mhz())
-        .sysclk(48.mhz())
+        .use_hse(25.MHz())
+        .sysclk(48.MHz())
         .require_pll48clk()
         .freeze();
 
