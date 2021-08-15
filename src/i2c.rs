@@ -4,6 +4,7 @@ use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use crate::pac::i2c1;
 use crate::rcc::{Enable, Reset};
 
+use crate::gpio::{Const, SetAlternateOD};
 #[cfg(feature = "i2c3")]
 use crate::pac::I2C3;
 use crate::pac::{I2C1, I2C2, RCC};
@@ -13,8 +14,6 @@ use crate::pac::{I2C1, I2C2, RCC};
 use crate::gpio::gpiof;
 #[allow(unused)]
 use crate::gpio::{gpioa, gpiob, gpioc, gpioh};
-
-use crate::gpio::AlternateOD;
 
 use crate::rcc::Clocks;
 use crate::time::{Hertz, U32Ext};
@@ -82,8 +81,12 @@ pub struct I2c<I2C: Instance, PINS> {
 }
 
 pub trait Pins<I2c> {}
-pub trait PinScl<I2c> {}
-pub trait PinSda<I2c> {}
+pub trait PinScl<I2c> {
+    type A;
+}
+pub trait PinSda<I2c> {
+    type A;
+}
 
 impl<I2c, SCL, SDA> Pins<I2c> for (SCL, SDA)
 where
@@ -92,13 +95,21 @@ where
 {
 }
 
-impl PinScl<I2C1> for gpiob::PB6<AlternateOD<4>> {}
-impl PinSda<I2C1> for gpiob::PB7<AlternateOD<4>> {}
-impl PinScl<I2C1> for gpiob::PB8<AlternateOD<4>> {}
-impl PinSda<I2C1> for gpiob::PB9<AlternateOD<4>> {}
+macro_rules! pin {
+    ($trait:ident<$I2C:ident> for $gpio:ident::$PX:ident<$A:literal>) => {
+        impl<MODE> $trait<$I2C> for $gpio::$PX<MODE> {
+            type A = Const<$A>;
+        }
+    };
+}
+
+pin!(PinScl<I2C1> for gpiob::PB6<4>);
+pin!(PinSda<I2C1> for gpiob::PB7<4>);
+pin!(PinScl<I2C1> for gpiob::PB8<4>);
+pin!(PinSda<I2C1> for gpiob::PB9<4>);
 
 #[cfg(any(feature = "stm32f446"))]
-impl PinSda<I2C2> for gpiob::PB3<AlternateOD<4>> {}
+pin!(PinSda<I2C2> for gpiob::PB3<4>);
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f410",
@@ -107,7 +118,7 @@ impl PinSda<I2C2> for gpiob::PB3<AlternateOD<4>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C2> for gpiob::PB3<AlternateOD<9>> {}
+pin!(PinSda<I2C2> for gpiob::PB3<9>);
 #[cfg(any(
     feature = "stm32f410",
     feature = "stm32f411",
@@ -115,8 +126,8 @@ impl PinSda<I2C2> for gpiob::PB3<AlternateOD<9>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C2> for gpiob::PB9<AlternateOD<9>> {}
-impl PinScl<I2C2> for gpiob::PB10<AlternateOD<4>> {}
+pin!(PinSda<I2C2> for gpiob::PB9<9>);
+pin!(PinScl<I2C2> for gpiob::PB10<4>);
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -135,9 +146,9 @@ impl PinScl<I2C2> for gpiob::PB10<AlternateOD<4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for gpiob::PB11<AlternateOD<4>> {}
+pin!(PinSda<I2C2> for gpiob::PB11<4>);
 #[cfg(any(feature = "stm32f446"))]
-impl PinSda<I2C2> for gpioc::PC12<AlternateOD<4>> {}
+pin!(PinSda<I2C2> for gpioc::PC12<4>);
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -154,7 +165,7 @@ impl PinSda<I2C2> for gpioc::PC12<AlternateOD<4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C2> for gpiof::PF1<AlternateOD<4>> {}
+pin!(PinScl<I2C2> for gpiof::PF1<4>);
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -171,7 +182,7 @@ impl PinScl<I2C2> for gpiof::PF1<AlternateOD<4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for gpiof::PF0<AlternateOD<4>> {}
+pin!(PinSda<I2C2> for gpiof::PF0<4>);
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -184,7 +195,7 @@ impl PinSda<I2C2> for gpiof::PF0<AlternateOD<4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C2> for gpioh::PH4<AlternateOD<4>> {}
+pin!(PinScl<I2C2> for gpioh::PH4<4>);
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -197,12 +208,12 @@ impl PinScl<I2C2> for gpioh::PH4<AlternateOD<4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C2> for gpioh::PH5<AlternateOD<4>> {}
+pin!(PinSda<I2C2> for gpioh::PH5<4>);
 
 #[cfg(feature = "i2c3")]
-impl PinScl<I2C3> for gpioa::PA8<AlternateOD<4>> {}
+pin!(PinScl<I2C3> for gpioa::PA8<4>);
 #[cfg(any(feature = "stm32f446"))]
-impl PinSda<I2C3> for gpiob::PB4<AlternateOD<4>> {}
+pin!(PinSda<I2C3> for gpiob::PB4<4>);
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f411",
@@ -210,17 +221,17 @@ impl PinSda<I2C3> for gpiob::PB4<AlternateOD<4>> {}
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C3> for gpiob::PB4<AlternateOD<9>> {}
+pin!(PinSda<I2C3> for gpiob::PB4<9>);
 #[cfg(any(
     feature = "stm32f411",
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423"
 ))]
-impl PinSda<I2C3> for gpiob::PB8<AlternateOD<9>> {}
+pin!(PinSda<I2C3> for gpiob::PB8<9>);
 
 #[cfg(feature = "i2c3")]
-impl PinSda<I2C3> for gpioc::PC9<AlternateOD<4>> {}
+pin!(PinSda<I2C3> for gpioc::PC9<4>);
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -233,7 +244,7 @@ impl PinSda<I2C3> for gpioc::PC9<AlternateOD<4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinScl<I2C3> for gpioh::PH7<AlternateOD<4>> {}
+pin!(PinScl<I2C3> for gpioh::PH7<4>);
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -246,7 +257,7 @@ impl PinScl<I2C3> for gpioh::PH7<AlternateOD<4>> {}
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-impl PinSda<I2C3> for gpioh::PH8<AlternateOD<4>> {}
+pin!(PinSda<I2C3> for gpioh::PH8<4>);
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
@@ -268,13 +279,13 @@ impl Instance for I2C2 {}
 #[cfg(feature = "i2c3")]
 impl Instance for I2C3 {}
 
-impl<I2C, SCL, SDA> I2c<I2C, (SCL, SDA)>
+impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> I2c<I2C, (SCL, SDA)>
 where
     I2C: Instance,
-    SCL: PinScl<I2C>,
-    SDA: PinSda<I2C>,
+    SCL: PinScl<I2C, A = Const<SCLA>> + SetAlternateOD<SCLA>,
+    SDA: PinSda<I2C, A = Const<SDAA>> + SetAlternateOD<SDAA>,
 {
-    pub fn new<M: Into<Mode>>(i2c: I2C, pins: (SCL, SDA), mode: M, clocks: Clocks) -> Self {
+    pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: (SCL, SDA), mode: M, clocks: Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -284,9 +295,19 @@ where
             I2C::reset(rcc);
         }
 
+        pins.0.set_alt_mode();
+        pins.1.set_alt_mode();
+
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(mode, clocks.pclk1());
         i2c
+    }
+
+    pub fn release(mut self) -> (I2C, (SCL, SDA)) {
+        self.pins.0.restore_mode();
+        self.pins.1.restore_mode();
+
+        (self.i2c, self.pins)
     }
 }
 
@@ -396,10 +417,6 @@ where
         }
 
         Ok(sr1)
-    }
-
-    pub fn release(self) -> (I2C, PINS) {
-        (self.i2c, self.pins)
     }
 }
 

@@ -1,6 +1,7 @@
 use core::ops::Deref;
 use core::ptr;
 
+use crate::gpio::{Const, NoPin, SetAlternate};
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
 
@@ -38,8 +39,6 @@ use crate::pac::SPI5;
 #[cfg(feature = "spi6")]
 use crate::pac::SPI6;
 
-use crate::gpio::{Alternate, NoPin};
-
 use crate::rcc::Clocks;
 use crate::time::Hertz;
 
@@ -56,9 +55,15 @@ pub enum Error {
 }
 
 pub trait Pins<SPI> {}
-pub trait PinSck<SPI> {}
-pub trait PinMiso<SPI> {}
-pub trait PinMosi<SPI> {}
+pub trait PinSck<SPI> {
+    type A;
+}
+pub trait PinMiso<SPI> {
+    type A;
+}
+pub trait PinMosi<SPI> {
+    type A;
+}
 
 impl<SPI, SCK, MISO, MOSI> Pins<SPI> for (SCK, MISO, MOSI)
 where
@@ -75,21 +80,44 @@ pub type NoMiso = NoPin;
 /// A filler type for when the Mosi pin is unnecessary
 pub type NoMosi = NoPin;
 
-impl<SPI> PinSck<SPI> for NoPin where SPI: Instance {}
-impl<SPI> PinMiso<SPI> for NoPin where SPI: Instance {}
-impl<SPI> PinMosi<SPI> for NoPin where SPI: Instance {}
+impl<SPI> PinSck<SPI> for NoPin
+where
+    SPI: Instance,
+{
+    type A = Const<0>;
+}
+impl<SPI> PinMiso<SPI> for NoPin
+where
+    SPI: Instance,
+{
+    type A = Const<0>;
+}
+impl<SPI> PinMosi<SPI> for NoPin
+where
+    SPI: Instance,
+{
+    type A = Const<0>;
+}
 
 macro_rules! pins {
-    ($($SPIX:ty: SCK: [$($SCK:ty),*] MISO: [$($MISO:ty),*] MOSI: [$($MOSI:ty),*])+) => {
+    ($($SPIX:ty: SCK: [$($gpio1:ident::$PX1:ident<$A1:literal>),*]
+                MISO: [$($gpio2:ident::$PX2:ident<$A2:literal>),*]
+                MOSI: [$($gpio3:ident::$PX3:ident<$A3:literal>),*])+) => {
         $(
             $(
-                impl PinSck<$SPIX> for $SCK {}
+                impl<MODE> PinSck<$SPIX> for $gpio1::$PX1<MODE> {
+                    type A = Const<$A1>;
+                }
             )*
             $(
-                impl PinMiso<$SPIX> for $MISO {}
+                impl<MODE> PinMiso<$SPIX> for $gpio2::$PX2<MODE> {
+                    type A = Const<$A2>;
+                }
             )*
             $(
-                impl PinMosi<$SPIX> for $MOSI {}
+                impl<MODE> PinMosi<$SPIX> for $gpio3::$PX3<MODE> {
+                    type A = Const<$A3>;
+                }
             )*
         )+
     }
@@ -98,30 +126,30 @@ macro_rules! pins {
 pins! {
     SPI1:
         SCK: [
-            gpioa::PA5<Alternate<5>>,
-            gpiob::PB3<Alternate<5>>
+            gpioa::PA5<5>,
+            gpiob::PB3<5>
         ]
         MISO: [
-            gpioa::PA6<Alternate<5>>,
-            gpiob::PB4<Alternate<5>>
+            gpioa::PA6<5>,
+            gpiob::PB4<5>
         ]
         MOSI: [
-            gpioa::PA7<Alternate<5>>,
-            gpiob::PB5<Alternate<5>>
+            gpioa::PA7<5>,
+            gpiob::PB5<5>
         ]
 
     SPI2:
         SCK: [
-            gpiob::PB10<Alternate<5>>,
-            gpiob::PB13<Alternate<5>>
+            gpiob::PB10<5>,
+            gpiob::PB13<5>
         ]
         MISO: [
-            gpiob::PB14<Alternate<5>>,
-            gpioc::PC2<Alternate<5>>
+            gpiob::PB14<5>,
+            gpioc::PC2<5>
         ]
         MOSI: [
-            gpiob::PB15<Alternate<5>>,
-            gpioc::PC3<Alternate<5>>
+            gpiob::PB15<5>,
+            gpioc::PC3<5>
         ]
 }
 
@@ -129,16 +157,16 @@ pins! {
 pins! {
     SPI3:
         SCK: [
-            gpiob::PB3<Alternate<6>>,
-            gpioc::PC10<Alternate<6>>
+            gpiob::PB3<6>,
+            gpioc::PC10<6>
         ]
         MISO: [
-            gpiob::PB4<Alternate<6>>,
-            gpioc::PC11<Alternate<6>>
+            gpiob::PB4<6>,
+            gpioc::PC11<6>
         ]
         MOSI: [
-            gpiob::PB5<Alternate<6>>,
-            gpioc::PC12<Alternate<6>>
+            gpiob::PB5<6>,
+            gpioc::PC12<6>
         ]
 }
 
@@ -158,25 +186,25 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [gpiod::PD3<Alternate<5>>]
+        SCK: [gpiod::PD3<5>]
         MISO: []
         MOSI: []
     SPI3:
         SCK: []
         MISO: []
-        MOSI: [gpiod::PD6<Alternate<5>>]
+        MOSI: [gpiod::PD6<5>]
     SPI4:
         SCK: [
-            gpioe::PE2<Alternate<5>>,
-            gpioe::PE12<Alternate<5>>
+            gpioe::PE2<5>,
+            gpioe::PE12<5>
         ]
         MISO: [
-            gpioe::PE5<Alternate<5>>,
-            gpioe::PE13<Alternate<5>>
+            gpioe::PE5<5>,
+            gpioe::PE13<5>
         ]
         MOSI: [
-            gpioe::PE6<Alternate<5>>,
-            gpioe::PE14<Alternate<5>>
+            gpioe::PE6<5>,
+            gpioe::PE14<5>
         ]
 }
 
@@ -194,9 +222,9 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [gpioi::PI1<Alternate<5>>]
-        MISO: [gpioi::PI2<Alternate<5>>]
-        MOSI: [gpioi::PI3<Alternate<5>>]
+        SCK: [gpioi::PI1<5>]
+        MISO: [gpioi::PI2<5>]
+        MOSI: [gpioi::PI3<5>]
 }
 
 #[cfg(any(
@@ -209,7 +237,7 @@ pins! {
 ))]
 pins! {
     SPI2:
-        SCK: [gpioc::PC7<Alternate<5>>]
+        SCK: [gpioc::PC7<5>]
         MISO: []
         MOSI: []
 }
@@ -224,14 +252,14 @@ pins! {
 pins! {
     SPI5:
         SCK: [
-            gpiob::PB0<Alternate<6>>
+            gpiob::PB0<6>
         ]
         MISO: [
-            gpioa::PA12<Alternate<6>>
+            gpioa::PA12<6>
         ]
         MOSI: [
-            gpioa::PA10<Alternate<6>>,
-            gpiob::PB8<Alternate<6>>
+            gpioa::PA10<6>,
+            gpiob::PB8<6>
         ]
 }
 
@@ -243,34 +271,34 @@ pins! {
 ))]
 pins! {
     SPI3:
-        SCK: [gpiob::PB12<Alternate<7>>]
+        SCK: [gpiob::PB12<7>]
         MISO: []
         MOSI: []
     SPI4:
-        SCK: [gpiob::PB13<Alternate<6>>]
-        MISO: [gpioa::PA11<Alternate<6>>]
-        MOSI: [gpioa::PA1<Alternate<5>>]
+        SCK: [gpiob::PB13<6>]
+        MISO: [gpioa::PA11<6>]
+        MOSI: [gpioa::PA1<5>]
     SPI5:
         SCK: [
-            gpioe::PE2<Alternate<6>>,
-            gpioe::PE12<Alternate<6>>
+            gpioe::PE2<6>,
+            gpioe::PE12<6>
         ]
         MISO: [
-            gpioe::PE5<Alternate<6>>,
-            gpioe::PE13<Alternate<6>>
+            gpioe::PE5<6>,
+            gpioe::PE13<6>
         ]
         MOSI: [
-            gpioe::PE6<Alternate<6>>,
-            gpioe::PE14<Alternate<6>>
+            gpioe::PE6<6>,
+            gpioe::PE14<6>
         ]
 }
 
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 pins! {
     SPI2:
-        SCK: [gpioa::PA9<Alternate<5>>]
-        MISO: [gpioa::PA12<Alternate<5>>]
-        MOSI: [gpioa::PA10<Alternate<5>>]
+        SCK: [gpioa::PA9<5>]
+        MISO: [gpioa::PA12<5>]
+        MOSI: [gpioa::PA10<5>]
 }
 
 #[cfg(any(
@@ -284,61 +312,61 @@ pins! {
 pins! {
     SPI5:
         SCK: [
-            gpiof::PF7<Alternate<5>>,
-            gpioh::PH6<Alternate<5>>
+            gpiof::PF7<5>,
+            gpioh::PH6<5>
         ]
         MISO: [
-            gpiof::PF8<Alternate<5>>,
-            gpioh::PH7<Alternate<5>>
+            gpiof::PF8<5>,
+            gpioh::PH7<5>
         ]
         MOSI: [
-            gpiof::PF9<Alternate<5>>,
-            gpiof::PF11<Alternate<5>>
+            gpiof::PF9<5>,
+            gpiof::PF11<5>
         ]
 
     SPI6:
         SCK: [
-            gpiog::PG13<Alternate<5>>
+            gpiog::PG13<5>
         ]
         MISO: [
-            gpiog::PG12<Alternate<5>>
+            gpiog::PG12<5>
         ]
         MOSI: [
-            gpiog::PG14<Alternate<5>>
+            gpiog::PG14<5>
         ]
 }
 
 #[cfg(any(feature = "stm32f446"))]
 pins! {
     SPI2:
-        SCK: [gpioa::PA9<Alternate<5>>]
+        SCK: [gpioa::PA9<5>]
         MISO: []
-        MOSI: [gpioc::PC1<Alternate<7>>]
+        MOSI: [gpioc::PC1<7>]
 
     SPI3:
         SCK: []
         MISO: []
         MOSI: [
-            gpiob::PB0<Alternate<7>>,
-            gpiob::PB2<Alternate<7>>,
-            gpiod::PD0<Alternate<6>>
+            gpiob::PB0<7>,
+            gpiob::PB2<7>,
+            gpiod::PD0<6>
         ]
 
     SPI4:
-        SCK: [gpiog::PG11<Alternate<6>>]
+        SCK: [gpiog::PG11<6>]
         MISO: [
-            gpiog::PG12<Alternate<6>>,
-            gpiod::PD0<Alternate<5>>
+            gpiog::PG12<6>,
+            gpiod::PD0<5>
         ]
-        MOSI: [gpiog::PG13<Alternate<6>>]
+        MOSI: [gpiog::PG13<6>]
 }
 
 #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
 pins! {
     SPI2:
-        SCK: [gpioa::PA9<Alternate<5>>]
+        SCK: [gpioa::PA9<5>]
         MISO: []
-        MOSI: [gpioc::PC1<Alternate<5>>]
+        MOSI: [gpioc::PC1<5>]
 }
 
 /// Interrupt events
@@ -374,11 +402,12 @@ macro_rules! spi {
     ($SPI:ident: ($spi:ident)) => {
         impl Instance for $SPI {}
 
-        impl<SCK, MISO, MOSI> Spi<$SPI, (SCK, MISO, MOSI), TransferModeNormal>
+        impl<SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
+            Spi<$SPI, (SCK, MISO, MOSI), TransferModeNormal>
         where
-            SCK: PinSck<$SPI>,
-            MISO: PinMiso<$SPI>,
-            MOSI: PinMosi<$SPI>,
+            SCK: PinSck<$SPI, A = Const<SCKA>> + SetAlternate<SCKA>,
+            MISO: PinMiso<$SPI, A = Const<MISOA>> + SetAlternate<MISOA>,
+            MOSI: PinMosi<$SPI, A = Const<MOSIA>> + SetAlternate<MOSIA>,
         {
             #[deprecated(since = "0.10.0", note = "Please use new instead")]
             pub fn $spi(
@@ -409,20 +438,31 @@ spi! { SPI5: (spi5) }
 #[cfg(feature = "spi6")]
 spi! { SPI6: (spi6) }
 
-impl<SPI, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal>
+impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
+    Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal>
 where
     SPI: Instance,
-    SCK: PinSck<SPI>,
-    MISO: PinMiso<SPI>,
-    MOSI: PinMosi<SPI>,
+    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<SCKA>,
+    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<MISOA>,
+    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<MOSIA>,
 {
-    pub fn new(spi: SPI, pins: (SCK, MISO, MOSI), mode: Mode, freq: Hertz, clocks: Clocks) -> Self {
+    pub fn new(
+        spi: SPI,
+        mut pins: (SCK, MISO, MOSI),
+        mode: Mode,
+        freq: Hertz,
+        clocks: Clocks,
+    ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
             SPI::enable(rcc);
             SPI::reset(rcc);
         }
+
+        pins.0.set_alt_mode();
+        pins.1.set_alt_mode();
+        pins.2.set_alt_mode();
 
         Spi {
             spi,
@@ -440,16 +480,17 @@ where
     }
 }
 
-impl<SPI, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi>
+impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
+    Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi>
 where
     SPI: Instance,
-    SCK: PinSck<SPI>,
-    MISO: PinMiso<SPI>,
-    MOSI: PinMosi<SPI>,
+    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<SCKA>,
+    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<MISOA>,
+    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<MOSIA>,
 {
     pub fn new_bidi(
         spi: SPI,
-        pins: (SCK, MISO, MOSI),
+        mut pins: (SCK, MISO, MOSI),
         mode: Mode,
         freq: Hertz,
         clocks: Clocks,
@@ -460,6 +501,10 @@ where
             SPI::enable(rcc);
             SPI::reset(rcc);
         }
+
+        pins.0.set_alt_mode();
+        pins.1.set_alt_mode();
+        pins.2.set_alt_mode();
 
         Spi {
             spi,
@@ -474,6 +519,28 @@ where
         let mut dev_w_new_t_mode = self.into_mode(TransferModeNormal {});
         dev_w_new_t_mode.enable(false);
         dev_w_new_t_mode.init()
+    }
+}
+
+impl<SPI, SCK, MISO, MOSI, TRANSFER_MODE, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
+    Spi<SPI, (SCK, MISO, MOSI), TRANSFER_MODE>
+where
+    SPI: Instance,
+    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<SCKA>,
+    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<MISOA>,
+    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<MOSIA>,
+{
+    pub fn release(mut self) -> (SPI, (SCK, MISO, MOSI)) {
+        self.pins.0.restore_mode();
+        self.pins.1.restore_mode();
+        self.pins.2.restore_mode();
+
+        (self.spi, self.pins)
+    }
+
+    #[deprecated(since = "0.10.0", note = "Please use release instead")]
+    pub fn free(self) -> (SPI, (SCK, MISO, MOSI)) {
+        self.release()
     }
 }
 
@@ -633,15 +700,6 @@ where
     /// while the receive data register was already filled.
     pub fn is_ovr(&self) -> bool {
         self.spi.sr.read().ovr().bit_is_set()
-    }
-
-    pub fn release(self) -> (SPI, PINS) {
-        (self.spi, self.pins)
-    }
-
-    #[deprecated(since = "0.10.0", note = "Please use release instead")]
-    pub fn free(self) -> (SPI, PINS) {
-        (self.spi, self.pins)
     }
 
     #[inline(always)]

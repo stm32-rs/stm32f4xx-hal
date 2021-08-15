@@ -1,7 +1,7 @@
 use core::ops::Deref;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
-use crate::gpio::{gpiob, gpioc, gpiod, gpiof, AlternateOD};
+use crate::gpio::{gpiob, gpioc, gpiod, gpiof, Const, SetAlternateOD};
 use crate::i2c::{Error, PinScl, PinSda};
 use crate::pac::{fmpi2c1, FMPI2C1, RCC};
 use crate::rcc::{Enable, Reset};
@@ -64,25 +64,33 @@ where
     }
 }
 
-impl PinScl<FMPI2C1> for gpioc::PC6<AlternateOD<4>> {}
-impl PinSda<FMPI2C1> for gpioc::PC7<AlternateOD<4>> {}
-impl PinSda<FMPI2C1> for gpiob::PB3<AlternateOD<4>> {}
-impl PinScl<FMPI2C1> for gpiob::PB10<AlternateOD<9>> {}
-impl PinSda<FMPI2C1> for gpiob::PB14<AlternateOD<4>> {}
-impl PinScl<FMPI2C1> for gpiob::PB15<AlternateOD<4>> {}
-impl PinScl<FMPI2C1> for gpiod::PD12<AlternateOD<4>> {}
-impl PinScl<FMPI2C1> for gpiob::PB13<AlternateOD<4>> {}
-impl PinScl<FMPI2C1> for gpiod::PD14<AlternateOD<4>> {}
-impl PinScl<FMPI2C1> for gpiod::PD15<AlternateOD<4>> {}
-impl PinScl<FMPI2C1> for gpiof::PF14<AlternateOD<4>> {}
-impl PinScl<FMPI2C1> for gpiof::PF15<AlternateOD<4>> {}
+macro_rules! pin {
+    ($trait:ident<$I2C:ident> for $gpio:ident::$PX:ident<$A:literal>) => {
+        impl<MODE> $trait<$I2C> for $gpio::$PX<MODE> {
+            type A = Const<$A>;
+        }
+    };
+}
 
-impl<SCL, SDA> FMPI2c<FMPI2C1, (SCL, SDA)>
+pin!(PinScl<FMPI2C1> for gpioc::PC6<4>);
+pin!(PinSda<FMPI2C1> for gpioc::PC7<4>);
+pin!(PinSda<FMPI2C1> for gpiob::PB3<4>);
+pin!(PinScl<FMPI2C1> for gpiob::PB10<9>);
+pin!(PinSda<FMPI2C1> for gpiob::PB14<4>);
+pin!(PinScl<FMPI2C1> for gpiob::PB15<4>);
+pin!(PinScl<FMPI2C1> for gpiod::PD12<4>);
+pin!(PinScl<FMPI2C1> for gpiob::PB13<4>);
+pin!(PinScl<FMPI2C1> for gpiod::PD14<4>);
+pin!(PinScl<FMPI2C1> for gpiod::PD15<4>);
+pin!(PinScl<FMPI2C1> for gpiof::PF14<4>);
+pin!(PinScl<FMPI2C1> for gpiof::PF15<4>);
+
+impl<SCL, SDA, const SCLA: u8, const SDAA: u8> FMPI2c<FMPI2C1, (SCL, SDA)>
 where
-    SCL: PinScl<FMPI2C1>,
-    SDA: PinSda<FMPI2C1>,
+    SCL: PinScl<FMPI2C1, A = Const<SCLA>> + SetAlternateOD<SCLA>,
+    SDA: PinSda<FMPI2C1, A = Const<SDAA>> + SetAlternateOD<SDAA>,
 {
-    pub fn new<M: Into<FmpMode>>(i2c: FMPI2C1, pins: (SCL, SDA), mode: M) -> Self {
+    pub fn new<M: Into<FmpMode>>(i2c: FMPI2C1, mut pins: (SCL, SDA), mode: M) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -94,9 +102,19 @@ where
             rcc.dckcfgr2.modify(|_, w| w.fmpi2c1sel().hsi());
         }
 
+        pins.0.set_alt_mode();
+        pins.1.set_alt_mode();
+
         let i2c = FMPI2c { i2c, pins };
         i2c.i2c_init(mode);
         i2c
+    }
+
+    pub fn release(mut self) -> (FMPI2C1, (SCL, SDA)) {
+        self.pins.0.restore_mode();
+        self.pins.1.restore_mode();
+
+        (self.i2c, self.pins)
     }
 }
 
@@ -163,10 +181,6 @@ where
 
         // Enable the I2C processing
         self.i2c.cr1.modify(|_, w| w.pe().set_bit());
-    }
-
-    pub fn release(self) -> (I2C, PINS) {
-        (self.i2c, self.pins)
     }
 
     fn check_and_clear_error_flags(&self, isr: &fmpi2c1::isr::R) -> Result<(), Error> {

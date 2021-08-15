@@ -336,8 +336,7 @@ impl<const P: char, const N: u8, const A: u8> From<Pin<AlternateOD<A>, P, N>>
 }
 
 impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
-    /// Configures the pin to operate alternate mode
-    pub fn into_alternate<const A: u8>(self) -> Pin<Alternate<A>, P, N> {
+    fn set_alternate<const A: u8>(&mut self) {
         #[allow(path_statements, clippy::no_effect)]
         {
             Assert::<A, 16>::LESS;
@@ -359,6 +358,10 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
                 .moder
                 .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)));
         }
+    }
+    /// Configures the pin to operate alternate mode
+    pub fn into_alternate<const A: u8>(mut self) -> Pin<Alternate<A>, P, N> {
+        self.set_alternate::<A>();
         Pin::new()
     }
 
@@ -826,4 +829,57 @@ impl PinMode for Output<PushPull> {
     const PUPDR: u32 = 0b00;
     const MODER: u32 = 0b01;
     const OTYPER: Option<u32> = Some(0b0);
+}
+
+pub struct Const<const A: u8>;
+
+pub trait SetAlternate<const A: u8> {
+    fn set_alt_mode(&mut self);
+    fn restore_mode(&mut self);
+}
+impl SetAlternate<0> for NoPin {
+    fn set_alt_mode(&mut self) {}
+    fn restore_mode(&mut self) {}
+}
+impl<MODE: PinMode, const P: char, const N: u8, const A: u8> SetAlternate<A> for Pin<MODE, P, N> {
+    fn set_alt_mode(&mut self) {
+        self.set_alternate::<A>();
+    }
+
+    fn restore_mode(&mut self) {
+        self.mode::<MODE>();
+    }
+}
+
+impl<const P: char, const N: u8, const A: u8> SetAlternate<A> for Pin<Alternate<A>, P, N> {
+    fn set_alt_mode(&mut self) {}
+    fn restore_mode(&mut self) {}
+}
+
+pub trait SetAlternateOD<const A: u8> {
+    fn set_alt_mode(&mut self);
+    fn restore_mode(&mut self);
+}
+impl SetAlternateOD<0> for NoPin {
+    fn set_alt_mode(&mut self) {}
+    fn restore_mode(&mut self) {}
+}
+impl<MODE: PinMode, const P: char, const N: u8, const A: u8> SetAlternateOD<A> for Pin<MODE, P, N> {
+    fn set_alt_mode(&mut self) {
+        self.set_alternate::<A>();
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .otyper
+                .modify(|r, w| w.bits(r.bits() | (1 << N)))
+        };
+    }
+
+    fn restore_mode(&mut self) {
+        self.mode::<MODE>();
+    }
+}
+
+impl<const P: char, const N: u8, const A: u8> SetAlternateOD<A> for Pin<AlternateOD<A>, P, N> {
+    fn set_alt_mode(&mut self) {}
+    fn restore_mode(&mut self) {}
 }
