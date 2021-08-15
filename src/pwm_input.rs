@@ -180,7 +180,7 @@ macro_rules! hal {
                 self.get_duty_cycle_clocks() != self.get_period_clocks()
             }
         }
-        )+
+    )+
 }}
 
 #[cfg(any(feature = "stm32f411",))]
@@ -233,7 +233,7 @@ hal! {
     feature = "stm32f479",
 ))]
 hal! {
-        TIM12: (u16),
+    TIM12: (u16),
 }
 
 /* every chip across the series have these timers with support for this feature.

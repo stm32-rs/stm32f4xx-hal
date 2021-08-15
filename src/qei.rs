@@ -2,7 +2,7 @@
 use crate::{
     hal::{self, Direction},
     pac::RCC,
-    rcc::{Enable, Reset},
+    rcc,
 };
 
 pub trait Pins<TIM> {}
@@ -22,19 +22,26 @@ pub struct Qei<TIM, PINS> {
     pins: PINS,
 }
 
-impl<TIM: Instance, PINS> Qei<TIM, PINS> {
+impl<TIM: Instance, PC1, PC2> Qei<TIM, (PC1, PC2)>
+where
+    PC1: PinC1<TIM>,
+    PC2: PinC2<TIM>,
+{
     /// Configures a TIM peripheral as a quadrature encoder interface input
-    pub fn new(tim: TIM, pins: PINS) -> Self
-    where
-        PINS: Pins<TIM>,
-    {
-        TIM::setup_clocks();
+    pub fn new(mut tim: TIM, pins: (PC1, PC2)) -> Self {
+        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+        let rcc = unsafe { &(*RCC::ptr()) };
+        // Enable and reset clock.
+        TIM::enable(rcc);
+        TIM::reset(rcc);
 
         tim.setup_qei();
 
         Qei { tim, pins }
     }
+}
 
+impl<TIM: Instance, PINS> Qei<TIM, PINS> {
     /// Releases the TIM peripheral and QEI pins
     pub fn release(self) -> (TIM, PINS) {
         (self.tim, self.pins)
@@ -57,11 +64,10 @@ impl<TIM: Instance, PINS> hal::Qei for Qei<TIM, PINS> {
     }
 }
 
-pub trait Instance: crate::Sealed {
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset {
     type Count;
 
-    fn setup_clocks();
-    fn setup_qei(&self);
+    fn setup_qei(&mut self);
     fn read_count(&self) -> Self::Count;
     fn read_direction(&self) -> bool;
 }
@@ -72,17 +78,7 @@ macro_rules! hal {
             impl Instance for $TIM {
                 type Count = $bits;
 
-                fn setup_clocks() {
-                    unsafe {
-                        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-                        let rcc = &(*RCC::ptr());
-                        // Enable and reset clock.
-                        <$TIM>::enable(rcc);
-                        <$TIM>::reset(rcc);
-                    }
-                }
-
-                fn setup_qei(&self) {
+                fn setup_qei(&mut self) {
                     // Configure TxC1 and TxC2 as captures
                     self.ccmr1_output()
                         .write(|w| unsafe { w.cc1s().bits(0b01).cc2s().bits(0b01) });
@@ -113,20 +109,6 @@ macro_rules! hal {
                     self.cr1.read().dir().bit_is_clear()
                 }
             }
-
-            impl<PINS> Qei<$TIM, PINS> {
-                /// Configures a TIM peripheral as a quadrature encoder interface input
-                #[deprecated(
-                    since = "0.9.0",
-                    note = "Please use new instead"
-                )]
-                pub fn $tim(tim: $TIM, pins: PINS) -> Self
-                where
-                    PINS: Pins<$TIM>,
-                {
-                    Self::new(tim, pins)
-                }
-            }
         )+
     }
 }
@@ -136,46 +118,14 @@ hal! {
     crate::pac::TIM5: (tim5, u32),
 }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(feature = "tim2")]
 hal! {
     crate::pac::TIM2: (tim2, u32),
     crate::pac::TIM3: (tim3, u16),
     crate::pac::TIM4: (tim4, u16),
 }
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(feature = "tim8")]
 hal! {
     crate::pac::TIM8: (tim8, u16),
 }

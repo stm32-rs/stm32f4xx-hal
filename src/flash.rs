@@ -115,6 +115,7 @@ impl UnlockedFlash<'_> {
             let amount = 16 - (offset % 16);
 
             #[rustfmt::skip]
+            #[allow(unused_unsafe)]
             self.flash.cr.modify(|_, w| unsafe {
                 w
                     .psize().bits(PSIZE_X8)
@@ -155,6 +156,7 @@ impl UnlockedFlash<'_> {
 const UNLOCK_KEY1: u32 = 0x45670123;
 const UNLOCK_KEY2: u32 = 0xCDEF89AB;
 
+#[allow(unused_unsafe)]
 fn unlock(flash: &FLASH) {
     flash.keyr.write(|w| unsafe { w.key().bits(UNLOCK_KEY1) });
     flash.keyr.write(|w| unsafe { w.key().bits(UNLOCK_KEY2) });

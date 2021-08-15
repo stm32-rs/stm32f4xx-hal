@@ -21,11 +21,11 @@ use crate::hal::{
     {delay::Delay, prelude::*},
 };
 
+use embedded_graphics::geometry::Size;
 use embedded_graphics::image::*;
 use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::*;
-use embedded_graphics::style::PrimitiveStyle;
 use st7789::*;
 
 pub use display_interface::{DisplayError, WriteOnlyDataCommand};
@@ -766,16 +766,17 @@ fn main() -> ! {
         const SIZEX: i32 = 86;
         const SIZEY: i32 = 64;
         const STEP: i32 = 4;
-        let raw_image_data = ImageRawLE::new(&FERRIS, SIZEX as u32, SIZEY as u32);
+        let raw_image_data = ImageRawLE::new(&FERRIS, SIZEX as u32);
 
         loop {
             disp.clear(Rgb565::BLACK).unwrap();
 
             for x in (0..240 - SIZEX).step_by(STEP as usize) {
                 let mut ferris = Image::new(&raw_image_data, Point::new(x, 0));
-                let mut horiz_line = Rectangle::new(Point::new(x, 0), Point::new(x + SIZEX, STEP))
-                    .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK));
-                let vert_line = Rectangle::new(Point::new(x, 0), Point::new(x + STEP, 240))
+                let mut horiz_line =
+                    Rectangle::new(Point::new(x, 0), Size::new(SIZEX as u32, STEP as u32))
+                        .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK));
+                let vert_line = Rectangle::new(Point::new(x, 0), Size::new(STEP as u32, 240))
                     .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK));
 
                 for _y in (0..240 - SIZEY).step_by(STEP as usize) {
@@ -787,9 +788,11 @@ fn main() -> ! {
                     horiz_line.translate_mut(Point::new(0, STEP));
                 }
 
-                let mut horiz_line =
-                    Rectangle::new(Point::new(x, 239 - STEP), Point::new(x + SIZEX, 239))
-                        .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK));
+                let mut horiz_line = Rectangle::new(
+                    Point::new(x, 239 - STEP),
+                    Size::new(SIZEX as u32, STEP as u32),
+                )
+                .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK));
 
                 for _y in (0..240 - SIZEY).rev().step_by(STEP as usize) {
                     horiz_line.draw(&mut disp).unwrap();

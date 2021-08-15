@@ -32,10 +32,6 @@ impl<P, SPI> PinCk<SPI> for P where P: spi::PinSck<SPI> {}
 /// A placeholder for when the MCLK pin is not needed
 pub struct NoMasterClock;
 
-mod sealed {
-    pub trait Sealed {}
-}
-
 /// A set of pins configured for I2S communication: (WS, CK, MCLK, SD)
 ///
 /// NoMasterClock can be used instead of the master clock pin.
@@ -55,7 +51,6 @@ mod mck_pins {
     macro_rules! pin_mck {
         ($($PER:ident => $pin:ident<$af:literal>,)+) => {
             $(
-                impl crate::i2s::sealed::Sealed for $pin<crate::gpio::Alternate<$af>> {}
                 impl crate::i2s::PinMck<$PER> for $pin<crate::gpio::Alternate<$af>> {}
             )+
         };
@@ -100,24 +95,7 @@ mod mck_pins {
     }
 
     // On all models except the STM32F410, PC7<6> is the master clock output from I2S3.
-    #[cfg(any(
-        feature = "stm32f401",
-        feature = "stm32f405",
-        feature = "stm32f407",
-        feature = "stm32f411",
-        feature = "stm32f412",
-        feature = "stm32f413",
-        feature = "stm32f415",
-        feature = "stm32f417",
-        feature = "stm32f423",
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-        feature = "stm32f446",
-        feature = "stm32f469",
-        feature = "stm32f479",
-    ))]
+    #[cfg(feature = "spi3")]
     mod i2s3_pc7_af6 {
         use crate::gpio::gpioc::PC7;
         use crate::pac::SPI3;
@@ -142,7 +120,6 @@ mod ws_pins {
     macro_rules! pin_ws {
         ($($PER:ident => $pin:ident<$af:literal>,)+) => {
             $(
-                impl crate::i2s::sealed::Sealed for $pin<crate::gpio::Alternate<$af>> {}
                 impl crate::i2s::PinWs<$PER> for $pin<crate::gpio::Alternate<$af>> {}
             )+
         };
@@ -159,24 +136,7 @@ mod ws_pins {
     }
 
     /// Pins available on all models except the STM32F410
-    #[cfg(any(
-        feature = "stm32f401",
-        feature = "stm32f405",
-        feature = "stm32f407",
-        feature = "stm32f411",
-        feature = "stm32f412",
-        feature = "stm32f413",
-        feature = "stm32f415",
-        feature = "stm32f417",
-        feature = "stm32f423",
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-        feature = "stm32f446",
-        feature = "stm32f469",
-        feature = "stm32f479",
-    ))]
+    #[cfg(feature = "spi3")]
     mod not_f410 {
         use crate::gpio::gpioa::{PA15, PA4};
         use crate::pac::SPI3;

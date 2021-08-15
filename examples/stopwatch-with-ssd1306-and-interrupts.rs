@@ -30,19 +30,22 @@ use crate::hal::{
     rcc::{Clocks, Rcc},
     timer::{CountDownTimer, Event, Timer},
 };
-use arrayvec::ArrayString;
 use core::cell::{Cell, RefCell};
-use core::fmt;
+use core::fmt::Write;
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, CriticalSection, Mutex};
 use cortex_m_rt::entry;
 use embedded_graphics::{
-    fonts::{Font12x16, Font6x12, Text},
+    mono_font::{
+        ascii::{FONT_6X12, FONT_9X15},
+        MonoTextStyleBuilder,
+    },
     pixelcolor::BinaryColor,
     prelude::*,
-    style::TextStyleBuilder,
+    text::Text,
 };
-use ssd1306::{prelude::*, Builder, I2CDIBuilder};
+use heapless::String;
+use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 // Set up global state. It's all mutexed up for concurrency safety.
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
@@ -83,8 +86,9 @@ fn main() -> ! {
         board_btn.enable_interrupt(&mut dp.EXTI);
         board_btn.trigger_on_edge(&mut dp.EXTI, Edge::Falling);
 
-        let interface = I2CDIBuilder::new().init(i2c);
-        let mut disp: GraphicsMode<_, _> = Builder::new().connect(interface).into();
+        let interface = I2CDisplayInterface::new(i2c);
+        let mut disp = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+            .into_buffered_graphics_mode();
         disp.init().unwrap();
         disp.flush().unwrap();
 
@@ -109,7 +113,7 @@ fn main() -> ! {
         loop {
             let elapsed = free(|cs| ELAPSED_MS.borrow(cs).get());
 
-            let mut format_buf = ArrayString::<[u8; 10]>::new();
+            let mut format_buf = String::<10>::new();
             format_elapsed(&mut format_buf, elapsed);
 
             disp.clear();
@@ -121,21 +125,20 @@ fn main() -> ! {
                 StopwatchState::Stopped => "Stopped",
             };
 
-            let text_style = TextStyleBuilder::new(Font6x12)
+            let text_style = MonoTextStyleBuilder::new()
+                .font(&FONT_6X12)
                 .text_color(BinaryColor::On)
                 .build();
 
-            let text_style_format_buf = TextStyleBuilder::new(Font12x16)
+            let text_style_format_buf = MonoTextStyleBuilder::new()
+                .font(&FONT_9X15)
                 .text_color(BinaryColor::On)
                 .build();
 
-            Text::new(state_msg, Point::new(0, 0))
-                .into_styled(text_style)
+            Text::new(state_msg, Point::zero(), text_style)
                 .draw(&mut disp)
                 .unwrap();
-
-            Text::new(format_buf.as_str(), Point::new(0, 14))
-                .into_styled(text_style_format_buf)
+            Text::new(&format_buf, Point::new(0, 14), text_style_format_buf)
                 .draw(&mut disp)
                 .unwrap();
 
@@ -208,16 +211,12 @@ fn stopwatch_stop(_cs: &CriticalSection) {
     pac::NVIC::mask(hal::pac::Interrupt::TIM2);
 }
 
-// Formatting requires the arrayvec crate
-fn format_elapsed(buf: &mut ArrayString<[u8; 10]>, elapsed: u32) {
+// Formatting requires the heapless crate
+fn format_elapsed(buf: &mut String<10>, elapsed: u32) {
     let minutes = elapsed_to_m(elapsed);
     let seconds = elapsed_to_s(elapsed);
     let millis = elapsed_to_ms(elapsed);
-    fmt::write(
-        buf,
-        format_args!("{}:{:02}.{:03}", minutes, seconds, millis),
-    )
-    .unwrap();
+    write!(buf, "{}:{:02}.{:03}", minutes, seconds, millis).unwrap();
 }
 
 fn elapsed_to_ms(elapsed: u32) -> u32 {
