@@ -126,11 +126,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#351]: https://github.com/stm32-rs/stm32f4xx-hal/pull/351
 [#355]: https://github.com/stm32-rs/stm32f4xx-hal/pull/355
 [#356]: https://github.com/stm32-rs/stm32f4xx-hal/pull/356
-<<<<<<< HEAD
 [#358]: https://github.com/stm32-rs/stm32f4xx-hal/pull/358
-=======
 [#359]: https://github.com/stm32-rs/stm32f4xx-hal/pull/359
->>>>>>> 162df0e... SetAlternate
 
 ### Fixed
 
