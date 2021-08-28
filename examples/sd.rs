@@ -8,7 +8,7 @@ use panic_semihosting as _;
 use stm32f4xx_hal::{
     pac,
     prelude::*,
-    sdio::{ClockFreq, Sdio},
+    sdio::{ClockFreq, SdCard, Sdio},
 };
 
 #[entry]
@@ -40,13 +40,13 @@ fn main() -> ! {
     let d3 = gpioc.pc11.into_alternate().internal_pull_up(true);
     let clk = gpioc.pc12.into_alternate().internal_pull_up(false);
     let cmd = gpiod.pd2.into_alternate().internal_pull_up(true);
-    let mut sdio = Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3), &clocks);
+    let mut sdio: Sdio<SdCard> = Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3), &clocks);
 
     hprintln!("Waiting for card...").ok();
 
     // Wait for card to be ready
     loop {
-        match sdio.init_card(ClockFreq::F24Mhz) {
+        match sdio.init(ClockFreq::F24Mhz) {
             Ok(_) => break,
             Err(_err) => (),
         }

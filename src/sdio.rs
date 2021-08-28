@@ -6,8 +6,11 @@ use crate::rcc::{Clocks, Enable, Reset};
 #[allow(unused_imports)]
 use fugit::HertzU32 as Hertz;
 pub use sdio_host::{
-    cmd, cmd::ResponseLen, CardCapacity, CardStatus, Cmd, CurrentState, SDStatus, CIC, CID, CSD,
-    OCR, RCA, SCR,
+    common_cmd::{self, ResponseLen},
+    emmc::{CardCapacity, CardStatus, CurrentState, CID, CSD, EMMC, OCR, RCA},
+    emmc_cmd,
+    sd::{SDStatus, CIC, SCR, SD},
+    sd_cmd, Cmd,
 };
 
 pub trait PinClk {}
@@ -190,25 +193,34 @@ pub enum Error {
     NoCard,
 }
 
-/// Sdio device
-pub struct Sdio {
+/// A peripheral that uses the SDIO hardware, generic over the particular type of device.
+pub struct Sdio<P: SdioPeripheral> {
     sdio: SDIO,
     bw: Buswidth,
-    card: Option<Card>,
+    card: Option<P>,
     clock: Hertz,
 }
 
-/// Sd card
-pub struct Card {
+/// Sd card peripheral
+pub struct SdCard {
     pub capacity: CardCapacity,
-    pub ocr: OCR,
-    pub rca: RCA, // Relative Card Address
-    pub cid: CID,
-    pub csd: CSD,
+    pub ocr: OCR<SD>,
+    pub rca: RCA<SD>, // Relative Card Address
+    pub cid: CID<SD>,
+    pub csd: CSD<SD>,
     pub scr: SCR,
 }
 
-impl Sdio {
+/// eMMC device peripheral
+pub struct Emmc {
+    pub capacity: CardCapacity,
+    pub ocr: OCR<EMMC>,
+    pub rca: RCA<EMMC>, // Relative Card Address
+    pub cid: CID<EMMC>,
+    pub csd: CSD<EMMC>,
+}
+
+impl<P: SdioPeripheral> Sdio<P> {
     /// Create and enable the Sdio device
     pub fn new<PINS: Pins>(sdio: SDIO, _pins: PINS, clocks: &Clocks) -> Self {
         unsafe {
@@ -237,7 +249,7 @@ impl Sdio {
                 .enabled()
         });
 
-        let mut host = Sdio {
+        let mut host = Self {
             sdio,
             bw: PINS::BUSWIDTH,
             card: None,
@@ -247,99 +259,6 @@ impl Sdio {
         // Make sure card is powered off
         host.power_card(false);
         host
-    }
-
-    /// Initializes card (if present) and sets the bus at the specified frequency.
-    pub fn init_card(&mut self, freq: ClockFreq) -> Result<(), Error> {
-        // Enable power to card
-        self.power_card(true);
-
-        // Enable clock
-        self.sdio.clkcr.modify(|_, w| w.clken().enabled());
-        // Send card to idle state
-        self.cmd(cmd::idle())?;
-
-        // Check if cards supports CMD 8 (with pattern)
-        self.cmd(cmd::send_if_cond(1, 0xAA))?;
-        let cic = CIC::from(self.sdio.resp1.read().bits());
-
-        // If card did't echo back the pattern, we do not have a v2 card
-        if cic.pattern() != 0xAA {
-            return Err(Error::UnsupportedCardVersion);
-        }
-
-        if cic.voltage_accepted() & 1 == 0 {
-            return Err(Error::UnsupportedVoltage);
-        }
-
-        let ocr = loop {
-            // Initialize card
-
-            // 3.2-3.3V
-            let voltage_window = 1 << 20;
-            match self.app_cmd(cmd::sd_send_op_cond(true, false, true, voltage_window)) {
-                Ok(_) => (),
-                Err(Error::Crc) => (),
-                Err(err) => return Err(err),
-            }
-            let ocr = OCR::from(self.sdio.resp1.read().bits());
-            if ocr.is_busy() {
-                // Still powering up
-                continue;
-            }
-            break ocr;
-        };
-
-        // True for SDHC and SDXC False for SDSC
-        let capacity = if ocr.high_capacity() {
-            CardCapacity::SDHC
-        } else {
-            CardCapacity::SDSC
-        };
-
-        // Get CID
-        self.cmd(cmd::all_send_cid())?;
-        let mut cid = [0; 4];
-        cid[3] = self.sdio.resp1.read().bits();
-        cid[2] = self.sdio.resp2.read().bits();
-        cid[1] = self.sdio.resp3.read().bits();
-        cid[0] = self.sdio.resp4.read().bits();
-        let cid = CID::from(cid);
-
-        // Get RCA
-        self.cmd(cmd::send_relative_address())?;
-        let rca = RCA::from(self.sdio.resp1.read().bits());
-        let card_addr = rca.address();
-
-        // Get CSD
-        self.cmd(cmd::send_csd(card_addr))?;
-
-        let mut csd = [0; 4];
-        csd[3] = self.sdio.resp1.read().bits();
-        csd[2] = self.sdio.resp2.read().bits();
-        csd[1] = self.sdio.resp3.read().bits();
-        csd[0] = self.sdio.resp4.read().bits();
-        let csd = CSD::from(csd);
-
-        self.select_card(card_addr)?;
-        let scr = self.get_scr(card_addr)?;
-
-        let card = Card {
-            capacity,
-            ocr,
-            rca,
-            cid,
-            csd,
-            scr,
-        };
-
-        self.card.replace(card);
-
-        // Wait before setting the bus witdth and frequency to avoid timeouts on SDSC cards
-        while !self.card_ready()? {}
-
-        self.set_bus(self.bw, freq)?;
-        Ok(())
     }
 
     fn power_card(&mut self, on: bool) {
@@ -358,7 +277,7 @@ impl Sdio {
     }
 
     /// Get a reference to the initialized card
-    pub fn card(&self) -> Result<&Card, Error> {
+    pub fn card(&self) -> Result<&P, Error> {
         self.card.as_ref().ok_or(Error::NoCard)
     }
 
@@ -368,13 +287,13 @@ impl Sdio {
 
         // Always read 1 block of 512 bytes
         // SDSC cards are byte addressed hence the blockaddress is in multiples of 512 bytes
-        let blockaddr = match card.capacity {
-            CardCapacity::SDSC => blockaddr * 512,
+        let blockaddr = match card.get_capacity() {
+            CardCapacity::StandardCapacity => blockaddr * 512,
             _ => blockaddr,
         };
-        self.cmd(cmd::set_block_length(512))?;
+        self.cmd(common_cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, true);
-        self.cmd(cmd::read_single_block(blockaddr))?;
+        self.cmd(common_cmd::read_single_block(blockaddr))?;
 
         let mut i = 0;
 
@@ -412,13 +331,13 @@ impl Sdio {
 
         // Always write 1 block of 512 bytes
         // SDSC cards are byte addressed hence the blockaddress is in multiples of 512 bytes
-        let blockaddr = match card.capacity {
-            CardCapacity::SDSC => blockaddr * 512,
+        let blockaddr = match card.get_capacity() {
+            CardCapacity::StandardCapacity => blockaddr * 512,
             _ => blockaddr,
         };
-        self.cmd(cmd::set_block_length(512))?;
+        self.cmd(common_cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, false);
-        self.cmd(cmd::write_single_block(blockaddr))?;
+        self.cmd(common_cmd::write_single_block(blockaddr))?;
 
         let mut i = 0;
 
@@ -500,10 +419,10 @@ impl Sdio {
     }
 
     /// Read the state bits of the status
-    fn read_status(&mut self) -> Result<CardStatus, Error> {
+    fn read_status(&mut self) -> Result<CardStatus<P>, Error> {
         let card = self.card()?;
 
-        self.cmd(cmd::card_status(card.rca.address(), false))?;
+        self.cmd(common_cmd::card_status(card.get_address(), false))?;
 
         let r1 = self.sdio.resp1.read().bits();
         Ok(CardStatus::from(r1))
@@ -514,111 +433,23 @@ impl Sdio {
         Ok(self.read_status()?.state() == CurrentState::Transfer)
     }
 
-    /// Read the SDStatus struct
-    pub fn read_sd_status(&mut self) -> Result<SDStatus, Error> {
-        let _card = self.card()?;
-        self.cmd(cmd::set_block_length(64))?;
-        self.start_datapath_transfer(64, 6, true);
-        self.app_cmd(cmd::sd_status())?;
-
-        let mut status = [0u32; 16];
-        let mut idx = 0;
-
-        let s = loop {
-            let sta = self.sdio.sta.read();
-
-            if sta.rxact().bit_is_clear() {
-                break sta;
-            }
-
-            if sta.rxfifohf().bit() {
-                for _ in 0..8 {
-                    status[15 - idx] = self.sdio.fifo.read().bits().swap_bytes();
-                    idx += 1;
-                }
-            }
-
-            if idx == status.len() {
-                break sta;
-            }
-        };
-
-        status_to_error(s)?;
-        Ok(SDStatus::from(status))
-    }
-
     /// Select the card with `address`
     fn select_card(&self, rca: u16) -> Result<(), Error> {
-        let r = self.cmd(cmd::select_card(rca));
+        let r = self.cmd(common_cmd::select_card(rca));
         match (r, rca) {
             (Err(Error::Timeout), 0) => Ok(()),
             _ => r,
         }
     }
 
-    /// Get the Card configuration for card at `address`
-    fn get_scr(&self, rca: u16) -> Result<SCR, Error> {
-        self.cmd(cmd::set_block_length(8))?;
-        self.start_datapath_transfer(8, 3, true);
-        self.cmd(cmd::app_cmd(rca))?;
-        self.cmd(cmd::send_scr())?;
-
-        let mut buf = [0; 2];
-        let mut i = 0;
-
-        let status = loop {
-            let sta = self.sdio.sta.read();
-
-            if sta.rxact().bit_is_clear() {
-                break sta;
-            }
-
-            if sta.rxdavl().bit() {
-                buf[1 - i] = self.sdio.fifo.read().bits().swap_bytes();
-                i += 1;
-            }
-
-            if i == 2 {
-                break sta;
-            }
-        };
-
-        status_to_error(status)?;
-        Ok(SCR::from(buf))
-    }
-
-    /// Set bus width and clock frequency
-    fn set_bus(&self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
-        use crate::pac::sdio::clkcr::WIDBUS_A;
-
-        let card_widebus = self.card()?.supports_widebus();
-
-        let width = match width {
-            Buswidth::Buswidth4 if card_widebus => WIDBUS_A::BUSWIDTH4,
-            _ => WIDBUS_A::BUSWIDTH1,
-        };
-
-        self.app_cmd(cmd::set_bus_width(width == WIDBUS_A::BUSWIDTH4))?;
-
-        self.sdio.clkcr.modify(|_, w| {
-            w.clkdiv()
-                .bits(freq as u8)
-                .widbus()
-                .variant(width)
-                .clken()
-                .enabled()
-        });
-        Ok(())
-    }
-
-    fn app_cmd<R: cmd::Resp>(&self, acmd: Cmd<R>) -> Result<(), Error> {
-        let rca = self.card().map(|card| card.rca.address()).unwrap_or(0);
-        self.cmd(cmd::app_cmd(rca))?;
+    fn app_cmd<R: common_cmd::Resp>(&self, acmd: Cmd<R>) -> Result<(), Error> {
+        let rca = self.card().map(|card| card.get_address()).unwrap_or(0);
+        self.cmd(common_cmd::app_cmd(rca))?;
         self.cmd(acmd)
     }
 
     /// Send command to card
-    fn cmd<R: cmd::Resp>(&self, cmd: Cmd<R>) -> Result<(), Error> {
+    fn cmd<R: common_cmd::Resp>(&self, cmd: Cmd<R>) -> Result<(), Error> {
         use crate::pac::sdio::cmd::WAITRESP_A;
 
         // Command state machines must be idle
@@ -692,6 +523,295 @@ impl Sdio {
     }
 }
 
+impl Sdio<SdCard> {
+    /// Initializes card (if present) and sets the bus at the specified frequency.
+    pub fn init(&mut self, freq: ClockFreq) -> Result<(), Error> {
+        // Enable power to card
+        self.power_card(true);
+
+        // Enable clock
+        self.sdio.clkcr.modify(|_, w| w.clken().enabled());
+        // Send card to idle state
+        self.cmd(common_cmd::idle())?;
+
+        // Check if cards supports CMD 8 (with pattern)
+        self.cmd(sd_cmd::send_if_cond(1, 0xAA))?;
+        let cic = CIC::from(self.sdio.resp1.read().bits());
+
+        // If card did't echo back the pattern, we do not have a v2 card
+        if cic.pattern() != 0xAA {
+            return Err(Error::UnsupportedCardVersion);
+        }
+
+        if cic.voltage_accepted() & 1 == 0 {
+            return Err(Error::UnsupportedVoltage);
+        }
+
+        let ocr = loop {
+            // Initialize card
+
+            // 3.2-3.3V
+            let voltage_window = 1 << 20;
+            match self.app_cmd(sd_cmd::sd_send_op_cond(true, false, true, voltage_window)) {
+                Ok(_) => (),
+                Err(Error::Crc) => (),
+                Err(err) => return Err(err),
+            }
+            let ocr = OCR::from(self.sdio.resp1.read().bits());
+            if ocr.is_busy() {
+                // Still powering up
+                continue;
+            }
+            break ocr;
+        };
+
+        // True for SDHC and SDXC False for SDSC
+        let capacity = if ocr.high_capacity() {
+            CardCapacity::HighCapacity
+        } else {
+            CardCapacity::StandardCapacity
+        };
+
+        // Get CID
+        self.cmd(common_cmd::all_send_cid())?;
+        let mut cid = [0; 4];
+        cid[3] = self.sdio.resp1.read().bits();
+        cid[2] = self.sdio.resp2.read().bits();
+        cid[1] = self.sdio.resp3.read().bits();
+        cid[0] = self.sdio.resp4.read().bits();
+        let cid = CID::from(cid);
+
+        // Get RCA
+        self.cmd(sd_cmd::send_relative_address())?;
+        let rca = RCA::from(self.sdio.resp1.read().bits());
+        let card_addr = rca.address();
+
+        // Get CSD
+        self.cmd(common_cmd::send_csd(card_addr))?;
+
+        let mut csd = [0; 4];
+        csd[3] = self.sdio.resp1.read().bits();
+        csd[2] = self.sdio.resp2.read().bits();
+        csd[1] = self.sdio.resp3.read().bits();
+        csd[0] = self.sdio.resp4.read().bits();
+        let csd = CSD::from(csd);
+
+        self.select_card(card_addr)?;
+        let scr = self.get_scr(card_addr)?;
+
+        let card = SdCard {
+            capacity,
+            ocr,
+            rca,
+            cid,
+            csd,
+            scr,
+        };
+
+        self.card.replace(card);
+
+        // Wait before setting the bus witdth and frequency to avoid timeouts on SDSC cards
+        while !self.card_ready()? {}
+
+        self.set_bus(self.bw, freq)?;
+        Ok(())
+    }
+
+    /// Read the SDStatus struct
+    pub fn read_sd_status(&mut self) -> Result<SDStatus, Error> {
+        let _card = self.card()?;
+        self.cmd(common_cmd::set_block_length(64))?;
+        self.start_datapath_transfer(64, 6, true);
+        self.app_cmd(sd_cmd::sd_status())?;
+
+        let mut status = [0u32; 16];
+        let mut idx = 0;
+
+        let s = loop {
+            let sta = self.sdio.sta.read();
+
+            if sta.rxact().bit_is_clear() {
+                break sta;
+            }
+
+            if sta.rxfifohf().bit() {
+                for _ in 0..8 {
+                    status[15 - idx] = self.sdio.fifo.read().bits().swap_bytes();
+                    idx += 1;
+                }
+            }
+
+            if idx == status.len() {
+                break sta;
+            }
+        };
+
+        status_to_error(s)?;
+        Ok(SDStatus::from(status))
+    }
+
+    /// Get the Card configuration for card at `address`
+    fn get_scr(&self, rca: u16) -> Result<SCR, Error> {
+        self.cmd(common_cmd::set_block_length(8))?;
+        self.start_datapath_transfer(8, 3, true);
+        self.cmd(common_cmd::app_cmd(rca))?;
+        self.cmd(sd_cmd::send_scr())?;
+
+        let mut buf = [0; 2];
+        let mut i = 0;
+
+        let status = loop {
+            let sta = self.sdio.sta.read();
+
+            if sta.rxact().bit_is_clear() {
+                break sta;
+            }
+
+            if sta.rxdavl().bit() {
+                buf[1 - i] = self.sdio.fifo.read().bits().swap_bytes();
+                i += 1;
+            }
+
+            if i == 2 {
+                break sta;
+            }
+        };
+
+        status_to_error(status)?;
+        Ok(SCR::from(buf))
+    }
+
+    /// Set bus width and clock frequency
+    fn set_bus(&self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
+        use crate::pac::sdio::clkcr::WIDBUS_A;
+
+        let card_widebus = self.card()?.supports_widebus();
+
+        let width = match width {
+            Buswidth::Buswidth4 if card_widebus => WIDBUS_A::BUSWIDTH4,
+            // Buswidth8 is not supported for SD cards
+            _ => WIDBUS_A::BUSWIDTH1,
+        };
+
+        self.app_cmd(sd_cmd::set_bus_width(width == WIDBUS_A::BUSWIDTH4))?;
+
+        self.sdio.clkcr.modify(|_, w| {
+            w.clkdiv()
+                .bits(freq as u8)
+                .widbus()
+                .variant(width)
+                .clken()
+                .enabled()
+        });
+        Ok(())
+    }
+}
+
+impl Sdio<Emmc> {
+    /// Initializes eMMC device (if present) and sets the bus at the specified frequency.
+    pub fn init(&mut self, freq: ClockFreq) -> Result<(), Error> {
+        let card_addr: RCA<EMMC> = RCA::from(1u16);
+
+        // Enable power to card
+        self.power_card(true);
+
+        // Enable clock
+        self.sdio.clkcr.modify(|_, w| w.clken().enabled());
+        // Send card to idle state
+        self.cmd(common_cmd::idle())?;
+
+        let ocr = loop {
+            // Initialize card
+
+            // 3.2-3.3V
+            //let voltage_window = 1 << 20;
+            match self.cmd(emmc_cmd::send_op_cond(0b01000000111111111000000000000000)) {
+                Ok(_) => (),
+                Err(Error::Crc) => (),
+                Err(err) => return Err(err),
+            };
+            let ocr = OCR::from(self.sdio.resp1.read().bits());
+            if !ocr.is_busy() {
+                break ocr;
+            }
+        };
+
+        // True for SDHC and SDXC False for SDSC
+        let capacity = if ocr.high_capacity() {
+            CardCapacity::HighCapacity
+        } else {
+            CardCapacity::StandardCapacity
+        };
+
+        // Get CID
+        self.cmd(common_cmd::all_send_cid())?;
+        let mut cid = [0; 4];
+        cid[3] = self.sdio.resp1.read().bits();
+        cid[2] = self.sdio.resp2.read().bits();
+        cid[1] = self.sdio.resp3.read().bits();
+        cid[0] = self.sdio.resp4.read().bits();
+        let cid = CID::from(cid);
+
+        self.cmd(emmc_cmd::assign_relative_address(card_addr.address()))?;
+
+        self.cmd(common_cmd::send_csd(card_addr.address()))?;
+
+        let mut csd = [0; 4];
+        csd[3] = self.sdio.resp1.read().bits();
+        csd[2] = self.sdio.resp2.read().bits();
+        csd[1] = self.sdio.resp3.read().bits();
+        csd[0] = self.sdio.resp4.read().bits();
+        let csd = CSD::from(csd);
+
+        self.select_card(card_addr.address())?;
+
+        let card = Emmc {
+            capacity,
+            ocr,
+            rca: card_addr,
+            cid,
+            csd,
+        };
+
+        self.card.replace(card);
+
+        // Wait before setting the bus width and frequency to avoid timeouts on SDSC cards
+        while !self.card_ready()? {}
+
+        self.set_bus(self.bw, freq)?;
+        Ok(())
+    }
+
+    pub fn set_bus(&mut self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
+        use crate::pac::sdio::clkcr::WIDBUS_A;
+
+        // Use access mode 0b11 to write a value of 0x02 to byte 183. Cmd Set is 0 (not used).
+        self.cmd(emmc_cmd::modify_ext_csd(
+            emmc_cmd::AccessMode::WriteByte,
+            183,
+            width as u8,
+        ))?;
+
+        let width = match width {
+            Buswidth::Buswidth1 => WIDBUS_A::BUSWIDTH1,
+            Buswidth::Buswidth4 => WIDBUS_A::BUSWIDTH4,
+            Buswidth::Buswidth8 => WIDBUS_A::BUSWIDTH8,
+        };
+
+        // CMD6 is R1b, so wait for the card to be ready again before proceeding.
+        while !self.card_ready()? {}
+        self.sdio.clkcr.modify(|_, w| {
+            w.clkdiv()
+                .bits(freq as u8)
+                .widbus()
+                .variant(width)
+                .clken()
+                .enabled()
+        });
+        Ok(())
+    }
+}
+
 fn status_to_error(sta: pac::sdio::sta::R) -> Result<(), Error> {
     if sta.ctimeout().bit_is_set() {
         return Err(Error::Timeout);
@@ -740,7 +860,7 @@ fn clear_all_interrupts(icr: &pac::sdio::ICR) {
     });
 }
 
-impl Card {
+impl SdCard {
     /// Size in blocks
     pub fn block_count(&self) -> u32 {
         self.csd.block_count()
@@ -750,4 +870,27 @@ impl Card {
     fn supports_widebus(&self) -> bool {
         self.scr.bus_width_four()
     }
+}
+
+impl SdioPeripheral for SdCard {
+    fn get_address(&self) -> u16 {
+        self.rca.address()
+    }
+    fn get_capacity(&self) -> CardCapacity {
+        self.capacity
+    }
+}
+
+impl SdioPeripheral for Emmc {
+    fn get_address(&self) -> u16 {
+        self.rca.address()
+    }
+    fn get_capacity(&self) -> CardCapacity {
+        self.capacity
+    }
+}
+
+pub trait SdioPeripheral {
+    fn get_address(&self) -> u16;
+    fn get_capacity(&self) -> CardCapacity;
 }
