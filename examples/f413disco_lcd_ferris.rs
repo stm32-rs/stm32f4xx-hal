@@ -10,7 +10,8 @@
 #![no_main]
 #![no_std]
 
-use panic_rtt_core::{self, rtt_init_print};
+use panic_halt as _;
+use rtt_target::{self, rtt_init_print};
 
 use stm32f4xx_hal as hal;
 

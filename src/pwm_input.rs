@@ -210,7 +210,6 @@ hal! {
     feature = "stm32f479",
 ))]
 hal! {
-    TIM8: (u16),
     TIM2: (u32),
     TIM3: (u16),
     TIM4: (u16),
@@ -233,6 +232,7 @@ hal! {
     feature = "stm32f479",
 ))]
 hal! {
+    TIM8: (u16),
     TIM12: (u16),
 }
 
