@@ -102,7 +102,7 @@ fn main() -> ! {
             polarity: Polarity::IdleLow,
             phase: Phase::CaptureOnFirstTransition,
         },
-        stm32f4xx_hal::time::KiloHertz(2000).into(),
+        2000.khz(),
         clocks,
     );
 

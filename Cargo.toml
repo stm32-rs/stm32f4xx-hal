@@ -61,6 +61,8 @@ st7789 = "0.6.1"
 panic-rtt-core = "0.2.1"
 display-interface-spi = "0.4"
 ist7920 = "0.1.0"
+smart-leds = "0.3.0"
+ws2812-spi = { version = "0.4.0", features = [] }
 
 [features]
 device-selected = []

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `ws2812_spi` example [#363]
 - `AsRef/AsMut<Rx/Tx` for Serial [#355]
 - `spi::Transactional` [#356]
 - `IoPin` for `Output<OpenDrain>` and `Output<PushPull>> <-> Input<Floating>>` [#356]
@@ -78,6 +79,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#355]: https://github.com/stm32-rs/stm32f4xx-hal/pull/355
 [#356]: https://github.com/stm32-rs/stm32f4xx-hal/pull/356
 [#357]: https://github.com/stm32-rs/stm32f4xx-hal/pull/357
+[#363]: https://github.com/stm32-rs/stm32f4xx-hal/pull/363
 
 ### Changed
 
