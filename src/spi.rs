@@ -414,7 +414,7 @@ macro_rules! spi {
                 spi: $SPI,
                 pins: (SCK, MISO, MOSI),
                 mode: Mode,
-                freq: Hertz,
+                freq: impl Into<Hertz>,
                 clocks: Clocks,
             ) -> Spi<$SPI, (SCK, MISO, MOSI), TransferModeNormal> {
                 Self::new(spi, pins, mode, freq, clocks)
@@ -450,7 +450,7 @@ where
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
         mode: Mode,
-        freq: Hertz,
+        freq: impl Into<Hertz>,
         clocks: Clocks,
     ) -> Self {
         unsafe {
@@ -469,7 +469,7 @@ where
             pins,
             transfer_mode: TransferModeNormal,
         }
-        .pre_init(mode, freq, SPI::get_frequency(&clocks))
+        .pre_init(mode, freq.into(), SPI::get_frequency(&clocks))
         .init()
     }
 
@@ -492,7 +492,7 @@ where
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
         mode: Mode,
-        freq: Hertz,
+        freq: impl Into<Hertz>,
         clocks: Clocks,
     ) -> Self {
         unsafe {
@@ -511,7 +511,7 @@ where
             pins,
             transfer_mode: TransferModeBidi,
         }
-        .pre_init(mode, freq, SPI::get_frequency(&clocks))
+        .pre_init(mode, freq.into(), SPI::get_frequency(&clocks))
         .init()
     }
 
