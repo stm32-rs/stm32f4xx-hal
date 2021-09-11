@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- PWM channels for timers 9-14 [#364]
 - `ws2812_spi` example [#363]
 - `AsRef/AsMut<Rx/Tx` for Serial [#355]
 - `spi::Transactional` [#356]
@@ -83,6 +84,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Uncommented two TIM5 channels for STM32F410 [#364]
 - Update examples with `embedded-graphics`,
   remove deprecated `I2s::i2sx` [#358]
 - `into_alternate()` may be omitted now for `Serial`, `Spi`, `I2s`, `I2c` [#359]
