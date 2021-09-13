@@ -530,9 +530,6 @@ channel_impl!(
 );
 
 // All parts except F401, F410, and F411.
-// Note that F401 has the same TIM10 and TIM11 pins as
-// this block, but since it is missing the other timers,
-// those pins are added in the F401 block below.
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -603,13 +600,6 @@ channel_impl!(
     TIM5, PinC2, PF4, 2;
     TIM5, PinC3, PF5, 2;
     TIM5, PinC4, PF10, 2;
-);
-
-#[cfg(feature = "stm32f401")]
-channel_impl!(
-    TIM10, PinC1, PF6, 3;
-
-    TIM11, PinC1, PF7, 3;
 );
 
 #[cfg(feature = "stm32f410")]
