@@ -308,6 +308,7 @@ macro_rules! hal {
     }
 }
 
+// All F4xx parts have these timers.
 hal! {
     crate::pac::TIM1: (tim1),
     crate::pac::TIM5: (tim5),
@@ -315,6 +316,7 @@ hal! {
     crate::pac::TIM11: (tim11),
 }
 
+// All parts except for F410 add these timers.
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -340,6 +342,7 @@ hal! {
     crate::pac::TIM10: (tim10),
 }
 
+// All parts except F401 and F411.
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -361,6 +364,7 @@ hal! {
     crate::pac::TIM6: (tim6),
 }
 
+// All parts except F401, F410, F411.
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -416,6 +420,12 @@ macro_rules! channel_impl {
     };
 }
 
+// The approach to PWM channel implementation is to group parts with
+// common pins, starting with groupings of the largest number of parts
+// and moving to smaller and smaller groupings.  Last, we have individual
+// parts to cover exceptions.
+
+// All parts have these PWM pins.
 channel_impl!(
     TIM1, PinC1, PA8, 1;
     TIM1, PinC2, PA9, 1;
@@ -426,8 +436,14 @@ channel_impl!(
     TIM5, PinC2, PA1, 2;
     TIM5, PinC3, PA2, 2;
     TIM5, PinC4, PA3, 2;
+
+    TIM9, PinC1, PA2, 3;
+    TIM9, PinC2, PA3, 3;
+
+    TIM11, PinC1, PB9, 3;
 );
 
+// All parts except F410.
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f405",
@@ -486,16 +502,71 @@ channel_impl!(
     TIM4, PinC2, PD13, 2;
     TIM4, PinC3, PD14, 2;
     TIM4, PinC4, PD15, 2;
+
+    TIM10, PinC1, PB8, 3;
 );
 
-#[cfg(feature = "tim8")]
+// All parts except F401 and F410.
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+channel_impl!(
+    TIM9, PinC1, PE5, 3;
+    TIM9, PinC2, PE6, 3;
+);
+
+// All parts except F401, F410, and F411.
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 channel_impl!(
     TIM8, PinC1, PC6, 3;
     TIM8, PinC2, PC7, 3;
     TIM8, PinC3, PC8, 3;
     TIM8, PinC4, PC9, 3;
+
+    TIM10, PinC1, PF6, 3;
+
+    TIM11, PinC1, PF7, 3;
+
+    TIM12, PinC1, PB14, 9;
+    TIM12, PinC2, PB15, 9;
+
+    TIM13, PinC1, PA6, 9;
+    TIM13, PinC1, PF8, 9;  // Not a mistake: TIM13 has only one channel.
+
+    TIM14, PinC1, PA7, 9;
+    TIM14, PinC1, PF9, 9;  // Not a mistake: TIM14 has only one channel.
 );
 
+// STM's "advanced and foundation" lines except F446.
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
@@ -518,6 +589,9 @@ channel_impl!(
     TIM8, PinC2, PI6, 3;
     TIM8, PinC3, PI7, 3;
     TIM8, PinC4, PI2, 3;
+
+    TIM12, PinC1, PH6, 9;
+    TIM12, PinC2, PH9, 9;
 );
 
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -531,9 +605,14 @@ channel_impl!(
 #[cfg(feature = "stm32f410")]
 channel_impl!(
     TIM5, PinC1, PB12, 2;
-    //TIM5, PinC2, PC10, 2;
-    //TIM5, PinC3, PC11, 2;
+    TIM5, PinC2, PC10, 2;
+    TIM5, PinC3, PC11, 2;
     TIM5, PinC4, PB11, 2;
+
+    TIM9, PinC1, PC4, 3;
+    TIM9, PinC2, PC5, 3;
+
+    TIM11, PinC1, PC13, 3;
 );
 
 #[cfg(feature = "stm32f446")]
