@@ -21,7 +21,6 @@ fn main() -> ! {
 
     let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
     let gpioa = dp.GPIOA.split();
-    let gpioc = dp.GPIOC.split();
 
     let spi = Spi::new(
         dp.SPI1,

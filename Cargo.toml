@@ -28,7 +28,7 @@ targets = ["thumbv7em-none-eabihf"]
 [dependencies]
 bxcan = { version = ">=0.4, <0.6", optional = true }
 cortex-m = "0.7"
-cortex-m-rt = "0.6.10"
+cortex-m-rt = "0.7"
 nb = "1"
 rand_core = "0.6"
 rtcc = "0.2"
@@ -37,7 +37,7 @@ synopsys-usb-otg = { version = "0.2.0", features = ["cortex-m"], optional = true
 sdio-host = { version = "0.5.0", optional = true }
 embedded-dma = "0.1.2"
 bare-metal = { version = "1" }
-cast = { default-features = false, version = "0.2.7" }
+cast = { default-features = false, version = "0.3.0" }
 void = { default-features = false, version = "1.0.2" }
 embedded-hal = { features = ["unproven"], version = "0.2.6" }
 display-interface = { version = "0.4.1", optional = true }
@@ -55,7 +55,7 @@ ssd1306 = "0.7.0"
 embedded-graphics = "0.7.1"
 usb-device = "0.2.5"
 usbd-serial = "0.1.0"
-micromath = "1.0.0"
+micromath = "2"
 cortex-m-rtic = "0.5.6"
 st7789 = "0.6.1"
 panic-rtt-core = "0.2.1"
