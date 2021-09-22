@@ -401,6 +401,6 @@ fn draw_seconds_hand(seconds: u32) -> impl Iterator<Item = Pixel<BinaryColor>> {
 }
 
 #[exception]
-fn HardFault(ef: &ExceptionFrame) -> ! {
+unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("{:#?}", ef);
 }

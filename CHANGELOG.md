@@ -84,6 +84,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Bumped a few dependencies and fixed example fallout [#365]
 - Uncommented two TIM5 channels for STM32F410 [#364]
 - Update examples with `embedded-graphics`,
   remove deprecated `I2s::i2sx` [#358]
@@ -132,6 +133,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#356]: https://github.com/stm32-rs/stm32f4xx-hal/pull/356
 [#358]: https://github.com/stm32-rs/stm32f4xx-hal/pull/358
 [#359]: https://github.com/stm32-rs/stm32f4xx-hal/pull/359
+[#364]: https://github.com/stm32-rs/stm32f4xx-hal/pull/364
+[#365]: https://github.com/stm32-rs/stm32f4xx-hal/pull/365
 
 ### Fixed
 

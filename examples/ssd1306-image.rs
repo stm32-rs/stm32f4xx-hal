@@ -109,6 +109,6 @@ fn get_next_rotation(rotation: DisplayRotation) -> DisplayRotation {
 }
 
 #[exception]
-fn HardFault(ef: &ExceptionFrame) -> ! {
+unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("{:#?}", ef);
 }

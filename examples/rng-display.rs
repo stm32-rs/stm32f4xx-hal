@@ -113,6 +113,6 @@ fn main() -> ! {
 }
 
 #[exception]
-fn HardFault(ef: &ExceptionFrame) -> ! {
+unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("{:#?}", ef);
 }
