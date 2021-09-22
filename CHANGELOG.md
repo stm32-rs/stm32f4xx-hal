@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.10.0] - 2021-09-22
+
 ### Added
 
 - PWM channels for timers 9-14 [#364]
@@ -444,7 +446,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Support longuer Delay without asserting.
+- Support longer Delay without asserting.
 
 ## v0.1.0 - 2018-10-02
 
@@ -452,7 +454,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.10.0...HEAD
+[v0.10.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.3...v0.9.0
 [v0.8.3]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.2...v0.8.3
 [v0.8.2]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.1...v0.8.2
