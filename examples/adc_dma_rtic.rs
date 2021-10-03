@@ -1,35 +1,45 @@
 #![no_std]
 #![no_main]
 
-use cortex_m_semihosting::hprintln;
 use panic_semihosting as _;
 
-use rtic::cyccnt::U32Ext;
+#[rtic::app(device = stm32f4xx_hal::pac, dispatchers = [EXTI0])]
+mod app {
+    use cortex_m_semihosting::hprintln;
+    use dwt_systick_monotonic::DwtSystick;
+    use rtic::time::duration::Seconds;
 
-use stm32f4xx_hal::{
-    adc::{
-        config::{AdcConfig, Dma, SampleTime, Scan, Sequence},
-        Adc, Temperature,
-    },
-    dma::{config::DmaConfig, PeripheralToMemory, Stream0, StreamsTuple, Transfer},
-    pac::{self, ADC1, DMA2},
-    prelude::*,
-    signature::{VtempCal110, VtempCal30},
-};
+    use stm32f4xx_hal::{
+        adc::{
+            config::{AdcConfig, Dma, SampleTime, Scan, Sequence},
+            Adc, Temperature,
+        },
+        dma::{config::DmaConfig, PeripheralToMemory, Stream0, StreamsTuple, Transfer},
+        pac::{self, ADC1, DMA2},
+        prelude::*,
+        signature::{VtempCal110, VtempCal30},
+    };
 
-const POLLING_PERIOD: u32 = 168_000_000 / 2;
+    const MONO_HZ: u32 = 84_000_000; // 8 MHz
 
-type DMATransfer = Transfer<Stream0<DMA2>, Adc<ADC1>, PeripheralToMemory, &'static mut [u16; 2], 0>;
+    #[monotonic(binds = SysTick, default = true)]
+    type MyMono = DwtSystick<MONO_HZ>;
 
-#[rtic::app(device = stm32f4xx_hal::pac, peripherals = true, monotonic = rtic::cyccnt::CYCCNT)]
-const APP: () = {
-    struct Resources {
+    type DMATransfer =
+        Transfer<Stream0<DMA2>, Adc<ADC1>, PeripheralToMemory, &'static mut [u16; 2], 0>;
+
+    #[shared]
+    struct Shared {
         transfer: DMATransfer,
+    }
+
+    #[local]
+    struct Local {
         buffer: Option<&'static mut [u16; 2]>,
     }
 
-    #[init(schedule=[polling])]
-    fn init(cx: init::Context) -> init::LateResources {
+    #[init]
+    fn init(cx: init::Context) -> (Shared, Local, init::Monotonics) {
         let device: pac::Peripherals = cx.device;
 
         let rcc = device.RCC.constrain();
@@ -42,6 +52,12 @@ const APP: () = {
             .pclk1(42.mhz())
             .pclk2(84.mhz())
             .freeze();
+
+        let mut dcb = cx.core.DCB;
+        let dwt = cx.core.DWT;
+        let systick = cx.core.SYST;
+
+        let mono = DwtSystick::new(&mut dcb, dwt, systick, MONO_HZ);
 
         let gpiob = device.GPIOB.split();
         let voltage = gpiob.pb1.into_analog();
@@ -66,38 +82,41 @@ const APP: () = {
         let second_buffer = Some(cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap());
         let transfer = Transfer::init_peripheral_to_memory(dma.0, adc, first_buffer, None, config);
 
-        let now = cx.start;
-        cx.schedule.polling(now + POLLING_PERIOD.cycles()).unwrap();
+        polling::spawn_after(Seconds(1_u32)).ok();
 
-        init::LateResources {
-            transfer,
-            buffer: second_buffer,
-        }
+        (
+            Shared { transfer },
+            Local {
+                buffer: second_buffer,
+            },
+            init::Monotonics(mono),
+        )
     }
 
-    #[task(resources = [transfer], schedule = [polling])]
-    fn polling(cx: polling::Context) {
-        let transfer: &mut DMATransfer = cx.resources.transfer;
-        transfer.start(|adc| {
-            adc.start_conversion();
+    #[task(shared = [transfer])]
+    fn polling(mut cx: polling::Context) {
+        cx.shared.transfer.lock(|transfer| {
+            transfer.start(|adc| {
+                adc.start_conversion();
+            });
         });
 
-        cx.schedule
-            .polling(cx.scheduled + POLLING_PERIOD.cycles())
-            .unwrap();
+        polling::spawn_after(Seconds(1_u32)).ok();
     }
 
-    #[task(binds = DMA2_STREAM0, resources = [transfer, buffer])]
+    #[task(binds = DMA2_STREAM0, shared = [transfer], local = [buffer])]
     fn dma(cx: dma::Context) {
-        let transfer: &mut DMATransfer = cx.resources.transfer;
+        let dma::Context { mut shared, local } = cx;
+        let (buffer, _) = shared.transfer.lock(|transfer| {
+            transfer
+                .next_transfer(local.buffer.take().unwrap())
+                .unwrap()
+        });
 
-        let (buffer, _) = transfer
-            .next_transfer(cx.resources.buffer.take().unwrap())
-            .unwrap();
         let raw_temp = buffer[0];
         let raw_volt = buffer[1];
 
-        *cx.resources.buffer = Some(buffer);
+        *local.buffer = Some(buffer);
 
         let cal30 = VtempCal30::get().read() as f32;
         let cal110 = VtempCal110::get().read() as f32;
@@ -107,8 +126,4 @@ const APP: () = {
 
         hprintln!("temperature: {}, voltage: {}", temperature, voltage).unwrap();
     }
-
-    extern "C" {
-        fn EXTI0();
-    }
-};
+}
