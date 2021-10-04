@@ -573,12 +573,12 @@ where
     /// Note, you will also have to enable the corresponding interrupt
     /// in the NVIC to start receiving events.
     pub fn listen(&mut self) {
-        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().set_bit()) }
+        USART::cr1().modify(|_, w| w.rxneie().set_bit())
     }
 
     /// Stop listening for the rx not empty interrupt event
     pub fn unlisten(&mut self) {
-        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().clear_bit()) }
+        USART::cr1().modify(|_, w| w.rxneie().clear_bit())
     }
 
     /// Start listening for a line idle interrupt event
@@ -586,30 +586,28 @@ where
     /// Note, you will also have to enable the corresponding interrupt
     /// in the NVIC to start receiving events.
     pub fn listen_idle(&mut self) {
-        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().set_bit()) }
+        USART::cr1().modify(|_, w| w.idleie().set_bit())
     }
 
     /// Stop listening for the line idle interrupt event
     pub fn unlisten_idle(&mut self) {
-        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) }
+        USART::cr1().modify(|_, w| w.idleie().clear_bit())
     }
 
     /// Return true if the line idle status is set
     pub fn is_idle(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().idle().bit_is_set() }
+        USART::sr().read().idle().bit_is_set()
     }
 
     /// Return true if the rx register is not empty (and can be read)
     pub fn is_rx_not_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
+        USART::sr().read().rxne().bit_is_set()
     }
 
     /// Clear idle line interrupt flag
     pub fn clear_idle_interrupt(&self) {
-        unsafe {
-            let _ = (*USART::ptr()).sr.read();
-            let _ = (*USART::ptr()).dr.read();
-        }
+        let _ = USART::sr().read();
+        let _ = USART::dr().read();
     }
 }
 
@@ -629,17 +627,17 @@ where
     /// Note, you will also have to enable the corresponding interrupt
     /// in the NVIC to start receiving events.
     pub fn listen(&mut self) {
-        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().set_bit()) }
+        USART::cr1().modify(|_, w| w.txeie().set_bit())
     }
 
     /// Stop listening for the tx empty interrupt event
     pub fn unlisten(&mut self) {
-        unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) }
+        USART::cr1().modify(|_, w| w.txeie().clear_bit())
     }
 
     /// Return true if the tx register is empty (and can accept data)
     pub fn is_tx_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
+        USART::sr().read().txe().bit_is_set()
     }
 }
 
@@ -747,44 +745,38 @@ where
             return Err(config::InvalidConfig);
         };
 
-        unsafe { (*USART::ptr()).brr.write(|w| w.bits(div)) };
+        unsafe { USART::brr().write(|w| w.bits(div)) };
 
         // Reset other registers to disable advanced USART features
-        unsafe { (*USART::ptr()).cr2.reset() };
-        unsafe { (*USART::ptr()).cr3.reset() };
+        USART::cr2().reset();
+        USART::cr3().reset();
 
         // Enable transmission and receiving
         // and configure frame
-        unsafe {
-            (*USART::ptr()).cr1.write(|w| {
-                w.ue()
-                    .set_bit()
-                    .over8()
-                    .bit(over8)
-                    .te()
-                    .set_bit()
-                    .re()
-                    .set_bit()
-                    .m()
-                    .bit(match config.wordlength {
-                        WordLength::DataBits8 => false,
-                        WordLength::DataBits9 => true,
-                    })
-                    .pce()
-                    .bit(!matches!(config.parity, Parity::ParityNone))
-                    .ps()
-                    .bit(matches!(config.parity, Parity::ParityOdd))
-            })
-        };
+        USART::cr1().write(|w| {
+            w.ue()
+                .set_bit()
+                .over8()
+                .bit(over8)
+                .te()
+                .set_bit()
+                .re()
+                .set_bit()
+                .m()
+                .bit(match config.wordlength {
+                    WordLength::DataBits8 => false,
+                    WordLength::DataBits9 => true,
+                })
+                .pce()
+                .bit(!matches!(config.parity, Parity::ParityNone))
+                .ps()
+                .bit(matches!(config.parity, Parity::ParityOdd))
+        });
 
         match config.dma {
-            DmaConfig::Tx => unsafe { (*USART::ptr()).cr3.write(|w| w.dmat().enabled()) },
-            DmaConfig::Rx => unsafe { (*USART::ptr()).cr3.write(|w| w.dmar().enabled()) },
-            DmaConfig::TxRx => unsafe {
-                (*USART::ptr())
-                    .cr3
-                    .write(|w| w.dmar().enabled().dmat().enabled())
-            },
+            DmaConfig::Tx => USART::cr3().write(|w| w.dmat().enabled()),
+            DmaConfig::Rx => USART::cr3().write(|w| w.dmar().enabled()),
+            DmaConfig::TxRx => USART::cr3().write(|w| w.dmar().enabled().dmat().enabled()),
             DmaConfig::None => {}
         }
 
@@ -847,42 +839,40 @@ where
     /// in the NVIC to start receiving events.
     pub fn listen(&mut self, event: Event) {
         match event {
-            Event::Rxne => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().set_bit()) },
-            Event::Txe => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().set_bit()) },
-            Event::Idle => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().set_bit()) },
+            Event::Rxne => USART::cr1().modify(|_, w| w.rxneie().set_bit()),
+            Event::Txe => USART::cr1().modify(|_, w| w.txeie().set_bit()),
+            Event::Idle => USART::cr1().modify(|_, w| w.idleie().set_bit()),
         }
     }
 
     /// Stop listening for an interrupt event
     pub fn unlisten(&mut self, event: Event) {
         match event {
-            Event::Rxne => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.rxneie().clear_bit()) },
-            Event::Txe => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) },
-            Event::Idle => unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) },
+            Event::Rxne => USART::cr1().modify(|_, w| w.rxneie().clear_bit()),
+            Event::Txe => USART::cr1().modify(|_, w| w.txeie().clear_bit()),
+            Event::Idle => USART::cr1().modify(|_, w| w.idleie().clear_bit()),
         }
     }
 
     /// Return true if the line idle status is set
     pub fn is_idle(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().idle().bit_is_set() }
+        USART::sr().read().idle().bit_is_set()
     }
 
     /// Return true if the tx register is empty (and can accept data)
     pub fn is_tx_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
+        USART::sr().read().txe().bit_is_set()
     }
 
     /// Return true if the rx register is not empty (and can be read)
     pub fn is_rx_not_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
+        USART::sr().read().rxne().bit_is_set()
     }
 
     /// Clear idle line interrupt flag
     pub fn clear_idle_interrupt(&self) {
-        unsafe {
-            let _ = (*USART::ptr()).sr.read();
-            let _ = (*USART::ptr()).dr.read();
-        }
+        let _ = USART::sr().read();
+        let _ = USART::dr().read();
     }
 
     pub fn split(self) -> (Tx<USART, WORD>, Rx<USART, WORD>) {
@@ -961,7 +951,7 @@ where
 
     fn read(&mut self) -> nb::Result<u16, Error> {
         // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART::ptr()).sr.read() };
+        let sr = USART::sr().read();
 
         // Any error requires the dr to be read to clear
         if sr.pe().bit_is_set()
@@ -969,7 +959,7 @@ where
             || sr.nf().bit_is_set()
             || sr.ore().bit_is_set()
         {
-            unsafe { (*USART::ptr()).dr.read() };
+            USART::dr().read();
         }
 
         Err(if sr.pe().bit_is_set() {
@@ -982,7 +972,7 @@ where
             Error::Overrun.into()
         } else if sr.rxne().bit_is_set() {
             // NOTE(unsafe) atomic read from stateless register
-            return Ok(unsafe { &*USART::ptr() }.dr.read().dr().bits());
+            return Ok(USART::dr().read().dr().bits());
         } else {
             nb::Error::WouldBlock
         })
@@ -995,7 +985,7 @@ where
 {
     #[inline(always)]
     fn address(&self) -> u32 {
-        &(unsafe { &(*USART::ptr()) }.dr) as *const _ as u32
+        USART::dr() as *const _ as u32
     }
 
     type MemSize = u8;
@@ -1023,7 +1013,7 @@ where
 {
     #[inline(always)]
     fn address(&self) -> u32 {
-        &(unsafe { &(*USART::ptr()) }.dr) as *const _ as u32
+        USART::dr() as *const _ as u32
     }
 
     type MemSize = u8;
@@ -1059,7 +1049,7 @@ where
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
         // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART::ptr()).sr.read() };
+        let sr = USART::sr().read();
 
         if sr.tc().bit_is_set() {
             Ok(())
@@ -1070,11 +1060,11 @@ where
 
     fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
         // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*USART::ptr()).sr.read() };
+        let sr = USART::sr().read();
 
         if sr.txe().bit_is_set() {
             // NOTE(unsafe) atomic write to stateless register
-            unsafe { &*USART::ptr() }.dr.write(|w| w.dr().bits(word));
+            USART::dr().write(|w| w.dr().bits(word));
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -1214,8 +1204,13 @@ use crate::pac::usart1 as uart_base;
 
 // Implemented by all USART instances
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {
-    #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
+    fn brr() -> &'static uart_base::BRR;
+    fn cr1() -> &'static uart_base::CR1;
+    fn cr2() -> &'static uart_base::CR2;
+    fn cr3() -> &'static uart_base::CR3;
+    fn dr() -> &'static uart_base::DR;
+    fn sr() -> &'static uart_base::SR;
     #[doc(hidden)]
     fn set_stopbits(&self, bits: config::StopBits);
 }
@@ -1223,10 +1218,34 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {
 macro_rules! halUsart {
     ($USARTX:ty) => {
         impl Instance for $USARTX {
+            #[inline(always)]
             fn ptr() -> *const uart_base::RegisterBlock {
-                <$USARTX>::ptr() as *const _
+                <$USARTX>::ptr() as *const uart_base::RegisterBlock
             }
-
+            #[inline(always)]
+            fn brr() -> &'static uart_base::BRR {
+                &unsafe { &*Self::ptr() }.brr
+            }
+            #[inline(always)]
+            fn cr1() -> &'static uart_base::CR1 {
+                &unsafe { &*Self::ptr() }.cr1
+            }
+            #[inline(always)]
+            fn cr2() -> &'static uart_base::CR2 {
+                &unsafe { &*Self::ptr() }.cr2
+            }
+            #[inline(always)]
+            fn cr3() -> &'static uart_base::CR3 {
+                &unsafe { &*Self::ptr() }.cr3
+            }
+            #[inline(always)]
+            fn dr() -> &'static uart_base::DR {
+                &unsafe { &*Self::ptr() }.dr
+            }
+            #[inline(always)]
+            fn sr() -> &'static uart_base::SR {
+                &unsafe { &*Self::ptr() }.sr
+            }
             fn set_stopbits(&self, bits: config::StopBits) {
                 use crate::pac::usart1::cr2::STOP_A;
                 use config::StopBits;
