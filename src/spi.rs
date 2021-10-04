@@ -398,45 +398,20 @@ pub trait Instance:
 }
 
 // Implemented by all SPI instances
-macro_rules! spi {
-    ($SPI:ident: ($spi:ident)) => {
-        impl Instance for $SPI {}
-
-        impl<SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
-            Spi<$SPI, (SCK, MISO, MOSI), TransferModeNormal>
-        where
-            SCK: PinSck<$SPI, A = Const<SCKA>> + SetAlternate<SCKA>,
-            MISO: PinMiso<$SPI, A = Const<MISOA>> + SetAlternate<MISOA>,
-            MOSI: PinMosi<$SPI, A = Const<MOSIA>> + SetAlternate<MOSIA>,
-        {
-            #[deprecated(since = "0.10.0", note = "Please use new instead")]
-            pub fn $spi(
-                spi: $SPI,
-                pins: (SCK, MISO, MOSI),
-                mode: Mode,
-                freq: impl Into<Hertz>,
-                clocks: Clocks,
-            ) -> Spi<$SPI, (SCK, MISO, MOSI), TransferModeNormal> {
-                Self::new(spi, pins, mode, freq, clocks)
-            }
-        }
-    };
-}
-
-spi! { SPI1: (spi1) }
-spi! { SPI2: (spi2) }
+impl Instance for SPI1 {}
+impl Instance for SPI2 {}
 
 #[cfg(feature = "spi3")]
-spi! { SPI3: (spi3) }
+impl Instance for SPI3 {}
 
 #[cfg(feature = "spi4")]
-spi! { SPI4: (spi4) }
+impl Instance for SPI4 {}
 
 #[cfg(feature = "spi5")]
-spi! { SPI5: (spi5) }
+impl Instance for SPI5 {}
 
 #[cfg(feature = "spi6")]
-spi! { SPI6: (spi6) }
+impl Instance for SPI6 {}
 
 impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
     Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal>
@@ -536,11 +511,6 @@ where
         self.pins.2.restore_mode();
 
         (self.spi, self.pins)
-    }
-
-    #[deprecated(since = "0.10.0", note = "Please use release instead")]
-    pub fn free(self) -> (SPI, (SCK, MISO, MOSI)) {
-        self.release()
     }
 }
 

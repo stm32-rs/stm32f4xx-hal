@@ -118,10 +118,6 @@ impl Crc32 {
         self.periph.dr.read().bits()
     }
 
-    #[deprecated(since = "0.10.0", note = "Please use release instead")]
-    pub fn free(self) -> CRC {
-        self.release()
-    }
     /// Consume the HAL peripheral, returning the PAC peripheral
     pub fn release(self) -> CRC {
         unsafe {

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- [breaking-change] Remove all deprecated
 - [breaking-change] Bump `stm32f4` to 0.14. Update RTIC based examples to use `rtic` 0.6 [#367]
 
 [#367]: https://github.com/stm32-rs/stm32f4xx-hal/pull/367

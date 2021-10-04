@@ -274,7 +274,7 @@ pub trait I2sFreq {
 /// $clock: The name of the Clocks function that returns the frequency of the I2S clock input
 /// to this SPI peripheral (i2s_cl, i2s_apb1_clk, or i2s2_apb_clk)
 macro_rules! i2s {
-    ($SPIX:ty, $i2sx:ident, $clock:ident) => {
+    ($SPIX:ty, $clock:ident) => {
         impl I2sFreq for $SPIX {
             fn i2s_freq(clocks: &Clocks) -> Hertz {
                 clocks
@@ -283,19 +283,6 @@ macro_rules! i2s {
             }
         }
 
-        impl<WS, CK, MCLK, SD, const WSA: u8, const CKA: u8, const MCLKA: u8, const SDA: u8>
-            I2s<$SPIX, (WS, CK, MCLK, SD)>
-        where
-            WS: PinWs<$SPIX, A = Const<WSA>> + SetAlternate<WSA>,
-            CK: PinCk<$SPIX, A = Const<CKA>> + SetAlternate<CKA>,
-            MCLK: PinMck<$SPIX, A = Const<MCLKA>> + SetAlternate<MCLKA>,
-            SD: PinSd<$SPIX, A = Const<SDA>> + SetAlternate<SDA>,
-        {
-            #[deprecated(since = "0.10.0", note = "Please use new instead")]
-            pub fn $i2sx(spi: $SPIX, pins: (WS, CK, MCLK, SD), clocks: Clocks) -> Self {
-                Self::new(spi, pins, clocks)
-            }
-        }
         unsafe impl<PINS> Instance for I2s<$SPIX, PINS> {
             const REGISTERS: *mut RegisterBlock = <$SPIX>::ptr() as *mut _;
         }
@@ -350,14 +337,14 @@ where
 // have two different I2S clocks while other models have only one.
 
 #[cfg(any(feature = "stm32f410", feature = "stm32f411"))]
-i2s!(crate::pac::SPI1, i2s1, i2s_clk);
+i2s!(crate::pac::SPI1, i2s_clk);
 #[cfg(any(
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423",
     feature = "stm32f446",
 ))]
-i2s!(crate::pac::SPI1, i2s1, i2s_apb2_clk);
+i2s!(crate::pac::SPI1, i2s_apb2_clk);
 
 // All STM32F4 models support SPI2/I2S2
 #[cfg(not(any(
@@ -366,14 +353,14 @@ i2s!(crate::pac::SPI1, i2s1, i2s_apb2_clk);
     feature = "stm32f423",
     feature = "stm32f446",
 )))]
-i2s!(crate::pac::SPI2, i2s2, i2s_clk);
+i2s!(crate::pac::SPI2, i2s_clk);
 #[cfg(any(
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423",
     feature = "stm32f446",
 ))]
-i2s!(crate::pac::SPI2, i2s2, i2s_apb1_clk);
+i2s!(crate::pac::SPI2, i2s_apb1_clk);
 
 // All STM32F4 models except STM32F410 support SPI3/I2S3
 #[cfg(any(
@@ -390,24 +377,24 @@ i2s!(crate::pac::SPI2, i2s2, i2s_apb1_clk);
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-i2s!(crate::pac::SPI3, i2s3, i2s_clk);
+i2s!(crate::pac::SPI3, i2s_clk);
 #[cfg(any(
     feature = "stm32f412",
     feature = "stm32f413",
     feature = "stm32f423",
     feature = "stm32f446",
 ))]
-i2s!(crate::pac::SPI3, i2s3, i2s_apb1_clk);
+i2s!(crate::pac::SPI3, i2s_apb1_clk);
 
 #[cfg(feature = "stm32f411")]
-i2s!(crate::pac::SPI4, i2s4, i2s_clk);
+i2s!(crate::pac::SPI4, i2s_clk);
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
-i2s!(crate::pac::SPI4, i2s4, i2s_apb2_clk);
+i2s!(crate::pac::SPI4, i2s_apb2_clk);
 
 #[cfg(any(feature = "stm32f410", feature = "stm32f411"))]
-i2s!(crate::pac::SPI5, i2s5, i2s_clk);
+i2s!(crate::pac::SPI5, i2s_clk);
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
-i2s!(crate::pac::SPI5, i2s5, i2s_apb2_clk);
+i2s!(crate::pac::SPI5, i2s_apb2_clk);
 
 /// An I2s wrapper around an SPI object and pins
 pub struct I2s<I, PINS> {

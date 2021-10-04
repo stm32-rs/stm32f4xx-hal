@@ -18,11 +18,6 @@ impl Delay<SYST> {
             clk: clocks.hclk(),
         }
     }
-
-    #[deprecated(since = "0.10.0", note = "Please use release instead")]
-    pub fn free(self) -> SYST {
-        self.release()
-    }
 }
 
 impl DelayMs<u32> for Delay<SYST> {
