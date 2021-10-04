@@ -141,10 +141,6 @@ pub mod otg_hs;
 pub mod rng;
 
 #[cfg(feature = "device-selected")]
-#[deprecated(since = "0.10.0", note = "Please use pac instead")]
-pub use pac as stm32;
-
-#[cfg(feature = "device-selected")]
 pub mod dma;
 #[cfg(feature = "device-selected")]
 pub mod dwt;

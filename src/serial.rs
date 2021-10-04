@@ -872,20 +872,8 @@ where
         unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
     }
 
-    /// Return true if the tx register is empty (and can accept data)
-    #[deprecated(since = "0.10.0")]
-    pub fn is_txe(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
-    }
-
     /// Return true if the rx register is not empty (and can be read)
     pub fn is_rx_not_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
-    }
-
-    /// Return true if the rx register is not empty (and can be read)
-    #[deprecated(since = "0.10.0")]
-    pub fn is_rxne(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
     }
 
@@ -1233,7 +1221,7 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {
 }
 
 macro_rules! halUsart {
-    ($USARTX:ty: ($usartX:ident)) => {
+    ($USARTX:ty) => {
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
                 <$USARTX>::ptr() as *const _
@@ -1253,23 +1241,6 @@ macro_rules! halUsart {
                 });
             }
         }
-
-        impl<USART, TX, RX, const TXA: u8, const RXA: u8> Serial<USART, (TX, RX)>
-        where
-            TX: PinTx<USART, A = Const<TXA>> + SetAlternate<TXA>,
-            RX: PinRx<USART, A = Const<RXA>> + SetAlternate<RXA>,
-            USART: Instance,
-        {
-            #[deprecated(since = "0.10.0")]
-            pub fn $usartX(
-                usart: USART,
-                pins: (TX, RX),
-                config: config::Config,
-                clocks: Clocks,
-            ) -> Result<Self, config::InvalidConfig> {
-                Self::new(usart, pins, config, clocks)
-            }
-        }
     };
 }
 
@@ -1284,7 +1255,7 @@ macro_rules! halUsart {
 ))]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
-    ($USARTX:ty: ($usartX:ident)) => {
+    ($USARTX:ty) => {
         impl Instance for $USARTX {
             fn ptr() -> *const uart_base::RegisterBlock {
                 <$USARTX>::ptr() as *const _
@@ -1304,55 +1275,38 @@ macro_rules! halUart {
                 });
             }
         }
-
-        impl<USART, TX, RX, const TXA: u8, const RXA: u8> Serial<USART, (TX, RX)>
-        where
-            TX: PinTx<USART, A = Const<TXA>> + SetAlternate<TXA>,
-            RX: PinRx<USART, A = Const<RXA>> + SetAlternate<RXA>,
-            USART: Instance,
-        {
-            #[deprecated(since = "0.10.0")]
-            pub fn $usartX(
-                usart: USART,
-                pins: (TX, RX),
-                config: config::Config,
-                clocks: Clocks,
-            ) -> Result<Self, config::InvalidConfig> {
-                Self::new(usart, pins, config, clocks)
-            }
-        }
     };
 }
 
-halUsart! { USART1: (usart1) }
-halUsart! { USART2: (usart2) }
-halUsart! { USART6: (usart6) }
+halUsart! { USART1 }
+halUsart! { USART2 }
+halUsart! { USART6 }
 
 #[cfg(feature = "usart3")]
-halUsart! { USART3: (usart3) }
+halUsart! { USART3 }
 
 #[cfg(feature = "uart4")]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
-halUart! { UART4: (uart4) }
+halUart! { UART4 }
 #[cfg(feature = "uart5")]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
-halUart! { UART5: (uart5) }
+halUart! { UART5 }
 
 #[cfg(feature = "uart4")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { UART4: (uart4) }
+halUsart! { UART4 }
 #[cfg(feature = "uart5")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { UART5: (uart5) }
+halUsart! { UART5 }
 
 #[cfg(feature = "uart7")]
-halUsart! { UART7: (uart7) }
+halUsart! { UART7 }
 #[cfg(feature = "uart8")]
-halUsart! { UART8: (uart8) }
+halUsart! { UART8 }
 #[cfg(feature = "uart9")]
-halUsart! { UART9: (uart9) }
+halUsart! { UART9 }
 #[cfg(feature = "uart10")]
-halUsart! { UART10: (uart10) }
+halUsart! { UART10 }
 
 impl<USART, PINS> fmt::Write for Serial<USART, PINS>
 where

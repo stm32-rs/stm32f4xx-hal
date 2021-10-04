@@ -363,10 +363,6 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     pub fn erase_number(self) -> PEPin<MODE, P> {
         PEPin::new(N)
     }
-    #[deprecated(since = "0.10.0", note = "Please use erase_number instead")]
-    pub fn downgrade(self) -> PEPin<MODE, P> {
-        self.erase_number()
-    }
 
     /// Erases the pin number and the port from the type
     ///
@@ -374,10 +370,6 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     /// need all the elements to have the same type
     pub fn erase(self) -> EPin<MODE> {
         EPin::new(P as u8 - b'A', N)
-    }
-    #[deprecated(since = "0.10.0", note = "Please use erase instead")]
-    pub fn downgrade2(self) -> EPin<MODE> {
-        self.erase()
     }
 }
 

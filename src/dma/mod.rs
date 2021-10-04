@@ -1278,10 +1278,6 @@ where
         self.stream.disable()
     }
 
-    #[deprecated(since = "0.10.0", note = "Please use release instead")]
-    pub fn free(self) -> (STREAM, PERIPHERAL, BUF, Option<BUF>) {
-        self.release()
-    }
     /// Stops the stream and returns the underlying resources.
     pub fn release(mut self) -> (STREAM, PERIPHERAL, BUF, Option<BUF>) {
         self.stream.disable();
