@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - `Into<serial::Config>` for `Bps` [#387]
+- Added the missing DMA implementations for USART3 [#373]
 - `count_down` constructor for `Timer` -> `CountDownTimer` without start [#382]
 - Implementation of RTIC Monotonic for TIM2 & TIM5 under `rtic` feature [#380] [#390]
 - `IoPin` for `Output<OpenDrain>> <-> Input<Floating>>` [#374]
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   with `internal_pull_up` [#399]
 
 [#390]: https://github.com/stm32-rs/stm32f4xx-hal/pull/390
+[#373]: https://github.com/stm32-rs/stm32f4xx-hal/pull/373
 [#382]: https://github.com/stm32-rs/stm32f4xx-hal/pull/382
 [#380]: https://github.com/stm32-rs/stm32f4xx-hal/pull/380
 [#374]: https://github.com/stm32-rs/stm32f4xx-hal/pull/374
