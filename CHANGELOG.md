@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Added the missing DMA implementations for USART3 [#373]
 ### Changed
 
 - [breaking-change] Remove all deprecated
