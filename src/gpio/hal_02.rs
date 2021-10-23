@@ -1,8 +1,8 @@
 use core::convert::Infallible;
 
 use super::{
-    ErasedPin, Floating, Input, OpenDrain, Output, PartiallyErasedPin, Pin, PullDown, PullUp,
-    PushPull,
+    dynamic::PinModeError, DynamicPin, ErasedPin, Floating, Input, OpenDrain, Output,
+    PartiallyErasedPin, Pin, PullDown, PullUp, PushPull,
 };
 
 pub use embedded_hal::digital::v2::PinState;
@@ -331,5 +331,27 @@ impl<MODE, const P: char> InputPin for PartiallyErasedPin<Input<MODE>, P> {
     #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
         Ok(self.is_low())
+    }
+}
+
+// Implementations for `DynamicPin`
+
+impl<const P: char, const N: u8> OutputPin for DynamicPin<P, N> {
+    type Error = PinModeError;
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        self.set_high()
+    }
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        self.set_low()
+    }
+}
+
+impl<const P: char, const N: u8> InputPin for DynamicPin<P, N> {
+    type Error = PinModeError;
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_high()
+    }
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        self.is_low()
     }
 }

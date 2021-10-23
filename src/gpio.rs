@@ -24,6 +24,7 @@
 //!
 //! - **Alternate**: Pin mode required when the pin is driven by other peripherals
 //! - **Analog**: Analog input to be used with ADC.
+//! - **Dynamic**: Pin mode is selected at runtime. See changing configurations for more details
 //! - Input
 //!     - **PullUp**: Input connected to high with a weak pull up resistor. Will be high when nothing
 //!     is connected
@@ -42,6 +43,16 @@
 //! If you need a more temporary mode change, and can not use the `into_<mode>` functions for
 //! ownership reasons, you can use the closure based `with_<mode>` functions to temporarily change the pin type, do
 //! some output or input, and then have it change back once done.
+//!
+//! ### Dynamic Mode Change
+//! The above mode change methods guarantee that you can only call input functions when the pin is
+//! in input mode, and output when in output modes, but can lead to some issues. Therefore, there
+//! is also a mode where the state is kept track of at runtime, allowing you to change the mode
+//! often, and without problems with ownership, or references, at the cost of some performance and
+//! the risk of runtime errors.
+//!
+//! To make a pin dynamic, use the `into_dynamic` function, and then use the `make_<mode>` functions to
+//! change the mode
 
 use core::marker::PhantomData;
 
@@ -56,6 +67,8 @@ mod partially_erased;
 pub use partially_erased::{PEPin, PartiallyErasedPin};
 mod erased;
 pub use erased::{EPin, ErasedPin};
+mod dynamic;
+pub use dynamic::{Dynamic, DynamicPin};
 mod hal_02;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -97,24 +110,6 @@ pub trait PinExt {
 
 /// Some alternate mode (type state)
 pub struct Alternate<Otype, const A: u8>(PhantomData<Otype>);
-
-// Compatibility constants
-pub const AF0: u8 = 0;
-pub const AF1: u8 = 1;
-pub const AF2: u8 = 2;
-pub const AF3: u8 = 3;
-pub const AF4: u8 = 4;
-pub const AF5: u8 = 5;
-pub const AF6: u8 = 6;
-pub const AF7: u8 = 7;
-pub const AF8: u8 = 8;
-pub const AF9: u8 = 9;
-pub const AF10: u8 = 10;
-pub const AF11: u8 = 11;
-pub const AF12: u8 = 12;
-pub const AF13: u8 = 13;
-pub const AF14: u8 = 14;
-pub const AF15: u8 = 15;
 
 /// Input mode (type state)
 pub struct Input<MODE> {
