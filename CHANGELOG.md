@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `IoPin` for `Output<OpenDrain>> <-> Input<Floating>>` [#374]
+
+[#374]: https://github.com/stm32-rs/stm32f4xx-hal/pull/374
+
 ### Changed
 
 - [breaking-change] Remove all deprecated
@@ -121,7 +127,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Remove unsafe code from ADC DMA example [#301]
 - [breaking-change] DMA: Memory to peripheral transfers now only require `StaticReadBuffer` [#257].
 - Rename erased `Pin` to `EPin`, partially erased `PXx` to `PEPin`, `PX` to `Pin` [#339]
-- [breaking-change] `gpio::Edge::{RISING, FALLING, RISING_FALLING}` are renamed to `Rising`, `Falling`, `RisingFalling`, respectively [#343] 
+- [breaking-change] `gpio::Edge::{RISING, FALLING, RISING_FALLING}` are renamed to `Rising`, `Falling`, `RisingFalling`, respectively [#343]
 
 [#266]: https://github.com/stm32-rs/stm32f4xx-hal/pull/266
 [#293]: https://github.com/stm32-rs/stm32f4xx-hal/pull/293
