@@ -2,7 +2,7 @@ use super::*;
 use crate::bb;
 
 macro_rules! bus_enable {
-    ($PER:ident => ($busX:ty, $bit:literal)) => {
+    ($PER:ident => $bit:literal) => {
         impl Enable for crate::pac::$PER {
             #[inline(always)]
             fn enable(rcc: &RccRB) {
@@ -22,7 +22,7 @@ macro_rules! bus_enable {
     };
 }
 macro_rules! bus_lpenable {
-    ($PER:ident => ($busX:ty, $bit:literal)) => {
+    ($PER:ident => $bit:literal) => {
         impl LPEnable for crate::pac::$PER {
             #[inline(always)]
             fn low_power_enable(rcc: &RccRB) {
@@ -42,7 +42,7 @@ macro_rules! bus_lpenable {
     };
 }
 macro_rules! bus_reset {
-    ($PER:ident => ($busX:ty, $bit:literal)) => {
+    ($PER:ident => $bit:literal) => {
         impl Reset for crate::pac::$PER {
             #[inline(always)]
             fn reset(rcc: &RccRB) {
@@ -62,9 +62,9 @@ macro_rules! bus {
             impl RccBus for crate::pac::$PER {
                 type Bus = $busX;
             }
-            bus_enable!($PER => ($busX, $bit));
-            bus_lpenable!($PER => ($busX, $bit));
-            bus_reset!($PER => ($busX, $bit));
+            bus_enable!($PER => $bit);
+            bus_lpenable!($PER => $bit);
+            bus_reset!($PER => $bit);
         )+
     }
 }
@@ -133,16 +133,16 @@ impl RccBus for crate::pac::FSMC {
 }
 #[cfg(feature = "fsmc")]
 #[cfg(any(feature = "stm32f427", feature = "stm32f437"))]
-bus_enable!(FSMC => (ahb3enr, 0));
+bus_enable!(FSMC => 0);
 #[cfg(feature = "fsmc")]
 #[cfg(not(any(feature = "stm32f427", feature = "stm32f437")))]
-bus_enable!(FSMC => (ahb3enr, 0));
+bus_enable!(FSMC => 0);
 #[cfg(feature = "fsmc")]
 #[cfg(any(feature = "stm32f427", feature = "stm32f437"))]
-bus_reset!(FSMC => (ahb3rstr, 0));
+bus_reset!(FSMC => 0);
 #[cfg(feature = "fsmc")]
 #[cfg(not(any(feature = "stm32f427", feature = "stm32f437")))]
-bus_reset!(FSMC => (ahb3rstr, 0));
+bus_reset!(FSMC => 0);
 
 bus! {
     PWR => (APB1, 28),
@@ -237,11 +237,11 @@ impl RccBus for crate::pac::ADC2 {
     type Bus = APB2;
 }
 #[cfg(feature = "adc2")]
-bus_enable!(ADC2 => (APB2, 9));
+bus_enable!(ADC2 => 9);
 #[cfg(feature = "adc2")]
-bus_lpenable!(ADC2 => (APB2, 9));
+bus_lpenable!(ADC2 => 9);
 #[cfg(feature = "adc2")]
-bus_reset!(ADC2 => (APB2, 8));
+bus_reset!(ADC2 => 8);
 
 #[cfg(feature = "adc3")]
 impl crate::Sealed for crate::pac::ADC3 {}
@@ -250,11 +250,11 @@ impl RccBus for crate::pac::ADC3 {
     type Bus = APB2;
 }
 #[cfg(feature = "adc3")]
-bus_enable!(ADC3 => (APB2, 10));
+bus_enable!(ADC3 => 10);
 #[cfg(feature = "adc3")]
-bus_lpenable!(ADC3 => (APB2, 10));
+bus_lpenable!(ADC3 => 10);
 #[cfg(feature = "adc3")]
-bus_reset!(ADC3 => (APB2, 8));
+bus_reset!(ADC3 => 8);
 
 #[cfg(feature = "sdio")]
 bus! {
