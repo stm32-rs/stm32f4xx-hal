@@ -605,10 +605,10 @@ mod common_pins {
     };
     use crate::gpio::gpiof::{PF0, PF1, PF12, PF13, PF14, PF15, PF2, PF3, PF4, PF5};
     use crate::gpio::gpiog::{PG0, PG1, PG10, PG12, PG13, PG2, PG3, PG4, PG5, PG9};
-    use crate::gpio::Alternate;
+    use crate::gpio::{Alternate, PushPull};
 
     // All FSMC/FMC pins use AF12
-    type FmcAlternate = Alternate<12>;
+    type FmcAlternate = Alternate<PushPull, 12>;
 
     impl PinD2 for PD0<FmcAlternate> {}
     impl PinD3 for PD1<FmcAlternate> {}
@@ -725,27 +725,27 @@ mod extra_pins {
     use crate::gpio::gpiob::{PB12, PB14};
     use crate::gpio::gpioc::{PC11, PC12, PC2, PC3, PC4, PC5, PC6};
     use crate::gpio::gpiod::PD2;
-    use crate::gpio::Alternate;
+    use crate::gpio::{Alternate, PushPull};
 
     // Most FSMC/FMC pins use AF12, but a few use AF10
-    type FmcAlternate = Alternate<12>;
+    type FmcAlternate = Alternate<PushPull, 12>;
 
     impl PinD4 for PA2<FmcAlternate> {}
     impl PinD5 for PA3<FmcAlternate> {}
     impl PinD6 for PA4<FmcAlternate> {}
     impl PinD7 for PA5<FmcAlternate> {}
     impl PinD13 for PB12<FmcAlternate> {}
-    impl PinD0 for PB14<Alternate<10>> {}
+    impl PinD0 for PB14<Alternate<PushPull, 10>> {}
     impl PinWriteEnable for PC2<FmcAlternate> {}
     impl PinAddress for PC3<FmcAlternate> {}
     impl Sealed for PC3<FmcAlternate> {}
     impl PinChipSelect4 for PC4<FmcAlternate> {}
     impl Sealed for PC4<FmcAlternate> {}
     impl PinReadEnable for PC5<FmcAlternate> {}
-    impl PinD1 for PC6<Alternate<10>> {}
-    impl PinD2 for PC11<Alternate<10>> {}
-    impl PinD3 for PC12<Alternate<10>> {}
-    impl PinWriteEnable for PD2<Alternate<10>> {}
+    impl PinD1 for PC6<Alternate<PushPull, 10>> {}
+    impl PinD2 for PC11<Alternate<PushPull, 10>> {}
+    impl PinD3 for PC12<Alternate<PushPull, 10>> {}
+    impl PinWriteEnable for PD2<Alternate<PushPull, 10>> {}
 
     // Sealed trait boilerplate
     impl Sealed for PA2<FmcAlternate> {}
@@ -753,11 +753,11 @@ mod extra_pins {
     impl Sealed for PA4<FmcAlternate> {}
     impl Sealed for PA5<FmcAlternate> {}
     impl Sealed for PB12<FmcAlternate> {}
-    impl Sealed for PB14<Alternate<10>> {}
+    impl Sealed for PB14<Alternate<PushPull, 10>> {}
     impl Sealed for PC2<FmcAlternate> {}
     impl Sealed for PC5<FmcAlternate> {}
-    impl Sealed for PC6<Alternate<10>> {}
-    impl Sealed for PC11<Alternate<10>> {}
-    impl Sealed for PC12<Alternate<10>> {}
-    impl Sealed for PD2<Alternate<10>> {}
+    impl Sealed for PC6<Alternate<PushPull, 10>> {}
+    impl Sealed for PC11<Alternate<PushPull, 10>> {}
+    impl Sealed for PC12<Alternate<PushPull, 10>> {}
+    impl Sealed for PD2<Alternate<PushPull, 10>> {}
 }

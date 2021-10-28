@@ -25,7 +25,7 @@ use embedded_hal::prelude::*;
 use embedded_hal::serial;
 use nb::block;
 
-use crate::gpio::{Const, SetAlternate};
+use crate::gpio::{Const, PushPull, SetAlternate};
 
 #[cfg(feature = "gpiod")]
 use crate::gpio::gpiod;
@@ -669,8 +669,8 @@ impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
 
 impl<USART, TX, RX, WORD, const TXA: u8, const RXA: u8> Serial<USART, (TX, RX), WORD>
 where
-    TX: PinTx<USART, A = Const<TXA>> + SetAlternate<TXA>,
-    RX: PinRx<USART, A = Const<RXA>> + SetAlternate<RXA>,
+    TX: PinTx<USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+    RX: PinRx<USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
     USART: Instance,
 {
     /*
@@ -809,7 +809,7 @@ where
 
 impl<USART, TX, WORD, const TXA: u8> Serial<USART, (TX, NoPin), WORD>
 where
-    TX: PinTx<USART, A = Const<TXA>> + SetAlternate<TXA>,
+    TX: PinTx<USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
     USART: Instance,
 {
     pub fn tx(
@@ -824,7 +824,7 @@ where
 
 impl<USART, RX, WORD, const RXA: u8> Serial<USART, (NoPin, RX), WORD>
 where
-    RX: PinRx<USART, A = Const<RXA>> + SetAlternate<RXA>,
+    RX: PinRx<USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
     USART: Instance,
 {
     pub fn rx(

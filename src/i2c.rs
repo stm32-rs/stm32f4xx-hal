@@ -4,7 +4,7 @@ use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use crate::pac::i2c1;
 use crate::rcc::{Enable, Reset};
 
-use crate::gpio::{Const, SetAlternateOD};
+use crate::gpio::{Const, OpenDrain, SetAlternate};
 #[cfg(feature = "i2c3")]
 use crate::pac::I2C3;
 use crate::pac::{I2C1, I2C2, RCC};
@@ -282,8 +282,8 @@ impl Instance for I2C3 {}
 impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> I2c<I2C, (SCL, SDA)>
 where
     I2C: Instance,
-    SCL: PinScl<I2C, A = Const<SCLA>> + SetAlternateOD<SCLA>,
-    SDA: PinSda<I2C, A = Const<SDAA>> + SetAlternateOD<SDAA>,
+    SCL: PinScl<I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
+    SDA: PinSda<I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
 {
     pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: (SCL, SDA), mode: M, clocks: Clocks) -> Self {
         unsafe {
