@@ -19,7 +19,7 @@ license = "0BSD"
 name = "stm32f4xx-hal"
 readme = "README.md"
 repository = "https://github.com/stm32-rs/stm32f4xx-hal"
-version = "0.10.0"
+version = "0.10.1"
 
 [package.metadata.docs.rs]
 features = ["stm32f429", "rt", "usb_fs", "can", "i2s", "fsmc_lcd"]
