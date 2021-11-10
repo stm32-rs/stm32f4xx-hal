@@ -7,7 +7,7 @@ use panic_semihosting as _;
 mod app {
     use cortex_m_semihosting::hprintln;
     use dwt_systick_monotonic::DwtSystick;
-    use rtic::time::duration::Seconds;
+    pub use fugit::ExtU32;
 
     use stm32f4xx_hal::{
         adc::{
@@ -82,7 +82,7 @@ mod app {
         let second_buffer = Some(cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap());
         let transfer = Transfer::init_peripheral_to_memory(dma.0, adc, first_buffer, None, config);
 
-        polling::spawn_after(Seconds(1_u32)).ok();
+        polling::spawn_after(1.secs()).ok();
 
         (
             Shared { transfer },
@@ -101,7 +101,7 @@ mod app {
             });
         });
 
-        polling::spawn_after(Seconds(1_u32)).ok();
+        polling::spawn_after(1.secs()).ok();
     }
 
     #[task(binds = DMA2_STREAM0, shared = [transfer], local = [buffer])]

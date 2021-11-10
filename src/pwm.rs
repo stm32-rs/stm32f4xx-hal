@@ -2,46 +2,6 @@ use crate::{bb, hal as pwm, time::Hertz, timer::Timer};
 use cast::{u16, u32};
 use core::{marker::PhantomData, mem::MaybeUninit};
 
-use crate::pac::{TIM1, TIM11, TIM5, TIM9};
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::pac::{TIM10, TIM2, TIM3, TIM4};
-
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-use crate::pac::{TIM12, TIM13, TIM14, TIM8};
-
 pub trait Pins<TIM, P> {
     const C1: bool = false;
     const C2: bool = false;
@@ -190,12 +150,12 @@ macro_rules! pwm_pin {
 }
 
 macro_rules! pwm_all_channels {
-    ($($TIMX:ident: ($timX:ident),)+) => {
+    ($($TIMX:ident,)+) => {
         $(
-            impl Timer<$TIMX> {
+            impl Timer<crate::pac::$TIMX> {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
                 where
-                    PINS: Pins<$TIMX, P>,
+                    PINS: Pins<crate::pac::$TIMX, P>,
                     T: Into<Hertz>,
                 {
                     if PINS::C1 {
@@ -221,9 +181,9 @@ macro_rules! pwm_all_channels {
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
                     let ticks = self.clk.0 / freq.into().0;
-                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                    self.tim.psc.write(|w| w.psc().bits(psc) );
-                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    let psc = (ticks - 1) / (1 << 16);
+                    self.tim.psc.write(|w| w.psc().bits(u16(psc).unwrap()) );
+                    let arr = u16(ticks / (psc + 1)).unwrap();
                     self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
 
                     // Trigger update event to load the registers
@@ -248,21 +208,21 @@ macro_rules! pwm_all_channels {
                 }
             }
 
-            pwm_pin!($TIMX, C1, ccr1, 0);
-            pwm_pin!($TIMX, C2, ccr2, 4);
-            pwm_pin!($TIMX, C3, ccr3, 8);
-            pwm_pin!($TIMX, C4, ccr4, 12);
+            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
+            pwm_pin!(crate::pac::$TIMX, C2, ccr2, 4);
+            pwm_pin!(crate::pac::$TIMX, C3, ccr3, 8);
+            pwm_pin!(crate::pac::$TIMX, C4, ccr4, 12);
         )+
     };
 }
 
 macro_rules! pwm_2_channels {
-    ($($TIMX:ty: ($timX:ident),)+) => {
+    ($($TIMX:ident,)+) => {
         $(
-            impl Timer<$TIMX> {
+            impl Timer<crate::pac::$TIMX> {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
                 where
-                    PINS: Pins<$TIMX, P>,
+                    PINS: Pins<crate::pac::$TIMX, P>,
                     T: Into<Hertz>,
                 {
                     if PINS::C1 {
@@ -284,9 +244,9 @@ macro_rules! pwm_2_channels {
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
                     let ticks = self.clk.0 / freq.into().0;
-                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                    self.tim.psc.write(|w| w.psc().bits(psc) );
-                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    let psc = (ticks - 1) / (1 << 16);
+                    self.tim.psc.write(|w| w.psc().bits(u16(psc).unwrap()) );
+                    let arr = u16(ticks / (psc + 1)).unwrap();
                     self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
 
                     // Trigger update event to load the registers
@@ -305,19 +265,19 @@ macro_rules! pwm_2_channels {
                 }
             }
 
-            pwm_pin!($TIMX, C1, ccr1, 0);
-            pwm_pin!($TIMX, C2, ccr2, 4);
+            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
+            pwm_pin!(crate::pac::$TIMX, C2, ccr2, 4);
         )+
     };
 }
 
 macro_rules! pwm_1_channel {
-    ($($TIMX:ty: ($timX:ident),)+) => {
+    ($($TIMX:ident,)+) => {
         $(
-            impl Timer<$TIMX> {
+            impl Timer<crate::pac::$TIMX> {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
                 where
-                    PINS: Pins<$TIMX, P>,
+                    PINS: Pins<crate::pac::$TIMX, P>,
                     T: Into<Hertz>,
                 {
                     if PINS::C1 {
@@ -334,9 +294,9 @@ macro_rules! pwm_1_channel {
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
                     let ticks = self.clk.0 / freq.into().0;
-                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                    self.tim.psc.write(|w| w.psc().bits(psc) );
-                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    let psc = (ticks - 1) / (1 << 16);
+                    self.tim.psc.write(|w| w.psc().bits(u16(psc).unwrap()) );
+                    let arr = u16(ticks / (psc + 1)).unwrap();
                     self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
 
                     // Trigger update event to load the registers
@@ -353,7 +313,7 @@ macro_rules! pwm_1_channel {
                 }
             }
 
-            pwm_pin!($TIMX, C1, ccr1, 0);
+            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
         )+
     };
 }
@@ -420,12 +380,12 @@ macro_rules! pwm_pin_tim5 {
 
 #[cfg(feature = "stm32f410")]
 macro_rules! pwm_tim5_f410 {
-    ($($TIMX:ty: ($timX:ident),)+) => {
+    ($($TIMX:ident,)+) => {
         $(
-            impl Timer<$TIMX> {
+            impl Timer<crate::pac::$TIMX> {
                 pub fn pwm<P, PINS, T>(self, _pins: PINS, freq: T) -> PINS::Channels
                 where
-                    PINS: Pins<$TIMX, P>,
+                    PINS: Pins<crate::pac::$TIMX, P>,
                     T: Into<Hertz>,
                 {
                     if PINS::C1 {
@@ -451,9 +411,9 @@ macro_rules! pwm_tim5_f410 {
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
                     let ticks = self.clk.0 / freq.into().0;
-                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                    self.tim.psc.write(|w| w.psc().bits(psc) );
-                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    let psc = (ticks - 1) / (1 << 16);
+                    self.tim.psc.write(|w| w.psc().bits(u16(psc).unwrap()) );
+                    let arr = u16(ticks / (psc + 1)).unwrap();
                     self.tim.arr.write(|w| unsafe { w.arr_l().bits(arr) });
 
                     // Trigger update event to load the registers
@@ -476,39 +436,19 @@ macro_rules! pwm_tim5_f410 {
                 }
             }
 
-            pwm_pin_tim5!($TIMX, C1, ccr1, 0);
-            pwm_pin_tim5!($TIMX, C2, ccr2, 4);
-            pwm_pin_tim5!($TIMX, C3, ccr3, 8);
-            pwm_pin_tim5!($TIMX, C4, ccr4, 12);
+            pwm_pin_tim5!(crate::pac::$TIMX, C1, ccr1, 0);
+            pwm_pin_tim5!(crate::pac::$TIMX, C2, ccr2, 4);
+            pwm_pin_tim5!(crate::pac::$TIMX, C3, ccr3, 8);
+            pwm_pin_tim5!(crate::pac::$TIMX, C4, ccr4, 12);
         )+
     };
 }
 
-pwm_all_channels!(TIM1: (tim1),);
+pwm_all_channels!(TIM1,);
 
-pwm_2_channels!(TIM9: (tim9),);
+pwm_2_channels!(TIM9,);
 
-pwm_1_channel!(TIM11: (tim11),);
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_all_channels!(TIM2: (tim2), TIM3: (tim3), TIM4: (tim4), TIM5: (tim5),);
+pwm_1_channel!(TIM11,);
 
 #[cfg(any(
     feature = "stm32f401",
@@ -528,7 +468,27 @@ pwm_all_channels!(TIM2: (tim2), TIM3: (tim3), TIM4: (tim4), TIM5: (tim5),);
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_1_channel!(TIM10: (tim10),);
+pwm_all_channels!(TIM2, TIM3, TIM4, TIM5,);
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+pwm_1_channel!(TIM10,);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -546,7 +506,7 @@ pwm_1_channel!(TIM10: (tim10),);
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_all_channels!(TIM8: (tim8),);
+pwm_all_channels!(TIM8,);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -564,7 +524,7 @@ pwm_all_channels!(TIM8: (tim8),);
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_2_channels!(TIM12: (tim12),);
+pwm_2_channels!(TIM12,);
 
 #[cfg(any(
     feature = "stm32f405",
@@ -582,7 +542,7 @@ pwm_2_channels!(TIM12: (tim12),);
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-pwm_1_channel!(TIM13: (tim13), TIM14: (tim14),);
+pwm_1_channel!(TIM13, TIM14,);
 
 #[cfg(feature = "stm32f410")]
-pwm_tim5_f410!(TIM5: (tim5),);
+pwm_tim5_f410!(TIM5,);
