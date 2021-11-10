@@ -412,7 +412,7 @@ required-features = ["gpiod", "rtic"] # stm32f407
 
 [[example]]
 name = "rtic-tick"
-required-features = ["gpiod", "rtic"]
+required-features = ["tim2", "rtic"]
 
 [[example]]
 name = "adc_dma_rtic"

@@ -15,6 +15,7 @@ use crate::rcc::{self, Clocks};
 use crate::time::Hertz;
 
 #[cfg(feature = "rtic")]
+#[cfg(not(feature = "stm32f410"))]
 pub mod monotonic;
 
 /// Timer wrapper

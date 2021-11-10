@@ -97,7 +97,8 @@ macro_rules! hal {
                     // some chip variants declare `.bits()` as unsafe, some don't
                     #[allow(unused_unsafe)]
                     self.smcr.write(|w| unsafe { w.sms().bits(3) });
-                    self.arr.write(|w| unsafe { w.bits(core::u32::MAX) });
+                    #[allow(unused_unsafe)]
+                    self.arr.write(|w| unsafe { w.bits($bits::MAX as u32) });
                     self.cr1.write(|w| w.cen().set_bit());
                 }
 
