@@ -14,6 +14,10 @@ use crate::pac::RCC;
 use crate::rcc::{self, Clocks};
 use crate::time::Hertz;
 
+#[cfg(feature = "rtic")]
+#[cfg(not(feature = "stm32f410"))]
+pub mod monotonic;
+
 /// Timer wrapper
 pub struct Timer<TIM> {
     pub(crate) tim: TIM,
@@ -200,7 +204,7 @@ where
 }
 
 macro_rules! hal {
-    ($($TIM:ty: ($tim:ident),)+) => {
+    ($($TIM:ty,)+) => {
         $(
             impl Instance for $TIM { }
 
@@ -264,10 +268,10 @@ macro_rules! hal {
                     let frequency = timeout.into().0;
                     let ticks = self.clk.0 / frequency;
 
-                    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                    self.tim.psc.write(|w| w.psc().bits(psc) );
+                    let psc = (ticks - 1) / (1 << 16);
+                    self.tim.psc.write(|w| w.psc().bits(u16(psc).unwrap()) );
 
-                    let arr = u16(ticks / u32(psc + 1)).unwrap();
+                    let arr = u16(ticks / (psc + 1)).unwrap();
                     self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
 
                     // Trigger update event to load the registers
@@ -309,12 +313,12 @@ macro_rules! hal {
 }
 
 // All F4xx parts have these timers.
-hal! {
-    crate::pac::TIM1: (tim1),
-    crate::pac::TIM5: (tim5),
-    crate::pac::TIM9: (tim9),
-    crate::pac::TIM11: (tim11),
-}
+hal!(
+    crate::pac::TIM1,
+    crate::pac::TIM5,
+    crate::pac::TIM9,
+    crate::pac::TIM11,
+);
 
 // All parts except for F410 add these timers.
 #[cfg(any(
@@ -335,12 +339,12 @@ hal! {
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-hal! {
-    crate::pac::TIM2: (tim2),
-    crate::pac::TIM3: (tim3),
-    crate::pac::TIM4: (tim4),
-    crate::pac::TIM10: (tim10),
-}
+hal!(
+    crate::pac::TIM2,
+    crate::pac::TIM3,
+    crate::pac::TIM4,
+    crate::pac::TIM10,
+);
 
 // All parts except F401 and F411.
 #[cfg(any(
@@ -360,9 +364,7 @@ hal! {
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-hal! {
-    crate::pac::TIM6: (tim6),
-}
+hal!(crate::pac::TIM6,);
 
 // All parts except F401, F410, F411.
 #[cfg(any(
@@ -381,13 +383,13 @@ hal! {
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-hal! {
-    crate::pac::TIM7: (tim7),
-    crate::pac::TIM8: (tim8),
-    crate::pac::TIM12: (tim12),
-    crate::pac::TIM13: (tim13),
-    crate::pac::TIM14: (tim14),
-}
+hal!(
+    crate::pac::TIM7,
+    crate::pac::TIM8,
+    crate::pac::TIM12,
+    crate::pac::TIM13,
+    crate::pac::TIM14,
+);
 
 #[allow(unused)]
 #[cfg(feature = "gpiod")]

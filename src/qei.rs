@@ -73,7 +73,7 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset {
 }
 
 macro_rules! hal {
-    ($($TIM:ty: ($tim:ident, $bits:ident),)+) => {
+    ($($TIM:ty: ($bits:ident),)+) => {
         $(
             impl Instance for $TIM {
                 type Count = $bits;
@@ -97,7 +97,8 @@ macro_rules! hal {
                     // some chip variants declare `.bits()` as unsafe, some don't
                     #[allow(unused_unsafe)]
                     self.smcr.write(|w| unsafe { w.sms().bits(3) });
-                    self.arr.write(|w| unsafe { w.bits(core::u32::MAX) });
+                    #[allow(unused_unsafe)]
+                    self.arr.write(|w| unsafe { w.bits($bits::MAX as u32) });
                     self.cr1.write(|w| w.cen().set_bit());
                 }
 
@@ -114,18 +115,18 @@ macro_rules! hal {
 }
 
 hal! {
-    crate::pac::TIM1: (tim1, u16),
-    crate::pac::TIM5: (tim5, u32),
+    crate::pac::TIM1: (u16),
+    crate::pac::TIM5: (u32),
 }
 
 #[cfg(feature = "tim2")]
 hal! {
-    crate::pac::TIM2: (tim2, u32),
-    crate::pac::TIM3: (tim3, u16),
-    crate::pac::TIM4: (tim4, u16),
+    crate::pac::TIM2: (u32),
+    crate::pac::TIM3: (u16),
+    crate::pac::TIM4: (u16),
 }
 
 #[cfg(feature = "tim8")]
 hal! {
-    crate::pac::TIM8: (tim8, u16),
+    crate::pac::TIM8: (u16),
 }

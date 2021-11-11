@@ -28,7 +28,7 @@ targets = ["thumbv7em-none-eabihf"]
 [dependencies]
 bxcan = { version = "0.6", optional = true }
 cortex-m = "0.7"
-cortex-m-rt = ">=0.6.15, <0.8"
+cortex-m-rt = "0.7"
 nb = "1"
 rand_core = "0.6"
 rtcc = "0.2"
@@ -41,6 +41,8 @@ cast = { default-features = false, version = "0.3.0" }
 void = { default-features = false, version = "1.0.2" }
 embedded-hal = { features = ["unproven"], version = "0.2.6" }
 display-interface = { version = "0.4.1", optional = true }
+fugit = "0.3.0"
+rtic-monotonic = { version = "0.1.0-rc.2", optional = true }
 
 [dependencies.stm32_i2s_v12x]
 version = "0.2.0"
@@ -56,8 +58,8 @@ embedded-graphics = "0.7.1"
 usb-device = "0.2.5"
 usbd-serial = "0.1.0"
 micromath = "2"
-cortex-m-rtic = "0.6.0-rc.2"
-dwt-systick-monotonic = "0.1.0-alpha.3"
+cortex-m-rtic = "0.6.0-rc.4"
+dwt-systick-monotonic = "0.1.0-rc.2"
 st7789 = "0.6.1"
 rtt-target = { version = "0.3.1", features = ["cortex-m"] }
 display-interface-spi = "0.4"
@@ -337,6 +339,8 @@ uart8 = []
 uart9 = []
 uart10 = []
 
+rtic = ["rt", "rtic-monotonic"]
+
 [profile.dev]
 debug = true
 lto = true
@@ -404,11 +408,15 @@ required-features = ["stm32f411", "rt", "i2s"]
 
 [[example]]
 name = "rtic"
-required-features = ["gpiod"] # stm32f407
+required-features = ["gpiod", "rtic"] # stm32f407
+
+[[example]]
+name = "rtic-tick"
+required-features = ["tim2", "rtic"]
 
 [[example]]
 name = "adc_dma_rtic"
-required-features = ["device-selected"] # stm32f401
+required-features = ["device-selected", "rtic"] # stm32f401
 
 [[example]]
 name = "serial-9bit"

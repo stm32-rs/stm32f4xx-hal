@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Implementation of RTIC Monotonic for TIM2 & TIM5 under `rtic` feature [#380]
 - `IoPin` for `Output<OpenDrain>> <-> Input<Floating>>` [#374]
 
+[#380]: https://github.com/stm32-rs/stm32f4xx-hal/pull/380
 [#374]: https://github.com/stm32-rs/stm32f4xx-hal/pull/374
 
 ### Changed
