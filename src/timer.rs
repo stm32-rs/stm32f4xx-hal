@@ -30,6 +30,14 @@ pub struct CountDownTimer<TIM> {
     clk: Hertz,
 }
 
+impl<TIM> Timer<TIM> {
+    /// Creates CountDownTimer
+    pub fn count_down(self) -> CountDownTimer<TIM> {
+        let Self { tim, clk } = self;
+        CountDownTimer { tim, clk }
+    }
+}
+
 impl<TIM> Timer<TIM>
 where
     CountDownTimer<TIM>: CountDown<Time = Hertz>,
@@ -39,8 +47,7 @@ where
     where
         T: Into<Hertz>,
     {
-        let Self { tim, clk } = self;
-        let mut timer = CountDownTimer { tim, clk };
+        let mut timer = self.count_down();
         timer.start(timeout);
         timer
     }
