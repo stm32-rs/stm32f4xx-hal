@@ -29,7 +29,8 @@ fn main() -> ! {
     let clocks = rcc.cfgr.sysclk(24.mhz()).freeze();
 
     // Create a timer based on SysTick
-    let mut timer = Timer::new(dp.TIM1, &clocks).start_count_down(1.hz());
+    let mut timer = Timer::new(dp.TIM1, &clocks).count_down();
+    timer.start(1.hz());
 
     hprintln!("hello!").unwrap();
     // wait until timer expires

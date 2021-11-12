@@ -3,7 +3,7 @@
 //! Pins can be used for PWM output in both push-pull mode (`Alternate`) and open-drain mode
 //! (`AlternateOD`).
 
-use cast::{u16, u32};
+use cast::u16;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::{DCB, DWT, SYST};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
@@ -30,6 +30,14 @@ pub struct CountDownTimer<TIM> {
     clk: Hertz,
 }
 
+impl<TIM> Timer<TIM> {
+    /// Creates CountDownTimer
+    pub fn count_down(self) -> CountDownTimer<TIM> {
+        let Self { tim, clk } = self;
+        CountDownTimer { tim, clk }
+    }
+}
+
 impl<TIM> Timer<TIM>
 where
     CountDownTimer<TIM>: CountDown<Time = Hertz>,
@@ -39,8 +47,7 @@ where
     where
         T: Into<Hertz>,
     {
-        let Self { tim, clk } = self;
-        let mut timer = CountDownTimer { tim, clk };
+        let mut timer = self.count_down();
         timer.start(timeout);
         timer
     }
@@ -58,6 +65,7 @@ pub enum Event {
 pub enum Error {
     /// CountDownTimer is disabled
     Disabled,
+    WrongAutoReload,
 }
 
 impl Timer<SYST> {
@@ -180,7 +188,24 @@ impl Instant {
     }
 }
 
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {}
+mod sealed {
+    pub trait General {
+        type Width;
+        fn enable_counter(&mut self);
+        fn disable_counter(&mut self);
+        fn is_counter_enabled(&self) -> bool;
+        fn reset_counter(&mut self);
+        fn set_prescaler(&mut self, psc: u16);
+        fn set_auto_reload(&mut self, arr: u32) -> Result<(), super::Error>;
+        fn trigger_update(&mut self);
+        fn clear_update_interrupt_flag(&mut self);
+        fn listen_update_interrupt(&mut self, b: bool);
+        fn get_update_interrupt_flag(&self) -> bool;
+    }
+}
+pub(crate) use sealed::General;
+
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq + General {}
 
 impl<TIM> Timer<TIM>
 where
@@ -204,120 +229,175 @@ where
 }
 
 macro_rules! hal {
-    ($($TIM:ty,)+) => {
+    ($($TIM:ty: $bits:ty,)+) => {
         $(
             impl Instance for $TIM { }
 
-            impl CountDownTimer<$TIM> {
-                /// Starts listening for an `event`
-                ///
-                /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
-                /// receiving events.
-                pub fn listen(&mut self, event: Event) {
-                    match event {
-                        Event::TimeOut => {
-                            // Enable update event interrupt
-                            self.tim.dier.write(|w| w.uie().set_bit());
-                        }
-                    }
+            impl General for $TIM {
+                type Width = $bits;
+
+                #[inline(always)]
+                fn enable_counter(&mut self) {
+                    self.cr1.modify(|_, w| w.cen().set_bit());
                 }
-
-                /// Clears interrupt associated with `event`.
-                ///
-                /// If the interrupt is not cleared, it will immediately retrigger after
-                /// the ISR has finished.
-                pub fn clear_interrupt(&mut self, event: Event) {
-                    match event {
-                        Event::TimeOut => {
-                            // Clear interrupt flag
-                            self.tim.sr.write(|w| w.uif().clear_bit());
-                        }
-                    }
+                #[inline(always)]
+                fn disable_counter(&mut self) {
+                    self.cr1.modify(|_, w| w.cen().clear_bit());
                 }
-
-                /// Stops listening for an `event`
-                pub fn unlisten(&mut self, event: Event) {
-                    match event {
-                        Event::TimeOut => {
-                            // Enable update event interrupt
-                            self.tim.dier.write(|w| w.uie().clear_bit());
-                        }
-                    }
+                #[inline(always)]
+                fn is_counter_enabled(&self) -> bool {
+                    self.cr1.read().cen().is_enabled()
                 }
-
-                /// Releases the TIM peripheral
-                pub fn release(self) -> $TIM {
-                    // pause counter
-                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
-                    self.tim
+                #[inline(always)]
+                fn reset_counter(&mut self) {
+                    self.cnt.reset();
                 }
-            }
-
-            impl CountDown for CountDownTimer<$TIM> {
-                type Time = Hertz;
-
-                fn start<T>(&mut self, timeout: T)
-                where
-                    T: Into<Hertz>,
-                {
-                    // pause
-                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
-                    // reset counter
-                    self.tim.cnt.reset();
-
-                    let frequency = timeout.into().0;
-                    let ticks = self.clk.0 / frequency;
-
-                    let psc = (ticks - 1) / (1 << 16);
-                    self.tim.psc.write(|w| w.psc().bits(u16(psc).unwrap()) );
-
-                    let arr = u16(ticks / (psc + 1)).unwrap();
-                    self.tim.arr.write(|w| unsafe { w.bits(u32(arr)) });
-
-                    // Trigger update event to load the registers
-                    self.tim.cr1.modify(|_, w| w.urs().set_bit());
-                    self.tim.egr.write(|w| w.ug().set_bit());
-                    self.tim.cr1.modify(|_, w| w.urs().clear_bit());
-
-                    // start counter
-                    self.tim.cr1.modify(|_, w| w.cen().set_bit());
+                #[inline(always)]
+                fn set_prescaler(&mut self, psc: u16) {
+                    self.psc.write(|w| w.psc().bits(psc) );
                 }
-
-                fn wait(&mut self) -> nb::Result<(), Void> {
-                    if self.tim.sr.read().uif().bit_is_clear() {
-                        Err(nb::Error::WouldBlock)
+                #[inline(always)]
+                fn set_auto_reload(&mut self, arr: u32) -> Result<(), Error> {
+                    if arr > 0 && arr <= <$bits>::MAX as u32 {
+                        Ok(self.arr.write(|w| unsafe { w.bits(arr) }))
                     } else {
-                        self.tim.sr.modify(|_, w| w.uif().clear_bit());
-                        Ok(())
+                        Err(Error::WrongAutoReload)
                     }
                 }
-            }
-
-            impl Cancel for CountDownTimer<$TIM>
-            {
-                type Error = Error;
-
-                fn cancel(&mut self) -> Result<(), Self::Error> {
-                    let is_counter_enabled = self.tim.cr1.read().cen().is_enabled();
-                    if !is_counter_enabled {
-                        return Err(Self::Error::Disabled);
-                    }
-
-                    // disable counter
-                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
-                    Ok(())
+                #[inline(always)]
+                fn trigger_update(&mut self) {
+                    self.cr1.modify(|_, w| w.urs().set_bit());
+                    self.egr.write(|w| w.ug().set_bit());
+                    self.cr1.modify(|_, w| w.urs().clear_bit());
+                }
+                #[inline(always)]
+                fn clear_update_interrupt_flag(&mut self) {
+                    self.sr.write(|w| w.uif().clear_bit());
+                }
+                #[inline(always)]
+                fn listen_update_interrupt(&mut self, b: bool) {
+                    self.dier.write(|w| w.uie().bit(b));
+                }
+                #[inline(always)]
+                fn get_update_interrupt_flag(&self) -> bool {
+                    self.sr.read().uif().bit_is_clear()
                 }
             }
         )+
     }
 }
 
+impl<TIM> CountDownTimer<TIM>
+where
+    TIM: General,
+{
+    /// Starts listening for an `event`
+    ///
+    /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
+    /// receiving events.
+    pub fn listen(&mut self, event: Event) {
+        match event {
+            Event::TimeOut => {
+                // Enable update event interrupt
+                self.tim.listen_update_interrupt(true);
+            }
+        }
+    }
+
+    /// Clears interrupt associated with `event`.
+    ///
+    /// If the interrupt is not cleared, it will immediately retrigger after
+    /// the ISR has finished.
+    pub fn clear_interrupt(&mut self, event: Event) {
+        match event {
+            Event::TimeOut => {
+                // Clear interrupt flag
+                self.tim.clear_update_interrupt_flag();
+            }
+        }
+    }
+
+    /// Stops listening for an `event`
+    pub fn unlisten(&mut self, event: Event) {
+        match event {
+            Event::TimeOut => {
+                // Disable update event interrupt
+                self.tim.listen_update_interrupt(false);
+            }
+        }
+    }
+
+    /// Releases the TIM peripheral
+    pub fn release(mut self) -> TIM {
+        // pause counter
+        self.tim.disable_counter();
+        self.tim
+    }
+}
+
+impl<TIM> CountDown for CountDownTimer<TIM>
+where
+    TIM: General,
+{
+    type Time = Hertz;
+
+    fn start<T>(&mut self, timeout: T)
+    where
+        T: Into<Self::Time>,
+    {
+        // pause
+        self.tim.disable_counter();
+        // reset counter
+        self.tim.reset_counter();
+
+        let frequency = timeout.into().0;
+        let ticks = self.clk.0 / frequency;
+        let psc = (ticks - 1) / (1 << 16);
+        self.tim.set_prescaler(u16(psc).unwrap());
+
+        let arr = ticks / (psc + 1);
+        self.tim.set_auto_reload(arr).unwrap();
+
+        // Trigger update event to load the registers
+        self.tim.trigger_update();
+
+        // start counter
+        self.tim.enable_counter();
+    }
+
+    fn wait(&mut self) -> nb::Result<(), Void> {
+        if self.tim.get_update_interrupt_flag() {
+            Err(nb::Error::WouldBlock)
+        } else {
+            self.tim.clear_update_interrupt_flag();
+            Ok(())
+        }
+    }
+}
+
+impl<TIM> Cancel for CountDownTimer<TIM>
+where
+    TIM: General,
+{
+    type Error = Error;
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        if !self.tim.is_counter_enabled() {
+            return Err(Self::Error::Disabled);
+        }
+
+        // disable counter
+        self.tim.disable_counter();
+        Ok(())
+    }
+}
+
 // All F4xx parts have these timers.
 hal!(
-    crate::pac::TIM1,
-    crate::pac::TIM5,
-    crate::pac::TIM9,
-    crate::pac::TIM11,
+    crate::pac::TIM1: u16,
+    crate::pac::TIM5: u32,
+    crate::pac::TIM9: u16,
+    crate::pac::TIM11: u16,
 );
 
 // All parts except for F410 add these timers.
@@ -340,10 +420,10 @@ hal!(
     feature = "stm32f479"
 ))]
 hal!(
-    crate::pac::TIM2,
-    crate::pac::TIM3,
-    crate::pac::TIM4,
-    crate::pac::TIM10,
+    crate::pac::TIM2: u32,
+    crate::pac::TIM3: u16,
+    crate::pac::TIM4: u16,
+    crate::pac::TIM10: u16,
 );
 
 // All parts except F401 and F411.
@@ -364,7 +444,7 @@ hal!(
     feature = "stm32f469",
     feature = "stm32f479"
 ))]
-hal!(crate::pac::TIM6,);
+hal!(crate::pac::TIM6: u16,);
 
 // All parts except F401, F410, F411.
 #[cfg(any(
@@ -384,11 +464,11 @@ hal!(crate::pac::TIM6,);
     feature = "stm32f479"
 ))]
 hal!(
-    crate::pac::TIM7,
-    crate::pac::TIM8,
-    crate::pac::TIM12,
-    crate::pac::TIM13,
-    crate::pac::TIM14,
+    crate::pac::TIM7: u16,
+    crate::pac::TIM8: u16,
+    crate::pac::TIM12: u16,
+    crate::pac::TIM13: u16,
+    crate::pac::TIM14: u16,
 );
 
 #[allow(unused)]
