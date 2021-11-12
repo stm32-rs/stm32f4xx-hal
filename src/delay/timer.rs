@@ -8,7 +8,11 @@ use core::cmp::max;
 use cast::{u16, u32};
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
-use crate::{pac, rcc::Clocks, timer::Timer};
+use crate::{
+    pac,
+    rcc::Clocks,
+    timer::{General, Timer},
+};
 
 use super::Delay;
 
@@ -17,25 +21,23 @@ macro_rules! hal {
         $(
             fn $waitfn(tim: &mut $TIM, prescaler: u16, auto_reload_register: u32) {
                 // Write Prescaler (PSC)
-                tim.psc.write(|w| w.psc().bits(prescaler));
+                tim.set_prescaler(prescaler);
 
                 // Write Auto-Reload Register (ARR)
                 // Note: Make it impossible to set the ARR value to 0, since this
                 // would cause an infinite loop.
-                tim.arr.write(|w| unsafe { w.bits(max(1, auto_reload_register)) });
+                tim.set_auto_reload(max(1, auto_reload_register)).unwrap();
 
                 // Trigger update event (UEV) in the event generation register (EGR)
                 // in order to immediately apply the config
-                tim.cr1.modify(|_, w| w.urs().set_bit());
-                tim.egr.write(|w| w.ug().set_bit());
-                tim.cr1.modify(|_, w| w.urs().clear_bit());
+                tim.trigger_update();
 
                 // Configure the counter in one-pulse mode (counter stops counting at
                 // the next updateevent, clearing the CEN bit) and enable the counter.
                 tim.cr1.write(|w| w.opm().set_bit().cen().set_bit());
 
                 // Wait for CEN bit to clear
-                while tim.cr1.read().cen().is_enabled() { /* wait */ }
+                while tim.is_counter_enabled() { /* wait */ }
             }
 
             impl Timer<$TIM> {

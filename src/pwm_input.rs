@@ -1,6 +1,6 @@
 use crate::{
     time::Hertz,
-    timer::{PinC1, Timer},
+    timer::{General, PinC1, Timer},
 };
 use cast::u16;
 
@@ -42,7 +42,7 @@ pub struct PwmInput<TIM, PINS: Pins<TIM>> {
 
 #[cfg(not(feature = "stm32f410"))]
 macro_rules! hal {
-    ($($TIM:ident: ($bits:ident),)+) => {
+    ($($TIM:ident,)+) => {
         $(
         // Drag the associated TIM object into scope.
         // Note: its drawn in via the macro to avoid duplicating the feature gate this macro is
@@ -59,7 +59,7 @@ macro_rules! hal {
             /// 2. When the period is captured. the duty cycle will be an observable value.
             /// See the pwm input example for an suitable interrupt handler.
             #[allow(unused_unsafe)] //for some chips the operations are considered safe.
-            pub fn pwm_input<T, PINS>(self, best_guess: T, pins: PINS) -> PwmInput<$TIM, PINS>
+            pub fn pwm_input<T, PINS>(mut self, best_guess: T, pins: PINS) -> PwmInput<$TIM, PINS>
             where
                 T: Into<Hertz>,
                 PINS: Pins<$TIM>,
@@ -71,7 +71,7 @@ macro_rules! hal {
                 */
                 let ticks = self.clk.0 / best_guess.into().0;
                 let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                self.tim.psc.write(|w| w.psc().bits(psc));
+                self.tim.set_prescaler(psc);
 
                 // Seemingly this needs to be written to
                 // self.tim.arr.write(|w| w.arr().bits(u16::MAX));
@@ -137,7 +137,7 @@ macro_rules! hal {
                 // enable interrupts.
                 self.tim.dier.modify(|_, w| w.cc2ie().set_bit());
                 // enable the counter.
-                self.tim.cr1.modify(|_, w| w.cen().enabled());
+                self.tim.enable_counter();
 
                 let Self { tim, clk } = self;
 
@@ -158,11 +158,11 @@ macro_rules! hal {
                 (Timer { tim, clk }, pins)
             }
             /// Period of PWM signal in terms of clock cycles
-            pub fn get_period_clocks(&self) -> $bits {
+            pub fn get_period_clocks(&self) -> <$TIM as General>::Width {
                 self.tim.ccr1.read().ccr().bits()
             }
             /// Duty cycle in terms of clock cycles
-            pub fn get_duty_cycle_clocks(&self) -> $bits {
+            pub fn get_duty_cycle_clocks(&self) -> <$TIM as General>::Width {
                 self.tim.ccr2.read().ccr().bits()
             }
             /// Observed duty cycle as a float in range [0.00, 1.00]
@@ -186,9 +186,9 @@ macro_rules! hal {
 #[cfg(any(feature = "stm32f411",))]
 /* red group */
 hal! {
-    TIM4: (u16),
-    TIM3: (u16),
-    TIM2: (u32),
+    TIM4,
+    TIM3,
+    TIM2,
 }
 
 /* orange group */
@@ -210,9 +210,9 @@ hal! {
     feature = "stm32f479",
 ))]
 hal! {
-    TIM2: (u32),
-    TIM3: (u16),
-    TIM4: (u16),
+    TIM2,
+    TIM3,
+    TIM4,
 }
 /* green group */
 #[cfg(any(
@@ -232,8 +232,8 @@ hal! {
     feature = "stm32f479",
 ))]
 hal! {
-    TIM8: (u16),
-    TIM12: (u16),
+    TIM8,
+    TIM12,
 }
 
 /* every chip across the series have these timers with support for this feature.
@@ -243,7 +243,7 @@ hal! {
 /* yellow group */
 #[cfg(not(feature = "stm32f410"))]
 hal! {
-    TIM1: (u16),
-    TIM5: (u32),
-    TIM9: (u16),
+    TIM1,
+    TIM5,
+    TIM9,
 }
