@@ -217,6 +217,12 @@ bus! {
     CAN1 => (APB1, 25),
     CAN2 => (APB1, 26),
 }
+
+#[cfg(feature = "can3")]
+bus! {
+    CAN3 => (APB1, 27),
+}
+
 #[cfg(feature = "dac")]
 bus! {
     DAC => (APB1, 29),

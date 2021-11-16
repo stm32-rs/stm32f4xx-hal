@@ -1,78 +1,101 @@
 //! # Controller Area Network (CAN) Interface
 //!
 
+use crate::gpio::{Const, NoPin, PushPull, SetAlternate};
 use crate::pac::{CAN1, CAN2};
-use crate::rcc::{Enable, Reset};
+use crate::rcc;
 
-mod sealed {
-    pub trait Sealed {}
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset {}
+
+// Implemented by all SPI instances
+impl Instance for CAN1 {}
+impl Instance for CAN2 {}
+
+pub trait Pins<Can> {}
+pub trait PinTx<Can> {
+    type A;
+}
+pub trait PinRx<Can> {
+    type A;
 }
 
-/// A pair of (TX, RX) pins configured for CAN communication
-pub trait Pins: sealed::Sealed {
-    /// The CAN peripheral that uses these pins
-    type Instance;
+impl<Can, TX, RX> Pins<Can> for (TX, RX)
+where
+    TX: PinTx<Can>,
+    RX: PinRx<Can>,
+{
 }
 
-/// Implements sealed::Sealed and Pins for a (TX, RX) pair of pins associated with a CAN peripheral
-/// The alternate function number can be specified after each pin name. If not specified, both
-/// default to AF9.
-macro_rules! pins {
-    ($($PER:ident => ($tx:ident<$txaf:literal>, $rx:ident<$rxaf:literal>),)+) => {
-        $(
-            impl crate::can::sealed::Sealed for ($tx<crate::gpio::Alternate<crate::gpio::PushPull, $txaf>>, $rx<crate::gpio::Alternate<crate::gpio::PushPull, $rxaf>>) {}
-            impl crate::can::Pins for ($tx<crate::gpio::Alternate<crate::gpio::PushPull, $txaf>>, $rx<crate::gpio::Alternate<crate::gpio::PushPull, $rxaf>>) {
-                type Instance = $PER;
-            }
-        )+
+impl<Can> PinTx<Can> for NoPin
+where
+    Can: Instance,
+{
+    type A = Const<0>;
+}
+
+impl<Can> PinRx<Can> for NoPin
+where
+    Can: Instance,
+{
+    type A = Const<0>;
+}
+
+macro_rules! pin {
+    ($trait:ident<$I2C:ident> for $gpio:ident::$PX:ident<$A:literal>) => {
+        impl<MODE> $trait<$I2C> for $gpio::$PX<MODE> {
+            type A = Const<$A>;
+        }
     };
-    ($($PER:ident => ($tx:ident, $rx:ident),)+) => {
-        pins! { $($PER => ($tx<9>, $rx<9>),)+ }
-    }
 }
 
 mod common_pins {
-    use crate::gpio::{
-        gpioa::{PA11, PA12},
-        gpiob::{PB12, PB13, PB5, PB6},
-        gpiod::{PD0, PD1},
-    };
-    use crate::pac::{CAN1, CAN2};
-    // All STM32F4 models with CAN support these pins
-    pins! {
-        CAN1 => (PA12<9>, PA11<9>),
-        CAN1 => (PD1<9>, PD0<9>),
-        CAN2 => (PB13<9>, PB12<9>),
-        CAN2 => (PB6<9>, PB5<9>),
-    }
+    use super::*;
+    use crate::gpio::{gpioa, gpiob, gpiod};
+    pin!(PinTx<CAN1> for gpioa::PA12<9>);
+    pin!(PinRx<CAN1> for gpioa::PA11<9>);
+    pin!(PinTx<CAN1> for gpiod::PD1<9>);
+    pin!(PinRx<CAN1> for gpiod::PD0<9>);
+    pin!(PinTx<CAN2> for gpiob::PB13<9>);
+    pin!(PinRx<CAN2> for gpiob::PB12<9>);
+    pin!(PinTx<CAN2> for gpiob::PB6<9>);
+    pin!(PinRx<CAN2> for gpiob::PB5<9>);
 }
 
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 mod pb9_pb8_af8 {
-    use crate::gpio::gpiob::{PB8, PB9};
-    use crate::pac::CAN1;
-    pins! { CAN1 => (PB9<8>, PB8<8>), }
+    use super::*;
+    use crate::gpio::gpiob;
+    pin!(PinTx<CAN1> for gpiob::PB9<8>);
+    pin!(PinRx<CAN1> for gpiob::PB8<8>);
 }
 
-#[cfg(any(feature = "can1", feature = "can2",))]
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
 mod pb9_pb8_af9 {
-    use crate::gpio::gpiob::{PB8, PB9};
-    use crate::pac::CAN1;
-    pins! { CAN1 => (PB9<9>, PB8<9>), }
+    use super::*;
+    use crate::gpio::gpiob;
+    pin!(PinTx<CAN1> for gpiob::PB9<9>);
+    pin!(PinRx<CAN1> for gpiob::PB8<9>);
 }
 
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 mod pg1_pg0 {
-    use crate::gpio::gpiog::{PG0, PG1};
-    use crate::pac::CAN1;
-    pins! { CAN1 => (PG1<9>, PG0<9>), }
-}
-
-#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
-mod pg12_pg11 {
-    use crate::gpio::gpiog::{PG11, PG12};
-    use crate::pac::CAN2;
-    pins! { CAN2 => (PG12<9>, PG11<9>), }
+    use super::*;
+    use crate::gpio::gpiog;
+    pin!(PinTx<CAN1> for gpiog::PG1<9>);
+    pin!(PinRx<CAN1> for gpiog::PG0<9>);
+    pin!(PinTx<CAN2> for gpiog::PG12<9>);
+    pin!(PinRx<CAN2> for gpiog::PG11<9>);
 }
 
 #[cfg(any(
@@ -88,78 +111,99 @@ mod pg12_pg11 {
     feature = "stm32f479"
 ))]
 mod ph13_pi9 {
-    use crate::gpio::{gpioh::PH13, gpioi::PI9};
-    use crate::pac::CAN1;
-    pins! { CAN1 => (PH13<9>, PI9<9>), }
+    use super::*;
+    use crate::gpio::{gpioh, gpioi};
+    pin!(PinTx<CAN1> for gpioh::PH13<9>);
+    pin!(PinRx<CAN1> for gpioi::PI9<9>);
 }
 
 /// Pins and definitions for models with a third CAN peripheral
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+#[cfg(feature = "can3")]
 mod can3 {
-    use super::Can;
-    use crate::gpio::{
-        gpioa::{PA15, PA8},
-        gpiob::{PB3, PB4},
-    };
+    use super::*;
+    use crate::gpio::{gpioa, gpiob};
     use crate::pac::CAN3;
-    pins! {
-        CAN3 => (PA15<11>, PA8<11>),
-        CAN3 => (PB4<11>, PB3<11>),
-    }
 
-    unsafe impl bxcan::Instance for Can<CAN3> {
+    impl Instance for CAN3 {}
+    pin!(PinTx<CAN3> for gpioa::PA15<11>);
+    pin!(PinRx<CAN3> for gpioa::PA8<11>);
+    pin!(PinTx<CAN3> for gpiob::PB4<11>);
+    pin!(PinRx<CAN3> for gpiob::PB3<11>);
+
+    unsafe impl<PINS> bxcan::Instance for Can<CAN3, PINS> {
         const REGISTERS: *mut bxcan::RegisterBlock = CAN3::ptr() as *mut _;
     }
 
-    unsafe impl bxcan::FilterOwner for Can<CAN3> {
+    unsafe impl<PINS> bxcan::FilterOwner for Can<CAN3, PINS> {
         const NUM_FILTER_BANKS: u8 = 14;
     }
 }
 
 /// Interface to the CAN peripheral.
-pub struct Can<Instance> {
-    _peripheral: Instance,
+pub struct Can<CAN, PINS> {
+    can: CAN,
+    pins: PINS,
 }
 
-impl<Instance> Can<Instance>
+impl<CAN, TX, RX, const TXA: u8, const RXA: u8> Can<CAN, (TX, RX)>
 where
-    Instance: Enable + Reset,
+    CAN: Instance,
+    TX: PinTx<CAN, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+    RX: PinRx<CAN, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
 {
     /// Creates a CAN interface.
-    pub fn new<P>(can: Instance, _pins: P) -> Can<Instance>
-    where
-        P: Pins<Instance = Instance>,
-    {
+    pub fn new(can: CAN, mut pins: (TX, RX)) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*crate::pac::RCC::ptr());
-            Instance::enable(rcc);
-            Instance::reset(rcc);
+            CAN::enable(rcc);
+            CAN::reset(rcc);
         }
-        Can { _peripheral: can }
+
+        pins.0.set_alt_mode();
+        pins.1.set_alt_mode();
+
+        Can { can, pins }
     }
 
-    pub fn new_unchecked(can: Instance) -> Can<Instance> {
-        unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*crate::pac::RCC::ptr());
-            Instance::enable(rcc);
-            Instance::reset(rcc);
-        }
-        Can { _peripheral: can }
+    pub fn release(mut self) -> (CAN, (TX, RX)) {
+        self.pins.0.restore_mode();
+        self.pins.1.restore_mode();
+
+        (self.can, self.pins)
     }
 }
 
-unsafe impl bxcan::Instance for Can<CAN1> {
+impl<CAN, TX, const TXA: u8> Can<CAN, (TX, NoPin)>
+where
+    CAN: Instance,
+    TX: PinTx<CAN, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+{
+    pub fn tx(usart: CAN, tx_pin: TX) -> Self {
+        Self::new(usart, (tx_pin, NoPin))
+    }
+}
+
+impl<CAN, RX, const RXA: u8> Can<CAN, (NoPin, RX)>
+where
+    CAN: Instance,
+    RX: PinRx<CAN, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+{
+    pub fn rx(usart: CAN, rx_pin: RX) -> Self {
+        Self::new(usart, (NoPin, rx_pin))
+    }
+}
+
+unsafe impl<PINS> bxcan::Instance for Can<CAN1, PINS> {
     const REGISTERS: *mut bxcan::RegisterBlock = CAN1::ptr() as *mut _;
 }
 
-unsafe impl bxcan::Instance for Can<CAN2> {
+unsafe impl<PINS> bxcan::Instance for Can<CAN2, PINS> {
     const REGISTERS: *mut bxcan::RegisterBlock = CAN2::ptr() as *mut _;
 }
 
-unsafe impl bxcan::FilterOwner for Can<CAN1> {
+unsafe impl<PINS> bxcan::FilterOwner for Can<CAN1, PINS> {
     const NUM_FILTER_BANKS: u8 = 28;
 }
 
-unsafe impl bxcan::MasterInstance for Can<CAN1> {}
+unsafe impl<PINS> bxcan::MasterInstance for Can<CAN1, PINS> {}
