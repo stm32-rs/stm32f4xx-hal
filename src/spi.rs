@@ -1,7 +1,7 @@
 use core::ops::Deref;
 use core::ptr;
 
-use crate::gpio::{Const, NoPin, SetAlternate};
+use crate::gpio::{Const, NoPin, PushPull, SetAlternate};
 use embedded_hal::spi;
 pub use embedded_hal::spi::{Mode, Phase, Polarity};
 
@@ -417,9 +417,9 @@ impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
     Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal>
 where
     SPI: Instance,
-    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<SCKA>,
-    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<MISOA>,
-    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<MOSIA>,
+    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<PushPull, SCKA>,
+    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<PushPull, MISOA>,
+    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<PushPull, MOSIA>,
 {
     pub fn new(
         spi: SPI,
@@ -459,9 +459,9 @@ impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
     Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi>
 where
     SPI: Instance,
-    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<SCKA>,
-    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<MISOA>,
-    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<MOSIA>,
+    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<PushPull, SCKA>,
+    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<PushPull, MISOA>,
+    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<PushPull, MOSIA>,
 {
     pub fn new_bidi(
         spi: SPI,
@@ -501,9 +501,9 @@ impl<SPI, SCK, MISO, MOSI, TRANSFER_MODE, const SCKA: u8, const MISOA: u8, const
     Spi<SPI, (SCK, MISO, MOSI), TRANSFER_MODE>
 where
     SPI: Instance,
-    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<SCKA>,
-    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<MISOA>,
-    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<MOSIA>,
+    SCK: PinSck<SPI, A = Const<SCKA>> + SetAlternate<PushPull, SCKA>,
+    MISO: PinMiso<SPI, A = Const<MISOA>> + SetAlternate<PushPull, MISOA>,
+    MOSI: PinMosi<SPI, A = Const<MOSIA>> + SetAlternate<PushPull, MOSIA>,
 {
     pub fn release(mut self) -> (SPI, (SCK, MISO, MOSI)) {
         self.pins.0.restore_mode();

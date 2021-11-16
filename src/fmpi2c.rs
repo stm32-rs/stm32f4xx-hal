@@ -1,7 +1,7 @@
 use core::ops::Deref;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
-use crate::gpio::{gpiob, gpioc, gpiod, gpiof, Const, SetAlternateOD};
+use crate::gpio::{gpiob, gpioc, gpiod, gpiof, Const, OpenDrain, SetAlternate};
 use crate::i2c::{Error, PinScl, PinSda};
 use crate::pac::{fmpi2c1, FMPI2C1, RCC};
 use crate::rcc::{Enable, Reset};
@@ -87,8 +87,8 @@ pin!(PinScl<FMPI2C1> for gpiof::PF15<4>);
 
 impl<SCL, SDA, const SCLA: u8, const SDAA: u8> FMPI2c<FMPI2C1, (SCL, SDA)>
 where
-    SCL: PinScl<FMPI2C1, A = Const<SCLA>> + SetAlternateOD<SCLA>,
-    SDA: PinSda<FMPI2C1, A = Const<SDAA>> + SetAlternateOD<SDAA>,
+    SCL: PinScl<FMPI2C1, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
+    SDA: PinSda<FMPI2C1, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
 {
     pub fn new<M: Into<FmpMode>>(i2c: FMPI2C1, mut pins: (SCL, SDA), mode: M) -> Self {
         unsafe {

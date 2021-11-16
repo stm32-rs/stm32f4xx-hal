@@ -2,7 +2,7 @@
 //!
 //! This module is only available if the `i2s` feature is enabled.
 
-use crate::gpio::{Const, NoPin, SetAlternate};
+use crate::gpio::{Const, NoPin, PushPull, SetAlternate};
 use stm32_i2s_v12x::{Instance, RegisterBlock};
 
 use crate::pac::RCC;
@@ -293,10 +293,10 @@ impl<SPI, WS, CK, MCLK, SD, const WSA: u8, const CKA: u8, const MCLKA: u8, const
     I2s<SPI, (WS, CK, MCLK, SD)>
 where
     SPI: I2sFreq + rcc::Enable + rcc::Reset,
-    WS: PinWs<SPI, A = Const<WSA>> + SetAlternate<WSA>,
-    CK: PinCk<SPI, A = Const<CKA>> + SetAlternate<CKA>,
-    MCLK: PinMck<SPI, A = Const<MCLKA>> + SetAlternate<MCLKA>,
-    SD: PinSd<SPI, A = Const<SDA>> + SetAlternate<SDA>,
+    WS: PinWs<SPI, A = Const<WSA>> + SetAlternate<PushPull, WSA>,
+    CK: PinCk<SPI, A = Const<CKA>> + SetAlternate<PushPull, CKA>,
+    MCLK: PinMck<SPI, A = Const<MCLKA>> + SetAlternate<PushPull, MCLKA>,
+    SD: PinSd<SPI, A = Const<SDA>> + SetAlternate<PushPull, SDA>,
 {
     /// Creates an I2s object around an SPI peripheral and pins
     ///
