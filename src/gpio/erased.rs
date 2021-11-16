@@ -11,6 +11,30 @@ pub struct ErasedPin<MODE> {
     _mode: PhantomData<MODE>,
 }
 
+impl<MODE> fmt::Debug for ErasedPin<MODE> {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_fmt(format_args!(
+            "P({}{})<{}>",
+            self.port_id(),
+            self.pin_id(),
+            crate::stripped_type_name::<MODE>()
+        ))
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl<MODE> defmt::Format for ErasedPin<MODE> {
+    fn format(&self, f: defmt::Formatter) {
+        defmt::write!(
+            f,
+            "P({}{})<{}>",
+            self.port_id(),
+            self.pin_id(),
+            crate::stripped_type_name::<MODE>()
+        );
+    }
+}
+
 impl<MODE> PinExt for ErasedPin<MODE> {
     type Mode = MODE;
 

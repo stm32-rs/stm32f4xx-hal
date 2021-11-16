@@ -6,9 +6,11 @@ use crate::bb;
 use crate::pac::{rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
 use core::convert::TryInto;
+use core::fmt;
 use rtcc::{Datelike, Hours, NaiveDate, NaiveDateTime, NaiveTime, Rtcc, Timelike};
 
 /// Invalid input error
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     InvalidInputData,
@@ -16,8 +18,23 @@ pub enum Error {
 
 pub const LSE_BITS: u8 = 0b01;
 
+/// Real Time Clock peripheral
 pub struct Rtc {
+    /// RTC Peripheral register
     pub regs: RTC,
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for Rtc {
+    fn format(&self, f: defmt::Formatter) {
+        defmt::write!(f, "Rtc");
+    }
+}
+
+impl fmt::Debug for Rtc {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Rtc")
+    }
 }
 
 impl Rtc {

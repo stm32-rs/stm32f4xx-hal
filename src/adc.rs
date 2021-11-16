@@ -41,7 +41,8 @@ macro_rules! adc_pins {
 /// Contains types related to ADC configuration
 pub mod config {
     /// The place in the sequence a given channel should be captured
-    #[derive(Debug, PartialEq, PartialOrd, Copy, Clone)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
     pub enum Sequence {
         /// 1
         One,
@@ -125,7 +126,8 @@ pub mod config {
     }
 
     /// The number of cycles to sample a given channel for
-    #[derive(Debug, PartialEq, Copy, Clone)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum SampleTime {
         /// 3 cycles
         Cycles_3,
@@ -178,7 +180,8 @@ pub mod config {
 
     /// Clock config for the ADC
     /// Check the datasheet for the maximum speed the ADC supports
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Clock {
         /// PCLK2 (APB2) divided by 2
         Pclk2_div_2,
@@ -202,7 +205,8 @@ pub mod config {
     }
 
     /// Resolution to sample at
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Resolution {
         /// 12-bit
         Twelve,
@@ -225,7 +229,8 @@ pub mod config {
     }
 
     /// Possible external triggers the ADC can listen to
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum ExternalTrigger {
         /// TIM1 compare channel 1
         Tim_1_cc_1,
@@ -278,7 +283,8 @@ pub mod config {
     }
 
     /// Possible trigger modes
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum TriggerMode {
         /// Don't listen to external trigger
         Disabled,
@@ -301,7 +307,8 @@ pub mod config {
     }
 
     /// Data register alignment
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Align {
         /// Right align output data
         Right,
@@ -318,7 +325,8 @@ pub mod config {
     }
 
     /// Scan enable/disable
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Scan {
         /// Scan mode disabled
         Disabled,
@@ -335,7 +343,8 @@ pub mod config {
     }
 
     /// Continuous mode enable/disable
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Continuous {
         /// Single mode, continuous disabled
         Single,
@@ -352,7 +361,8 @@ pub mod config {
     }
 
     /// DMA mode
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Dma {
         /// No DMA, disabled
         Disabled,
@@ -363,7 +373,8 @@ pub mod config {
     }
 
     /// End-of-conversion interrupt enabled/disabled
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Eoc {
         /// End-of-conversion interrupt disabled
         Disabled,
@@ -376,7 +387,8 @@ pub mod config {
     /// Configuration for the adc.
     /// There are some additional parameters on the adc peripheral that can be
     /// added here when needed but this covers several basic usecases.
-    #[derive(Debug, Clone, Copy)]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub struct AdcConfig {
         pub(crate) clock: Clock,
         pub(crate) resolution: Resolution,

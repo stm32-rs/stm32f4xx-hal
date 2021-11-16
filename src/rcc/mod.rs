@@ -1242,6 +1242,8 @@ impl CFGR {
     }
 }
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct PllSetup {
     use_pll: bool,
     #[cfg(not(feature = "stm32f410"))]
@@ -1282,6 +1284,8 @@ struct PllSetup {
     feature = "stm32f423",
     feature = "stm32f446",
 ))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct I2sClocks {
     /// True if the clock for the APB1 I2S instances is identical to I2S_CKIN.
     i2s_apb1_ext: bool,
@@ -1297,6 +1301,8 @@ struct I2sClocks {
     feature = "stm32f423",
     feature = "stm32f446",
 )))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct I2sClocks {
     /// True if the clock for I2S is identical to I2S_CKIN.
     i2s_ext: bool,
@@ -1348,6 +1354,8 @@ impl I2sClocks {
     feature = "stm32f423",
     feature = "stm32f446",
 ))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealI2sClocks {
     i2s_apb1_ext: bool,
     i2s_apb2_ext: bool,
@@ -1361,6 +1369,8 @@ struct RealI2sClocks {
     feature = "stm32f423",
     feature = "stm32f446",
 )))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealI2sClocks {
     i2s_ext: bool,
     i2s_clk: Option<u32>,
@@ -1424,6 +1434,8 @@ impl RealI2sClocks {
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct SaiClocks {
     /// True if the clock for SAI1 (STM32F446) or SAIA (all other models) is identical to I2S_CKIN.
     sai1_ext: bool,
@@ -1471,6 +1483,8 @@ impl SaiClocks {
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealSaiClocks {
     sai1_ext: bool,
     #[cfg(not(feature = "stm32f446"))]
@@ -1519,7 +1533,8 @@ impl RealSaiClocks {
 /// Frozen clock frequencies
 ///
 /// The existence of this value indicates that the clock configuration can no longer be changed
-#[derive(Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Clocks {
     hclk: Hertz,
     pclk1: Hertz,

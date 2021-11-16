@@ -77,17 +77,34 @@ pub mod config {
     use crate::time::Bps;
     use crate::time::U32Ext;
 
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum WordLength {
         DataBits8,
         DataBits9,
     }
 
+    /// Parity generation and checking. If odd or even parity is selected, the
+    /// underlying USART will be configured to send/receive the parity bit in
+    /// addtion to the data bits.
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Parity {
+        /// No parity bit will be added/checked.
         ParityNone,
+        /// The MSB transmitted/received will be generated/checked to have a
+        /// even number of bits set.
         ParityEven,
+        /// The MSB transmitted/received will be generated/checked to have a
+        /// odd number of bits set.
         ParityOdd,
     }
 
+    /// Stop Bit configuration parameter for serial.
+    ///
+    /// Wrapper around [`STOP_A`]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Clone, Copy, Debug, PartialEq)]
     pub enum StopBits {
         #[doc = "1 stop bit"]
         STOP1,
@@ -99,6 +116,8 @@ pub mod config {
         STOP1P5,
     }
 
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum DmaConfig {
         None,
         Tx,
@@ -106,6 +125,9 @@ pub mod config {
         TxRx,
     }
 
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[non_exhaustive]
     pub struct Config {
         pub baudrate: Bps,
         pub wordlength: WordLength,
