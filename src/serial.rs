@@ -695,7 +695,7 @@ where
             USART::reset(rcc);
         }
 
-        let pclk_freq = USART::get_frequency(&clocks).0;
+        let pclk_freq = USART::clock(&clocks).0;
         let baud = config.baudrate.0;
 
         // The frequency to calculate USARTDIV is this:
@@ -1213,7 +1213,7 @@ use crate::pac::uart4 as uart_base;
 use crate::pac::usart1 as uart_base;
 
 // Implemented by all USART instances
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq {
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock {
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
     #[doc(hidden)]

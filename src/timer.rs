@@ -205,7 +205,10 @@ mod sealed {
 }
 pub(crate) use sealed::General;
 
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::GetBusFreq + General {}
+pub trait Instance:
+    crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock + General
+{
+}
 
 impl<TIM> Timer<TIM>
 where
@@ -222,7 +225,7 @@ where
         }
 
         Self {
-            clk: TIM::get_timer_frequency(clocks),
+            clk: TIM::timer_clock(clocks),
             tim,
         }
     }

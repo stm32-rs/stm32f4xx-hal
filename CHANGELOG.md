@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Split and rename `GetBusFreq` -> `BusClock`, `BusTimerClock` [#386]
 - [breaking-change] Remove `Can::new_unchecked`. Add `Can::tx` and `Can::rx` [#384]
 - [breaking-change] Make `Alternate` generic over `Otype` instead of separate `Alternate` and `AlternateOD` [#383]
 - [breaking-change] Bump `stm32f4` to 0.14. Update RTIC based examples to use `rtic` 0.6 [#367]
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#371]: https://github.com/stm32-rs/stm32f4xx-hal/pull/371
 [#383]: https://github.com/stm32-rs/stm32f4xx-hal/pull/383
 [#384]: https://github.com/stm32-rs/stm32f4xx-hal/pull/384
+[#386]: https://github.com/stm32-rs/stm32f4xx-hal/pull/386
 
 ## [v0.10.1] - 2021-10-26
 
