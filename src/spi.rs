@@ -393,7 +393,7 @@ pub struct Spi<SPI, PINS, TRANSFER_MODE> {
 
 // Implemented by all SPI instances
 pub trait Instance:
-    crate::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset + rcc::GetBusFreq
+    crate::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset + rcc::BusClock
 {
 }
 
@@ -444,7 +444,7 @@ where
             pins,
             transfer_mode: TransferModeNormal,
         }
-        .pre_init(mode, freq.into(), SPI::get_frequency(&clocks))
+        .pre_init(mode, freq.into(), SPI::clock(&clocks))
         .init()
     }
 
@@ -486,7 +486,7 @@ where
             pins,
             transfer_mode: TransferModeBidi,
         }
-        .pre_init(mode, freq.into(), SPI::get_frequency(&clocks))
+        .pre_init(mode, freq.into(), SPI::clock(&clocks))
         .init()
     }
 
