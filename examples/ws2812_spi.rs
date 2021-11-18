@@ -27,7 +27,7 @@ fn main() -> ! {
         (gpioa.pa5, NoPin, gpioa.pa7),
         ws2812::MODE,
         3500.khz(),
-        clocks,
+        &clocks,
     );
 
     let mut ws = ws2812::Ws2812::new(spi);

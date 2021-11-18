@@ -109,7 +109,7 @@ fn main() -> ! {
             gpiob.pb9.into_alternate_open_drain(),
         ),
         100.khz(),
-        clocks,
+        &clocks,
     );
     // Shift the address to deal with different ways of representing I2C addresses
     let mut dac = Cs43L22::new(i2c, 0x94 >> 1);
@@ -123,7 +123,7 @@ fn main() -> ! {
         gpioc.pc7.into_alternate(),
         gpioc.pc12.into_alternate(),
     );
-    let hal_i2s = I2s::new(dp.SPI3, i2s_pins, clocks);
+    let hal_i2s = I2s::new(dp.SPI3, i2s_pins, &clocks);
     let i2s_clock = hal_i2s.input_clock();
 
     // Audio timing configuration:

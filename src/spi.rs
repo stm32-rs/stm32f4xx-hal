@@ -440,7 +440,7 @@ where
         mut pins: (SCK, MISO, MOSI),
         mode: Mode,
         freq: impl Into<Hertz>,
-        clocks: Clocks,
+        clocks: &Clocks,
     ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
@@ -458,7 +458,7 @@ where
             pins,
             transfer_mode: TransferModeNormal,
         }
-        .pre_init(mode, freq.into(), SPI::clock(&clocks))
+        .pre_init(mode, freq.into(), SPI::clock(clocks))
         .init()
     }
 
@@ -482,7 +482,7 @@ where
         mut pins: (SCK, MISO, MOSI),
         mode: Mode,
         freq: impl Into<Hertz>,
-        clocks: Clocks,
+        clocks: &Clocks,
     ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.

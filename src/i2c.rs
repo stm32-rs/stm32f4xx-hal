@@ -285,7 +285,7 @@ where
     SCL: PinScl<I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
     SDA: PinSda<I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
 {
-    pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: (SCL, SDA), mode: M, clocks: Clocks) -> Self {
+    pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: (SCL, SDA), mode: M, clocks: &Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());

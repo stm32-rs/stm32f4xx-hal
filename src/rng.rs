@@ -77,11 +77,11 @@ pub trait RngExt {
     /// # Panics
     ///
     /// This function will panic if `PLL48_CLK < 1/16 HCLK`.
-    fn constrain(self, clocks: Clocks) -> Rng;
+    fn constrain(self, clocks: &Clocks) -> Rng;
 }
 
 impl RngExt for RNG {
-    fn constrain(self, clocks: Clocks) -> Rng {
+    fn constrain(self, clocks: &Clocks) -> Rng {
         let rcc = unsafe { &*pac::RCC::ptr() };
 
         cortex_m::interrupt::free(|_| {

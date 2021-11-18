@@ -73,7 +73,7 @@ fn main() -> ! {
         let gpiob = dp.GPIOB.split();
         let scl = gpiob.pb8.into_alternate().set_open_drain();
         let sda = gpiob.pb9.into_alternate().set_open_drain();
-        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
+        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), &clocks);
 
         // Set up the display
         let interface = I2CDisplayInterface::new(i2c);
@@ -83,7 +83,7 @@ fn main() -> ! {
 
         // enable the RNG peripheral and its clock
         // this will panic if the clock configuration is unsuitable
-        let mut rand_source = dp.RNG.constrain(clocks);
+        let mut rand_source = dp.RNG.constrain(&clocks);
         let mut format_buf = String::<20>::new();
         loop {
             //display clear

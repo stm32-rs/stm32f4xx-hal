@@ -74,7 +74,7 @@ fn main() -> ! {
                 gpiob.pb9.into_alternate().set_open_drain(),
             ),
             400.khz(),
-            clocks,
+            &clocks,
         );
 
         let mut syscfg = dp.SYSCFG.constrain();

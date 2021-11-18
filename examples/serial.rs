@@ -31,7 +31,7 @@ fn main() -> ! {
         dp.USART2,
         tx_pin,
         Config::default().baudrate(9600.bps()),
-        clocks,
+        &clocks,
     )
     .unwrap();
 

@@ -103,7 +103,7 @@ fn main() -> ! {
             phase: Phase::CaptureOnFirstTransition,
         },
         2000.khz(),
-        clocks,
+        &clocks,
     );
 
     // Set up the LEDs. On the stm32f429i-disco they are connected to pin PG13 and PG14.

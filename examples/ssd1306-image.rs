@@ -46,7 +46,7 @@ fn main() -> ! {
             .into_alternate()
             .internal_pull_up(true)
             .set_open_drain();
-        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), clocks);
+        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), &clocks);
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor
         // and therefore is active LOW. There's even a 100nF capacitor for debouncing - nice for us

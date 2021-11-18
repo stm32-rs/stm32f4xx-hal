@@ -682,7 +682,7 @@ where
         usart: USART,
         mut pins: (TX, RX),
         config: config::Config,
-        clocks: Clocks,
+        clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig> {
         use self::config::*;
 
@@ -695,7 +695,7 @@ where
             USART::reset(rcc);
         }
 
-        let pclk_freq = USART::clock(&clocks).0;
+        let pclk_freq = USART::clock(clocks).0;
         let baud = config.baudrate.0;
 
         // The frequency to calculate USARTDIV is this:
@@ -816,7 +816,7 @@ where
         usart: USART,
         tx_pin: TX,
         config: config::Config,
-        clocks: Clocks,
+        clocks: &Clocks,
     ) -> Result<Tx<USART, WORD>, config::InvalidConfig> {
         Self::new(usart, (tx_pin, NoPin), config, clocks).map(|s| s.split().0)
     }
@@ -831,7 +831,7 @@ where
         usart: USART,
         rx_pin: RX,
         config: config::Config,
-        clocks: Clocks,
+        clocks: &Clocks,
     ) -> Result<Rx<USART, WORD>, config::InvalidConfig> {
         Self::new(usart, (NoPin, rx_pin), config, clocks).map(|s| s.split().1)
     }
