@@ -438,3 +438,7 @@ required-features = ["tim8"] # stm32f446
 [[example]]
 name = "ist7920_bidi_normal_spi"
 required-features = ["device-selected"]
+
+[[example]]
+name = "spi_dma"
+required-features = ["rt", "stm32f411"]
