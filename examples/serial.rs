@@ -6,7 +6,7 @@ use panic_halt as _;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{pac, prelude::*, serial::config::Config, serial::Serial};
+use crate::hal::{pac, prelude::*, serial::Serial};
 
 use core::fmt::Write; // for pretty formatting of the serial output
 
@@ -27,13 +27,7 @@ fn main() -> ! {
     let tx_pin = gpioa.pa2.into_alternate();
 
     // configure serial
-    let mut tx = Serial::tx(
-        dp.USART2,
-        tx_pin,
-        Config::default().baudrate(9600.bps()),
-        &clocks,
-    )
-    .unwrap();
+    let mut tx = Serial::tx(dp.USART2, tx_pin, 9600.bps(), &clocks).unwrap();
 
     let mut value: u8 = 0;
 

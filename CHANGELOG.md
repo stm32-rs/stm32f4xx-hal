@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `Into<serial::Config>` for `Bps` [#387]
 - `count_down` constructor for `Timer` -> `CountDownTimer` without start [#382]
 - Implementation of RTIC Monotonic for TIM2 & TIM5 under `rtic` feature [#380]
 - `IoPin` for `Output<OpenDrain>> <-> Input<Floating>>` [#374]
