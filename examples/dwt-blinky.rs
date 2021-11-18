@@ -29,7 +29,7 @@ fn main() -> ! {
         let clocks = rcc.cfgr.sysclk(48.mhz()).freeze();
 
         // Create a delay abstraction based on DWT cycle counter
-        let dwt = cp.DWT.constrain(cp.DCB, clocks);
+        let dwt = cp.DWT.constrain(cp.DCB, &clocks);
         let mut delay = dwt.delay();
 
         // Create a stopwatch for maximum 9 laps

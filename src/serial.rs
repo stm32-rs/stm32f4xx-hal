@@ -180,6 +180,15 @@ pub mod config {
             }
         }
     }
+
+    impl<T: Into<Bps>> From<T> for Config {
+        fn from(b: T) -> Config {
+            Config {
+                baudrate: b.into(),
+                ..Default::default()
+            }
+        }
+    }
 }
 
 pub trait Pins<USART> {}
@@ -681,11 +690,12 @@ where
     pub fn new(
         usart: USART,
         mut pins: (TX, RX),
-        config: config::Config,
-        clocks: Clocks,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig> {
         use self::config::*;
 
+        let config = config.into();
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -695,7 +705,7 @@ where
             USART::reset(rcc);
         }
 
-        let pclk_freq = USART::clock(&clocks).0;
+        let pclk_freq = USART::clock(clocks).0;
         let baud = config.baudrate.0;
 
         // The frequency to calculate USARTDIV is this:
@@ -815,8 +825,8 @@ where
     pub fn tx(
         usart: USART,
         tx_pin: TX,
-        config: config::Config,
-        clocks: Clocks,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
     ) -> Result<Tx<USART, WORD>, config::InvalidConfig> {
         Self::new(usart, (tx_pin, NoPin), config, clocks).map(|s| s.split().0)
     }
@@ -830,8 +840,8 @@ where
     pub fn rx(
         usart: USART,
         rx_pin: RX,
-        config: config::Config,
-        clocks: Clocks,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
     ) -> Result<Rx<USART, WORD>, config::InvalidConfig> {
         Self::new(usart, (NoPin, rx_pin), config, clocks).map(|s| s.split().1)
     }

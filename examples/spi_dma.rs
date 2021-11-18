@@ -52,7 +52,7 @@ fn main() -> ! {
             (pb13, NoMiso {}, pb15),
             mode,
             3_000_000.hz(),
-            clocks,
+            &clocks,
         );
 
         let buffer = cortex_m::singleton!(: [u8; ARRAY_SIZE] = [1; ARRAY_SIZE]).unwrap();

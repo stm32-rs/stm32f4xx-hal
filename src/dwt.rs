@@ -6,17 +6,17 @@ use cortex_m::peripheral::{DCB, DWT};
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
 pub trait DwtExt {
-    fn constrain(self, dcb: DCB, clocks: Clocks) -> Dwt;
+    fn constrain(self, dcb: DCB, clocks: &Clocks) -> Dwt;
 }
 impl DwtExt for DWT {
     /// Enable trace unit and cycle counter
-    fn constrain(mut self, mut dcb: DCB, clocks: Clocks) -> Dwt {
+    fn constrain(mut self, mut dcb: DCB, clocks: &Clocks) -> Dwt {
         dcb.enable_trace();
         self.enable_cycle_counter();
         Dwt {
             dwt: self,
             dcb,
-            clocks,
+            clock: clocks.hclk(),
         }
     }
 }
@@ -25,7 +25,7 @@ impl DwtExt for DWT {
 pub struct Dwt {
     dwt: DWT,
     dcb: DCB,
-    clocks: Clocks,
+    clock: Hertz,
 }
 impl Dwt {
     /// Release the dwt and dcb control
@@ -36,15 +36,13 @@ impl Dwt {
     }
     /// Create a delay instance
     pub fn delay(&self) -> Delay {
-        Delay {
-            clock: self.clocks.hclk(),
-        }
+        Delay { clock: self.clock }
     }
     /// Create a stopwatch instance
     /// # Arguments
     /// * `times` - Array which will be holding the timings in ticks (max laps == times.len()-1)
     pub fn stopwatch<'i>(&self, times: &'i mut [u32]) -> StopWatch<'i> {
-        StopWatch::new(times, self.clocks.hclk())
+        StopWatch::new(times, self.clock)
     }
     /// Measure cycles it takes to execute closure `f`.
     ///

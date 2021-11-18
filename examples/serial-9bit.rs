@@ -66,7 +66,7 @@ fn main() -> ! {
         dp.USART2,
         (tx_pin, rx_pin),
         Config::default().baudrate(9600.bps()).wordlength_9(),
-        clocks,
+        &clocks,
     )
     .unwrap()
     // Make this Serial object use u16s instead of u8s

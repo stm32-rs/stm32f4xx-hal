@@ -309,8 +309,8 @@ where
     ///
     /// This function panics if the I2S clock input (from the I2S PLL or similar)
     /// is not configured.
-    pub fn new(spi: SPI, mut pins: (WS, CK, MCLK, SD), clocks: Clocks) -> Self {
-        let input_clock = SPI::i2s_freq(&clocks);
+    pub fn new(spi: SPI, mut pins: (WS, CK, MCLK, SD), clocks: &Clocks) -> Self {
+        let input_clock = SPI::i2s_freq(clocks);
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());

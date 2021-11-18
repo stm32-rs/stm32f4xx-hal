@@ -1,9 +1,17 @@
 //! Sdio host
 
-#[allow(unused_imports)]
-use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, Alternate, PushPull};
+#[cfg(any(
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+use crate::gpio::{gpioa::*, gpiob::*};
+use crate::gpio::{gpioc::*, gpiod::*, Alternate, PushPull};
 use crate::pac::{self, RCC, SDIO};
 use crate::rcc::{Clocks, Enable, Reset};
+#[allow(unused_imports)]
+use crate::time::Hertz;
 pub use sdio_host::{
     cmd, cmd::ResponseLen, CardCapacity, CardStatus, Cmd, CurrentState, SDStatus, CIC, CID, CSD,
     OCR, RCA, SCR,
@@ -149,7 +157,7 @@ pub struct Sdio {
     sdio: SDIO,
     bw: Buswidth,
     card: Option<Card>,
-    clocks: Clocks,
+    clock: Hertz,
 }
 
 /// Sd card
@@ -164,7 +172,7 @@ pub struct Card {
 
 impl Sdio {
     /// Create and enable the Sdio device
-    pub fn new<PINS: Pins>(sdio: SDIO, _pins: PINS, clocks: Clocks) -> Self {
+    pub fn new<PINS: Pins>(sdio: SDIO, _pins: PINS, clocks: &Clocks) -> Self {
         unsafe {
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
             let rcc = &*RCC::ptr();
@@ -195,7 +203,7 @@ impl Sdio {
             sdio,
             bw: PINS::BUSWIDTH,
             card: None,
-            clocks,
+            clock: clocks.sysclk(),
         };
 
         // Make sure card is powered off
@@ -308,7 +316,7 @@ impl Sdio {
         });
 
         // Wait for 2 ms after changing power settings
-        cortex_m::asm::delay(2 * (self.clocks.sysclk().0 / 1000));
+        cortex_m::asm::delay(2 * (self.clock.0 / 1000));
     }
 
     /// Get a reference to the initialized card

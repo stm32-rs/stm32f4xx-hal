@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `Into<serial::Config>` for `Bps` [#387]
 - `count_down` constructor for `Timer` -> `CountDownTimer` without start [#382]
 - Implementation of RTIC Monotonic for TIM2 & TIM5 under `rtic` feature [#380]
 - `IoPin` for `Output<OpenDrain>> <-> Input<Floating>>` [#374]
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- [breaking-change] Use `&Clocks` instead of `Clocks` [#387]
 - Split and rename `GetBusFreq` -> `BusClock`, `BusTimerClock` [#386]
 - [breaking-change] Remove `Can::new_unchecked`. Add `Can::tx` and `Can::rx` [#384]
 - [breaking-change] Make `Alternate` generic over `Otype` instead of separate `Alternate` and `AlternateOD` [#383]
@@ -30,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#383]: https://github.com/stm32-rs/stm32f4xx-hal/pull/383
 [#384]: https://github.com/stm32-rs/stm32f4xx-hal/pull/384
 [#386]: https://github.com/stm32-rs/stm32f4xx-hal/pull/386
+[#387]: https://github.com/stm32-rs/stm32f4xx-hal/pull/387
 
 ## [v0.10.1] - 2021-10-26
 
