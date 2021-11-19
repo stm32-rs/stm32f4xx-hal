@@ -25,6 +25,7 @@ pub mod pwm;
 pub use pwm::*;
 
 mod hal_02;
+mod hal_1;
 
 /// Timer wrapper
 pub struct Timer<TIM, const FREQ: u32> {

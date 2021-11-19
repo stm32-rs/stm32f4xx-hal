@@ -1,4 +1,4 @@
-use embedded_hal_one::i2c::{Error, ErrorKind, NoAcknowledgeSource};
+use embedded_hal_one::i2c::{Error, ErrorKind, ErrorType, NoAcknowledgeSource};
 
 impl Error for super::Error {
     fn kind(&self) -> ErrorKind {
@@ -14,15 +14,29 @@ impl Error for super::Error {
     }
 }
 
-mod blocking {
-    use super::super::{Error, I2c, Instance};
-    use embedded_hal_one::i2c::blocking::{Read, Write, WriteIter, WriteIterRead, WriteRead};
+impl<I2C: super::Instance, PINS> ErrorType for super::I2c<I2C, PINS> {
+    type Error = super::Error;
+}
 
-    impl<I2C, PINS> WriteRead for I2c<I2C, PINS>
-    where
-        I2C: Instance,
-    {
-        type Error = Error;
+mod blocking {
+    use super::super::{I2c, Instance};
+    use embedded_hal_one::i2c::blocking::Operation;
+
+    impl<I2C: Instance, PINS> embedded_hal_one::i2c::blocking::I2c for I2c<I2C, PINS> {
+        fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
+            self.read(addr, buffer)
+        }
+
+        fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+            self.write(addr, bytes)
+        }
+
+        fn write_iter<B>(&mut self, addr: u8, bytes: B) -> Result<(), Self::Error>
+        where
+            B: IntoIterator<Item = u8>,
+        {
+            self.write_iter(addr, bytes)
+        }
 
         fn write_read(
             &mut self,
@@ -32,13 +46,6 @@ mod blocking {
         ) -> Result<(), Self::Error> {
             self.write_read(addr, bytes, buffer)
         }
-    }
-
-    impl<I2C, PINS> WriteIterRead for I2c<I2C, PINS>
-    where
-        I2C: Instance,
-    {
-        type Error = Error;
 
         fn write_iter_read<B>(
             &mut self,
@@ -51,41 +58,20 @@ mod blocking {
         {
             self.write_iter_read(addr, bytes, buffer)
         }
-    }
 
-    impl<I2C, PINS> Write for I2c<I2C, PINS>
-    where
-        I2C: Instance,
-    {
-        type Error = Error;
-
-        fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-            self.write(addr, bytes)
+        fn transaction<'a>(
+            &mut self,
+            _addr: u8,
+            _operations: &mut [Operation<'a>],
+        ) -> Result<(), Self::Error> {
+            todo!()
         }
-    }
 
-    impl<I2C, PINS> WriteIter for I2c<I2C, PINS>
-    where
-        I2C: Instance,
-    {
-        type Error = Error;
-
-        fn write_iter<B>(&mut self, addr: u8, bytes: B) -> Result<(), Self::Error>
+        fn transaction_iter<'a, O>(&mut self, _addr: u8, _operations: O) -> Result<(), Self::Error>
         where
-            B: IntoIterator<Item = u8>,
+            O: IntoIterator<Item = Operation<'a>>,
         {
-            self.write_iter(addr, bytes)
-        }
-    }
-
-    impl<I2C, PINS> Read for I2c<I2C, PINS>
-    where
-        I2C: Instance,
-    {
-        type Error = Error;
-
-        fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
-            self.read(addr, buffer)
+            todo!()
         }
     }
 }

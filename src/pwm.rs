@@ -2,7 +2,7 @@ use crate::{
     time::{Hertz, U32Ext},
     timer::{compute_arr_presc, Channel, Instance, Ocm, Timer, WithPwm},
 };
-use core::{convert::Infallible, marker::PhantomData};
+use core::marker::PhantomData;
 
 pub trait Pins<TIM, P> {
     const C1: bool = false;
@@ -143,27 +143,6 @@ impl<TIM: WithPwm, const C: u8> embedded_hal::PwmPin for PwmChannel<TIM, C> {
     }
     fn set_duty(&mut self, duty: Self::Duty) {
         self.set_duty(duty)
-    }
-}
-
-impl<TIM: WithPwm, const C: u8> embedded_hal_one::pwm::blocking::PwmPin for PwmChannel<TIM, C> {
-    type Error = Infallible;
-    type Duty = u16;
-
-    fn disable(&mut self) -> Result<(), Self::Error> {
-        Ok(self.disable())
-    }
-    fn enable(&mut self) -> Result<(), Self::Error> {
-        Ok(self.enable())
-    }
-    fn get_duty(&self) -> Result<Self::Duty, Self::Error> {
-        Ok(self.get_duty())
-    }
-    fn get_max_duty(&self) -> Result<Self::Duty, Self::Error> {
-        Ok(self.get_max_duty())
-    }
-    fn set_duty(&mut self, duty: Self::Duty) -> Result<(), Self::Error> {
-        Ok(self.set_duty(duty))
     }
 }
 
