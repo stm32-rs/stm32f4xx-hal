@@ -602,6 +602,56 @@ impl<const P: char, const N: u8> IoPin<Self, Pin<Output<PushPull>, P, N>>
     }
 }
 
+impl<const P: char, const N: u8> IoPin<Pin<Input<PullUp>, P, N>, Self>
+    for Pin<Output<PushPull>, P, N>
+{
+    type Error = Infallible;
+    fn into_input_pin(self) -> Result<Pin<Input<PullUp>, P, N>, Self::Error> {
+        Ok(self.into_pull_up_input())
+    }
+    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
+        self.set_state(state);
+        Ok(self)
+    }
+}
+
+impl<const P: char, const N: u8> IoPin<Self, Pin<Output<PushPull>, P, N>>
+    for Pin<Input<PullUp>, P, N>
+{
+    type Error = Infallible;
+    fn into_input_pin(self) -> Result<Self, Self::Error> {
+        Ok(self)
+    }
+    fn into_output_pin(self, state: PinState) -> Result<Pin<Output<PushPull>, P, N>, Self::Error> {
+        Ok(self.into_push_pull_output_in_state(state))
+    }
+}
+
+impl<const P: char, const N: u8> IoPin<Pin<Input<PullDown>, P, N>, Self>
+    for Pin<Output<PushPull>, P, N>
+{
+    type Error = Infallible;
+    fn into_input_pin(self) -> Result<Pin<Input<PullDown>, P, N>, Self::Error> {
+        Ok(self.into_pull_down_input())
+    }
+    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
+        self.set_state(state);
+        Ok(self)
+    }
+}
+
+impl<const P: char, const N: u8> IoPin<Self, Pin<Output<PushPull>, P, N>>
+    for Pin<Input<PullDown>, P, N>
+{
+    type Error = Infallible;
+    fn into_input_pin(self) -> Result<Self, Self::Error> {
+        Ok(self)
+    }
+    fn into_output_pin(self, state: PinState) -> Result<Pin<Output<PushPull>, P, N>, Self::Error> {
+        Ok(self.into_push_pull_output_in_state(state))
+    }
+}
+
 macro_rules! gpio {
     ($GPIOX:ident, $gpiox:ident, $PEPin:ident, $port_id:expr, $PXn:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty),)+
