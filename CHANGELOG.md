@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Support of embedded-hal 1.0.0-alpha.6 [#388]
+
+[#388]: https://github.com/stm32-rs/stm32f4xx-hal/pull/388
+
 ### Changed
 
 - Add inherent impl of `embedded_hal::Pwm` methods on `Pwm`s [#439]
