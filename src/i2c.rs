@@ -10,6 +10,7 @@ use crate::rcc::Clocks;
 use crate::time::{Hertz, U32Ext};
 
 mod hal_02;
+mod hal_1;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum DutyCycle {
@@ -99,15 +100,33 @@ where
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[non_exhaustive]
 pub enum Error {
     OVERRUN,
     NACK,
+    NACK_ADDR,
+    NACK_DATA,
     TIMEOUT,
     // Note: The BUS error type is not currently returned, but is maintained for backwards
     // compatibility.
     BUS,
     CRC,
     ARBITRATION,
+}
+
+impl Error {
+    pub(crate) fn nack_addr(self) -> Self {
+        match self {
+            Error::NACK => Error::NACK_ADDR,
+            e => e,
+        }
+    }
+    pub(crate) fn nack_data(self) -> Self {
+        match self {
+            Error::NACK => Error::NACK_DATA,
+            e => e,
+        }
+    }
 }
 
 pub trait Instance: crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {}
@@ -281,7 +300,9 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         // Wait until address was sent
         loop {
             // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
-            let sr1 = self.check_and_clear_error_flags()?;
+            let sr1 = self
+                .check_and_clear_error_flags()
+                .map_err(Error::nack_addr)?;
 
             // Wait for the address to be acknowledged
             if sr1.addr().bit_is_set() {
@@ -304,14 +325,24 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
         // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
-        while self.check_and_clear_error_flags()?.tx_e().bit_is_clear() {}
+        while self
+            .check_and_clear_error_flags()
+            .map_err(Error::nack_addr)?
+            .tx_e()
+            .bit_is_clear()
+        {}
 
         // Push out a byte of data
         self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
         // Wait until byte is transferred
         // Check for any potential error conditions.
-        while self.check_and_clear_error_flags()?.btf().bit_is_clear() {}
+        while self
+            .check_and_clear_error_flags()
+            .map_err(Error::nack_data)?
+            .btf()
+            .bit_is_clear()
+        {}
 
         Ok(())
     }
@@ -319,7 +350,8 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
     fn recv_byte(&self) -> Result<u8, Error> {
         loop {
             // Check for any potential error conditions.
-            self.check_and_clear_error_flags()?;
+            self.check_and_clear_error_flags()
+                .map_err(Error::nack_data)?;
 
             if self.i2c.sr1.read().rx_ne().bit_is_set() {
                 break;
@@ -353,7 +385,8 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
 
             // Wait until address was sent
             loop {
-                self.check_and_clear_error_flags()?;
+                self.check_and_clear_error_flags()
+                    .map_err(Error::nack_addr)?;
                 if self.i2c.sr1.read().addr().bit_is_set() {
                     break;
                 }
