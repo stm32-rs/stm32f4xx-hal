@@ -59,6 +59,23 @@ impl<TIM: Instance, PINS> embedded_hal::Qei for Qei<TIM, PINS> {
     }
 }
 
+impl<TIM: Instance, PINS> embedded_hal_one::qei::blocking::Qei for Qei<TIM, PINS> {
+    type Error = core::convert::Infallible;
+    type Count = TIM::Width;
+
+    fn count(&self) -> Result<Self::Count, Self::Error> {
+        Ok(self.tim.read_count() as Self::Count)
+    }
+
+    fn direction(&self) -> Result<embedded_hal_one::qei::Direction, Self::Error> {
+        Ok(if self.tim.read_direction() {
+            embedded_hal_one::qei::Direction::Upcounting
+        } else {
+            embedded_hal_one::qei::Direction::Downcounting
+        })
+    }
+}
+
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + General {
     fn setup_qei(&mut self);
 
