@@ -1,6 +1,19 @@
+use embedded_hal_one::serial::{Error, ErrorKind};
+
+impl Error for super::Error {
+    fn kind(&self) -> ErrorKind {
+        match self {
+            Self::Overrun => ErrorKind::Overrun,
+            Self::Framing => ErrorKind::FrameFormat,
+            Self::Parity => ErrorKind::Parity,
+            Self::Noise => ErrorKind::Noise,
+        }
+    }
+}
+
 mod nb {
     use super::super::{Error, Instance, Rx, Serial, Tx};
-    use embedded_hal::serial::{Read, Write};
+    use embedded_hal_one::serial::nb::{Read, Write};
 
     impl<USART, PINS, WORD> Read<WORD> for Serial<USART, PINS, WORD>
     where
@@ -127,15 +140,15 @@ mod nb {
 
 mod blocking {
     use super::super::{Error, Instance, Serial, Tx};
-    use embedded_hal::{blocking::serial::Write, serial};
+    use embedded_hal_one::serial::{self, blocking::Write};
 
     impl<USART: Instance> Write<u8> for Tx<USART, u8> {
         type Error = Error;
 
-        fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+        fn write(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
             for &b in bytes {
                 loop {
-                    match <Self as serial::Write<u8>>::write(self, b) {
+                    match <Self as serial::nb::Write<u8>>::write(self, b) {
                         Err(nb::Error::WouldBlock) => continue,
                         Err(nb::Error::Other(err)) => return Err(err),
                         Ok(()) => break,
@@ -145,9 +158,9 @@ mod blocking {
             Ok(())
         }
 
-        fn bflush(&mut self) -> Result<(), Self::Error> {
+        fn flush(&mut self) -> Result<(), Self::Error> {
             loop {
-                match <Self as serial::Write<u8>>::flush(self) {
+                match <Self as serial::nb::Write<u8>>::flush(self) {
                     Ok(()) => return Ok(()),
                     Err(nb::Error::WouldBlock) => continue,
                     Err(nb::Error::Other(err)) => return Err(err),
@@ -159,22 +172,22 @@ mod blocking {
     impl<USART: Instance, PINS> Write<u8> for Serial<USART, PINS, u8> {
         type Error = Error;
 
-        fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
-            self.tx.bwrite_all(bytes)
+        fn write(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+            self.tx.write(bytes)
         }
 
-        fn bflush(&mut self) -> Result<(), Self::Error> {
-            self.tx.bflush()
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.tx.flush()
         }
     }
 
     impl<USART: Instance> Write<u16> for Tx<USART, u16> {
         type Error = Error;
 
-        fn bwrite_all(&mut self, buffer: &[u16]) -> Result<(), Self::Error> {
+        fn write(&mut self, buffer: &[u16]) -> Result<(), Self::Error> {
             for &b in buffer {
                 loop {
-                    match <Self as serial::Write<u16>>::write(self, b) {
+                    match <Self as serial::nb::Write<u16>>::write(self, b) {
                         Err(nb::Error::WouldBlock) => continue,
                         Err(nb::Error::Other(err)) => return Err(err),
                         Ok(()) => break,
@@ -184,9 +197,9 @@ mod blocking {
             Ok(())
         }
 
-        fn bflush(&mut self) -> Result<(), Self::Error> {
+        fn flush(&mut self) -> Result<(), Self::Error> {
             loop {
-                match <Self as serial::Write<u16>>::flush(self) {
+                match <Self as serial::nb::Write<u16>>::flush(self) {
                     Ok(()) => return Ok(()),
                     Err(nb::Error::WouldBlock) => continue,
                     Err(nb::Error::Other(err)) => return Err(err),
@@ -198,12 +211,12 @@ mod blocking {
     impl<USART: Instance, PINS> Write<u16> for Serial<USART, PINS, u16> {
         type Error = Error;
 
-        fn bwrite_all(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
-            self.tx.bwrite_all(bytes)
+        fn write(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
+            self.tx.write(bytes)
         }
 
-        fn bflush(&mut self) -> Result<(), Self::Error> {
-            self.tx.bflush()
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.tx.flush()
         }
     }
 }
