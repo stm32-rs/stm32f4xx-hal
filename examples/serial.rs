@@ -34,7 +34,7 @@ fn main() -> ! {
     loop {
         // print some value every 500 ms, value will overflow after 255
         writeln!(tx, "value: {:02}\r", value).unwrap();
-        value += 1;
+        value = value.wrapping_add(1);
         delay.delay_ms(500_u32);
     }
 }
