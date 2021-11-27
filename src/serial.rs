@@ -25,20 +25,7 @@ use embedded_hal::prelude::*;
 use embedded_hal::serial;
 use nb::block;
 
-use crate::gpio::{Const, PushPull, SetAlternate};
-
-#[cfg(feature = "gpiod")]
-use crate::gpio::gpiod;
-#[allow(unused)]
-#[cfg(feature = "gpioe")]
-use crate::gpio::gpioe;
-#[allow(unused)]
-#[cfg(feature = "gpiof")]
-use crate::gpio::gpiof;
-#[allow(unused)]
-#[cfg(feature = "gpiog")]
-use crate::gpio::gpiog;
-use crate::gpio::{gpioa, gpiob, gpioc};
+use crate::gpio::{Const, PinA, PushPull, SetAlternate};
 
 use crate::pac::{RCC, USART1, USART2, USART6};
 
@@ -191,18 +178,16 @@ pub mod config {
     }
 }
 
-pub trait Pins<USART> {}
-pub trait PinTx<USART> {
-    type A;
-}
-pub trait PinRx<USART> {
-    type A;
-}
+pub struct TxPin;
+impl crate::Sealed for TxPin {}
+pub struct RxPin;
+impl crate::Sealed for RxPin {}
 
+pub trait Pins<USART> {}
 impl<USART, TX, RX> Pins<USART> for (TX, RX)
 where
-    TX: PinTx<USART>,
-    RX: PinRx<USART>,
+    TX: PinA<TxPin, USART>,
+    RX: PinA<RxPin, USART>,
 {
 }
 
@@ -210,341 +195,6 @@ where
 pub type NoTx = NoPin;
 /// A filler type for when the Rx pin is unnecessary
 pub type NoRx = NoPin;
-
-impl<USART> PinTx<USART> for NoPin
-where
-    USART: Instance,
-{
-    type A = Const<0>;
-}
-
-impl<USART> PinRx<USART> for NoPin
-where
-    USART: Instance,
-{
-    type A = Const<0>;
-}
-
-macro_rules! pin {
-    ($trait:ident<$USART:ident> for $gpio:ident::$PX:ident<$A:literal>) => {
-        impl<MODE> $trait<$USART> for $gpio::$PX<MODE> {
-            type A = Const<$A>;
-        }
-    };
-}
-
-pin!(PinTx<USART1> for gpioa::PA9<7>);
-pin!(PinRx<USART1> for gpioa::PA10<7>);
-
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinTx<USART1> for gpioa::PA15<7>);
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinRx<USART1> for gpiob::PB3<7>);
-
-pin!(PinTx<USART1> for gpiob::PB6<7>);
-
-pin!(PinRx<USART1> for gpiob::PB7<7>);
-
-pin!(PinTx<USART2> for gpioa::PA2<7>);
-pin!(PinRx<USART2> for gpioa::PA3<7>);
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinTx<USART2> for gpiod::PD5<7>);
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinRx<USART2> for gpiod::PD6<7>);
-
-#[cfg(feature = "usart3")]
-pin!(PinTx<USART3> for gpiob::PB10<7>);
-#[cfg(feature = "usart3")]
-pin!(PinRx<USART3> for gpiob::PB11<7>);
-#[cfg(any(
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446"
-))]
-pin!(PinRx<USART3> for gpioc::PC5<7>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinTx<USART3> for gpioc::PC10<7>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinRx<USART3> for gpioc::PC11<7>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinTx<USART3> for gpiod::PD8<7>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinRx<USART3> for gpiod::PD9<7>);
-
-#[cfg(feature = "uart4")]
-pin!(PinTx<UART4> for gpioa::PA0<8>);
-#[cfg(feature = "uart4")]
-pin!(PinRx<UART4> for gpioa::PA1<8>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART4> for gpioa::PA12<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART4> for gpioa::PA11<11>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinTx<UART4> for gpioc::PC10<8>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinRx<UART4> for gpioc::PC11<8>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART4> for gpiod::PD1<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART4> for gpiod::PD0<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART4> for gpiod::PD10<8>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART4> for gpioc::PC11<8>);
-
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART5> for gpiob::PB6<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART5> for gpiob::PB5<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART5> for gpiob::PB9<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART5> for gpiob::PB8<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART5> for gpiob::PB13<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART5> for gpiob::PB12<11>);
-#[cfg(feature = "uart5")]
-pin!(PinTx<UART5> for gpioc::PC12<8>);
-#[cfg(feature = "uart5")]
-pin!(PinRx<UART5> for gpiod::PD2<8>);
-#[cfg(any(feature = "stm32f446"))]
-pin!(PinTx<UART5> for gpioe::PE8<8>);
-#[cfg(any(feature = "stm32f446"))]
-pin!(PinRx<UART5> for gpioe::PE7<8>);
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinTx<USART6> for gpioa::PA11<8>);
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinRx<USART6> for gpioa::PA12<8>);
-
-pin!(PinTx<USART6> for gpioc::PC6<8>);
-
-pin!(PinRx<USART6> for gpioc::PC7<8>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinTx<USART6> for gpiog::PG14<8>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinRx<USART6> for gpiog::PG9<8>);
-
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART7> for gpioa::PA15<8>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART7> for gpioa::PA8<8>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART7> for gpiob::PB4<8>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART7> for gpiob::PB3<8>);
-#[cfg(all(feature = "uart7", feature = "gpioe"))]
-pin!(PinTx<UART7> for gpioe::PE8<8>);
-#[cfg(all(feature = "uart7", feature = "gpioe"))]
-pin!(PinRx<UART7> for gpioe::PE7<8>);
-#[cfg(all(feature = "uart7", feature = "gpiof"))]
-pin!(PinTx<UART7> for gpiof::PF7<8>);
-#[cfg(all(feature = "uart7", feature = "gpiof"))]
-pin!(PinRx<UART7> for gpiof::PF6<8>);
-
-#[cfg(all(feature = "uart8", feature = "gpioe"))]
-pin!(PinTx<UART8> for gpioe::PE1<8>);
-#[cfg(all(feature = "uart8", feature = "gpioe"))]
-pin!(PinRx<UART8> for gpioe::PE0<8>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART8> for gpiof::PF9<8>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART8> for gpiof::PF8<8>);
-
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART9> for gpiod::PD15<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART9> for gpiod::PD14<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART9> for gpiog::PG1<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART9> for gpiog::PG0<11>);
-
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART10> for gpioe::PE3<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART10> for gpioe::PE2<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinTx<UART10> for gpiog::PG12<11>);
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-pin!(PinRx<UART10> for gpiog::PG11<11>);
 
 /// Serial abstraction
 pub struct Serial<USART, PINS, WORD = u8> {
@@ -678,8 +328,8 @@ impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
 
 impl<USART, TX, RX, WORD, const TXA: u8, const RXA: u8> Serial<USART, (TX, RX), WORD>
 where
-    TX: PinTx<USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
-    RX: PinRx<USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
     USART: Instance,
 {
     /*
@@ -819,7 +469,7 @@ where
 
 impl<USART, TX, WORD, const TXA: u8> Serial<USART, (TX, NoPin), WORD>
 where
-    TX: PinTx<USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
     USART: Instance,
 {
     pub fn tx(
@@ -834,7 +484,7 @@ where
 
 impl<USART, RX, WORD, const RXA: u8> Serial<USART, (NoPin, RX), WORD>
 where
-    RX: PinRx<USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
     USART: Instance,
 {
     pub fn rx(

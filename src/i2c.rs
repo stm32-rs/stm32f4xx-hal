@@ -4,7 +4,7 @@ use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use crate::pac::i2c1;
 use crate::rcc::{Enable, Reset};
 
-use crate::gpio::{Const, OpenDrain, SetAlternate};
+use crate::gpio::{Const, OpenDrain, PinA, SetAlternate};
 #[cfg(feature = "i2c3")]
 use crate::pac::I2C3;
 use crate::pac::{I2C1, I2C2, RCC};
@@ -80,184 +80,19 @@ pub struct I2c<I2C: Instance, PINS> {
     pins: PINS,
 }
 
+pub struct Scl;
+impl crate::Sealed for Scl {}
+pub struct Sda;
+impl crate::Sealed for Sda {}
+
 pub trait Pins<I2c> {}
-pub trait PinScl<I2c> {
-    type A;
-}
-pub trait PinSda<I2c> {
-    type A;
-}
 
 impl<I2c, SCL, SDA> Pins<I2c> for (SCL, SDA)
 where
-    SCL: PinScl<I2c>,
-    SDA: PinSda<I2c>,
+    SCL: PinA<Scl, I2c>,
+    SDA: PinA<Sda, I2c>,
 {
 }
-
-macro_rules! pin {
-    ($trait:ident<$I2C:ident> for $gpio:ident::$PX:ident<$A:literal>) => {
-        impl<MODE> $trait<$I2C> for $gpio::$PX<MODE> {
-            type A = Const<$A>;
-        }
-    };
-}
-
-pin!(PinScl<I2C1> for gpiob::PB6<4>);
-pin!(PinSda<I2C1> for gpiob::PB7<4>);
-pin!(PinScl<I2C1> for gpiob::PB8<4>);
-pin!(PinSda<I2C1> for gpiob::PB9<4>);
-
-#[cfg(any(feature = "stm32f446"))]
-pin!(PinSda<I2C2> for gpiob::PB3<4>);
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinSda<I2C2> for gpiob::PB3<9>);
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinSda<I2C2> for gpiob::PB9<9>);
-pin!(PinScl<I2C2> for gpiob::PB10<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinSda<I2C2> for gpiob::PB11<4>);
-#[cfg(any(feature = "stm32f446"))]
-pin!(PinSda<I2C2> for gpioc::PC12<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinScl<I2C2> for gpiof::PF1<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinSda<I2C2> for gpiof::PF0<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinScl<I2C2> for gpioh::PH4<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinSda<I2C2> for gpioh::PH5<4>);
-
-#[cfg(feature = "i2c3")]
-pin!(PinScl<I2C3> for gpioa::PA8<4>);
-#[cfg(any(feature = "stm32f446"))]
-pin!(PinSda<I2C3> for gpiob::PB4<4>);
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinSda<I2C3> for gpiob::PB4<9>);
-#[cfg(any(
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinSda<I2C3> for gpiob::PB8<9>);
-
-#[cfg(feature = "i2c3")]
-pin!(PinSda<I2C3> for gpioc::PC9<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinScl<I2C3> for gpioh::PH7<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinSda<I2C3> for gpioh::PH8<4>);
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
@@ -282,8 +117,8 @@ impl Instance for I2C3 {}
 impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> I2c<I2C, (SCL, SDA)>
 where
     I2C: Instance,
-    SCL: PinScl<I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
-    SDA: PinSda<I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
+    SCL: PinA<Scl, I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
+    SDA: PinA<Sda, I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
 {
     pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: (SCL, SDA), mode: M, clocks: &Clocks) -> Self {
         unsafe {

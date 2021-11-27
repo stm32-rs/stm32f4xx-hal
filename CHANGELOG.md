@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Unify alternate pin constraints [#393]
 - [breaking-change] Use `&Clocks` instead of `Clocks` [#387]
 - Split and rename `GetBusFreq` -> `BusClock`, `BusTimerClock` [#386]
 - [breaking-change] Remove `Can::new_unchecked`. Add `Can::tx` and `Can::rx` [#384]
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#384]: https://github.com/stm32-rs/stm32f4xx-hal/pull/384
 [#386]: https://github.com/stm32-rs/stm32f4xx-hal/pull/386
 [#387]: https://github.com/stm32-rs/stm32f4xx-hal/pull/387
+[#393]: https://github.com/stm32-rs/stm32f4xx-hal/pull/393
 
 ## [v0.10.1] - 2021-10-26
 

@@ -1,8 +1,8 @@
 use core::ops::Deref;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
-use crate::gpio::{gpiob, gpioc, gpiod, gpiof, Const, OpenDrain, SetAlternate};
-use crate::i2c::{Error, PinScl, PinSda};
+use crate::gpio::{Const, OpenDrain, PinA, SetAlternate};
+use crate::i2c::{Error, Scl, Sda};
 use crate::pac::{fmpi2c1, FMPI2C1, RCC};
 use crate::rcc::{Enable, Reset};
 use crate::time::{Hertz, U32Ext};
@@ -64,31 +64,10 @@ where
     }
 }
 
-macro_rules! pin {
-    ($trait:ident<$I2C:ident> for $gpio:ident::$PX:ident<$A:literal>) => {
-        impl<MODE> $trait<$I2C> for $gpio::$PX<MODE> {
-            type A = Const<$A>;
-        }
-    };
-}
-
-pin!(PinScl<FMPI2C1> for gpioc::PC6<4>);
-pin!(PinSda<FMPI2C1> for gpioc::PC7<4>);
-pin!(PinSda<FMPI2C1> for gpiob::PB3<4>);
-pin!(PinScl<FMPI2C1> for gpiob::PB10<9>);
-pin!(PinSda<FMPI2C1> for gpiob::PB14<4>);
-pin!(PinScl<FMPI2C1> for gpiob::PB15<4>);
-pin!(PinScl<FMPI2C1> for gpiod::PD12<4>);
-pin!(PinScl<FMPI2C1> for gpiob::PB13<4>);
-pin!(PinScl<FMPI2C1> for gpiod::PD14<4>);
-pin!(PinScl<FMPI2C1> for gpiod::PD15<4>);
-pin!(PinScl<FMPI2C1> for gpiof::PF14<4>);
-pin!(PinScl<FMPI2C1> for gpiof::PF15<4>);
-
 impl<SCL, SDA, const SCLA: u8, const SDAA: u8> FMPI2c<FMPI2C1, (SCL, SDA)>
 where
-    SCL: PinScl<FMPI2C1, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
-    SDA: PinSda<FMPI2C1, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
+    SCL: PinA<Scl, FMPI2C1, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
+    SDA: PinA<Sda, FMPI2C1, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
 {
     pub fn new<M: Into<FmpMode>>(i2c: FMPI2C1, mut pins: (SCL, SDA), mode: M) -> Self {
         unsafe {
