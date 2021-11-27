@@ -126,7 +126,7 @@ pub mod fmpi2c;
 pub mod gpio;
 #[cfg(feature = "device-selected")]
 pub mod i2c;
-#[cfg(all(feature = "device-selected", feature = "i2s"))]
+#[cfg(all(feature = "device-selected"))]
 pub mod i2s;
 #[cfg(all(feature = "device-selected", feature = "usb_fs", feature = "otg-fs"))]
 pub mod otg_fs;

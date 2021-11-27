@@ -192,7 +192,7 @@ where
             pins,
             transfer_mode: TransferModeBidi,
         }
-        .pre_init(mode, freq.into(), SPI::clock(&clocks))
+        .pre_init(mode, freq.into(), SPI::clock(clocks))
         .init()
     }
 

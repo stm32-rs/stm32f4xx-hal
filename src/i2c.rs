@@ -275,12 +275,14 @@ where
         while self.check_and_clear_error_flags()?.sb().bit_is_clear() {}
 
         // Also wait until signalled we're master and everything is waiting for us
-        while {
+        loop {
             self.check_and_clear_error_flags()?;
 
             let sr2 = self.i2c.sr2.read();
-            sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
-        } {}
+            if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
+                break;
+            }
+        }
 
         // Set up current address, we're trying to talk to
         self.i2c
@@ -288,13 +290,15 @@ where
             .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
 
         // Wait until address was sent
-        while {
+        loop {
             // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
             let sr1 = self.check_and_clear_error_flags()?;
 
             // Wait for the address to be acknowledged
-            sr1.addr().bit_is_clear()
-        } {}
+            if sr1.addr().bit_is_set() {
+                break;
+            }
+        }
 
         // Clear condition by reading SR2
         self.i2c.sr2.read();
@@ -310,30 +314,28 @@ where
 
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
-        while {
-            // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
-            self.check_and_clear_error_flags()?.tx_e().bit_is_clear()
-        } {}
+        // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
+        while self.check_and_clear_error_flags()?.tx_e().bit_is_clear() {}
 
         // Push out a byte of data
         self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
         // Wait until byte is transferred
-        while {
-            // Check for any potential error conditions.
-            self.check_and_clear_error_flags()?.btf().bit_is_clear()
-        } {}
+        // Check for any potential error conditions.
+        while self.check_and_clear_error_flags()?.btf().bit_is_clear() {}
 
         Ok(())
     }
 
     fn recv_byte(&self) -> Result<u8, Error> {
-        while {
+        loop {
             // Check for any potential error conditions.
             self.check_and_clear_error_flags()?;
 
-            self.i2c.sr1.read().rx_ne().bit_is_clear()
-        } {}
+            if self.i2c.sr1.read().rx_ne().bit_is_set() {
+                break;
+            }
+        }
 
         let value = self.i2c.dr.read().bits() as u8;
         Ok(value)
@@ -391,10 +393,12 @@ where
             while self.i2c.sr1.read().sb().bit_is_clear() {}
 
             // Also wait until signalled we're master and everything is waiting for us
-            while {
+            loop {
                 let sr2 = self.i2c.sr2.read();
-                sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
-            } {}
+                if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
+                    break;
+                }
+            }
 
             // Set up current address, we're trying to talk to
             self.i2c
@@ -402,10 +406,12 @@ where
                 .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
 
             // Wait until address was sent
-            while {
+            loop {
                 self.check_and_clear_error_flags()?;
-                self.i2c.sr1.read().addr().bit_is_clear()
-            } {}
+                if self.i2c.sr1.read().addr().bit_is_set() {
+                    break;
+                }
+            }
 
             // Clear condition by reading SR2
             self.i2c.sr2.read();

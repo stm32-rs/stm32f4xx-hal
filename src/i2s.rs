@@ -3,6 +3,7 @@
 //! This module is only available if the `i2s` feature is enabled.
 
 use crate::gpio::{Const, NoPin, PinA, PushPull, SetAlternate};
+#[cfg(feature = "stm32_i2s_v12x")]
 use stm32_i2s_v12x::{Instance, RegisterBlock};
 
 use crate::pac::RCC;
@@ -72,6 +73,7 @@ macro_rules! i2s {
             }
         }
 
+        #[cfg(feature = "stm32_i2s_v12x")]
         unsafe impl<PINS> Instance for I2s<$SPIX, PINS> {
             const REGISTERS: *mut RegisterBlock = <$SPIX>::ptr() as *mut _;
         }
@@ -202,6 +204,7 @@ impl<I, PINS> I2s<I, PINS> {
 }
 
 // DMA support: reuse existing mappings for SPI
+#[cfg(feature = "stm32_i2s_v12x")]
 mod dma {
     use super::*;
     use crate::dma::traits::{DMASet, PeriAddress};
