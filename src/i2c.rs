@@ -4,7 +4,7 @@ use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use crate::pac::i2c1;
 use crate::rcc::{Enable, Reset};
 
-use crate::gpio::{Const, OpenDrain, SetAlternate};
+use crate::gpio::{Const, OpenDrain, PinA, SetAlternate};
 #[cfg(feature = "i2c3")]
 use crate::pac::I2C3;
 use crate::pac::{I2C1, I2C2, RCC};
@@ -80,184 +80,30 @@ pub struct I2c<I2C: Instance, PINS> {
     pins: PINS,
 }
 
-pub trait Pins<I2c> {}
-pub trait PinScl<I2c> {
-    type A;
-}
-pub trait PinSda<I2c> {
-    type A;
+pub struct Scl;
+impl crate::Sealed for Scl {}
+pub struct Sda;
+impl crate::Sealed for Sda {}
+
+pub trait Pins<I2C> {
+    fn set_alt_mode(&mut self);
+    fn restore_mode(&mut self);
 }
 
-impl<I2c, SCL, SDA> Pins<I2c> for (SCL, SDA)
+impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> Pins<I2C> for (SCL, SDA)
 where
-    SCL: PinScl<I2c>,
-    SDA: PinSda<I2c>,
+    SCL: PinA<Scl, I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
+    SDA: PinA<Sda, I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
 {
+    fn set_alt_mode(&mut self) {
+        self.0.set_alt_mode();
+        self.1.set_alt_mode();
+    }
+    fn restore_mode(&mut self) {
+        self.0.restore_mode();
+        self.1.restore_mode();
+    }
 }
-
-macro_rules! pin {
-    ($trait:ident<$I2C:ident> for $gpio:ident::$PX:ident<$A:literal>) => {
-        impl<MODE> $trait<$I2C> for $gpio::$PX<MODE> {
-            type A = Const<$A>;
-        }
-    };
-}
-
-pin!(PinScl<I2C1> for gpiob::PB6<4>);
-pin!(PinSda<I2C1> for gpiob::PB7<4>);
-pin!(PinScl<I2C1> for gpiob::PB8<4>);
-pin!(PinSda<I2C1> for gpiob::PB9<4>);
-
-#[cfg(any(feature = "stm32f446"))]
-pin!(PinSda<I2C2> for gpiob::PB3<4>);
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinSda<I2C2> for gpiob::PB3<9>);
-#[cfg(any(
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinSda<I2C2> for gpiob::PB9<9>);
-pin!(PinScl<I2C2> for gpiob::PB10<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinSda<I2C2> for gpiob::PB11<4>);
-#[cfg(any(feature = "stm32f446"))]
-pin!(PinSda<I2C2> for gpioc::PC12<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinScl<I2C2> for gpiof::PF1<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinSda<I2C2> for gpiof::PF0<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinScl<I2C2> for gpioh::PH4<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinSda<I2C2> for gpioh::PH5<4>);
-
-#[cfg(feature = "i2c3")]
-pin!(PinScl<I2C3> for gpioa::PA8<4>);
-#[cfg(any(feature = "stm32f446"))]
-pin!(PinSda<I2C3> for gpiob::PB4<4>);
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinSda<I2C3> for gpiob::PB4<9>);
-#[cfg(any(
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-pin!(PinSda<I2C3> for gpiob::PB8<9>);
-
-#[cfg(feature = "i2c3")]
-pin!(PinSda<I2C3> for gpioc::PC9<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinScl<I2C3> for gpioh::PH7<4>);
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pin!(PinSda<I2C3> for gpioh::PH8<4>);
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
@@ -279,13 +125,12 @@ impl Instance for I2C2 {}
 #[cfg(feature = "i2c3")]
 impl Instance for I2C3 {}
 
-impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> I2c<I2C, (SCL, SDA)>
+impl<I2C, PINS> I2c<I2C, PINS>
 where
     I2C: Instance,
-    SCL: PinScl<I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
-    SDA: PinSda<I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
+    PINS: Pins<I2C>,
 {
-    pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: (SCL, SDA), mode: M, clocks: &Clocks) -> Self {
+    pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: PINS, mode: M, clocks: &Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -295,17 +140,15 @@ where
             I2C::reset(rcc);
         }
 
-        pins.0.set_alt_mode();
-        pins.1.set_alt_mode();
+        pins.set_alt_mode();
 
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(mode, clocks.pclk1());
         i2c
     }
 
-    pub fn release(mut self) -> (I2C, (SCL, SDA)) {
-        self.pins.0.restore_mode();
-        self.pins.1.restore_mode();
+    pub fn release(mut self) -> (I2C, PINS) {
+        self.pins.restore_mode();
 
         (self.i2c, self.pins)
     }
@@ -440,12 +283,14 @@ where
         while self.check_and_clear_error_flags()?.sb().bit_is_clear() {}
 
         // Also wait until signalled we're master and everything is waiting for us
-        while {
+        loop {
             self.check_and_clear_error_flags()?;
 
             let sr2 = self.i2c.sr2.read();
-            sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
-        } {}
+            if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
+                break;
+            }
+        }
 
         // Set up current address, we're trying to talk to
         self.i2c
@@ -453,13 +298,15 @@ where
             .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
 
         // Wait until address was sent
-        while {
+        loop {
             // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
             let sr1 = self.check_and_clear_error_flags()?;
 
             // Wait for the address to be acknowledged
-            sr1.addr().bit_is_clear()
-        } {}
+            if sr1.addr().bit_is_set() {
+                break;
+            }
+        }
 
         // Clear condition by reading SR2
         self.i2c.sr2.read();
@@ -475,30 +322,28 @@ where
 
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
-        while {
-            // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
-            self.check_and_clear_error_flags()?.tx_e().bit_is_clear()
-        } {}
+        // Check for any I2C errors. If a NACK occurs, the ADDR bit will never be set.
+        while self.check_and_clear_error_flags()?.tx_e().bit_is_clear() {}
 
         // Push out a byte of data
         self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
         // Wait until byte is transferred
-        while {
-            // Check for any potential error conditions.
-            self.check_and_clear_error_flags()?.btf().bit_is_clear()
-        } {}
+        // Check for any potential error conditions.
+        while self.check_and_clear_error_flags()?.btf().bit_is_clear() {}
 
         Ok(())
     }
 
     fn recv_byte(&self) -> Result<u8, Error> {
-        while {
+        loop {
             // Check for any potential error conditions.
             self.check_and_clear_error_flags()?;
 
-            self.i2c.sr1.read().rx_ne().bit_is_clear()
-        } {}
+            if self.i2c.sr1.read().rx_ne().bit_is_set() {
+                break;
+            }
+        }
 
         let value = self.i2c.dr.read().bits() as u8;
         Ok(value)
@@ -556,10 +401,12 @@ where
             while self.i2c.sr1.read().sb().bit_is_clear() {}
 
             // Also wait until signalled we're master and everything is waiting for us
-            while {
+            loop {
                 let sr2 = self.i2c.sr2.read();
-                sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
-            } {}
+                if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
+                    break;
+                }
+            }
 
             // Set up current address, we're trying to talk to
             self.i2c
@@ -567,10 +414,12 @@ where
                 .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
 
             // Wait until address was sent
-            while {
+            loop {
                 self.check_and_clear_error_flags()?;
-                self.i2c.sr1.read().addr().bit_is_clear()
-            } {}
+                if self.i2c.sr1.read().addr().bit_is_set() {
+                    break;
+                }
+            }
 
             // Clear condition by reading SR2
             self.i2c.sr2.read();

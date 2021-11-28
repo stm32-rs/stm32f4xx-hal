@@ -340,7 +340,7 @@ impl<const P: char, const N: u8, const A: u8> From<Pin<Alternate<OpenDrain, A>, 
 }
 
 impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
-    fn set_alternate<const A: u8>(&mut self) {
+    pub(super) fn set_alternate<const A: u8>(&mut self) {
         #[allow(path_statements, clippy::no_effect)]
         {
             Assert::<A, 16>::LESS;
@@ -441,7 +441,7 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     /// This violates the type state constraints from `MODE`, so callers must
     /// ensure they use this properly.
     #[inline(always)]
-    fn mode<M: PinMode>(&mut self) {
+    pub(super) fn mode<M: PinMode>(&mut self) {
         let offset = 2 * N;
         unsafe {
             (*Gpio::<P>::ptr())
@@ -642,57 +642,4 @@ impl PinMode for Output<PushPull> {
     const PUPDR: u32 = 0b00;
     const MODER: u32 = 0b01;
     const OTYPER: Option<u32> = Some(0b0);
-}
-
-pub struct Const<const A: u8>;
-
-pub trait SetAlternate<Otype, const A: u8> {
-    fn set_alt_mode(&mut self);
-    fn restore_mode(&mut self);
-}
-impl<Otype> SetAlternate<Otype, 0> for NoPin {
-    fn set_alt_mode(&mut self) {}
-    fn restore_mode(&mut self) {}
-}
-impl<MODE: PinMode, const P: char, const N: u8, const A: u8> SetAlternate<PushPull, A>
-    for Pin<MODE, P, N>
-{
-    fn set_alt_mode(&mut self) {
-        self.set_alternate::<A>();
-    }
-
-    fn restore_mode(&mut self) {
-        self.mode::<MODE>();
-    }
-}
-
-impl<MODE: PinMode, const P: char, const N: u8, const A: u8> SetAlternate<OpenDrain, A>
-    for Pin<MODE, P, N>
-{
-    fn set_alt_mode(&mut self) {
-        self.set_alternate::<A>();
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .otyper
-                .modify(|r, w| w.bits(r.bits() | (1 << N)))
-        };
-    }
-
-    fn restore_mode(&mut self) {
-        self.mode::<MODE>();
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> SetAlternate<PushPull, A>
-    for Pin<Alternate<PushPull, A>, P, N>
-{
-    fn set_alt_mode(&mut self) {}
-    fn restore_mode(&mut self) {}
-}
-
-impl<const P: char, const N: u8, const A: u8> SetAlternate<OpenDrain, A>
-    for Pin<Alternate<OpenDrain, A>, P, N>
-{
-    fn set_alt_mode(&mut self) {}
-    fn restore_mode(&mut self) {}
 }

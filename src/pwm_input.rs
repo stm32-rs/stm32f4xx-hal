@@ -1,13 +1,13 @@
 use crate::{
     time::Hertz,
-    timer::{General, PinC1, Timer},
+    timer::{CPin, General, Timer, C1},
 };
 use cast::u16;
 
 pub trait Pins<TIM> {}
 
-// implement the `Pins` trait wherever PC1 implements PinC1
-impl<TIM, PC1> Pins<TIM> for PC1 where PC1: PinC1<TIM> {}
+// implement the `Pins` trait wherever PC1 implements CPin<C1>
+impl<TIM, PC1> Pins<TIM> for PC1 where PC1: CPin<C1, TIM> {}
 
 /// Represents a TIMer configured as a PWM input.
 /// This peripheral will emit an interrupt on CC2 events, which occurs at two times in this mode:
