@@ -183,12 +183,23 @@ impl crate::Sealed for TxPin {}
 pub struct RxPin;
 impl crate::Sealed for RxPin {}
 
-pub trait Pins<USART> {}
-impl<USART, TX, RX> Pins<USART> for (TX, RX)
+pub trait Pins<USART> {
+    fn set_alt_mode(&mut self);
+    fn restore_mode(&mut self);
+}
+impl<USART, TX, RX, const TXA: u8, const RXA: u8> Pins<USART> for (TX, RX)
 where
-    TX: PinA<TxPin, USART>,
-    RX: PinA<RxPin, USART>,
+    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
 {
+    fn set_alt_mode(&mut self) {
+        self.0.set_alt_mode();
+        self.1.set_alt_mode();
+    }
+    fn restore_mode(&mut self) {
+        self.0.restore_mode();
+        self.1.restore_mode();
+    }
 }
 
 /// A filler type for when the Tx pin is unnecessary
@@ -326,10 +337,9 @@ impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
     }
 }
 
-impl<USART, TX, RX, WORD, const TXA: u8, const RXA: u8> Serial<USART, (TX, RX), WORD>
+impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
 where
-    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
-    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+    PINS: Pins<USART>,
     USART: Instance,
 {
     /*
@@ -339,7 +349,7 @@ where
     */
     pub fn new(
         usart: USART,
-        mut pins: (TX, RX),
+        mut pins: PINS,
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig> {
@@ -448,8 +458,7 @@ where
             DmaConfig::None => {}
         }
 
-        pins.0.set_alt_mode();
-        pins.1.set_alt_mode();
+        pins.set_alt_mode();
 
         Ok(Serial {
             usart,
@@ -459,9 +468,8 @@ where
         }
         .config_stop(config))
     }
-    pub fn release(mut self) -> (USART, (TX, RX)) {
-        self.pins.0.restore_mode();
-        self.pins.1.restore_mode();
+    pub fn release(mut self) -> (USART, PINS) {
+        self.pins.restore_mode();
 
         (self.usart, self.pins)
     }

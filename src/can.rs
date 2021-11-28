@@ -16,13 +16,24 @@ impl crate::Sealed for Tx {}
 pub struct Rx;
 impl crate::Sealed for Rx {}
 
-pub trait Pins<Can> {}
+pub trait Pins<CAN> {
+    fn set_alt_mode(&mut self);
+    fn restore_mode(&mut self);
+}
 
-impl<Can, TX, RX> Pins<Can> for (TX, RX)
+impl<CAN, TX, RX, const TXA: u8, const RXA: u8> Pins<CAN> for (TX, RX)
 where
-    TX: PinA<Tx, Can>,
-    RX: PinA<Rx, Can>,
+    TX: PinA<Tx, CAN, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+    RX: PinA<Rx, CAN, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
 {
+    fn set_alt_mode(&mut self) {
+        self.0.set_alt_mode();
+        self.1.set_alt_mode();
+    }
+    fn restore_mode(&mut self) {
+        self.0.restore_mode();
+        self.1.restore_mode();
+    }
 }
 
 /// Pins and definitions for models with a third CAN peripheral
@@ -48,14 +59,13 @@ pub struct Can<CAN, PINS> {
     pins: PINS,
 }
 
-impl<CAN, TX, RX, const TXA: u8, const RXA: u8> Can<CAN, (TX, RX)>
+impl<CAN, PINS> Can<CAN, PINS>
 where
     CAN: Instance,
-    TX: PinA<Tx, CAN, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
-    RX: PinA<Rx, CAN, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+    PINS: Pins<CAN>,
 {
     /// Creates a CAN interface.
-    pub fn new(can: CAN, mut pins: (TX, RX)) -> Self {
+    pub fn new(can: CAN, mut pins: PINS) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*crate::pac::RCC::ptr());
@@ -63,15 +73,13 @@ where
             CAN::reset(rcc);
         }
 
-        pins.0.set_alt_mode();
-        pins.1.set_alt_mode();
+        pins.set_alt_mode();
 
         Can { can, pins }
     }
 
-    pub fn release(mut self) -> (CAN, (TX, RX)) {
-        self.pins.0.restore_mode();
-        self.pins.1.restore_mode();
+    pub fn release(mut self) -> (CAN, PINS) {
+        self.pins.restore_mode();
 
         (self.can, self.pins)
     }

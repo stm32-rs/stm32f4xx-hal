@@ -85,13 +85,24 @@ impl crate::Sealed for Scl {}
 pub struct Sda;
 impl crate::Sealed for Sda {}
 
-pub trait Pins<I2c> {}
+pub trait Pins<I2C> {
+    fn set_alt_mode(&mut self);
+    fn restore_mode(&mut self);
+}
 
-impl<I2c, SCL, SDA> Pins<I2c> for (SCL, SDA)
+impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> Pins<I2C> for (SCL, SDA)
 where
-    SCL: PinA<Scl, I2c>,
-    SDA: PinA<Sda, I2c>,
+    SCL: PinA<Scl, I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
+    SDA: PinA<Sda, I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
 {
+    fn set_alt_mode(&mut self) {
+        self.0.set_alt_mode();
+        self.1.set_alt_mode();
+    }
+    fn restore_mode(&mut self) {
+        self.0.restore_mode();
+        self.1.restore_mode();
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -114,13 +125,12 @@ impl Instance for I2C2 {}
 #[cfg(feature = "i2c3")]
 impl Instance for I2C3 {}
 
-impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> I2c<I2C, (SCL, SDA)>
+impl<I2C, PINS> I2c<I2C, PINS>
 where
     I2C: Instance,
-    SCL: PinA<Scl, I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
-    SDA: PinA<Sda, I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
+    PINS: Pins<I2C>,
 {
-    pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: (SCL, SDA), mode: M, clocks: &Clocks) -> Self {
+    pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: PINS, mode: M, clocks: &Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -130,17 +140,15 @@ where
             I2C::reset(rcc);
         }
 
-        pins.0.set_alt_mode();
-        pins.1.set_alt_mode();
+        pins.set_alt_mode();
 
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(mode, clocks.pclk1());
         i2c
     }
 
-    pub fn release(mut self) -> (I2C, (SCL, SDA)) {
-        self.pins.0.restore_mode();
-        self.pins.1.restore_mode();
+    pub fn release(mut self) -> (I2C, PINS) {
+        self.pins.restore_mode();
 
         (self.i2c, self.pins)
     }

@@ -40,15 +40,31 @@ pub type NoMasterClock = NoPin;
 /// A set of pins configured for I2S communication: (WS, CK, MCLK, SD)
 ///
 /// NoMasterClock can be used instead of the master clock pin.
-pub trait Pins<SPI> {}
+pub trait Pins<SPI> {
+    fn set_alt_mode(&mut self);
+    fn restore_mode(&mut self);
+}
 
-impl<SPI, PWS, PCK, PMCLK, PSD> Pins<SPI> for (PWS, PCK, PMCLK, PSD)
+impl<SPI, WS, CK, MCLK, SD, const WSA: u8, const CKA: u8, const MCLKA: u8, const SDA: u8> Pins<SPI>
+    for (WS, CK, MCLK, SD)
 where
-    PWS: PinA<Ws, SPI>,
-    PCK: PinA<Ck, SPI>,
-    PMCLK: PinA<Mck, SPI>,
-    PSD: PinA<Sd, SPI>,
+    WS: PinA<Ws, SPI, A = Const<WSA>> + SetAlternate<PushPull, WSA>,
+    CK: PinA<Ck, SPI, A = Const<CKA>> + SetAlternate<PushPull, CKA>,
+    MCLK: PinA<Mck, SPI, A = Const<MCLKA>> + SetAlternate<PushPull, MCLKA>,
+    SD: PinA<Sd, SPI, A = Const<SDA>> + SetAlternate<PushPull, SDA>,
 {
+    fn set_alt_mode(&mut self) {
+        self.0.set_alt_mode();
+        self.1.set_alt_mode();
+        self.2.set_alt_mode();
+        self.3.set_alt_mode();
+    }
+    fn restore_mode(&mut self) {
+        self.0.restore_mode();
+        self.1.restore_mode();
+        self.2.restore_mode();
+        self.3.restore_mode();
+    }
 }
 
 pub trait I2sFreq {
@@ -80,14 +96,10 @@ macro_rules! i2s {
     };
 }
 
-impl<SPI, WS, CK, MCLK, SD, const WSA: u8, const CKA: u8, const MCLKA: u8, const SDA: u8>
-    I2s<SPI, (WS, CK, MCLK, SD)>
+impl<SPI, PINS> I2s<SPI, PINS>
 where
     SPI: I2sFreq + rcc::Enable + rcc::Reset,
-    WS: PinA<Ws, SPI, A = Const<WSA>> + SetAlternate<PushPull, WSA>,
-    CK: PinA<Ck, SPI, A = Const<CKA>> + SetAlternate<PushPull, CKA>,
-    MCLK: PinA<Mck, SPI, A = Const<MCLKA>> + SetAlternate<PushPull, MCLKA>,
-    SD: PinA<Sd, SPI, A = Const<SDA>> + SetAlternate<PushPull, SDA>,
+    PINS: Pins<SPI>,
 {
     /// Creates an I2s object around an SPI peripheral and pins
     ///
@@ -100,7 +112,7 @@ where
     ///
     /// This function panics if the I2S clock input (from the I2S PLL or similar)
     /// is not configured.
-    pub fn new(spi: SPI, mut pins: (WS, CK, MCLK, SD), clocks: &Clocks) -> Self {
+    pub fn new(spi: SPI, mut pins: PINS, clocks: &Clocks) -> Self {
         let input_clock = SPI::i2s_freq(clocks);
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
@@ -110,16 +122,19 @@ where
             SPI::reset(rcc);
         }
 
-        pins.0.set_alt_mode();
-        pins.1.set_alt_mode();
-        pins.2.set_alt_mode();
-        pins.3.set_alt_mode();
+        pins.set_alt_mode();
 
         I2s {
-            _spi: spi,
-            _pins: pins,
+            spi,
+            pins,
             input_clock,
         }
+    }
+
+    pub fn release(mut self) -> (SPI, PINS) {
+        self.pins.restore_mode();
+
+        (self.spi, self.pins)
     }
 }
 
@@ -189,8 +204,8 @@ i2s!(crate::pac::SPI5, i2s_apb2_clk);
 
 /// An I2s wrapper around an SPI object and pins
 pub struct I2s<I, PINS> {
-    _spi: I,
-    _pins: PINS,
+    spi: I,
+    pins: PINS,
     /// Frequency of clock input to this peripheral from the I2S PLL or related source
     input_clock: Hertz,
 }
@@ -222,7 +237,7 @@ mod dma {
         type MemSize = u16;
 
         fn address(&self) -> u32 {
-            let registers = &*self.instance()._spi;
+            let registers = &*self.instance().spi;
             &registers.dr as *const _ as u32
         }
     }

@@ -46,14 +46,28 @@ impl crate::Sealed for Mosi {}
 pub struct Nss;
 impl crate::Sealed for Nss {}
 
-pub trait Pins<SPI> {}
+pub trait Pins<SPI> {
+    fn set_alt_mode(&mut self);
+    fn restore_mode(&mut self);
+}
 
-impl<SPI, SCK, MISO, MOSI> Pins<SPI> for (SCK, MISO, MOSI)
+impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8> Pins<SPI>
+    for (SCK, MISO, MOSI)
 where
-    SCK: PinA<Sck, SPI>,
-    MISO: PinA<Miso, SPI>,
-    MOSI: PinA<Mosi, SPI>,
+    SCK: PinA<Sck, SPI, A = Const<SCKA>> + SetAlternate<PushPull, SCKA>,
+    MISO: PinA<Miso, SPI, A = Const<MISOA>> + SetAlternate<PushPull, MISOA>,
+    MOSI: PinA<Mosi, SPI, A = Const<MOSIA>> + SetAlternate<PushPull, MOSIA>,
 {
+    fn set_alt_mode(&mut self) {
+        self.0.set_alt_mode();
+        self.1.set_alt_mode();
+        self.2.set_alt_mode();
+    }
+    fn restore_mode(&mut self) {
+        self.0.restore_mode();
+        self.1.restore_mode();
+        self.2.restore_mode();
+    }
 }
 
 /// A filler type for when the SCK pin is unnecessary
@@ -119,17 +133,14 @@ spi! { SPI5: (spi5) }
 #[cfg(feature = "spi6")]
 spi! { SPI6: (spi6) }
 
-impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
-    Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal>
+impl<SPI, PINS> Spi<SPI, PINS, TransferModeNormal>
 where
     SPI: Instance,
-    SCK: PinA<Sck, SPI, A = Const<SCKA>> + SetAlternate<PushPull, SCKA>,
-    MISO: PinA<Miso, SPI, A = Const<MISOA>> + SetAlternate<PushPull, MISOA>,
-    MOSI: PinA<Mosi, SPI, A = Const<MOSIA>> + SetAlternate<PushPull, MOSIA>,
+    PINS: Pins<SPI>,
 {
     pub fn new(
         spi: SPI,
-        mut pins: (SCK, MISO, MOSI),
+        mut pins: PINS,
         mode: Mode,
         freq: impl Into<Hertz>,
         clocks: &Clocks,
@@ -141,9 +152,7 @@ where
             SPI::reset(rcc);
         }
 
-        pins.0.set_alt_mode();
-        pins.1.set_alt_mode();
-        pins.2.set_alt_mode();
+        pins.set_alt_mode();
 
         Spi {
             spi,
@@ -154,24 +163,21 @@ where
         .init()
     }
 
-    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi> {
+    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, TransferModeBidi> {
         let mut dev_w_new_t_mode = self.into_mode(TransferModeBidi {});
         dev_w_new_t_mode.enable(false);
         dev_w_new_t_mode.init()
     }
 }
 
-impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
-    Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi>
+impl<SPI, PINS> Spi<SPI, PINS, TransferModeBidi>
 where
     SPI: Instance,
-    SCK: PinA<Sck, SPI, A = Const<SCKA>> + SetAlternate<PushPull, SCKA>,
-    MISO: PinA<Miso, SPI, A = Const<MISOA>> + SetAlternate<PushPull, MISOA>,
-    MOSI: PinA<Mosi, SPI, A = Const<MOSIA>> + SetAlternate<PushPull, MOSIA>,
+    PINS: Pins<SPI>,
 {
     pub fn new_bidi(
         spi: SPI,
-        mut pins: (SCK, MISO, MOSI),
+        mut pins: PINS,
         mode: Mode,
         freq: impl Into<Hertz>,
         clocks: &Clocks,
@@ -183,9 +189,7 @@ where
             SPI::reset(rcc);
         }
 
-        pins.0.set_alt_mode();
-        pins.1.set_alt_mode();
-        pins.2.set_alt_mode();
+        pins.set_alt_mode();
 
         Spi {
             spi,
@@ -196,25 +200,20 @@ where
         .init()
     }
 
-    pub fn to_normal_transfer_mode(self) -> Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal> {
+    pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, TransferModeNormal> {
         let mut dev_w_new_t_mode = self.into_mode(TransferModeNormal {});
         dev_w_new_t_mode.enable(false);
         dev_w_new_t_mode.init()
     }
 }
 
-impl<SPI, SCK, MISO, MOSI, TRANSFER_MODE, const SCKA: u8, const MISOA: u8, const MOSIA: u8>
-    Spi<SPI, (SCK, MISO, MOSI), TRANSFER_MODE>
+impl<SPI, PINS, TRANSFER_MODE> Spi<SPI, PINS, TRANSFER_MODE>
 where
     SPI: Instance,
-    SCK: PinA<Sck, SPI, A = Const<SCKA>> + SetAlternate<PushPull, SCKA>,
-    MISO: PinA<Miso, SPI, A = Const<MISOA>> + SetAlternate<PushPull, MISOA>,
-    MOSI: PinA<Mosi, SPI, A = Const<MOSIA>> + SetAlternate<PushPull, MOSIA>,
+    PINS: Pins<SPI>,
 {
-    pub fn release(mut self) -> (SPI, (SCK, MISO, MOSI)) {
-        self.pins.0.restore_mode();
-        self.pins.1.restore_mode();
-        self.pins.2.restore_mode();
+    pub fn release(mut self) -> (SPI, PINS) {
+        self.pins.restore_mode();
 
         (self.spi, self.pins)
     }
