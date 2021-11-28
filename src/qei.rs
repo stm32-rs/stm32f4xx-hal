@@ -6,13 +6,12 @@ use crate::{
 };
 
 pub trait Pins<TIM> {}
-use crate::timer::PinC1;
-use crate::timer::PinC2;
+use crate::timer::{CPin, C1, C2};
 
 impl<TIM, PC1, PC2> Pins<TIM> for (PC1, PC2)
 where
-    PC1: PinC1<TIM>,
-    PC2: PinC2<TIM>,
+    PC1: CPin<C1, TIM>,
+    PC2: CPin<C2, TIM>,
 {
 }
 
@@ -24,8 +23,8 @@ pub struct Qei<TIM, PINS> {
 
 impl<TIM: Instance, PC1, PC2> Qei<TIM, (PC1, PC2)>
 where
-    PC1: PinC1<TIM>,
-    PC2: PinC2<TIM>,
+    PC1: CPin<C1, TIM>,
+    PC2: CPin<C2, TIM>,
 {
     /// Configures a TIM peripheral as a quadrature encoder interface input
     pub fn new(mut tim: TIM, pins: (PC1, PC2)) -> Self {

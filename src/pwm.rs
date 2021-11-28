@@ -13,77 +13,49 @@ pub trait Pins<TIM, P> {
     const C4: bool = false;
     type Channels;
 }
-use crate::timer::PinC1;
-use crate::timer::PinC2;
-use crate::timer::PinC3;
-use crate::timer::PinC4;
+pub use crate::timer::{CPin, C1, C2, C3, C4};
 
-pub struct C1;
-pub struct C2;
-pub struct C3;
-pub struct C4;
-
-pub struct PwmChannels<TIM, CHANNELS> {
-    _channel: PhantomData<CHANNELS>,
+pub struct PwmChannel<TIM, CHANNEL> {
+    _channel: PhantomData<CHANNEL>,
     _tim: PhantomData<TIM>,
 }
 
 macro_rules! pins_impl {
-    ( $( ( $($PINX:ident),+ ), ( $($TRAIT:ident),+ ), ( $($ENCHX:ident),* ); )+ ) => {
+    ( $( ( $($PINX:ident),+ ), ( $($ENCHX:ident),* ); )+ ) => {
         $(
             #[allow(unused_parens)]
             impl<TIM, $($PINX,)+> Pins<TIM, ($($ENCHX),+)> for ($($PINX),+)
             where
-                $($PINX: $TRAIT<TIM>,)+
+                $($PINX: CPin<$ENCHX, TIM>,)+
             {
                 $(const $ENCHX: bool = true;)+
-                type Channels = ($(PwmChannels<TIM, $ENCHX>),+);
+                type Channels = ($(PwmChannel<TIM, $ENCHX>),+);
             }
         )+
     };
 }
 
 pins_impl!(
-    (P1, P2, P3, P4), (PinC1, PinC2, PinC3, PinC4), (C1, C2, C3, C4);
-    (P2, P3, P4), (PinC2, PinC3, PinC4), (C2, C3, C4);
-    (P1, P3, P4), (PinC1, PinC3, PinC4), (C1, C3, C4);
-    (P1, P2, P4), (PinC1, PinC2, PinC4), (C1, C2, C4);
-    (P1, P2, P3), (PinC1, PinC2, PinC3), (C1, C2, C3);
-    (P3, P4), (PinC3, PinC4), (C3, C4);
-    (P2, P4), (PinC2, PinC4), (C2, C4);
-    (P2, P3), (PinC2, PinC3), (C2, C3);
-    (P1, P4), (PinC1, PinC4), (C1, C4);
-    (P1, P3), (PinC1, PinC3), (C1, C3);
-    (P1, P2), (PinC1, PinC2), (C1, C2);
-    (P1), (PinC1), (C1);
-    (P2), (PinC2), (C2);
-    (P3), (PinC3), (C3);
-    (P4), (PinC4), (C4);
+    (P1, P2, P3, P4), (C1, C2, C3, C4);
+    (P2, P3, P4), (C2, C3, C4);
+    (P1, P3, P4), (C1, C3, C4);
+    (P1, P2, P4), (C1, C2, C4);
+    (P1, P2, P3), (C1, C2, C3);
+    (P3, P4), (C3, C4);
+    (P2, P4), (C2, C4);
+    (P2, P3), (C2, C3);
+    (P1, P4), (C1, C4);
+    (P1, P3), (C1, C3);
+    (P1, P2), (C1, C2);
+    (P1), (C1);
+    (P2), (C2);
+    (P3), (C3);
+    (P4), (C4);
 );
 
-impl<TIM, P1: PinC1<TIM>, P2: PinC1<TIM>> PinC1<TIM> for (P1, P2) {}
-impl<TIM, P1: PinC2<TIM>, P2: PinC2<TIM>> PinC2<TIM> for (P1, P2) {}
-impl<TIM, P1: PinC3<TIM>, P2: PinC3<TIM>> PinC3<TIM> for (P1, P2) {}
-impl<TIM, P1: PinC4<TIM>, P2: PinC4<TIM>> PinC4<TIM> for (P1, P2) {}
-
-impl<TIM, P1: PinC1<TIM>, P2: PinC1<TIM>, P3: PinC1<TIM>> PinC1<TIM> for (P1, P2, P3) {}
-impl<TIM, P1: PinC2<TIM>, P2: PinC2<TIM>, P3: PinC2<TIM>> PinC2<TIM> for (P1, P2, P3) {}
-impl<TIM, P1: PinC3<TIM>, P2: PinC3<TIM>, P3: PinC3<TIM>> PinC3<TIM> for (P1, P2, P3) {}
-impl<TIM, P1: PinC4<TIM>, P2: PinC4<TIM>, P3: PinC4<TIM>> PinC4<TIM> for (P1, P2, P3) {}
-
-impl<TIM, P1: PinC1<TIM>, P2: PinC1<TIM>, P3: PinC1<TIM>, P4: PinC1<TIM>> PinC1<TIM>
-    for (P1, P2, P3, P4)
-{
-}
-impl<TIM, P1: PinC2<TIM>, P2: PinC2<TIM>, P3: PinC2<TIM>, P4: PinC2<TIM>> PinC2<TIM>
-    for (P1, P2, P3, P4)
-{
-}
-impl<TIM, P1: PinC3<TIM>, P2: PinC3<TIM>, P3: PinC3<TIM>, P4: PinC3<TIM>> PinC3<TIM>
-    for (P1, P2, P3, P4)
-{
-}
-impl<TIM, P1: PinC4<TIM>, P2: PinC4<TIM>, P3: PinC4<TIM>, P4: PinC4<TIM>> PinC4<TIM>
+impl<C, TIM, P1: CPin<C, TIM>, P2: CPin<C, TIM>> CPin<C, TIM> for (P1, P2) {}
+impl<C, TIM, P1: CPin<C, TIM>, P2: CPin<C, TIM>, P3: CPin<C, TIM>> CPin<C, TIM> for (P1, P2, P3) {}
+impl<C, TIM, P1: CPin<C, TIM>, P2: CPin<C, TIM>, P3: CPin<C, TIM>, P4: CPin<C, TIM>> CPin<C, TIM>
     for (P1, P2, P3, P4)
 {
 }
@@ -100,7 +72,7 @@ macro_rules! brk {
 
 macro_rules! pwm_pin {
     ($TIMX:ty, $C:ty, $ccr: ident, $bit:literal) => {
-        impl PwmChannels<$TIMX, $C> {
+        impl PwmChannel<$TIMX, $C> {
             //NOTE(unsafe) atomic write with no side effects
             #[inline]
             pub fn disable(&mut self) {
@@ -132,7 +104,7 @@ macro_rules! pwm_pin {
             }
         }
 
-        impl pwm::PwmPin for PwmChannels<$TIMX, $C> {
+        impl pwm::PwmPin for PwmChannel<$TIMX, $C> {
             type Duty = u16;
             fn disable(&mut self) {
                 self.disable()
@@ -228,15 +200,11 @@ macro_rules! pwm_2_channels {
                     T: Into<Hertz>,
                 {
                     if PINS::C1 {
-                        //NOTE(unsafe) 6 is a valid value to write to oc1m
-
-                        self.tim.ccmr1_output().modify(|_, w| w.oc1pe().set_bit().oc1m().bits(6));
+                        self.tim.ccmr1_output().modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1());
 
                     }
                     if PINS::C2 {
-                        //NOTE(unsafe) 6 is a valid value to write to oc2m
-
-                        self.tim.ccmr1_output().modify(|_, w| w.oc2pe().set_bit().oc2m().bits(6));
+                        self.tim.ccmr1_output().modify(|_, w| w.oc2pe().set_bit().oc2m().pwm_mode1());
 
                     }
 
@@ -281,10 +249,8 @@ macro_rules! pwm_1_channel {
                     T: Into<Hertz>,
                 {
                     if PINS::C1 {
-                        //NOTE(unsafe) 6 is a valid value to write to oc1m
-
                         self.tim.ccmr1_output()
-                            .modify(|_, w| w.oc1pe().set_bit().oc1m().bits(6));
+                            .modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1());
 
                     }
 

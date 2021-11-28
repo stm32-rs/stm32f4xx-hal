@@ -490,16 +490,17 @@ use crate::gpio::{gpioa::*, gpiob::*, Alternate};
 #[allow(unused)]
 use crate::gpio::{gpioc::*, gpioh::*};
 
-// Output channels marker traits
-pub trait PinC1<TIM> {}
-pub trait PinC2<TIM> {}
-pub trait PinC3<TIM> {}
-pub trait PinC4<TIM> {}
+// Output channels markers
+pub trait CPin<C, TIM> {}
+pub struct C1;
+pub struct C2;
+pub struct C3;
+pub struct C4;
 
 macro_rules! channel_impl {
-    ( $( $TIM:ident, $PINC:ident, $PINX:ident, $AF:literal; )+ ) => {
+    ( $( $TIM:ident, $C:ident, $PINX:ident, $AF:literal; )+ ) => {
         $(
-            impl<Otype> $PINC<crate::pac::$TIM> for $PINX<Alternate<Otype, $AF>> {}
+            impl<Otype> CPin<$C, crate::pac::$TIM> for $PINX<Alternate<Otype, $AF>> { }
         )+
     };
 }
@@ -511,20 +512,20 @@ macro_rules! channel_impl {
 
 // All parts have these PWM pins.
 channel_impl!(
-    TIM1, PinC1, PA8, 1;
-    TIM1, PinC2, PA9, 1;
-    TIM1, PinC3, PA10, 1;
-    TIM1, PinC4, PA11, 1;
+    TIM1, C1, PA8, 1;
+    TIM1, C2, PA9, 1;
+    TIM1, C3, PA10, 1;
+    TIM1, C4, PA11, 1;
 
-    TIM5, PinC1, PA0, 2;
-    TIM5, PinC2, PA1, 2;
-    TIM5, PinC3, PA2, 2;
-    TIM5, PinC4, PA3, 2;
+    TIM5, C1, PA0, 2;
+    TIM5, C2, PA1, 2;
+    TIM5, C3, PA2, 2;
+    TIM5, C4, PA3, 2;
 
-    TIM9, PinC1, PA2, 3;
-    TIM9, PinC2, PA3, 3;
+    TIM9, C1, PA2, 3;
+    TIM9, C2, PA3, 3;
 
-    TIM11, PinC1, PB9, 3;
+    TIM11, C1, PB9, 3;
 );
 
 // All parts except F410.
@@ -547,47 +548,47 @@ channel_impl!(
     feature = "stm32f479"
 ))]
 channel_impl!(
-    TIM1, PinC1, PE9, 1;
-    TIM1, PinC2, PE11, 1;
-    TIM1, PinC3, PE13, 1;
-    TIM1, PinC4, PE14, 1;
+    TIM1, C1, PE9, 1;
+    TIM1, C2, PE11, 1;
+    TIM1, C3, PE13, 1;
+    TIM1, C4, PE14, 1;
 
-    TIM2, PinC1, PA0, 1;
-    TIM2, PinC2, PA1, 1;
-    TIM2, PinC3, PA2, 1;
-    TIM2, PinC4, PA3, 1;
+    TIM2, C1, PA0, 1;
+    TIM2, C2, PA1, 1;
+    TIM2, C3, PA2, 1;
+    TIM2, C4, PA3, 1;
 
-    TIM2, PinC2, PB3, 1;
-    TIM2, PinC3, PB10, 1;
-    TIM2, PinC4, PB11, 1;
+    TIM2, C2, PB3, 1;
+    TIM2, C3, PB10, 1;
+    TIM2, C4, PB11, 1;
 
-    TIM2, PinC1, PA5, 1;
-    TIM2, PinC1, PA15, 1;
+    TIM2, C1, PA5, 1;
+    TIM2, C1, PA15, 1;
 
-    TIM3, PinC1, PA6, 2;
-    TIM3, PinC2, PA7, 2;
-    TIM3, PinC3, PB0, 2;
-    TIM3, PinC4, PB1, 2;
+    TIM3, C1, PA6, 2;
+    TIM3, C2, PA7, 2;
+    TIM3, C3, PB0, 2;
+    TIM3, C4, PB1, 2;
 
-    TIM3, PinC1, PB4, 2;
-    TIM3, PinC2, PB5, 2;
+    TIM3, C1, PB4, 2;
+    TIM3, C2, PB5, 2;
 
-    TIM3, PinC1, PC6, 2;
-    TIM3, PinC2, PC7, 2;
-    TIM3, PinC3, PC8, 2;
-    TIM3, PinC4, PC9, 2;
+    TIM3, C1, PC6, 2;
+    TIM3, C2, PC7, 2;
+    TIM3, C3, PC8, 2;
+    TIM3, C4, PC9, 2;
 
-    TIM4, PinC1, PB6, 2;
-    TIM4, PinC2, PB7, 2;
-    TIM4, PinC3, PB8, 2;
-    TIM4, PinC4, PB9, 2;
+    TIM4, C1, PB6, 2;
+    TIM4, C2, PB7, 2;
+    TIM4, C3, PB8, 2;
+    TIM4, C4, PB9, 2;
 
-    TIM4, PinC1, PD12, 2;
-    TIM4, PinC2, PD13, 2;
-    TIM4, PinC3, PD14, 2;
-    TIM4, PinC4, PD15, 2;
+    TIM4, C1, PD12, 2;
+    TIM4, C2, PD13, 2;
+    TIM4, C3, PD14, 2;
+    TIM4, C4, PD15, 2;
 
-    TIM10, PinC1, PB8, 3;
+    TIM10, C1, PB8, 3;
 );
 
 // All parts except F401 and F410.
@@ -609,8 +610,8 @@ channel_impl!(
     feature = "stm32f479"
 ))]
 channel_impl!(
-    TIM9, PinC1, PE5, 3;
-    TIM9, PinC2, PE6, 3;
+    TIM9, C1, PE5, 3;
+    TIM9, C2, PE6, 3;
 );
 
 // All parts except F401, F410, and F411.
@@ -631,23 +632,23 @@ channel_impl!(
     feature = "stm32f479"
 ))]
 channel_impl!(
-    TIM8, PinC1, PC6, 3;
-    TIM8, PinC2, PC7, 3;
-    TIM8, PinC3, PC8, 3;
-    TIM8, PinC4, PC9, 3;
+    TIM8, C1, PC6, 3;
+    TIM8, C2, PC7, 3;
+    TIM8, C3, PC8, 3;
+    TIM8, C4, PC9, 3;
 
-    TIM10, PinC1, PF6, 3;
+    TIM10, C1, PF6, 3;
 
-    TIM11, PinC1, PF7, 3;
+    TIM11, C1, PF7, 3;
 
-    TIM12, PinC1, PB14, 9;
-    TIM12, PinC2, PB15, 9;
+    TIM12, C1, PB14, 9;
+    TIM12, C2, PB15, 9;
 
-    TIM13, PinC1, PA6, 9;
-    TIM13, PinC1, PF8, 9;  // Not a mistake: TIM13 has only one channel.
+    TIM13, C1, PA6, 9;
+    TIM13, C1, PF8, 9;  // Not a mistake: TIM13 has only one channel.
 
-    TIM14, PinC1, PA7, 9;
-    TIM14, PinC1, PF9, 9;  // Not a mistake: TIM14 has only one channel.
+    TIM14, C1, PA7, 9;
+    TIM14, C1, PF9, 9;  // Not a mistake: TIM14 has only one channel.
 );
 
 // STM's "advanced and foundation" lines except F446.
@@ -664,45 +665,45 @@ channel_impl!(
     feature = "stm32f479"
 ))]
 channel_impl!(
-    TIM5, PinC1, PH10, 2;
-    TIM5, PinC2, PH11, 2;
-    TIM5, PinC3, PH12, 2;
-    TIM5, PinC4, PI0, 2;
+    TIM5, C1, PH10, 2;
+    TIM5, C2, PH11, 2;
+    TIM5, C3, PH12, 2;
+    TIM5, C4, PI0, 2;
 
-    TIM8, PinC1, PI5, 3;
-    TIM8, PinC2, PI6, 3;
-    TIM8, PinC3, PI7, 3;
-    TIM8, PinC4, PI2, 3;
+    TIM8, C1, PI5, 3;
+    TIM8, C2, PI6, 3;
+    TIM8, C3, PI7, 3;
+    TIM8, C4, PI2, 3;
 
-    TIM12, PinC1, PH6, 9;
-    TIM12, PinC2, PH9, 9;
+    TIM12, C1, PH6, 9;
+    TIM12, C2, PH9, 9;
 );
 
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 channel_impl!(
-    TIM5, PinC1, PF3, 2;
-    TIM5, PinC2, PF4, 2;
-    TIM5, PinC3, PF5, 2;
-    TIM5, PinC4, PF10, 2;
+    TIM5, C1, PF3, 2;
+    TIM5, C2, PF4, 2;
+    TIM5, C3, PF5, 2;
+    TIM5, C4, PF10, 2;
 );
 
 #[cfg(feature = "stm32f410")]
 channel_impl!(
-    TIM5, PinC1, PB12, 2;
-    TIM5, PinC2, PC10, 2;
-    TIM5, PinC3, PC11, 2;
-    TIM5, PinC4, PB11, 2;
+    TIM5, C1, PB12, 2;
+    TIM5, C2, PC10, 2;
+    TIM5, C3, PC11, 2;
+    TIM5, C4, PB11, 2;
 
-    TIM9, PinC1, PC4, 3;
-    TIM9, PinC2, PC5, 3;
+    TIM9, C1, PC4, 3;
+    TIM9, C2, PC5, 3;
 
-    TIM11, PinC1, PC13, 3;
+    TIM11, C1, PC13, 3;
 );
 
 #[cfg(feature = "stm32f446")]
 channel_impl!(
-    TIM2, PinC1, PB8, 1;
-    TIM2, PinC2, PB9, 1;
+    TIM2, C1, PB8, 1;
+    TIM2, C2, PB9, 1;
 
-    TIM2, PinC4, PB2, 1;
+    TIM2, C4, PB2, 1;
 );
