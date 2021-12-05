@@ -106,10 +106,13 @@ mod app {
     #[task(binds = DMA2_STREAM0, shared = [transfer], local = [buffer])]
     fn dma(cx: dma::Context) {
         let dma::Context { mut shared, local } = cx;
-        let (buffer, _) = shared.transfer.lock(|transfer| {
-            transfer
+        let (buffer, sample_to_millivolts) = shared.transfer.lock(|transfer| {
+            let (buffer, _) = transfer
                 .next_transfer(local.buffer.take().unwrap())
-                .unwrap()
+                .unwrap();
+
+            let sample_to_millivolts = transfer.peripheral().make_sample_to_millivolts();
+            (buffer, sample_to_millivolts)
         });
 
         let raw_temp = buffer[0];
@@ -121,7 +124,7 @@ mod app {
         let cal110 = VtempCal110::get().read() as f32;
 
         let temperature = (110.0 - 30.0) * ((raw_temp as f32) - cal30) / (cal110 - cal30) + 30.0;
-        let voltage = (raw_volt as f32) / ((2_i32.pow(12) - 1) as f32) * 3.3;
+        let voltage = sample_to_millivolts(raw_volt);
 
         hprintln!("temperature: {}, voltage: {}", temperature, voltage).unwrap();
     }

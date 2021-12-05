@@ -23,7 +23,7 @@ use crate::{pac, rcc};
 pub mod traits;
 use traits::{
     sealed::{Bits, Sealed},
-    Channel, DMASet, Direction, Instance, PeriAddress, Stream, StreamISR,
+    Channel, DMASet, Direction, Instance, PeriAddress, SafePeripheralRead, Stream, StreamISR,
 };
 
 /// Errors.
@@ -1011,6 +1011,20 @@ where
         };
         self.next_transfer_with_common(new_buf, ptr_and_len, false, CurrentBuffer::FirstBuffer);
         Ok(r.1)
+    }
+}
+
+impl<STREAM, PERIPHERAL, BUF, const CHANNEL: u8>
+    Transfer<STREAM, PERIPHERAL, PeripheralToMemory, BUF, CHANNEL>
+where
+    STREAM: Stream,
+    ChannelX<CHANNEL>: Channel,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, PeripheralToMemory, CHANNEL> + SafePeripheralRead,
+    BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
+{
+    /// Access the owned peripheral for reading
+    pub fn peripheral(&self) -> &PERIPHERAL {
+        &self.peripheral
     }
 }
 
