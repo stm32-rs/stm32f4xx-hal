@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Finish SDIO data transmission before querying card status in `write_block` [#395]
 - Unify alternate pin constraints [#393]
 - [breaking-change] Use `&Clocks` instead of `Clocks` [#387]
 - Split and rename `GetBusFreq` -> `BusClock`, `BusTimerClock` [#386]
@@ -37,6 +38,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#386]: https://github.com/stm32-rs/stm32f4xx-hal/pull/386
 [#387]: https://github.com/stm32-rs/stm32f4xx-hal/pull/387
 [#393]: https://github.com/stm32-rs/stm32f4xx-hal/pull/393
+[#395]: https://github.com/stm32-rs/stm32f4xx-hal/pull/395
 
 ## [v0.10.1] - 2021-10-26
 
