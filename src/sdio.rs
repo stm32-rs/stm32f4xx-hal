@@ -404,6 +404,14 @@ impl Sdio {
 
         status_to_error(sta)?;
 
+        // Wait for SDIO module to finish transmitting data
+        loop {
+            sta = self.sdio.sta.read();
+            if !sta.txact().bit_is_set() {
+                break;
+            }
+        }
+
         // Wait for card to finish writing data
         while !self.card_ready()? {}
 
