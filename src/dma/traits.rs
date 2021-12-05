@@ -931,6 +931,10 @@ dma_map!(
     (Stream2<DMA2>, 1, pac::ADC2, PeripheralToMemory),  //ADC2
     (Stream3<DMA2>, 1, pac::ADC2, PeripheralToMemory),  //ADC2
     (Stream7<DMA2>, 1, pac::DCMI, PeripheralToMemory),  //DCMI
+    (Stream2<DMA2>, 1, Adc<pac::ADC3>, PeripheralToMemory), //ADC2
+    (Stream3<DMA2>, 1, Adc<pac::ADC3>, PeripheralToMemory), //ADC2
+    (Stream0<DMA2>, 2, Adc<pac::ADC3>, PeripheralToMemory), //ADC3
+    (Stream1<DMA2>, 2, Adc<pac::ADC3>, PeripheralToMemory), //ADC3
 );
 #[cfg(any(
     feature = "stm32f417",
