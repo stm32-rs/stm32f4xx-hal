@@ -339,12 +339,14 @@ impl Sdio {
         self.cmd(cmd::read_single_block(blockaddr))?;
 
         let mut i = 0;
-        let mut sta;
 
-        while {
-            sta = self.sdio.sta.read();
-            sta.rxact().bit_is_set()
-        } {
+        let status = loop {
+            let sta = self.sdio.sta.read();
+
+            if sta.rxact().bit_is_clear() {
+                break sta;
+            }
+
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
                     let bytes = self.sdio.fifo.read().bits().to_le_bytes();
@@ -354,11 +356,11 @@ impl Sdio {
             }
 
             if i == block.len() {
-                break;
+                break sta;
             }
-        }
+        };
 
-        status_to_error(sta)?;
+        status_to_error(status)?;
 
         // Wait for card to be ready
         while !self.card_ready()? {}
@@ -381,12 +383,14 @@ impl Sdio {
         self.cmd(cmd::write_single_block(blockaddr))?;
 
         let mut i = 0;
-        let mut sta;
 
-        while {
-            sta = self.sdio.sta.read();
-            sta.txact().bit_is_set()
-        } {
+        let status = loop {
+            let sta = self.sdio.sta.read();
+
+            if sta.txact().bit_is_clear() {
+                break sta;
+            }
+
             if sta.txfifohe().bit() {
                 for _ in 0..8 {
                     let mut wb = [0u8; 4];
@@ -398,15 +402,15 @@ impl Sdio {
             }
 
             if i == block.len() {
-                break;
+                break sta;
             }
-        }
+        };
 
-        status_to_error(sta)?;
+        status_to_error(status)?;
 
         // Wait for SDIO module to finish transmitting data
         loop {
-            sta = self.sdio.sta.read();
+            let sta = self.sdio.sta.read();
             if !sta.txact().bit_is_set() {
                 break;
             }
@@ -425,10 +429,16 @@ impl Sdio {
         assert!(block_size <= 14);
 
         // Command AND Data state machines must be idle
-        while self.sdio.sta.read().cmdact().bit_is_set()
-            || self.sdio.sta.read().rxact().bit_is_set()
-            || self.sdio.sta.read().txact().bit_is_set()
-        {}
+        loop {
+            let status = self.sdio.sta.read();
+
+            if status.cmdact().bit_is_clear()
+                && status.rxact().bit_is_clear()
+                && status.txact().bit_is_clear()
+            {
+                break;
+            }
+        }
 
         let dtdir = if card_to_controller {
             DTDIR_A::CARDTOCONTROLLER
@@ -475,12 +485,14 @@ impl Sdio {
 
         let mut status = [0u32; 16];
         let mut idx = 0;
-        let mut sta;
 
-        while {
-            sta = self.sdio.sta.read();
-            sta.rxact().bit_is_set()
-        } {
+        let s = loop {
+            let sta = self.sdio.sta.read();
+
+            if sta.rxact().bit_is_clear() {
+                break sta;
+            }
+
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
                     status[15 - idx] = self.sdio.fifo.read().bits().swap_bytes();
@@ -489,11 +501,11 @@ impl Sdio {
             }
 
             if idx == status.len() {
-                break;
+                break sta;
             }
-        }
+        };
 
-        status_to_error(sta)?;
+        status_to_error(s)?;
         Ok(SDStatus::from(status))
     }
 
@@ -515,23 +527,25 @@ impl Sdio {
 
         let mut buf = [0; 2];
         let mut i = 0;
-        let mut sta;
 
-        while {
-            sta = self.sdio.sta.read();
-            sta.rxact().bit_is_set()
-        } {
+        let status = loop {
+            let sta = self.sdio.sta.read();
+
+            if sta.rxact().bit_is_clear() {
+                break sta;
+            }
+
             if sta.rxdavl().bit() {
                 buf[1 - i] = self.sdio.fifo.read().bits().swap_bytes();
                 i += 1;
             }
 
             if i == 2 {
-                break;
+                break sta;
             }
-        }
+        };
 
-        status_to_error(sta)?;
+        status_to_error(status)?;
         Ok(SCR::from(buf))
     }
 
@@ -599,33 +613,44 @@ impl Sdio {
 
         let mut timeout: u32 = 0xFFFF_FFFF;
 
-        let mut sta;
-        if cmd.response_len() == ResponseLen::Zero {
+        let status = if cmd.response_len() == ResponseLen::Zero {
             // Wait for command sent or a timeout
-            while {
-                sta = self.sdio.sta.read();
+            loop {
+                let sta = self.sdio.sta.read();
 
-                (!(sta.ctimeout().bit() || sta.cmdsent().bit()) || sta.cmdact().bit_is_set())
-                    && timeout > 0
-            } {
+                if sta.cmdact().bit_is_clear()
+                    && (sta.ctimeout().bit_is_set() || sta.cmdsent().bit_is_set())
+                {
+                    break sta;
+                }
+
+                if timeout == 0 {
+                    return Err(Error::SoftwareTimeout);
+                }
+
                 timeout -= 1;
             }
         } else {
-            while {
-                sta = self.sdio.sta.read();
-                (!(sta.ctimeout().bit() || sta.cmdrend().bit() || sta.ccrcfail().bit())
-                    || sta.cmdact().bit_is_set())
-                    && timeout > 0
-            } {
+            loop {
+                let sta = self.sdio.sta.read();
+
+                if sta.cmdact().bit_is_clear()
+                    && (sta.ctimeout().bit()
+                        || sta.cmdrend().bit_is_set()
+                        || sta.ccrcfail().bit_is_set())
+                {
+                    break sta;
+                }
+
+                if timeout == 0 {
+                    return Err(Error::SoftwareTimeout);
+                }
+
                 timeout -= 1;
             }
-        }
+        };
 
-        if timeout == 0 {
-            return Err(Error::SoftwareTimeout);
-        }
-
-        status_to_error(sta)
+        status_to_error(status)
     }
 }
 

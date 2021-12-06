@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Finish SDIO data transmission before querying card status in `write_block` [#395]
+- SDIO: Rewrite loop conditions to silence clippy
 - Unify alternate pin constraints [#393]
 - [breaking-change] Use `&Clocks` instead of `Clocks` [#387]
 - Split and rename `GetBusFreq` -> `BusClock`, `BusTimerClock` [#386]
