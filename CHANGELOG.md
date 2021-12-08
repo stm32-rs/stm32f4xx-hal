@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Implementation of RTIC Monotonic for TIM2 & TIM5 under `rtic` feature [#380] [#390]
 - `IoPin` for `Output<OpenDrain>> <-> Input<Floating>>` [#374]
 - `IoPin` for `Output<PushPull>> <-> Input<PullUp>> and Input<PullDown>>` [#389]
+- Add `internal_pull_down` to `Pin<Output<OpenDrain>>` and `Pin<Alternate<PushPull>>` for symmetry
+  with `internal_pull_up` [#399]
 
 [#390]: https://github.com/stm32-rs/stm32f4xx-hal/pull/390
 [#382]: https://github.com/stm32-rs/stm32f4xx-hal/pull/382
@@ -32,6 +34,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] Bump `stm32f4` to 0.14. Update RTIC based examples to use `rtic` 0.6 [#367]
 - [breaking-change] Bump `bxcan` to 0.6 [#371]
 - fix #362: ADC voltage conversion might be incorrect [#397]
+- [breaking-change] Change `Pin<Output<OpenDrain>>::internal_pull_up` signature from `(&mut self, _: bool) -> ()`
+  to `(self, _: bool) -> Self`. [#399]
 
 [#367]: https://github.com/stm32-rs/stm32f4xx-hal/pull/397
 [#367]: https://github.com/stm32-rs/stm32f4xx-hal/pull/367

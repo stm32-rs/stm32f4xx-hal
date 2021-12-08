@@ -300,7 +300,7 @@ impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
 
 impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
     /// Enables / disables the internal pull up
-    pub fn internal_pull_up(&mut self, on: bool) {
+    pub fn internal_pull_up(self, on: bool) -> Self {
         let offset = 2 * { N };
         let value = if on { 0b01 } else { 0b00 };
         unsafe {
@@ -308,6 +308,21 @@ impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
                 .pupdr
                 .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
         };
+
+        self
+    }
+
+    /// Enables / disables the internal pull down
+    pub fn internal_pull_down(self, on: bool) -> Self {
+        let offset = 2 * { N };
+        let value = if on { 0b10 } else { 0b00 };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
+        };
+
+        self
     }
 }
 
@@ -329,6 +344,19 @@ impl<const P: char, const N: u8, const A: u8> Pin<Alternate<PushPull, A>, P, N> 
     pub fn internal_pull_up(self, on: bool) -> Self {
         let offset = 2 * { N };
         let value = if on { 0b01 } else { 0b00 };
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
+        };
+
+        self
+    }
+
+    /// Enables / disables the internal pull down
+    pub fn internal_pull_down(self, on: bool) -> Self {
+        let offset = 2 * { N };
+        let value = if on { 0b10 } else { 0b00 };
         unsafe {
             (*Gpio::<P>::ptr())
                 .pupdr
