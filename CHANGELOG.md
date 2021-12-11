@@ -30,7 +30,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] Make `Alternate` generic over `Otype` instead of separate `Alternate` and `AlternateOD` [#383]
 - [breaking-change] Bump `stm32f4` to 0.14. Update RTIC based examples to use `rtic` 0.6 [#367]
 - [breaking-change] Bump `bxcan` to 0.6 [#371]
+- fix #362: ADC voltage conversion might be incorrect [#397]
 
+[#367]: https://github.com/stm32-rs/stm32f4xx-hal/pull/397
 [#367]: https://github.com/stm32-rs/stm32f4xx-hal/pull/367
 [#371]: https://github.com/stm32-rs/stm32f4xx-hal/pull/371
 [#383]: https://github.com/stm32-rs/stm32f4xx-hal/pull/383
