@@ -605,7 +605,7 @@ pub struct Adc<ADC> {
     adc_reg: ADC,
     /// VDDA in millivolts calculated from the factory calibration and vrefint
     calibrated_vdda: u32,
-    /// Maximum sample value possible for the configured resolution
+    /// Exclusive limit for the sample value possible for the configured resolution.
     max_sample: u32,
 }
 impl<ADC> fmt::Debug for Adc<ADC> {
@@ -794,10 +794,10 @@ macro_rules! adc {
                 /// Sets the sampling resolution
                 pub fn set_resolution(&mut self, resolution: config::Resolution) {
                     self.max_sample = match resolution {
-                        config::Resolution::Twelve => (1 << 12) - 1,
-                        config::Resolution::Ten => (1 << 10) - 1,
-                        config::Resolution::Eight => (1 << 8) - 1,
-                        config::Resolution::Six => (1 << 6) -1,
+                        config::Resolution::Twelve => (1 << 12),
+                        config::Resolution::Ten => (1 << 10),
+                        config::Resolution::Eight => (1 << 8),
+                        config::Resolution::Six => (1 << 6),
                     };
                     self.config.resolution = resolution;
                     self.adc_reg.cr1.modify(|_, w| w.res().bits(resolution.into()));
@@ -954,7 +954,9 @@ macro_rules! adc {
                     self.adc_reg.dr.read().data().bits()
                 }
 
-                /// Converts a sample value to millivolts using calibrated VDDA and configured resolution
+                /// Converts a sample value to millivolts using calibrated VDDA and configured resolution.
+                /// Due to the ADC characteristics VDDA will never be reached as described in #362 and
+                /// [AN2834-How to get the best ADC accuracy in STM32 microcontrollers](https://www.st.com/resource/en/application_note/cd00211314-how-to-get-the-best-adc-accuracy-in-stm32-microcontrollers-stmicroelectronics.pdf) in section 3.1.2.
                 pub fn sample_to_millivolts(&self, sample: u16) -> u16 {
                     ((u32::from(sample) * self.calibrated_vdda) / self.max_sample) as u16
                 }
