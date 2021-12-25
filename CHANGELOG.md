@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Update RTIC to 1.0 [#401]
 - Finish SDIO data transmission before querying card status in `write_block` [#395]
 - SDIO: Rewrite loop conditions to silence clippy
 - Unify alternate pin constraints [#393]
@@ -46,6 +47,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#387]: https://github.com/stm32-rs/stm32f4xx-hal/pull/387
 [#393]: https://github.com/stm32-rs/stm32f4xx-hal/pull/393
 [#395]: https://github.com/stm32-rs/stm32f4xx-hal/pull/395
+[#401]: https://github.com/stm32-rs/stm32f4xx-hal/pull/401
 
 ## [v0.10.1] - 2021-10-26
 
