@@ -1,28 +1,6 @@
 #![no_std]
 #![allow(non_camel_case_types)]
 
-#[cfg(not(feature = "device-selected"))]
-compile_error!(
-    "This crate requires one of the following device features enabled:
-        stm32f401
-        stm32f405
-        stm32f407
-        stm32f410
-        stm32f411
-        stm32f412
-        stm32f413
-        stm32f415
-        stm32f417
-        stm32f423
-        stm32f427
-        stm32f429
-        stm32f437
-        stm32f439
-        stm32f446
-        stm32f469
-        stm32f479"
-);
-
 #[cfg(feature = "device-selected")]
 pub use embedded_hal as hal;
 
