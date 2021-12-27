@@ -190,7 +190,7 @@ impl Instant {
 
 mod sealed {
     pub trait General {
-        type Width;
+        type Width: Into<u32>;
         fn enable_counter(&mut self);
         fn disable_counter(&mut self);
         fn is_counter_enabled(&self) -> bool;
@@ -201,6 +201,8 @@ mod sealed {
         fn clear_update_interrupt_flag(&mut self);
         fn listen_update_interrupt(&mut self, b: bool);
         fn get_update_interrupt_flag(&self) -> bool;
+        fn read_count(&self) -> Self::Width;
+        fn read_auto_reload(&self) -> Self::Width;
     }
 }
 pub(crate) use sealed::General;
@@ -284,6 +286,14 @@ macro_rules! hal {
                 #[inline(always)]
                 fn get_update_interrupt_flag(&self) -> bool {
                     self.sr.read().uif().bit_is_clear()
+                }
+                #[inline(always)]
+                fn read_count(&self) -> Self::Width {
+                    self.cnt.read().bits() as Self::Width
+                }
+                #[inline(always)]
+                fn read_auto_reload(&self) -> Self::Width {
+                    self.arr.read().bits() as Self::Width
                 }
             }
         )+
