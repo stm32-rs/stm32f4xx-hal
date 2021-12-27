@@ -132,16 +132,8 @@ impl RccBus for crate::pac::FSMC {
     type Bus = AHB3;
 }
 #[cfg(feature = "fsmc")]
-#[cfg(any(feature = "stm32f427", feature = "stm32f437"))]
 bus_enable!(FSMC => 0);
 #[cfg(feature = "fsmc")]
-#[cfg(not(any(feature = "stm32f427", feature = "stm32f437")))]
-bus_enable!(FSMC => 0);
-#[cfg(feature = "fsmc")]
-#[cfg(any(feature = "stm32f427", feature = "stm32f437"))]
-bus_reset!(FSMC => 0);
-#[cfg(feature = "fsmc")]
-#[cfg(not(any(feature = "stm32f427", feature = "stm32f437")))]
 bus_reset!(FSMC => 0);
 
 bus! {
