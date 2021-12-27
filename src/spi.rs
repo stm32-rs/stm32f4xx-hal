@@ -96,7 +96,7 @@ pub struct TransferModeBidi;
 pub struct Spi<SPI, PINS, TRANSFER_MODE> {
     spi: SPI,
     pins: PINS,
-    transfer_mode: TRANSFER_MODE,
+    _transfer_mode: PhantomData<TRANSFER_MODE>,
 }
 
 // Implemented by all SPI instances
@@ -154,17 +154,13 @@ where
 
         pins.set_alt_mode();
 
-        Spi {
-            spi,
-            pins,
-            transfer_mode: TransferModeNormal,
-        }
-        .pre_init(mode, freq.into(), SPI::clock(clocks))
-        .init()
+        Self::_new(spi, pins)
+            .pre_init(mode, freq.into(), SPI::clock(clocks))
+            .init()
     }
 
     pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, TransferModeBidi> {
-        let mut dev_w_new_t_mode = self.into_mode(TransferModeBidi {});
+        let mut dev_w_new_t_mode = self.into_mode::<TransferModeBidi>();
         dev_w_new_t_mode.enable(false);
         dev_w_new_t_mode.init()
     }
@@ -191,17 +187,13 @@ where
 
         pins.set_alt_mode();
 
-        Spi {
-            spi,
-            pins,
-            transfer_mode: TransferModeBidi,
-        }
-        .pre_init(mode, freq.into(), SPI::clock(clocks))
-        .init()
+        Self::_new(spi, pins)
+            .pre_init(mode, freq.into(), SPI::clock(clocks))
+            .init()
     }
 
     pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, TransferModeNormal> {
-        let mut dev_w_new_t_mode = self.into_mode(TransferModeNormal {});
+        let mut dev_w_new_t_mode = self.into_mode::<TransferModeNormal>();
         dev_w_new_t_mode.enable(false);
         dev_w_new_t_mode.init()
     }
@@ -263,16 +255,17 @@ impl<SPI, PINS, TRANSFER_MODE> Spi<SPI, PINS, TRANSFER_MODE>
 where
     SPI: Instance,
 {
-    /// Convert the spi to another transfer mode.
-    fn into_mode<TRANSFER_MODE2>(
-        self,
-        transfer_mode: TRANSFER_MODE2,
-    ) -> Spi<SPI, PINS, TRANSFER_MODE2> {
-        Spi {
-            spi: self.spi,
-            pins: self.pins,
-            transfer_mode,
+    fn _new(spi: SPI, pins: PINS) -> Self {
+        Self {
+            spi,
+            pins,
+            _transfer_mode: PhantomData,
         }
+    }
+
+    /// Convert the spi to another transfer mode.
+    fn into_mode<TRANSFER_MODE2>(self) -> Spi<SPI, PINS, TRANSFER_MODE2> {
+        Spi::_new(self.spi, self.pins)
     }
 
     /// Enable/disable spi
