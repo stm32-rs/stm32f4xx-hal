@@ -3,7 +3,6 @@
 use crate::rcc::Clocks;
 use crate::time::Hertz;
 use cortex_m::peripheral::{DCB, DWT};
-use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 
 pub trait DwtExt {
     fn constrain(self, dcb: DCB, clocks: &Clocks) -> Dwt;
@@ -98,7 +97,7 @@ impl Delay {
 }
 
 // Implement DelayUs/DelayMs for various integer types
-impl<T: Into<u64>> DelayUs<T> for Delay {
+impl<T: Into<u64>> embedded_hal::blocking::delay::DelayUs<T> for Delay {
     fn delay_us(&mut self, us: T) {
         // Convert us to ticks
         let start = DWT::get_cycle_count();
@@ -106,7 +105,7 @@ impl<T: Into<u64>> DelayUs<T> for Delay {
         Delay::delay_ticks(start, ticks);
     }
 }
-impl<T: Into<u64>> DelayMs<T> for Delay {
+impl<T: Into<u64>> embedded_hal::blocking::delay::DelayMs<T> for Delay {
     fn delay_ms(&mut self, ms: T) {
         // Convert ms to ticks
         let start = DWT::get_cycle_count();

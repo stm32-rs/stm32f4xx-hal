@@ -1,5 +1,5 @@
 use crate::{
-    bb, hal as pwm,
+    bb,
     time::Hertz,
     timer::{General, Timer},
 };
@@ -104,8 +104,9 @@ macro_rules! pwm_pin {
             }
         }
 
-        impl pwm::PwmPin for PwmChannel<$TIMX, $C> {
+        impl embedded_hal::PwmPin for PwmChannel<$TIMX, $C> {
             type Duty = u16;
+
             fn disable(&mut self) {
                 self.disable()
             }

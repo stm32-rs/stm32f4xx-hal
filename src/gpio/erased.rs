@@ -107,44 +107,6 @@ impl<MODE> ErasedPin<Output<MODE>> {
     }
 }
 
-impl<MODE> OutputPin for ErasedPin<Output<MODE>> {
-    type Error = core::convert::Infallible;
-
-    #[inline(always)]
-    fn set_high(&mut self) -> Result<(), Self::Error> {
-        self.set_high();
-        Ok(())
-    }
-
-    #[inline(always)]
-    fn set_low(&mut self) -> Result<(), Self::Error> {
-        self.set_low();
-        Ok(())
-    }
-}
-
-impl<MODE> StatefulOutputPin for ErasedPin<Output<MODE>> {
-    #[inline(always)]
-    fn is_set_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_high())
-    }
-
-    #[inline(always)]
-    fn is_set_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_low())
-    }
-}
-
-impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn toggle(&mut self) -> Result<(), Self::Error> {
-        self.toggle();
-        Ok(())
-    }
-}
-
 impl ErasedPin<Output<OpenDrain>> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
@@ -157,20 +119,6 @@ impl ErasedPin<Output<OpenDrain>> {
     }
 }
 
-impl InputPin for ErasedPin<Output<OpenDrain>> {
-    type Error = core::convert::Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
 impl<MODE> ErasedPin<Input<MODE>> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
@@ -180,19 +128,5 @@ impl<MODE> ErasedPin<Input<MODE>> {
     #[inline(always)]
     pub fn is_low(&self) -> bool {
         self.block().idr.read().bits() & (1 << self.pin_id()) == 0
-    }
-}
-
-impl<MODE> InputPin for ErasedPin<Input<MODE>> {
-    type Error = core::convert::Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
     }
 }

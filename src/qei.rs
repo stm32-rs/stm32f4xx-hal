@@ -1,10 +1,5 @@
 //! # Quadrature Encoder Interface
-use crate::{
-    hal::{self, Direction},
-    pac::RCC,
-    rcc,
-    timer::General,
-};
+use crate::{pac::RCC, rcc, timer::General};
 
 pub trait Pins<TIM> {}
 use crate::timer::{CPin, C1, C2};
@@ -48,18 +43,18 @@ impl<TIM: Instance, PINS> Qei<TIM, PINS> {
     }
 }
 
-impl<TIM: Instance, PINS> hal::Qei for Qei<TIM, PINS> {
+impl<TIM: Instance, PINS> embedded_hal::Qei for Qei<TIM, PINS> {
     type Count = TIM::Width;
 
     fn count(&self) -> Self::Count {
         self.tim.read_count() as Self::Count
     }
 
-    fn direction(&self) -> Direction {
+    fn direction(&self) -> embedded_hal::Direction {
         if self.tim.read_direction() {
-            hal::Direction::Upcounting
+            embedded_hal::Direction::Upcounting
         } else {
-            hal::Direction::Downcounting
+            embedded_hal::Direction::Downcounting
         }
     }
 }

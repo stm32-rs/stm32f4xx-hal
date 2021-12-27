@@ -88,44 +88,6 @@ impl<MODE, const P: char> PartiallyErasedPin<Output<MODE>, P> {
     }
 }
 
-impl<MODE, const P: char> OutputPin for PartiallyErasedPin<Output<MODE>, P> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn set_high(&mut self) -> Result<(), Self::Error> {
-        self.set_high();
-        Ok(())
-    }
-
-    #[inline(always)]
-    fn set_low(&mut self) -> Result<(), Self::Error> {
-        self.set_low();
-        Ok(())
-    }
-}
-
-impl<MODE, const P: char> StatefulOutputPin for PartiallyErasedPin<Output<MODE>, P> {
-    #[inline(always)]
-    fn is_set_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_high())
-    }
-
-    #[inline(always)]
-    fn is_set_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_set_low())
-    }
-}
-
-impl<MODE, const P: char> ToggleableOutputPin for PartiallyErasedPin<Output<MODE>, P> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn toggle(&mut self) -> Result<(), Self::Error> {
-        self.toggle();
-        Ok(())
-    }
-}
-
 impl<const P: char> PartiallyErasedPin<Output<OpenDrain>, P> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
@@ -139,20 +101,6 @@ impl<const P: char> PartiallyErasedPin<Output<OpenDrain>, P> {
     }
 }
 
-impl<const P: char> InputPin for PartiallyErasedPin<Output<OpenDrain>, P> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
 impl<MODE, const P: char> PartiallyErasedPin<Input<MODE>, P> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
@@ -163,19 +111,5 @@ impl<MODE, const P: char> PartiallyErasedPin<Input<MODE>, P> {
     pub fn is_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
         unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 }
-    }
-}
-
-impl<MODE, const P: char> InputPin for PartiallyErasedPin<Input<MODE>, P> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
     }
 }

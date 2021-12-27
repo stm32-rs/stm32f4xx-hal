@@ -23,13 +23,13 @@
 use core::cmp;
 use core::mem;
 
-use crate::hal::blocking::rng;
 use crate::pac;
 use crate::pac::RNG;
 use crate::rcc::{Clocks, Enable, Reset};
 use crate::time::U32Ext;
 use core::num::NonZeroU32;
 use core::ops::Shl;
+use embedded_hal::blocking::rng;
 use rand_core::RngCore;
 
 /// Random number generator specific errors
