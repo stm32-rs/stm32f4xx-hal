@@ -144,6 +144,8 @@ pub struct PushPull;
 /// Analog mode (type state)
 pub struct Analog;
 
+pub type Debugger = Alternate<PushPull, 0>;
+
 /// GPIO Pin speed selection
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Speed {
@@ -581,17 +583,17 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA10: (pa10, 10, Input<Floating>),
     PA11: (pa11, 11, Input<Floating>),
     PA12: (pa12, 12, Input<Floating>),
-    PA13: (pa13, 13, Input<Floating>),
-    PA14: (pa14, 14, Input<Floating>),
-    PA15: (pa15, 15, Input<Floating>),
+    PA13: (pa13, 13, super::Debugger), // SWDIO, PullUp VeryHigh speed
+    PA14: (pa14, 14, super::Debugger), // SWCLK, PullDown
+    PA15: (pa15, 15, super::Debugger), // JTDI, PullUp
 ]);
 
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, Input<Floating>),
     PB1: (pb1, 1, Input<Floating>),
     PB2: (pb2, 2, Input<Floating>),
-    PB3: (pb3, 3, Input<Floating>),
-    PB4: (pb4, 4, Input<Floating>),
+    PB3: (pb3, 3, super::Debugger), // SWO, VeryHigh speed
+    PB4: (pb4, 4, super::Debugger), // JTRST, PullUp
     PB5: (pb5, 5, Input<Floating>),
     PB6: (pb6, 6, Input<Floating>),
     PB7: (pb7, 7, Input<Floating>),
