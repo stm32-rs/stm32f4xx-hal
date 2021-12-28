@@ -7,7 +7,6 @@ use panic_semihosting as _;
 mod app {
     use cortex_m_semihosting::hprintln;
     use dwt_systick_monotonic::DwtSystick;
-    pub use fugit::ExtU32;
 
     use stm32f4xx_hal::{
         adc::{

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Added `Counter` with `CountDown<Time=fugit::TimerDuration>` and `atat::Clock` implementations [#381]
 - `Into<serial::Config>` for `Bps` [#387]
 - Added the missing DMA implementations for USART3 [#373]
 - `count_down` constructor for `Timer` -> `CountDownTimer` without start [#382]
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#382]: https://github.com/stm32-rs/stm32f4xx-hal/pull/382
 [#380]: https://github.com/stm32-rs/stm32f4xx-hal/pull/380
 [#374]: https://github.com/stm32-rs/stm32f4xx-hal/pull/374
+[#381]: https://github.com/stm32-rs/stm32f4xx-hal/pull/381
 
 ### Changed
 

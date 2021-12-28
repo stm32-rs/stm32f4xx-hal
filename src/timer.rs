@@ -18,6 +18,9 @@ use crate::time::Hertz;
 #[cfg(not(feature = "stm32f410"))]
 pub mod monotonic;
 
+mod counter;
+pub use counter::*;
+
 /// Timer wrapper
 pub struct Timer<TIM> {
     pub(crate) tim: TIM,

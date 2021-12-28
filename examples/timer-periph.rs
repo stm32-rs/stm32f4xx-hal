@@ -15,7 +15,6 @@ use panic_halt as _;
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 
-use embedded_hal::timer::Cancel;
 use hal::timer;
 use hal::timer::Timer;
 use stm32f4xx_hal as hal;
@@ -29,8 +28,8 @@ fn main() -> ! {
     let clocks = rcc.cfgr.sysclk(24.mhz()).freeze();
 
     // Create a timer based on SysTick
-    let mut timer = Timer::new(dp.TIM1, &clocks).count_down();
-    timer.start(1.hz());
+    let mut timer = Timer::new(dp.TIM1, &clocks).counter_ms();
+    timer.start(1.secs()).unwrap();
 
     hprintln!("hello!").unwrap();
     // wait until timer expires
@@ -46,8 +45,7 @@ fn main() -> ! {
     timer.cancel().unwrap();
 
     // start it again
-    timer.start(1.hz());
-    nb::block!(timer.wait()).unwrap();
+    timer.delay(1.secs()).unwrap();
     hprintln!("timer expired 3").unwrap();
 
     timer.cancel().unwrap();
