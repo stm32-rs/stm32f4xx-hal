@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Correct default mode for debugger pins [#405]
 - Move `embedded-hal` implementations to subdirs [#404]
 - Qei macro cleanups  [#403]
 - Update RTIC to 1.0 [#401]
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#401]: https://github.com/stm32-rs/stm32f4xx-hal/pull/401
 [#403]: https://github.com/stm32-rs/stm32f4xx-hal/pull/403
 [#404]: https://github.com/stm32-rs/stm32f4xx-hal/pull/404
+[#405]: https://github.com/stm32-rs/stm32f4xx-hal/pull/405
 
 ## [v0.10.1] - 2021-10-26
 
