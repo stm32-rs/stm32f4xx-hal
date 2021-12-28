@@ -68,11 +68,10 @@ smart-leds = "0.3.0"
 ws2812-spi = { version = "0.4.0", features = [] }
 
 [features]
-device-selected = []
 rt = ["stm32f4/rt"]
 # Note: stm32f4 has only one feature for some very similar device families,
 # so it's intended for e.g. stm32f405/415 to both enable stm32f4/stm32f405.
-stm32f401 = ["stm32f4/stm32f401", "device-selected",
+stm32f401 = ["stm32f4/stm32f401",
     "gpiod", "gpioe",
     "i2c3",
     "otg-fs",
@@ -80,7 +79,7 @@ stm32f401 = ["stm32f4/stm32f401", "device-selected",
     "spi3", "spi4",
     "tim2",
 ]
-stm32f405 = ["stm32f4/stm32f405", "device-selected",
+stm32f405 = ["stm32f4/stm32f405",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -95,7 +94,7 @@ stm32f405 = ["stm32f4/stm32f405", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5",
 ]
-stm32f407 = ["stm32f4/stm32f407", "device-selected",
+stm32f407 = ["stm32f4/stm32f407",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -110,11 +109,11 @@ stm32f407 = ["stm32f4/stm32f407", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5",
 ]
-stm32f410 = ["stm32f4/stm32f410", "device-selected",
+stm32f410 = ["stm32f4/stm32f410",
     "dac",
     "spi5",
 ]
-stm32f411 = ["stm32f4/stm32f411", "device-selected",
+stm32f411 = ["stm32f4/stm32f411",
     "gpiod", "gpioe",
     "i2c3",
     "otg-fs",
@@ -122,7 +121,7 @@ stm32f411 = ["stm32f4/stm32f411", "device-selected",
     "tim2",
     "spi3", "spi4", "spi5",
 ]
-stm32f412 = ["stm32f4/stm32f412", "device-selected",
+stm32f412 = ["stm32f4/stm32f412",
     "can1", "can2",
     "fsmc",
     "gpiod", "gpioe", "gpiof", "gpiog",
@@ -134,7 +133,7 @@ stm32f412 = ["stm32f4/stm32f412", "device-selected",
     "tim2", "tim8",
     "usart3",
 ]
-stm32f413 = ["stm32f4/stm32f413", "device-selected",
+stm32f413 = ["stm32f4/stm32f413",
     "can1", "can2", "can3",
     "dac",
     "fsmc",
@@ -148,7 +147,7 @@ stm32f413 = ["stm32f4/stm32f413", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5", "uart7", "uart8", "uart9", "uart10",
 ]
-stm32f415 = ["stm32f4/stm32f405", "device-selected",
+stm32f415 = ["stm32f4/stm32f405",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -163,7 +162,7 @@ stm32f415 = ["stm32f4/stm32f405", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5",
 ]
-stm32f417 = ["stm32f4/stm32f407", "device-selected",
+stm32f417 = ["stm32f4/stm32f407",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -178,7 +177,7 @@ stm32f417 = ["stm32f4/stm32f407", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5",
 ]
-stm32f423 = ["stm32f4/stm32f413", "device-selected",
+stm32f423 = ["stm32f4/stm32f413",
     "can1", "can2", "can3",
     "dac",
     "fsmc",
@@ -192,7 +191,7 @@ stm32f423 = ["stm32f4/stm32f413", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5", "uart7", "uart8", "uart9", "uart10",
 ]
-stm32f427 = ["stm32f4/stm32f427", "device-selected",
+stm32f427 = ["stm32f4/stm32f427",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -207,7 +206,7 @@ stm32f427 = ["stm32f4/stm32f427", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5", "uart7", "uart8",
 ]
-stm32f429 = ["stm32f4/stm32f429", "device-selected",
+stm32f429 = ["stm32f4/stm32f429",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -222,7 +221,7 @@ stm32f429 = ["stm32f4/stm32f429", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5", "uart7", "uart8",
 ]
-stm32f437 = ["stm32f4/stm32f427", "device-selected",
+stm32f437 = ["stm32f4/stm32f427",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -237,7 +236,7 @@ stm32f437 = ["stm32f4/stm32f427", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5", "uart7", "uart8",
 ]
-stm32f439 = ["stm32f4/stm32f429", "device-selected",
+stm32f439 = ["stm32f4/stm32f429",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -252,7 +251,7 @@ stm32f439 = ["stm32f4/stm32f429", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5", "uart7", "uart8",
 ]
-stm32f446 = ["stm32f4/stm32f446", "device-selected",
+stm32f446 = ["stm32f4/stm32f446",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -265,7 +264,7 @@ stm32f446 = ["stm32f4/stm32f446", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5",
 ]
-stm32f469 = ["stm32f4/stm32f469", "device-selected",
+stm32f469 = ["stm32f4/stm32f469",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -280,7 +279,7 @@ stm32f469 = ["stm32f4/stm32f469", "device-selected",
     "tim2", "tim8",
     "usart3", "uart4", "uart5", "uart7", "uart8",
 ]
-stm32f479 = ["stm32f4/stm32f469", "device-selected",
+stm32f479 = ["stm32f4/stm32f469",
     "adc2", "adc3",
     "can1", "can2",
     "dac",
@@ -365,11 +364,11 @@ required-features = ["gpiod", "sdio", "sdio-host"] # stm32f405
 
 [[example]]
 name = "delay-syst-blinky"
-required-features = ["device-selected"] # stm32f411
+required-features = []
 
 [[example]]
 name = "delay-timer-blinky"
-required-features = ["device-selected"] # stm32f411
+required-features = []
 
 [[example]]
 name = "dwt-blinky"
@@ -377,7 +376,7 @@ required-features = ["gpiog"] # "stm32f429"
 
 [[example]]
 name = "ssd1306-image"
-required-features = ["device-selected"] # stm32f411
+required-features = []
 
 [[example]]
 name = "stopwatch-with-ssd1306-and-interrupts"
@@ -417,7 +416,7 @@ required-features = ["tim2", "rtic"]
 
 [[example]]
 name = "adc_dma_rtic"
-required-features = ["device-selected", "rtic"] # stm32f401
+required-features = ["rtic"] # stm32f401
 
 [[example]]
 name = "serial-9bit"
@@ -437,7 +436,7 @@ required-features = ["tim8"] # stm32f446
 
 [[example]]
 name = "ist7920_bidi_normal_spi"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "spi_dma"

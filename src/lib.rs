@@ -1,12 +1,9 @@
 #![no_std]
 #![allow(non_camel_case_types)]
 
-#[cfg(feature = "device-selected")]
 pub use embedded_hal as hal;
 
-#[cfg(feature = "device-selected")]
 pub use nb;
-#[cfg(feature = "device-selected")]
 pub use nb::block;
 
 #[cfg(feature = "stm32f401")]
@@ -81,88 +78,59 @@ pub use stm32f4::stm32f469 as pac;
 #[cfg(feature = "rt")]
 pub use crate::pac::interrupt;
 
-#[cfg(feature = "device-selected")]
 pub mod adc;
-#[cfg(feature = "device-selected")]
 pub mod bb;
 #[cfg(all(
-    feature = "device-selected",
     feature = "can",
     any(feature = "can1", feature = "can2",)
 ))]
 pub mod can;
-#[cfg(feature = "device-selected")]
 pub mod crc32;
-#[cfg(all(feature = "device-selected", feature = "dac"))]
+#[cfg(feature = "dac")]
 pub mod dac;
-#[cfg(feature = "device-selected")]
 pub mod delay;
-#[cfg(feature = "device-selected")]
 #[cfg(feature = "fmpi2c1")]
 pub mod fmpi2c;
-#[cfg(feature = "device-selected")]
 pub mod gpio;
-#[cfg(feature = "device-selected")]
 pub mod i2c;
-#[cfg(all(feature = "device-selected"))]
 pub mod i2s;
-#[cfg(all(feature = "device-selected", feature = "usb_fs", feature = "otg-fs"))]
+#[cfg(all(feature = "usb_fs", feature = "otg-fs"))]
 pub mod otg_fs;
 #[cfg(all(
-    feature = "device-selected",
     any(feature = "usb_hs", docsrs),
     feature = "otg-hs",
 ))]
 pub mod otg_hs;
 
-#[cfg(all(feature = "device-selected", feature = "rng"))]
+#[cfg(feature = "rng")]
 pub mod rng;
 
-#[cfg(feature = "device-selected")]
 pub mod dma;
-#[cfg(feature = "device-selected")]
 pub mod dwt;
-#[cfg(feature = "device-selected")]
 pub mod flash;
 #[cfg(all(
-    feature = "device-selected",
     feature = "fsmc_lcd",
     any(feature = "fmc", feature = "fsmc")
 ))]
 pub mod fsmc_lcd;
-#[cfg(feature = "device-selected")]
 pub mod prelude;
-#[cfg(feature = "device-selected")]
 pub mod pwm;
-#[cfg(feature = "device-selected")]
 #[cfg(not(feature = "stm32f410"))]
 pub mod pwm_input;
-#[cfg(feature = "device-selected")]
 pub mod qei;
-#[cfg(feature = "device-selected")]
 pub mod rcc;
-#[cfg(feature = "device-selected")]
 pub mod rtc;
-#[cfg(all(feature = "device-selected", feature = "sdio-host", feature = "sdio"))]
+#[cfg(all(feature = "sdio-host", feature = "sdio"))]
 pub mod sdio;
-#[cfg(feature = "device-selected")]
 pub mod serial;
-#[cfg(feature = "device-selected")]
 pub mod signature;
-#[cfg(feature = "device-selected")]
 pub mod spi;
-#[cfg(feature = "device-selected")]
 pub mod syscfg;
-#[cfg(feature = "device-selected")]
 pub mod time;
-#[cfg(feature = "device-selected")]
 pub mod timer;
-#[cfg(feature = "device-selected")]
 pub mod watchdog;
 
-#[cfg(feature = "device-selected")]
 mod sealed {
     pub trait Sealed {}
 }
-#[cfg(feature = "device-selected")]
 pub(crate) use sealed::Sealed;
