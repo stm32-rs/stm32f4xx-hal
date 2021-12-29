@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `Counter` with `CountDown<Time=fugit::TimerDuration>` and `atat::Clock` implementations [#381]
 - `Into<serial::Config>` for `Bps` [#387]
 - Added the missing DMA implementations for USART3 [#373]
+- `DynamicPin` with dynamically changed mode, remove `AF` constants [#372]
 - `count_down` constructor for `Timer` -> `CountDownTimer` without start [#382]
 - Implementation of RTIC Monotonic for TIM2 & TIM5 under `rtic` feature [#380] [#390]
 - `IoPin` for `Output<OpenDrain>> <-> Input<Floating>>` [#374]

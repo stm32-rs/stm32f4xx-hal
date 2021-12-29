@@ -443,3 +443,8 @@ required-features = ["device-selected"]
 [[example]]
 name = "spi_dma"
 required-features = ["rt", "stm32f411"]
+
+[[example]]
+name = "dynamic_gpio"
+required-features = ["device-selected"]
+
