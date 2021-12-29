@@ -443,3 +443,7 @@ required-features = ["device-selected"]
 [[example]]
 name = "spi_dma"
 required-features = ["rt", "stm32f411"]
+
+[[example]]
+name = "stm32f429idisco-fmc"
+required-features = ["rt", "stm32f429"]
