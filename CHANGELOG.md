@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.11.0] - 2021-12-29
+
 ### Added
 
 - Added `Counter` with `CountDown<Time=fugit::TimerDuration>` and `atat::Clock` implementations [#381]
@@ -20,12 +22,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add `internal_pull_down` to `Pin<Output<OpenDrain>>` and `Pin<Alternate<PushPull>>` for symmetry
   with `internal_pull_up` [#399]
 
-[#390]: https://github.com/stm32-rs/stm32f4xx-hal/pull/390
 [#373]: https://github.com/stm32-rs/stm32f4xx-hal/pull/373
-[#382]: https://github.com/stm32-rs/stm32f4xx-hal/pull/382
-[#380]: https://github.com/stm32-rs/stm32f4xx-hal/pull/380
 [#374]: https://github.com/stm32-rs/stm32f4xx-hal/pull/374
+[#380]: https://github.com/stm32-rs/stm32f4xx-hal/pull/380
 [#381]: https://github.com/stm32-rs/stm32f4xx-hal/pull/381
+[#382]: https://github.com/stm32-rs/stm32f4xx-hal/pull/382
+[#390]: https://github.com/stm32-rs/stm32f4xx-hal/pull/390
 
 ### Changed
 
@@ -46,7 +48,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] Change `Pin<Output<OpenDrain>>::internal_pull_up` signature from `(&mut self, _: bool) -> ()`
   to `(self, _: bool) -> Self`. [#399]
 
-[#367]: https://github.com/stm32-rs/stm32f4xx-hal/pull/397
 [#367]: https://github.com/stm32-rs/stm32f4xx-hal/pull/367
 [#371]: https://github.com/stm32-rs/stm32f4xx-hal/pull/371
 [#383]: https://github.com/stm32-rs/stm32f4xx-hal/pull/383
@@ -55,6 +56,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#387]: https://github.com/stm32-rs/stm32f4xx-hal/pull/387
 [#393]: https://github.com/stm32-rs/stm32f4xx-hal/pull/393
 [#395]: https://github.com/stm32-rs/stm32f4xx-hal/pull/395
+[#397]: https://github.com/stm32-rs/stm32f4xx-hal/pull/397
 [#401]: https://github.com/stm32-rs/stm32f4xx-hal/pull/401
 [#403]: https://github.com/stm32-rs/stm32f4xx-hal/pull/403
 [#404]: https://github.com/stm32-rs/stm32f4xx-hal/pull/404
@@ -112,7 +114,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added DMA support for SPI [#319]
 
 [#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/265
-[#265]: https://github.com/stm32-rs/stm32f4xx-hal/pull/266
+[#266]: https://github.com/stm32-rs/stm32f4xx-hal/pull/266
 [#271]: https://github.com/stm32-rs/stm32f4xx-hal/pull/271
 [#295]: https://github.com/stm32-rs/stm32f4xx-hal/pull/295
 [#297]: https://github.com/stm32-rs/stm32f4xx-hal/pull/297
@@ -513,7 +515,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.10.1...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.11.0...HEAD
+[v0.11.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.10.1...v0.11.0
 [v0.10.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.10.0...v0.10.1
 [v0.10.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.8.3...v0.9.0
