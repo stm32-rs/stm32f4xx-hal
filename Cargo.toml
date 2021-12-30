@@ -43,7 +43,6 @@ embedded-hal = { features = ["unproven"], version = "0.2.6" }
 display-interface = { version = "0.4.1", optional = true }
 fugit = "0.3.3"
 rtic-monotonic = { version = "1.0", optional = true }
-atat = { version = "0.14.0", optional = true }
 
 [dependencies.stm32_i2s_v12x]
 version = "0.2.0"
