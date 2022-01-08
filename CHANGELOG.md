@@ -28,12 +28,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add `internal_pull_down` to `Pin<Output<OpenDrain>>` and `Pin<Alternate<PushPull>>` for symmetry
   with `internal_pull_up` [#399]
 
+[#372]: https://github.com/stm32-rs/stm32f4xx-hal/pull/372
 [#373]: https://github.com/stm32-rs/stm32f4xx-hal/pull/373
 [#374]: https://github.com/stm32-rs/stm32f4xx-hal/pull/374
 [#380]: https://github.com/stm32-rs/stm32f4xx-hal/pull/380
 [#381]: https://github.com/stm32-rs/stm32f4xx-hal/pull/381
 [#382]: https://github.com/stm32-rs/stm32f4xx-hal/pull/382
+[#389]: https://github.com/stm32-rs/stm32f4xx-hal/pull/389
 [#390]: https://github.com/stm32-rs/stm32f4xx-hal/pull/390
+[#399]: https://github.com/stm32-rs/stm32f4xx-hal/pull/399
 
 ### Changed
 
