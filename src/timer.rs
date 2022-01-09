@@ -173,7 +173,7 @@ impl MonoTimer {
     /// Returns an `Instant` corresponding to "now"
     pub fn now(self) -> Instant {
         Instant {
-            now: DWT::get_cycle_count(),
+            now: DWT::cycle_count(),
         }
     }
 }
@@ -187,7 +187,7 @@ pub struct Instant {
 impl Instant {
     /// Ticks elapsed since the `Instant` was created
     pub fn elapsed(self) -> u32 {
-        DWT::get_cycle_count().wrapping_sub(self.now)
+        DWT::cycle_count().wrapping_sub(self.now)
     }
 }
 
