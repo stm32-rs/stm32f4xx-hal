@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- up `cortex-m` to 0.7.4, use `cycle_count` instead of `get_cycle_count` on DWT
+
 ## [v0.11.1] - 2021-12-30
 
 - Remove optional `atat` dependency [#408]
