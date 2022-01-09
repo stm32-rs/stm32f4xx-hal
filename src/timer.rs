@@ -411,74 +411,30 @@ where
 // All F4xx parts have these timers.
 hal!(
     crate::pac::TIM1: u16,
-    crate::pac::TIM5: u32,
     crate::pac::TIM9: u16,
     crate::pac::TIM11: u16,
 );
 
 // All parts except for F410 add these timers.
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(not(feature = "stm32f410"))]
 hal!(
+    crate::pac::TIM5: u32,
     crate::pac::TIM2: u32,
     crate::pac::TIM3: u16,
     crate::pac::TIM4: u16,
     crate::pac::TIM10: u16,
 );
 
+// TIM5 on F410 is 16-bit
+#[cfg(feature = "stm32f410")]
+hal!(crate::pac::TIM5: u16,);
+
 // All parts except F401 and F411.
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(not(any(feature = "stm32f401", feature = "stm32f411",)))]
 hal!(crate::pac::TIM6: u16,);
 
 // All parts except F401, F410, F411.
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(not(any(feature = "stm32f401", feature = "stm32f410", feature = "stm32f411",)))]
 hal!(
     crate::pac::TIM7: u16,
     crate::pac::TIM8: u16,

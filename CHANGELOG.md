@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-- up `cortex-m` to 0.7.4, use `cycle_count` instead of `get_cycle_count` on DWT
+### Changed
+
+- Fix Width of TIM5 F410 [#409]
+- up `cortex-m` to 0.7.4, use `cycle_count` instead of `get_cycle_count` on DWT [#415]
+
+[#409]: https://github.com/stm32-rs/stm32f4xx-hal/pull/409
+[#415]: https://github.com/stm32-rs/stm32f4xx-hal/pull/415
 
 ## [v0.11.1] - 2021-12-30
 
