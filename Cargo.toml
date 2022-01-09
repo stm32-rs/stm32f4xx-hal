@@ -27,7 +27,7 @@ targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]
 bxcan = { version = "0.6", optional = true }
-cortex-m = "0.7"
+cortex-m = "0.7.4"
 cortex-m-rt = "0.7"
 nb = "1"
 rand_core = "0.6"

@@ -64,7 +64,7 @@ impl Delay {
     /// Delay for `ClockDuration::ticks`
     pub fn delay(duration: ClockDuration) {
         let ticks = duration.ticks as u64;
-        Delay::delay_ticks(DWT::get_cycle_count(), ticks);
+        Delay::delay_ticks(DWT::cycle_count(), ticks);
     }
     /// Delay ticks
     /// NOTE DCB and DWT need to be set up for this to work, so it is private
@@ -72,25 +72,25 @@ impl Delay {
         if ticks < (core::u32::MAX / 2) as u64 {
             // Simple delay
             let ticks = ticks as u32;
-            while (DWT::get_cycle_count().wrapping_sub(start)) < ticks {}
+            while (DWT::cycle_count().wrapping_sub(start)) < ticks {}
         } else if ticks <= core::u32::MAX as u64 {
             // Try to avoid race conditions by limiting delay to u32::MAX / 2
             let mut ticks = ticks as u32;
             ticks -= core::u32::MAX / 2;
-            while (DWT::get_cycle_count().wrapping_sub(start)) < core::u32::MAX / 2 {}
+            while (DWT::cycle_count().wrapping_sub(start)) < core::u32::MAX / 2 {}
             start -= core::u32::MAX / 2;
-            while (DWT::get_cycle_count().wrapping_sub(start)) < ticks {}
+            while (DWT::cycle_count().wrapping_sub(start)) < ticks {}
         } else {
             // Delay for ticks, then delay for rest * u32::MAX
             let mut rest = (ticks >> 32) as u32;
             let ticks = (ticks & core::u32::MAX as u64) as u32;
             loop {
-                while (DWT::get_cycle_count().wrapping_sub(start)) < ticks {}
+                while (DWT::cycle_count().wrapping_sub(start)) < ticks {}
                 if rest == 0 {
                     break;
                 }
                 rest -= 1;
-                while (DWT::get_cycle_count().wrapping_sub(start)) > ticks {}
+                while (DWT::cycle_count().wrapping_sub(start)) > ticks {}
             }
         }
     }
@@ -100,7 +100,7 @@ impl Delay {
 impl<T: Into<u64>> embedded_hal::blocking::delay::DelayUs<T> for Delay {
     fn delay_us(&mut self, us: T) {
         // Convert us to ticks
-        let start = DWT::get_cycle_count();
+        let start = DWT::cycle_count();
         let ticks = (us.into() * self.clock.0 as u64) / 1_000_000;
         Delay::delay_ticks(start, ticks);
     }
@@ -108,7 +108,7 @@ impl<T: Into<u64>> embedded_hal::blocking::delay::DelayUs<T> for Delay {
 impl<T: Into<u64>> embedded_hal::blocking::delay::DelayMs<T> for Delay {
     fn delay_ms(&mut self, ms: T) {
         // Convert ms to ticks
-        let start = DWT::get_cycle_count();
+        let start = DWT::cycle_count();
         let ticks = (ms.into() * self.clock.0 as u64) / 1_000;
         Delay::delay_ticks(start, ticks);
     }
@@ -146,13 +146,13 @@ impl<'l> StopWatch<'l> {
     /// Resets recorded laps to 0 and sets 0 offset
     pub fn reset(&mut self) {
         self.timei = 0;
-        self.times[0] = DWT::get_cycle_count();
+        self.times[0] = DWT::cycle_count();
     }
     /// Record a new lap.
     ///
     /// If lap count exceeds maximum, the last lap is updated
     pub fn lap(&mut self) -> &mut Self {
-        let c = DWT::get_cycle_count();
+        let c = DWT::cycle_count();
         if self.timei < self.times.len() {
             self.timei += 1;
         }
