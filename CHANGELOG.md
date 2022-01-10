@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- VSCode setting file
+
 ### Changed
 
 - Fix Width of TIM5 F410 [#409]
