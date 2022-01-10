@@ -35,9 +35,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `IoPin` for `Output<PushPull>> <-> Input<PullUp>> and Input<PullDown>>` [#389]
 - Add `internal_pull_down` to `Pin<Output<OpenDrain>>` and `Pin<Alternate<PushPull>>` for symmetry
   with `internal_pull_up` [#399]
+- Added `peripheral` for DMA read access to peripheral [#396]
+- Added ADC2+ADC3 implementations to DMA Transfer [#396]
+- Added `reference_voltage` to Adc [#396]
 
 [#372]: https://github.com/stm32-rs/stm32f4xx-hal/pull/372
 [#373]: https://github.com/stm32-rs/stm32f4xx-hal/pull/373
+[#396]: https://github.com/stm32-rs/stm32f4xx-hal/pull/396
 [#374]: https://github.com/stm32-rs/stm32f4xx-hal/pull/374
 [#380]: https://github.com/stm32-rs/stm32f4xx-hal/pull/380
 [#381]: https://github.com/stm32-rs/stm32f4xx-hal/pull/381

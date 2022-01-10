@@ -8,7 +8,7 @@
     Temperature in °C = (110-30) * (adc_sample - VtempCal30::get().read()) / (VtempCal110::get().read()-VtempCal30::get().read()) + 30
 */
 
-use crate::dma::traits::PeriAddress;
+use crate::dma::traits::{PeriAddress, SafePeripheralRead};
 use crate::rcc::{Enable, Reset};
 use crate::{gpio::*, pac, signature::VrefCal, signature::VDDA_CALIB};
 use core::fmt;
@@ -690,6 +690,8 @@ macro_rules! adc {
 
     ($($adc_type:ident => ($constructor_fn_name:ident, $common_type:ident, $en_bit: expr)),+ $(,)*) => {
         $(
+            impl SafePeripheralRead for Adc<pac::$adc_type> { }
+
             impl Adc<pac::$adc_type> {
 
                 adc!(additionals: $adc_type => ($common_type));
@@ -958,6 +960,20 @@ macro_rules! adc {
                 /// [AN2834-How to get the best ADC accuracy in STM32 microcontrollers](https://www.st.com/resource/en/application_note/cd00211314-how-to-get-the-best-adc-accuracy-in-stm32-microcontrollers-stmicroelectronics.pdf) in section 3.1.2.
                 pub fn sample_to_millivolts(&self, sample: u16) -> u16 {
                     ((u32::from(sample) * self.calibrated_vdda) / self.max_sample) as u16
+                }
+
+                /// Make a converter for samples to millivolts
+                pub fn make_sample_to_millivolts(&self) -> impl Fn(u16)->u16 {
+                    let calibrated_vdda= self.calibrated_vdda;
+                    let max_sample=self.max_sample;
+                    move |sample| {
+                     ((u32::from(sample) * calibrated_vdda) / max_sample) as u16
+                    }
+                }
+
+                /// Returns the VDDA in millivolts calculated from the factory calibration and vrefint. Can be used to get calibration data from ADC1 and use it to configure ADCs that don't support calibration.
+                pub fn reference_voltage(&self) -> u32 {
+                    self.calibrated_vdda
                 }
 
                 /// Block until the conversion is completed
