@@ -490,7 +490,10 @@ impl SingleOutputPll {
         // through all possible "N" values would result in more iterations.
         let (n, outdiv, output, error) = (min_div..=max_div)
             .filter_map(|outdiv| {
-                let target_vco_out = target * outdiv;
+                let target_vco_out = match target.checked_mul(outdiv) {
+                    Some(x) => x,
+                    None => return None,
+                };
                 let n = (target_vco_out + (vco_in >> 1)) / vco_in;
                 let vco_out = vco_in * n;
                 if !(100_000_000..=432_000_000).contains(&vco_out) {
