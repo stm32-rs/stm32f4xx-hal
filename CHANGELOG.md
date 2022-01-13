@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - VSCode setting file
+- `fugit-timer::Timer` impl for `Counter`
 
 ### Changed
 

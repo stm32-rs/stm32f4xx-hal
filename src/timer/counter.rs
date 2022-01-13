@@ -272,3 +272,46 @@ where
         self.cancel()
     }
 }
+
+impl fugit_timer::Timer<1_000_000> for SysCounter {
+    type Error = Error;
+
+    fn now(&mut self) -> TimerInstantU32<1_000_000> {
+        Self::now(self)
+    }
+
+    fn start(&mut self, duration: MicrosDurationU32) -> Result<(), Self::Error> {
+        self.start(duration)
+    }
+
+    fn wait(&mut self) -> nb::Result<(), Self::Error> {
+        self.wait()
+    }
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        self.cancel()
+    }
+}
+
+impl<TIM, const FREQ: u32> fugit_timer::Timer<FREQ> for Counter<TIM, FREQ>
+where
+    TIM: General,
+{
+    type Error = Error;
+
+    fn now(&mut self) -> TimerInstantU32<FREQ> {
+        Self::now(self)
+    }
+
+    fn start(&mut self, duration: TimerDurationU32<FREQ>) -> Result<(), Self::Error> {
+        self.start(duration)
+    }
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        self.cancel()
+    }
+
+    fn wait(&mut self) -> nb::Result<(), Self::Error> {
+        self.wait()
+    }
+}
