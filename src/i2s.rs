@@ -48,10 +48,10 @@ pub trait Pins<SPI> {
 impl<SPI, WS, CK, MCLK, SD, const WSA: u8, const CKA: u8, const MCLKA: u8, const SDA: u8> Pins<SPI>
     for (WS, CK, MCLK, SD)
 where
-    WS: PinA<Ws, SPI, A = Const<WSA>> + SetAlternate<PushPull, WSA>,
-    CK: PinA<Ck, SPI, A = Const<CKA>> + SetAlternate<PushPull, CKA>,
-    MCLK: PinA<Mck, SPI, A = Const<MCLKA>> + SetAlternate<PushPull, MCLKA>,
-    SD: PinA<Sd, SPI, A = Const<SDA>> + SetAlternate<PushPull, SDA>,
+    WS: PinA<Ws, SPI, A = Const<WSA>> + SetAlternate<WSA, PushPull>,
+    CK: PinA<Ck, SPI, A = Const<CKA>> + SetAlternate<CKA, PushPull>,
+    MCLK: PinA<Mck, SPI, A = Const<MCLKA>> + SetAlternate<MCLKA, PushPull>,
+    SD: PinA<Sd, SPI, A = Const<SDA>> + SetAlternate<SDA, PushPull>,
 {
     fn set_alt_mode(&mut self) {
         self.0.set_alt_mode();

@@ -27,8 +27,8 @@ pub trait Pins<CAN> {
 
 impl<CAN, TX, RX, const TXA: u8, const RXA: u8> Pins<CAN> for (TX, RX)
 where
-    TX: PinA<Tx, CAN, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
-    RX: PinA<Rx, CAN, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+    TX: PinA<Tx, CAN, A = Const<TXA>> + SetAlternate<TXA, PushPull>,
+    RX: PinA<Rx, CAN, A = Const<RXA>> + SetAlternate<RXA, PushPull>,
 {
     fn set_alt_mode(&mut self) {
         self.0.set_alt_mode();

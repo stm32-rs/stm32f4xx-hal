@@ -99,7 +99,7 @@ pub trait PinExt {
 }
 
 /// Some alternate mode (type state)
-pub struct Alternate<Otype, const A: u8>(PhantomData<Otype>);
+pub struct Alternate<const A: u8, Otype>(PhantomData<Otype>);
 
 /// Input mode (type state)
 pub struct Input<MODE> {
@@ -129,7 +129,7 @@ pub struct PushPull;
 /// Analog mode (type state)
 pub struct Analog;
 
-pub type Debugger = Alternate<PushPull, 0>;
+pub type Debugger = Alternate<0, PushPull>;
 
 /// GPIO Pin speed selection
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -262,16 +262,16 @@ where
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 /// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
 /// - `N` is pin number: from `0` to `15`.
-pub struct Pin<MODE, const P: char, const N: u8> {
+pub struct Pin<const P: char, const N: u8, MODE> {
     _mode: PhantomData<MODE>,
 }
-impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
+impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     const fn new() -> Self {
         Self { _mode: PhantomData }
     }
 }
 
-impl<MODE, const P: char, const N: u8> fmt::Debug for Pin<MODE, P, N> {
+impl<const P: char, const N: u8, MODE> fmt::Debug for Pin<P, N, MODE> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_fmt(format_args!(
             "P{}{}<{}>",
@@ -283,13 +283,13 @@ impl<MODE, const P: char, const N: u8> fmt::Debug for Pin<MODE, P, N> {
 }
 
 #[cfg(feature = "defmt")]
-impl<MODE, const P: char, const N: u8> defmt::Format for Pin<MODE, P, N> {
+impl<const P: char, const N: u8, MODE> defmt::Format for Pin<P, N, MODE> {
     fn format(&self, f: defmt::Formatter) {
         defmt::write!(f, "P{}{}<{}>", P, N, crate::stripped_type_name::<MODE>());
     }
 }
 
-impl<MODE, const P: char, const N: u8> PinExt for Pin<MODE, P, N> {
+impl<const P: char, const N: u8, MODE> PinExt for Pin<P, N, MODE> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -302,7 +302,7 @@ impl<MODE, const P: char, const N: u8> PinExt for Pin<MODE, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
+impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 2 * { N };
@@ -317,7 +317,7 @@ impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
     }
 }
 
-impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
+impl<const P: char, const N: u8> Pin<P, N, Output<OpenDrain>> {
     /// Enables / disables the internal pull up
     pub fn internal_pull_up(self, on: bool) -> Self {
         let offset = 2 * { N };
@@ -345,7 +345,7 @@ impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> Pin<Alternate<PushPull, A>, P, N> {
+impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 2 * { N };
@@ -386,9 +386,9 @@ impl<const P: char, const N: u8, const A: u8> Pin<Alternate<PushPull, A>, P, N> 
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> Pin<Alternate<PushPull, A>, P, N> {
+impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Turns pin alternate configuration pin into open drain
-    pub fn set_open_drain(self) -> Pin<Alternate<OpenDrain, A>, P, N> {
+    pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
         let offset = { N };
         unsafe {
             (*Gpio::<P>::ptr())
@@ -400,12 +400,12 @@ impl<const P: char, const N: u8, const A: u8> Pin<Alternate<PushPull, A>, P, N> 
     }
 }
 
-impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
+impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     /// Erases the pin number from the type
     ///
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
-    pub fn erase_number(self) -> PEPin<MODE, P> {
+    pub fn erase_number(self) -> PEPin<P, MODE> {
         PEPin::new(N)
     }
 
@@ -418,7 +418,7 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
+impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     /// Set the output of the pin regardless of its mode.
     /// Primarily used to set the output value of the pin
     /// before changing its mode to an output to avoid
@@ -452,7 +452,7 @@ impl<MODE, const P: char, const N: u8> Pin<MODE, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
+impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     #[inline(always)]
     pub fn set_high(&mut self) {
         self._set_high()
@@ -500,7 +500,7 @@ impl<MODE, const P: char, const N: u8> Pin<Output<MODE>, P, N> {
     }
 }
 
-impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
+impl<const P: char, const N: u8> Pin<P, N, Output<OpenDrain>> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -512,7 +512,7 @@ impl<const P: char, const N: u8> Pin<Output<OpenDrain>, P, N> {
     }
 }
 
-impl<MODE, const P: char, const N: u8> Pin<Input<MODE>, P, N> {
+impl<const P: char, const N: u8, MODE> Pin<P, N, Input<MODE>> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -564,10 +564,10 @@ macro_rules! gpio {
                 }
             }
 
-            pub type $PXn<MODE> = super::PEPin<MODE, $port_id>;
+            pub type $PXn<MODE> = super::PEPin<$port_id, MODE>;
 
             $(
-                pub type $PXi<MODE> = super::Pin<MODE, $port_id, $i>;
+                pub type $PXi<MODE> = super::Pin<$port_id, $i, MODE>;
             )+
 
         }

@@ -214,10 +214,10 @@ type I2sDmaTransfer = Transfer<
         I2s<
             SPI3,
             (
-                PA4<Alternate<PushPull, 6>>,
-                PC10<Alternate<PushPull, 6>>,
-                PC7<Alternate<PushPull, 6>>,
-                PC12<Alternate<PushPull, 6>>,
+                PA4<Alternate<6, PushPull>>,
+                PC10<Alternate<6, PushPull>>,
+                PC7<Alternate<6, PushPull>>,
+                PC12<Alternate<6, PushPull>>,
             ),
         >,
         TransmitMode<Data16Frame16>,

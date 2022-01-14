@@ -11,7 +11,7 @@ pub const C4: u8 = 3;
 macro_rules! channel_impl {
     ( $( $TIM:ident, $C:ident, $PINX:ident, $AF:literal; )+ ) => {
         $(
-            impl<Otype> CPin<crate::pac::$TIM, $C> for gpio::$PINX<Alternate<Otype, $AF>> { }
+            impl<Otype> CPin<crate::pac::$TIM, $C> for gpio::$PINX<Alternate<$AF, Otype>> { }
         )+
     };
 }

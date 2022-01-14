@@ -72,9 +72,9 @@ pub trait Pins<SPI> {
 impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8> Pins<SPI>
     for (SCK, MISO, MOSI)
 where
-    SCK: PinA<Sck, SPI, A = Const<SCKA>> + SetAlternate<PushPull, SCKA>,
-    MISO: PinA<Miso, SPI, A = Const<MISOA>> + SetAlternate<PushPull, MISOA>,
-    MOSI: PinA<Mosi, SPI, A = Const<MOSIA>> + SetAlternate<PushPull, MOSIA>,
+    SCK: PinA<Sck, SPI, A = Const<SCKA>> + SetAlternate<SCKA, PushPull>,
+    MISO: PinA<Miso, SPI, A = Const<MISOA>> + SetAlternate<MISOA, PushPull>,
+    MOSI: PinA<Mosi, SPI, A = Const<MOSIA>> + SetAlternate<MOSIA, PushPull>,
 {
     fn set_alt_mode(&mut self) {
         self.0.set_alt_mode();

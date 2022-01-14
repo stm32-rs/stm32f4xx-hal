@@ -184,8 +184,8 @@ pub trait Pins<USART> {
 }
 impl<USART, TX, RX, const TXA: u8, const RXA: u8> Pins<USART> for (TX, RX)
 where
-    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
-    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<TXA, PushPull>,
+    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<RXA, PushPull>,
 {
     fn set_alt_mode(&mut self) {
         self.0.set_alt_mode();

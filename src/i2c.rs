@@ -81,8 +81,8 @@ pub trait Pins<I2C> {
 
 impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> Pins<I2C> for (SCL, SDA)
 where
-    SCL: PinA<Scl, I2C, A = Const<SCLA>> + SetAlternate<OpenDrain, SCLA>,
-    SDA: PinA<Sda, I2C, A = Const<SDAA>> + SetAlternate<OpenDrain, SDAA>,
+    SCL: PinA<Scl, I2C, A = Const<SCLA>> + SetAlternate<SCLA, OpenDrain>,
+    SDA: PinA<Sda, I2C, A = Const<SDAA>> + SetAlternate<SDAA, OpenDrain>,
 {
     fn set_alt_mode(&mut self) {
         self.0.set_alt_mode();
