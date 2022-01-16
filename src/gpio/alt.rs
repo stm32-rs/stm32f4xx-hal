@@ -108,6 +108,7 @@ mod can {
         feature = "stm32f429",
         feature = "stm32f437",
         feature = "stm32f439",
+        feature = "stm32f446",
         feature = "stm32f469",
         feature = "stm32f479"
     ))]
@@ -448,7 +449,7 @@ pin! {
     <spi::Mosi, SPI2> for [gpioc::PC1<7>],
     <spi::Nss,  SPI2> for [gpiob::PB4<7>, gpiod::PD1<7>],
 
-    <spi::Mosi, SPI3> for [gpiob::PB0<7>, gpiob::PB2<7>, gpiod::PD0<6>],
+    <spi::Mosi, SPI3> for [gpiob::PB0<7>, gpiob::PB2<7>, gpioc::PC1<5>, gpiod::PD0<6>],
 
     <spi::Sck,  SPI4> for [gpiog::PG11<6>],
     <spi::Miso, SPI4> for [gpiog::PG12<6>, gpiod::PD0<5>],
