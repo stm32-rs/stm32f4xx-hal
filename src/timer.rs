@@ -13,13 +13,6 @@ use crate::pac::RCC;
 use crate::rcc::{self, Clocks};
 use crate::time::Hertz;
 
-#[cfg(feature = "rtic")]
-#[cfg(not(feature = "stm32f410"))]
-pub mod monotonic;
-
-mod counter;
-pub use counter::*;
-
 /// Timer wrapper
 pub struct Timer<TIM> {
     pub(crate) tim: TIM,
@@ -193,6 +186,7 @@ impl Instant {
 mod sealed {
     pub trait General {
         type Width: Into<u32>;
+        fn max_auto_reload() -> u32;
         fn enable_counter(&mut self);
         fn disable_counter(&mut self);
         fn is_counter_enabled(&self) -> bool;
@@ -205,6 +199,8 @@ mod sealed {
         fn get_update_interrupt_flag(&self) -> bool;
         fn read_count(&self) -> Self::Width;
         fn read_auto_reload(&self) -> Self::Width;
+        fn start_one_pulse(&mut self);
+        fn cr1_reset(&mut self);
     }
 }
 pub(crate) use sealed::General;
@@ -244,6 +240,10 @@ macro_rules! hal {
                 type Width = $bits;
 
                 #[inline(always)]
+                fn max_auto_reload() -> u32 {
+                    <$bits>::MAX as u32
+                }
+                #[inline(always)]
                 fn enable_counter(&mut self) {
                     self.cr1.modify(|_, w| w.cen().set_bit());
                 }
@@ -265,7 +265,9 @@ macro_rules! hal {
                 }
                 #[inline(always)]
                 fn set_auto_reload(&mut self, arr: u32) -> Result<(), Error> {
-                    if arr > 0 && arr <= <$bits>::MAX as u32 {
+                    // Note: Make it impossible to set the ARR value to 0, since this
+                    // would cause an infinite loop.
+                    if arr > 0 && arr <= Self::max_auto_reload() {
                         Ok(self.arr.write(|w| unsafe { w.bits(arr) }))
                     } else {
                         Err(Error::WrongAutoReload)
@@ -296,6 +298,14 @@ macro_rules! hal {
                 #[inline(always)]
                 fn read_auto_reload(&self) -> Self::Width {
                     self.arr.read().bits() as Self::Width
+                }
+                #[inline(always)]
+                fn start_one_pulse(&mut self) {
+                    self.cr1.write(|w| unsafe { w.bits(1 << 3) }.cen().set_bit());
+                }
+                #[inline(always)]
+                fn cr1_reset(&mut self) {
+                    self.cr1.reset();
                 }
             }
         )+

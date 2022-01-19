@@ -11,10 +11,10 @@ use panic_halt as _;
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
+    fugit::{CounterUs, Event, Timer},
     gpio::{gpioa, Output, PushPull},
     pac::{interrupt, Interrupt, Peripherals, TIM2},
     prelude::*,
-    timer::{CounterUs, Event, Timer},
 };
 
 use core::cell::RefCell;

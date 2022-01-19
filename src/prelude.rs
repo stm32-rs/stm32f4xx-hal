@@ -61,6 +61,12 @@ pub use fugit::ExtU32 as _fugit_ExtU32;
 
 #[cfg(all(feature = "device-selected", feature = "dac"))]
 pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;
+#[cfg(feature = "rtic")]
+#[cfg(not(feature = "stm32f410"))]
+pub use crate::fugit::MonoTimerExt as _stm32f4xx_hal_fugit_MonoTimerExt;
+pub use crate::fugit::PwmExt as _stm32f4xx_hal_fugit_PwmExt;
+pub use crate::fugit::SysCounterExt as _stm32f4xx_hal_fugit_SysCounterExt;
+pub use crate::fugit::TimerExt as _stm32f4xx_hal_fugit_TimerExt;
 pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
 pub use crate::i2c::Pins as _stm32f4xx_hal_i2c_Pins;

@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Timer impls with time based on `fugit` moved to `fugit` module, added `Pwm` and `fugit-timer` impls [#423]
+
 ### Fixed
 
-- Incorrect values of autoreload in `CountDown::start`, `Pwm::new`, `Delay` and prescaler in `Delay` 
+- Incorrect values of autoreload in `CountDown::start`, `Pwm::new`, `Delay` and prescaler in `Delay` [#422]
 
 ### Added
 
@@ -17,6 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add CAN1 PB8/PB9 and SPI3 MOSI PC1 pin mappings for F446 [#421]
 
 [#421]: https://github.com/stm32-rs/stm32f4xx-hal/pull/421
+[#422]: https://github.com/stm32-rs/stm32f4xx-hal/pull/422
+[#423]: https://github.com/stm32-rs/stm32f4xx-hal/pull/423
 
 ### Changed
 
