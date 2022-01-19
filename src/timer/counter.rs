@@ -146,6 +146,7 @@ where
     TIM: General,
 {
     fn new(mut tim: TIM, clk: Hertz) -> Self {
+        assert!(clk.0 % FREQ == 0);
         let psc = clk.0 / FREQ - 1;
         tim.set_prescaler(u16(psc).unwrap());
         Self { tim }

@@ -7,7 +7,6 @@ use crate::{
     rcc::Clocks,
     timer::{General, Timer},
 };
-use core::cmp::max;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 
@@ -69,12 +68,12 @@ macro_rules! hal {
             impl Wait for Delay<$TIM> {
                 fn wait(&mut self, prescaler: u16, auto_reload_register: u32) {
                     // Write Prescaler (PSC)
-                    self.tim.set_prescaler(prescaler);
+                    self.tim.set_prescaler(prescaler - 1);
 
                     // Write Auto-Reload Register (ARR)
                     // Note: Make it impossible to set the ARR value to 0, since this
                     // would cause an infinite loop.
-                    self.tim.set_auto_reload(max(1, auto_reload_register)).unwrap();
+                    self.tim.set_auto_reload(auto_reload_register - 1).unwrap();
 
                     // Trigger update event (UEV) in the event generation register (EGR)
                     // in order to immediately apply the config

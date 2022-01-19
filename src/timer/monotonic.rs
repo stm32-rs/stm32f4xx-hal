@@ -22,6 +22,7 @@ macro_rules! mono {
 
                 fn _new(timer: Timer<$TIM>) -> Self {
                     let Timer { tim, clk } = timer;
+                    assert!(clk.0 % FREQ == 0);
                     let prescaler = clk.0 / FREQ - 1;
                     tim.psc.write(|w| w.psc().bits(u16(prescaler).unwrap()));
                     tim.arr.write(|w| unsafe { w.bits(u32::MAX) });

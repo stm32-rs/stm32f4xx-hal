@@ -1,9 +1,8 @@
 use crate::{
     bb,
     time::Hertz,
-    timer::{General, Timer},
+    timer::{compute_arr_presc, General, Timer},
 };
-use cast::u16;
 use core::{marker::PhantomData, mem::MaybeUninit};
 
 pub trait Pins<TIM, P> {
@@ -157,10 +156,8 @@ macro_rules! pwm_all_channels {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
-                    let psc = (ticks - 1) / (1 << 16);
-                    self.tim.set_prescaler(u16(psc).unwrap());
-                    let arr = ticks / (psc + 1);
+                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
+                    self.tim.set_prescaler(psc);
                     self.tim.set_auto_reload(arr).unwrap();
 
                     // Trigger update event to load the registers
@@ -214,10 +211,8 @@ macro_rules! pwm_2_channels {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
-                    let psc = (ticks - 1) / (1 << 16);
-                    self.tim.set_prescaler(u16(psc).unwrap());
-                    let arr = ticks / (psc + 1);
+                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
+                    self.tim.set_prescaler(psc);
                     self.tim.set_auto_reload(arr).unwrap();
 
                     // Trigger update event to load the registers
@@ -260,10 +255,8 @@ macro_rules! pwm_1_channel {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
-                    let psc = (ticks - 1) / (1 << 16);
-                    self.tim.set_prescaler(u16(psc).unwrap());
-                    let arr = ticks / (psc + 1);
+                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
+                    self.tim.set_prescaler(psc);
                     self.tim.set_auto_reload(arr).unwrap();
 
                     // Trigger update event to load the registers
