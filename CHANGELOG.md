@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - VSCode setting file
+- Add CAN1 PB8/PB9 and SPI3 MOSI PC1 pin mappings for F446 [#421]
+
+[#421]: https://github.com/stm32-rs/stm32f4xx-hal/pull/421
 
 ### Changed
 
