@@ -3,7 +3,6 @@
 //! Pins can be used for PWM output in both push-pull mode (`Alternate`) and open-drain mode
 //! (`AlternateOD`).
 
-use cast::u16;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::{DCB, DWT, SYST};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
@@ -352,10 +351,14 @@ where
 }
 
 #[inline(always)]
-pub(crate) fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
+pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
     let ticks = clock / freq;
     let psc_u32 = (ticks - 1) / (1 << 16);
-    let psc = u16(psc_u32).unwrap();
+    let psc = if psc_u32 > u16::MAX as u32 {
+        panic!();
+    } else {
+        psc_u32 as u16
+    };
     let arr = ticks / (psc_u32 + 1) - 1;
     (psc, arr)
 }
