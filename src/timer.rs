@@ -3,7 +3,6 @@
 //! Pins can be used for PWM output in both push-pull mode (`Alternate`) and open-drain mode
 //! (`AlternateOD`).
 
-use cast::u16;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::{DCB, DWT, SYST};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
@@ -351,6 +350,19 @@ where
     }
 }
 
+#[inline(always)]
+pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
+    let ticks = clock / freq;
+    let psc_u32 = (ticks - 1) / (1 << 16);
+    let psc = if psc_u32 > u16::MAX as u32 {
+        panic!();
+    } else {
+        psc_u32 as u16
+    };
+    let arr = ticks / (psc_u32 + 1) - 1;
+    (psc, arr)
+}
+
 impl<TIM> CountDown for CountDownTimer<TIM>
 where
     TIM: General,
@@ -366,12 +378,8 @@ where
         // reset counter
         self.tim.reset_counter();
 
-        let frequency = timeout.into().0;
-        let ticks = self.clk.0 / frequency;
-        let psc = (ticks - 1) / (1 << 16);
-        self.tim.set_prescaler(u16(psc).unwrap());
-
-        let arr = ticks / (psc + 1);
+        let (psc, arr) = compute_arr_presc(timeout.into().0, self.clk.0);
+        self.tim.set_prescaler(psc);
         self.tim.set_auto_reload(arr).unwrap();
 
         // Trigger update event to load the registers

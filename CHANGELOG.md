@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Incorrect values of autoreload in `CountDown::start`, `Pwm::new`, `Delay` and prescaler in `Delay` 
+
 ### Added
 
 - VSCode setting file

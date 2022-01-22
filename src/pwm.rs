@@ -1,9 +1,8 @@
 use crate::{
     bb,
     time::Hertz,
-    timer::{General, Timer},
+    timer::{compute_arr_presc, General, Timer},
 };
-use cast::u16;
 use core::{marker::PhantomData, mem::MaybeUninit};
 
 pub trait Pins<TIM, P> {
@@ -73,33 +72,34 @@ macro_rules! brk {
 macro_rules! pwm_pin {
     ($TIMX:ty, $C:ty, $ccr: ident, $bit:literal) => {
         impl PwmChannel<$TIMX, $C> {
-            //NOTE(unsafe) atomic write with no side effects
             #[inline]
             pub fn disable(&mut self) {
+                //NOTE(unsafe) atomic write with no side effects
                 unsafe { bb::clear(&(*<$TIMX>::ptr()).ccer, $bit) }
             }
 
-            //NOTE(unsafe) atomic write with no side effects
             #[inline]
             pub fn enable(&mut self) {
+                //NOTE(unsafe) atomic write with no side effects
                 unsafe { bb::set(&(*<$TIMX>::ptr()).ccer, $bit) }
             }
 
-            //NOTE(unsafe) atomic read with no side effects
             #[inline]
             pub fn get_duty(&self) -> u16 {
+                //NOTE(unsafe) atomic read with no side effects
                 unsafe { (*<$TIMX>::ptr()).$ccr.read().bits() as u16 }
             }
 
-            //NOTE(unsafe) atomic read with no side effects
+            /// If `0` returned means max_duty is 2^16
             #[inline]
             pub fn get_max_duty(&self) -> u16 {
-                unsafe { (*<$TIMX>::ptr()).arr.read().bits() as u16 }
+                //NOTE(unsafe) atomic read with no side effects
+                unsafe { ((*<$TIMX>::ptr()).arr.read().bits() as u16).wrapping_add(1) }
             }
 
-            //NOTE(unsafe) atomic write with no side effects
             #[inline]
             pub fn set_duty(&mut self, duty: u16) {
+                //NOTE(unsafe) atomic write with no side effects
                 unsafe { (*<$TIMX>::ptr()).$ccr.write(|w| w.bits(duty.into())) }
             }
         }
@@ -157,10 +157,8 @@ macro_rules! pwm_all_channels {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
-                    let psc = (ticks - 1) / (1 << 16);
-                    self.tim.set_prescaler(u16(psc).unwrap());
-                    let arr = ticks / (psc + 1);
+                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
+                    self.tim.set_prescaler(psc);
                     self.tim.set_auto_reload(arr).unwrap();
 
                     // Trigger update event to load the registers
@@ -214,10 +212,8 @@ macro_rules! pwm_2_channels {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
-                    let psc = (ticks - 1) / (1 << 16);
-                    self.tim.set_prescaler(u16(psc).unwrap());
-                    let arr = ticks / (psc + 1);
+                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
+                    self.tim.set_prescaler(psc);
                     self.tim.set_auto_reload(arr).unwrap();
 
                     // Trigger update event to load the registers
@@ -260,10 +256,8 @@ macro_rules! pwm_1_channel {
                     // might as well enable for the auto-reload too
                     self.tim.cr1.modify(|_, w| w.arpe().set_bit());
 
-                    let ticks = self.clk.0 / freq.into().0;
-                    let psc = (ticks - 1) / (1 << 16);
-                    self.tim.set_prescaler(u16(psc).unwrap());
-                    let arr = ticks / (psc + 1);
+                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
+                    self.tim.set_prescaler(psc);
                     self.tim.set_auto_reload(arr).unwrap();
 
                     // Trigger update event to load the registers
