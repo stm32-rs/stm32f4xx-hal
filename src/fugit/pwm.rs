@@ -1,16 +1,10 @@
 use super::{General, Timer};
-use crate::bb;
 use crate::rcc::Clocks;
-use core::{marker::PhantomData, mem::MaybeUninit};
+use core::mem::MaybeUninit;
 use fugit::TimerDurationU32;
 
-pub use crate::pwm::Pins;
+pub use crate::pwm::{Pins, PwmChannel};
 pub use crate::timer::{CPin, C1, C2, C3, C4};
-
-pub struct PwmChannel<TIM, CHANNEL> {
-    _channel: PhantomData<CHANNEL>,
-    _tim: PhantomData<TIM>,
-}
 
 pub trait PwmExt<P, PINS>
 where
@@ -42,63 +36,6 @@ macro_rules! brk {
         $tim.bdtr.modify(|_, w| w.aoe().set_bit());
     };
     ($_other:ident, $_tim:ident) => {};
-}
-
-macro_rules! pwm_pin {
-    ($TIMX:ty, $C:ty, $ccr: ident, $bit:literal) => {
-        impl PwmChannel<$TIMX, $C> {
-            #[inline]
-            pub fn disable(&mut self) {
-                //NOTE(unsafe) atomic write with no side effects
-                unsafe { bb::clear(&(*<$TIMX>::ptr()).ccer, $bit) }
-            }
-
-            #[inline]
-            pub fn enable(&mut self) {
-                //NOTE(unsafe) atomic write with no side effects
-                unsafe { bb::set(&(*<$TIMX>::ptr()).ccer, $bit) }
-            }
-
-            #[inline]
-            pub fn get_duty(&self) -> u16 {
-                //NOTE(unsafe) atomic read with no side effects
-                unsafe { (*<$TIMX>::ptr()).$ccr.read().bits() as u16 }
-            }
-
-            /// If `0` returned means max_duty is 2^16
-            #[inline]
-            pub fn get_max_duty(&self) -> u16 {
-                //NOTE(unsafe) atomic read with no side effects
-                unsafe { ((*<$TIMX>::ptr()).arr.read().bits() as u16).wrapping_add(1) }
-            }
-
-            #[inline]
-            pub fn set_duty(&mut self, duty: u16) {
-                //NOTE(unsafe) atomic write with no side effects
-                unsafe { (*<$TIMX>::ptr()).$ccr.write(|w| w.bits(duty.into())) }
-            }
-        }
-
-        impl embedded_hal::PwmPin for PwmChannel<$TIMX, $C> {
-            type Duty = u16;
-
-            fn disable(&mut self) {
-                self.disable()
-            }
-            fn enable(&mut self) {
-                self.enable()
-            }
-            fn get_duty(&self) -> Self::Duty {
-                self.get_duty()
-            }
-            fn get_max_duty(&self) -> Self::Duty {
-                self.get_max_duty()
-            }
-            fn set_duty(&mut self, duty: Self::Duty) {
-                self.set_duty(duty)
-            }
-        }
-    };
 }
 
 macro_rules! pwm_all_channels {
@@ -161,11 +98,6 @@ macro_rules! pwm_all_channels {
                     unsafe { MaybeUninit::uninit().assume_init() }
                 }
             }
-
-            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
-            pwm_pin!(crate::pac::$TIMX, C2, ccr2, 4);
-            pwm_pin!(crate::pac::$TIMX, C3, ccr3, 8);
-            pwm_pin!(crate::pac::$TIMX, C4, ccr4, 12);
         )+
     };
 }
@@ -216,9 +148,6 @@ macro_rules! pwm_2_channels {
                     unsafe { MaybeUninit::uninit().assume_init() }
                 }
             }
-
-            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
-            pwm_pin!(crate::pac::$TIMX, C2, ccr2, 4);
         )+
     };
 }
@@ -264,8 +193,6 @@ macro_rules! pwm_1_channel {
                     unsafe { MaybeUninit::uninit().assume_init() }
                 }
             }
-
-            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
         )+
     };
 }
