@@ -6,10 +6,10 @@ use panic_halt as _;
 #[rtic::app(device = stm32f4xx_hal::pac, dispatchers = [USART1])]
 mod app {
     use stm32f4xx_hal::{
+        fugit::MonoTimerUs,
         gpio::{gpioc::PC13, Output, PushPull},
         pac,
         prelude::*,
-        timer::{monotonic::MonoTimer, Timer},
     };
 
     #[shared]
@@ -21,7 +21,7 @@ mod app {
     }
 
     #[monotonic(binds = TIM2, default = true)]
-    type MicrosecMono = MonoTimer<pac::TIM2, 1_000_000>;
+    type MicrosecMono = MonoTimerUs<pac::TIM2>;
 
     #[init]
     fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
@@ -31,7 +31,7 @@ mod app {
         let gpioc = ctx.device.GPIOC.split();
         let led = gpioc.pc13.into_push_pull_output();
 
-        let mono = Timer::new(ctx.device.TIM2, &clocks).monotonic();
+        let mono = ctx.device.TIM2.monotonic_us(&clocks);
         tick::spawn().ok();
         (Shared {}, Local { led }, init::Monotonics(mono))
     }

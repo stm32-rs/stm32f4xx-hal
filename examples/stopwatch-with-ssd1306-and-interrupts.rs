@@ -23,12 +23,12 @@ use stm32f4xx_hal as hal;
 
 use crate::hal::{
     delay::Delay,
+    fugit::{CounterUs, Event, Timer},
     gpio::{gpioc::PC13, Edge, Input, PullUp},
     i2c::I2c,
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
-    timer::{CounterUs, Event, Timer},
 };
 use core::cell::{Cell, RefCell};
 use core::fmt::Write;

@@ -11,12 +11,12 @@ use panic_semihosting as _;
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
+    fugit::{CounterUs, Event, Timer},
     gpio::{gpioa::PA0, Edge, Input, PullDown},
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
     spi::Spi,
-    timer::{CounterUs, Event, Timer},
 };
 
 use core::cell::{Cell, RefCell};
