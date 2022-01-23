@@ -13,13 +13,12 @@ use ws2812_spi as ws2812;
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().expect("cannot take peripherals");
-    let cp = cortex_m::Peripherals::take().expect("cannot take core peripherals");
 
     // Configure APB bus clock to 56MHz, cause ws2812b requires 3.5Mbps SPI
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.sysclk(56.mhz()).freeze();
+    let clocks = rcc.cfgr.use_hse(25.mhz()).sysclk(56.mhz()).freeze();
 
-    let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
+    let mut delay = dp.TIM1.delay_us(&clocks);
     let gpioa = dp.GPIOA.split();
 
     let spi = Spi::new(
@@ -35,13 +34,16 @@ fn main() -> ! {
     const NUM_LEDS: usize = 8;
     let mut data = [RGB8::default(); NUM_LEDS];
 
+    // Wait before start write for syncronization
+    delay.delay(200.micros()).unwrap();
+
     loop {
         for j in 0..(256 * 5) {
-            for i in 0..NUM_LEDS {
-                data[i] = wheel((((i * 256) as u16 / NUM_LEDS as u16 + j as u16) & 255) as u8);
+            for (i, b) in data.iter_mut().enumerate() {
+                *b = wheel((((i * 256) as u16 / NUM_LEDS as u16 + j as u16) & 255) as u8);
             }
             ws.write(brightness(data.iter().cloned(), 32)).unwrap();
-            delay.delay_ms(5u8);
+            delay.delay(10.millis()).unwrap();
         }
     }
 }
