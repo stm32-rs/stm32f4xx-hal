@@ -1,4 +1,4 @@
-use super::{Error, Instance, Timer};
+use super::{Error, Event, Instance, Timer};
 
 use core::ops::{Deref, DerefMut};
 use fugit::{TimerDurationU32, TimerInstantU32};
@@ -57,11 +57,11 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
     }
 
     pub fn wait(&mut self) -> nb::Result<(), Error> {
-        if self.tim.get_update_interrupt_flag() {
-            Err(nb::Error::WouldBlock)
-        } else {
-            self.tim.clear_update_interrupt_flag();
+        if self.tim.get_interrupt_flag().contains(Event::Update) {
+            self.tim.clear_interrupt_flag(Event::Update);
             Ok(())
+        } else {
+            Err(nb::Error::WouldBlock)
         }
     }
 

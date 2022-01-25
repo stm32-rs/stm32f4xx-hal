@@ -1,9 +1,8 @@
 use crate::{
-    bb,
-    time::Hertz,
-    timer::{compute_arr_presc, General, Timer},
+    time::{Hertz, U32Ext},
+    timer::{compute_arr_presc, Channel, Instance, Ocm, Timer, WithPwm},
 };
-use core::{marker::PhantomData, mem::MaybeUninit};
+use core::marker::PhantomData;
 
 pub trait Pins<TIM, P> {
     const C1: bool = false;
@@ -11,6 +10,20 @@ pub trait Pins<TIM, P> {
     const C3: bool = false;
     const C4: bool = false;
     type Channels;
+
+    fn check_used(c: Channel) -> Channel {
+        if (c == Channel::C1 && Self::C1)
+            || (c == Channel::C2 && Self::C2)
+            || (c == Channel::C3 && Self::C3)
+            || (c == Channel::C4 && Self::C4)
+        {
+            c
+        } else {
+            panic!("Unused channel")
+        }
+    }
+
+    fn split() -> Self::Channels;
 }
 pub use crate::timer::{CPin, C1, C2, C3, C4};
 
@@ -29,6 +42,9 @@ macro_rules! pins_impl {
             {
                 $(const $ENCHX: bool = true;)+
                 type Channels = ($(PwmChannel<TIM, $ENCHX>),+);
+                fn split() -> Self::Channels {
+                    ($(PwmChannel::<TIM, $ENCHX> { _channel: PhantomData, _tim: PhantomData }),+)
+                }
             }
         )+
     };
@@ -57,16 +73,6 @@ impl<C, TIM, P1: CPin<C, TIM>, P2: CPin<C, TIM>, P3: CPin<C, TIM>> CPin<C, TIM> 
 impl<C, TIM, P1: CPin<C, TIM>, P2: CPin<C, TIM>, P3: CPin<C, TIM>, P4: CPin<C, TIM>> CPin<C, TIM>
     for (P1, P2, P3, P4)
 {
-}
-
-macro_rules! brk {
-    (TIM1, $tim:ident) => {
-        $tim.bdtr.modify(|_, w| w.aoe().set_bit());
-    };
-    (TIM8, $tim:ident) => {
-        $tim.bdtr.modify(|_, w| w.aoe().set_bit());
-    };
-    ($_other:ident, $_tim:ident) => {};
 }
 
 macro_rules! pwm_pin {
@@ -126,253 +132,121 @@ macro_rules! pwm_pin {
     };
 }
 
-macro_rules! pwm_all_channels {
-    ($($TIMX:ident,)+) => {
-        $(
-            impl Timer<crate::pac::$TIMX> {
-                pub fn pwm<P, PINS, T>(mut self, _pins: PINS, freq: T) -> PINS::Channels
-                where
-                    PINS: Pins<crate::pac::$TIMX, P>,
-                    T: Into<Hertz>,
-                {
-                    if PINS::C1 {
-                        self.tim.ccmr1_output()
-                            .modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1() );
-                    }
-                    if PINS::C2 {
-                        self.tim.ccmr1_output()
-                            .modify(|_, w| w.oc2pe().set_bit().oc2m().pwm_mode1() );
-                    }
-                    if PINS::C3 {
-                        self.tim.ccmr2_output()
-                            .modify(|_, w| w.oc3pe().set_bit().oc3m().pwm_mode1() );
-                    }
-                    if PINS::C4 {
-                        self.tim.ccmr2_output()
-                            .modify(|_, w| w.oc4pe().set_bit().oc4m().pwm_mode1() );
-                    }
+pub(crate) use pwm_pin;
 
-                    // The reference manual is a bit ambiguous about when enabling this bit is really
-                    // necessary, but since we MUST enable the preload for the output channels then we
-                    // might as well enable for the auto-reload too
-                    self.tim.cr1.modify(|_, w| w.arpe().set_bit());
+impl<TIM: Instance + WithPwm> Timer<TIM> {
+    pub fn pwm<P, PINS, T>(mut self, _pins: PINS, freq: T) -> Pwm<TIM, P, PINS>
+    where
+        PINS: Pins<TIM, P>,
+        T: Into<Hertz>,
+    {
+        if PINS::C1 {
+            self.tim
+                .preload_output_channel_in_mode(Channel::C1, Ocm::PwmMode1);
+        }
+        if PINS::C2 && TIM::CH_NUMBER > 1 {
+            self.tim
+                .preload_output_channel_in_mode(Channel::C2, Ocm::PwmMode1);
+        }
+        if PINS::C3 && TIM::CH_NUMBER > 2 {
+            self.tim
+                .preload_output_channel_in_mode(Channel::C3, Ocm::PwmMode1);
+        }
+        if PINS::C4 && TIM::CH_NUMBER > 3 {
+            self.tim
+                .preload_output_channel_in_mode(Channel::C4, Ocm::PwmMode1);
+        }
 
-                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
-                    self.tim.set_prescaler(psc);
-                    self.tim.set_auto_reload(arr).unwrap();
+        // The reference manual is a bit ambiguous about when enabling this bit is really
+        // necessary, but since we MUST enable the preload for the output channels then we
+        // might as well enable for the auto-reload too
+        self.tim.enable_preload(true);
 
-                    // Trigger update event to load the registers
-                    self.tim.trigger_update();
+        let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
+        self.tim.set_prescaler(psc);
+        self.tim.set_auto_reload(arr).unwrap();
 
-                    let _tim = &self.tim;
-                    brk!($TIMX, _tim);
-                    self.tim.cr1.write(|w|
-                        w.cms()
-                            .bits(0b00)
-                            .dir()
-                            .clear_bit()
-                            .opm()
-                            .clear_bit()
-                            .cen()
-                            .set_bit()
-                    );
-                    //NOTE(unsafe) `PINS::Channels` is a ZST
-                    unsafe { MaybeUninit::uninit().assume_init() }
-                }
-            }
+        // Trigger update event to load the registers
+        self.tim.trigger_update();
 
-            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
-            pwm_pin!(crate::pac::$TIMX, C2, ccr2, 4);
-            pwm_pin!(crate::pac::$TIMX, C3, ccr3, 8);
-            pwm_pin!(crate::pac::$TIMX, C4, ccr4, 12);
-        )+
-    };
+        self.tim.start_pwm();
+
+        Pwm {
+            clk: self.clk,
+            tim: self.tim,
+            _pins: PhantomData,
+        }
+    }
 }
 
-macro_rules! pwm_2_channels {
-    ($($TIMX:ident,)+) => {
-        $(
-            impl Timer<crate::pac::$TIMX> {
-                pub fn pwm<P, PINS, T>(mut self, _pins: PINS, freq: T) -> PINS::Channels
-                where
-                    PINS: Pins<crate::pac::$TIMX, P>,
-                    T: Into<Hertz>,
-                {
-                    if PINS::C1 {
-                        self.tim.ccmr1_output().modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1());
-
-                    }
-                    if PINS::C2 {
-                        self.tim.ccmr1_output().modify(|_, w| w.oc2pe().set_bit().oc2m().pwm_mode1());
-
-                    }
-
-                    // The reference manual is a bit ambiguous about when enabling this bit is really
-                    // necessary, but since we MUST enable the preload for the output channels then we
-                    // might as well enable for the auto-reload too
-                    self.tim.cr1.modify(|_, w| w.arpe().set_bit());
-
-                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
-                    self.tim.set_prescaler(psc);
-                    self.tim.set_auto_reload(arr).unwrap();
-
-                    // Trigger update event to load the registers
-                    self.tim.trigger_update();
-
-                    self.tim.cr1.write(|w|
-                        w.opm()
-                            .clear_bit()
-                            .cen()
-                            .set_bit()
-                    );
-                    //NOTE(unsafe) `PINS::Channels` is a ZST
-                    unsafe { MaybeUninit::uninit().assume_init() }
-                }
-            }
-
-            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
-            pwm_pin!(crate::pac::$TIMX, C2, ccr2, 4);
-        )+
-    };
+pub struct Pwm<TIM, P, PINS>
+where
+    PINS: Pins<TIM, P>,
+{
+    clk: Hertz,
+    tim: TIM,
+    _pins: PhantomData<(P, PINS)>,
 }
 
-macro_rules! pwm_1_channel {
-    ($($TIMX:ident,)+) => {
-        $(
-            impl Timer<crate::pac::$TIMX> {
-                pub fn pwm<P, PINS, T>(mut self, _pins: PINS, freq: T) -> PINS::Channels
-                where
-                    PINS: Pins<crate::pac::$TIMX, P>,
-                    T: Into<Hertz>,
-                {
-                    if PINS::C1 {
-                        self.tim.ccmr1_output()
-                            .modify(|_, w| w.oc1pe().set_bit().oc1m().pwm_mode1());
-
-                    }
-
-                    // The reference manual is a bit ambiguous about when enabling this bit is really
-                    // necessary, but since we MUST enable the preload for the output channels then we
-                    // might as well enable for the auto-reload too
-                    self.tim.cr1.modify(|_, w| w.arpe().set_bit());
-
-                    let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
-                    self.tim.set_prescaler(psc);
-                    self.tim.set_auto_reload(arr).unwrap();
-
-                    // Trigger update event to load the registers
-                    self.tim.trigger_update();
-
-                    self.tim.cr1.write(|w|
-                        w.cen()
-                            .set_bit()
-                    );
-                    //NOTE(unsafe) `PINS::Channels` is a ZST
-                    unsafe { MaybeUninit::uninit().assume_init() }
-                }
-            }
-
-            pwm_pin!(crate::pac::$TIMX, C1, ccr1, 0);
-        )+
-    };
+impl<TIM, P, PINS> Pwm<TIM, P, PINS>
+where
+    PINS: Pins<TIM, P>,
+{
+    pub fn split(self) -> PINS::Channels {
+        PINS::split()
+    }
 }
 
-pwm_all_channels!(TIM1, TIM5,);
+impl<TIM, P, PINS> embedded_hal::Pwm for Pwm<TIM, P, PINS>
+where
+    TIM: Instance + WithPwm,
+    PINS: Pins<TIM, P>,
+{
+    type Channel = Channel;
+    type Duty = u16;
+    type Time = Hertz;
 
-pwm_2_channels!(TIM9,);
+    fn enable(&mut self, channel: Self::Channel) {
+        self.tim.enable_channel(PINS::check_used(channel), true)
+    }
 
-pwm_1_channel!(TIM11,);
+    fn disable(&mut self, channel: Self::Channel) {
+        self.tim.enable_channel(PINS::check_used(channel), false)
+    }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_all_channels!(TIM2, TIM3, TIM4,);
+    fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
+        let duty: u32 = self.tim.read_cc_value(PINS::check_used(channel)).into();
+        duty as u16
+    }
 
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_1_channel!(TIM10,);
+    fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {
+        self.tim
+            .set_cc_value(PINS::check_used(channel), duty.into())
+    }
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_all_channels!(TIM8,);
+    /// If `0` returned means max_duty is 2^16
+    fn get_max_duty(&self) -> Self::Duty {
+        let arr: u32 = self.tim.read_auto_reload().into();
+        (arr as u16).wrapping_add(1)
+    }
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_2_channels!(TIM12,);
+    fn get_period(&self) -> Self::Time {
+        let clk = self.clk;
+        let psc = self.tim.read_prescaler() as u32;
+        let arr: u32 = self.tim.read_auto_reload().into();
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pwm_1_channel!(TIM13, TIM14,);
+        // Length in ms of an internal clock pulse
+        (clk.0 / (psc * arr)).hz()
+    }
+
+    fn set_period<T>(&mut self, period: T)
+    where
+        T: Into<Self::Time>,
+    {
+        let clk = self.clk;
+
+        let (psc, arr) = compute_arr_presc(period.into().0, clk.0);
+        self.tim.set_prescaler(psc);
+        self.tim.set_auto_reload(arr).unwrap();
+    }
+}

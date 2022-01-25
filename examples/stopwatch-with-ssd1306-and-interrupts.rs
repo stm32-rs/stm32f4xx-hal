@@ -94,7 +94,7 @@ fn main() -> ! {
         // Create a 1ms periodic interrupt from TIM2
         let mut timer = Timer::new(dp.TIM2, &clocks).counter();
         timer.start(1.secs()).unwrap();
-        timer.listen(Event::TimeOut);
+        timer.listen(Event::Update);
 
         free(|cs| {
             TIMER_TIM2.borrow(cs).replace(Some(timer));
@@ -155,7 +155,7 @@ fn main() -> ! {
 fn TIM2() {
     free(|cs| {
         if let Some(ref mut tim2) = TIMER_TIM2.borrow(cs).borrow_mut().deref_mut() {
-            tim2.clear_interrupt(Event::TimeOut);
+            tim2.clear_interrupt(Event::Update);
         }
 
         let cell = ELAPSED_MS.borrow(cs);

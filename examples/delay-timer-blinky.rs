@@ -31,11 +31,11 @@ fn main() -> ! {
         let mut delay = dp.TIM5.delay_us(&clocks);
 
         loop {
-            // On for 1s, off for 1s.
+            // On for 1s, off for 3s.
             led.set_high();
-            delay.delay_ms(1_000_u32);
+            delay.delay(1.secs()).unwrap();
             led.set_low();
-            delay.delay_us(1_000_000_u32);
+            delay.delay(3.secs()).unwrap();
         }
     }
 

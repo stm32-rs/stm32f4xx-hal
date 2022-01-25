@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Add channel events, make Event use bitflags (simplify interrupt handling) [#425]
 - reexport `digital::v2::PinState` again [#428]
 - Timer impls with time based on `fugit` moved to `fugit` module, added `Pwm` and `fugit-timer` impls [#423]
 
@@ -18,6 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- `WithPwm` trait implemented for timers with channels (internals) [#425]
+- `Pwm` struct with `split` method and implementation of embedded-hal::Pwm (similar to f1xx-hal) [#425]
 - VSCode setting file
 - Add CAN1 PB8/PB9 and SPI3 MOSI PC1 pin mappings for F446 [#421]
 
@@ -25,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#422]: https://github.com/stm32-rs/stm32f4xx-hal/pull/422
 [#423]: https://github.com/stm32-rs/stm32f4xx-hal/pull/423
 [#428]: https://github.com/stm32-rs/stm32f4xx-hal/pull/428
+[#425]: https://github.com/stm32-rs/stm32f4xx-hal/pull/425
 
 ### Changed
 
