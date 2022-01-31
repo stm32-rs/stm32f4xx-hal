@@ -70,6 +70,7 @@ pub use erased::{EPin, ErasedPin};
 mod dynamic;
 pub use dynamic::{Dynamic, DynamicPin};
 mod hal_02;
+mod hal_1;
 
 pub use embedded_hal::digital::v2::PinState;
 
