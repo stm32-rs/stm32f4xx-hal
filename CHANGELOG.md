@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- reexport `digital::v2::PinState` again [#428]
 - Timer impls with time based on `fugit` moved to `fugit` module, added `Pwm` and `fugit-timer` impls [#423]
 
 ### Fixed
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#421]: https://github.com/stm32-rs/stm32f4xx-hal/pull/421
 [#422]: https://github.com/stm32-rs/stm32f4xx-hal/pull/422
 [#423]: https://github.com/stm32-rs/stm32f4xx-hal/pull/423
+[#428]: https://github.com/stm32-rs/stm32f4xx-hal/pull/428
 
 ### Changed
 

@@ -2,22 +2,12 @@ use core::convert::Infallible;
 
 use super::{
     dynamic::PinModeError, DynamicPin, ErasedPin, Floating, Input, OpenDrain, Output,
-    PartiallyErasedPin, Pin, PullDown, PullUp, PushPull,
+    PartiallyErasedPin, Pin, PinState, PullDown, PullUp, PushPull,
 };
 
-pub use embedded_hal::digital::v2::PinState;
 use embedded_hal::digital::v2::{
     InputPin, IoPin, OutputPin, StatefulOutputPin, ToggleableOutputPin,
 };
-
-impl From<PinState> for super::PinState {
-    fn from(state: PinState) -> Self {
-        match state {
-            PinState::Low => Self::Low,
-            PinState::High => Self::High,
-        }
-    }
-}
 
 // Implementations for `Pin`
 
