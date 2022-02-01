@@ -2,8 +2,8 @@
 
 use crate::pac::RCC;
 use crate::rcc::Clocks;
-use crate::timer::General;
-pub use crate::timer::{Error, Event, Instance};
+use crate::timer::WithPwm;
+pub use crate::timer::{Channel, Error, Event, Instance, Ocm, SysEvent};
 use cast::u16;
 
 pub mod delay;
@@ -128,12 +128,7 @@ impl<TIM: Instance, const FREQ: u32> Timer<TIM, FREQ> {
     /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
     /// receiving events.
     pub fn listen(&mut self, event: Event) {
-        match event {
-            Event::TimeOut => {
-                // Enable update event interrupt
-                self.tim.listen_update_interrupt(true);
-            }
-        }
+        self.tim.listen_interrupt(event, true);
     }
 
     /// Clears interrupt associated with `event`.
@@ -141,21 +136,15 @@ impl<TIM: Instance, const FREQ: u32> Timer<TIM, FREQ> {
     /// If the interrupt is not cleared, it will immediately retrigger after
     /// the ISR has finished.
     pub fn clear_interrupt(&mut self, event: Event) {
-        match event {
-            Event::TimeOut => {
-                // Clear interrupt flag
-                self.tim.clear_update_interrupt_flag();
-            }
-        }
+        self.tim.clear_interrupt_flag(event);
+    }
+
+    pub fn get_interrupt(&mut self) -> Event {
+        self.tim.get_interrupt_flag()
     }
 
     /// Stops listening for an `event`
     pub fn unlisten(&mut self, event: Event) {
-        match event {
-            Event::TimeOut => {
-                // Disable update event interrupt
-                self.tim.listen_update_interrupt(false);
-            }
-        }
+        self.tim.listen_interrupt(event, false);
     }
 }

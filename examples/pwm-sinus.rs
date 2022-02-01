@@ -8,25 +8,7 @@ use panic_halt as _;
 use core::f32::consts::FRAC_PI_2;
 use cortex_m_rt::entry;
 use micromath::F32Ext;
-use stm32f4xx_hal::{pac, prelude::*};
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Quadrant {
-    Q1,
-    Q2,
-    Q3,
-    Q4,
-}
-impl Quadrant {
-    pub fn next_cw(&mut self) {
-        *self = match self {
-            Self::Q1 => Self::Q2,
-            Self::Q2 => Self::Q3,
-            Self::Q3 => Self::Q4,
-            Self::Q4 => Self::Q1,
-        };
-    }
-}
+use stm32f4xx_hal::{fugit::Channel, pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
@@ -37,12 +19,10 @@ fn main() -> ! {
 
         let gpioa = dp.GPIOA.split();
         let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
-        let mut quad = Quadrant::Q1;
 
-        let pwm = dp.TIM1.pwm_us(&clocks, channels, 100.micros());
+        let mut pwm = dp.TIM1.pwm_us(&clocks, channels, 100.micros());
         let mut counter = dp.TIM2.counter_us(&clocks);
-        let (mut ch1, mut ch2) = pwm;
-        let max_duty = ch1.get_max_duty();
+        let max_duty = pwm.get_max_duty();
 
         const N: usize = 50;
         let mut sin_a = [0_u16; N + 1];
@@ -54,36 +34,30 @@ fn main() -> ! {
         }
 
         counter.start(100.micros()).unwrap();
-        ch1.enable();
-        ch2.enable();
-        let mut clos = |quad, duty| {
-            match quad {
-                Quadrant::Q1 | Quadrant::Q2 => {
-                    ch1.set_duty(duty);
-                    ch2.set_duty(0);
-                }
-                Quadrant::Q3 | Quadrant::Q4 => {
-                    ch1.set_duty(0);
-                    ch2.set_duty(duty);
-                }
+        pwm.enable(Channel::C1);
+        pwm.enable(Channel::C2);
+        let mut i = 0;
+        loop {
+            if i == 0 {
+                pwm.set_duty(Channel::C2, 0);
+            }
+            if i == 2 * N {
+                pwm.set_duty(Channel::C1, 0);
+            }
+            if i < N {
+                pwm.set_duty(Channel::C1, sin_a[i]);
+            } else if i < 2 * N {
+                pwm.set_duty(Channel::C1, sin_a[2 * N - i]);
+            } else if i < 3 * N {
+                pwm.set_duty(Channel::C2, sin_a[i - 2 * N]);
+            } else {
+                pwm.set_duty(Channel::C2, sin_a[4 * N - i]);
             }
             nb::block!(counter.wait()).unwrap();
-        };
-        loop {
-            match quad {
-                Quadrant::Q1 | Quadrant::Q3 => {
-                    for &duty in sin_a.iter().take(N) {
-                        clos(quad, duty);
-                    }
-                }
-                Quadrant::Q2 | Quadrant::Q4 => {
-                    for &duty in sin_a.iter().rev().take(N) {
-                        clos(quad, duty);
-                    }
-                }
+            i += 1;
+            if i == 4 * N {
+                i -= 4 * N;
             }
-
-            quad.next_cw();
         }
     }
 

@@ -82,7 +82,7 @@ fn main() -> ! {
     timer.start(1.secs()).unwrap();
 
     // Generate an interrupt when the timer expires
-    timer.listen(Event::TimeOut);
+    timer.listen(Event::Update);
 
     // Move the timer into our global storage
     cortex_m::interrupt::free(|cs| *G_TIM.borrow(cs).borrow_mut() = Some(timer));

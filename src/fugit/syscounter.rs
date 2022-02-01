@@ -1,4 +1,4 @@
-use super::{Error, Event};
+use super::{Error, SysEvent};
 
 use crate::{pac::SYST, rcc::Clocks, time::Hertz};
 use fugit::{MicrosDurationU32, TimerInstantU32};
@@ -44,16 +44,16 @@ impl SysCounter {
     }
 
     /// Starts listening for an `event`
-    pub fn listen(&mut self, event: Event) {
+    pub fn listen(&mut self, event: SysEvent) {
         match event {
-            Event::TimeOut => self.tim.enable_interrupt(),
+            SysEvent::Update => self.tim.enable_interrupt(),
         }
     }
 
     /// Stops listening for an `event`
-    pub fn unlisten(&mut self, event: Event) {
+    pub fn unlisten(&mut self, event: SysEvent) {
         match event {
-            Event::TimeOut => self.tim.disable_interrupt(),
+            SysEvent::Update => self.tim.disable_interrupt(),
         }
     }
 
