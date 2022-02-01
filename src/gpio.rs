@@ -71,22 +71,7 @@ mod dynamic;
 pub use dynamic::{Dynamic, DynamicPin};
 mod hal_02;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum PinState {
-    /// Low pin state
-    Low,
-    /// High pin state
-    High,
-}
-
-impl From<bool> for PinState {
-    fn from(value: bool) -> Self {
-        match value {
-            false => PinState::Low,
-            true => PinState::High,
-        }
-    }
-}
+pub use embedded_hal::digital::v2::PinState;
 
 /// A filler pin type
 pub struct NoPin;
