@@ -76,7 +76,7 @@ impl FlashExt for FLASH {
                     feature = "stm32f427",
                     feature = "stm32f429",
                     feature = "stm32f437",
-                    feature = "stm32f429",
+                    feature = "stm32f439",
                     feature = "stm32f469",
                     feature = "stm32f479",
                 )) {
