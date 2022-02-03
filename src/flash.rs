@@ -102,6 +102,22 @@ impl FlashExt for FLASH {
 const PSIZE_X8: u8 = 0b00;
 
 /// Read-only flash
+///
+/// # Examples
+///
+/// ```
+/// use stm32f4xx_hal::pac::Peripherals;
+/// use stm32f4xx_hal::flash::LockedFlash;
+/// use embedded_storage::nor_flash::ReadNorFlash;
+///
+/// let dp = Peripherals::take().unwrap();
+/// let mut flash = LockedFlash::new(dp.FLASH);
+/// println!("Flash capacity: {}", ReadNorFlash::capacity(&flash));
+///
+/// let mut buf = [0u8; 64];
+/// ReadNorFlash::read(&mut flash, 0x0, &mut buf).unwrap();
+/// println!("First 64 bytes of flash memory: {:?}", buf);
+/// ```
 pub struct LockedFlash {
     flash: FLASH,
 }
@@ -135,6 +151,30 @@ impl FlashExt for LockedFlash {
 }
 
 /// Result of `FlashExt::unlocked()`
+///
+/// # Examples
+///
+/// ```
+/// use stm32f4xx_hal::pac::Peripherals;
+/// use stm32f4xx_hal::flash::{FlashExt, LockedFlash, UnlockedFlash};
+/// use embedded_storage::nor_flash::NorFlash;
+///
+/// let dp = Peripherals::take().unwrap();
+/// let mut flash = LockedFlash::new(dp.FLASH);
+///
+/// // Unlock flash for writing
+/// let mut unlocked_flash = flash.unlocked();
+///
+/// // Erase the second 128 KB sector.
+/// NorFlash::erase(&mut unlocked_flash, 128 * 1024, 256 * 1024).unwrap();
+///
+/// // Write some data at the start of the second 128 KB sector.
+/// let buf = [0u8; 64];
+/// NorFlash::write(&mut unlocked_flash, 128 * 1024, &buf).unwrap();
+///
+/// // Lock flash by dropping
+/// drop(unlocked_flash);
+/// ```
 pub struct UnlockedFlash<'a> {
     flash: &'a mut FLASH,
 }
