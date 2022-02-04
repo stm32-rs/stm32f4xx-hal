@@ -61,8 +61,8 @@ fn main() -> ! {
         // from which RNG_CLK is derived, is about 48 MHz
         let clocks = rcc
             .cfgr
-            .use_hse(8.mhz()) //discovery board has 8 MHz crystal for HSE
-            .sysclk(128.mhz())
+            .use_hse(8.MHz()) //discovery board has 8 MHz crystal for HSE
+            .sysclk(128.MHz())
             .freeze();
 
         let mut delay_source = hal::delay::Delay::new(cp.SYST, &clocks);
@@ -73,7 +73,7 @@ fn main() -> ! {
         let gpiob = dp.GPIOB.split();
         let scl = gpiob.pb8.into_alternate().set_open_drain();
         let sda = gpiob.pb9.into_alternate().set_open_drain();
-        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.khz(), &clocks);
+        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &clocks);
 
         // Set up the display
         let interface = I2CDisplayInterface::new(i2c);

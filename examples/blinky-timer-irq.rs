@@ -67,7 +67,7 @@ fn main() -> ! {
     let dp = Peripherals::take().unwrap();
 
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.sysclk(16.mhz()).pclk1(8.mhz()).freeze();
+    let clocks = rcc.cfgr.sysclk(16.MHz()).pclk1(8.MHz()).freeze();
 
     // Configure PA5 pin to blink LED
     let gpioa = dp.GPIOA.split();

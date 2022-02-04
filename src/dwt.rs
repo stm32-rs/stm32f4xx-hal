@@ -1,8 +1,8 @@
 //! Debug and trace and stuff
 
 use crate::rcc::Clocks;
-use crate::time::Hertz;
 use cortex_m::peripheral::{DCB, DWT};
+use fugit::HertzU32 as Hertz;
 
 pub trait DwtExt {
     fn constrain(self, dcb: DCB, clocks: &Clocks) -> Dwt;
@@ -101,7 +101,7 @@ impl<T: Into<u64>> embedded_hal::blocking::delay::DelayUs<T> for Delay {
     fn delay_us(&mut self, us: T) {
         // Convert us to ticks
         let start = DWT::cycle_count();
-        let ticks = (us.into() * self.clock.0 as u64) / 1_000_000;
+        let ticks = (us.into() * self.clock.raw() as u64) / 1_000_000;
         Delay::delay_ticks(start, ticks);
     }
 }
@@ -109,7 +109,7 @@ impl<T: Into<u64>> embedded_hal::blocking::delay::DelayMs<T> for Delay {
     fn delay_ms(&mut self, ms: T) {
         // Convert ms to ticks
         let start = DWT::cycle_count();
-        let ticks = (ms.into() * self.clock.0 as u64) / 1_000;
+        let ticks = (ms.into() * self.clock.raw() as u64) / 1_000;
         Delay::delay_ticks(start, ticks);
     }
 }
@@ -120,7 +120,7 @@ impl embedded_hal_one::delay::blocking::DelayUs for Delay {
     fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
         // Convert us to ticks
         let start = DWT::cycle_count();
-        let ticks = (us as u64 * self.clock.0 as u64) / 1_000_000;
+        let ticks = (us as u64 * self.clock.raw() as u64) / 1_000_000;
         Delay::delay_ticks(start, ticks);
         Ok(())
     }
@@ -128,7 +128,7 @@ impl embedded_hal_one::delay::blocking::DelayUs for Delay {
     fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
         // Convert ms to ticks
         let start = DWT::cycle_count();
-        let ticks = (ms as u64 * self.clock.0 as u64) / 1_000;
+        let ticks = (ms as u64 * self.clock.raw() as u64) / 1_000;
         Delay::delay_ticks(start, ticks);
         Ok(())
     }
@@ -207,22 +207,22 @@ impl ClockDuration {
     }
     /// Returns calculated milliseconds as integer
     pub fn as_millis(self) -> u64 {
-        self.ticks as u64 * 1_000 / self.clock.0 as u64
+        self.ticks as u64 * 1_000 / self.clock.raw() as u64
     }
     /// Returns calculated microseconds as integer
     pub fn as_micros(self) -> u64 {
-        self.ticks as u64 * 1_000_000 / self.clock.0 as u64
+        self.ticks as u64 * 1_000_000 / self.clock.raw() as u64
     }
     /// Returns calculated nanoseconds as integer
     pub fn as_nanos(self) -> u64 {
-        self.ticks as u64 * 1_000_000_000 / self.clock.0 as u64
+        self.ticks as u64 * 1_000_000_000 / self.clock.raw() as u64
     }
     /// Return calculated seconds as 32-bit float
     pub fn as_secs_f32(self) -> f32 {
-        self.ticks as f32 / self.clock.0 as f32
+        self.ticks as f32 / self.clock.raw() as f32
     }
     /// Return calculated seconds as 64-bit float
     pub fn as_secs_f64(self) -> f64 {
-        self.ticks as f64 / self.clock.0 as f64
+        self.ticks as f64 / self.clock.raw() as f64
     }
 }

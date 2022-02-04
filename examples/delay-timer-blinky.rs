@@ -25,7 +25,7 @@ fn main() -> ! {
 
         // Set up the system clock. We want to run at 48MHz for this one.
         let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.use_hse(25.mhz()).sysclk(48.mhz()).freeze();
+        let clocks = rcc.cfgr.use_hse(25.MHz()).sysclk(48.MHz()).freeze();
 
         // Create a delay abstraction based on general-pupose 32-bit timer TIM5
         let mut delay = dp.TIM5.delay_us(&clocks);

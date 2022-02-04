@@ -4,12 +4,12 @@
 
 use crate::gpio::{Const, NoPin, PinA, PushPull, SetAlternate};
 #[cfg(feature = "stm32_i2s_v12x")]
-use stm32_i2s_v12x::{Instance, RegisterBlock};
+use stm32_i2s_v12x::RegisterBlock;
 
 use crate::pac::{self, RCC};
 use crate::rcc;
-use crate::time::Hertz;
 use crate::{rcc::Clocks, spi};
+use fugit::HertzU32 as Hertz;
 
 // I2S pins are mostly the same as the corresponding SPI pins:
 // MOSI -> SD
@@ -67,11 +67,13 @@ where
     }
 }
 
+pub trait Instance: I2sFreq + rcc::Enable + rcc::Reset {}
+
 pub trait I2sFreq {
     fn i2s_freq(clocks: &Clocks) -> Hertz;
 }
 
-/// Implements Instance for I2s<$SPIX, _> and creates an I2s::$spix function to create and enable
+/// Implements stm32_i2s_v12x::Instance for I2s<$SPIX, _> and creates an I2s::$spix function to create and enable
 /// the peripheral
 ///
 /// $SPIX: The fully-capitalized name of the SPI peripheral (example: SPI1)
@@ -83,6 +85,8 @@ macro_rules! i2s {
     ($SPI:ty, $I2s:ident, $clock:ident) => {
         pub type $I2s<PINS> = I2s<$SPI, PINS>;
 
+        impl Instance for $SPI {}
+
         impl I2sFreq for $SPI {
             fn i2s_freq(clocks: &Clocks) -> Hertz {
                 clocks
@@ -92,15 +96,25 @@ macro_rules! i2s {
         }
 
         #[cfg(feature = "stm32_i2s_v12x")]
-        unsafe impl<PINS> Instance for I2s<$SPI, PINS> {
+        unsafe impl<PINS> stm32_i2s_v12x::Instance for I2s<$SPI, PINS> {
             const REGISTERS: *mut RegisterBlock = <$SPI>::ptr() as *mut _;
         }
     };
 }
 
+pub trait I2sExt: Sized + Instance {
+    fn i2s<PINS: Pins<Self>>(self, pins: PINS, clocks: &Clocks) -> I2s<Self, PINS>;
+}
+
+impl<SPI: Instance> I2sExt for SPI {
+    fn i2s<PINS: Pins<Self>>(self, pins: PINS, clocks: &Clocks) -> I2s<Self, PINS> {
+        I2s::new(self, pins, clocks)
+    }
+}
+
 impl<SPI, PINS> I2s<SPI, PINS>
 where
-    SPI: I2sFreq + rcc::Enable + rcc::Reset,
+    SPI: Instance,
     PINS: Pins<SPI>,
 {
     /// Creates an I2s object around an SPI peripheral and pins
@@ -230,7 +244,7 @@ mod dma {
     /// I2S DMA reads from and writes to the data register
     unsafe impl<SPI, PINS, MODE> PeriAddress for stm32_i2s_v12x::I2s<I2s<SPI, PINS>, MODE>
     where
-        I2s<SPI, PINS>: Instance,
+        I2s<SPI, PINS>: stm32_i2s_v12x::Instance,
         PINS: Pins<SPI>,
         SPI: Deref<Target = crate::pac::spi1::RegisterBlock>,
     {

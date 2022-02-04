@@ -7,7 +7,7 @@ use crate::gpio::{Const, OpenDrain, PinA, SetAlternate};
 use crate::pac::RCC;
 
 use crate::rcc::Clocks;
-use crate::time::{Hertz, U32Ext};
+use fugit::{HertzU32 as Hertz, RateExtU32};
 
 mod hal_02;
 mod hal_1;
@@ -30,15 +30,13 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub fn standard<F: Into<Hertz>>(frequency: F) -> Self {
-        Self::Standard {
-            frequency: frequency.into(),
-        }
+    pub fn standard(frequency: Hertz) -> Self {
+        Self::Standard { frequency }
     }
 
-    pub fn fast<F: Into<Hertz>>(frequency: F, duty_cycle: DutyCycle) -> Self {
+    pub fn fast(frequency: Hertz, duty_cycle: DutyCycle) -> Self {
         Self::Fast {
-            frequency: frequency.into(),
+            frequency,
             duty_cycle,
         }
     }
@@ -51,13 +49,10 @@ impl Mode {
     }
 }
 
-impl<F> From<F> for Mode
-where
-    F: Into<Hertz>,
-{
-    fn from(frequency: F) -> Self {
-        let frequency: Hertz = frequency.into();
-        if frequency <= 100_000.hz() {
+impl From<Hertz> for Mode {
+    fn from(frequency: Hertz) -> Self {
+        let k100: Hertz = 100.kHz();
+        if frequency <= k100 {
             Self::Standard { frequency }
         } else {
             Self::Fast {
@@ -144,12 +139,32 @@ impl Instance for pac::I2C3 {}
 #[cfg(feature = "i2c3")]
 pub type I2c3<PINS> = I2c<pac::I2C3, PINS>;
 
+pub trait I2cExt: Sized + Instance {
+    fn i2c<PINS: Pins<Self>>(
+        self,
+        pins: PINS,
+        mode: impl Into<Mode>,
+        clocks: &Clocks,
+    ) -> I2c<Self, PINS>;
+}
+
+impl<I2C: Instance> I2cExt for I2C {
+    fn i2c<PINS: Pins<Self>>(
+        self,
+        pins: PINS,
+        mode: impl Into<Mode>,
+        clocks: &Clocks,
+    ) -> I2c<Self, PINS> {
+        I2c::new(self, pins, mode, clocks)
+    }
+}
+
 impl<I2C, PINS> I2c<I2C, PINS>
 where
     I2C: Instance,
     PINS: Pins<I2C>,
 {
-    pub fn new<M: Into<Mode>>(i2c: I2C, mut pins: PINS, mode: M, clocks: &Clocks) -> Self {
+    pub fn new(i2c: I2C, mut pins: PINS, mode: impl Into<Mode>, clocks: &Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -174,13 +189,13 @@ where
 }
 
 impl<I2C: Instance, PINS> I2c<I2C, PINS> {
-    fn i2c_init<M: Into<Mode>>(&self, mode: M, pclk: Hertz) {
+    fn i2c_init(&self, mode: impl Into<Mode>, pclk: Hertz) {
         let mode = mode.into();
         // Make sure the I2C unit is disabled so we can configure it
         self.i2c.cr1.modify(|_, w| w.pe().clear_bit());
 
         // Calculate settings for I2C speed modes
-        let clock = pclk.0;
+        let clock = pclk.raw();
         let clc_mhz = clock / 1_000_000;
         assert!((2..=50).contains(&clc_mhz));
 
@@ -200,7 +215,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         match mode {
             // I2C clock control calculation
             Mode::Standard { frequency } => {
-                let ccr = (clock / (frequency.0 * 2)).max(4);
+                let ccr = (clock / (frequency.raw() * 2)).max(4);
 
                 // Set clock to standard mode with appropriate parameters for selected speed
                 self.i2c.ccr.write(|w| unsafe {
@@ -217,7 +232,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
                 duty_cycle,
             } => match duty_cycle {
                 DutyCycle::Ratio2to1 => {
-                    let ccr = (clock / (frequency.0 * 3)).max(1);
+                    let ccr = (clock / (frequency.raw() * 3)).max(1);
 
                     // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
                     self.i2c.ccr.write(|w| unsafe {
@@ -225,7 +240,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
                     });
                 }
                 DutyCycle::Ratio16to9 => {
-                    let ccr = (clock / (frequency.0 * 25)).max(1);
+                    let ccr = (clock / (frequency.raw() * 25)).max(1);
 
                     // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
                     self.i2c.ccr.write(|w| unsafe {

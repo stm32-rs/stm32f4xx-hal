@@ -44,12 +44,12 @@ mod app {
         let rcc = device.RCC.constrain();
         let _clocks = rcc
             .cfgr
-            .use_hse(25.mhz())
+            .use_hse(25.MHz())
             .require_pll48clk()
-            .sysclk(84.mhz())
-            .hclk(84.mhz())
-            .pclk1(42.mhz())
-            .pclk2(84.mhz())
+            .sysclk(MONO_HZ.Hz())
+            .hclk(MONO_HZ.Hz())
+            .pclk1(42.MHz())
+            .pclk2(84.MHz())
             .freeze();
 
         let mut dcb = cx.core.DCB;

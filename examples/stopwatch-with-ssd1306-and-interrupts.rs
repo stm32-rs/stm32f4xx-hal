@@ -72,7 +72,7 @@ fn main() -> ! {
                 gpiob.pb8.into_alternate().set_open_drain(),
                 gpiob.pb9.into_alternate().set_open_drain(),
             ),
-            400.khz(),
+            400.kHz(),
             &clocks,
         );
 
@@ -193,10 +193,10 @@ fn EXTI15_10() {
 
 fn setup_clocks(rcc: Rcc) -> Clocks {
     rcc.cfgr
-        .hclk(48.mhz())
-        .sysclk(48.mhz())
-        .pclk1(24.mhz())
-        .pclk2(24.mhz())
+        .hclk(48.MHz())
+        .sysclk(48.MHz())
+        .pclk1(24.MHz())
+        .pclk2(24.MHz())
         .freeze()
 }
 

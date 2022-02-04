@@ -7,7 +7,7 @@ use cortex_m_rt::entry;
 
 use stm32f4xx_hal as hal;
 
-use crate::hal::{pac, prelude::*, spi::Spi};
+use crate::hal::{pac, prelude::*};
 
 use hal::spi::{Mode, NoMiso, Phase, Polarity};
 
@@ -44,8 +44,9 @@ fn main() -> ! {
     };
 
     // Change spi transfer mode to Bidi for more efficient operations.
-    let spi =
-        Spi::new(dp.SPI1, (sck, miso, mosi), mode, 8_000_000.hz(), &clocks).to_bidi_transfer_mode();
+    // let spi = Spi::new(dp.SPI1, (sck, miso, mosi), mode, 8.MHz(), &clocks).to_bidi_transfer_mode();
+    // or
+    let spi = dp.SPI1.spi_bidi((sck, miso, mosi), mode, 8.MHz(), &clocks);
 
     let iface = SPIInterface::new(spi, dc, cs);
 

@@ -1,7 +1,7 @@
 use super::{Error, SysEvent};
 
-use crate::{pac::SYST, rcc::Clocks, time::Hertz};
-use fugit::{MicrosDurationU32, TimerInstantU32};
+use crate::{pac::SYST, rcc::Clocks};
+use fugit::{HertzU32 as Hertz, MicrosDurationU32, TimerInstantU32};
 
 impl crate::timer::Timer<SYST> {
     /// Creates SysCounter
@@ -33,13 +33,13 @@ impl SysCounter {
     }
 
     pub fn configure(&mut self, clocks: &Clocks) {
-        self.mhz = clocks.sysclk().0 / 1_000_000;
+        self.mhz = clocks.sysclk().raw() / 1_000_000;
     }
 
     fn _new(tim: SYST, clk: Hertz) -> Self {
         Self {
             tim,
-            mhz: clk.0 / 1_000_000,
+            mhz: clk.raw() / 1_000_000,
         }
     }
 

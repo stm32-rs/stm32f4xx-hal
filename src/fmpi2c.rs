@@ -3,7 +3,7 @@ use core::ops::Deref;
 use crate::i2c::{Error, NoAcknowledgeSource, Pins};
 use crate::pac::{fmpi2c1, FMPI2C1, RCC};
 use crate::rcc::{Enable, Reset};
-use crate::time::{Hertz, U32Ext};
+use fugit::{HertzU32 as Hertz, RateExtU32};
 
 mod hal_02;
 mod hal_1;
@@ -24,22 +24,18 @@ pub enum FmpMode {
 }
 
 impl FmpMode {
-    pub fn standard<F: Into<Hertz>>(frequency: F) -> Self {
+    pub fn standard(frequency: Hertz) -> Self {
         Self::Standard {
             frequency: frequency.into(),
         }
     }
 
-    pub fn fast<F: Into<Hertz>>(frequency: F) -> Self {
-        Self::Fast {
-            frequency: frequency.into(),
-        }
+    pub fn fast(frequency: Hertz) -> Self {
+        Self::Fast { frequency }
     }
 
-    pub fn fast_plus<F: Into<Hertz>>(frequency: F) -> Self {
-        Self::FastPlus {
-            frequency: frequency.into(),
-        }
+    pub fn fast_plus(frequency: Hertz) -> Self {
+        Self::FastPlus { frequency }
     }
 
     pub fn get_frequency(&self) -> Hertz {
@@ -51,15 +47,13 @@ impl FmpMode {
     }
 }
 
-impl<F> From<F> for FmpMode
-where
-    F: Into<Hertz>,
-{
-    fn from(frequency: F) -> Self {
-        let frequency: Hertz = frequency.into();
-        if frequency <= 100_000.hz() {
+impl From<Hertz> for FmpMode {
+    fn from(frequency: Hertz) -> Self {
+        let k100: Hertz = 100.kHz();
+        let k400: Hertz = 400.kHz();
+        if frequency <= k100 {
             Self::Standard { frequency }
-        } else if frequency <= 400_000.hz() {
+        } else if frequency <= k400 {
             Self::Fast { frequency }
         } else {
             Self::FastPlus { frequency }
@@ -123,21 +117,21 @@ where
         match mode {
             FmpMode::Standard { frequency } => {
                 presc = 3;
-                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.0) - 1, 255) as u8;
+                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 1, 255) as u8;
                 sclh = scll - 4;
                 sdadel = 2;
                 scldel = 4;
             }
             FmpMode::Fast { frequency } => {
                 presc = 1;
-                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.0) - 1, 255) as u8;
+                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 1, 255) as u8;
                 sclh = scll - 6;
                 sdadel = 2;
                 scldel = 3;
             }
             FmpMode::FastPlus { frequency } => {
                 presc = 0;
-                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.0) - 4, 255) as u8;
+                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 4, 255) as u8;
                 sclh = scll - 2;
                 sdadel = 0;
                 scldel = 2;

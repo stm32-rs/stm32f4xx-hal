@@ -1,8 +1,6 @@
-use crate::{
-    time::Hertz,
-    timer::{CPin, General, Timer},
-};
+use crate::timer::{CPin, General, Timer};
 use cast::u16;
+use fugit::HertzU32 as Hertz;
 
 pub trait Pins<TIM> {}
 
@@ -59,9 +57,8 @@ macro_rules! hal {
             /// 2. When the period is captured. the duty cycle will be an observable value.
             /// See the pwm input example for an suitable interrupt handler.
             #[allow(unused_unsafe)] //for some chips the operations are considered safe.
-            pub fn pwm_input<T, PINS>(mut self, best_guess: T, pins: PINS) -> PwmInput<$TIM, PINS>
+            pub fn pwm_input<PINS>(mut self, best_guess: Hertz, pins: PINS) -> PwmInput<$TIM, PINS>
             where
-                T: Into<Hertz>,
                 PINS: Pins<$TIM>,
             {
                 /*
@@ -69,7 +66,7 @@ macro_rules! hal {
                 Sets the TIMer's prescaler such that the TIMer that it ticks at about the best-guess
                  frequency.
                 */
-                let ticks = self.clk.0 / best_guess.into().0;
+                let ticks = self.clk.raw() / best_guess.raw();
                 let psc = u16((ticks - 1) / (1 << 16)).unwrap();
                 self.tim.set_prescaler(psc);
 

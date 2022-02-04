@@ -1,8 +1,6 @@
-use crate::{
-    time::{Hertz, U32Ext},
-    timer::{compute_arr_presc, Channel, Instance, Ocm, Timer, WithPwm},
-};
+use crate::timer::{compute_arr_presc, Channel, Instance, Ocm, Timer, WithPwm};
 use core::marker::PhantomData;
+use fugit::HertzU32 as Hertz;
 
 pub trait Pins<TIM, P> {
     const C1: bool = false;
@@ -174,7 +172,7 @@ impl<TIM: Instance + WithPwm> Timer<TIM> {
         // might as well enable for the auto-reload too
         self.tim.enable_preload(true);
 
-        let (psc, arr) = compute_arr_presc(freq.into().0, self.clk.0);
+        let (psc, arr) = compute_arr_presc(freq.into().raw(), self.clk.raw());
         self.tim.set_prescaler(psc);
         self.tim.set_auto_reload(arr).unwrap();
 
@@ -241,7 +239,7 @@ where
         let arr = TIM::read_auto_reload();
 
         // Length in ms of an internal clock pulse
-        (clk.0 / (psc * arr)).hz()
+        clk / (psc * arr)
     }
 
     pub fn set_period<T>(&mut self, period: T)
@@ -250,7 +248,7 @@ where
     {
         let clk = self.clk;
 
-        let (psc, arr) = compute_arr_presc(period.into().0, clk.0);
+        let (psc, arr) = compute_arr_presc(period.into().raw(), clk.raw());
         self.tim.set_prescaler(psc);
         self.tim.set_auto_reload(arr).unwrap();
     }

@@ -343,6 +343,64 @@ impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
     }
 }
 
+pub trait SerialExt: Sized + Instance {
+    fn serial<PINS: Pins<Self>, WORD>(
+        self,
+        pins: PINS,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Serial<Self, PINS, WORD>, config::InvalidConfig>;
+    fn tx<TX, WORD>(
+        self,
+        tx_pin: TX,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
+    where
+        (TX, NoPin): Pins<Self>;
+    fn rx<RX, WORD>(
+        self,
+        rx_pin: RX,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
+    where
+        (NoPin, RX): Pins<Self>;
+}
+
+impl<USART: Instance> SerialExt for USART {
+    fn serial<PINS: Pins<Self>, WORD>(
+        self,
+        pins: PINS,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Serial<Self, PINS, WORD>, config::InvalidConfig> {
+        Serial::new(self, pins, config, clocks)
+    }
+    fn tx<TX, WORD>(
+        self,
+        tx_pin: TX,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
+    where
+        (TX, NoPin): Pins<Self>,
+    {
+        Serial::tx(self, tx_pin, config, clocks)
+    }
+    fn rx<RX, WORD>(
+        self,
+        rx_pin: RX,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
+    where
+        (NoPin, RX): Pins<Self>,
+    {
+        Serial::rx(self, rx_pin, config, clocks)
+    }
+}
+
 impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
 where
     PINS: Pins<USART>,
@@ -371,7 +429,7 @@ where
             USART::reset(rcc);
         }
 
-        let pclk_freq = USART::clock(clocks).0;
+        let pclk_freq = USART::clock(clocks).raw();
         let baud = config.baudrate.0;
 
         // The frequency to calculate USARTDIV is this:
@@ -481,9 +539,9 @@ where
     }
 }
 
-impl<USART, TX, WORD, const TXA: u8> Serial<USART, (TX, NoPin), WORD>
+impl<USART, TX, WORD> Serial<USART, (TX, NoPin), WORD>
 where
-    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+    (TX, NoPin): Pins<USART>,
     USART: Instance,
 {
     pub fn tx(
@@ -496,9 +554,9 @@ where
     }
 }
 
-impl<USART, RX, WORD, const RXA: u8> Serial<USART, (NoPin, RX), WORD>
+impl<USART, RX, WORD> Serial<USART, (NoPin, RX), WORD>
 where
-    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+    (NoPin, RX): Pins<USART>,
     USART: Instance,
 {
     pub fn rx(

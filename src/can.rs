@@ -57,6 +57,34 @@ mod can3 {
     }
 }
 
+pub trait CanExt: Sized + Instance {
+    fn can<PINS: Pins<Self>>(self, pins: PINS) -> Can<Self, PINS>;
+    fn tx<TX>(self, tx_pin: TX) -> Can<Self, (TX, NoPin)>
+    where
+        (TX, NoPin): Pins<Self>;
+    fn rx<RX>(self, rx_pin: RX) -> Can<Self, (NoPin, RX)>
+    where
+        (NoPin, RX): Pins<Self>;
+}
+
+impl<CAN: Instance> CanExt for CAN {
+    fn can<PINS: Pins<Self>>(self, pins: PINS) -> Can<Self, PINS> {
+        Can::new(self, pins)
+    }
+    fn tx<TX>(self, tx_pin: TX) -> Can<Self, (TX, NoPin)>
+    where
+        (TX, NoPin): Pins<Self>,
+    {
+        Can::tx(self, tx_pin)
+    }
+    fn rx<RX>(self, rx_pin: RX) -> Can<Self, (NoPin, RX)>
+    where
+        (NoPin, RX): Pins<Self>,
+    {
+        Can::rx(self, rx_pin)
+    }
+}
+
 /// Interface to the CAN peripheral.
 pub struct Can<CAN, PINS> {
     can: CAN,
@@ -89,20 +117,20 @@ where
     }
 }
 
-impl<CAN, TX, const TXA: u8> Can<CAN, (TX, NoPin)>
+impl<CAN, TX> Can<CAN, (TX, NoPin)>
 where
     CAN: Instance,
-    TX: PinA<Tx, CAN, A = Const<TXA>> + SetAlternate<PushPull, TXA>,
+    (TX, NoPin): Pins<CAN>,
 {
     pub fn tx(usart: CAN, tx_pin: TX) -> Self {
         Self::new(usart, (tx_pin, NoPin))
     }
 }
 
-impl<CAN, RX, const RXA: u8> Can<CAN, (NoPin, RX)>
+impl<CAN, RX> Can<CAN, (NoPin, RX)>
 where
     CAN: Instance,
-    RX: PinA<Rx, CAN, A = Const<RXA>> + SetAlternate<PushPull, RXA>,
+    (NoPin, RX): Pins<CAN>,
 {
     pub fn rx(usart: CAN, rx_pin: RX) -> Self {
         Self::new(usart, (NoPin, rx_pin))

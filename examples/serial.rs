@@ -6,7 +6,7 @@ use panic_halt as _;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{pac, prelude::*, serial::Serial};
+use crate::hal::{pac, prelude::*};
 
 use core::fmt::Write; // for pretty formatting of the serial output
 
@@ -18,7 +18,7 @@ fn main() -> ! {
 
     let rcc = dp.RCC.constrain();
 
-    let clocks = rcc.cfgr.use_hse(25.mhz()).freeze();
+    let clocks = rcc.cfgr.use_hse(25.MHz()).freeze();
 
     let mut delay = dp.TIM1.delay_ms(&clocks);
 
@@ -26,7 +26,9 @@ fn main() -> ! {
     let tx_pin = gpioa.pa9.into_alternate();
 
     // configure serial
-    let mut tx = Serial::tx(dp.USART1, tx_pin, 9600.bps(), &clocks).unwrap();
+    // let mut tx = Serial::tx(dp.USART1, tx_pin, 9600.bps(), &clocks).unwrap();
+    // or
+    let mut tx = dp.USART1.tx(tx_pin, 9600.bps(), &clocks).unwrap();
 
     let mut value: u8 = 0;
 
