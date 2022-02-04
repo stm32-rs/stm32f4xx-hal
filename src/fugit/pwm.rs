@@ -145,31 +145,29 @@ where
     type Time = TimerDurationU32<FREQ>;
 
     fn enable(&mut self, channel: Self::Channel) {
-        self.tim.enable_channel(PINS::check_used(channel), true)
+        TIM::enable_channel(PINS::check_used(channel) as u8, true)
     }
 
     fn disable(&mut self, channel: Self::Channel) {
-        self.tim.enable_channel(PINS::check_used(channel), false)
+        TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
     fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
-        let duty: u32 = self.tim.read_cc_value(PINS::check_used(channel)).into();
+        let duty: u32 = TIM::read_cc_value(PINS::check_used(channel) as u8).into();
         duty as u16
     }
 
     fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {
-        self.tim
-            .set_cc_value(PINS::check_used(channel), duty.into())
+        TIM::set_cc_value(PINS::check_used(channel) as u8, duty.into())
     }
 
     /// If `0` returned means max_duty is 2^16
     fn get_max_duty(&self) -> Self::Duty {
-        let arr: u32 = self.tim.read_auto_reload().into();
-        (arr as u16).wrapping_add(1)
+        (TIM::read_auto_reload() as u16).wrapping_add(1)
     }
 
     fn get_period(&self) -> Self::Time {
-        Self::Time::from_ticks(self.tim.read_auto_reload().into() + 1)
+        Self::Time::from_ticks(TIM::read_auto_reload() + 1)
     }
 
     fn set_period<T>(&mut self, period: T)
