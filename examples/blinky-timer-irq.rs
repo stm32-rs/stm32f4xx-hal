@@ -12,7 +12,7 @@ use stm32f4xx_hal as hal;
 
 use crate::hal::{
     fugit::{CounterUs, Event, Timer},
-    gpio::{gpioa, Output, PushPull},
+    gpio::{self, Output, PushPull},
     pac::{interrupt, Interrupt, Peripherals, TIM2},
     prelude::*,
 };
@@ -28,8 +28,8 @@ use cortex_m_rt::entry;
 //use cortex_m_semihosting::hprintln;
 
 // A type definition for the GPIO pin to be used for our LED
-// For the onboard nucleo LED, use gpioa::PA5 or gpiob::PB13 depending your model
-type LedPin = gpioa::PA5<Output<PushPull>>;
+// For the onboard nucleo LED, use PA5 or PB13 depending your model
+type LedPin = gpio::PA5<Output<PushPull>>;
 
 // Make LED pin globally available
 static G_LED: Mutex<RefCell<Option<LedPin>>> = Mutex::new(RefCell::new(None));

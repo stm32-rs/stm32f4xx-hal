@@ -5,10 +5,7 @@
 #![deny(unused_imports)]
 
 use crate::{
-    gpio::{
-        gpioa::{PA4, PA5},
-        Analog,
-    },
+    gpio::{Analog, PA4, PA5},
     pac::{DAC, RCC},
     rcc::{Enable, Reset},
 };

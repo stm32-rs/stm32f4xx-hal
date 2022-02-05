@@ -597,15 +597,11 @@ mod common_pins {
         PinD10, PinD11, PinD12, PinD13, PinD14, PinD15, PinD2, PinD3, PinD4, PinD5, PinD6, PinD7,
         PinD8, PinD9, PinReadEnable, PinWriteEnable,
     };
-    use crate::gpio::gpiod::{
-        PD0, PD1, PD10, PD11, PD12, PD13, PD14, PD15, PD4, PD5, PD7, PD8, PD9,
+    use crate::gpio::{
+        Alternate, PushPull, PD0, PD1, PD10, PD11, PD12, PD13, PD14, PD15, PD4, PD5, PD7, PD8, PD9,
+        PE10, PE11, PE12, PE13, PE14, PE15, PE2, PE3, PE4, PE5, PE6, PE7, PE8, PE9, PF0, PF1, PF12,
+        PF13, PF14, PF15, PF2, PF3, PF4, PF5, PG0, PG1, PG10, PG12, PG13, PG2, PG3, PG4, PG5, PG9,
     };
-    use crate::gpio::gpioe::{
-        PE10, PE11, PE12, PE13, PE14, PE15, PE2, PE3, PE4, PE5, PE6, PE7, PE8, PE9,
-    };
-    use crate::gpio::gpiof::{PF0, PF1, PF12, PF13, PF14, PF15, PF2, PF3, PF4, PF5};
-    use crate::gpio::gpiog::{PG0, PG1, PG10, PG12, PG13, PG2, PG3, PG4, PG5, PG9};
-    use crate::gpio::{Alternate, PushPull};
 
     // All FSMC/FMC pins use AF12
     type FmcAlternate = Alternate<PushPull, 12>;
@@ -721,11 +717,10 @@ mod extra_pins {
         PinAddress, PinChipSelect4, PinD0, PinD1, PinD13, PinD2, PinD3, PinD4, PinD5, PinD6, PinD7,
         PinReadEnable, PinWriteEnable,
     };
-    use crate::gpio::gpioa::{PA2, PA3, PA4, PA5};
-    use crate::gpio::gpiob::{PB12, PB14};
-    use crate::gpio::gpioc::{PC11, PC12, PC2, PC3, PC4, PC5, PC6};
-    use crate::gpio::gpiod::PD2;
-    use crate::gpio::{Alternate, PushPull};
+    use crate::gpio::{
+        Alternate, PushPull, PA2, PA3, PA4, PA5, PB12, PB14, PC11, PC12, PC2, PC3, PC4, PC5, PC6,
+        PD2,
+    };
 
     // Most FSMC/FMC pins use AF12, but a few use AF10
     type FmcAlternate = Alternate<PushPull, 12>;

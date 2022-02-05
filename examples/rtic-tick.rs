@@ -7,7 +7,7 @@ use panic_halt as _;
 mod app {
     use stm32f4xx_hal::{
         fugit::MonoTimerUs,
-        gpio::{gpioc::PC13, Output, PushPull},
+        gpio::{Output, PushPull, PC13},
         pac,
         prelude::*,
     };

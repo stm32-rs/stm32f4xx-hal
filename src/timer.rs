@@ -721,21 +721,7 @@ hal!(
     crate::pac::TIM14: [u16, CH1],
 );
 
-#[allow(unused)]
-#[cfg(feature = "gpiod")]
-use crate::gpio::gpiod::*;
-#[allow(unused)]
-#[cfg(feature = "gpioe")]
-use crate::gpio::gpioe::*;
-#[allow(unused)]
-#[cfg(feature = "gpiof")]
-use crate::gpio::gpiof::*;
-#[allow(unused)]
-#[cfg(feature = "gpioi")]
-use crate::gpio::gpioi::*;
-use crate::gpio::{gpioa::*, gpiob::*, Alternate};
-#[allow(unused)]
-use crate::gpio::{gpioc::*, gpioh::*};
+use crate::gpio::{self, Alternate};
 
 // Output channels markers
 pub trait CPin<C, TIM> {}
@@ -747,7 +733,7 @@ pub struct C4;
 macro_rules! channel_impl {
     ( $( $TIM:ident, $C:ident, $PINX:ident, $AF:literal; )+ ) => {
         $(
-            impl<Otype> CPin<$C, crate::pac::$TIM> for $PINX<Alternate<Otype, $AF>> { }
+            impl<Otype> CPin<$C, crate::pac::$TIM> for gpio::$PINX<Alternate<Otype, $AF>> { }
         )+
     };
 }

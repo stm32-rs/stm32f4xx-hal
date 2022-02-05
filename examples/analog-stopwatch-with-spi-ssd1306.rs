@@ -12,7 +12,7 @@ use stm32f4xx_hal as hal;
 
 use crate::hal::{
     fugit::{CounterUs, Event, Timer},
-    gpio::{gpioa::PA0, Edge, Input, PullDown},
+    gpio::{Edge, Input, PullDown, PA0},
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},

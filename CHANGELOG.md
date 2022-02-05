@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Reexport pins in `gpio` module
 - Add channel events, make Event use bitflags (simplify interrupt handling) [#425]
 - reexport `digital::v2::PinState` again [#428]
 - Timer impls with time based on `fugit` moved to `fugit` module, added `Pwm` and `fugit-timer` impls [#423]

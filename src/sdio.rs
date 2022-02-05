@@ -1,13 +1,6 @@
 //! Sdio host
 
-#[cfg(any(
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423"
-))]
-use crate::gpio::{gpioa::*, gpiob::*};
-use crate::gpio::{gpioc::*, gpiod::*, Alternate, PushPull};
+use crate::gpio::{self, Alternate, PushPull};
 use crate::pac::{self, RCC, SDIO};
 use crate::rcc::{Clocks, Enable, Reset};
 #[allow(unused_imports)]
@@ -93,32 +86,32 @@ macro_rules! pins {
     feature = "stm32f479"
 ))]
 pins! {
-    CLK: [PC12<Alternate<PushPull, 12>>]
-    CMD: [PD2<Alternate<PushPull, 12>>]
-    D0: [PC8<Alternate<PushPull, 12>>]
-    D1: [PC9<Alternate<PushPull, 12>>]
-    D2: [PC10<Alternate<PushPull, 12>>]
-    D3: [PC11<Alternate<PushPull, 12>>]
+    CLK: [gpio::PC12<Alternate<PushPull, 12>>]
+    CMD: [gpio::PD2<Alternate<PushPull, 12>>]
+    D0: [gpio::PC8<Alternate<PushPull, 12>>]
+    D1: [gpio::PC9<Alternate<PushPull, 12>>]
+    D2: [gpio::PC10<Alternate<PushPull, 12>>]
+    D3: [gpio::PC11<Alternate<PushPull, 12>>]
 }
 
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 pins! {
-    CLK: [PB15<Alternate<PushPull, 12>>]
-    CMD: [PA6<Alternate<PushPull, 12>>]
-    D0: [PB4<Alternate<PushPull, 12>>, PB6<Alternate<PushPull, 12>>]
-    D1: [PA8<Alternate<PushPull, 12>>]
-    D2: [PA9<Alternate<PushPull, 12>>]
-    D3: [PB5<Alternate<PushPull, 12>>]
+    CLK: [gpio::PB15<Alternate<PushPull, 12>>]
+    CMD: [gpio::PA6<Alternate<PushPull, 12>>]
+    D0: [gpio::PB4<Alternate<PushPull, 12>>, gpio::PB6<Alternate<PushPull, 12>>]
+    D1: [gpio::PA8<Alternate<PushPull, 12>>]
+    D2: [gpio::PA9<Alternate<PushPull, 12>>]
+    D3: [gpio::PB5<Alternate<PushPull, 12>>]
 }
 
 #[cfg(feature = "stm32f411")]
 pins! {
-    CLK: [PB15<Alternate<PushPull, 12>>]
-    CMD: [PA6<Alternate<PushPull, 12>>]
-    D0: [PB4<Alternate<PushPull, 12>>, PB7<Alternate<PushPull, 12>>]
-    D1: [PA8<Alternate<PushPull, 12>>]
-    D2: [PA9<Alternate<PushPull, 12>>]
-    D3: [PB5<Alternate<PushPull, 12>>]
+    CLK: [gpio::PB15<Alternate<PushPull, 12>>]
+    CMD: [gpio::PA6<Alternate<PushPull, 12>>]
+    D0: [gpio::PB4<Alternate<PushPull, 12>>, gpio::PB7<Alternate<PushPull, 12>>]
+    D1: [gpio::PA8<Alternate<PushPull, 12>>]
+    D2: [gpio::PA9<Alternate<PushPull, 12>>]
+    D3: [gpio::PB5<Alternate<PushPull, 12>>]
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]

@@ -8,12 +8,6 @@ use crate::gpio::{Const, OpenDrain, PinA, SetAlternate};
 use crate::pac::I2C3;
 use crate::pac::{I2C1, I2C2, RCC};
 
-#[allow(unused)]
-#[cfg(feature = "gpiof")]
-use crate::gpio::gpiof;
-#[allow(unused)]
-use crate::gpio::{gpioa, gpiob, gpioc, gpioh};
-
 use crate::rcc::Clocks;
 use crate::time::{Hertz, U32Ext};
 

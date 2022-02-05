@@ -24,7 +24,7 @@ use stm32f4xx_hal as hal;
 use crate::hal::{
     delay::Delay,
     fugit::{CounterUs, Event, Timer},
-    gpio::{gpioc::PC13, Edge, Input, PullUp},
+    gpio::{Edge, Input, PullUp, PC13},
     i2c::I2c,
     interrupt, pac,
     prelude::*,

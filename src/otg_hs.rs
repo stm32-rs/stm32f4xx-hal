@@ -8,10 +8,7 @@
 
 use crate::pac;
 
-use crate::gpio::{
-    gpiob::{PB14, PB15},
-    Alternate, PushPull,
-};
+use crate::gpio::{Alternate, PushPull, PB14, PB15};
 use crate::rcc::{Enable, Reset};
 use crate::time::Hertz;
 
