@@ -39,10 +39,6 @@
 pub use embedded_hal::adc::OneShot as _embedded_hal_adc_OneShot;
 pub use embedded_hal::blocking::delay::DelayMs as _embedded_hal_blocking_delay_DelayMs;
 pub use embedded_hal::blocking::delay::DelayUs as _embedded_hal_blocking_delay_DelayUs;
-pub use embedded_hal::blocking::i2c::{
-    Read as _embedded_hal_blocking_i2c_Read, Write as _embedded_hal_blocking_i2c_Write,
-    WriteRead as _embedded_hal_blocking_i2c_WriteRead,
-};
 pub use embedded_hal::blocking::serial::Write as _embedded_hal_blocking_serial_Write;
 pub use embedded_hal::blocking::spi::{
     Transfer as _embedded_hal_blocking_spi_Transfer, Write as _embedded_hal_blocking_spi_Write,
