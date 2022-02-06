@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Use `time` for `Rtc` instead of `rtcc`, add `rtc` example [#436]
 - Move `i2c` `embedded-hal` trait impls to `I2c` methods [#431]
 - Reexport pins in `gpio` module
 - Pwm channels now constants [#432]
@@ -40,6 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#431]: https://github.com/stm32-rs/stm32f4xx-hal/pull/431
 [#432]: https://github.com/stm32-rs/stm32f4xx-hal/pull/432
 [#434]: https://github.com/stm32-rs/stm32f4xx-hal/pull/434
+[#436]: https://github.com/stm32-rs/stm32f4xx-hal/pull/436
 
 ### Changed
 
