@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Move `i2c` `embedded-hal` trait impls to `I2c` methods [#431]
 - Reexport pins in `gpio` module
 - Add channel events, make Event use bitflags (simplify interrupt handling) [#425]
 - reexport `digital::v2::PinState` again [#428]
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#428]: https://github.com/stm32-rs/stm32f4xx-hal/pull/428
 [#425]: https://github.com/stm32-rs/stm32f4xx-hal/pull/425
 [#429]: https://github.com/stm32-rs/stm32f4xx-hal/pull/429
+[#431]: https://github.com/stm32-rs/stm32f4xx-hal/pull/431
 
 ### Changed
 
