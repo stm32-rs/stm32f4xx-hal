@@ -126,6 +126,16 @@ pub struct Analog;
 
 pub type Debugger = Alternate<PushPull, 0>;
 
+pub type OutPP = Output<PushPull>;
+pub type OutOD = Output<OpenDrain>;
+
+pub type InF = Input<Floating>;
+pub type InPU = Input<PullUp>;
+pub type InPD = Input<PullDown>;
+
+pub type AltPP<const A: u8> = Alternate<PushPull, A>;
+pub type AltOD<const A: u8> = Alternate<OpenDrain, A>;
+
 /// GPIO Pin speed selection
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Speed {
