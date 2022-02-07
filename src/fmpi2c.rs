@@ -14,6 +14,8 @@ pub struct FMPI2c<I2C, PINS> {
     pins: PINS,
 }
 
+pub type FMPI2c1<PINS> = FMPI2c<FMPI2C1, PINS>;
+
 #[derive(Debug, PartialEq)]
 pub enum FmpMode {
     Standard { frequency: Hertz },

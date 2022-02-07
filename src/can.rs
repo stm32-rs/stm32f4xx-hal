@@ -9,7 +9,11 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset {}
 
 // Implemented by all SPI instances
 impl Instance for CAN1 {}
+pub type Can1<PINS> = Can<CAN1, PINS>;
 impl Instance for CAN2 {}
+pub type Can2<PINS> = Can<CAN2, PINS>;
+#[cfg(feature = "can3")]
+pub type Can3<PINS> = Can<crate::pac::CAN3, PINS>;
 
 pub struct Tx;
 impl crate::Sealed for Tx {}

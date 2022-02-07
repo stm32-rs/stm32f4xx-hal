@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Aliases for peripheral wrappers [#434]
 - `WithPwm` trait implemented for timers with channels (internals) [#425]
 - `Pwm` struct with `split` method and implementation of embedded-hal::Pwm (similar to f1xx-hal) [#425]
 - VSCode setting file
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#425]: https://github.com/stm32-rs/stm32f4xx-hal/pull/425
 [#429]: https://github.com/stm32-rs/stm32f4xx-hal/pull/429
 [#431]: https://github.com/stm32-rs/stm32f4xx-hal/pull/431
+[#434]: https://github.com/stm32-rs/stm32f4xx-hal/pull/434
 
 ### Changed
 

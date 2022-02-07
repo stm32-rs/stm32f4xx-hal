@@ -1,12 +1,10 @@
 use core::ops::Deref;
 
-use crate::pac::i2c1;
+use crate::pac::{self, i2c1};
 use crate::rcc::{Enable, Reset};
 
 use crate::gpio::{Const, OpenDrain, PinA, SetAlternate};
-#[cfg(feature = "i2c3")]
-use crate::pac::I2C3;
-use crate::pac::{I2C1, I2C2, RCC};
+use crate::pac::RCC;
 
 use crate::rcc::Clocks;
 use crate::time::{Hertz, U32Ext};
@@ -114,11 +112,15 @@ pub enum Error {
 
 pub trait Instance: crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {}
 
-impl Instance for I2C1 {}
-impl Instance for I2C2 {}
+impl Instance for pac::I2C1 {}
+pub type I2c1<PINS> = I2c<pac::I2C1, PINS>;
+impl Instance for pac::I2C2 {}
+pub type I2c2<PINS> = I2c<pac::I2C2, PINS>;
 
 #[cfg(feature = "i2c3")]
-impl Instance for I2C3 {}
+impl Instance for pac::I2C3 {}
+#[cfg(feature = "i2c3")]
+pub type I2c3<PINS> = I2c<pac::I2C3, PINS>;
 
 impl<I2C, PINS> I2c<I2C, PINS>
 where
