@@ -20,6 +20,30 @@ impl<MODE, const P: char> PartiallyErasedPin<MODE, P> {
     }
 }
 
+impl<MODE, const P: char> fmt::Debug for PartiallyErasedPin<MODE, P> {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_fmt(format_args!(
+            "P{}({})<{}>",
+            P,
+            self.i,
+            crate::stripped_type_name::<MODE>()
+        ))
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl<MODE, const P: char> defmt::Format for PartiallyErasedPin<MODE, P> {
+    fn format(&self, f: defmt::Formatter) {
+        defmt::write!(
+            f,
+            "P{}({})<{}>",
+            P,
+            self.i,
+            crate::stripped_type_name::<MODE>()
+        );
+    }
+}
+
 impl<MODE, const P: char> PinExt for PartiallyErasedPin<MODE, P> {
     type Mode = MODE;
 

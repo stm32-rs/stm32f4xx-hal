@@ -1,15 +1,43 @@
 /// Bits per second
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Bps(pub u32);
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+#[cfg(feature = "defmt")]
+impl defmt::Format for Bps {
+    fn format(&self, f: defmt::Formatter) {
+        defmt::write!(f, "{} bps", self.0);
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Hertz(pub u32);
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+#[cfg(feature = "defmt")]
+impl defmt::Format for Hertz {
+    fn format(&self, f: defmt::Formatter) {
+        defmt::write!(f, "{} Hz", self.0);
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct KiloHertz(pub u32);
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+#[cfg(feature = "defmt")]
+impl defmt::Format for KiloHertz {
+    fn format(&self, f: defmt::Formatter) {
+        defmt::write!(f, "{} kHz", self.0);
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct MegaHertz(pub u32);
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for MegaHertz {
+    fn format(&self, f: defmt::Formatter) {
+        defmt::write!(f, "{} MHz", self.0);
+    }
+}
 
 /// Extension trait that adds convenience methods to the `u32` type
 pub trait U32Ext {

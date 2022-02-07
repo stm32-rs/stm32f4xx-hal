@@ -53,8 +53,9 @@ use crate::rcc::Clocks;
 use crate::time::Hertz;
 
 /// SPI error
-#[non_exhaustive]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[non_exhaustive]
 pub enum Error {
     /// Overrun occurred
     Overrun,
@@ -105,6 +106,8 @@ pub type NoMiso = NoPin;
 pub type NoMosi = NoPin;
 
 /// Interrupt events
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Event {
     /// New data has been received
     Rxne,
