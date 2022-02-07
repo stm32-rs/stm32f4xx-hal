@@ -4,6 +4,7 @@ use core::ptr;
 
 use crate::dma::traits::PeriAddress;
 use crate::gpio::{Const, NoPin, PinA, PushPull, SetAlternate};
+use crate::pac;
 
 /// Clock polarity
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -34,20 +35,8 @@ pub struct Mode {
 
 mod hal_02;
 
-use crate::pac::{spi1, RCC, SPI1, SPI2};
+use crate::pac::{spi1, RCC};
 use crate::rcc;
-
-#[cfg(feature = "spi3")]
-use crate::pac::SPI3;
-
-#[cfg(feature = "spi4")]
-use crate::pac::SPI4;
-
-#[cfg(feature = "spi5")]
-use crate::pac::SPI5;
-
-#[cfg(feature = "spi6")]
-use crate::pac::SPI6;
 
 use crate::rcc::Clocks;
 use crate::time::Hertz;
@@ -136,7 +125,9 @@ pub trait Instance:
 
 // Implemented by all SPI instances
 macro_rules! spi {
-    ($SPI:ident: ($spi:ident)) => {
+    ($SPI:ty: $Spi:ident) => {
+        pub type $Spi<PINS> = Spi<$SPI, PINS, TransferModeNormal>;
+
         impl Instance for $SPI {
             fn ptr() -> *const spi1::RegisterBlock {
                 <$SPI>::ptr() as *const _
@@ -145,20 +136,20 @@ macro_rules! spi {
     };
 }
 
-spi! { SPI1: (spi1) }
-spi! { SPI2: (spi2) }
+spi! { pac::SPI1: Spi1 }
+spi! { pac::SPI2: Spi2 }
 
 #[cfg(feature = "spi3")]
-spi! { SPI3: (spi3) }
+spi! { pac::SPI3: Spi3 }
 
 #[cfg(feature = "spi4")]
-spi! { SPI4: (spi4) }
+spi! { pac::SPI4: Spi4 }
 
 #[cfg(feature = "spi5")]
-spi! { SPI5: (spi5) }
+spi! { pac::SPI5: Spi5 }
 
 #[cfg(feature = "spi6")]
-spi! { SPI6: (spi6) }
+spi! { pac::SPI6: Spi6 }
 
 impl<SPI, PINS> Spi<SPI, PINS, TransferModeNormal>
 where

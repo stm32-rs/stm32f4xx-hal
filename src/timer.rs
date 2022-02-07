@@ -10,7 +10,7 @@ use embedded_hal::timer::{Cancel, CountDown, Periodic};
 use void::Void;
 
 use crate::bb;
-use crate::pac::RCC;
+use crate::pac::{self, RCC};
 use crate::pwm::{pwm_pin, PwmChannel};
 
 use crate::rcc::{self, Clocks};
@@ -280,9 +280,10 @@ where
 }
 
 macro_rules! hal {
-    ($($TIM:ty: [$bits:ty, $($cnum:ident $(, $aoe:ident)?)?],)+) => {
+    ($($TIM:ty: [$Timer:ident, $bits:ty, $($cnum:ident $(, $aoe:ident)?)?],)+) => {
         $(
             impl Instance for $TIM { }
+            pub type $Timer = Timer<$TIM>;
 
             impl General for $TIM {
                 type Width = $bits;
@@ -688,37 +689,37 @@ where
 
 // All F4xx parts have these timers.
 hal!(
-    crate::pac::TIM1: [u16, CH4, _aoe],
-    crate::pac::TIM9: [u16, CH2],
-    crate::pac::TIM11: [u16, CH1],
+    pac::TIM1: [Timer1, u16, CH4, _aoe],
+    pac::TIM9: [Timer9, u16, CH2],
+    pac::TIM11: [Timer11, u16, CH1],
 );
 
 // All parts except for F410 add these timers.
 #[cfg(not(feature = "stm32f410"))]
 hal!(
-    crate::pac::TIM5: [u32, CH4],
-    crate::pac::TIM2: [u32, CH4],
-    crate::pac::TIM3: [u16, CH4],
-    crate::pac::TIM4: [u16, CH4],
-    crate::pac::TIM10: [u16, CH1],
+    pac::TIM5: [Timer5, u32, CH4],
+    pac::TIM2: [Timer2, u32, CH4],
+    pac::TIM3: [Timer3, u16, CH4],
+    pac::TIM4: [Timer4, u16, CH4],
+    pac::TIM10: [Timer10, u16, CH1],
 );
 
 // TIM5 on F410 is 16-bit
 #[cfg(feature = "stm32f410")]
-hal!(crate::pac::TIM5: [u16, CH4],);
+hal!(pac::TIM5: [Timer5, u16, CH4],);
 
 // All parts except F401 and F411.
 #[cfg(not(any(feature = "stm32f401", feature = "stm32f411",)))]
-hal!(crate::pac::TIM6: [u16,],);
+hal!(pac::TIM6: [Timer6, u16,],);
 
 // All parts except F401, F410, F411.
 #[cfg(not(any(feature = "stm32f401", feature = "stm32f410", feature = "stm32f411",)))]
 hal!(
-    crate::pac::TIM7: [u16,],
-    crate::pac::TIM8: [u16, CH4, _aoe],
-    crate::pac::TIM12: [u16, CH2],
-    crate::pac::TIM13: [u16, CH1],
-    crate::pac::TIM14: [u16, CH1],
+    pac::TIM7: [Timer7, u16,],
+    pac::TIM8: [Timer8, u16, CH4, _aoe],
+    pac::TIM12: [Timer12, u16, CH2],
+    pac::TIM13: [Timer13, u16, CH1],
+    pac::TIM14: [Timer14, u16, CH1],
 );
 
 use crate::gpio::{self, Alternate};
