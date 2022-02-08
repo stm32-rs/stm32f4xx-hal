@@ -153,8 +153,7 @@ where
     }
 
     fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
-        let duty: u32 = TIM::read_cc_value(PINS::check_used(channel) as u8).into();
-        duty as u16
+        TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
 
     fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {

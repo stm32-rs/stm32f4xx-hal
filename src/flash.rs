@@ -364,7 +364,8 @@ impl ReadNorFlash for LockedFlash {
 
     fn read(&mut self, offset: u32, bytes: &mut [u8]) -> Result<(), Self::Error> {
         let offset = offset as usize;
-        Ok(bytes.copy_from_slice(&self.flash.read()[offset..offset + bytes.len()]))
+        bytes.copy_from_slice(&self.flash.read()[offset..offset + bytes.len()]);
+        Ok(())
     }
 
     fn capacity(&self) -> usize {
@@ -379,7 +380,8 @@ impl<'a> ReadNorFlash for UnlockedFlash<'a> {
 
     fn read(&mut self, offset: u32, bytes: &mut [u8]) -> Result<(), Self::Error> {
         let offset = offset as usize;
-        Ok(bytes.copy_from_slice(&self.flash.read()[offset..offset + bytes.len()]))
+        bytes.copy_from_slice(&self.flash.read()[offset..offset + bytes.len()]);
+        Ok(())
     }
 
     fn capacity(&self) -> usize {
