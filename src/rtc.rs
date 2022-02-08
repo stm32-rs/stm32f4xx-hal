@@ -8,6 +8,7 @@ use crate::pac::{rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
 use core::convert::TryInto;
 use core::fmt;
+use core::marker::PhantomData;
 use time::{Date, PrimitiveDateTime, Time};
 
 /// Invalid input error
@@ -17,12 +18,16 @@ pub enum Error {
     InvalidInputData,
 }
 
-pub const LSE_BITS: u8 = 0b01;
+/// RTC clock source LSE oscillator clock (type state)
+pub struct Lse;
+/// RTC clock source LSI oscillator clock (type state)
+pub struct Lsi;
 
 /// Real Time Clock peripheral
-pub struct Rtc {
+pub struct Rtc<CS = Lse> {
     /// RTC Peripheral register
     pub regs: RTC,
+    _clock_source: PhantomData<CS>,
 }
 
 #[cfg(feature = "defmt")]
@@ -49,27 +54,27 @@ pub enum LSEClockMode {
     Bypass,
 }
 
-impl Rtc {
+impl Rtc<Lse> {
     /// Create and enable a new RTC with external crystal or ceramic resonator and default prescalers.
     pub fn new(regs: RTC, pwr: &mut PWR) -> Self {
-        Self::with_source(regs, pwr, LSEClockMode::Oscillator, 255, 127)
+        Self::with_config(regs, pwr, LSEClockMode::Oscillator, 255, 127)
     }
 
     /// Create and enable a new RTC, and configure its clock source and prescalers.
     ///
-    /// From AN4759, Table 7, when using the LSE (The only clock source this module
-    /// supports currently), set `prediv_s` to 255, and `prediv_a` to 127 to get a
-    /// calendar clock of 1Hz.
-    /// The `bypass` argument is `true` if you're using an external oscillator that
-    /// doesn't connect to `OSC32_IN`, such as a MEMS resonator.
-    pub fn with_source(
+    /// From AN3371, Table 3, when using the LSE,
+    /// set `prediv_s` to 255, and `prediv_a` to 127 to get a calendar clock of 1Hz.
+    pub fn with_config(
         regs: RTC,
         pwr: &mut PWR,
         mode: LSEClockMode,
         prediv_s: u16,
         prediv_a: u8,
     ) -> Self {
-        let mut result = Self { regs };
+        let mut result = Self {
+            regs,
+            _clock_source: PhantomData,
+        };
 
         // Steps:
         // Enable PWR and DBP
@@ -90,6 +95,8 @@ impl Rtc {
             if rcc.bdcr.read().lserdy().bit_is_clear() {
                 result.enable_lse(rcc, mode);
             }
+            // Set clock source to LSE.
+            rcc.bdcr.modify(|_, w| w.rtcsel().lse());
             result.enable(rcc);
         }
 
@@ -122,12 +129,75 @@ impl Rtc {
                 LSEClockMode::Oscillator => bb::clear(&rcc.bdcr, 2),
             }
             while rcc.bdcr.read().lserdy().bit_is_clear() {}
-            // Set clock source to LSE.
-            // Set BDCR - Bit 8 (RTCSEL to value for LSE)
-            bb::set(&rcc.bdcr, 8);
         }
     }
+}
 
+impl Rtc<Lsi> {
+    /// Create and enable a new RTC with internal crystal and default prescalers.
+    pub fn new_lsi(regs: RTC, pwr: &mut PWR) -> Self {
+        Self::lsi_with_config(regs, pwr, 249, 127)
+    }
+
+    /// Create and enable a new RTC, and configure its clock source and prescalers.
+    ///
+    /// From AN3371, Table 3, when using the LSI,
+    /// set `prediv_s` to 249, and `prediv_a` to 127 to get a calendar clock of 1Hz.
+    pub fn lsi_with_config(regs: RTC, pwr: &mut PWR, prediv_s: u16, prediv_a: u8) -> Self {
+        let mut result = Self {
+            regs,
+            _clock_source: PhantomData,
+        };
+
+        // Steps:
+        // Enable PWR and DBP
+        // Enable LSI (if needed)
+        // Enable RTC Clock
+        // Disable Write Protect
+        // Enter Init
+        // Configure 24 hour format
+        // Set prescalers
+        // Exit Init
+        // Enable write protect
+
+        unsafe {
+            let rcc = &(*RCC::ptr());
+            // As per the sample code, unlock comes first. (Enable PWR and DBP)
+            result.unlock(rcc, pwr);
+            // If necessary, enable the LSE.
+            if rcc.csr.read().lsirdy().bit_is_clear() {
+                result.enable_lsi(rcc);
+            }
+            // Set clock source to LSI.
+            rcc.bdcr.modify(|_, w| w.rtcsel().lsi());
+            result.enable(rcc);
+        }
+
+        result.modify(|regs| {
+            // Set 24 Hour
+            regs.cr.modify(|_, w| w.fmt().clear_bit());
+            // Set prescalers
+            regs.prer.modify(|_, w| {
+                w.prediv_s().bits(prediv_s);
+                w.prediv_a().bits(prediv_a)
+            })
+        });
+
+        result
+    }
+
+    fn enable_lsi(&mut self, rcc: &RegisterBlock) {
+        unsafe {
+            // Force a reset of the backup domain.
+            self.backup_reset(rcc);
+            // Enable the LSI.
+            rcc.csr.modify(|_, w| w.lsion().on());
+            while rcc.csr.read().lsirdy().is_not_ready() {}
+        }
+    }
+}
+
+impl<CS> Rtc<CS> {
     fn unlock(&mut self, rcc: &RegisterBlock, pwr: &mut PWR) {
         // Enable the backup interface
         // Set APB1 - Bit 28 (PWREN)
