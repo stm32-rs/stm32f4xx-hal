@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Use `embedded-dma` v0.2 [#440]
 - Add LSI support for `Rtc` [#438]
 - Use `time` for `Rtc` instead of `rtcc`, add `rtc` example [#436]
 - Move `i2c` `embedded-hal` trait impls to `I2c` methods [#431]
@@ -44,6 +45,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#434]: https://github.com/stm32-rs/stm32f4xx-hal/pull/434
 [#436]: https://github.com/stm32-rs/stm32f4xx-hal/pull/436
 [#438]: https://github.com/stm32-rs/stm32f4xx-hal/pull/438
+[#440]: https://github.com/stm32-rs/stm32f4xx-hal/pull/440
 
 ### Changed
 

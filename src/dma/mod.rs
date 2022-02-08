@@ -15,7 +15,7 @@ use core::{
     ptr,
     sync::atomic::{compiler_fence, Ordering},
 };
-use embedded_dma::{StaticReadBuffer, StaticWriteBuffer};
+use embedded_dma::{ReadBuffer, WriteBuffer};
 
 use crate::pac::RCC;
 use crate::{pac, rcc};
@@ -889,7 +889,7 @@ where
     STREAM: Stream,
     ChannelX<CHANNEL>: Channel,
     PERIPHERAL: PeriAddress + DMASet<STREAM, MemoryToPeripheral, CHANNEL>,
-    BUF: StaticReadBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
+    BUF: ReadBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Configures the DMA stream to the correct channel for the peripheral, configures source and
     /// destination and applies supplied configuration. If double buffering is enabled, the
@@ -1020,7 +1020,7 @@ where
     STREAM: Stream,
     ChannelX<CHANNEL>: Channel,
     PERIPHERAL: PeriAddress + DMASet<STREAM, PeripheralToMemory, CHANNEL> + SafePeripheralRead,
-    BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
+    BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Access the owned peripheral for reading
     pub fn peripheral(&self) -> &PERIPHERAL {
@@ -1034,7 +1034,7 @@ where
     STREAM: Stream,
     ChannelX<CHANNEL>: Channel,
     PERIPHERAL: PeriAddress + DMASet<STREAM, PeripheralToMemory, CHANNEL>,
-    BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
+    BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Configures the DMA stream to the correct channel for the peripheral, configures source and
     /// destination and applies supplied configuration. If double buffering is enabled, the
@@ -1169,7 +1169,7 @@ where
     ChannelX<CHANNEL>: Channel,
     PERIPHERAL: PeriAddress + DMASet<STREAM, MemoryToMemory<S>, CHANNEL>,
     MemoryToMemory<S>: PeriAddress,
-    BUF: StaticWriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
+    BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Configures the DMA stream to the correct channel for the peripheral, configures source and
     /// destination and applies supplied configuration. In a memory to memory transfer,
