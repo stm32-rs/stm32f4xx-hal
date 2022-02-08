@@ -34,8 +34,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#421]: https://github.com/stm32-rs/stm32f4xx-hal/pull/421
 [#422]: https://github.com/stm32-rs/stm32f4xx-hal/pull/422
 [#423]: https://github.com/stm32-rs/stm32f4xx-hal/pull/423
-[#428]: https://github.com/stm32-rs/stm32f4xx-hal/pull/428
 [#425]: https://github.com/stm32-rs/stm32f4xx-hal/pull/425
+[#428]: https://github.com/stm32-rs/stm32f4xx-hal/pull/428
 [#429]: https://github.com/stm32-rs/stm32f4xx-hal/pull/429
 [#431]: https://github.com/stm32-rs/stm32f4xx-hal/pull/431
 [#432]: https://github.com/stm32-rs/stm32f4xx-hal/pull/432
