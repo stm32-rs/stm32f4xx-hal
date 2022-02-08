@@ -187,13 +187,11 @@ impl Rtc<Lsi> {
     }
 
     fn enable_lsi(&mut self, rcc: &RegisterBlock) {
-        unsafe {
-            // Force a reset of the backup domain.
-            self.backup_reset(rcc);
-            // Enable the LSI.
-            rcc.csr.modify(|_, w| w.lsion().on());
-            while rcc.csr.read().lsirdy().is_not_ready() {}
-        }
+        // Force a reset of the backup domain.
+        self.backup_reset(rcc);
+        // Enable the LSI.
+        rcc.csr.modify(|_, w| w.lsion().on());
+        while rcc.csr.read().lsirdy().is_not_ready() {}
     }
 }
 

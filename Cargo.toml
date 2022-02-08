@@ -35,7 +35,7 @@ rand_core = "0.6"
 stm32f4 = "0.14.0"
 synopsys-usb-otg = { version = "0.2.0", features = ["cortex-m"], optional = true }
 sdio-host = { version = "0.5.0", optional = true }
-embedded-dma = "0.1.2"
+embedded-dma = "0.2.0"
 bare-metal = { version = "1" }
 cast = { default-features = false, version = "0.3.0" }
 void = { default-features = false, version = "1.0.2" }
