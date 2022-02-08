@@ -135,44 +135,37 @@ impl<TIM: Instance + WithPwm, const FREQ: u32> Timer<TIM, FREQ> {
     }
 }
 
-impl<TIM, P, PINS, const FREQ: u32> embedded_hal::Pwm for Pwm<TIM, P, PINS, FREQ>
+impl<TIM, P, PINS, const FREQ: u32> Pwm<TIM, P, PINS, FREQ>
 where
     TIM: Instance + WithPwm,
     PINS: Pins<TIM, P>,
 {
-    type Channel = Channel;
-    type Duty = u16;
-    type Time = TimerDurationU32<FREQ>;
-
-    fn enable(&mut self, channel: Self::Channel) {
+    pub fn enable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, true)
     }
 
-    fn disable(&mut self, channel: Self::Channel) {
+    pub fn disable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
-    fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
+    pub fn get_duty(&self, channel: Channel) -> u16 {
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
 
-    fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {
+    pub fn set_duty(&mut self, channel: Channel, duty: u16) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty.into())
     }
 
     /// If `0` returned means max_duty is 2^16
-    fn get_max_duty(&self) -> Self::Duty {
+    pub fn get_max_duty(&self) -> u16 {
         (TIM::read_auto_reload() as u16).wrapping_add(1)
     }
 
-    fn get_period(&self) -> Self::Time {
-        Self::Time::from_ticks(TIM::read_auto_reload() + 1)
+    pub fn get_period(&self) -> TimerDurationU32<FREQ> {
+        TimerDurationU32::from_ticks(TIM::read_auto_reload() + 1)
     }
 
-    fn set_period<T>(&mut self, period: T)
-    where
-        T: Into<Self::Time>,
-    {
-        self.tim.set_auto_reload(period.into().ticks() - 1).unwrap();
+    pub fn set_period(&mut self, period: TimerDurationU32<FREQ>) {
+        self.tim.set_auto_reload(period.ticks() - 1).unwrap();
     }
 }

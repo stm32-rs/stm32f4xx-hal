@@ -209,6 +209,53 @@ where
     }
 }
 
+impl<TIM, P, PINS> Pwm<TIM, P, PINS>
+where
+    TIM: Instance + WithPwm,
+    PINS: Pins<TIM, P>,
+{
+    pub fn enable(&mut self, channel: Channel) {
+        TIM::enable_channel(PINS::check_used(channel) as u8, true)
+    }
+
+    pub fn disable(&mut self, channel: Channel) {
+        TIM::enable_channel(PINS::check_used(channel) as u8, false)
+    }
+
+    pub fn get_duty(&self, channel: Channel) -> u16 {
+        TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
+    }
+
+    pub fn set_duty(&mut self, channel: Channel, duty: u16) {
+        TIM::set_cc_value(PINS::check_used(channel) as u8, duty as u32)
+    }
+
+    /// If `0` returned means max_duty is 2^16
+    pub fn get_max_duty(&self) -> u16 {
+        (TIM::read_auto_reload() as u16).wrapping_add(1)
+    }
+
+    pub fn get_period(&self) -> Hertz {
+        let clk = self.clk;
+        let psc = self.tim.read_prescaler() as u32;
+        let arr = TIM::read_auto_reload();
+
+        // Length in ms of an internal clock pulse
+        (clk.0 / (psc * arr)).hz()
+    }
+
+    pub fn set_period<T>(&mut self, period: T)
+    where
+        T: Into<Hertz>,
+    {
+        let clk = self.clk;
+
+        let (psc, arr) = compute_arr_presc(period.into().0, clk.0);
+        self.tim.set_prescaler(psc);
+        self.tim.set_auto_reload(arr).unwrap();
+    }
+}
+
 impl<TIM, P, PINS> embedded_hal::Pwm for Pwm<TIM, P, PINS>
 where
     TIM: Instance + WithPwm,
@@ -219,43 +266,34 @@ where
     type Time = Hertz;
 
     fn enable(&mut self, channel: Self::Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, true)
+        self.enable(channel)
     }
 
     fn disable(&mut self, channel: Self::Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, false)
+        self.disable(channel)
     }
 
     fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
-        TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
+        self.get_duty(channel)
     }
 
     fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {
-        TIM::set_cc_value(PINS::check_used(channel) as u8, duty as u32)
+        self.set_duty(channel, duty)
     }
 
     /// If `0` returned means max_duty is 2^16
     fn get_max_duty(&self) -> Self::Duty {
-        (TIM::read_auto_reload() as u16).wrapping_add(1)
+        self.get_max_duty()
     }
 
     fn get_period(&self) -> Self::Time {
-        let clk = self.clk;
-        let psc = self.tim.read_prescaler() as u32;
-        let arr = TIM::read_auto_reload();
-
-        // Length in ms of an internal clock pulse
-        (clk.0 / (psc * arr)).hz()
+        self.get_period()
     }
 
     fn set_period<T>(&mut self, period: T)
     where
         T: Into<Self::Time>,
     {
-        let clk = self.clk;
-
-        let (psc, arr) = compute_arr_presc(period.into().0, clk.0);
-        self.tim.set_prescaler(psc);
-        self.tim.set_auto_reload(arr).unwrap();
+        self.set_period(period)
     }
 }

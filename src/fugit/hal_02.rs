@@ -1,4 +1,4 @@
-use super::{Counter, Delay, Error, Instance, SysCounter};
+use super::{Channel, Counter, Delay, Error, Instance, Pins, Pwm, SysCounter, WithPwm};
 
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 use fugit::{ExtU32, MicrosDurationU32, TimerDurationU32};
@@ -84,5 +84,47 @@ impl Cancel for SysCounter {
 
     fn cancel(&mut self) -> Result<(), Self::Error> {
         self.cancel()
+    }
+}
+
+impl<TIM, P, PINS, const FREQ: u32> embedded_hal::Pwm for Pwm<TIM, P, PINS, FREQ>
+where
+    TIM: Instance + WithPwm,
+    PINS: Pins<TIM, P>,
+{
+    type Channel = Channel;
+    type Duty = u16;
+    type Time = TimerDurationU32<FREQ>;
+
+    fn enable(&mut self, channel: Self::Channel) {
+        self.enable(channel)
+    }
+
+    fn disable(&mut self, channel: Self::Channel) {
+        self.disable(channel)
+    }
+
+    fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
+        self.get_duty(channel)
+    }
+
+    fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {
+        self.set_duty(channel, duty)
+    }
+
+    /// If `0` returned means max_duty is 2^16
+    fn get_max_duty(&self) -> Self::Duty {
+        self.get_max_duty()
+    }
+
+    fn get_period(&self) -> Self::Time {
+        self.get_period()
+    }
+
+    fn set_period<T>(&mut self, period: T)
+    where
+        T: Into<Self::Time>,
+    {
+        self.set_period(period.into())
     }
 }
