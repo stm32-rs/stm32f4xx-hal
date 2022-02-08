@@ -50,13 +50,25 @@ pub enum LSEClockMode {
 }
 
 impl Rtc {
+    /// Create and enable a new RTC with external crystal or ceramic resonator and default prescalers.
+    pub fn new(regs: RTC, pwr: &mut PWR) -> Self {
+        Self::with_source(regs, pwr, LSEClockMode::Oscillator, 255, 127)
+    }
+
     /// Create and enable a new RTC, and configure its clock source and prescalers.
+    ///
     /// From AN4759, Table 7, when using the LSE (The only clock source this module
     /// supports currently), set `prediv_s` to 255, and `prediv_a` to 127 to get a
     /// calendar clock of 1Hz.
     /// The `bypass` argument is `true` if you're using an external oscillator that
     /// doesn't connect to `OSC32_IN`, such as a MEMS resonator.
-    pub fn new(regs: RTC, prediv_s: u16, prediv_a: u8, mode: LSEClockMode, pwr: &mut PWR) -> Self {
+    pub fn with_source(
+        regs: RTC,
+        pwr: &mut PWR,
+        mode: LSEClockMode,
+        prediv_s: u16,
+        prediv_a: u8,
+    ) -> Self {
         let mut result = Self { regs };
 
         // Steps:
@@ -73,12 +85,12 @@ impl Rtc {
         unsafe {
             let rcc = &(*RCC::ptr());
             // As per the sample code, unlock comes first. (Enable PWR and DBP)
-            unlock(rcc, pwr);
+            result.unlock(rcc, pwr);
             // If necessary, enable the LSE.
             if rcc.bdcr.read().lserdy().bit_is_clear() {
-                enable_lse(rcc, mode);
+                result.enable_lse(rcc, mode);
             }
-            enable(rcc);
+            result.enable(rcc);
         }
 
         result.modify(|regs| {
@@ -92,6 +104,68 @@ impl Rtc {
         });
 
         result
+    }
+
+    /// Enable the low frequency external oscillator. This is the only mode currently
+    /// supported, to avoid exposing the `CR` and `CRS` registers.
+    fn enable_lse(&mut self, rcc: &RegisterBlock, mode: LSEClockMode) {
+        unsafe {
+            // Force a reset of the backup domain.
+            self.backup_reset(rcc);
+            // Enable the LSE.
+            // Set BDCR - Bit 0 (LSEON)
+            bb::set(&rcc.bdcr, 0);
+            match mode {
+                // Set BDCR - Bit 2 (LSEBYP)
+                LSEClockMode::Bypass => bb::set(&rcc.bdcr, 2),
+                // Clear BDCR - Bit 2 (LSEBYP)
+                LSEClockMode::Oscillator => bb::clear(&rcc.bdcr, 2),
+            }
+            while rcc.bdcr.read().lserdy().bit_is_clear() {}
+            // Set clock source to LSE.
+            // Set BDCR - Bit 8 (RTCSEL to value for LSE)
+            bb::set(&rcc.bdcr, 8);
+        }
+    }
+
+    fn unlock(&mut self, rcc: &RegisterBlock, pwr: &mut PWR) {
+        // Enable the backup interface
+        // Set APB1 - Bit 28 (PWREN)
+        PWR::enable(rcc);
+
+        pwr.cr.modify(|_, w| {
+            w
+                // Enable access to the backup registers
+                .dbp()
+                .set_bit()
+        });
+    }
+
+    fn backup_reset(&mut self, rcc: &RegisterBlock) {
+        unsafe {
+            // Set BDCR - Bit 16 (BDRST)
+            bb::set(&rcc.bdcr, 16);
+            // Clear BDCR - Bit 16 (BDRST)
+            bb::clear(&rcc.bdcr, 16);
+        }
+    }
+
+    fn enable(&mut self, rcc: &RegisterBlock) {
+        // Start the actual RTC.
+        // Set BDCR - Bit 15 (RTCEN)
+        unsafe {
+            bb::set(&rcc.bdcr, 15);
+        }
+    }
+
+    pub fn set_prescalers(&mut self, prediv_s: u16, prediv_a: u8) {
+        self.modify(|regs| {
+            // Set prescalers
+            regs.prer.modify(|_, w| {
+                w.prediv_s().bits(prediv_s);
+                w.prediv_a().bits(prediv_a)
+            })
+        });
     }
 
     /// As described in Section 27.3.7 in RM0316,
@@ -339,52 +413,6 @@ fn bcd2_encode(word: u32) -> Result<(u8, u8), Error> {
 
 fn bcd2_decode(fst: u8, snd: u8) -> u32 {
     (fst * 10 + snd).into()
-}
-
-/// Enable the low frequency external oscillator. This is the only mode currently
-/// supported, to avoid exposing the `CR` and `CRS` registers.
-fn enable_lse(rcc: &RegisterBlock, mode: LSEClockMode) {
-    unsafe {
-        // Force a reset of the backup domain.
-        // Set BDCR - Bit 16 (BDRST)
-        bb::set(&rcc.bdcr, 16);
-        // Clear BDCR - Bit 16 (BDRST)
-        bb::clear(&rcc.bdcr, 16);
-        // Enable the LSE.
-        // Set BDCR - Bit 0 (LSEON)
-        bb::set(&rcc.bdcr, 0);
-        match mode {
-            // Set BDCR - Bit 2 (LSEBYP)
-            LSEClockMode::Bypass => bb::set(&rcc.bdcr, 2),
-            // Clear BDCR - Bit 2 (LSEBYP)
-            LSEClockMode::Oscillator => bb::clear(&rcc.bdcr, 2),
-        }
-        while rcc.bdcr.read().lserdy().bit_is_clear() {}
-        // Set clock source to LSE.
-        // Set BDCR - Bit 8 (RTCSEL to value for LSE)
-        bb::set(&rcc.bdcr, 8);
-    }
-}
-
-fn unlock(rcc: &RegisterBlock, pwr: &mut PWR) {
-    // Enable the backup interface
-    // Set APB1 - Bit 28 (PWREN)
-    PWR::enable(rcc);
-
-    pwr.cr.modify(|_, w| {
-        w
-            // Enable access to the backup registers
-            .dbp()
-            .set_bit()
-    });
-}
-
-fn enable(rcc: &RegisterBlock) {
-    // Start the actual RTC.
-    // Set BDCR - Bit 15 (RTCEN)
-    unsafe {
-        bb::set(&rcc.bdcr, 15);
-    }
 }
 
 #[inline(always)]
