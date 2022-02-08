@@ -51,7 +51,6 @@ pub use embedded_hal::watchdog::Watchdog as _embedded_hal_watchdog_Watchdog;
 pub use embedded_hal::watchdog::WatchdogDisable as _embedded_hal_watchdog_WatchdogDisable;
 pub use embedded_hal::watchdog::WatchdogEnable as _embedded_hal_watchdog_WatchdogEnable;
 pub use embedded_hal::Capture as _embedded_hal_Capture;
-pub use embedded_hal::Pwm as _embedded_hal_Pwm;
 pub use embedded_hal::Qei as _embedded_hal_Qei;
 pub use fugit::ExtU32 as _fugit_ExtU32;
 

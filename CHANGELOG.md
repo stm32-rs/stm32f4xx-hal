@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Add inherent impl of `embedded_hal::Pwm` methods on `Pwm`s [#439]
 - Use `embedded-dma` v0.2 [#440]
 - Add LSI support for `Rtc` [#438]
 - Use `time` for `Rtc` instead of `rtcc`, add `rtc` example [#436]
@@ -45,6 +46,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#434]: https://github.com/stm32-rs/stm32f4xx-hal/pull/434
 [#436]: https://github.com/stm32-rs/stm32f4xx-hal/pull/436
 [#438]: https://github.com/stm32-rs/stm32f4xx-hal/pull/438
+[#439]: https://github.com/stm32-rs/stm32f4xx-hal/pull/439
 [#440]: https://github.com/stm32-rs/stm32f4xx-hal/pull/440
 
 ### Changed
