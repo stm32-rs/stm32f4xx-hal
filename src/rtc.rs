@@ -38,6 +38,17 @@ impl fmt::Debug for Rtc {
     }
 }
 
+/// LSE clock mode.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LSEClockMode {
+    /// Enable LSE oscillator to use external crystal or ceramic resonator.
+    Oscillator,
+    /// Bypass LSE oscillator to use external clock source.
+    /// Use this if an external oscillator is used which is not connected to `OSC32_IN` such as a MEMS resonator.
+    Bypass,
+}
+
 impl Rtc {
     /// Create and enable a new RTC, and configure its clock source and prescalers.
     /// From AN4759, Table 7, when using the LSE (The only clock source this module
@@ -45,7 +56,7 @@ impl Rtc {
     /// calendar clock of 1Hz.
     /// The `bypass` argument is `true` if you're using an external oscillator that
     /// doesn't connect to `OSC32_IN`, such as a MEMS resonator.
-    pub fn new(regs: RTC, prediv_s: u16, prediv_a: u8, bypass: bool, pwr: &mut PWR) -> Self {
+    pub fn new(regs: RTC, prediv_s: u16, prediv_a: u8, mode: LSEClockMode, pwr: &mut PWR) -> Self {
         let mut result = Self { regs };
 
         // Steps:
@@ -65,7 +76,7 @@ impl Rtc {
             unlock(rcc, pwr);
             // If necessary, enable the LSE.
             if rcc.bdcr.read().lserdy().bit_is_clear() {
-                enable_lse(rcc, bypass);
+                enable_lse(rcc, mode);
             }
             enable(rcc);
         }
@@ -332,7 +343,7 @@ fn bcd2_decode(fst: u8, snd: u8) -> u32 {
 
 /// Enable the low frequency external oscillator. This is the only mode currently
 /// supported, to avoid exposing the `CR` and `CRS` registers.
-fn enable_lse(rcc: &RegisterBlock, bypass: bool) {
+fn enable_lse(rcc: &RegisterBlock, mode: LSEClockMode) {
     unsafe {
         // Force a reset of the backup domain.
         // Set BDCR - Bit 16 (BDRST)
@@ -342,12 +353,11 @@ fn enable_lse(rcc: &RegisterBlock, bypass: bool) {
         // Enable the LSE.
         // Set BDCR - Bit 0 (LSEON)
         bb::set(&rcc.bdcr, 0);
-        if bypass {
+        match mode {
             // Set BDCR - Bit 2 (LSEBYP)
-            bb::set(&rcc.bdcr, 2);
-        } else {
+            LSEClockMode::Bypass => bb::set(&rcc.bdcr, 2),
             // Clear BDCR - Bit 2 (LSEBYP)
-            bb::clear(&rcc.bdcr, 2);
+            LSEClockMode::Oscillator => bb::clear(&rcc.bdcr, 2),
         }
         while rcc.bdcr.read().lserdy().bit_is_clear() {}
         // Set clock source to LSE.

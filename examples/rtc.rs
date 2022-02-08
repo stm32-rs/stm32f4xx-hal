@@ -9,7 +9,11 @@ use cortex_m_rt::entry;
 use panic_rtt_target as _;
 use rtt_target::{rprintln, rtt_init_print};
 
-use stm32f4xx_hal::{pac, prelude::*, rtc::Rtc};
+use stm32f4xx_hal::{
+    pac,
+    prelude::*,
+    rtc::{LSEClockMode, Rtc},
+};
 use time::{
     macros::{date, time},
     PrimitiveDateTime,
@@ -23,7 +27,7 @@ fn main() -> ! {
 
     let clocks = rcc.cfgr.freeze();
 
-    let mut rtc = Rtc::new(p.RTC, 249, 127, false, &mut p.PWR);
+    let mut rtc = Rtc::new(p.RTC, 249, 127, LSEClockMode::Oscillator, &mut p.PWR);
     let mut delay = p.TIM5.delay_us(&clocks);
 
     rtc.set_datetime(&PrimitiveDateTime::new(
