@@ -31,6 +31,19 @@ impl<TIM: Instance, const FREQ: u32> DelayMs<u16> for Delay<TIM, FREQ> {
     }
 }
 
+impl<TIM: Instance, const FREQ: u32> DelayUs<u8> for Delay<TIM, FREQ> {
+    /// Sleep for `us` microseconds
+    fn delay_us(&mut self, us: u8) {
+        self.delay((us as u32).micros()).unwrap()
+    }
+}
+impl<TIM: Instance, const FREQ: u32> DelayMs<u8> for Delay<TIM, FREQ> {
+    /// Sleep for `ms` milliseconds
+    fn delay_ms(&mut self, ms: u8) {
+        self.delay((ms as u32).millis()).unwrap()
+    }
+}
+
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
 
 impl<TIM: Instance, const FREQ: u32> Periodic for Counter<TIM, FREQ> {}
