@@ -46,6 +46,7 @@ fugit-timer = "0.1.3"
 rtic-monotonic = { version = "1.0", optional = true }
 bitflags = "1.3.2"
 embedded-storage = "0.2"
+hd44780-driver = "0.4.0"
 
 [dependencies.time]
 version = "0.3"
@@ -471,5 +472,9 @@ required-features = ["device-selected"]
 
 [[example]]
 name = "rtc"
+required-features = ["device-selected"]
+
+[[example]]
+name = "hd44780"
 required-features = ["device-selected"]
 
