@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Missing `DelayMs<u8>` / `DelayUs<u8>` impls for fugit::Delay
 - Aliases for peripheral wrappers [#434]
 - `WithPwm` trait implemented for timers with channels (internals) [#425]
 - `Pwm` struct with `split` method and implementation of embedded-hal::Pwm (similar to f1xx-hal) [#425]
