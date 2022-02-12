@@ -99,31 +99,34 @@ where
     }
 }
 
+pub use embedded_hal_one::i2c::NoAcknowledgeSource;
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 #[non_exhaustive]
 pub enum Error {
-    OVERRUN,
-    NACK,
-    NACK_ADDR,
-    NACK_DATA,
-    TIMEOUT,
-    // Note: The BUS error type is not currently returned, but is maintained for backwards
-    // compatibility.
-    BUS,
-    CRC,
-    ARBITRATION,
+    Overrun,
+    NoAcknowledge(NoAcknowledgeSource),
+    Timeout,
+    // Note: The Bus error type is not currently returned, but is maintained for compatibility.
+    Bus,
+    Crc,
+    ArbitrationLoss,
 }
 
 impl Error {
     pub(crate) fn nack_addr(self) -> Self {
         match self {
-            Error::NACK => Error::NACK_ADDR,
+            Error::NoAcknowledge(NoAcknowledgeSource::Unknown) => {
+                Error::NoAcknowledge(NoAcknowledgeSource::Address)
+            }
             e => e,
         }
     }
     pub(crate) fn nack_data(self) -> Self {
         match self {
-            Error::NACK => Error::NACK_DATA,
+            Error::NoAcknowledge(NoAcknowledgeSource::Unknown) => {
+                Error::NoAcknowledge(NoAcknowledgeSource::Data)
+            }
             e => e,
         }
     }
@@ -243,27 +246,27 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
 
         if sr1.timeout().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.timeout().clear_bit());
-            return Err(Error::TIMEOUT);
+            return Err(Error::Timeout);
         }
 
         if sr1.pecerr().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.pecerr().clear_bit());
-            return Err(Error::CRC);
+            return Err(Error::Crc);
         }
 
         if sr1.ovr().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.ovr().clear_bit());
-            return Err(Error::OVERRUN);
+            return Err(Error::Overrun);
         }
 
         if sr1.af().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.af().clear_bit());
-            return Err(Error::NACK);
+            return Err(Error::NoAcknowledge(NoAcknowledgeSource::Unknown));
         }
 
         if sr1.arlo().bit_is_set() {
             self.i2c.sr1.modify(|_, w| w.arlo().clear_bit());
-            return Err(Error::ARBITRATION);
+            return Err(Error::ArbitrationLoss);
         }
 
         // The errata indicates that BERR may be incorrectly detected. It recommends ignoring and
@@ -414,7 +417,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
             // Fallthrough is success
             Ok(())
         } else {
-            Err(Error::OVERRUN)
+            Err(Error::Overrun)
         }
     }
 
@@ -449,9 +452,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
 
     pub fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
         self.write_bytes(addr, bytes.iter().cloned())?;
-        self.read(addr, buffer)?;
-
-        Ok(())
+        self.read(addr, buffer)
     }
 
     pub fn write_iter_read<B>(&mut self, addr: u8, bytes: B, buffer: &mut [u8]) -> Result<(), Error>
@@ -459,8 +460,6 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         B: IntoIterator<Item = u8>,
     {
         self.write_bytes(addr, bytes.into_iter())?;
-        self.read(addr, buffer)?;
-
-        Ok(())
+        self.read(addr, buffer)
     }
 }

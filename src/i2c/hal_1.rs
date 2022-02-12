@@ -1,15 +1,13 @@
-use embedded_hal_one::i2c::{Error, ErrorKind, ErrorType, NoAcknowledgeSource};
+use embedded_hal_one::i2c::{Error, ErrorKind, ErrorType};
 
 impl Error for super::Error {
     fn kind(&self) -> ErrorKind {
-        match self {
-            Self::OVERRUN => ErrorKind::Overrun,
-            Self::BUS => ErrorKind::Bus,
-            Self::ARBITRATION => ErrorKind::ArbitrationLoss,
-            Self::NACK_ADDR => ErrorKind::NoAcknowledge(NoAcknowledgeSource::Address),
-            Self::NACK_DATA => ErrorKind::NoAcknowledge(NoAcknowledgeSource::Data),
-            Self::NACK => ErrorKind::NoAcknowledge(NoAcknowledgeSource::Unknown),
-            Self::CRC | Self::TIMEOUT => ErrorKind::Other,
+        match *self {
+            Self::Overrun => ErrorKind::Overrun,
+            Self::Bus => ErrorKind::Bus,
+            Self::ArbitrationLoss => ErrorKind::ArbitrationLoss,
+            Self::NoAcknowledge(nack) => ErrorKind::NoAcknowledge(nack),
+            Self::Crc | Self::Timeout => ErrorKind::Other,
         }
     }
 }

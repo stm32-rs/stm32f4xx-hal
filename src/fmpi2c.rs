@@ -1,6 +1,6 @@
 use core::ops::Deref;
 
-use crate::i2c::{Error, Pins};
+use crate::i2c::{Error, NoAcknowledgeSource, Pins};
 use crate::pac::{fmpi2c1, FMPI2C1, RCC};
 use crate::rcc::{Enable, Reset};
 use crate::time::{Hertz, U32Ext};
@@ -168,9 +168,16 @@ where
             self.i2c
                 .icr
                 .write(|w| w.stopcf().set_bit().nackcf().set_bit());
-            return Err(Error::NACK);
+            return Err(Error::NoAcknowledge(NoAcknowledgeSource::Unknown));
         }
 
+        Ok(())
+    }
+
+    fn end_transaction(&self) -> Result<(), Error> {
+        // Check and clear flags if they somehow ended up set
+        self.check_and_clear_error_flags(&self.i2c.isr.read())
+            .map_err(Error::nack_data)?;
         Ok(())
     }
 
@@ -186,9 +193,7 @@ where
         // Push out a byte of data
         self.i2c.txdr.write(|w| unsafe { w.bits(u32::from(byte)) });
 
-        self.check_and_clear_error_flags(&self.i2c.isr.read())
-            .map_err(Error::nack_data)?;
-        Ok(())
+        self.end_transaction()
     }
 
     fn recv_byte(&self) -> Result<u8, Error> {
@@ -225,11 +230,7 @@ where
             *c = self.recv_byte()?;
         }
 
-        // Check and clear flags if they somehow ended up set
-        self.check_and_clear_error_flags(&self.i2c.isr.read())
-            .map_err(Error::nack_data)?;
-
-        Ok(())
+        self.end_transaction()
     }
 
     pub fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
@@ -253,11 +254,7 @@ where
             self.send_byte(*c)?;
         }
 
-        // Check and clear flags if they somehow ended up set
-        self.check_and_clear_error_flags(&self.i2c.isr.read())
-            .map_err(Error::nack_data)?;
-
-        Ok(())
+        self.end_transaction()
     }
 
     pub fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
@@ -318,10 +315,6 @@ where
             *c = self.recv_byte()?;
         }
 
-        // Check and clear flags if they somehow ended up set
-        self.check_and_clear_error_flags(&self.i2c.isr.read())
-            .map_err(Error::nack_data)?;
-
-        Ok(())
+        self.end_transaction()
     }
 }
