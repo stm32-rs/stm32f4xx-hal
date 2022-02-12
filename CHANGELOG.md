@@ -18,11 +18,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Extended 64-bit monotonic timer [#640]
  - Basic blocking QSPI interface [#645]
+ - Rtc: add subsecond reading, add interrupts [#446]
 
 ### Fixed
 
  - map `$SpiSlave` into `SpiSlave` struct in `spi!` macro [#635]
 
+[#446]: https://github.com/stm32-rs/stm32f4xx-hal/pull/446
 [#632]: https://github.com/stm32-rs/stm32f4xx-hal/pull/632
 [#635]: https://github.com/stm32-rs/stm32f4xx-hal/pull/635
 [#636]: https://github.com/stm32-rs/stm32f4xx-hal/pull/636

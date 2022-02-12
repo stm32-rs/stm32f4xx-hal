@@ -3,10 +3,10 @@
 //! [ST AN4759](https:/www.st.com%2Fresource%2Fen%2Fapplication_note%2Fdm00226326-using-the-hardware-realtime-clock-rtc-and-the-tamper-management-unit-tamp-with-stm32-microcontrollers-stmicroelectronics.pdf&usg=AOvVaw3PzvL2TfYtwS32fw-Uv37h)
 
 use crate::bb;
-use crate::pac::rtc::{dr, tr};
-use crate::pac::{rcc::RegisterBlock, PWR, RCC, RTC};
+use crate::pac::rtc::{dr, tr, tsdr, tstr};
+use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
-use core::convert::TryInto;
+use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::marker::PhantomData;
 use time::{Date, PrimitiveDateTime, Time};
@@ -16,6 +16,15 @@ use time::{Date, PrimitiveDateTime, Time};
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     InvalidInputData,
+}
+
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum Event {
+    AlarmA,
+    AlarmB,
+    Wakeup,
+    Timestamp,
 }
 
 /// RTC clock source LSE oscillator clock (type state)
@@ -375,6 +384,7 @@ impl<CS> Rtc<CS> {
         let (yt, yu) = bcd2_encode((date.year() - 1970) as u32)?;
         let (mt, mu) = bcd2_encode(u8::from(date.month()).into())?;
         let (dt, du) = bcd2_encode(date.day().into())?;
+        let wdu = date.weekday().number_from_monday();
 
         self.modify(|regs| {
             regs.dr.write(|w| {
@@ -383,7 +393,8 @@ impl<CS> Rtc<CS> {
                 w.mt().bit(mt > 0);
                 w.mu().bits(mu);
                 w.yt().bits(yt);
-                w.yu().bits(yu)
+                w.yu().bits(yu);
+                unsafe { w.wdu().bits(wdu) }
             })
         });
 
@@ -402,6 +413,7 @@ impl<CS> Rtc<CS> {
         let (yt, yu) = bcd2_encode((date.year() - 1970) as u32)?;
         let (mt, mu) = bcd2_encode(u8::from(date.month()).into())?;
         let (dt, du) = bcd2_encode(date.day().into())?;
+        let wdu = date.weekday().number_from_monday();
 
         let (ht, hu) = bcd2_encode(date.hour().into())?;
         let (mnt, mnu) = bcd2_encode(date.minute().into())?;
@@ -414,7 +426,8 @@ impl<CS> Rtc<CS> {
                 w.mt().bit(mt > 0);
                 w.mu().bits(mu);
                 w.yt().bits(yt);
-                w.yu().bits(yu)
+                w.yu().bits(yu);
+                unsafe { w.wdu().bits(wdu) }
             });
             regs.tr.write(|w| {
                 w.ht().bits(ht);
@@ -436,6 +449,7 @@ impl<CS> Rtc<CS> {
 
         // Reading either RTC_SSR or RTC_TR locks the values in the higher-order calendar shadow registers until RTC_DR is read.
         // So it is important to always read SSR, TR and then DR or TR and then DR.
+        let ss = self.regs.ssr.read().ss().bits();
         let tr = self.regs.tr.read();
         let dr = self.regs.dr.read();
         // In case the software makes read accesses to the calendar in a time interval smaller
@@ -448,11 +462,171 @@ impl<CS> Rtc<CS> {
         let day = decode_day(&dr);
         let month = decode_month(&dr);
         let year = decode_year(&dr);
+        let prediv_s = self.regs.prer.read().prediv_s().bits();
+        let nano = ss_to_nano(ss, prediv_s);
 
         PrimitiveDateTime::new(
             Date::from_calendar_date(year.into(), month.try_into().unwrap(), day).unwrap(),
-            Time::from_hms(hours, minutes, seconds).unwrap(),
+            Time::from_hms_nano(hours, minutes, seconds, nano).unwrap(),
         )
+    }
+
+    /// Configures the wakeup timer to trigger periodically every `interval` seconds
+    ///
+    /// # Panics
+    ///
+    /// Panics if interval is greater than 2¹⁷-1.
+    pub fn enable_wakeup(&mut self, interval: u32) {
+        self.modify(|regs| {
+            regs.cr.modify(|_, w| w.wute().clear_bit());
+            regs.isr.modify(|_, w| w.wutf().clear_bit());
+            while regs.isr.read().wutwf().bit_is_clear() {}
+
+            if interval > 1 << 16 {
+                regs.cr.modify(|_, w| unsafe { w.wucksel().bits(0b110) });
+                let interval = u16::try_from(interval - (1 << 16) - 1)
+                    .expect("Interval was too large for wakeup timer");
+                regs.wutr.write(|w| w.wut().bits(interval));
+            } else {
+                regs.cr.modify(|_, w| unsafe { w.wucksel().bits(0b100) });
+                let interval =
+                    u16::try_from(interval - 1).expect("Interval was too large for wakeup timer");
+                regs.wutr.write(|w| w.wut().bits(interval));
+            }
+
+            regs.cr.modify(|_, w| w.wute().set_bit());
+        });
+    }
+
+    /// Disables the wakeup timer
+    pub fn disable_wakeup(&mut self) {
+        self.modify(|regs| {
+            regs.cr.modify(|_, w| w.wute().clear_bit());
+            regs.isr.modify(|_, w| w.wutf().clear_bit());
+        });
+    }
+
+    /// Configures the timestamp to be captured when the RTC switches to Vbat power
+    pub fn enable_vbat_timestamp(&mut self) {
+        self.modify(|regs| {
+            regs.cr.modify(|_, w| w.tse().clear_bit());
+            regs.isr.modify(|_, w| w.tsf().clear_bit());
+            regs.cr.modify(|_, w| w.tse().set_bit());
+        });
+    }
+
+    /// Disables the timestamp
+    pub fn disable_timestamp(&mut self) {
+        self.modify(|regs| {
+            regs.cr.modify(|_, w| w.tse().clear_bit());
+            regs.isr.modify(|_, w| w.tsf().clear_bit());
+        });
+    }
+
+    /// Reads the stored value of the timestamp if present
+    ///
+    /// Clears the timestamp interrupt flags.
+    pub fn read_timestamp(&self) -> PrimitiveDateTime {
+        while self.regs.isr.read().rsf().bit_is_clear() {}
+
+        // Timestamp doesn't include year, get it from the main calendar
+        let ss = self.regs.tsssr.read().ss().bits();
+        let tr = self.regs.tstr.read();
+        let dr = self.regs.tsdr.read();
+        let dry = self.regs.dr.read();
+
+        let seconds = decode_ts_seconds(&tr);
+        let minutes = decode_ts_minutes(&tr);
+        let hours = decode_ts_hours(&tr);
+        let day = decode_ts_day(&dr);
+        let month = decode_ts_month(&dr);
+        let year = decode_year(&dry);
+        let prediv_s = self.regs.prer.read().prediv_s().bits();
+        let nano = ss_to_nano(ss, prediv_s);
+
+        PrimitiveDateTime::new(
+            Date::from_calendar_date(year.into(), month.try_into().unwrap(), day).unwrap(),
+            Time::from_hms_nano(hours, minutes, seconds, nano).unwrap(),
+        )
+    }
+
+    // TODO: Alarms
+
+    /// Start listening for `event`
+    pub fn listen(&mut self, exti: &mut pac::EXTI, event: Event) {
+        // Input Mapping:
+        // EXTI 17 = RTC Alarms
+        // EXTI 21 = RTC Tamper, RTC Timestamp
+        // EXTI 22 = RTC Wakeup Timer
+        self.modify(|regs| match event {
+            Event::AlarmA => {
+                exti.rtsr.modify(|_, w| w.tr17().enabled());
+                regs.cr.modify(|_, w| w.alraie().set_bit());
+            }
+            Event::AlarmB => {
+                exti.rtsr.modify(|_, w| w.tr17().enabled());
+                regs.cr.modify(|_, w| w.alrbie().set_bit());
+            }
+            Event::Wakeup => {
+                exti.rtsr.modify(|_, w| w.tr22().enabled());
+                regs.cr.modify(|_, w| w.wutie().set_bit());
+            }
+            Event::Timestamp => {
+                exti.rtsr.modify(|_, w| w.tr21().enabled());
+                regs.cr.modify(|_, w| w.tsie().set_bit());
+            }
+        });
+    }
+
+    /// Stop listening for `event`
+    pub fn unlisten(&mut self, exti: &mut pac::EXTI, event: Event) {
+        // See the note in listen() about EXTI
+        self.modify(|regs| match event {
+            Event::AlarmA => {
+                regs.cr.modify(|_, w| w.alraie().clear_bit());
+                exti.rtsr.modify(|_, w| w.tr17().disabled());
+            }
+            Event::AlarmB => {
+                regs.cr.modify(|_, w| w.alrbie().clear_bit());
+                exti.rtsr.modify(|_, w| w.tr17().disabled());
+            }
+            Event::Wakeup => {
+                regs.cr.modify(|_, w| w.wutie().clear_bit());
+                exti.rtsr.modify(|_, w| w.tr22().disabled());
+            }
+            Event::Timestamp => {
+                regs.cr.modify(|_, w| w.tsie().clear_bit());
+                exti.rtsr.modify(|_, w| w.tr21().disabled());
+            }
+        });
+    }
+
+    /// Returns `true` if `event` is pending
+    pub fn is_pending(&self, event: Event) -> bool {
+        match event {
+            Event::AlarmA => self.regs.isr.read().alraf().bit_is_set(),
+            Event::AlarmB => self.regs.isr.read().alrbf().bit_is_set(),
+            Event::Wakeup => self.regs.isr.read().wutf().bit_is_set(),
+            Event::Timestamp => self.regs.isr.read().tsf().bit_is_set(),
+        }
+    }
+
+    /// Clears the interrupt flag for `event`
+    pub fn clear_interrupt(&mut self, event: Event) {
+        match event {
+            Event::AlarmA => {
+                self.regs.isr.modify(|_, w| w.alraf().clear_bit());
+            }
+            Event::AlarmB => {
+                self.regs.isr.modify(|_, w| w.alrbf().clear_bit());
+            }
+            Event::Wakeup => {
+                self.regs.isr.modify(|_, w| w.wutf().clear_bit());
+            }
+            Event::Timestamp => {
+                self.regs.isr.modify(|_, w| w.tsf().clear_bit());
+            }
+        }
     }
 }
 
@@ -479,38 +653,67 @@ fn bcd2_encode(word: u32) -> Result<(u8, u8), Error> {
     Ok((l, r))
 }
 
-fn bcd2_decode(fst: u8, snd: u8) -> u32 {
-    (fst * 10 + snd).into()
+const fn bcd2_decode(fst: u8, snd: u8) -> u8 {
+    fst * 10 + snd
 }
 
 #[inline(always)]
 fn decode_seconds(tr: &tr::R) -> u8 {
-    bcd2_decode(tr.st().bits(), tr.su().bits()) as u8
+    bcd2_decode(tr.st().bits(), tr.su().bits())
+}
+#[inline(always)]
+fn decode_ts_seconds(tr: &tstr::R) -> u8 {
+    bcd2_decode(tr.st().bits(), tr.su().bits())
 }
 
 #[inline(always)]
 fn decode_minutes(tr: &tr::R) -> u8 {
-    bcd2_decode(tr.mnt().bits(), tr.mnu().bits()) as u8
+    bcd2_decode(tr.mnt().bits(), tr.mnu().bits())
+}
+#[inline(always)]
+fn decode_ts_minutes(tr: &tstr::R) -> u8 {
+    bcd2_decode(tr.mnt().bits(), tr.mnu().bits())
 }
 
 #[inline(always)]
 fn decode_hours(tr: &tr::R) -> u8 {
-    bcd2_decode(tr.ht().bits(), tr.hu().bits()) as u8
+    bcd2_decode(tr.ht().bits(), tr.hu().bits())
+}
+#[inline(always)]
+fn decode_ts_hours(tr: &tstr::R) -> u8 {
+    bcd2_decode(tr.ht().bits(), tr.hu().bits())
 }
 
 #[inline(always)]
 fn decode_day(dr: &dr::R) -> u8 {
-    bcd2_decode(dr.dt().bits(), dr.du().bits()) as u8
+    bcd2_decode(dr.dt().bits(), dr.du().bits())
+}
+#[inline(always)]
+fn decode_ts_day(dr: &tsdr::R) -> u8 {
+    bcd2_decode(dr.dt().bits(), dr.du().bits())
 }
 
 #[inline(always)]
 fn decode_month(dr: &dr::R) -> u8 {
     let mt = u8::from(dr.mt().bit());
-    bcd2_decode(mt, dr.mu().bits()) as u8
+    bcd2_decode(mt, dr.mu().bits())
+}
+#[inline(always)]
+fn decode_ts_month(dr: &tsdr::R) -> u8 {
+    let mt = u8::from(dr.mt().bit());
+    bcd2_decode(mt, dr.mu().bits())
 }
 
 #[inline(always)]
 fn decode_year(dr: &dr::R) -> u16 {
-    let year = bcd2_decode(dr.yt().bits(), dr.yu().bits()) + 1970; // 1970-01-01 is the epoch begin.
+    let year = (bcd2_decode(dr.yt().bits(), dr.yu().bits()) as u32) + 1970; // 1970-01-01 is the epoch begin.
     year as u16
+}
+
+const fn ss_to_nano(ss: u16, prediv_s: u16) -> u32 {
+    let ss = ss as u32;
+    let prediv_s = prediv_s as u32;
+    assert!(ss <= prediv_s);
+
+    (((prediv_s - ss) * 100_000) / (prediv_s + 1)) * 10_000
 }
