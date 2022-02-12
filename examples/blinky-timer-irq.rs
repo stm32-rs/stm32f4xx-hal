@@ -18,7 +18,7 @@ use crate::hal::{
 };
 
 use core::cell::RefCell;
-use cortex_m::{asm::wfi, interrupt::Mutex};
+use cortex_m::interrupt::Mutex;
 use cortex_m_rt::entry;
 
 // NOTE You can uncomment 'hprintln' here and in the code below for a bit more
@@ -93,6 +93,7 @@ fn main() -> ! {
     }
 
     loop {
-        wfi();
+        // Uncomment if you want to make controller sleep
+        // cortex_m::asm::wfi();
     }
 }
