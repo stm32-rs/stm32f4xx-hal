@@ -114,6 +114,26 @@ impl<T: Into<u64>> embedded_hal::blocking::delay::DelayMs<T> for Delay {
     }
 }
 
+impl embedded_hal_one::delay::blocking::DelayUs for Delay {
+    type Error = core::convert::Infallible;
+
+    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
+        // Convert us to ticks
+        let start = DWT::cycle_count();
+        let ticks = (us as u64 * self.clock.0 as u64) / 1_000_000;
+        Delay::delay_ticks(start, ticks);
+        Ok(())
+    }
+
+    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+        // Convert ms to ticks
+        let start = DWT::cycle_count();
+        let ticks = (ms as u64 * self.clock.0 as u64) / 1_000;
+        Delay::delay_ticks(start, ticks);
+        Ok(())
+    }
+}
+
 /// Very simple stopwatch which reads from DWT Cycle Counter to record timing.
 ///
 /// Since DWT Cycle Counter is a 32-bit counter that wraps around to 0 on overflow,

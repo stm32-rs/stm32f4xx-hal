@@ -39,7 +39,7 @@ embedded-dma = "0.2.0"
 bare-metal = { version = "1" }
 cast = { default-features = false, version = "0.3.0" }
 void = { default-features = false, version = "1.0.2" }
-embedded-hal = { features = ["unproven"], version = "0.2.6" }
+embedded-hal = { features = ["unproven"], version = "0.2.7" }
 display-interface = { version = "0.4.1", optional = true }
 fugit = "0.3.3"
 fugit-timer = "0.1.3"
@@ -50,6 +50,10 @@ embedded-storage = "0.2"
 [dependencies.time]
 version = "0.3"
 default-features = false
+
+[dependencies.embedded-hal-one]
+version = "1.0.0-alpha.7"
+package = "embedded-hal"
 
 [dependencies.stm32_i2s_v12x]
 version = "0.2.0"

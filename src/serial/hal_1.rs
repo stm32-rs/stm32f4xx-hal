@@ -1,22 +1,46 @@
+use embedded_hal_one::serial::{Error, ErrorKind, ErrorType};
+
+impl Error for super::Error {
+    fn kind(&self) -> ErrorKind {
+        match self {
+            Self::Overrun => ErrorKind::Overrun,
+            Self::Framing => ErrorKind::FrameFormat,
+            Self::Parity => ErrorKind::Parity,
+            Self::Noise => ErrorKind::Noise,
+        }
+    }
+}
+
+impl<USART, PINS, WORD> ErrorType for super::Serial<USART, PINS, WORD> {
+    type Error = super::Error;
+}
+
+impl<USART, WORD> ErrorType for super::Rx<USART, WORD> {
+    type Error = super::Error;
+}
+
+impl<USART, WORD> ErrorType for super::Tx<USART, WORD> {
+    type Error = super::Error;
+}
+
 mod nb {
     use super::super::{Error, Instance, Rx, Serial, Tx};
-    use embedded_hal::serial::{Read, Write};
+    use embedded_hal_one::serial::{
+        nb::{Read, Write},
+        ErrorType,
+    };
 
-    impl<USART, PINS, WORD> Read<WORD> for Serial<USART, PINS, WORD>
+    impl<USART, PINS, WORD: Copy> Read<WORD> for Serial<USART, PINS, WORD>
     where
         USART: Instance,
-        Rx<USART, WORD>: Read<WORD, Error = Error>,
+        Rx<USART, WORD>: Read<WORD> + ErrorType<Error = Error>,
     {
-        type Error = Error;
-
         fn read(&mut self) -> nb::Result<WORD, Error> {
             self.rx.read()
         }
     }
 
     impl<USART: Instance> Read<u8> for Rx<USART, u8> {
-        type Error = Error;
-
         fn read(&mut self) -> nb::Result<u8, Self::Error> {
             // Delegate to the Read<u16> implementation, then truncate to 8 bits
             Rx::<USART, u16>::new().read().map(|word16| word16 as u8)
@@ -29,8 +53,6 @@ mod nb {
     /// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
     /// 8 received data bits and all other bits set to zero.
     impl<USART: Instance> Read<u16> for Rx<USART, u16> {
-        type Error = Error;
-
         fn read(&mut self) -> nb::Result<u16, Error> {
             // NOTE(unsafe) atomic read with no side effects
             let sr = unsafe { (*USART::ptr()).sr.read() };
@@ -61,13 +83,11 @@ mod nb {
         }
     }
 
-    impl<USART, PINS, WORD> Write<WORD> for Serial<USART, PINS, WORD>
+    impl<USART, PINS, WORD: Copy> Write<WORD> for Serial<USART, PINS, WORD>
     where
         USART: Instance,
-        Tx<USART, WORD>: Write<WORD, Error = Error>,
+        Tx<USART, WORD>: Write<WORD> + ErrorType<Error = Error>,
     {
-        type Error = Error;
-
         fn flush(&mut self) -> nb::Result<(), Self::Error> {
             self.tx.flush()
         }
@@ -78,8 +98,6 @@ mod nb {
     }
 
     impl<USART: Instance> Write<u8> for Tx<USART, u8> {
-        type Error = Error;
-
         fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
             // Delegate to u16 version
             Tx::<USART, u16>::new().write(u16::from(word))
@@ -97,8 +115,6 @@ mod nb {
     /// be transmitted and the other 7 bits will be ignored. Otherwise, the 8 least significant bits
     /// will be transmitted and the other 8 bits will be ignored.
     impl<USART: Instance> Write<u16> for Tx<USART, u16> {
-        type Error = Error;
-
         fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
             // NOTE(unsafe) atomic read with no side effects
             let sr = unsafe { (*USART::ptr()).sr.read() };
@@ -126,16 +142,14 @@ mod nb {
 }
 
 mod blocking {
-    use super::super::{Error, Instance, Serial, Tx};
-    use embedded_hal::{blocking::serial::Write, serial};
+    use super::super::{Instance, Serial, Tx};
+    use embedded_hal_one::serial::{self, blocking::Write};
 
     impl<USART: Instance> Write<u8> for Tx<USART, u8> {
-        type Error = Error;
-
-        fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+        fn write(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
             for &b in bytes {
                 loop {
-                    match <Self as serial::Write<u8>>::write(self, b) {
+                    match <Self as serial::nb::Write<u8>>::write(self, b) {
                         Err(nb::Error::WouldBlock) => continue,
                         Err(nb::Error::Other(err)) => return Err(err),
                         Ok(()) => break,
@@ -145,9 +159,9 @@ mod blocking {
             Ok(())
         }
 
-        fn bflush(&mut self) -> Result<(), Self::Error> {
+        fn flush(&mut self) -> Result<(), Self::Error> {
             loop {
-                match <Self as serial::Write<u8>>::flush(self) {
+                match <Self as serial::nb::Write<u8>>::flush(self) {
                     Ok(()) => return Ok(()),
                     Err(nb::Error::WouldBlock) => continue,
                     Err(nb::Error::Other(err)) => return Err(err),
@@ -157,24 +171,20 @@ mod blocking {
     }
 
     impl<USART: Instance, PINS> Write<u8> for Serial<USART, PINS, u8> {
-        type Error = Error;
-
-        fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
-            self.tx.bwrite_all(bytes)
+        fn write(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+            self.tx.write(bytes)
         }
 
-        fn bflush(&mut self) -> Result<(), Self::Error> {
-            self.tx.bflush()
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.tx.flush()
         }
     }
 
     impl<USART: Instance> Write<u16> for Tx<USART, u16> {
-        type Error = Error;
-
-        fn bwrite_all(&mut self, buffer: &[u16]) -> Result<(), Self::Error> {
+        fn write(&mut self, buffer: &[u16]) -> Result<(), Self::Error> {
             for &b in buffer {
                 loop {
-                    match <Self as serial::Write<u16>>::write(self, b) {
+                    match <Self as serial::nb::Write<u16>>::write(self, b) {
                         Err(nb::Error::WouldBlock) => continue,
                         Err(nb::Error::Other(err)) => return Err(err),
                         Ok(()) => break,
@@ -184,9 +194,9 @@ mod blocking {
             Ok(())
         }
 
-        fn bflush(&mut self) -> Result<(), Self::Error> {
+        fn flush(&mut self) -> Result<(), Self::Error> {
             loop {
-                match <Self as serial::Write<u16>>::flush(self) {
+                match <Self as serial::nb::Write<u16>>::flush(self) {
                     Ok(()) => return Ok(()),
                     Err(nb::Error::WouldBlock) => continue,
                     Err(nb::Error::Other(err)) => return Err(err),
@@ -196,14 +206,12 @@ mod blocking {
     }
 
     impl<USART: Instance, PINS> Write<u16> for Serial<USART, PINS, u16> {
-        type Error = Error;
-
-        fn bwrite_all(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
-            self.tx.bwrite_all(bytes)
+        fn write(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
+            self.tx.write(bytes)
         }
 
-        fn bflush(&mut self) -> Result<(), Self::Error> {
-            self.tx.bflush()
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.tx.flush()
         }
     }
 }

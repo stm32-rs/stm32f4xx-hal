@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Missing `DelayMs<u8>` / `DelayUs<u8>` impls for fugit::Delay
+- Support of embedded-hal 1.0.0-alpha.7 [#443]
 - Aliases for peripheral wrappers [#434]
 - `WithPwm` trait implemented for timers with channels (internals) [#425]
 - `Pwm` struct with `split` method and implementation of embedded-hal::Pwm (similar to f1xx-hal) [#425]
@@ -50,6 +51,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#438]: https://github.com/stm32-rs/stm32f4xx-hal/pull/438
 [#439]: https://github.com/stm32-rs/stm32f4xx-hal/pull/439
 [#440]: https://github.com/stm32-rs/stm32f4xx-hal/pull/440
+[#443]: https://github.com/stm32-rs/stm32f4xx-hal/pull/443
 
 ### Changed
 

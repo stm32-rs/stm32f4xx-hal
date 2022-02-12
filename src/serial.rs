@@ -23,6 +23,7 @@ use crate::rcc;
 use nb::block;
 
 mod hal_02;
+mod hal_1;
 
 use crate::gpio::{Const, PinA, PushPull, SetAlternate};
 

@@ -1,6 +1,7 @@
 //! Delays
 
 mod hal_02;
+mod hal_1;
 
 use crate::{
     pac,
