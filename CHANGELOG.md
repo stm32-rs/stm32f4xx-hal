@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Add possibility to select Timer master mode
 - Add inherent impl of `embedded_hal::Pwm` methods on `Pwm`s [#439]
 - Use `embedded-dma` v0.2 [#440]
 - Add LSI support for `Rtc` [#438]

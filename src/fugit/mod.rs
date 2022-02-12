@@ -2,8 +2,8 @@
 
 use crate::pac::RCC;
 use crate::rcc::Clocks;
-use crate::timer::WithPwm;
 pub use crate::timer::{Channel, Error, Event, Instance, Ocm, SysEvent};
+use crate::timer::{MasterTimer, WithPwm};
 use cast::u16;
 
 pub mod delay;
@@ -146,5 +146,11 @@ impl<TIM: Instance, const FREQ: u32> Timer<TIM, FREQ> {
     /// Stops listening for an `event`
     pub fn unlisten(&mut self, event: Event) {
         self.tim.listen_interrupt(event, false);
+    }
+}
+
+impl<TIM: Instance + MasterTimer, const FREQ: u32> Timer<TIM, FREQ> {
+    pub fn set_master_mode(&mut self, mode: TIM::Mms) {
+        self.tim.master_mode(mode)
     }
 }

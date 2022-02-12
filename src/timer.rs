@@ -252,8 +252,13 @@ mod sealed {
         fn start_pwm(&mut self);
         fn enable_channel(channel: u8, b: bool);
     }
+
+    pub trait MasterTimer: General {
+        type Mms;
+        fn master_mode(&mut self, mode: Self::Mms);
+    }
 }
-pub(crate) use sealed::{General, WithPwm};
+pub(crate) use sealed::{General, MasterTimer, WithPwm};
 
 pub trait Instance:
     crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock + General
@@ -282,7 +287,12 @@ where
 }
 
 macro_rules! hal {
-    ($($TIM:ty: [$Timer:ident, $bits:ty, $($cnum:ident $(, $aoe:ident)?)?],)+) => {
+    ($($TIM:ty: [
+        $Timer:ident,
+        $bits:ty,
+        $(c: ($cnum:ident $(, $aoe:ident)?),)?
+        $(m: $timbase:ident,)?
+    ],)+) => {
         $(
             impl Instance for $TIM { }
             pub type $Timer = Timer<$TIM>;
@@ -373,6 +383,13 @@ macro_rules! hal {
                 }
             }
             $(with_pwm!($TIM: $cnum $(, $aoe)?);)?
+
+            $(impl MasterTimer for $TIM {
+                type Mms = pac::$timbase::cr2::MMS_A;
+                fn master_mode(&mut self, mode: Self::Mms) {
+                    self.cr2.modify(|_,w| w.mms().variant(mode));
+                }
+            })?
         )+
     }
 }
@@ -587,10 +604,7 @@ macro_rules! with_pwm {
     }
 }
 
-impl<TIM> CountDownTimer<TIM>
-where
-    TIM: General,
-{
+impl<TIM: General> CountDownTimer<TIM> {
     /// Starts listening for an `event`
     ///
     /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
@@ -617,6 +631,12 @@ where
         // pause counter
         self.tim.disable_counter();
         self.tim
+    }
+}
+
+impl<TIM: General + MasterTimer> CountDownTimer<TIM> {
+    pub fn set_master_mode(&mut self, mode: TIM::Mms) {
+        self.tim.master_mode(mode)
     }
 }
 
@@ -688,35 +708,38 @@ where
 
 // All F4xx parts have these timers.
 hal!(
-    pac::TIM1: [Timer1, u16, CH4, _aoe],
-    pac::TIM9: [Timer9, u16, CH2],
-    pac::TIM11: [Timer11, u16, CH1],
+    pac::TIM9: [Timer9, u16, c: (CH2),],
+    pac::TIM11: [Timer11, u16, c: (CH1),],
 );
 
 // All parts except for F410 add these timers.
 #[cfg(not(feature = "stm32f410"))]
 hal!(
-    pac::TIM5: [Timer5, u32, CH4],
-    pac::TIM2: [Timer2, u32, CH4],
-    pac::TIM3: [Timer3, u16, CH4],
-    pac::TIM4: [Timer4, u16, CH4],
-    pac::TIM10: [Timer10, u16, CH1],
+    pac::TIM1: [Timer1, u16, c: (CH4, _aoe), m: tim1,],
+    pac::TIM5: [Timer5, u32, c: (CH4), m: tim5,],
+    pac::TIM2: [Timer2, u32, c: (CH4), m: tim2,],
+    pac::TIM3: [Timer3, u16, c: (CH4), m: tim3,],
+    pac::TIM4: [Timer4, u16, c: (CH4), m: tim3,],
+    pac::TIM10: [Timer10, u16, c: (CH1),],
 );
 
 // TIM5 on F410 is 16-bit
 #[cfg(feature = "stm32f410")]
-hal!(pac::TIM5: [Timer5, u16, CH4],);
+hal!(
+    pac::TIM1: [Timer1, u16, c: (CH4, _aoe), /*m: tim1,*/], // TODO: fix SVD
+    pac::TIM5: [Timer5, u16, c: (CH4), /*m: tim5,*/], // TODO: fix SVD
+);
 
 // All parts except F401 and F411.
 #[cfg(not(any(feature = "stm32f401", feature = "stm32f411",)))]
-hal!(pac::TIM6: [Timer6, u16,],);
+hal!(pac::TIM6: [Timer6, u16, /*m: tim7,*/],); // TODO: fix SVD
 
 // All parts except F401, F410, F411.
 #[cfg(not(any(feature = "stm32f401", feature = "stm32f410", feature = "stm32f411",)))]
 hal!(
-    pac::TIM7: [Timer7, u16,],
-    pac::TIM8: [Timer8, u16, CH4, _aoe],
-    pac::TIM12: [Timer12, u16, CH2],
-    pac::TIM13: [Timer13, u16, CH1],
-    pac::TIM14: [Timer14, u16, CH1],
+    pac::TIM7: [Timer7, u16, /*m: tim7,*/], // TODO: fix SVD
+    pac::TIM8: [Timer8, u16, c: (CH4, _aoe), m: tim1,],
+    pac::TIM12: [Timer12, u16, c: (CH2),],
+    pac::TIM13: [Timer13, u16, c: (CH1),],
+    pac::TIM14: [Timer14, u16, c: (CH1),],
 );
