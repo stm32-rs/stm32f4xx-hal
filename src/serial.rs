@@ -35,18 +35,7 @@ use crate::rcc::Clocks;
 use crate::dma::traits::PeriAddress;
 
 /// Serial error
-#[non_exhaustive]
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub enum Error {
-    /// Framing error
-    Framing,
-    /// Noise error
-    Noise,
-    /// RX buffer overrun
-    Overrun,
-    /// Parity check error
-    Parity,
-}
+pub use embedded_hal_one::serial::ErrorKind as Error;
 
 /// Interrupt event
 pub enum Event {
@@ -766,23 +755,114 @@ halUsart! { pac::UART9, Serial9, Rx9, Tx9 }
 #[cfg(feature = "uart10")]
 halUsart! { pac::UART10, Serial10, Rx10, Tx10 }
 
-impl<USART, PINS> fmt::Write for Serial<USART, PINS>
-where
-    Tx<USART>: embedded_hal::serial::Write<u8>,
-{
+impl<USART: Instance, PINS> fmt::Write for Serial<USART, PINS> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.tx.write_str(s)
     }
 }
 
-impl<USART> fmt::Write for Tx<USART>
-where
-    Tx<USART>: embedded_hal::serial::Write<u8>,
-{
+impl<USART: Instance> fmt::Write for Tx<USART> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        use embedded_hal::serial::Write;
         s.bytes()
             .try_for_each(|c| block!(self.write(c)))
             .map_err(|_| fmt::Error)
+    }
+}
+
+impl<USART: Instance> Rx<USART, u8> {
+    fn read(&mut self) -> nb::Result<u8, Error> {
+        // Delegate to the Read<u16> implementation, then truncate to 8 bits
+        Rx::<USART, u16>::new().read().map(|word16| word16 as u8)
+    }
+}
+
+impl<USART: Instance> Rx<USART, u16> {
+    fn read(&mut self) -> nb::Result<u16, Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        let sr = unsafe { (*USART::ptr()).sr.read() };
+
+        // Any error requires the dr to be read to clear
+        if sr.pe().bit_is_set()
+            || sr.fe().bit_is_set()
+            || sr.nf().bit_is_set()
+            || sr.ore().bit_is_set()
+        {
+            unsafe { (*USART::ptr()).dr.read() };
+        }
+
+        Err(if sr.pe().bit_is_set() {
+            Error::Parity.into()
+        } else if sr.fe().bit_is_set() {
+            Error::FrameFormat.into()
+        } else if sr.nf().bit_is_set() {
+            Error::Noise.into()
+        } else if sr.ore().bit_is_set() {
+            Error::Overrun.into()
+        } else if sr.rxne().bit_is_set() {
+            // NOTE(unsafe) atomic read from stateless register
+            return Ok(unsafe { &*USART::ptr() }.dr.read().dr().bits());
+        } else {
+            nb::Error::WouldBlock
+        })
+    }
+}
+
+impl<USART: Instance> Tx<USART, u8> {
+    fn write(&mut self, word: u8) -> nb::Result<(), Error> {
+        // Delegate to u16 version
+        Tx::<USART, u16>::new().write(u16::from(word))
+    }
+
+    fn flush(&mut self) -> nb::Result<(), Error> {
+        // Delegate to u16 version
+        Tx::<USART, u16>::new().flush()
+    }
+
+    fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Error> {
+        for &b in bytes {
+            nb::block!(self.write(b))?;
+        }
+        Ok(())
+    }
+
+    fn bflush(&mut self) -> Result<(), Error> {
+        nb::block!(self.flush())
+    }
+}
+
+impl<USART: Instance> Tx<USART, u16> {
+    fn write(&mut self, word: u16) -> nb::Result<(), Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        let sr = unsafe { (*USART::ptr()).sr.read() };
+
+        if sr.txe().bit_is_set() {
+            // NOTE(unsafe) atomic write to stateless register
+            unsafe { &*USART::ptr() }.dr.write(|w| w.dr().bits(word));
+            Ok(())
+        } else {
+            Err(nb::Error::WouldBlock)
+        }
+    }
+
+    fn flush(&mut self) -> nb::Result<(), Error> {
+        // NOTE(unsafe) atomic read with no side effects
+        let sr = unsafe { (*USART::ptr()).sr.read() };
+
+        if sr.tc().bit_is_set() {
+            Ok(())
+        } else {
+            Err(nb::Error::WouldBlock)
+        }
+    }
+
+    fn bwrite_all(&mut self, buffer: &[u16]) -> Result<(), Error> {
+        for &b in buffer {
+            nb::block!(self.write(b))?;
+        }
+        Ok(())
+    }
+
+    fn bflush(&mut self) -> Result<(), Error> {
+        nb::block!(self.flush())
     }
 }
