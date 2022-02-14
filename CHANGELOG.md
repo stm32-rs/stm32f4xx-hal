@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Unify serial trait impls for embedded-hal 0.2 & 1.0
+- Move `MonoTimer` from `timer` to dwt mode [#448]
+- Unify serial trait impls for embedded-hal 0.2 & 1.0 [#447]
 - Add possibility to select Timer master mode
 - Add inherent impl of `embedded_hal::Pwm` methods on `Pwm`s [#439]
 - Use `embedded-dma` v0.2 [#440]
@@ -57,6 +58,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#443]: https://github.com/stm32-rs/stm32f4xx-hal/pull/443
 [#441]: https://github.com/stm32-rs/stm32f4xx-hal/pull/441
 [#430]: https://github.com/stm32-rs/stm32f4xx-hal/pull/430
+[#447]: https://github.com/stm32-rs/stm32f4xx-hal/pull/447
+[#448]: https://github.com/stm32-rs/stm32f4xx-hal/pull/448
 
 ### Changed
 
