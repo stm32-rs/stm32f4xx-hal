@@ -98,7 +98,7 @@ fn main() -> ! {
 
     let rcc = dp.RCC.constrain();
     // The 86 MHz frequency can be divided to get a sample rate very close to 48 kHz.
-    let clocks = rcc.cfgr.use_hse(8.mhz()).i2s_clk(86.mhz()).freeze();
+    let clocks = rcc.cfgr.use_hse(8.MHz()).i2s_clk(86.MHz()).freeze();
 
     let mut delay = Delay::new(cp.SYST, &clocks);
 
@@ -108,7 +108,7 @@ fn main() -> ! {
             gpiob.pb6.into_alternate_open_drain(),
             gpiob.pb9.into_alternate_open_drain(),
         ),
-        100.khz(),
+        100.kHz(),
         &clocks,
     );
     // Shift the address to deal with different ways of representing I2C addresses
@@ -134,7 +134,7 @@ fn main() -> ! {
 
     let i2s = stm32_i2s_v12x::I2s::new(hal_i2s);
     let mut i2s = i2s.configure_master_transmit(MasterConfig::with_sample_rate(
-        i2s_clock.0,
+        i2s_clock.raw(),
         sample_rate,
         Data16Frame16,
         FrameFormat::PhilipsI2s,

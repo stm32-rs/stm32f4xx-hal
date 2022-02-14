@@ -101,7 +101,7 @@ fn main() -> ! {
             polarity: Polarity::IdleLow,
             phase: Phase::CaptureOnFirstTransition,
         },
-        2000.khz(),
+        2000.kHz(),
         &clocks,
     );
 
@@ -209,10 +209,10 @@ fn main() -> ! {
 
 fn setup_clocks(rcc: Rcc) -> Clocks {
     rcc.cfgr
-        .hclk(180.mhz())
-        .sysclk(180.mhz())
-        .pclk1(45.mhz())
-        .pclk2(90.mhz())
+        .hclk(180.MHz())
+        .sysclk(180.MHz())
+        .pclk1(45.MHz())
+        .pclk2(90.MHz())
         .freeze()
 }
 

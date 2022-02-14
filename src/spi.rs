@@ -40,7 +40,7 @@ use crate::pac::{spi1, RCC};
 use crate::rcc;
 
 use crate::rcc::Clocks;
-use crate::time::Hertz;
+use fugit::HertzU32 as Hertz;
 
 /// SPI error
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -155,6 +155,44 @@ spi! { pac::SPI5: Spi5 }
 #[cfg(feature = "spi6")]
 spi! { pac::SPI6: Spi6 }
 
+pub trait SpiExt: Sized + Instance {
+    fn spi<PINS: Pins<Self>>(
+        self,
+        pins: PINS,
+        mode: impl Into<Mode>,
+        freq: Hertz,
+        clocks: &Clocks,
+    ) -> Spi<Self, PINS, TransferModeNormal>;
+    fn spi_bidi<PINS: Pins<Self>>(
+        self,
+        pins: PINS,
+        mode: impl Into<Mode>,
+        freq: Hertz,
+        clocks: &Clocks,
+    ) -> Spi<Self, PINS, TransferModeBidi>;
+}
+
+impl<SPI: Instance> SpiExt for SPI {
+    fn spi<PINS: Pins<Self>>(
+        self,
+        pins: PINS,
+        mode: impl Into<Mode>,
+        freq: Hertz,
+        clocks: &Clocks,
+    ) -> Spi<Self, PINS, TransferModeNormal> {
+        Spi::new(self, pins, mode, freq, clocks)
+    }
+    fn spi_bidi<PINS: Pins<Self>>(
+        self,
+        pins: PINS,
+        mode: impl Into<Mode>,
+        freq: Hertz,
+        clocks: &Clocks,
+    ) -> Spi<Self, PINS, TransferModeBidi> {
+        Spi::new_bidi(self, pins, mode, freq, clocks)
+    }
+}
+
 impl<SPI, PINS> Spi<SPI, PINS, TransferModeNormal>
 where
     SPI: Instance,
@@ -164,7 +202,7 @@ where
         spi: SPI,
         mut pins: PINS,
         mode: impl Into<Mode>,
-        freq: impl Into<Hertz>,
+        freq: Hertz,
         clocks: &Clocks,
     ) -> Self {
         unsafe {
@@ -177,7 +215,7 @@ where
         pins.set_alt_mode();
 
         Self::_new(spi, pins)
-            .pre_init(mode.into(), freq.into(), SPI::clock(clocks))
+            .pre_init(mode.into(), freq, SPI::clock(clocks))
             .init()
     }
 
@@ -197,7 +235,7 @@ where
         spi: SPI,
         mut pins: PINS,
         mode: impl Into<Mode>,
-        freq: impl Into<Hertz>,
+        freq: Hertz,
         clocks: &Clocks,
     ) -> Self {
         unsafe {
@@ -210,7 +248,7 @@ where
         pins.set_alt_mode();
 
         Self::_new(spi, pins)
-            .pre_init(mode.into(), freq.into(), SPI::clock(clocks))
+            .pre_init(mode.into(), freq, SPI::clock(clocks))
             .init()
     }
 
@@ -303,7 +341,7 @@ where
         // disable SS output
         self.spi.cr2.write(|w| w.ssoe().clear_bit());
 
-        let br = match clock.0 / freq.0 {
+        let br = match clock.raw() / freq.raw() {
             0 => unreachable!(),
             1..=2 => 0b000,
             3..=5 => 0b001,

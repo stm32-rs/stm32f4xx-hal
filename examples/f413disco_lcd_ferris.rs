@@ -706,7 +706,7 @@ fn main() -> ! {
 
         // Configure and lock the clocks at maximum warp
         let rcc = p.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(100.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(100.MHz()).freeze();
 
         // Define the pins we need for our 16bit parallel bus
         let lcd_pins = LcdPins {

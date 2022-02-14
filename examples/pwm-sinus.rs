@@ -15,7 +15,7 @@ fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
         let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.use_hse(25.mhz()).freeze();
+        let clocks = rcc.cfgr.use_hse(25.MHz()).freeze();
 
         let gpioa = dp.GPIOA.split();
         let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());

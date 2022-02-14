@@ -47,13 +47,7 @@ fn main() -> ! {
             phase: Phase::CaptureOnFirstTransition,
         };
 
-        let spi2 = Spi::new(
-            dp.SPI2,
-            (pb13, NoMiso {}, pb15),
-            mode,
-            3_000_000.hz(),
-            &clocks,
-        );
+        let spi2 = Spi::new(dp.SPI2, (pb13, NoMiso {}, pb15), mode, 3.MHz(), &clocks);
 
         let buffer = cortex_m::singleton!(: [u8; ARRAY_SIZE] = [1; ARRAY_SIZE]).unwrap();
 

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move `i2c` `embedded-hal` trait impls to `I2c` methods [#431]
 - Reexport pins in `gpio` module
 - Pwm channels now constants [#432]
+- Use fugit rate types instead of custom [#430]
 - Add channel events, make Event use bitflags (simplify interrupt handling) [#425]
 - reexport `digital::v2::PinState` again [#428]
 - Timer impls with time based on `fugit` moved to `fugit` module, added `Pwm` and `fugit-timer` impls [#423]
@@ -55,6 +56,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#440]: https://github.com/stm32-rs/stm32f4xx-hal/pull/440
 [#443]: https://github.com/stm32-rs/stm32f4xx-hal/pull/443
 [#441]: https://github.com/stm32-rs/stm32f4xx-hal/pull/441
+[#430]: https://github.com/stm32-rs/stm32f4xx-hal/pull/430
 
 ### Changed
 

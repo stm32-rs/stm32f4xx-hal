@@ -42,7 +42,7 @@ fn main() -> ! {
 
     let rcc = dp.RCC.constrain();
     // Make HCLK faster to allow updating the display more quickly
-    let clocks = rcc.cfgr.hclk(100.mhz()).freeze();
+    let clocks = rcc.cfgr.hclk(100.MHz()).freeze();
 
     let mut delay = Delay::new(cp.SYST, &clocks);
 

@@ -47,13 +47,18 @@ pub use embedded_hal::serial::Read as _embedded_hal_serial_Read;
 pub use embedded_hal::serial::Write as _embedded_hal_serial_Write;
 pub use embedded_hal::spi::FullDuplex as _embedded_hal_spi_FullDuplex;
 pub use embedded_hal::timer::CountDown as _embedded_hal_timer_CountDown;
-pub use embedded_hal::watchdog::Watchdog as _embedded_hal_watchdog_Watchdog;
-pub use embedded_hal::watchdog::WatchdogDisable as _embedded_hal_watchdog_WatchdogDisable;
-pub use embedded_hal::watchdog::WatchdogEnable as _embedded_hal_watchdog_WatchdogEnable;
 pub use embedded_hal::Capture as _embedded_hal_Capture;
+pub use embedded_hal::Pwm as _embedded_hal_Pwm;
 pub use embedded_hal::Qei as _embedded_hal_Qei;
-pub use fugit::ExtU32 as _fugit_ExtU32;
+pub use fugit::ExtU32 as _fugit_DurationExtU32;
+pub use fugit::RateExtU32 as _fugit_RateExtU32;
 
+#[cfg(all(
+    feature = "device-selected",
+    feature = "can",
+    any(feature = "can1", feature = "can2",)
+))]
+pub use crate::can::CanExt as _stm32f4xx_hal_can_CanExt;
 #[cfg(all(feature = "device-selected", feature = "dac"))]
 pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;
 #[cfg(feature = "rtic")]
@@ -64,9 +69,12 @@ pub use crate::fugit::SysCounterExt as _stm32f4xx_hal_fugit_SysCounterExt;
 pub use crate::fugit::TimerExt as _stm32f4xx_hal_fugit_TimerExt;
 pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
-pub use crate::i2c::Pins as _stm32f4xx_hal_i2c_Pins;
+pub use crate::i2c::I2cExt as _stm32f4xx_hal_i2c_I2cExt;
+pub use crate::i2s::I2sExt as _stm32f4xx_hal_i2s_I2sExt;
 pub use crate::rcc::RccExt as _stm32f4xx_hal_rcc_RccExt;
 #[cfg(all(feature = "device-selected", feature = "rng"))]
 pub use crate::rng::RngExt as _stm32f4xx_hal_rng_RngExt;
+pub use crate::serial::SerialExt as _stm32f4xx_hal_serial_SerialExt;
+pub use crate::spi::SpiExt as _stm32f4xx_hal_spi_SpiExt;
 pub use crate::syscfg::SysCfgExt as _stm32f4xx_hal_syscfg_SysCfgExt;
 pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;

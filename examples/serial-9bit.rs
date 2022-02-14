@@ -34,7 +34,7 @@ use panic_halt as _;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{block, pac, prelude::*, serial::config::Config, serial::Serial};
+use crate::hal::{block, pac, prelude::*, serial::config::Config};
 
 use core::ops::Range;
 
@@ -53,7 +53,7 @@ fn main() -> ! {
 
     let rcc = dp.RCC.constrain();
 
-    let clocks = rcc.cfgr.use_hse(8.mhz()).freeze();
+    let clocks = rcc.cfgr.use_hse(8.MHz()).freeze();
 
     let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
 
@@ -62,15 +62,16 @@ fn main() -> ! {
     let rx_pin = gpioa.pa3.into_alternate();
 
     // configure serial
-    let serial = Serial::new(
-        dp.USART2,
-        (tx_pin, rx_pin),
-        Config::default().baudrate(9600.bps()).wordlength_9(),
-        &clocks,
-    )
-    .unwrap()
-    // Make this Serial object use u16s instead of u8s
-    .with_u16_data();
+    let serial = dp
+        .USART2
+        .serial(
+            (tx_pin, rx_pin),
+            Config::default().baudrate(9600.bps()).wordlength_9(),
+            &clocks,
+        )
+        .unwrap()
+        // Make this Serial object use u16s instead of u8s
+        .with_u16_data();
 
     let (mut tx, mut rx) = serial.split();
 

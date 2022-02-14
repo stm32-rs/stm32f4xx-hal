@@ -13,7 +13,7 @@ use crate::bb;
 use crate::pac::{self, RCC};
 
 use crate::rcc::{self, Clocks};
-use crate::time::Hertz;
+use fugit::HertzU32 as Hertz;
 
 mod pins;
 pub use pins::*;
@@ -43,10 +43,7 @@ where
     CountDownTimer<TIM>: CountDown<Time = Hertz>,
 {
     /// Starts timer in count down mode at a given frequency
-    pub fn start_count_down<T>(self, timeout: T) -> CountDownTimer<TIM>
-    where
-        T: Into<Hertz>,
-    {
+    pub fn start_count_down(self, timeout: Hertz) -> CountDownTimer<TIM> {
         let mut timer = self.count_down();
         timer.start(timeout);
         timer
@@ -126,7 +123,7 @@ impl CountDown for CountDownTimer<SYST> {
     where
         T: Into<Hertz>,
     {
-        let rvr = self.clk.0 / timeout.into().0 - 1;
+        let rvr = self.clk.raw() / timeout.into().raw() - 1;
 
         assert!(rvr < (1 << 24));
 
@@ -643,14 +640,10 @@ impl<TIM: General + MasterTimer> CountDownTimer<TIM> {
 #[inline(always)]
 pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
     let ticks = clock / freq;
-    let psc_u32 = (ticks - 1) / (1 << 16);
-    let psc = if psc_u32 > u16::MAX as u32 {
-        panic!();
-    } else {
-        psc_u32 as u16
-    };
-    let arr = ticks / (psc_u32 + 1) - 1;
-    (psc, arr)
+    let psc = (ticks - 1) / (1 << 16);
+    assert!(psc <= u16::MAX as u32);
+    let arr = ticks / (psc + 1) - 1;
+    (psc as u16, arr)
 }
 
 impl<TIM> CountDown for CountDownTimer<TIM>
@@ -668,7 +661,7 @@ where
         // reset counter
         self.tim.reset_counter();
 
-        let (psc, arr) = compute_arr_presc(timeout.into().0, self.clk.0);
+        let (psc, arr) = compute_arr_presc(timeout.into().raw(), self.clk.raw());
         self.tim.set_prescaler(psc);
         self.tim.set_auto_reload(arr).unwrap();
 

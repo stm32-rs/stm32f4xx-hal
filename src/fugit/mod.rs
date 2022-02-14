@@ -104,8 +104,8 @@ impl<TIM: Instance, const FREQ: u32> Timer<TIM, FREQ> {
     /// Calculate prescaler depending on `Clocks` state
     pub fn configure(&mut self, clocks: &Clocks) {
         let clk = TIM::timer_clock(clocks);
-        assert!(clk.0 % FREQ == 0);
-        let psc = clk.0 / FREQ;
+        assert!(clk.raw() % FREQ == 0);
+        let psc = clk.raw() / FREQ;
         self.tim.set_prescaler(u16(psc - 1).unwrap());
     }
 

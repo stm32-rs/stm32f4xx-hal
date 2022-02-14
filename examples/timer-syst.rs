@@ -25,7 +25,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.sysclk(24.mhz()).freeze();
+    let clocks = rcc.cfgr.sysclk(24.MHz()).freeze();
 
     // Create a timer based on SysTick
     let mut timer = cp.SYST.counter_us(&clocks);

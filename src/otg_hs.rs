@@ -10,7 +10,7 @@ use crate::pac;
 
 use crate::gpio::{Alternate, PushPull, PB14, PB15};
 use crate::rcc::{Enable, Reset};
-use crate::time::Hertz;
+use fugit::HertzU32 as Hertz;
 
 pub use synopsys_usb_otg::UsbBus;
 use synopsys_usb_otg::UsbPeripheral;

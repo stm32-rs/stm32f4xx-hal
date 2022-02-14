@@ -20,7 +20,7 @@ fn main() -> ! {
 
         let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
         // configure tim1 as a PWM output of known frequency.
-        let pwm = Timer::new(dp.TIM1, &clocks).pwm(channels, 501u32.hz());
+        let pwm = Timer::new(dp.TIM1, &clocks).pwm(channels, 501.Hz());
         let (mut ch1, _ch2) = pwm.split();
         let max_duty = ch1.get_max_duty();
         ch1.set_duty(max_duty / 2);
@@ -30,7 +30,7 @@ fn main() -> ! {
         let pwm_reader_ch1 = gpioc.pc6.into_alternate();
 
         // configure tim8 as a PWM input, using the best-guess frequency of the input signal.
-        let monitor = Timer::new(dp.TIM8, &clocks).pwm_input(500u32.hz(), pwm_reader_ch1);
+        let monitor = Timer::new(dp.TIM8, &clocks).pwm_input(500.Hz(), pwm_reader_ch1);
 
         // NOTE: this value may only be accurately observed at the CC2 interrupt.
         let _duty = monitor.get_duty_cycle();

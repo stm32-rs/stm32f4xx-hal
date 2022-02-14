@@ -14,7 +14,7 @@ impl DelayUs<u32> for Delay<SYST> {
         // The SysTick Reload Value register supports values between 1 and 0x00FFFFFF.
         const MAX_RVR: u32 = 0x00FF_FFFF;
 
-        let mut total_rvr = us * (self.clk.0 / 8_000_000);
+        let mut total_rvr = us * (self.clk.raw() / 8_000_000);
 
         while total_rvr != 0 {
             let current_rvr = if total_rvr <= MAX_RVR {
@@ -78,7 +78,7 @@ where
         // For example, if the clock is set to 48 MHz, with a prescaler of 48
         // we'll get ticks that are 1 µs long. This means that we can write the
         // delay value directly to the auto-reload register (ARR).
-        let psc = u16(self.clk.0 / 1_000_000).expect("Prescaler does not fit in u16");
+        let psc = u16(self.clk.raw() / 1_000_000).expect("Prescaler does not fit in u16");
         let arr = us;
         self.wait(psc, arr);
     }
@@ -106,7 +106,7 @@ where
         //
         // Unfortunately this means that only one half of the full 32-bit range
         // can be used, but 24 days should be plenty of usable delay time.
-        let psc = u16(self.clk.0 / 1000 / 2).expect("Prescaler does not fit in u16");
+        let psc = u16(self.clk.raw() / 1000 / 2).expect("Prescaler does not fit in u16");
 
         // Since PSC = 0.5 ms, double the value for the ARR
         let arr = ms << 1;
@@ -122,7 +122,7 @@ where
     /// Sleep for up to 2^16-1 microseconds (~65 milliseconds).
     fn delay_us(&mut self, us: u16) {
         // See DelayUs<u32> for explanations.
-        let psc = u16(self.clk.0 / 1_000_000).expect("Prescaler does not fit in u16");
+        let psc = u16(self.clk.raw() / 1_000_000).expect("Prescaler does not fit in u16");
         let arr = u32(us);
         self.wait(psc, arr);
     }
@@ -136,7 +136,7 @@ where
     fn delay_ms(&mut self, ms: u16) {
         // See DelayMs<u32> for explanations. Since the value range is only 16 bit,
         // we don't need an assert here.
-        let psc = u16(self.clk.0 / 1000 / 2).expect("Prescaler does not fit in u16");
+        let psc = u16(self.clk.raw() / 1000 / 2).expect("Prescaler does not fit in u16");
         let arr = u32(ms) << 1;
         self.wait(psc, arr);
     }

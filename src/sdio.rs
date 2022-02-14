@@ -4,7 +4,7 @@ use crate::gpio::{self, Alternate, PushPull};
 use crate::pac::{self, RCC, SDIO};
 use crate::rcc::{Clocks, Enable, Reset};
 #[allow(unused_imports)]
-use crate::time::Hertz;
+use fugit::HertzU32 as Hertz;
 pub use sdio_host::{
     cmd, cmd::ResponseLen, CardCapacity, CardStatus, Cmd, CurrentState, SDStatus, CIC, CID, CSD,
     OCR, RCA, SCR,
@@ -309,7 +309,7 @@ impl Sdio {
         });
 
         // Wait for 2 ms after changing power settings
-        cortex_m::asm::delay(2 * (self.clock.0 / 1000));
+        cortex_m::asm::delay(2 * (self.clock.raw() / 1000));
     }
 
     /// Get a reference to the initialized card

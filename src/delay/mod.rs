@@ -11,7 +11,7 @@ use crate::{
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 
-use crate::time::Hertz;
+use fugit::HertzU32 as Hertz;
 
 /// Timer as a delay provider (SysTick by default)
 pub struct Delay<T = SYST> {

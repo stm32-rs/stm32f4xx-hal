@@ -24,7 +24,7 @@ use crate::hal::{pac, prelude::*};
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.sysclk(24.mhz()).freeze();
+    let clocks = rcc.cfgr.sysclk(24.MHz()).freeze();
 
     // Create a timer based on SysTick
     let mut timer = dp.TIM1.counter_ms(&clocks);

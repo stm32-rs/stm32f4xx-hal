@@ -8,14 +8,14 @@
 //! let dp = pac::Peripherals::take().unwrap();
 //! let clocks = rcc
 //!     .cfgr
-//!     .use_hse(8.mhz())
-//!     .sysclk(168.mhz())
-//!     .pclk1(24.mhz())
-//!     .i2s_clk(86.mhz())
+//!     .use_hse(8.MHz())
+//!     .sysclk(168.MHz())
+//!     .pclk1(24.MHz())
+//!     .i2s_clk(86.MHz())
 //!     .require_pll48clk()
 //!     .freeze();
-//!     // Test that the I2S clock is suitable for 48000KHz audio.
-//!     assert!(clocks.i2s_clk().unwrap() == 48.mhz().into());
+//!     // Test that the I2S clock is suitable for 48000kHz audio.
+//!     assert!(clocks.i2s_clk().unwrap() == 48.MHz().into());
 //! ```
 //!
 //! # Limitations
@@ -42,7 +42,8 @@
 use crate::pac::rcc::cfgr::{HPRE_A, SW_A};
 use crate::pac::{rcc, RCC};
 
-use crate::time::Hertz;
+use fugit::HertzU32 as Hertz;
+use fugit::RateExtU32;
 
 #[cfg(not(feature = "stm32f410"))]
 use pll::I2sPll;
@@ -264,14 +265,14 @@ impl BusClock for APB2 {
 impl BusTimerClock for APB1 {
     fn timer_clock(clocks: &Clocks) -> Hertz {
         let pclk_mul = if clocks.ppre1 == 1 { 1 } else { 2 };
-        Hertz(clocks.pclk1.0 * pclk_mul)
+        Hertz::from_raw(clocks.pclk1.raw() * pclk_mul)
     }
 }
 
 impl BusTimerClock for APB2 {
     fn timer_clock(clocks: &Clocks) -> Hertz {
         let pclk_mul = if clocks.ppre2 == 1 { 1 } else { 2 };
-        Hertz(clocks.pclk2.0 * pclk_mul)
+        Hertz::from_raw(clocks.pclk2.raw() * pclk_mul)
     }
 }
 
@@ -508,11 +509,8 @@ pub struct CFGR {
 impl CFGR {
     /// Uses HSE (external oscillator) instead of HSI (internal RC oscillator) as the clock source.
     /// Will result in a hang if an external oscillator is not connected or it fails to start.
-    pub fn use_hse<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.hse = Some(freq.into().0);
+    pub fn use_hse(mut self, freq: Hertz) -> Self {
+        self.hse = Some(freq.raw());
         self
     }
 
@@ -530,35 +528,23 @@ impl CFGR {
         }
     }
 
-    pub fn hclk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.hclk = Some(freq.into().0);
+    pub fn hclk(mut self, freq: Hertz) -> Self {
+        self.hclk = Some(freq.raw());
         self
     }
 
-    pub fn pclk1<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.pclk1 = Some(freq.into().0);
+    pub fn pclk1(mut self, freq: Hertz) -> Self {
+        self.pclk1 = Some(freq.raw());
         self
     }
 
-    pub fn pclk2<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.pclk2 = Some(freq.into().0);
+    pub fn pclk2(mut self, freq: Hertz) -> Self {
+        self.pclk2 = Some(freq.raw());
         self
     }
 
-    pub fn sysclk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.sysclk = Some(freq.into().0);
+    pub fn sysclk(mut self, freq: Hertz) -> Self {
+        self.sysclk = Some(freq.raw());
         self
     }
 
@@ -571,11 +557,8 @@ impl CFGR {
     ///
     /// If this frequency matches the requested SAI or I2S frequencies, the external I2S clock is
     /// used to generate the clocks.
-    pub fn i2s_ckin<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.i2s_ckin = Some(freq.into().0);
+    pub fn i2s_ckin(mut self, freq: Hertz) -> Self {
+        self.i2s_ckin = Some(freq.raw());
         self
     }
 
@@ -595,11 +578,8 @@ impl CFGR {
         feature = "stm32f469",
         feature = "stm32f479"
     ))]
-    pub fn i2s_clk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.i2s_clk = Some(freq.into().0);
+    pub fn i2s_clk(mut self, freq: Hertz) -> Self {
+        self.i2s_clk = Some(freq.raw());
         self
     }
 
@@ -610,11 +590,8 @@ impl CFGR {
         feature = "stm32f423",
         feature = "stm32f446",
     ))]
-    pub fn i2s_apb1_clk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.i2s_apb1_clk = Some(freq.into().0);
+    pub fn i2s_apb1_clk(mut self, freq: Hertz) -> Self {
+        self.i2s_apb1_clk = Some(freq.raw());
         self
     }
 
@@ -625,11 +602,8 @@ impl CFGR {
         feature = "stm32f423",
         feature = "stm32f446",
     ))]
-    pub fn i2s_apb2_clk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.i2s_apb2_clk = Some(freq.into().0);
+    pub fn i2s_apb2_clk(mut self, freq: Hertz) -> Self {
+        self.i2s_apb2_clk = Some(freq.raw());
         self
     }
 
@@ -644,11 +618,8 @@ impl CFGR {
         feature = "stm32f469",
         feature = "stm32f479",
     ))]
-    pub fn saia_clk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.sai1_clk = Some(freq.into().0);
+    pub fn saia_clk(mut self, freq: Hertz) -> Self {
+        self.sai1_clk = Some(freq.raw());
         self
     }
 
@@ -663,31 +634,22 @@ impl CFGR {
         feature = "stm32f469",
         feature = "stm32f479",
     ))]
-    pub fn saib_clk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.sai2_clk = Some(freq.into().0);
+    pub fn saib_clk(mut self, freq: Hertz) -> Self {
+        self.sai2_clk = Some(freq.raw());
         self
     }
 
     /// Selects a SAI1 clock frequency and enables the SAI1 clock.
     #[cfg(any(feature = "stm32f446",))]
-    pub fn sai1_clk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.sai1_clk = Some(freq.into().0);
+    pub fn sai1_clk(mut self, freq: Hertz) -> Self {
+        self.sai1_clk = Some(freq.raw());
         self
     }
 
     /// Selects a SAI2 clock frequency and enables the SAI2 clock.
     #[cfg(any(feature = "stm32f446",))]
-    pub fn sai2_clk<F>(mut self, freq: F) -> Self
-    where
-        F: Into<Hertz>,
-    {
-        self.sai2_clk = Some(freq.into().0);
+    pub fn sai2_clk(mut self, freq: Hertz) -> Self {
+        self.sai2_clk = Some(freq.raw());
         self
     }
     #[cfg(feature = "stm32f410")]
@@ -1176,13 +1138,13 @@ impl CFGR {
         });
 
         let clocks = Clocks {
-            hclk: Hertz(hclk),
-            pclk1: Hertz(pclk1),
-            pclk2: Hertz(pclk2),
+            hclk: hclk.Hz(),
+            pclk1: pclk1.Hz(),
+            pclk2: pclk2.Hz(),
             ppre1,
             ppre2,
-            sysclk: Hertz(sysclk),
-            pll48clk: plls.pll48clk.map(Hertz),
+            sysclk: sysclk.Hz(),
+            pll48clk: plls.pll48clk.map(Hertz::from_raw),
 
             #[cfg(not(any(
                 feature = "stm32f412",
@@ -1190,21 +1152,21 @@ impl CFGR {
                 feature = "stm32f423",
                 feature = "stm32f446",
             )))]
-            i2s_clk: plls.i2s.i2s_clk.map(Hertz),
+            i2s_clk: plls.i2s.i2s_clk.map(Hertz::from_raw),
             #[cfg(any(
                 feature = "stm32f412",
                 feature = "stm32f413",
                 feature = "stm32f423",
                 feature = "stm32f446",
             ))]
-            i2s_apb1_clk: plls.i2s.i2s_apb1_clk.map(Hertz),
+            i2s_apb1_clk: plls.i2s.i2s_apb1_clk.map(Hertz::from_raw),
             #[cfg(any(
                 feature = "stm32f412",
                 feature = "stm32f413",
                 feature = "stm32f423",
                 feature = "stm32f446",
             ))]
-            i2s_apb2_clk: plls.i2s.i2s_apb2_clk.map(Hertz),
+            i2s_apb2_clk: plls.i2s.i2s_apb2_clk.map(Hertz::from_raw),
 
             #[cfg(any(
                 feature = "stm32f413",
@@ -1216,7 +1178,7 @@ impl CFGR {
                 feature = "stm32f469",
                 feature = "stm32f479",
             ))]
-            saia_clk: plls.sai.sai1_clk.map(Hertz),
+            saia_clk: plls.sai.sai1_clk.map(Hertz::from_raw),
             #[cfg(any(
                 feature = "stm32f413",
                 feature = "stm32f423",
@@ -1227,11 +1189,11 @@ impl CFGR {
                 feature = "stm32f469",
                 feature = "stm32f479",
             ))]
-            saib_clk: plls.sai.sai2_clk.map(Hertz),
+            saib_clk: plls.sai.sai2_clk.map(Hertz::from_raw),
             #[cfg(feature = "stm32f446")]
-            sai1_clk: plls.sai.sai1_clk.map(Hertz),
+            sai1_clk: plls.sai.sai1_clk.map(Hertz::from_raw),
             #[cfg(feature = "stm32f446")]
-            sai2_clk: plls.sai.sai2_clk.map(Hertz),
+            sai2_clk: plls.sai.sai2_clk.map(Hertz::from_raw),
         };
 
         if self.pll48clk {
@@ -1635,7 +1597,7 @@ impl Clocks {
     pub fn is_pll48clk_valid(&self) -> bool {
         // USB specification allows +-0.25%
         self.pll48clk
-            .map(|freq| (48_000_000 - freq.0 as i32).abs() <= 120_000)
+            .map(|freq| (48_000_000 - freq.raw() as i32).abs() <= 120_000)
             .unwrap_or(false)
     }
 

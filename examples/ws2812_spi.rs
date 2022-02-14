@@ -6,7 +6,7 @@ use panic_halt as _;
 use stm32f4xx_hal as hal;
 
 use cortex_m_rt::entry;
-use hal::{gpio::NoPin, pac, prelude::*, spi::Spi};
+use hal::{gpio::NoPin, pac, prelude::*};
 use smart_leds::{brightness, hsv::RGB8, SmartLedsWrite};
 use ws2812_spi as ws2812;
 
@@ -16,16 +16,15 @@ fn main() -> ! {
 
     // Configure APB bus clock to 56MHz, cause ws2812b requires 3.5Mbps SPI
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.use_hse(25.mhz()).sysclk(56.mhz()).freeze();
+    let clocks = rcc.cfgr.use_hse(25.MHz()).sysclk(56.MHz()).freeze();
 
     let mut delay = dp.TIM1.delay_us(&clocks);
     let gpioa = dp.GPIOA.split();
 
-    let spi = Spi::new(
-        dp.SPI1,
+    let spi = dp.SPI1.spi(
         (gpioa.pa5, NoPin, gpioa.pa7),
         ws2812::MODE,
-        3500.khz(),
+        3500.kHz(),
         &clocks,
     );
 
