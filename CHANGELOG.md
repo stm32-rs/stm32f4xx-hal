@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Unify serial trait impls for embedded-hal 0.2 & 1.0
 - Add possibility to select Timer master mode
 - Add inherent impl of `embedded_hal::Pwm` methods on `Pwm`s [#439]
 - Use `embedded-dma` v0.2 [#440]
