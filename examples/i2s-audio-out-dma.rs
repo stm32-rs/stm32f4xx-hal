@@ -48,7 +48,6 @@ use cortex_m_rt::entry;
 use stm32_i2s_v12x::format::{Data16Frame16, FrameFormat};
 use stm32_i2s_v12x::{MasterClock, MasterConfig, Polarity, TransmitMode};
 
-use stm32f4xx_hal::delay::Delay;
 use stm32f4xx_hal::dma::config::DmaConfig;
 use stm32f4xx_hal::dma::MemoryToPeripheral;
 use stm32f4xx_hal::dma::{Stream5, StreamsTuple, Transfer};
@@ -100,7 +99,7 @@ fn main() -> ! {
     let gpioc = dp.GPIOC.split();
     let gpiod = dp.GPIOD.split();
 
-    let mut delay = Delay::new(cp.SYST, &clocks);
+    let mut delay = cp.SYST.delay(&clocks);
 
     let i2c = I2c::new(
         dp.I2C1,

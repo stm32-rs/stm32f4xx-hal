@@ -22,13 +22,12 @@ use panic_semihosting as _; // logs messages to the host stderr; requires a debu
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
-    fugit::{CounterUs, Event},
     gpio::{Edge, Input, PullUp, PC13},
     i2c::I2c,
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
-    timer::Timer,
+    timer::{CounterUs, Event, Timer},
 };
 use core::cell::{Cell, RefCell};
 use core::fmt::Write;

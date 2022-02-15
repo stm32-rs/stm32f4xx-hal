@@ -121,8 +121,6 @@ pub mod dac;
 #[cfg(feature = "fmpi2c1")]
 pub mod fmpi2c;
 #[cfg(feature = "device-selected")]
-pub mod fugit;
-#[cfg(feature = "device-selected")]
 pub mod gpio;
 #[cfg(feature = "device-selected")]
 pub mod i2c;

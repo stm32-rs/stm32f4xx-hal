@@ -8,6 +8,9 @@ use core::convert::Infallible;
 use cortex_m::peripheral::SYST;
 use embedded_hal_one::delay::blocking::DelayUs;
 
+use super::{Error, FDelay, Instance};
+use fugit::ExtU32;
+
 use super::{delay::Wait, Delay};
 
 impl DelayUs for Delay<SYST> {
@@ -17,7 +20,7 @@ impl DelayUs for Delay<SYST> {
         // The SysTick Reload Value register supports values between 1 and 0x00FFFFFF.
         const MAX_RVR: u32 = 0x00FF_FFFF;
 
-        let mut total_rvr = us * (self.clk.raw() / 8_000_000);
+        let mut total_rvr = us * (self.clk.raw() / 1_000_000);
 
         while total_rvr != 0 {
             let current_rvr = if total_rvr <= MAX_RVR {
@@ -92,5 +95,17 @@ where
         self.wait(psc, arr);
 
         Ok(())
+    }
+}
+
+impl<TIM: Instance, const FREQ: u32> DelayUs for FDelay<TIM, FREQ> {
+    type Error = Error;
+
+    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
+        self.delay(us.micros())
+    }
+
+    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+        self.delay(ms.millis())
     }
 }

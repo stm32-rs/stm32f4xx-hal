@@ -11,10 +11,10 @@ use panic_halt as _;
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
-    fugit::{CounterUs, Event, Timer},
     gpio::{self, Output, PushPull},
     pac::{interrupt, Interrupt, Peripherals, TIM2},
     prelude::*,
+    timer::{CounterUs, Event},
 };
 
 use core::cell::RefCell;
@@ -78,7 +78,7 @@ fn main() -> ! {
     cortex_m::interrupt::free(|cs| *G_LED.borrow(cs).borrow_mut() = Some(led));
 
     // Set up a timer expiring after 1s
-    let mut timer = Timer::new(dp.TIM2, &clocks).counter();
+    let mut timer = dp.TIM2.counter(&clocks);
     timer.start(1.secs()).unwrap();
 
     // Generate an interrupt when the timer expires

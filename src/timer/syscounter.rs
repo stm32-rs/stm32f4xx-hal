@@ -3,29 +3,7 @@ use super::{Error, SysEvent, Timer};
 use crate::{pac::SYST, rcc::Clocks};
 use core::ops::{Deref, DerefMut};
 use cortex_m::peripheral::syst::SystClkSource;
-use fugit::{HertzU32 as Hertz, TimerInstantU32, TimerDurationU32};
-
-pub trait SysCounterExt: Sized {
-    /// Creates timer which takes [Hertz] as Duration
-    fn counter_hz(self, clocks: &Clocks) -> SysCounterHz;
-
-    /// Creates timer with custom precision (core frequency recommended is known)
-    fn counter<const FREQ: u32>(self, clocks: &Clocks) -> SysCounter<FREQ>;
-    /// Creates timer with 1 microsecond precision
-    fn counter_us(self, clocks: &Clocks) -> SysCounterUs;
-}
-
-impl SysCounterExt for SYST {
-    fn counter_hz(self, clocks: &Clocks) -> SysCounterHz {
-        Timer::syst(self, clocks).counter_hz()
-    }
-    fn counter<const FREQ: u32>(self, clocks: &Clocks) -> SysCounter<FREQ> {
-        Timer::syst(self, clocks).counter()
-    }
-    fn counter_us(self, clocks: &Clocks) -> SysCounterUs {
-        Timer::syst(self, clocks).counter_us()
-    }
-}
+use fugit::{HertzU32 as Hertz, TimerDurationU32, TimerInstantU32};
 
 impl Timer<SYST> {
     /// Creates [SysCounterHz] which takes [Hertz] as Duration
@@ -95,7 +73,7 @@ impl SysCounterHz {
 
 pub type SysCounterUs = SysCounter<1_000_000>;
 
-/// SysTick timer with sampling of 1MHz
+/// SysTick timer with precision of 1 μs (1 MHz sampling)
 pub struct SysCounter<const FREQ: u32>(Timer<SYST>);
 
 impl<const FREQ: u32> Deref for SysCounter<FREQ> {

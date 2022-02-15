@@ -60,11 +60,6 @@ pub use fugit::RateExtU32 as _fugit_RateExtU32;
 pub use crate::can::CanExt as _stm32f4xx_hal_can_CanExt;
 #[cfg(all(feature = "device-selected", feature = "dac"))]
 pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;
-#[cfg(feature = "rtic")]
-#[cfg(not(feature = "stm32f410"))]
-pub use crate::fugit::MonoTimerExt as _stm32f4xx_hal_fugit_MonoTimerExt;
-pub use crate::fugit::PwmExt as _stm32f4xx_hal_fugit_PwmExt;
-pub use crate::fugit::TimerExt as _stm32f4xx_hal_fugit_TimerExt;
 pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
 pub use crate::i2c::I2cExt as _stm32f4xx_hal_i2c_I2cExt;
@@ -76,4 +71,9 @@ pub use crate::serial::SerialExt as _stm32f4xx_hal_serial_SerialExt;
 pub use crate::spi::SpiExt as _stm32f4xx_hal_spi_SpiExt;
 pub use crate::syscfg::SysCfgExt as _stm32f4xx_hal_syscfg_SysCfgExt;
 pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;
-pub use crate::timer::SysCounterExt as _stm32f4xx_hal_fugit_SysCounterExt;
+#[cfg(feature = "rtic")]
+#[cfg(not(feature = "stm32f410"))]
+pub use crate::timer::MonoTimerExt as _stm32f4xx_hal_timer_MonoTimerExt;
+pub use crate::timer::PwmExt as _stm32f4xx_hal_timer_PwmExt;
+pub use crate::timer::SysTimerExt as _stm32f4xx_hal_timer_SysCounterExt;
+pub use crate::timer::TimerExt as _stm32f4xx_hal_timer_TimerExt;

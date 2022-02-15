@@ -30,7 +30,6 @@ use embedded_graphics::prelude::*;
 
 use embedded_graphics::primitives::{Circle, PrimitiveStyle};
 use st7789::ST7789;
-use stm32f4xx_hal::delay::Delay;
 use stm32f4xx_hal::fsmc_lcd::{ChipSelect1, FsmcLcd, LcdPins, Timing};
 use stm32f4xx_hal::pac::{CorePeripherals, Peripherals};
 use stm32f4xx_hal::prelude::*;
@@ -44,7 +43,7 @@ fn main() -> ! {
     // Make HCLK faster to allow updating the display more quickly
     let clocks = rcc.cfgr.hclk(100.MHz()).freeze();
 
-    let mut delay = Delay::new(cp.SYST, &clocks);
+    let mut delay = cp.SYST.delay(&clocks);
 
     let gpiod = dp.GPIOD.split();
     let gpioe = dp.GPIOE.split();

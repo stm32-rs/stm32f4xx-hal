@@ -19,7 +19,7 @@ use crate::hal::{
     fsmc_lcd::{ChipSelect3, FsmcLcd, LcdPins, Timing},
     gpio::Speed,
     pac::{CorePeripherals, Peripherals},
-    {delay::Delay, prelude::*},
+    prelude::*,
 };
 
 use embedded_graphics::geometry::Size;
@@ -747,7 +747,7 @@ fn main() -> ! {
         gpioe.pe5.into_push_pull_output().set_high();
 
         // Get delay provider
-        let mut delay = Delay::new(cp.SYST, &clocks);
+        let mut delay = cp.SYST.delay(&clocks);
 
         // Set up timing
         let write_timing = Timing::default().data(3).address_setup(3).bus_turnaround(0);
