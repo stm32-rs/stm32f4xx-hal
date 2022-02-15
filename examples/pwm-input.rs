@@ -20,7 +20,7 @@ fn main() -> ! {
 
         let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
         // configure tim1 as a PWM output of known frequency.
-        let pwm = Timer::new(dp.TIM1, &clocks).pwm(channels, 501.Hz());
+        let pwm = Timer::new(dp.TIM1, &clocks).pwm_hz(channels, 501.Hz());
         let (mut ch1, _ch2) = pwm.split();
         let max_duty = ch1.get_max_duty();
         ch1.set_duty(max_duty / 2);

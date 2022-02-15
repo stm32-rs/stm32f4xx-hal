@@ -6,10 +6,10 @@ use panic_halt as _;
 #[rtic::app(device = stm32f4xx_hal::pac, dispatchers = [USART1])]
 mod app {
     use stm32f4xx_hal::{
-        fugit::MonoTimerUs,
         gpio::{Output, PushPull, PC13},
         pac,
         prelude::*,
+        timer::MonoTimerUs,
     };
 
     #[shared]

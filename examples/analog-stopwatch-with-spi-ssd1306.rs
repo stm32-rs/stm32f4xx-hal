@@ -11,12 +11,12 @@ use panic_semihosting as _;
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
-    fugit::{CounterUs, Event, Timer},
     gpio::{Edge, Input, PullDown, PA0},
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
     spi::Spi,
+    timer::{CounterUs, Event, FTimer, Timer},
 };
 
 use core::cell::{Cell, RefCell};
@@ -112,7 +112,7 @@ fn main() -> ! {
 
     let dc = gpioe.pe3.into_push_pull_output();
     let mut ss = gpioe.pe4.into_push_pull_output();
-    let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
+    let mut delay = Timer::syst(cp.SYST, &clocks).delay();
 
     ss.set_high();
     delay.delay_ms(100_u32);
@@ -126,7 +126,7 @@ fn main() -> ! {
     disp.flush().unwrap();
 
     // Create a 1ms periodic interrupt from TIM2
-    let mut timer = Timer::new(dp.TIM2, &clocks).counter();
+    let mut timer = FTimer::new(dp.TIM2, &clocks).counter();
     timer.start(1.secs()).unwrap();
     timer.listen(Event::Update);
 

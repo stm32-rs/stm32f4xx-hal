@@ -28,7 +28,7 @@ fn main() -> ! {
         let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
 
         // Create a delay abstraction based on SysTick
-        let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
+        let mut delay = cp.SYST.delay(&clocks);
 
         loop {
             // On for 1s, off for 1s.

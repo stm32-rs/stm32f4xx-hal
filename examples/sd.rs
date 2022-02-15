@@ -6,7 +6,7 @@ use cortex_m_semihosting::{hprint, hprintln};
 use panic_semihosting as _;
 
 use stm32f4xx_hal::{
-    delay, pac,
+    pac,
     prelude::*,
     sdio::{ClockFreq, Sdio},
 };
@@ -29,7 +29,7 @@ fn main() -> ! {
 
     assert!(clocks.is_pll48clk_valid());
 
-    let mut delay = delay::Delay::new(core.SYST, &clocks);
+    let mut delay = core.SYST.delay(&clocks);
 
     let gpioc = device.GPIOC.split();
     let gpiod = device.GPIOD.split();

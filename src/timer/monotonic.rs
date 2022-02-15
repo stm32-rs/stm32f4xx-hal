@@ -1,14 +1,14 @@
 // RTIC Monotonic impl for the 32-bit timers
-use super::{Instance, Timer};
+use super::{FTimer, Instance};
 use crate::rcc::Clocks;
 use core::ops::{Deref, DerefMut};
 pub use fugit::{self, ExtU32};
 use rtic_monotonic::Monotonic;
 
-pub struct MonoTimer<TIM, const FREQ: u32>(Timer<TIM, FREQ>);
+pub struct MonoTimer<TIM, const FREQ: u32>(FTimer<TIM, FREQ>);
 
 impl<TIM, const FREQ: u32> Deref for MonoTimer<TIM, FREQ> {
-    type Target = Timer<TIM, FREQ>;
+    type Target = FTimer<TIM, FREQ>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -20,12 +20,12 @@ impl<TIM, const FREQ: u32> DerefMut for MonoTimer<TIM, FREQ> {
     }
 }
 
-/// `MonoTimer` with sampling of 1 MHz
+/// `MonoTimer` with precision of 1 μs (1 MHz sampling)
 pub type MonoTimerUs<TIM> = MonoTimer<TIM, 1_000_000>;
 
 impl<TIM: Instance, const FREQ: u32> MonoTimer<TIM, FREQ> {
     /// Releases the TIM peripheral
-    pub fn release(mut self) -> Timer<TIM, FREQ> {
+    pub fn release(mut self) -> FTimer<TIM, FREQ> {
         // stop counter
         self.tim.cr1_reset();
         self.0
@@ -44,18 +44,18 @@ macro_rules! mono {
         $(
             impl MonoTimerExt for $TIM {
                 fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> MonoTimer<Self, FREQ> {
-                    Timer::new(self, clocks).monotonic()
+                    FTimer::new(self, clocks).monotonic()
                 }
             }
 
-            impl<const FREQ: u32> Timer<$TIM, FREQ> {
+            impl<const FREQ: u32> FTimer<$TIM, FREQ> {
                 pub fn monotonic(self) -> MonoTimer<$TIM, FREQ> {
                     MonoTimer::<$TIM, FREQ>::_new(self)
                 }
             }
 
             impl<const FREQ: u32> MonoTimer<$TIM, FREQ> {
-                fn _new(timer: Timer<$TIM, FREQ>) -> Self {
+                fn _new(timer: FTimer<$TIM, FREQ>) -> Self {
                     timer.tim.arr.write(|w| unsafe { w.bits(u32::MAX) });
                     timer.tim.egr.write(|w| w.ug().set_bit());
                     timer.tim.sr.modify(|_, w| w.uif().clear_bit());

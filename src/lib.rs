@@ -118,12 +118,8 @@ pub mod crc32;
 #[cfg(all(feature = "device-selected", feature = "dac"))]
 pub mod dac;
 #[cfg(feature = "device-selected")]
-pub mod delay;
-#[cfg(feature = "device-selected")]
 #[cfg(feature = "fmpi2c1")]
 pub mod fmpi2c;
-#[cfg(feature = "device-selected")]
-pub mod fugit;
 #[cfg(feature = "device-selected")]
 pub mod gpio;
 #[cfg(feature = "device-selected")]
@@ -156,11 +152,6 @@ pub mod flash;
 pub mod fsmc_lcd;
 #[cfg(feature = "device-selected")]
 pub mod prelude;
-#[cfg(feature = "device-selected")]
-pub mod pwm;
-#[cfg(feature = "device-selected")]
-#[cfg(not(feature = "stm32f410"))]
-pub mod pwm_input;
 #[cfg(feature = "device-selected")]
 pub mod qei;
 #[cfg(feature = "device-selected")]

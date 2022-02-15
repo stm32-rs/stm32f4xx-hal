@@ -15,7 +15,7 @@ use panic_halt as _;
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 
-use hal::fugit::Error;
+use hal::timer::Error;
 use stm32f4xx_hal as hal;
 
 use crate::hal::{pac, prelude::*};
@@ -35,7 +35,7 @@ fn main() -> ! {
     nb::block!(timer.wait()).unwrap();
     hprintln!("timer expired 1").unwrap();
 
-    // the function syst() creates a periodic timer, so it is automatically
+    // the function counter_ms() creates a periodic timer, so it is automatically
     // restarted
     nb::block!(timer.wait()).unwrap();
     hprintln!("timer expired 2").unwrap();

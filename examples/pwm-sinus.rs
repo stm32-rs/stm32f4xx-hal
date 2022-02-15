@@ -8,7 +8,7 @@ use panic_halt as _;
 use core::f32::consts::FRAC_PI_2;
 use cortex_m_rt::entry;
 use micromath::F32Ext;
-use stm32f4xx_hal::{fugit::Channel, pac, prelude::*};
+use stm32f4xx_hal::{pac, prelude::*, timer::Channel};
 
 #[entry]
 fn main() -> ! {

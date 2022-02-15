@@ -4,10 +4,9 @@
 //! (`AlternateOD`).
 #![allow(non_upper_case_globals)]
 
+use core::convert::TryFrom;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
-use embedded_hal::timer::{Cancel, CountDown, Periodic};
-use void::Void;
 
 use crate::bb;
 use crate::pac::{self, RCC};
@@ -15,42 +14,35 @@ use crate::pac::{self, RCC};
 use crate::rcc::{self, Clocks};
 use fugit::HertzU32 as Hertz;
 
+pub mod counter;
+pub use counter::*;
+pub mod syscounter;
+pub use syscounter::*;
+pub mod delay;
+pub use delay::*;
 mod pins;
 pub use pins::*;
+pub mod pwm;
+pub use pwm::*;
+#[cfg(not(feature = "stm32f410"))]
+pub mod pwm_input;
+#[cfg(not(feature = "stm32f410"))]
+pub use pwm_input::PwmInput;
+#[cfg(feature = "rtic")]
+#[cfg(not(feature = "stm32f410"))]
+pub mod monotonic;
+#[cfg(feature = "rtic")]
+#[cfg(not(feature = "stm32f410"))]
+pub use monotonic::*;
+
+mod hal_02;
+mod hal_1;
 
 /// Timer wrapper
 pub struct Timer<TIM> {
     pub(crate) tim: TIM,
     pub(crate) clk: Hertz,
 }
-
-/// Hardware timers
-pub struct CountDownTimer<TIM> {
-    tim: TIM,
-    clk: Hertz,
-}
-
-impl<TIM> Timer<TIM> {
-    /// Creates CountDownTimer
-    pub fn count_down(self) -> CountDownTimer<TIM> {
-        let Self { tim, clk } = self;
-        CountDownTimer { tim, clk }
-    }
-}
-
-impl<TIM> Timer<TIM>
-where
-    CountDownTimer<TIM>: CountDown<Time = Hertz>,
-{
-    /// Starts timer in count down mode at a given frequency
-    pub fn start_count_down(self, timeout: Hertz) -> CountDownTimer<TIM> {
-        let mut timer = self.count_down();
-        timer.start(timeout);
-        timer
-    }
-}
-
-impl<TIM> Periodic for CountDownTimer<TIM> {}
 
 #[derive(Clone, Copy, PartialEq)]
 #[repr(u8)]
@@ -64,7 +56,7 @@ pub enum Channel {
 /// Interrupt events
 #[derive(Clone, Copy, PartialEq)]
 pub enum SysEvent {
-    /// CountDownTimer timed out / count down ended
+    /// [Timer] timed out / count down ended
     Update,
 }
 
@@ -80,27 +72,125 @@ bitflags::bitflags! {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
-    /// CountDownTimer is disabled
+    /// Timer is disabled
     Disabled,
     WrongAutoReload,
 }
 
+pub trait TimerExt: Sized {
+    /// Non-blocking [Counter] with custom fixed precision
+    fn counter<const FREQ: u32>(self, clocks: &Clocks) -> Counter<Self, FREQ>;
+    /// Non-blocking [Counter] with fixed precision of 1 ms (1 kHz sampling)
+    ///
+    /// Can wait from 2 ms to 65 sec for 16-bit timer and from 2 ms to 49 days for 32-bit timer.
+    ///
+    /// NOTE: don't use this if your system frequency more than 65 MHz
+    fn counter_ms(self, clocks: &Clocks) -> CounterMs<Self> {
+        self.counter::<1_000>(clocks)
+    }
+    /// Non-blocking [Counter] with fixed precision of 1 μs (1 MHz sampling)
+    ///
+    /// Can wait from 2 μs to 65 ms for 16-bit timer and from 2 μs to 71 min for 32-bit timer.
+    fn counter_us(self, clocks: &Clocks) -> CounterUs<Self> {
+        self.counter::<1_000_000>(clocks)
+    }
+    /// Non-blocking [Counter] with dynamic precision which uses `Hertz` as Duration units
+    fn counter_hz(self, clocks: &Clocks) -> CounterHz<Self>;
+
+    /// Blocking [Delay] with custom fixed precision
+    fn delay<const FREQ: u32>(self, clocks: &Clocks) -> FDelay<Self, FREQ>;
+    /// Blocking [Delay] with fixed precision of 1 ms (1 kHz sampling)
+    ///
+    /// Can wait from 2 ms to 65 sec for 16-bit timer and from 2 ms to 49 days for 32-bit timer.
+    ///
+    /// NOTE: don't use this if your system frequency more than 65 MHz
+    fn delay_ms(self, clocks: &Clocks) -> DelayMs<Self> {
+        self.delay::<1_000>(clocks)
+    }
+    /// Blocking [Delay] with fixed precision of 1 μs (1 MHz sampling)
+    ///
+    /// Can wait from 2 μs to 65 ms for 16-bit timer and from 2 μs to 71 min for 32-bit timer.
+    fn delay_us(self, clocks: &Clocks) -> DelayUs<Self> {
+        self.delay::<1_000_000>(clocks)
+    }
+    /// Blocking [Delay]
+    fn delay_dyn(self, clocks: &Clocks) -> Delay<Self>;
+}
+
+impl<TIM: Instance> TimerExt for TIM {
+    fn counter<const FREQ: u32>(self, clocks: &Clocks) -> Counter<Self, FREQ> {
+        FTimer::new(self, clocks).counter()
+    }
+    fn counter_hz(self, clocks: &Clocks) -> CounterHz<Self> {
+        Timer::new(self, clocks).counter_hz()
+    }
+    fn delay<const FREQ: u32>(self, clocks: &Clocks) -> FDelay<Self, FREQ> {
+        FTimer::new(self, clocks).delay()
+    }
+    fn delay_dyn(self, clocks: &Clocks) -> Delay<Self> {
+        Timer::new(self, clocks).delay()
+    }
+}
+
+pub trait SysTimerExt: Sized {
+    /// Creates timer which takes [Hertz] as Duration
+    fn counter_hz(self, clocks: &Clocks) -> SysCounterHz;
+
+    /// Creates timer with custom precision (core frequency recommended is known)
+    fn counter<const FREQ: u32>(self, clocks: &Clocks) -> SysCounter<FREQ>;
+    /// Creates timer with precision of 1 μs (1 MHz sampling)
+    fn counter_us(self, clocks: &Clocks) -> SysCounterUs {
+        self.counter::<1_000_000>(clocks)
+    }
+    /// Blocking [Delay] with custom precision
+    fn delay(self, clocks: &Clocks) -> Delay<Self>;
+}
+
+impl SysTimerExt for SYST {
+    fn counter_hz(self, clocks: &Clocks) -> SysCounterHz {
+        Timer::syst(self, clocks).counter_hz()
+    }
+    fn counter<const FREQ: u32>(self, clocks: &Clocks) -> SysCounter<FREQ> {
+        Timer::syst(self, clocks).counter()
+    }
+    fn delay(self, clocks: &Clocks) -> Delay<Self> {
+        Timer::syst_external(self, clocks).delay()
+    }
+}
+
 impl Timer<SYST> {
-    /// Initialize timer
-    pub fn syst(mut syst: SYST, clocks: &Clocks) -> Self {
-        syst.set_clock_source(SystClkSource::Core);
+    /// Initialize SysTick timer
+    pub fn syst(mut tim: SYST, clocks: &Clocks) -> Self {
+        tim.set_clock_source(SystClkSource::Core);
         Self {
-            tim: syst,
-            clk: clocks.sysclk(),
+            tim,
+            clk: clocks.hclk(),
         }
+    }
+
+    /// Initialize SysTick timer and set it frequency to `HCLK / 8`
+    pub fn syst_external(mut tim: SYST, clocks: &Clocks) -> Self {
+        tim.set_clock_source(SystClkSource::External);
+        Self {
+            tim,
+            clk: clocks.hclk() / 8,
+        }
+    }
+
+    pub fn configure(&mut self, clocks: &Clocks) {
+        self.tim.set_clock_source(SystClkSource::Core);
+        self.clk = clocks.hclk();
+    }
+
+    pub fn configure_external(&mut self, clocks: &Clocks) {
+        self.tim.set_clock_source(SystClkSource::External);
+        self.clk = clocks.hclk() / 8;
     }
 
     pub fn release(self) -> SYST {
         self.tim
     }
-}
 
-impl CountDownTimer<SYST> {
     /// Starts listening for an `event`
     pub fn listen(&mut self, event: SysEvent) {
         match event {
@@ -113,44 +203,6 @@ impl CountDownTimer<SYST> {
         match event {
             SysEvent::Update => self.tim.disable_interrupt(),
         }
-    }
-}
-
-impl CountDown for CountDownTimer<SYST> {
-    type Time = Hertz;
-
-    fn start<T>(&mut self, timeout: T)
-    where
-        T: Into<Hertz>,
-    {
-        let rvr = self.clk.raw() / timeout.into().raw() - 1;
-
-        assert!(rvr < (1 << 24));
-
-        self.tim.set_reload(rvr);
-        self.tim.clear_current();
-        self.tim.enable_counter();
-    }
-
-    fn wait(&mut self) -> nb::Result<(), Void> {
-        if self.tim.has_wrapped() {
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
-}
-
-impl Cancel for CountDownTimer<SYST> {
-    type Error = Error;
-
-    fn cancel(&mut self) -> Result<(), Self::Error> {
-        if !self.tim.is_counter_enabled() {
-            return Err(Self::Error::Disabled);
-        }
-
-        self.tim.disable_counter();
-        Ok(())
     }
 }
 
@@ -209,27 +261,6 @@ pub(crate) use sealed::{General, MasterTimer, WithPwm};
 pub trait Instance:
     crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock + General
 {
-}
-
-impl<TIM> Timer<TIM>
-where
-    TIM: Instance,
-{
-    /// Initialize timer
-    pub fn new(tim: TIM, clocks: &Clocks) -> Self {
-        unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &(*RCC::ptr());
-            // Enable and reset the timer peripheral
-            TIM::enable(rcc);
-            TIM::reset(rcc);
-        }
-
-        Self {
-            clk: TIM::timer_clock(clocks),
-            tim,
-        }
-    }
 }
 
 macro_rules! hal {
@@ -550,7 +581,35 @@ macro_rules! with_pwm {
     }
 }
 
-impl<TIM: General> CountDownTimer<TIM> {
+impl<TIM: Instance> Timer<TIM> {
+    /// Initialize timer
+    pub fn new(tim: TIM, clocks: &Clocks) -> Self {
+        unsafe {
+            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+            let rcc = &(*RCC::ptr());
+            // Enable and reset the timer peripheral
+            TIM::enable(rcc);
+            TIM::reset(rcc);
+        }
+
+        Self {
+            clk: TIM::timer_clock(clocks),
+            tim,
+        }
+    }
+
+    pub fn configure(&mut self, clocks: &Clocks) {
+        self.clk = TIM::timer_clock(clocks);
+    }
+
+    pub fn counter_hz(self) -> CounterHz<TIM> {
+        CounterHz(self)
+    }
+
+    pub fn release(self) -> TIM {
+        self.tim
+    }
+
     /// Starts listening for an `event`
     ///
     /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
@@ -571,16 +630,95 @@ impl<TIM: General> CountDownTimer<TIM> {
     pub fn unlisten(&mut self, event: Event) {
         self.tim.listen_interrupt(event, false);
     }
+}
 
-    /// Releases the TIM peripheral
-    pub fn release(mut self) -> TIM {
-        // pause counter
-        self.tim.disable_counter();
-        self.tim
+impl<TIM: Instance + MasterTimer> Timer<TIM> {
+    pub fn set_master_mode(&mut self, mode: TIM::Mms) {
+        self.tim.master_mode(mode)
     }
 }
 
-impl<TIM: General + MasterTimer> CountDownTimer<TIM> {
+/// Timer wrapper for fixed precision timers.
+///
+/// Uses `fugit::TimerDurationU32` for most of operations
+pub struct FTimer<TIM, const FREQ: u32> {
+    tim: TIM,
+}
+
+/// `FTimer` with precision of 1 μs (1 MHz sampling)
+pub type FTimerUs<TIM> = FTimer<TIM, 1_000_000>;
+
+/// `FTimer` with precision of 1 ms (1 kHz sampling)
+///
+/// NOTE: don't use this if your system frequency more than 65 MHz
+pub type FTimerMs<TIM> = FTimer<TIM, 1_000>;
+
+impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
+    /// Initialize timer
+    pub fn new(tim: TIM, clocks: &Clocks) -> Self {
+        unsafe {
+            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
+            let rcc = &(*RCC::ptr());
+            // Enable and reset the timer peripheral
+            TIM::enable(rcc);
+            TIM::reset(rcc);
+        }
+
+        let mut t = Self { tim };
+        t.configure(clocks);
+        t
+    }
+
+    /// Calculate prescaler depending on `Clocks` state
+    pub fn configure(&mut self, clocks: &Clocks) {
+        let clk = TIM::timer_clock(clocks);
+        assert!(clk.raw() % FREQ == 0);
+        let psc = clk.raw() / FREQ;
+        self.tim.set_prescaler(u16::try_from(psc - 1).unwrap());
+    }
+
+    /// Creates `Counter` that imlements [embedded_hal::timer::CountDown]
+    pub fn counter(self) -> Counter<TIM, FREQ> {
+        Counter(self)
+    }
+
+    /// Creates `Delay` that imlements [embedded_hal::blocking::delay] traits
+    pub fn delay(self) -> FDelay<TIM, FREQ> {
+        FDelay(self)
+    }
+
+    /// Releases the TIM peripheral
+    pub fn release(self) -> TIM {
+        self.tim
+    }
+
+    /// Starts listening for an `event`
+    ///
+    /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
+    /// receiving events.
+    pub fn listen(&mut self, event: Event) {
+        self.tim.listen_interrupt(event, true);
+    }
+
+    /// Clears interrupt associated with `event`.
+    ///
+    /// If the interrupt is not cleared, it will immediately retrigger after
+    /// the ISR has finished.
+    pub fn clear_interrupt(&mut self, event: Event) {
+        self.tim.clear_interrupt_flag(event);
+    }
+
+    pub fn get_interrupt(&mut self) -> Event {
+        self.tim.get_interrupt_flag()
+    }
+
+    /// Stops listening for an `event`
+    pub fn unlisten(&mut self, event: Event) {
+        self.tim.listen_interrupt(event, false);
+    }
+}
+
+impl<TIM: Instance + MasterTimer, const FREQ: u32> FTimer<TIM, FREQ> {
     pub fn set_master_mode(&mut self, mode: TIM::Mms) {
         self.tim.master_mode(mode)
     }
@@ -593,59 +731,6 @@ pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
     assert!(psc <= u16::MAX as u32);
     let arr = ticks / (psc + 1) - 1;
     (psc as u16, arr)
-}
-
-impl<TIM> CountDown for CountDownTimer<TIM>
-where
-    TIM: General,
-{
-    type Time = Hertz;
-
-    fn start<T>(&mut self, timeout: T)
-    where
-        T: Into<Self::Time>,
-    {
-        // pause
-        self.tim.disable_counter();
-        // reset counter
-        self.tim.reset_counter();
-
-        let (psc, arr) = compute_arr_presc(timeout.into().raw(), self.clk.raw());
-        self.tim.set_prescaler(psc);
-        self.tim.set_auto_reload(arr).unwrap();
-
-        // Trigger update event to load the registers
-        self.tim.trigger_update();
-
-        // start counter
-        self.tim.enable_counter();
-    }
-
-    fn wait(&mut self) -> nb::Result<(), Void> {
-        if self.tim.get_interrupt_flag().contains(Event::Update) {
-            self.tim.clear_interrupt_flag(Event::Update);
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
-}
-
-impl<TIM> Cancel for CountDownTimer<TIM>
-where
-    TIM: General,
-{
-    type Error = Error;
-
-    fn cancel(&mut self) -> Result<(), Self::Error> {
-        if !self.tim.is_counter_enabled() {
-            return Err(Self::Error::Disabled);
-        }
-
-        // disable counter
-        self.tim.disable_counter();
-        Ok(())
-    }
 }
 
 // All F4xx parts have these timers.

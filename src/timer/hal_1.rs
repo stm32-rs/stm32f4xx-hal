@@ -3,18 +3,24 @@
 //! TIM2 and TIM5 are a general purpose 32-bit auto-reload up/downcounter with
 //! a 16-bit prescaler.
 
-use cast::{u16, u32};
+use cast::u16;
+use core::convert::Infallible;
 use cortex_m::peripheral::SYST;
-use embedded_hal::blocking::delay::{DelayMs, DelayUs};
+use embedded_hal_one::delay::blocking::DelayUs;
 
-use super::{Delay, Wait};
+use super::{Error, FDelay, Instance};
+use fugit::ExtU32;
 
-impl DelayUs<u32> for Delay<SYST> {
-    fn delay_us(&mut self, us: u32) {
+use super::{delay::Wait, Delay};
+
+impl DelayUs for Delay<SYST> {
+    type Error = Infallible;
+
+    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
         // The SysTick Reload Value register supports values between 1 and 0x00FFFFFF.
         const MAX_RVR: u32 = 0x00FF_FFFF;
 
-        let mut total_rvr = us * (self.clk.raw() / 8_000_000);
+        let mut total_rvr = us * (self.clk.raw() / 1_000_000);
 
         while total_rvr != 0 {
             let current_rvr = if total_rvr <= MAX_RVR {
@@ -34,45 +40,23 @@ impl DelayUs<u32> for Delay<SYST> {
 
             self.tim.disable_counter();
         }
+
+        Ok(())
+    }
+
+    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+        self.delay_us(ms * 1_000)
     }
 }
 
-impl DelayMs<u32> for Delay<SYST> {
-    fn delay_ms(&mut self, ms: u32) {
-        self.delay_us(ms * 1_000);
-    }
-}
-
-impl DelayUs<u16> for Delay<SYST> {
-    fn delay_us(&mut self, us: u16) {
-        self.delay_us(u32(us))
-    }
-}
-
-impl DelayMs<u16> for Delay<SYST> {
-    fn delay_ms(&mut self, ms: u16) {
-        self.delay_ms(u32(ms));
-    }
-}
-
-impl DelayUs<u8> for Delay<SYST> {
-    fn delay_us(&mut self, us: u8) {
-        self.delay_us(u32(us))
-    }
-}
-
-impl DelayMs<u8> for Delay<SYST> {
-    fn delay_ms(&mut self, ms: u8) {
-        self.delay_ms(u32(ms));
-    }
-}
-
-impl<TIM> DelayUs<u32> for Delay<TIM>
+impl<TIM> DelayUs for Delay<TIM>
 where
     Self: Wait,
 {
+    type Error = Infallible;
+
     /// Sleep for up to 2^32-1 microseconds (~71 minutes).
-    fn delay_us(&mut self, us: u32) {
+    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
         // Set up prescaler so that a tick takes exactly 1 µs.
         //
         // For example, if the clock is set to 48 MHz, with a prescaler of 48
@@ -81,16 +65,13 @@ where
         let psc = u16(self.clk.raw() / 1_000_000).expect("Prescaler does not fit in u16");
         let arr = us;
         self.wait(psc, arr);
-    }
-}
 
-impl<TIM> DelayMs<u32> for Delay<TIM>
-where
-    Self: Wait,
-{
+        Ok(())
+    }
+
     /// Sleep for up to (2^32)/2-1 milliseconds (~24 days).
     /// If the `ms` value is larger than 2147483647, the code will panic.
-    fn delay_ms(&mut self, ms: u32) {
+    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
         // See next section for explanation why the usable range is reduced.
         assert!(ms <= 2_147_483_647); // (2^32)/2-1
 
@@ -112,32 +93,19 @@ where
         let arr = ms << 1;
 
         self.wait(psc, arr);
+
+        Ok(())
     }
 }
 
-impl<TIM> DelayUs<u16> for Delay<TIM>
-where
-    Self: Wait,
-{
-    /// Sleep for up to 2^16-1 microseconds (~65 milliseconds).
-    fn delay_us(&mut self, us: u16) {
-        // See DelayUs<u32> for explanations.
-        let psc = u16(self.clk.raw() / 1_000_000).expect("Prescaler does not fit in u16");
-        let arr = u32(us);
-        self.wait(psc, arr);
-    }
-}
+impl<TIM: Instance, const FREQ: u32> DelayUs for FDelay<TIM, FREQ> {
+    type Error = Error;
 
-impl<TIM> DelayMs<u16> for Delay<TIM>
-where
-    Self: Wait,
-{
-    /// Sleep for up to (2^16)-1 milliseconds (~65 seconds).
-    fn delay_ms(&mut self, ms: u16) {
-        // See DelayMs<u32> for explanations. Since the value range is only 16 bit,
-        // we don't need an assert here.
-        let psc = u16(self.clk.raw() / 1000 / 2).expect("Prescaler does not fit in u16");
-        let arr = u32(ms) << 1;
-        self.wait(psc, arr);
+    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
+        self.delay(us.micros())
+    }
+
+    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+        self.delay(ms.millis())
     }
 }

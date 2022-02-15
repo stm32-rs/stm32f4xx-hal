@@ -22,7 +22,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Use fugit rate types instead of custom [#430]
 - Add channel events, make Event use bitflags (simplify interrupt handling) [#425]
 - reexport `digital::v2::PinState` again [#428]
-- Timer impls with time based on `fugit` moved to `fugit` module, added `Pwm` and `fugit-timer` impls [#423]
+- Timer impls with time based on `fugit::Duration` same as `Hertz` moved to `timer` module,
+  added appropriate `Ext` traits implemented on peripherals directly,
+  added `Pwm` and `fugit-timer` impls [#423] [#449]
 
 ### Fixed
 
@@ -60,6 +62,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#430]: https://github.com/stm32-rs/stm32f4xx-hal/pull/430
 [#447]: https://github.com/stm32-rs/stm32f4xx-hal/pull/447
 [#448]: https://github.com/stm32-rs/stm32f4xx-hal/pull/448
+[#449]: https://github.com/stm32-rs/stm32f4xx-hal/pull/449
 
 ### Changed
 
