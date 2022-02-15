@@ -46,7 +46,6 @@ pub use embedded_hal::blocking::spi::{
 pub use embedded_hal::serial::Read as _embedded_hal_serial_Read;
 pub use embedded_hal::serial::Write as _embedded_hal_serial_Write;
 pub use embedded_hal::spi::FullDuplex as _embedded_hal_spi_FullDuplex;
-pub use embedded_hal::timer::CountDown as _embedded_hal_timer_CountDown;
 pub use embedded_hal::Capture as _embedded_hal_Capture;
 pub use embedded_hal::Pwm as _embedded_hal_Pwm;
 pub use embedded_hal::Qei as _embedded_hal_Qei;
@@ -65,7 +64,6 @@ pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;
 #[cfg(not(feature = "stm32f410"))]
 pub use crate::fugit::MonoTimerExt as _stm32f4xx_hal_fugit_MonoTimerExt;
 pub use crate::fugit::PwmExt as _stm32f4xx_hal_fugit_PwmExt;
-pub use crate::fugit::SysCounterExt as _stm32f4xx_hal_fugit_SysCounterExt;
 pub use crate::fugit::TimerExt as _stm32f4xx_hal_fugit_TimerExt;
 pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
@@ -78,3 +76,4 @@ pub use crate::serial::SerialExt as _stm32f4xx_hal_serial_SerialExt;
 pub use crate::spi::SpiExt as _stm32f4xx_hal_spi_SpiExt;
 pub use crate::syscfg::SysCfgExt as _stm32f4xx_hal_syscfg_SysCfgExt;
 pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;
+pub use crate::timer::SysCounterExt as _stm32f4xx_hal_fugit_SysCounterExt;

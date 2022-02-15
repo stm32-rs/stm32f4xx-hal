@@ -7,7 +7,7 @@ use cortex_m_rt::entry;
 
 use stm32f4xx_hal as hal;
 
-use crate::hal::{pac, prelude::*};
+use crate::hal::{pac, prelude::*, timer::Timer};
 
 use hal::spi::{Mode, NoMiso, Phase, Polarity};
 
@@ -36,7 +36,7 @@ fn main() -> ! {
     let mut res = gpiob.pb10.into_push_pull_output();
     let cs = gpiob.pb13.into_push_pull_output();
 
-    let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
+    let mut delay = Timer::syst(cp.SYST, &clocks).delay();
 
     let mode = Mode {
         polarity: Polarity::IdleLow,

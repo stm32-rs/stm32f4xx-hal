@@ -2,7 +2,9 @@
 
 use crate::pac::RCC;
 use crate::rcc::Clocks;
-pub use crate::timer::{Channel, Error, Event, Instance, Ocm, SysEvent};
+pub use crate::timer::{
+    CPin, Channel, Error, Event, Instance, Ocm, Pins, PwmChannel, C1, C2, C3, C4,
+};
 use crate::timer::{MasterTimer, WithPwm};
 use cast::u16;
 
@@ -11,8 +13,6 @@ pub use delay::*;
 
 pub mod counter;
 pub use counter::*;
-pub mod syscounter;
-pub use syscounter::*;
 
 #[cfg(feature = "rtic")]
 #[cfg(not(feature = "stm32f410"))]

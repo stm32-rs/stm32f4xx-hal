@@ -14,7 +14,7 @@ use panic_halt as _;
 
 use cortex_m_rt::entry;
 use embedded_hal::Direction as RotaryDirection;
-use stm32f4xx_hal::{delay::Delay, pac, prelude::*, qei::Qei};
+use stm32f4xx_hal::{pac, prelude::*, qei::Qei, timer::Timer};
 
 #[entry]
 fn main() -> ! {
@@ -31,7 +31,7 @@ fn main() -> ! {
     let clocks = rcc.cfgr.freeze();
 
     // Create a delay abstraction based on SysTick.
-    let mut delay = Delay::new(cp.SYST, &clocks);
+    let mut delay = Timer::syst(cp.SYST, &clocks).delay();
 
     let gpioa = dp.GPIOA.split();
 

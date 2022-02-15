@@ -1,7 +1,7 @@
-use super::{Channel, Counter, Delay, Error, Instance, Pins, Pwm, SysCounter, WithPwm};
+use super::{Channel, Counter, Delay, Error, Instance, Pins, Pwm, WithPwm};
 
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
-use fugit::{ExtU32, MicrosDurationU32, TimerDurationU32};
+use fugit::{ExtU32, TimerDurationU32};
 use void::Void;
 
 impl<TIM: Instance, const FREQ: u32> DelayUs<u32> for Delay<TIM, FREQ> {
@@ -67,32 +67,6 @@ impl<TIM: Instance, const FREQ: u32> CountDown for Counter<TIM, FREQ> {
 }
 
 impl<TIM: Instance, const FREQ: u32> Cancel for Counter<TIM, FREQ> {
-    type Error = Error;
-
-    fn cancel(&mut self) -> Result<(), Self::Error> {
-        self.cancel()
-    }
-}
-
-impl CountDown for SysCounter {
-    type Time = MicrosDurationU32;
-
-    fn start<T>(&mut self, timeout: T)
-    where
-        T: Into<Self::Time>,
-    {
-        self.start(timeout.into()).unwrap()
-    }
-
-    fn wait(&mut self) -> nb::Result<(), Void> {
-        match self.wait() {
-            Err(nb::Error::WouldBlock) => Err(nb::Error::WouldBlock),
-            _ => Ok(()),
-        }
-    }
-}
-
-impl Cancel for SysCounter {
     type Error = Error;
 
     fn cancel(&mut self) -> Result<(), Self::Error> {

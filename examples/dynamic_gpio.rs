@@ -29,7 +29,7 @@ fn main() -> ! {
 
     let mut pin = gpioc.pc13.into_dynamic();
     // Configure the syst timer to trigger an update every second
-    let mut timer = Timer::syst(cp.SYST, &clocks).counter();
+    let mut timer = Timer::syst(cp.SYST, &clocks).counter_us();
     timer.start(1.secs()).unwrap();
 
     // Wait for the timer to trigger an update and change the state of the LED

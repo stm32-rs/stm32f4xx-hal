@@ -5,9 +5,17 @@
 
 use cast::{u16, u32};
 use cortex_m::peripheral::SYST;
-use embedded_hal::blocking::delay::{DelayMs, DelayUs};
+use embedded_hal::{
+    blocking::delay::{DelayMs, DelayUs},
+    timer::{Cancel, CountDown, Periodic},
+};
+use fugit::{HertzU32 as Hertz, TimerDurationU32};
+use void::Void;
 
-use super::{Delay, Wait};
+use super::{
+    delay::Wait, Channel, CounterHz, Delay, Error, Instance, Pins, Pwm, PwmChannel, SysCounterHz,
+    SysCounter, WithPwm,
+};
 
 impl DelayUs<u32> for Delay<SYST> {
     fn delay_us(&mut self, us: u32) {
@@ -139,5 +147,149 @@ where
         let psc = u16(self.clk.raw() / 1000 / 2).expect("Prescaler does not fit in u16");
         let arr = u32(ms) << 1;
         self.wait(psc, arr);
+    }
+}
+
+impl<TIM> Periodic for CounterHz<TIM> {}
+impl Periodic for SysCounterHz {}
+impl<const FREQ: u32> Periodic for SysCounter<FREQ> {}
+
+impl CountDown for SysCounterHz {
+    type Time = Hertz;
+
+    fn start<T>(&mut self, timeout: T)
+    where
+        T: Into<Hertz>,
+    {
+        self.start(timeout.into()).unwrap()
+    }
+
+    fn wait(&mut self) -> nb::Result<(), Void> {
+        match self.wait() {
+            Err(nb::Error::WouldBlock) => Err(nb::Error::WouldBlock),
+            _ => Ok(()),
+        }
+    }
+}
+
+impl Cancel for SysCounterHz {
+    type Error = Error;
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        self.cancel()
+    }
+}
+
+impl<TIM: Instance> CountDown for CounterHz<TIM> {
+    type Time = Hertz;
+
+    fn start<T>(&mut self, timeout: T)
+    where
+        T: Into<Hertz>,
+    {
+        self.start(timeout.into()).unwrap()
+    }
+
+    fn wait(&mut self) -> nb::Result<(), Void> {
+        match self.wait() {
+            Err(nb::Error::WouldBlock) => Err(nb::Error::WouldBlock),
+            _ => Ok(()),
+        }
+    }
+}
+
+impl<TIM: Instance> Cancel for CounterHz<TIM> {
+    type Error = Error;
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        self.cancel()
+    }
+}
+
+impl<const FREQ: u32> CountDown for SysCounter<FREQ> {
+    type Time = TimerDurationU32<FREQ>;
+
+    fn start<T>(&mut self, timeout: T)
+    where
+        T: Into<Self::Time>,
+    {
+        self.start(timeout.into()).unwrap()
+    }
+
+    fn wait(&mut self) -> nb::Result<(), Void> {
+        match self.wait() {
+            Err(nb::Error::WouldBlock) => Err(nb::Error::WouldBlock),
+            _ => Ok(()),
+        }
+    }
+}
+
+impl<const FREQ: u32> Cancel for SysCounter<FREQ> {
+    type Error = Error;
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        self.cancel()
+    }
+}
+
+impl<TIM: Instance + WithPwm, const C: u8> embedded_hal::PwmPin for PwmChannel<TIM, C> {
+    type Duty = u16;
+
+    fn disable(&mut self) {
+        self.disable()
+    }
+    fn enable(&mut self) {
+        self.enable()
+    }
+    fn get_duty(&self) -> Self::Duty {
+        self.get_duty()
+    }
+    fn get_max_duty(&self) -> Self::Duty {
+        self.get_max_duty()
+    }
+    fn set_duty(&mut self, duty: Self::Duty) {
+        self.set_duty(duty)
+    }
+}
+
+impl<TIM, P, PINS> embedded_hal::Pwm for Pwm<TIM, P, PINS>
+where
+    TIM: Instance + WithPwm,
+    PINS: Pins<TIM, P>,
+{
+    type Channel = Channel;
+    type Duty = u16;
+    type Time = Hertz;
+
+    fn enable(&mut self, channel: Self::Channel) {
+        self.enable(channel)
+    }
+
+    fn disable(&mut self, channel: Self::Channel) {
+        self.disable(channel)
+    }
+
+    fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
+        self.get_duty(channel)
+    }
+
+    fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {
+        self.set_duty(channel, duty)
+    }
+
+    /// If `0` returned means max_duty is 2^16
+    fn get_max_duty(&self) -> Self::Duty {
+        self.get_max_duty()
+    }
+
+    fn get_period(&self) -> Self::Time {
+        self.get_period()
+    }
+
+    fn set_period<T>(&mut self, period: T)
+    where
+        T: Into<Self::Time>,
+    {
+        self.set_period(period.into())
     }
 }

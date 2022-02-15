@@ -8,7 +8,7 @@ use core::convert::Infallible;
 use cortex_m::peripheral::SYST;
 use embedded_hal_one::delay::blocking::DelayUs;
 
-use super::{Delay, Wait};
+use super::{delay::Wait, Delay};
 
 impl DelayUs for Delay<SYST> {
     type Error = Infallible;

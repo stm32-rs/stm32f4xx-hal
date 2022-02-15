@@ -1,5 +1,6 @@
-use crate::timer::{compute_arr_presc, Channel, Instance, Ocm, Timer, WithPwm};
+use super::{compute_arr_presc, Channel, Instance, Ocm, Timer, WithPwm};
 use core::marker::PhantomData;
+use core::ops::{Deref, DerefMut};
 use fugit::HertzU32 as Hertz;
 
 pub trait Pins<TIM, P> {
@@ -23,7 +24,7 @@ pub trait Pins<TIM, P> {
 
     fn split() -> Self::Channels;
 }
-pub use crate::timer::{CPin, Ch, C1, C2, C3, C4};
+pub use super::{CPin, Ch, C1, C2, C3, C4};
 
 pub struct PwmChannel<TIM, const C: u8> {
     pub(super) _tim: PhantomData<TIM>,
@@ -35,7 +36,7 @@ macro_rules! pins_impl {
             #[allow(unused_parens)]
             impl<TIM, $($PINX,)+> Pins<TIM, ($(Ch<$ENCHX>),+)> for ($($PINX),+)
             where
-                TIM: WithPwm,
+                TIM: Instance + WithPwm,
                 $($PINX: CPin<TIM, $ENCHX>,)+
             {
                 $(const $ENCHX: bool = true;)+
@@ -88,7 +89,7 @@ where
 {
 }
 
-impl<TIM: WithPwm, const C: u8> PwmChannel<TIM, C> {
+impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     pub(crate) fn new() -> Self {
         Self {
             _tim: core::marker::PhantomData,
@@ -96,7 +97,7 @@ impl<TIM: WithPwm, const C: u8> PwmChannel<TIM, C> {
     }
 }
 
-impl<TIM: WithPwm, const C: u8> PwmChannel<TIM, C> {
+impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     #[inline]
     pub fn disable(&mut self) {
         TIM::enable_channel(C, false);
@@ -124,23 +125,49 @@ impl<TIM: WithPwm, const C: u8> PwmChannel<TIM, C> {
     }
 }
 
-impl<TIM: WithPwm, const C: u8> embedded_hal::PwmPin for PwmChannel<TIM, C> {
-    type Duty = u16;
+pub struct Pwm<TIM, P, PINS>
+where
+    TIM: Instance + WithPwm,
+    PINS: Pins<TIM, P>,
+{
+    timer: Timer<TIM>,
+    _pins: PhantomData<(P, PINS)>,
+}
 
-    fn disable(&mut self) {
-        self.disable()
+impl<TIM, P, PINS> Pwm<TIM, P, PINS>
+where
+    TIM: Instance + WithPwm,
+    PINS: Pins<TIM, P>,
+{
+    pub fn release(mut self) -> Timer<TIM> {
+        // stop timer
+        self.tim.cr1_reset();
+        self.timer
     }
-    fn enable(&mut self) {
-        self.enable()
+
+    pub fn split(self) -> PINS::Channels {
+        PINS::split()
     }
-    fn get_duty(&self) -> Self::Duty {
-        self.get_duty()
+}
+
+impl<TIM, P, PINS> Deref for Pwm<TIM, P, PINS>
+where
+    TIM: Instance + WithPwm,
+    PINS: Pins<TIM, P>,
+{
+    type Target = Timer<TIM>;
+    fn deref(&self) -> &Self::Target {
+        &self.timer
     }
-    fn get_max_duty(&self) -> Self::Duty {
-        self.get_max_duty()
-    }
-    fn set_duty(&mut self, duty: Self::Duty) {
-        self.set_duty(duty)
+}
+
+impl<TIM, P, PINS> DerefMut for Pwm<TIM, P, PINS>
+where
+    TIM: Instance + WithPwm,
+    PINS: Pins<TIM, P>,
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.timer
     }
 }
 
@@ -182,28 +209,9 @@ impl<TIM: Instance + WithPwm> Timer<TIM> {
         self.tim.start_pwm();
 
         Pwm {
-            clk: self.clk,
-            tim: self.tim,
+            timer: self,
             _pins: PhantomData,
         }
-    }
-}
-
-pub struct Pwm<TIM, P, PINS>
-where
-    PINS: Pins<TIM, P>,
-{
-    clk: Hertz,
-    tim: TIM,
-    _pins: PhantomData<(P, PINS)>,
-}
-
-impl<TIM, P, PINS> Pwm<TIM, P, PINS>
-where
-    PINS: Pins<TIM, P>,
-{
-    pub fn split(self) -> PINS::Channels {
-        PINS::split()
     }
 }
 
@@ -242,56 +250,11 @@ where
         clk / (psc * arr)
     }
 
-    pub fn set_period<T>(&mut self, period: T)
-    where
-        T: Into<Hertz>,
-    {
+    pub fn set_period(&mut self, period: Hertz) {
         let clk = self.clk;
 
-        let (psc, arr) = compute_arr_presc(period.into().raw(), clk.raw());
+        let (psc, arr) = compute_arr_presc(period.raw(), clk.raw());
         self.tim.set_prescaler(psc);
         self.tim.set_auto_reload(arr).unwrap();
-    }
-}
-
-impl<TIM, P, PINS> embedded_hal::Pwm for Pwm<TIM, P, PINS>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
-{
-    type Channel = Channel;
-    type Duty = u16;
-    type Time = Hertz;
-
-    fn enable(&mut self, channel: Self::Channel) {
-        self.enable(channel)
-    }
-
-    fn disable(&mut self, channel: Self::Channel) {
-        self.disable(channel)
-    }
-
-    fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
-        self.get_duty(channel)
-    }
-
-    fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {
-        self.set_duty(channel, duty)
-    }
-
-    /// If `0` returned means max_duty is 2^16
-    fn get_max_duty(&self) -> Self::Duty {
-        self.get_max_duty()
-    }
-
-    fn get_period(&self) -> Self::Time {
-        self.get_period()
-    }
-
-    fn set_period<T>(&mut self, period: T)
-    where
-        T: Into<Self::Time>,
-    {
-        self.set_period(period)
     }
 }

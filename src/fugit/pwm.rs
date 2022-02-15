@@ -4,8 +4,7 @@ use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use fugit::TimerDurationU32;
 
-pub use crate::pwm::{Pins, PwmChannel};
-pub use crate::timer::{CPin, C1, C2, C3, C4};
+pub use super::{CPin, Pins, PwmChannel, C1, C2, C3, C4};
 
 pub trait PwmExt<P, PINS>
 where

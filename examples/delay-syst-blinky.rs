@@ -11,7 +11,7 @@ use panic_halt as _; // panic handler
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{pac, prelude::*};
+use crate::hal::{pac, prelude::*, timer::Timer};
 
 #[entry]
 fn main() -> ! {
@@ -28,7 +28,7 @@ fn main() -> ! {
         let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
 
         // Create a delay abstraction based on SysTick
-        let mut delay = hal::delay::Delay::new(cp.SYST, &clocks);
+        let mut delay = Timer::syst(cp.SYST, &clocks).delay();
 
         loop {
             // On for 1s, off for 1s.

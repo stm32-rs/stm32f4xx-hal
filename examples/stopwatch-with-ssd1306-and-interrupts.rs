@@ -22,13 +22,13 @@ use panic_semihosting as _; // logs messages to the host stderr; requires a debu
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
-    delay::Delay,
-    fugit::{CounterUs, Event, Timer},
+    fugit::{CounterUs, Event},
     gpio::{Edge, Input, PullUp, PC13},
     i2c::I2c,
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
+    timer::Timer,
 };
 use core::cell::{Cell, RefCell};
 use core::fmt::Write;
@@ -92,7 +92,7 @@ fn main() -> ! {
         disp.flush().unwrap();
 
         // Create a 1ms periodic interrupt from TIM2
-        let mut timer = Timer::new(dp.TIM2, &clocks).counter();
+        let mut timer = dp.TIM2.counter(&clocks);
         timer.start(1.secs()).unwrap();
         timer.listen(Event::Update);
 
@@ -108,7 +108,7 @@ fn main() -> ! {
             pac::NVIC::unmask(hal::pac::Interrupt::EXTI15_10);
         };
 
-        let mut delay = Delay::new(cp.SYST, &clocks);
+        let mut delay = Timer::syst(cp.SYST, &clocks).delay();
 
         loop {
             let elapsed = free(|cs| ELAPSED_MS.borrow(cs).get());
