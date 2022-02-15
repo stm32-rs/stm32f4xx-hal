@@ -64,6 +64,7 @@ pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
 pub use crate::i2c::I2cExt as _stm32f4xx_hal_i2c_I2cExt;
 pub use crate::i2s::I2sExt as _stm32f4xx_hal_i2s_I2sExt;
+pub use crate::qei::QeiExt as _stm32f4xx_hal_QeiExt;
 pub use crate::rcc::RccExt as _stm32f4xx_hal_rcc_RccExt;
 #[cfg(all(feature = "device-selected", feature = "rng"))]
 pub use crate::rng::RngExt as _stm32f4xx_hal_rng_RngExt;

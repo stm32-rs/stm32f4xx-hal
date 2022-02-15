@@ -34,7 +34,7 @@ use panic_halt as _;
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{block, pac, prelude::*, serial::config::Config, timer::Timer};
+use crate::hal::{block, pac, prelude::*, serial::config::Config};
 
 use core::ops::Range;
 
@@ -55,7 +55,7 @@ fn main() -> ! {
 
     let clocks = rcc.cfgr.use_hse(8.MHz()).freeze();
 
-    let mut delay = Timer::syst(cp.SYST, &clocks).delay();
+    let mut delay = cp.SYST.delay(&clocks);
 
     // define RX/TX pins
     let tx_pin = gpioa.pa2.into_alternate();
