@@ -98,7 +98,7 @@ impl Crc32 {
             // native-endian u32. Feed this into the CRC peripheral
             self.periph
                 .dr
-                .write(|w| w.bits(u32::from_ne_bytes(scratch.assume_init())));
+                .write(|w| w.bits(u32::from_be_bytes(scratch.assume_init())));
         });
 
         // If we had a non-multiple of four bytes...
@@ -112,7 +112,7 @@ impl Crc32 {
             scratch[..remainder.len()].copy_from_slice(remainder);
             self.periph
                 .dr
-                .write(|w| unsafe { w.bits(u32::from_ne_bytes(scratch)) });
+                .write(|w| unsafe { w.bits(u32::from_be_bytes(scratch)) });
         }
 
         self.periph.dr.read().bits()
