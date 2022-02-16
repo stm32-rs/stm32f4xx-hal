@@ -49,5 +49,6 @@ fn main() -> ! {
     .unwrap();
     lcd.write_str("Hello, world!", &mut delay).unwrap();
 
+    #[allow(clippy::empty_loop)]
     loop {}
 }

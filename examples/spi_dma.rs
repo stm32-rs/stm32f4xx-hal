@@ -51,8 +51,8 @@ fn main() -> ! {
 
         let buffer = cortex_m::singleton!(: [u8; ARRAY_SIZE] = [1; ARRAY_SIZE]).unwrap();
 
-        for i in 0..ARRAY_SIZE {
-            buffer[i] = i as u8;
+        for (i, b) in buffer.iter_mut().enumerate() {
+            *b = i as u8;
         }
 
         let tx = spi2.use_dma().tx();
@@ -100,8 +100,8 @@ fn DMA2_STREAM4() {
         transfer.clear_transfer_complete_interrupt();
         unsafe {
             static mut BUFFER: [u8; ARRAY_SIZE] = [0; ARRAY_SIZE];
-            for i in 0..ARRAY_SIZE {
-                BUFFER[i] = (i + 1) as u8;
+            for (i, b) in BUFFER.iter_mut().enumerate() {
+                *b = (i + 1) as u8;
             }
             transfer.next_transfer(&mut BUFFER).unwrap();
         }
