@@ -92,6 +92,7 @@ fn main() -> ! {
         cortex_m::peripheral::NVIC::unmask(Interrupt::TIM2);
     }
 
+    #[allow(clippy::empty_loop)]
     loop {
         // Uncomment if you want to make controller sleep
         // cortex_m::asm::wfi();
