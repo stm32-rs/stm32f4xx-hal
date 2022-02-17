@@ -224,6 +224,7 @@ mod sealed {
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
+        unsafe fn set_auto_reload_unchecked(&mut self, arr: u32);
         fn set_auto_reload(&mut self, arr: u32) -> Result<(), super::Error>;
         fn read_auto_reload() -> u32;
         fn enable_preload(&mut self, b: bool);
@@ -282,11 +283,15 @@ macro_rules! hal {
                     <$bits>::MAX as u32
                 }
                 #[inline(always)]
+                unsafe fn set_auto_reload_unchecked(&mut self, arr: u32) {
+                    self.arr.write(|w| w.bits(arr))
+                }
+                #[inline(always)]
                 fn set_auto_reload(&mut self, arr: u32) -> Result<(), Error> {
                     // Note: Make it impossible to set the ARR value to 0, since this
                     // would cause an infinite loop.
                     if arr > 0 && arr <= Self::max_auto_reload() {
-                        Ok(self.arr.write(|w| unsafe { w.bits(arr) }))
+                        Ok(unsafe { self.set_auto_reload_unchecked(arr) })
                     } else {
                         Err(Error::WrongAutoReload)
                     }

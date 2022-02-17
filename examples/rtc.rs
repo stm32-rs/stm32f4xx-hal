@@ -43,6 +43,6 @@ fn main() -> ! {
     // rtc.set_seconds(50).unwrap();
     loop {
         rprintln!("{}", rtc.get_datetime());
-        delay.delay(500.millis()).unwrap();
+        delay.delay(500.millis());
     }
 }

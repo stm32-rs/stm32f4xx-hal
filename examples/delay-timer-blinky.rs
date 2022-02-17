@@ -37,7 +37,7 @@ fn main() -> ! {
             delay.delay_ms(1000_u32);
             led.set_low();
             // or use `fugit::ExtU32` trait
-            delay.delay(3.secs()).unwrap();
+            delay.delay(3.secs());
         }
     }
 

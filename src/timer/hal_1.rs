@@ -102,10 +102,12 @@ impl<TIM: Instance, const FREQ: u32> DelayUs for FDelay<TIM, FREQ> {
     type Error = Error;
 
     fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
-        self.delay(us.micros())
+        self.delay(us.micros());
+        Ok(())
     }
 
     fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
-        self.delay(ms.millis())
+        self.delay(ms.millis());
+        Ok(())
     }
 }

@@ -297,40 +297,40 @@ where
 impl<TIM: Instance, const FREQ: u32> DelayUs<u32> for FDelay<TIM, FREQ> {
     /// Sleep for `us` microseconds
     fn delay_us(&mut self, us: u32) {
-        self.delay(us.micros()).unwrap()
+        self.delay(us.micros())
     }
 }
 
 impl<TIM: Instance, const FREQ: u32> DelayMs<u32> for FDelay<TIM, FREQ> {
     /// Sleep for `ms` milliseconds
     fn delay_ms(&mut self, ms: u32) {
-        self.delay(ms.millis()).unwrap()
+        self.delay(ms.millis())
     }
 }
 
 impl<TIM: Instance, const FREQ: u32> DelayUs<u16> for FDelay<TIM, FREQ> {
     /// Sleep for `us` microseconds
     fn delay_us(&mut self, us: u16) {
-        self.delay((us as u32).micros()).unwrap()
+        self.delay((us as u32).micros())
     }
 }
 impl<TIM: Instance, const FREQ: u32> DelayMs<u16> for FDelay<TIM, FREQ> {
     /// Sleep for `ms` milliseconds
     fn delay_ms(&mut self, ms: u16) {
-        self.delay((ms as u32).millis()).unwrap()
+        self.delay((ms as u32).millis())
     }
 }
 
 impl<TIM: Instance, const FREQ: u32> DelayUs<u8> for FDelay<TIM, FREQ> {
     /// Sleep for `us` microseconds
     fn delay_us(&mut self, us: u8) {
-        self.delay((us as u32).micros()).unwrap()
+        self.delay((us as u32).micros())
     }
 }
 impl<TIM: Instance, const FREQ: u32> DelayMs<u8> for FDelay<TIM, FREQ> {
     /// Sleep for `ms` milliseconds
     fn delay_ms(&mut self, ms: u8) {
-        self.delay((ms as u32).millis()).unwrap()
+        self.delay((ms as u32).millis())
     }
 }
 
