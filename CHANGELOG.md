@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Extend timers to 32bit on `Delay`
 - Move `MonoTimer` from `timer` to dwt mode [#448]
 - Unify serial trait impls for embedded-hal 0.2 & 1.0 [#447]
 - Add possibility to select Timer master mode

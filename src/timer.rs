@@ -101,7 +101,7 @@ pub trait TimerExt: Sized {
     fn delay<const FREQ: u32>(self, clocks: &Clocks) -> FDelay<Self, FREQ>;
     /// Blocking [Delay] with fixed precision of 1 ms (1 kHz sampling)
     ///
-    /// Can wait from 2 ms to 65 sec for 16-bit timer and from 2 ms to 49 days for 32-bit timer.
+    /// Can wait from 2 ms to 49 days.
     ///
     /// NOTE: don't use this if your system frequency more than 65 MHz
     fn delay_ms(self, clocks: &Clocks) -> DelayMs<Self> {
@@ -109,7 +109,7 @@ pub trait TimerExt: Sized {
     }
     /// Blocking [Delay] with fixed precision of 1 μs (1 MHz sampling)
     ///
-    /// Can wait from 2 μs to 65 ms for 16-bit timer and from 2 μs to 71 min for 32-bit timer.
+    /// Can wait from 2 μs to 71 min.
     fn delay_us(self, clocks: &Clocks) -> DelayUs<Self> {
         self.delay::<1_000_000>(clocks)
     }

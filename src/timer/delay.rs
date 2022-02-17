@@ -115,19 +115,25 @@ pub type DelayMs<TIM> = FDelay<TIM, 1_000>;
 impl<TIM: Instance, const FREQ: u32> FDelay<TIM, FREQ> {
     /// Sleep for given time
     pub fn delay(&mut self, time: TimerDurationU32<FREQ>) -> Result<(), Error> {
-        // Write Auto-Reload Register (ARR)
-        self.tim.set_auto_reload(time.ticks() - 1)?;
+        let mut ticks = time.ticks() - 1;
+        while ticks > 0 {
+            let reload = ticks.min(TIM::max_auto_reload());
+            ticks -= reload;
 
-        // Trigger update event (UEV) in the event generation register (EGR)
-        // in order to immediately apply the config
-        self.tim.trigger_update();
+            // Write Auto-Reload Register (ARR)
+            self.tim.set_auto_reload(reload)?;
 
-        // Configure the counter in one-pulse mode (counter stops counting at
-        // the next updateevent, clearing the CEN bit) and enable the counter.
-        self.tim.start_one_pulse();
+            // Trigger update event (UEV) in the event generation register (EGR)
+            // in order to immediately apply the config
+            self.tim.trigger_update();
 
-        // Wait for CEN bit to clear
-        while self.tim.is_counter_enabled() { /* wait */ }
+            // Configure the counter in one-pulse mode (counter stops counting at
+            // the next updateevent, clearing the CEN bit) and enable the counter.
+            self.tim.start_one_pulse();
+
+            // Wait for CEN bit to clear
+            while self.tim.is_counter_enabled() { /* wait */ }
+        }
 
         Ok(())
     }
