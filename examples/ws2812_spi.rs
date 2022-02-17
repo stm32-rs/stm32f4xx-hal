@@ -34,7 +34,7 @@ fn main() -> ! {
     let mut data = [RGB8::default(); NUM_LEDS];
 
     // Wait before start write for syncronization
-    delay.delay(200.micros()).unwrap();
+    delay.delay(200.micros());
 
     loop {
         for j in 0..(256 * 5) {
@@ -42,7 +42,7 @@ fn main() -> ! {
                 *b = wheel((((i * 256) as u16 / NUM_LEDS as u16 + j as u16) & 255) as u8);
             }
             ws.write(brightness(data.iter().cloned(), 32)).unwrap();
-            delay.delay(10.millis()).unwrap();
+            delay.delay(10.millis());
         }
     }
 }
