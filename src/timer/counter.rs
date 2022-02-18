@@ -261,7 +261,9 @@ impl<const FREQ: u32> SysCounter<FREQ> {
     }
 
     pub fn now(&self) -> TimerInstantU32<FREQ> {
-        TimerInstantU32::from_ticks(SYST::get_current() / (self.clk.raw() / FREQ))
+        TimerInstantU32::from_ticks(
+            (SYST::get_current() - SYST::get_reload()) / (self.clk.raw() / FREQ),
+        )
     }
 
     pub fn start(&mut self, timeout: TimerDurationU32<FREQ>) -> Result<(), Error> {
