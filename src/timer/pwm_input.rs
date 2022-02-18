@@ -1,5 +1,5 @@
 use super::{CPin, General, Instance, Timer, WithPwm};
-use cast::u16;
+use core::convert::TryFrom;
 use core::ops::{Deref, DerefMut};
 use fugit::HertzU32 as Hertz;
 
@@ -103,7 +103,7 @@ macro_rules! hal {
                  frequency.
                 */
                 let ticks = self.clk.raw() / best_guess.raw();
-                let psc = u16((ticks - 1) / (1 << 16)).unwrap();
+                let psc = u16::try_from((ticks - 1) / (1 << 16)).unwrap();
                 self.tim.set_prescaler(psc);
 
                 // Seemingly this needs to be written to

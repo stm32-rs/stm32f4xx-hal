@@ -16,8 +16,6 @@ use fugit::HertzU32 as Hertz;
 
 pub mod counter;
 pub use counter::*;
-pub mod syscounter;
-pub use syscounter::*;
 pub mod delay;
 pub use delay::*;
 mod pins;
@@ -98,7 +96,7 @@ pub trait TimerExt: Sized {
     fn counter_hz(self, clocks: &Clocks) -> CounterHz<Self>;
 
     /// Blocking [Delay] with custom fixed precision
-    fn delay<const FREQ: u32>(self, clocks: &Clocks) -> FDelay<Self, FREQ>;
+    fn delay<const FREQ: u32>(self, clocks: &Clocks) -> Delay<Self, FREQ>;
     /// Blocking [Delay] with fixed precision of 1 ms (1 kHz sampling)
     ///
     /// Can wait from 2 ms to 49 days.
@@ -113,8 +111,6 @@ pub trait TimerExt: Sized {
     fn delay_us(self, clocks: &Clocks) -> DelayUs<Self> {
         self.delay::<1_000_000>(clocks)
     }
-    /// Blocking [Delay]
-    fn delay_dyn(self, clocks: &Clocks) -> Delay<Self>;
 }
 
 impl<TIM: Instance> TimerExt for TIM {
@@ -124,11 +120,8 @@ impl<TIM: Instance> TimerExt for TIM {
     fn counter_hz(self, clocks: &Clocks) -> CounterHz<Self> {
         Timer::new(self, clocks).counter_hz()
     }
-    fn delay<const FREQ: u32>(self, clocks: &Clocks) -> FDelay<Self, FREQ> {
+    fn delay<const FREQ: u32>(self, clocks: &Clocks) -> Delay<Self, FREQ> {
         FTimer::new(self, clocks).delay()
-    }
-    fn delay_dyn(self, clocks: &Clocks) -> Delay<Self> {
-        Timer::new(self, clocks).delay()
     }
 }
 
@@ -143,7 +136,7 @@ pub trait SysTimerExt: Sized {
         self.counter::<1_000_000>(clocks)
     }
     /// Blocking [Delay] with custom precision
-    fn delay(self, clocks: &Clocks) -> Delay<Self>;
+    fn delay(self, clocks: &Clocks) -> SysDelay;
 }
 
 impl SysTimerExt for SYST {
@@ -153,7 +146,7 @@ impl SysTimerExt for SYST {
     fn counter<const FREQ: u32>(self, clocks: &Clocks) -> SysCounter<FREQ> {
         Timer::syst(self, clocks).counter()
     }
-    fn delay(self, clocks: &Clocks) -> Delay<Self> {
+    fn delay(self, clocks: &Clocks) -> SysDelay {
         Timer::syst_external(self, clocks).delay()
     }
 }
@@ -688,8 +681,8 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     }
 
     /// Creates `Delay` that imlements [embedded_hal::blocking::delay] traits
-    pub fn delay(self) -> FDelay<TIM, FREQ> {
-        FDelay(self)
+    pub fn delay(self) -> Delay<TIM, FREQ> {
+        Delay(self)
     }
 
     /// Releases the TIM peripheral
