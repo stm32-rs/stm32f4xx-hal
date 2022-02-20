@@ -18,7 +18,7 @@ fn main() -> ! {
         let gpioa = dp.GPIOA.split();
         let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
 
-        let pwm = dp.TIM1.pwm_hz(&clocks, channels, 20.kHz()).split();
+        let pwm = dp.TIM1.pwm_hz(channels, 20.kHz(), &clocks).split();
         let (mut ch1, _ch2) = pwm;
         let max_duty = ch1.get_max_duty();
         ch1.set_duty(max_duty / 2);

@@ -726,7 +726,6 @@ impl<TIM: Instance + MasterTimer, const FREQ: u32> FTimer<TIM, FREQ> {
 pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
     let ticks = clock / freq;
     let psc = (ticks - 1) / (1 << 16);
-    assert!(psc <= u16::MAX as u32);
     let arr = ticks / (psc + 1) - 1;
     (psc as u16, arr)
 }

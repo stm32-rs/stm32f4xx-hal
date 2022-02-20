@@ -20,7 +20,7 @@ fn main() -> ! {
         let gpioa = dp.GPIOA.split();
         let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
 
-        let mut pwm = dp.TIM1.pwm_us(&clocks, channels, 100.micros());
+        let mut pwm = dp.TIM1.pwm_us(channels, 100.micros(), &clocks);
         let mut counter = dp.TIM2.counter_us(&clocks);
         let max_duty = pwm.get_max_duty();
 
