@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.12.0] - 2022-02-23
+
 ### Changed
 
 - Make `Monotonic` implementation generic for `u32` timers, fix `PwmExt` trait [#454]
@@ -599,7 +601,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.11.1...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.12.0...HEAD
+[v0.12.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.11.1...v0.12.0
 [v0.11.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.11.0...v0.11.1
 [v0.11.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.10.1...v0.11.0
 [v0.10.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.10.0...v0.10.1
