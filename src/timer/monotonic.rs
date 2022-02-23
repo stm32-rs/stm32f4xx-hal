@@ -1,5 +1,5 @@
 // RTIC Monotonic impl for the 32-bit timers
-use super::{FTimer, Instance};
+use super::{Channel, Event, FTimer, General, Instance, WithPwm};
 use crate::rcc::Clocks;
 use core::ops::{Deref, DerefMut};
 pub use fugit::{self, ExtU32};
@@ -39,64 +39,55 @@ pub trait MonoTimerExt: Sized {
     }
 }
 
-macro_rules! mono {
-    ($($TIM:ty,)+) => {
-        $(
-            impl MonoTimerExt for $TIM {
-                fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> MonoTimer<Self, FREQ> {
-                    FTimer::new(self, clocks).monotonic()
-                }
-            }
-
-            impl<const FREQ: u32> FTimer<$TIM, FREQ> {
-                pub fn monotonic(self) -> MonoTimer<$TIM, FREQ> {
-                    MonoTimer::<$TIM, FREQ>::_new(self)
-                }
-            }
-
-            impl<const FREQ: u32> MonoTimer<$TIM, FREQ> {
-                fn _new(timer: FTimer<$TIM, FREQ>) -> Self {
-                    timer.tim.arr.write(|w| unsafe { w.bits(u32::MAX) });
-                    timer.tim.egr.write(|w| w.ug().set_bit());
-                    timer.tim.sr.modify(|_, w| w.uif().clear_bit());
-                    timer.tim.cr1.modify(|_, w| w.cen().set_bit().udis().set_bit());
-                    Self(timer)
-                }
-            }
-
-            impl<const FREQ: u32> Monotonic for MonoTimer<$TIM, FREQ> {
-                type Instant = fugit::TimerInstantU32<FREQ>;
-                type Duration = fugit::TimerDurationU32<FREQ>;
-
-                unsafe fn reset(&mut self) {
-                    self.tim.dier.modify(|_, w| w.cc1ie().set_bit());
-                }
-
-                #[inline(always)]
-                fn now(&mut self) -> Self::Instant {
-                    Self::Instant::from_ticks(self.tim.cnt.read().cnt().bits())
-                }
-
-                fn set_compare(&mut self, instant: Self::Instant) {
-                    self.tim
-                        .ccr1
-                        .write(|w| w.ccr().bits(instant.duration_since_epoch().ticks()));
-                }
-
-                fn clear_compare_flag(&mut self) {
-                    self.tim.sr.modify(|_, w| w.cc1if().clear_bit());
-                }
-
-                #[inline(always)]
-                fn zero() -> Self::Instant {
-                    Self::Instant::from_ticks(0)
-                }
-            }
-        )+
+impl<TIM> MonoTimerExt for TIM
+where
+    Self: Instance + General<Width = u32> + WithPwm,
+{
+    fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> MonoTimer<Self, FREQ> {
+        FTimer::new(self, clocks).monotonic()
     }
 }
 
-mono!(crate::pac::TIM5,);
+impl<TIM, const FREQ: u32> FTimer<TIM, FREQ>
+where
+    TIM: Instance + General<Width = u32> + WithPwm,
+{
+    pub fn monotonic(mut self) -> MonoTimer<TIM, FREQ> {
+        unsafe {
+            self.tim.set_auto_reload_unchecked(TIM::max_auto_reload());
+        }
+        self.tim.trigger_update();
+        self.tim.start_no_update();
+        MonoTimer(self)
+    }
+}
 
-#[cfg(feature = "tim2")]
-mono!(crate::pac::TIM2,);
+impl<TIM, const FREQ: u32> Monotonic for MonoTimer<TIM, FREQ>
+where
+    TIM: Instance + General<Width = u32> + WithPwm,
+{
+    type Instant = fugit::TimerInstantU32<FREQ>;
+    type Duration = fugit::TimerDurationU32<FREQ>;
+
+    unsafe fn reset(&mut self) {
+        self.tim.listen_interrupt(Event::C1, true);
+    }
+
+    #[inline(always)]
+    fn now(&mut self) -> Self::Instant {
+        Self::Instant::from_ticks(self.tim.read_count())
+    }
+
+    fn set_compare(&mut self, instant: Self::Instant) {
+        TIM::set_cc_value(Channel::C1 as u8, instant.duration_since_epoch().ticks());
+    }
+
+    fn clear_compare_flag(&mut self) {
+        self.tim.clear_interrupt_flag(Event::C1);
+    }
+
+    #[inline(always)]
+    fn zero() -> Self::Instant {
+        Self::Instant::from_ticks(0)
+    }
+}

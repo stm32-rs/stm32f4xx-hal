@@ -90,45 +90,56 @@ where
 {
 }
 
-pub trait PwmExt<P, PINS>
+pub trait PwmExt
 where
     Self: Sized + Instance + WithPwm,
-    PINS: Pins<Self, P>,
 {
-    fn pwm<const FREQ: u32>(
+    fn pwm<P, PINS, const FREQ: u32>(
         self,
-        clocks: &Clocks,
         pins: PINS,
         time: TimerDurationU32<FREQ>,
-    ) -> Pwm<Self, P, PINS, FREQ>;
-
-    fn pwm_hz(self, clocks: &Clocks, pins: PINS, freq: Hertz) -> PwmHz<Self, P, PINS>;
-
-    fn pwm_us(
-        self,
         clocks: &Clocks,
+    ) -> Pwm<Self, P, PINS, FREQ>
+    where
+        PINS: Pins<Self, P>;
+
+    fn pwm_hz<P, PINS>(self, pins: PINS, freq: Hertz, clocks: &Clocks) -> PwmHz<Self, P, PINS>
+    where
+        PINS: Pins<Self, P>;
+
+    fn pwm_us<P, PINS>(
+        self,
         pins: PINS,
         time: TimerDurationU32<1_000_000>,
-    ) -> Pwm<Self, P, PINS, 1_000_000> {
-        self.pwm::<1_000_000>(clocks, pins, time)
+        clocks: &Clocks,
+    ) -> Pwm<Self, P, PINS, 1_000_000>
+    where
+        PINS: Pins<Self, P>,
+    {
+        self.pwm::<_, _, 1_000_000>(pins, time, clocks)
     }
 }
 
-impl<TIM, P, PINS> PwmExt<P, PINS> for TIM
+impl<TIM> PwmExt for TIM
 where
     Self: Sized + Instance + WithPwm,
-    PINS: Pins<Self, P>,
 {
-    fn pwm<const FREQ: u32>(
+    fn pwm<P, PINS, const FREQ: u32>(
         self,
-        clocks: &Clocks,
         pins: PINS,
         time: TimerDurationU32<FREQ>,
-    ) -> Pwm<TIM, P, PINS, FREQ> {
+        clocks: &Clocks,
+    ) -> Pwm<TIM, P, PINS, FREQ>
+    where
+        PINS: Pins<Self, P>,
+    {
         FTimer::<Self, FREQ>::new(self, clocks).pwm(pins, time)
     }
 
-    fn pwm_hz(self, clocks: &Clocks, pins: PINS, time: Hertz) -> PwmHz<TIM, P, PINS> {
+    fn pwm_hz<P, PINS>(self, pins: PINS, time: Hertz, clocks: &Clocks) -> PwmHz<TIM, P, PINS>
+    where
+        PINS: Pins<Self, P>,
+    {
         Timer::new(self, clocks).pwm_hz(pins, time)
     }
 }

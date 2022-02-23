@@ -22,15 +22,11 @@ mod pins;
 pub use pins::*;
 pub mod pwm;
 pub use pwm::*;
-#[cfg(not(feature = "stm32f410"))]
 pub mod pwm_input;
-#[cfg(not(feature = "stm32f410"))]
 pub use pwm_input::PwmInput;
 #[cfg(feature = "rtic")]
-#[cfg(not(feature = "stm32f410"))]
 pub mod monotonic;
 #[cfg(feature = "rtic")]
-#[cfg(not(feature = "stm32f410"))]
 pub use monotonic::*;
 
 mod hal_02;
@@ -233,6 +229,7 @@ mod sealed {
         fn get_interrupt_flag(&self) -> Event;
         fn read_count(&self) -> Self::Width;
         fn start_one_pulse(&mut self);
+        fn start_no_update(&mut self);
         fn cr1_reset(&mut self);
     }
 
@@ -351,6 +348,10 @@ macro_rules! hal {
                 #[inline(always)]
                 fn start_one_pulse(&mut self) {
                     self.cr1.write(|w| unsafe { w.bits(1 << 3) }.cen().set_bit());
+                }
+                #[inline(always)]
+                fn start_no_update(&mut self) {
+                    self.cr1.write(|w| w.cen().set_bit().udis().set_bit());
                 }
                 #[inline(always)]
                 fn cr1_reset(&mut self) {
@@ -726,7 +727,6 @@ impl<TIM: Instance + MasterTimer, const FREQ: u32> FTimer<TIM, FREQ> {
 pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
     let ticks = clock / freq;
     let psc = (ticks - 1) / (1 << 16);
-    assert!(psc <= u16::MAX as u32);
     let arr = ticks / (psc + 1) - 1;
     (psc as u16, arr)
 }
