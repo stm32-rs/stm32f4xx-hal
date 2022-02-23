@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Make `Monotonic` implementation generic for `u32` timers, fix `PwmExt` trait [#454]
 - Rename `Delay<SYST>` to SysDelay, remove old `Delay<TIM2>`
 - Extend timers to 32bit on `Delay`
 - Move `MonoTimer` from `timer` to dwt mode [#448]
@@ -65,6 +66,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#447]: https://github.com/stm32-rs/stm32f4xx-hal/pull/447
 [#448]: https://github.com/stm32-rs/stm32f4xx-hal/pull/448
 [#449]: https://github.com/stm32-rs/stm32f4xx-hal/pull/449
+[#454]: https://github.com/stm32-rs/stm32f4xx-hal/pull/454
 
 ### Changed
 
