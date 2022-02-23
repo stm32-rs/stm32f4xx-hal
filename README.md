@@ -74,7 +74,7 @@ cortex-m-rt = "0.7"
 panic-halt = "0.2"
 
 [dependencies.stm32f4xx-hal]
-version = "0.10"
+version = "0.12"
 features = ["rt", "stm32f407"] # replace the model of your microcontroller here
 ```
 
