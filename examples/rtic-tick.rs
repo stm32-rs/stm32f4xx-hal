@@ -6,7 +6,7 @@ use panic_halt as _;
 #[rtic::app(device = stm32f4xx_hal::pac, dispatchers = [USART1])]
 mod app {
     use stm32f4xx_hal::{
-        gpio::{Output, PushPull, PC13},
+        gpio::{Output, PC13},
         pac,
         prelude::*,
         timer::MonoTimerUs,
@@ -17,7 +17,7 @@ mod app {
 
     #[local]
     struct Local {
-        led: PC13<Output<PushPull>>,
+        led: PC13<Output>,
     }
 
     #[monotonic(binds = TIM2, default = true)]
