@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Support eMMC peripherals using SDIO module [#458]
+
 ## [v0.12.0] - 2022-02-23
 
 ### Changed
