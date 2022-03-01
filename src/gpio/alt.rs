@@ -3,16 +3,16 @@ use crate::{gpio, i2c, i2s, pac, serial, spi};
 
 pub struct Const<const A: u8>;
 
-pub trait SetAlternate<Otype, const A: u8> {
+pub trait SetAlternate<const A: u8, Otype> {
     fn set_alt_mode(&mut self);
     fn restore_mode(&mut self);
 }
-impl<Otype> SetAlternate<Otype, 0> for NoPin {
+impl<Otype> SetAlternate<0, Otype> for NoPin {
     fn set_alt_mode(&mut self) {}
     fn restore_mode(&mut self) {}
 }
-impl<MODE: PinMode, const P: char, const N: u8, const A: u8> SetAlternate<PushPull, A>
-    for Pin<MODE, P, N>
+impl<const P: char, const N: u8, MODE: PinMode, const A: u8> SetAlternate<A, PushPull>
+    for Pin<P, N, MODE>
 {
     fn set_alt_mode(&mut self) {
         self.set_alternate::<A>();
@@ -23,8 +23,8 @@ impl<MODE: PinMode, const P: char, const N: u8, const A: u8> SetAlternate<PushPu
     }
 }
 
-impl<MODE: PinMode, const P: char, const N: u8, const A: u8> SetAlternate<OpenDrain, A>
-    for Pin<MODE, P, N>
+impl<const P: char, const N: u8, MODE: PinMode, const A: u8> SetAlternate<A, OpenDrain>
+    for Pin<P, N, MODE>
 {
     fn set_alt_mode(&mut self) {
         self.set_alternate::<A>();
@@ -40,15 +40,15 @@ impl<MODE: PinMode, const P: char, const N: u8, const A: u8> SetAlternate<OpenDr
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> SetAlternate<PushPull, A>
-    for Pin<Alternate<PushPull, A>, P, N>
+impl<const P: char, const N: u8, const A: u8> SetAlternate<A, PushPull>
+    for Pin<P, N, Alternate<A, PushPull>>
 {
     fn set_alt_mode(&mut self) {}
     fn restore_mode(&mut self) {}
 }
 
-impl<const P: char, const N: u8, const A: u8> SetAlternate<OpenDrain, A>
-    for Pin<Alternate<OpenDrain, A>, P, N>
+impl<const P: char, const N: u8, const A: u8> SetAlternate<A, OpenDrain>
+    for Pin<P, N, Alternate<A, OpenDrain>>
 {
     fn set_alt_mode(&mut self) {}
     fn restore_mode(&mut self) {}

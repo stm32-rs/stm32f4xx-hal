@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Move pin mode at the end of generics, add defaults for modes,
+  bump MSRV to 1.59 [#418]
+
 ### Added
 
 - Support eMMC peripherals using SDIO module [#458]
+
+[#418]: https://github.com/stm32-rs/stm32f4xx-hal/pull/418
+[#458]: https://github.com/stm32-rs/stm32f4xx-hal/pull/458
 
 ## [v0.12.0] - 2022-02-23
 

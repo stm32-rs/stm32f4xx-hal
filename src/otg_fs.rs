@@ -16,8 +16,8 @@ pub struct USB {
     pub usb_global: pac::OTG_FS_GLOBAL,
     pub usb_device: pac::OTG_FS_DEVICE,
     pub usb_pwrclk: pac::OTG_FS_PWRCLK,
-    pub pin_dm: PA11<Alternate<PushPull, 10>>,
-    pub pin_dp: PA12<Alternate<PushPull, 10>>,
+    pub pin_dm: PA11<Alternate<10, PushPull>>,
+    pub pin_dp: PA12<Alternate<10, PushPull>>,
     pub hclk: Hertz,
 }
 
