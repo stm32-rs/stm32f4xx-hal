@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - i2s module don't reuse marker from spi module and define its own.
  - `i2s-audio-out` example updated and now use pcm5102 dac module instead one from discovery board.
  - extend visibility of gpio/marker to crate since i2s module require it.
+ - Bump `synopsys-usb-otg` to `0.3.0`
 
 ### Added
  - example of using i2s in out with rtic and interrupt.
