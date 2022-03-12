@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Support eMMC peripherals using SDIO module [#458]
+- `defmt::Format` derive on enums behind `defmt` feature
 
 [#418]: https://github.com/stm32-rs/stm32f4xx-hal/pull/418
 [#458]: https://github.com/stm32-rs/stm32f4xx-hal/pull/458
