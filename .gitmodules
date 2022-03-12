@@ -1,0 +1,3 @@
+[submodule "stm32_i2s"]
+	path = stm32_i2s
+	url = https://github.com/YruamaLairba/stm32_i2s
