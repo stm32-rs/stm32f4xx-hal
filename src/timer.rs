@@ -39,6 +39,7 @@ pub struct Timer<TIM> {
 }
 
 #[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Channel {
     C1 = 0,
@@ -49,6 +50,7 @@ pub enum Channel {
 
 /// Interrupt events
 #[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum SysEvent {
     /// [Timer] timed out / count down ended
     Update,
@@ -65,6 +67,7 @@ bitflags::bitflags! {
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// Timer is disabled
     Disabled,
@@ -196,6 +199,7 @@ impl Timer<SYST> {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Ocm {
     Frozen = 0,
