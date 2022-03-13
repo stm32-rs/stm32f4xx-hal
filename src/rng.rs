@@ -2,7 +2,7 @@
 //!
 //!
 //! The build in random number generator (RNG) of an STM32F4 uses analog noise to
-//! proved random 32-bit values.
+//! provide random 32-bit values.
 //!
 //! Notes:
 //! - It takes 40 periods of `RNG_CLK` to generate a new random value.
