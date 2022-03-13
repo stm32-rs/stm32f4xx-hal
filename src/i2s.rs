@@ -94,7 +94,7 @@ where
     CK: PinA<Ck, SPI, A = Const<CKA>> + SetAlternate<CKA, PushPull>,
     MCLK: PinA<Mck, SPI, A = Const<MCLKA>> + SetAlternate<MCLKA, PushPull>,
     SD: PinA<Sd, SPI, A = Const<SDA>> + SetAlternate<SDA, PushPull>,
-    EXTSD: PinA<ExtSd, SPI, A = Const<EXTSDA>> + SetAlternate<EXTSDA, PushPull>,
+    EXTSD: PinA<ExtSd, I2SEXT, A = Const<EXTSDA>> + SetAlternate<EXTSDA, PushPull>,
 {
     fn set_alt_mode(&mut self) {
         self.0.set_alt_mode();
@@ -290,7 +290,7 @@ pub struct DualI2s<I, PINS> {
 impl<SPI, I2SEXT, PINS> DualI2s<(SPI, I2SEXT), PINS>
 where
     SPI: Instance,
-    PINS: Pins<SPI>,
+    PINS: Pins<(SPI, I2SEXT)>,
 {
     /// Creates a DualI2s object around a SPI and I2SEXT peripherals and pins
     ///
