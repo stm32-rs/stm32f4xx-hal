@@ -34,17 +34,24 @@ pub type Ck = spi::Sck;
 pub struct Mck;
 impl crate::Sealed for Mck {}
 
+/// A pin that can be as SD with extended I2s instance
+pub struct ExtSd;
+impl crate::Sealed for ExtSd {}
+
 /// A placeholder for when the MCLK pin is not needed
 pub type NoMasterClock = NoPin;
 
-/// A set of pins configured for I2S communication: (WS, CK, MCLK, SD)
+/// A set of pins configured for simple or full-duplex I2S communication:
+/// - (WS, CK, MCLK, SD) for simple I2s
+/// - (WS, CK, MCLK, SD, EXTSD) for Dual I2s
 ///
 /// NoMasterClock can be used instead of the master clock pin.
-pub trait Pins<SPI> {
+pub trait Pins<I> {
     fn set_alt_mode(&mut self);
     fn restore_mode(&mut self);
 }
 
+/// Pins for simple I2s communication
 impl<SPI, WS, CK, MCLK, SD, const WSA: u8, const CKA: u8, const MCLKA: u8, const SDA: u8> Pins<SPI>
     for (WS, CK, MCLK, SD)
 where
@@ -64,6 +71,44 @@ where
         self.1.restore_mode();
         self.2.restore_mode();
         self.3.restore_mode();
+    }
+}
+
+/// Pins for Dual I2s communication
+impl<
+        SPI,
+        I2SEXT,
+        WS,
+        CK,
+        MCLK,
+        SD,
+        EXTSD,
+        const WSA: u8,
+        const CKA: u8,
+        const MCLKA: u8,
+        const SDA: u8,
+        const EXTSDA: u8,
+    > Pins<(SPI, I2SEXT)> for (WS, CK, MCLK, SD, EXTSD)
+where
+    WS: PinA<Ws, SPI, A = Const<WSA>> + SetAlternate<WSA, PushPull>,
+    CK: PinA<Ck, SPI, A = Const<CKA>> + SetAlternate<CKA, PushPull>,
+    MCLK: PinA<Mck, SPI, A = Const<MCLKA>> + SetAlternate<MCLKA, PushPull>,
+    SD: PinA<Sd, SPI, A = Const<SDA>> + SetAlternate<SDA, PushPull>,
+    EXTSD: PinA<ExtSd, SPI, A = Const<EXTSDA>> + SetAlternate<EXTSDA, PushPull>,
+{
+    fn set_alt_mode(&mut self) {
+        self.0.set_alt_mode();
+        self.1.set_alt_mode();
+        self.2.set_alt_mode();
+        self.3.set_alt_mode();
+        self.4.set_alt_mode();
+    }
+    fn restore_mode(&mut self) {
+        self.0.restore_mode();
+        self.1.restore_mode();
+        self.2.restore_mode();
+        self.3.restore_mode();
+        self.4.restore_mode();
     }
 }
 
@@ -231,6 +276,56 @@ impl<I, PINS> I2s<I, PINS> {
     /// I2S PLL or similar source
     pub fn input_clock(&self) -> Hertz {
         self.input_clock
+    }
+}
+
+/// An full duplex I2s wrapper around SPI and I2SEXT object and pins
+pub struct DualI2s<I, PINS> {
+    interfaces: I,
+    pins: PINS,
+    /// Frequency of clock input to this peripheral from the I2S PLL or related source
+    input_clock: Hertz,
+}
+
+impl<SPI, I2SEXT, PINS> DualI2s<(SPI, I2SEXT), PINS>
+where
+    SPI: Instance,
+    PINS: Pins<SPI>,
+{
+    /// Creates a DualI2s object around a SPI and I2SEXT peripherals and pins
+    ///
+    /// This function enables and resets SPI and I2SEXT peripherals, but does not configure it.
+    ///
+    /// The returned DualI2s object implements [stm32_i2s_v12x::DualInstance], so it can be used
+    /// to configure the peripheral and communicate.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if the I2S clock input (from the I2S PLL or similar)
+    /// is not configured.
+    pub fn new(interfaces: (SPI, I2SEXT), mut pins: PINS, clocks: &Clocks) -> Self {
+        let input_clock = SPI::i2s_freq(clocks);
+        unsafe {
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
+            // Enable clock, enable reset, clear, reset
+            SPI::enable(rcc);
+            SPI::reset(rcc);
+        }
+
+        pins.set_alt_mode();
+
+        DualI2s {
+            interfaces,
+            pins,
+            input_clock,
+        }
+    }
+
+    pub fn release(mut self) -> ((SPI, I2SEXT), PINS) {
+        self.pins.restore_mode();
+
+        (self.interfaces, self.pins)
     }
 }
 
