@@ -301,7 +301,7 @@ pin! {
     <i2c::Scl, FMPI2C1> for [PF15<4>]
 }
 
-// SPI pins
+// SPI and I2S pins
 
 pin! {
     <spi::Sck,  SPI1> for [PA5<5>, PB3<5>],
@@ -472,6 +472,43 @@ pin! { <i2s::Mck,  SPI1> for [PC4<5>] }
 
 #[cfg(feature = "stm32f410")]
 pin! { <i2s::Mck,  SPI1> for [PC7<6>, PB10<6>] }
+
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+pin! {
+    <i2s::ExtSd,  I2S2EXT> for [PB14<6>, PC2<6>],
+    <i2s::ExtSd,  I2S3EXT> for [PB4<7>, PC11<5>]
+}
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+pin! { <i2s::ExtSd,  I2S2EXT> for [PI2<6>] }
 
 // Serial pins
 
