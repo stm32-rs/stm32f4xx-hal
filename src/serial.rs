@@ -100,6 +100,17 @@ pub mod config {
     }
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub enum IrdaMode {
+        #[doc = "IrDA mode disabled"]
+        None,
+        #[doc = "IrDA SIR rx/tx enabled in 'normal' mode"]
+        Normal,
+        #[doc = "IrDA SIR 'low-power' mode"]
+        LowPower,
+    }
+
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Debug, Clone, Copy, PartialEq)]
     #[non_exhaustive]
     pub struct Config {
@@ -108,6 +119,7 @@ pub mod config {
         pub parity: Parity,
         pub stopbits: StopBits,
         pub dma: DmaConfig,
+        pub irda: IrdaMode,
     }
 
     impl Config {
@@ -145,6 +157,11 @@ pub mod config {
             self.stopbits = stopbits;
             self
         }
+
+        pub fn irda(mut self, irda: IrdaMode) -> Self {
+            self.irda = irda;
+            self
+        }
     }
 
     #[derive(Debug)]
@@ -159,6 +176,7 @@ pub mod config {
                 parity: Parity::ParityNone,
                 stopbits: StopBits::STOP1,
                 dma: DmaConfig::None,
+                irda: IrdaMode::None,
             }
         }
     }
@@ -443,9 +461,23 @@ where
         // When OVER8 is enabled, we can only use the lowest three
         // fractional bits, so we'll need to shift those last four bits
         // right one bit
+        //
+        // In IrDA Smartcard, LIN, and IrDA modes, OVER8 is always disabled.
+        //
+        // (Taken from STM32F411xC/E Reference Manual,
+        // Section 19.3.4, Equation 2)
+        //
+        // USARTDIV =   pclk
+        //            ---------
+        //            16 x baud
+        //
+        // With reference to the above, OVER8 == 0 when in Smartcard, LIN, and
+        // IrDA modes, so the register value needed for USARTDIV is the same
+        // as for 16 bit oversampling.
+
 
         // Calculate correct baudrate divisor on the fly
-        let (over8, div) = if (pclk_freq / 16) >= baud {
+        let (over8, div) = if (pclk_freq / 16) >= baud || config.irda != IrdaMode::None {
             // We have the ability to oversample to 16 bits, take
             // advantage of it.
             //
@@ -475,6 +507,30 @@ where
         // Reset other registers to disable advanced USART features
         unsafe { (*USART::ptr()).cr2.reset() };
         unsafe { (*USART::ptr()).cr3.reset() };
+
+        // IrDA configuration - see STM32F411xC/E (RM0383) sections:
+        // 19.3.12 "IrDA SIR ENDEC block"
+        // 19.6.7 "Guard time and prescaler register (USART_GTPR)"
+        if config.irda != IrdaMode::None && config.stopbits != StopBits::STOP1 {
+            return Err(config::InvalidConfig);
+        }
+
+        match config.irda {
+            IrdaMode::Normal => unsafe {
+                (*USART::ptr()).gtpr.reset();
+                (*USART::ptr()).cr3.write(|w| w.iren().enabled());
+                (*USART::ptr()).gtpr.write(|w| w.psc().bits(1u8))
+            },
+            IrdaMode::LowPower => unsafe {
+                (*USART::ptr()).gtpr.reset();
+                (*USART::ptr()).cr3.write(|w| w.iren().enabled().irlp().low_power());
+                // FIXME
+                (*USART::ptr()).gtpr.write(|w| w.psc().bits((1843200u32 / pclk_freq) as u8))
+            },
+            IrdaMode::None => {}
+        }
+
+
 
         // Enable transmission and receiving
         // and configure frame
