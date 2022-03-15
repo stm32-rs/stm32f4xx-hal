@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - `i2c_scanner` example [#758]
  - port LTDC implementation and example from stm32f7xx-hal [#731]
+ - IrDA mode for USARTs
 
 ### Changed
 

@@ -50,6 +50,17 @@ pub enum DmaConfig {
 }
 
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IrdaMode {
+    #[doc = "IrDA mode disabled"]
+    None,
+    #[doc = "IrDA SIR rx/tx enabled in 'normal' mode"]
+    Normal,
+    #[doc = "IrDA SIR 'low-power' mode"]
+    LowPower,
+}
+
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Config {
     pub baudrate: Bps,
@@ -57,6 +68,7 @@ pub struct Config {
     pub parity: Parity,
     pub stopbits: StopBits,
     pub dma: DmaConfig,
+    pub irda: IrdaMode,
 }
 
 impl Config {
@@ -99,6 +111,11 @@ impl Config {
         self.dma = dma;
         self
     }
+
+    pub fn irda(mut self, irda: IrdaMode) -> Self {
+        self.irda = irda;
+        self
+    }
 }
 
 #[derive(Debug)]
@@ -113,6 +130,7 @@ impl Default for Config {
             parity: Parity::ParityNone,
             stopbits: StopBits::STOP1,
             dma: DmaConfig::None,
+            irda: IrdaMode::None,
         }
     }
 }
