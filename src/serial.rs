@@ -475,7 +475,6 @@ where
         // IrDA modes, so the register value needed for USARTDIV is the same
         // as for 16 bit oversampling.
 
-
         // Calculate correct baudrate divisor on the fly
         let (over8, div) = if (pclk_freq / 16) >= baud || config.irda != IrdaMode::None {
             // We have the ability to oversample to 16 bits, take
@@ -523,14 +522,16 @@ where
             },
             IrdaMode::LowPower => unsafe {
                 (*USART::ptr()).gtpr.reset();
-                (*USART::ptr()).cr3.write(|w| w.iren().enabled().irlp().low_power());
+                (*USART::ptr())
+                    .cr3
+                    .write(|w| w.iren().enabled().irlp().low_power());
                 // FIXME
-                (*USART::ptr()).gtpr.write(|w| w.psc().bits((1843200u32 / pclk_freq) as u8))
+                (*USART::ptr())
+                    .gtpr
+                    .write(|w| w.psc().bits((1843200u32 / pclk_freq) as u8))
             },
             IrdaMode::None => {}
         }
-
-
 
         // Enable transmission and receiving
         // and configure frame
