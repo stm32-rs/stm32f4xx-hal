@@ -1,6 +1,9 @@
 #![no_std]
 #![allow(non_camel_case_types)]
 
+#[cfg(feature = "defmt")]
+extern crate defmt_ as defmt;
+
 #[cfg(not(feature = "device-selected"))]
 compile_error!(
     "This crate requires one of the following device features enabled:
