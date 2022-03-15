@@ -329,6 +329,63 @@ where
     }
 }
 
+/// Implements stm32_i2s_v12x::DualInstance for `DualI2s<($SPI,$I2SEXT), _>.
+///
+/// $SPI: The fully-capitalized name of the SPI peripheral (example: SPI1)
+/// $I2SEXT: The fully-capitalized name of the I2SEXT peripheral (example: I2S2EXT)
+macro_rules! dual_i2s {
+    (($SPI:ty, $I2SEXT:ty)) => {
+        #[cfg(feature = "stm32_i2s_v12x")]
+        unsafe impl<PINS> stm32_i2s_v12x::DualInstance for DualI2s<($SPI, $I2SEXT), PINS> {
+            const REGISTERS: (
+                *mut stm32_i2s_v12x::RegisterBlock,
+                *mut stm32_i2s_v12x::RegisterBlock,
+            ) = (
+                <$SPI>::ptr() as *mut stm32_i2s_v12x::RegisterBlock,
+                <$I2SEXT>::ptr() as *mut stm32_i2s_v12x::RegisterBlock,
+            );
+        }
+    };
+}
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+dual_i2s!((pac::SPI2, pac::I2S2EXT));
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+dual_i2s!((pac::SPI3, pac::I2S3EXT));
+
 // DMA support: reuse existing mappings for SPI
 #[cfg(feature = "stm32_i2s_v12x")]
 mod dma {
