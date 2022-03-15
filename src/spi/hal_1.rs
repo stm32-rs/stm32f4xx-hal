@@ -77,83 +77,117 @@ mod nb {
 mod blocking {
     use super::super::{Error, Instance, Spi, TransferModeBidi, TransferModeNormal};
     use embedded_hal_one::spi::{
-        blocking::{Operation, Transactional, TransferInplace, Write, WriteIter},
+        blocking::{Operation, Read, Transactional, Transfer, TransferInplace, Write, WriteIter},
         nb::FullDuplex,
     };
 
-    impl<SPI, PINS, TRANSFER_MODE> TransferInplace<u8> for Spi<SPI, PINS, TRANSFER_MODE>
+    impl<SPI, PINS, TRANSFER_MODE, W: Copy + 'static> TransferInplace<W>
+        for Spi<SPI, PINS, TRANSFER_MODE>
     where
-        Self: FullDuplex<u8, Error = Error>,
+        Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
     {
-        fn transfer_inplace(&mut self, words: &mut [u8]) -> Result<(), Self::Error> {
+        fn transfer_inplace(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
             for word in words.iter_mut() {
-                nb::block!(self.write(*word))?;
-                *word = nb::block!(self.read())?;
+                nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
+                *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
             }
 
             Ok(())
         }
     }
 
-    impl<SPI, PINS> Write<u8> for Spi<SPI, PINS, TransferModeNormal>
+    impl<SPI, PINS, TRANSFER_MODE, W: Copy + 'static> Transfer<W> for Spi<SPI, PINS, TRANSFER_MODE>
     where
-        Self: FullDuplex<u8, Error = Error>,
+        Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
     {
-        fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(<Self as FullDuplex<u8>>::write(self, *word))?;
-                nb::block!(self.read())?;
+        fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Self::Error> {
+            assert_eq!(data.len(), buff.len());
+
+            for i in 0..data.len() {
+                nb::block!(<Self as FullDuplex<W>>::write(self, data[i]))?;
+                buff[i] = nb::block!(<Self as FullDuplex<W>>::read(self))?;
             }
 
             Ok(())
         }
     }
 
-    impl<SPI, PINS> Write<u8> for Spi<SPI, PINS, TransferModeBidi>
+    impl<SPI, PINS, W: Copy + 'static> Write<W> for Spi<SPI, PINS, TransferModeNormal>
     where
-        Self: FullDuplex<u8, Error = Error>,
+        Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
     {
-        fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        fn write(&mut self, words: &[W]) -> Result<(), Self::Error> {
             for word in words {
-                nb::block!(<Self as FullDuplex<u8>>::write(self, *word))?;
+                nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
+                nb::block!(<Self as FullDuplex<W>>::read(self))?;
             }
 
             Ok(())
         }
     }
 
-    impl<SPI, PINS> WriteIter<u8> for Spi<SPI, PINS, TransferModeNormal>
+    impl<SPI, PINS, W: Copy + 'static> Write<W> for Spi<SPI, PINS, TransferModeBidi>
     where
-        Self: FullDuplex<u8, Error = Error>,
+        Self: FullDuplex<W, Error = Error>,
+        SPI: Instance,
+    {
+        fn write(&mut self, words: &[W]) -> Result<(), Self::Error> {
+            for word in words {
+                nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
+            }
+
+            Ok(())
+        }
+    }
+
+    impl<SPI, PINS, W: Copy + 'static> WriteIter<W> for Spi<SPI, PINS, TransferModeNormal>
+    where
+        Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
     {
         fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
         where
-            WI: IntoIterator<Item = u8>,
+            WI: IntoIterator<Item = W>,
         {
             for word in words.into_iter() {
-                nb::block!(<Self as FullDuplex<u8>>::write(self, word))?;
-                nb::block!(self.read())?;
+                nb::block!(<Self as FullDuplex<W>>::write(self, word))?;
+                nb::block!(<Self as FullDuplex<W>>::read(self))?;
             }
 
             Ok(())
         }
     }
 
-    impl<SPI, PINS> WriteIter<u8> for Spi<SPI, PINS, TransferModeBidi>
+    impl<SPI, PINS, W: Copy + 'static> WriteIter<W> for Spi<SPI, PINS, TransferModeBidi>
     where
-        Self: FullDuplex<u8, Error = Error>,
+        Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
     {
         fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
         where
-            WI: IntoIterator<Item = u8>,
+            WI: IntoIterator<Item = W>,
         {
             for word in words.into_iter() {
-                nb::block!(<Self as FullDuplex<u8>>::write(self, word))?;
+                nb::block!(<Self as FullDuplex<W>>::write(self, word))?;
+            }
+
+            Ok(())
+        }
+    }
+
+    impl<SPI, PINS, TRANSFER_MODE, W: Copy + Default + 'static> Read<W>
+        for Spi<SPI, PINS, TRANSFER_MODE>
+    where
+        Self: FullDuplex<W, Error = Error>,
+        SPI: Instance,
+    {
+        fn read(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
+            for word in words {
+                nb::block!(<Self as FullDuplex<W>>::write(self, W::default()))?;
+                *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
             }
 
             Ok(())
@@ -162,14 +196,18 @@ mod blocking {
 
     impl<SPI, PINS, TRANSFER_MODE, W: Copy + 'static> Transactional<W> for Spi<SPI, PINS, TRANSFER_MODE>
     where
-        Self: Write<W, Error = Error> + TransferInplace<W, Error = Error>,
+        Self: Write<W, Error = Error>
+            + Read<W, Error = Error>
+            + TransferInplace<W, Error = Error>
+            + Transfer<W, Error = Error>,
     {
         fn exec<'a>(&mut self, operations: &mut [Operation<'a, W>]) -> Result<(), Error> {
             for op in operations {
                 match op {
                     Operation::Write(w) => self.write(w)?,
                     Operation::TransferInplace(t) => self.transfer_inplace(t)?,
-                    _ => todo!(),
+                    Operation::Read(r) => self.read(r)?,
+                    Operation::Transfer(w, r) => self.transfer(w, r)?,
                 }
             }
 
