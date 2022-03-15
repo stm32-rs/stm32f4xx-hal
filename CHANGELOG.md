@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Move pin mode at the end of generics, add defaults for modes,
   bump MSRV to 1.59 [#418]
+- Move hd44780-driver to dev-dependencies
 
 ### Fixed
 - Enable the defmt feature on fugit when the defmt feature on the
