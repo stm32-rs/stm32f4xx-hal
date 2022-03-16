@@ -100,6 +100,17 @@ pub mod config {
     }
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub enum IrdaMode {
+        #[doc = "IrDA mode disabled"]
+        None,
+        #[doc = "IrDA SIR rx/tx enabled in 'normal' mode"]
+        Normal,
+        #[doc = "IrDA SIR 'low-power' mode"]
+        LowPower,
+    }
+
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Debug, Clone, Copy, PartialEq)]
     #[non_exhaustive]
     pub struct Config {
@@ -521,6 +532,7 @@ where
         }
         .config_stop(config))
     }
+
     pub fn release(mut self) -> (USART, PINS) {
         self.pins.restore_mode();
 
@@ -555,6 +567,170 @@ where
         clocks: &Clocks,
     ) -> Result<Rx<USART, WORD>, config::InvalidConfig> {
         Self::new(usart, (NoPin, rx_pin), config, clocks).map(|s| s.split().1)
+    }
+}
+
+impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
+where
+    PINS: Pins<USART>,
+    USART: Instance + core::ops::Deref<Target = crate::pac::usart1::RegisterBlock>,
+{
+    /*
+        StopBits::STOP0P5 and StopBits::STOP1P5 aren't supported when using UART
+        STOP_A::STOP1 and STOP_A::STOP2 will be used, respectively
+    */
+    pub fn irda(
+        usart: USART,
+        mut pins: PINS,
+        config: impl Into<config::Config>,
+        mode: config::IrdaMode,
+        clocks: &Clocks,
+    ) -> Result<Self, config::InvalidConfig> {
+        use self::config::*;
+
+        let config = config.into();
+        unsafe {
+            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+            let rcc = &(*RCC::ptr());
+
+            // Enable clock.
+            USART::enable(rcc);
+            USART::reset(rcc);
+        }
+
+        let pclk_freq = USART::clock(clocks).raw();
+        let baud = config.baudrate.0;
+
+        // The frequency to calculate USARTDIV is this:
+        //
+        // (Taken from STM32F411xC/E Reference Manual,
+        // Section 19.3.4, Equation 1)
+        //
+        // 16 bit oversample: OVER8 = 0
+        // 8 bit oversample:  OVER8 = 1
+        //
+        // USARTDIV =          (pclk)
+        //            ------------------------
+        //            8 x (2 - OVER8) x (baud)
+        //
+        // BUT, the USARTDIV has 4 "fractional" bits, which effectively
+        // means that we need to "correct" the equation as follows:
+        //
+        // USARTDIV =      (pclk) * 16
+        //            ------------------------
+        //            8 x (2 - OVER8) x (baud)
+        //
+        // When OVER8 is enabled, we can only use the lowest three
+        // fractional bits, so we'll need to shift those last four bits
+        // right one bit
+        //
+        // In IrDA Smartcard, LIN, and IrDA modes, OVER8 is always disabled.
+        //
+        // (Taken from STM32F411xC/E Reference Manual,
+        // Section 19.3.4, Equation 2)
+        //
+        // USARTDIV =   pclk
+        //            ---------
+        //            16 x baud
+        //
+        // With reference to the above, OVER8 == 0 when in Smartcard, LIN, and
+        // IrDA modes, so the register value needed for USARTDIV is the same
+        // as for 16 bit oversampling.
+
+        // Calculate correct baudrate divisor on the fly
+        let (over8, div) = if (pclk_freq / 16) >= baud || mode != IrdaMode::None {
+            // We have the ability to oversample to 16 bits, take
+            // advantage of it.
+            //
+            // We also add `baud / 2` to the `pclk_freq` to ensure
+            // rounding of values to the closest scale, rather than the
+            // floored behavior of normal integer division.
+            let div = (pclk_freq + (baud / 2)) / baud;
+            (false, div)
+        } else if (pclk_freq / 8) >= baud {
+            // We are close enough to pclk where we can only
+            // oversample 8.
+            //
+            // See note above regarding `baud` and rounding.
+            let div = ((pclk_freq * 2) + (baud / 2)) / baud;
+
+            // Ensure the the fractional bits (only 3) are
+            // right-aligned.
+            let frac = div & 0xF;
+            let div = (div & !0xF) | (frac >> 1);
+            (true, div)
+        } else {
+            return Err(config::InvalidConfig);
+        };
+
+        usart.brr.write(|w| unsafe { w.bits(div) });
+
+        // Reset other registers to disable advanced USART features
+        usart.cr2.reset();
+        usart.cr3.reset();
+
+        // IrDA configuration - see STM32F411xC/E (RM0383) sections:
+        // 19.3.12 "IrDA SIR ENDEC block"
+        // 19.6.7 "Guard time and prescaler register (USART_GTPR)"
+        if mode != IrdaMode::None && config.stopbits != StopBits::STOP1 {
+            return Err(config::InvalidConfig);
+        }
+
+        match mode {
+            IrdaMode::Normal => unsafe {
+                usart.gtpr.reset();
+                usart.cr3.write(|w| w.iren().enabled());
+                usart.gtpr.write(|w| w.psc().bits(1u8))
+            },
+            IrdaMode::LowPower => unsafe {
+                usart.gtpr.reset();
+                usart.cr3.write(|w| w.iren().enabled().irlp().low_power());
+                // FIXME
+                usart
+                    .gtpr
+                    .write(|w| w.psc().bits((1843200u32 / pclk_freq) as u8))
+            },
+            IrdaMode::None => {}
+        }
+
+        // Enable transmission and receiving
+        // and configure frame
+        usart.cr1.write(|w| {
+            w.ue()
+                .set_bit()
+                .over8()
+                .bit(over8)
+                .te()
+                .set_bit()
+                .re()
+                .set_bit()
+                .m()
+                .bit(match config.wordlength {
+                    WordLength::DataBits8 => false,
+                    WordLength::DataBits9 => true,
+                })
+                .pce()
+                .bit(!matches!(config.parity, Parity::ParityNone))
+                .ps()
+                .bit(matches!(config.parity, Parity::ParityOdd))
+        });
+
+        match config.dma {
+            DmaConfig::Tx => usart.cr3.write(|w| w.dmat().enabled()),
+            DmaConfig::Rx => usart.cr3.write(|w| w.dmar().enabled()),
+            DmaConfig::TxRx => usart.cr3.write(|w| w.dmar().enabled().dmat().enabled()),
+            DmaConfig::None => {}
+        }
+
+        pins.set_alt_mode();
+
+        Ok(Serial {
+            usart,
+            pins,
+            tx: Tx::new(),
+            rx: Rx::new(),
+        }
+        .config_stop(config))
     }
 }
 
@@ -680,32 +856,22 @@ where
 }
 
 #[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
+    feature = "uart4",
+    feature = "uart5",
+    feature = "uart7",
+    feature = "uart8",
+    feature = "uart9",
+    feature = "uart10"
 ))]
 use crate::pac::uart4 as uart_base;
 
 #[cfg(not(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
+    feature = "uart4",
+    feature = "uart5",
+    feature = "uart7",
+    feature = "uart8",
+    feature = "uart9",
+    feature = "uart10"
 )))]
 use crate::pac::usart1 as uart_base;
 
