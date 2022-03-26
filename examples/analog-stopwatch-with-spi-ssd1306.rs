@@ -11,7 +11,7 @@ use panic_semihosting as _;
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
-    gpio::{Edge, Input, PullDown, PA0},
+    gpio::{Edge, Input, PA0},
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
@@ -45,7 +45,7 @@ static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
 static ELAPSED_RESET_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
 static TIMER_TIM2: Mutex<RefCell<Option<CounterUs<pac::TIM2>>>> = Mutex::new(RefCell::new(None));
 static STATE: Mutex<Cell<StopwatchState>> = Mutex::new(Cell::new(StopwatchState::Ready));
-static BUTTON: Mutex<RefCell<Option<PA0<Input<PullDown>>>>> = Mutex::new(RefCell::new(None));
+static BUTTON: Mutex<RefCell<Option<PA0<Input>>>> = Mutex::new(RefCell::new(None));
 
 /// The center of the clock face
 const CENTER: Point = Point::new(64, 40);

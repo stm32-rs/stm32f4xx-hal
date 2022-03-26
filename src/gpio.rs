@@ -102,18 +102,19 @@ pub trait PinExt {
 pub struct Alternate<const A: u8, Otype = PushPull>(PhantomData<Otype>);
 
 /// Input mode (type state)
-pub struct Input<MODE = Floating> {
-    _mode: PhantomData<MODE>,
+pub struct Input;
+
+/// Pull setting for an input.
+#[derive(Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum Pull {
+    /// Floating
+    None = 0,
+    /// Pulled up
+    Up = 1,
+    /// Pulled down
+    Down = 2,
 }
-
-/// Floating input (type state)
-pub struct Floating;
-
-/// Pulled down input (type state)
-pub struct PullDown;
-
-/// Pulled up input (type state)
-pub struct PullUp;
 
 /// Open drain input or output (type state)
 pub struct OpenDrain;
@@ -130,6 +131,10 @@ pub struct PushPull;
 pub struct Analog;
 
 pub type Debugger = Alternate<0, PushPull>;
+
+impl sealed::Active for Input {}
+impl<Otype> sealed::Active for Output<Otype> {}
+impl<const A: u8, Otype> sealed::Active for Alternate<A, Otype> {}
 
 /// GPIO Pin speed selection
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -152,11 +157,13 @@ pub enum Edge {
 mod sealed {
     /// Marker trait that show if `ExtiPin` can be implemented
     pub trait Interruptable {}
+    /// Marker trait for active pin modes
+    pub trait Active {}
 }
 
 use sealed::Interruptable;
 impl<MODE> Interruptable for Output<MODE> {}
-impl<MODE> Interruptable for Input<MODE> {}
+impl Interruptable for Input {}
 
 /// External Interrupt Pin
 pub trait ExtiPin {
@@ -262,7 +269,7 @@ where
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
 /// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
 /// - `N` is pin number: from `0` to `15`.
-pub struct Pin<const P: char, const N: u8, MODE = Input<Floating>> {
+pub struct Pin<const P: char, const N: u8, MODE = Input> {
     _mode: PhantomData<MODE>,
 }
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
@@ -317,34 +324,6 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     }
 }
 
-impl<const P: char, const N: u8> Pin<P, N, Output<OpenDrain>> {
-    /// Enables / disables the internal pull up
-    pub fn internal_pull_up(self, on: bool) -> Self {
-        let offset = 2 * { N };
-        let value = if on { 0b01 } else { 0b00 };
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .pupdr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
-        };
-
-        self
-    }
-
-    /// Enables / disables the internal pull down
-    pub fn internal_pull_down(self, on: bool) -> Self {
-        let offset = 2 * { N };
-        let value = if on { 0b10 } else { 0b00 };
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .pupdr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
-        };
-
-        self
-    }
-}
-
 impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
@@ -358,24 +337,13 @@ impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> 
 
         self
     }
+}
 
-    /// Enables / disables the internal pull up
-    pub fn internal_pull_up(self, on: bool) -> Self {
+impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
+    /// Set the internal pull-up and pull-down resistor
+    fn _internal_resistor(self, resistor: Pull) -> Self {
         let offset = 2 * { N };
-        let value = if on { 0b01 } else { 0b00 };
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .pupdr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
-        };
-
-        self
-    }
-
-    /// Enables / disables the internal pull down
-    pub fn internal_pull_down(self, on: bool) -> Self {
-        let offset = 2 * { N };
-        let value = if on { 0b10 } else { 0b00 };
+        let value = resistor as u32;
         unsafe {
             (*Gpio::<P>::ptr())
                 .pupdr
@@ -386,17 +354,31 @@ impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> 
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
-    /// Turns pin alternate configuration pin into open drain
-    pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
-        let offset = { N };
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .otyper
-                .modify(|r, w| w.bits(r.bits() | (1 << offset)))
-        };
+impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
+where
+    MODE: sealed::Active,
+{
+    /// Set the internal pull-up and pull-down resistor
+    pub fn internal_resistor(self, resistor: Pull) -> Self {
+        self._internal_resistor(resistor)
+    }
 
-        Pin::new()
+    /// Enables / disables the internal pull up
+    pub fn internal_pull_up(self, on: bool) -> Self {
+        if on {
+            self.internal_resistor(Pull::Up)
+        } else {
+            self.internal_resistor(Pull::None)
+        }
+    }
+
+    /// Enables / disables the internal pull down
+    pub fn internal_pull_down(self, on: bool) -> Self {
+        if on {
+            self.internal_resistor(Pull::Down)
+        } else {
+            self.internal_resistor(Pull::None)
+        }
     }
 }
 
@@ -512,7 +494,7 @@ impl<const P: char, const N: u8> Pin<P, N, Output<OpenDrain>> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, Input<MODE>> {
+impl<const P: char, const N: u8> Pin<P, N, Input> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
@@ -533,7 +515,7 @@ macro_rules! gpio {
             use crate::pac::{$GPIOX, RCC};
             use crate::rcc::{Enable, Reset};
             use super::{
-                Floating, Input,
+                Input,
             };
 
             /// GPIO parts
@@ -567,7 +549,7 @@ macro_rules! gpio {
             pub type $PXn<MODE> = super::PEPin<$port_id, MODE>;
 
             $(
-                pub type $PXi<MODE = Input<Floating>> = super::Pin<$port_id, $i, MODE>;
+                pub type $PXi<MODE = Input> = super::Pin<$port_id, $i, MODE>;
             )+
 
         }

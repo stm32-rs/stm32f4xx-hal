@@ -125,7 +125,7 @@ impl<const P: char> PartiallyErasedPin<P, Output<OpenDrain>> {
     }
 }
 
-impl<const P: char, MODE> PartiallyErasedPin<P, Input<MODE>> {
+impl<const P: char> PartiallyErasedPin<P, Input> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()

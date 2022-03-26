@@ -1,8 +1,8 @@
 use core::convert::Infallible;
 
 use super::{
-    dynamic::PinModeError, DynamicPin, ErasedPin, Floating, Input, OpenDrain, Output,
-    PartiallyErasedPin, Pin, PinState, PullDown, PullUp, PushPull,
+    dynamic::PinModeError, DynamicPin, ErasedPin, Input, OpenDrain, Output, PartiallyErasedPin,
+    Pin, PinState, PushPull,
 };
 
 use embedded_hal::digital::v2::{
@@ -63,7 +63,7 @@ impl<const P: char, const N: u8> InputPin for Pin<P, N, Output<OpenDrain>> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> InputPin for Pin<P, N, Input<MODE>> {
+impl<const P: char, const N: u8> InputPin for Pin<P, N, Input> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -88,12 +88,10 @@ impl<const P: char, const N: u8> IoPin<Self, Self> for Pin<P, N, Output<OpenDrai
     }
 }
 
-impl<const P: char, const N: u8> IoPin<Pin<P, N, Input<Floating>>, Self>
-    for Pin<P, N, Output<OpenDrain>>
-{
+impl<const P: char, const N: u8> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Output<OpenDrain>> {
     type Error = Infallible;
-    fn into_input_pin(self) -> Result<Pin<P, N, Input<Floating>>, Self::Error> {
-        Ok(self.into_floating_input())
+    fn into_input_pin(self) -> Result<Pin<P, N, Input>, Self::Error> {
+        Ok(self.into_input())
     }
     fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
         self.set_state(state);
@@ -101,9 +99,7 @@ impl<const P: char, const N: u8> IoPin<Pin<P, N, Input<Floating>>, Self>
     }
 }
 
-impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<OpenDrain>>>
-    for Pin<P, N, Input<Floating>>
-{
+impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<OpenDrain>>> for Pin<P, N, Input> {
     type Error = Infallible;
     fn into_input_pin(self) -> Result<Self, Self::Error> {
         Ok(self)
@@ -113,12 +109,10 @@ impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<OpenDrain>>>
     }
 }
 
-impl<const P: char, const N: u8> IoPin<Pin<P, N, Input<Floating>>, Self>
-    for Pin<P, N, Output<PushPull>>
-{
+impl<const P: char, const N: u8> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Output<PushPull>> {
     type Error = Infallible;
-    fn into_input_pin(self) -> Result<Pin<P, N, Input<Floating>>, Self::Error> {
-        Ok(self.into_floating_input())
+    fn into_input_pin(self) -> Result<Pin<P, N, Input>, Self::Error> {
+        Ok(self.into_input())
     }
     fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
         self.set_state(state);
@@ -126,59 +120,7 @@ impl<const P: char, const N: u8> IoPin<Pin<P, N, Input<Floating>>, Self>
     }
 }
 
-impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<PushPull>>>
-    for Pin<P, N, Input<Floating>>
-{
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Self, Self::Error> {
-        Ok(self)
-    }
-    fn into_output_pin(self, state: PinState) -> Result<Pin<P, N, Output<PushPull>>, Self::Error> {
-        Ok(self.into_push_pull_output_in_state(state))
-    }
-}
-
-impl<const P: char, const N: u8> IoPin<Pin<P, N, Input<PullUp>>, Self>
-    for Pin<P, N, Output<PushPull>>
-{
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Pin<P, N, Input<PullUp>>, Self::Error> {
-        Ok(self.into_pull_up_input())
-    }
-    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
-        self.set_state(state);
-        Ok(self)
-    }
-}
-
-impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<PushPull>>>
-    for Pin<P, N, Input<PullUp>>
-{
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Self, Self::Error> {
-        Ok(self)
-    }
-    fn into_output_pin(self, state: PinState) -> Result<Pin<P, N, Output<PushPull>>, Self::Error> {
-        Ok(self.into_push_pull_output_in_state(state))
-    }
-}
-
-impl<const P: char, const N: u8> IoPin<Pin<P, N, Input<PullDown>>, Self>
-    for Pin<P, N, Output<PushPull>>
-{
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Pin<P, N, Input<PullDown>>, Self::Error> {
-        Ok(self.into_pull_down_input())
-    }
-    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
-        self.set_state(state);
-        Ok(self)
-    }
-}
-
-impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<PushPull>>>
-    for Pin<P, N, Input<PullDown>>
-{
+impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<PushPull>>> for Pin<P, N, Input> {
     type Error = Infallible;
     fn into_input_pin(self) -> Result<Self, Self::Error> {
         Ok(self)
@@ -242,7 +184,7 @@ impl InputPin for ErasedPin<Output<OpenDrain>> {
     }
 }
 
-impl<MODE> InputPin for ErasedPin<Input<MODE>> {
+impl InputPin for ErasedPin<Input> {
     type Error = core::convert::Infallible;
 
     #[inline(always)]
@@ -310,7 +252,7 @@ impl<const P: char> InputPin for PartiallyErasedPin<P, Output<OpenDrain>> {
     }
 }
 
-impl<const P: char, MODE> InputPin for PartiallyErasedPin<P, Input<MODE>> {
+impl<const P: char> InputPin for PartiallyErasedPin<P, Input> {
     type Error = Infallible;
 
     #[inline(always)]

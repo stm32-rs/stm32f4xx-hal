@@ -143,7 +143,7 @@ impl ErasedPin<Output<OpenDrain>> {
     }
 }
 
-impl<MODE> ErasedPin<Input<MODE>> {
+impl ErasedPin<Input> {
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()

@@ -8,7 +8,7 @@ use panic_halt as _;
 #[rtic::app(device = stm32f4xx_hal::pac)]
 mod app {
     use stm32f4xx_hal::{
-        gpio::{Edge, Input, Output, PullUp, PushPull, PA0, PC13},
+        gpio::{Edge, Input, Output, PushPull, PA0, PC13},
         prelude::*,
     };
 
@@ -17,7 +17,7 @@ mod app {
 
     #[local]
     struct Local {
-        button: PA0<Input<PullUp>>,
+        button: PA0<Input>,
         led: PC13<Output<PushPull>>,
     }
 
