@@ -276,34 +276,29 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     }
 
     /// Configures the pin to operate as a input pin
-    pub fn into_input(mut self) -> Pin<P, N, Input> {
-        self.mode::<Input>();
-        Pin::new()
+    pub fn into_input(self) -> Pin<P, N, Input> {
+        self.into_mode()
     }
 
     /// Configures the pin to operate as a floating input pin
-    pub fn into_floating_input(mut self) -> Pin<P, N, Input> {
-        self.mode::<Input>();
-        Pin::new()._internal_resistor(Pull::None)
+    pub fn into_floating_input(self) -> Pin<P, N, Input> {
+        self.into_mode()._internal_resistor(Pull::None)
     }
 
     /// Configures the pin to operate as a pulled down input pin
-    pub fn into_pull_down_input(mut self) -> Pin<P, N, Input> {
-        self.mode::<Input>();
-        Pin::new()._internal_resistor(Pull::Down)
+    pub fn into_pull_down_input(self) -> Pin<P, N, Input> {
+        self.into_mode()._internal_resistor(Pull::Down)
     }
 
     /// Configures the pin to operate as a pulled up input pin
-    pub fn into_pull_up_input(mut self) -> Pin<P, N, Input> {
-        self.mode::<Input>();
-        Pin::new()._internal_resistor(Pull::Up)
+    pub fn into_pull_up_input(self) -> Pin<P, N, Input> {
+        self.into_mode()._internal_resistor(Pull::Up)
     }
 
     /// Configures the pin to operate as an open drain output pin
     /// Initial state will be low.
-    pub fn into_open_drain_output(mut self) -> Pin<P, N, Output<OpenDrain>> {
-        self.mode::<Output<OpenDrain>>();
-        Pin::new()
+    pub fn into_open_drain_output(self) -> Pin<P, N, Output<OpenDrain>> {
+        self.into_mode()
     }
 
     /// Configures the pin to operate as an open-drain output pin.
@@ -313,16 +308,14 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
         initial_state: PinState,
     ) -> Pin<P, N, Output<OpenDrain>> {
         self._set_state(initial_state);
-        self.mode::<Output<OpenDrain>>();
-        Pin::new()
+        self.into_mode()
     }
 
     /// Configures the pin to operate as an push pull output pin
     /// Initial state will be low.
     pub fn into_push_pull_output(mut self) -> Pin<P, N, Output<PushPull>> {
         self._set_low();
-        self.mode::<Output<PushPull>>();
-        Pin::new()
+        self.into_mode()
     }
 
     /// Configures the pin to operate as an push-pull output pin.
@@ -332,14 +325,12 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
         initial_state: PinState,
     ) -> Pin<P, N, Output<PushPull>> {
         self._set_state(initial_state);
-        self.mode::<Output<PushPull>>();
-        Pin::new()
+        self.into_mode()
     }
 
     /// Configures the pin to operate as an analog input pin
-    pub fn into_analog(mut self) -> Pin<P, N, Analog> {
-        self.mode::<Analog>();
-        Pin::new()
+    pub fn into_analog(self) -> Pin<P, N, Analog> {
+        self.into_mode()
     }
 
     /// Configures the pin as a pin that can change between input
@@ -375,6 +366,12 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
                 .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::MODER << offset)));
         }
     }
+
+    #[inline(always)]
+    pub(super) fn into_mode<M: PinMode>(mut self) -> Pin<P, N, M> {
+        self.mode::<M>();
+        Pin::new()
+    }
 }
 
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
@@ -401,7 +398,7 @@ where
     ///
     /// The closure `f` is called with the reconfigured pin. After it returns,
     /// the pin will be configured back.
-    pub fn with_floating_input<R>(&mut self, f: impl FnOnce(&mut Pin<P, N, Input>) -> R) -> R {
+    pub fn with_input<R>(&mut self, f: impl FnOnce(&mut Pin<P, N, Input>) -> R) -> R {
         self.with_mode(f)
     }
 
