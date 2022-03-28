@@ -36,13 +36,20 @@ jobs:
             experimental: true
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           target: thumbv7em-none-eabihf
           override: true
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: pac-v0.14-${{ matrix.mcu }}
+
       - uses: actions-rs/cargo@v1
         with:
           command: check

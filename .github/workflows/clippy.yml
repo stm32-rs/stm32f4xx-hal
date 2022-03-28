@@ -8,7 +8,8 @@ jobs:
   clippy_check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -16,6 +17,12 @@ jobs:
           target: thumbv7em-none-eabihf
           override: true
           components: clippy
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: pac-v0.14
+
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
