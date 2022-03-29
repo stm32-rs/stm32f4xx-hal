@@ -212,14 +212,6 @@ impl<const P: char, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
     pub(super) fn mode<M: PinMode>(&mut self) {
         let offset = 2 * N;
         unsafe {
-            if MODE::PUPDR != M::PUPDR {
-                if let Some(pudpr) = M::PUPDR {
-                    (*Gpio::<P>::ptr())
-                        .pupdr
-                        .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (pudpr << offset)));
-                }
-            }
-
             if MODE::OTYPER != M::OTYPER {
                 if let Some(otyper) = M::OTYPER {
                     (*Gpio::<P>::ptr())
@@ -373,8 +365,6 @@ pub trait PinMode: crate::Sealed {
     // They are not part of public API.
 
     #[doc(hidden)]
-    const PUPDR: Option<u32> = None;
-    #[doc(hidden)]
     const MODER: u32 = u32::MAX;
     #[doc(hidden)]
     const OTYPER: Option<u32> = None;
@@ -389,7 +379,6 @@ impl PinMode for Input {
 
 impl crate::Sealed for Analog {}
 impl PinMode for Analog {
-    const PUPDR: Option<u32> = Some(0b00);
     const MODER: u32 = 0b11;
 }
 

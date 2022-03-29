@@ -101,7 +101,6 @@ pub mod config {
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Debug, Clone, Copy, PartialEq)]
-    #[non_exhaustive]
     pub struct Config {
         pub baudrate: Bps,
         pub wordlength: WordLength,
