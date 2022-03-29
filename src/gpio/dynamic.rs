@@ -43,6 +43,9 @@ impl Dynamic {
 // For convertion simplify
 struct Unknown;
 
+impl crate::Sealed for Unknown {}
+impl PinMode for Unknown {}
+
 impl<const P: char, const N: u8> DynamicPin<P, N> {
     pub const fn new(mode: Dynamic) -> Self {
         Self { mode }

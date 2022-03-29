@@ -22,7 +22,7 @@ use panic_semihosting as _; // logs messages to the host stderr; requires a debu
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
-    gpio::{Edge, Input, PullUp, PC13},
+    gpio::{Edge, Input, PC13},
     i2c::I2c,
     interrupt, pac,
     prelude::*,
@@ -50,7 +50,7 @@ use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 static ELAPSED_MS: Mutex<Cell<u32>> = Mutex::new(Cell::new(0u32));
 static TIMER_TIM2: Mutex<RefCell<Option<CounterUs<pac::TIM2>>>> = Mutex::new(RefCell::new(None));
 static STATE: Mutex<Cell<StopwatchState>> = Mutex::new(Cell::new(StopwatchState::Ready));
-static BUTTON: Mutex<RefCell<Option<PC13<Input<PullUp>>>>> = Mutex::new(RefCell::new(None));
+static BUTTON: Mutex<RefCell<Option<PC13<Input>>>> = Mutex::new(RefCell::new(None));
 
 #[derive(Clone, Copy)]
 enum StopwatchState {

@@ -4,69 +4,24 @@ use super::*;
 struct Assert<const L: u8, const R: u8>;
 
 impl<const L: u8, const R: u8> Assert<L, R> {
-    pub const LESS: u8 = R - L - 1;
+    pub const LESS: () = assert!(L < R);
 }
 
-impl<const P: char, const N: u8, const A: u8, MODE> From<Pin<P, N, Input<MODE>>>
-    for Pin<P, N, Alternate<A, PushPull>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<MODE>>) -> Self {
-        f.into_alternate::<A>()
+impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
+    /// Turns pin alternate configuration pin into open drain
+    pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
+        self.into_mode()
     }
 }
 
-impl<const P: char, const N: u8, const A: u8, MODE> From<Pin<P, N, Output<MODE>>>
-    for Pin<P, N, Alternate<A, PushPull>>
+impl<const P: char, const N: u8, MODE: PinMode + sealed::NotAlt, const A: u8, Otype>
+    From<Pin<P, N, MODE>> for Pin<P, N, Alternate<A, Otype>>
+where
+    Alternate<A, Otype>: PinMode,
 {
     #[inline(always)]
-    fn from(f: Pin<P, N, Output<MODE>>) -> Self {
-        f.into_alternate::<A>()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Analog>>
-    for Pin<P, N, Alternate<A, PushPull>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Analog>) -> Self {
-        f.into_alternate::<A>()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8, const B: u8> From<Pin<P, N, Alternate<B, OpenDrain>>>
-    for Pin<P, N, Alternate<A, PushPull>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<B, OpenDrain>>) -> Self {
-        f.into_alternate::<A>()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8, MODE> From<Pin<P, N, Input<MODE>>>
-    for Pin<P, N, Alternate<A, OpenDrain>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<MODE>>) -> Self {
-        f.into_alternate_open_drain::<A>()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8, MODE> From<Pin<P, N, Output<MODE>>>
-    for Pin<P, N, Alternate<A, OpenDrain>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Output<MODE>>) -> Self {
-        f.into_alternate_open_drain::<A>()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Analog>>
-    for Pin<P, N, Alternate<A, OpenDrain>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Analog>) -> Self {
-        f.into_alternate_open_drain::<A>()
+    fn from(f: Pin<P, N, MODE>) -> Self {
+        f.into_mode()
     }
 }
 
@@ -75,158 +30,56 @@ impl<const P: char, const N: u8, const A: u8, const B: u8> From<Pin<P, N, Altern
 {
     #[inline(always)]
     fn from(f: Pin<P, N, Alternate<B, PushPull>>) -> Self {
-        f.into_alternate_open_drain::<A>()
+        f.into_mode()
     }
 }
 
-impl<const P: char, const N: u8> From<Pin<P, N, Input<Floating>>> for Pin<P, N, Input<PullDown>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<Floating>>) -> Self {
-        f.into_pull_down_input()
-    }
-}
-
-impl<const P: char, const N: u8> From<Pin<P, N, Input<PullUp>>> for Pin<P, N, Input<PullDown>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<PullUp>>) -> Self {
-        f.into_pull_down_input()
-    }
-}
-
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, Output<MODE>>>
-    for Pin<P, N, Input<PullDown>>
+impl<const P: char, const N: u8, Otype> From<Pin<P, N, Output<Otype>>> for Pin<P, N, Input>
+where
+    Output<Otype>: PinMode,
 {
     #[inline(always)]
-    fn from(f: Pin<P, N, Output<MODE>>) -> Self {
-        f.into_pull_down_input()
+    fn from(f: Pin<P, N, Output<Otype>>) -> Self {
+        f.into_mode()
     }
 }
 
-impl<const P: char, const N: u8> From<Pin<P, N, Analog>> for Pin<P, N, Input<PullDown>> {
+impl<const P: char, const N: u8> From<Pin<P, N, Analog>> for Pin<P, N, Input> {
     #[inline(always)]
     fn from(f: Pin<P, N, Analog>) -> Self {
-        f.into_pull_down_input()
+        f.into_mode()
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, PushPull>>>
-    for Pin<P, N, Input<PullDown>>
+impl<const P: char, const N: u8, const A: u8, Otype, MODE> From<Pin<P, N, Alternate<A, Otype>>>
+    for Pin<P, N, MODE>
+where
+    Alternate<A, Otype>: PinMode,
+    MODE: PinMode + sealed::NotAlt,
 {
     #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, PushPull>>) -> Self {
-        f.into_pull_down_input()
+    fn from(f: Pin<P, N, Alternate<A, Otype>>) -> Self {
+        f.into_mode()
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, OpenDrain>>>
-    for Pin<P, N, Input<PullDown>>
+impl<const P: char, const N: u8, Otype> From<Pin<P, N, Input>> for Pin<P, N, Output<Otype>>
+where
+    Output<Otype>: PinMode,
 {
     #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, OpenDrain>>) -> Self {
-        f.into_pull_down_input()
+    fn from(f: Pin<P, N, Input>) -> Self {
+        f.into_mode()
     }
 }
 
-impl<const P: char, const N: u8> From<Pin<P, N, Input<Floating>>> for Pin<P, N, Input<PullUp>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<Floating>>) -> Self {
-        f.into_pull_up_input()
-    }
-}
-
-impl<const P: char, const N: u8> From<Pin<P, N, Input<PullDown>>> for Pin<P, N, Input<PullUp>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<PullDown>>) -> Self {
-        f.into_pull_up_input()
-    }
-}
-
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, Output<MODE>>> for Pin<P, N, Input<PullUp>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Output<MODE>>) -> Self {
-        f.into_pull_up_input()
-    }
-}
-
-impl<const P: char, const N: u8> From<Pin<P, N, Analog>> for Pin<P, N, Input<PullUp>> {
+impl<const P: char, const N: u8, Otype> From<Pin<P, N, Analog>> for Pin<P, N, Output<Otype>>
+where
+    Output<Otype>: PinMode,
+{
     #[inline(always)]
     fn from(f: Pin<P, N, Analog>) -> Self {
-        f.into_pull_up_input()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, PushPull>>>
-    for Pin<P, N, Input<PullUp>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, PushPull>>) -> Self {
-        f.into_pull_up_input()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, OpenDrain>>>
-    for Pin<P, N, Input<PullUp>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, OpenDrain>>) -> Self {
-        f.into_pull_up_input()
-    }
-}
-
-impl<const P: char, const N: u8> From<Pin<P, N, Input<PullDown>>> for Pin<P, N, Input<Floating>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<PullDown>>) -> Self {
-        f.into_floating_input()
-    }
-}
-
-impl<const P: char, const N: u8> From<Pin<P, N, Input<PullUp>>> for Pin<P, N, Input<Floating>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<PullUp>>) -> Self {
-        f.into_floating_input()
-    }
-}
-
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, Output<MODE>>>
-    for Pin<P, N, Input<Floating>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Output<MODE>>) -> Self {
-        f.into_floating_input()
-    }
-}
-
-impl<const P: char, const N: u8> From<Pin<P, N, Analog>> for Pin<P, N, Input<Floating>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Analog>) -> Self {
-        f.into_floating_input()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, PushPull>>>
-    for Pin<P, N, Input<Floating>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, PushPull>>) -> Self {
-        f.into_floating_input()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, OpenDrain>>>
-    for Pin<P, N, Input<Floating>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, OpenDrain>>) -> Self {
-        f.into_floating_input()
-    }
-}
-
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, Input<MODE>>>
-    for Pin<P, N, Output<OpenDrain>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<MODE>>) -> Self {
-        f.into_open_drain_output()
+        f.into_mode()
     }
 }
 
@@ -235,41 +88,7 @@ impl<const P: char, const N: u8> From<Pin<P, N, Output<PushPull>>>
 {
     #[inline(always)]
     fn from(f: Pin<P, N, Output<PushPull>>) -> Self {
-        f.into_open_drain_output()
-    }
-}
-
-impl<const P: char, const N: u8> From<Pin<P, N, Analog>> for Pin<P, N, Output<OpenDrain>> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Analog>) -> Self {
-        f.into_open_drain_output()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, PushPull>>>
-    for Pin<P, N, Output<OpenDrain>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, PushPull>>) -> Self {
-        f.into_open_drain_output()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, OpenDrain>>>
-    for Pin<P, N, Output<OpenDrain>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, OpenDrain>>) -> Self {
-        f.into_open_drain_output()
-    }
-}
-
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, Input<MODE>>>
-    for Pin<P, N, Output<PushPull>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<MODE>>) -> Self {
-        f.into_push_pull_output()
+        f.into_mode()
     }
 }
 
@@ -278,126 +97,71 @@ impl<const P: char, const N: u8> From<Pin<P, N, Output<OpenDrain>>>
 {
     #[inline(always)]
     fn from(f: Pin<P, N, Output<OpenDrain>>) -> Self {
-        f.into_push_pull_output()
+        f.into_mode()
     }
 }
 
-impl<const P: char, const N: u8> From<Pin<P, N, Analog>> for Pin<P, N, Output<PushPull>> {
+impl<const P: char, const N: u8> From<Pin<P, N, Input>> for Pin<P, N, Analog> {
     #[inline(always)]
-    fn from(f: Pin<P, N, Analog>) -> Self {
-        f.into_push_pull_output()
+    fn from(f: Pin<P, N, Input>) -> Self {
+        f.into_mode()
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, PushPull>>>
-    for Pin<P, N, Output<PushPull>>
+impl<const P: char, const N: u8, Otype> From<Pin<P, N, Output<Otype>>> for Pin<P, N, Analog>
+where
+    Output<Otype>: PinMode,
 {
     #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, PushPull>>) -> Self {
-        f.into_push_pull_output()
+    fn from(f: Pin<P, N, Output<Otype>>) -> Self {
+        f.into_mode()
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, OpenDrain>>>
-    for Pin<P, N, Output<PushPull>>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, OpenDrain>>) -> Self {
-        f.into_push_pull_output()
-    }
-}
-
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, Input<MODE>>> for Pin<P, N, Analog> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Input<MODE>>) -> Self {
-        f.into_analog()
-    }
-}
-
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, Output<MODE>>> for Pin<P, N, Analog> {
-    #[inline(always)]
-    fn from(f: Pin<P, N, Output<MODE>>) -> Self {
-        f.into_analog()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, PushPull>>>
-    for Pin<P, N, Analog>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, PushPull>>) -> Self {
-        f.into_analog()
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> From<Pin<P, N, Alternate<A, OpenDrain>>>
-    for Pin<P, N, Analog>
-{
-    #[inline(always)]
-    fn from(f: Pin<P, N, Alternate<A, OpenDrain>>) -> Self {
-        f.into_analog()
-    }
-}
-
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
-    pub(super) fn set_alternate<const A: u8>(&mut self) {
+impl<const P: char, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
+    /// Configures the pin to operate alternate mode
+    pub fn into_alternate<const A: u8>(self) -> Pin<P, N, Alternate<A, PushPull>> {
         #[allow(path_statements, clippy::no_effect)]
         {
             Assert::<A, 16>::LESS;
         }
-        let offset = 2 * { N };
-        unsafe {
-            if N < 8 {
-                let offset2 = 4 * { N };
-                (*Gpio::<P>::ptr()).afrl.modify(|r, w| {
-                    w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2))
-                });
-            } else {
-                let offset2 = 4 * { N - 8 };
-                (*Gpio::<P>::ptr()).afrh.modify(|r, w| {
-                    w.bits((r.bits() & !(0b1111 << offset2)) | ((A as u32) << offset2))
-                });
-            }
-            (*Gpio::<P>::ptr())
-                .moder
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)));
-        }
-    }
-    /// Configures the pin to operate alternate mode
-    pub fn into_alternate<const A: u8>(mut self) -> Pin<P, N, Alternate<A, PushPull>> {
-        self.set_alternate::<A>();
-        Pin::new()
+        self.into_mode()
     }
 
     /// Configures the pin to operate in alternate open drain mode
     #[allow(path_statements)]
     pub fn into_alternate_open_drain<const A: u8>(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
-        self.into_alternate::<A>().set_open_drain()
+        #[allow(path_statements, clippy::no_effect)]
+        {
+            Assert::<A, 16>::LESS;
+        }
+        self.into_mode()
+    }
+
+    /// Configures the pin to operate as a input pin
+    pub fn into_input(self) -> Pin<P, N, Input> {
+        self.into_mode()
     }
 
     /// Configures the pin to operate as a floating input pin
-    pub fn into_floating_input(mut self) -> Pin<P, N, Input<Floating>> {
-        self.mode::<Input<Floating>>();
-        Pin::new()
+    pub fn into_floating_input(self) -> Pin<P, N, Input> {
+        self.into_mode()._internal_resistor(Pull::None)
     }
 
     /// Configures the pin to operate as a pulled down input pin
-    pub fn into_pull_down_input(mut self) -> Pin<P, N, Input<PullDown>> {
-        self.mode::<Input<PullDown>>();
-        Pin::new()
+    pub fn into_pull_down_input(self) -> Pin<P, N, Input> {
+        self.into_mode()._internal_resistor(Pull::Down)
     }
 
     /// Configures the pin to operate as a pulled up input pin
-    pub fn into_pull_up_input(mut self) -> Pin<P, N, Input<PullUp>> {
-        self.mode::<Input<PullUp>>();
-        Pin::new()
+    pub fn into_pull_up_input(self) -> Pin<P, N, Input> {
+        self.into_mode()._internal_resistor(Pull::Up)
     }
 
     /// Configures the pin to operate as an open drain output pin
     /// Initial state will be low.
-    pub fn into_open_drain_output(mut self) -> Pin<P, N, Output<OpenDrain>> {
-        self.mode::<Output<OpenDrain>>();
-        Pin::new()
+    pub fn into_open_drain_output(self) -> Pin<P, N, Output<OpenDrain>> {
+        self.into_mode()
     }
 
     /// Configures the pin to operate as an open-drain output pin.
@@ -407,16 +171,14 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
         initial_state: PinState,
     ) -> Pin<P, N, Output<OpenDrain>> {
         self._set_state(initial_state);
-        self.mode::<Output<OpenDrain>>();
-        Pin::new()
+        self.into_mode()
     }
 
     /// Configures the pin to operate as an push pull output pin
     /// Initial state will be low.
     pub fn into_push_pull_output(mut self) -> Pin<P, N, Output<PushPull>> {
         self._set_low();
-        self.mode::<Output<PushPull>>();
-        Pin::new()
+        self.into_mode()
     }
 
     /// Configures the pin to operate as an push-pull output pin.
@@ -426,14 +188,12 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
         initial_state: PinState,
     ) -> Pin<P, N, Output<PushPull>> {
         self._set_state(initial_state);
-        self.mode::<Output<PushPull>>();
-        Pin::new()
+        self.into_mode()
     }
 
     /// Configures the pin to operate as an analog input pin
-    pub fn into_analog(mut self) -> Pin<P, N, Analog> {
-        self.mode::<Analog>();
-        Pin::new()
+    pub fn into_analog(self) -> Pin<P, N, Analog> {
+        self.into_mode()
     }
 
     /// Configures the pin as a pin that can change between input
@@ -452,20 +212,43 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     pub(super) fn mode<M: PinMode>(&mut self) {
         let offset = 2 * N;
         unsafe {
-            (*Gpio::<P>::ptr())
-                .pupdr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::PUPDR << offset)));
-
-            if let Some(otyper) = M::OTYPER {
-                (*Gpio::<P>::ptr())
-                    .otyper
-                    .modify(|r, w| w.bits(r.bits() & !(0b1 << N) | (otyper << N)));
+            if MODE::OTYPER != M::OTYPER {
+                if let Some(otyper) = M::OTYPER {
+                    (*Gpio::<P>::ptr())
+                        .otyper
+                        .modify(|r, w| w.bits(r.bits() & !(0b1 << N) | (otyper << N)));
+                }
             }
 
-            (*Gpio::<P>::ptr())
-                .moder
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::MODER << offset)));
+            if MODE::AFR != M::AFR {
+                if let Some(afr) = M::AFR {
+                    if N < 8 {
+                        let offset2 = 4 * { N };
+                        (*Gpio::<P>::ptr()).afrl.modify(|r, w| {
+                            w.bits((r.bits() & !(0b1111 << offset2)) | (afr << offset2))
+                        });
+                    } else {
+                        let offset2 = 4 * { N - 8 };
+                        (*Gpio::<P>::ptr()).afrh.modify(|r, w| {
+                            w.bits((r.bits() & !(0b1111 << offset2)) | (afr << offset2))
+                        });
+                    }
+                }
+            }
+
+            if MODE::MODER != M::MODER {
+                (*Gpio::<P>::ptr())
+                    .moder
+                    .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::MODER << offset)));
+            }
         }
+    }
+
+    #[inline(always)]
+    /// Converts pin into specified mode
+    pub fn into_mode<M: PinMode>(mut self) -> Pin<P, N, M> {
+        self.mode::<M>();
+        Pin::new()
     }
 }
 
@@ -489,36 +272,11 @@ where
         f(&mut witness)
     }
 
-    /// Temporarily configures this pin as a floating input.
+    /// Temporarily configures this pin as a input.
     ///
     /// The closure `f` is called with the reconfigured pin. After it returns,
     /// the pin will be configured back.
-    pub fn with_floating_input<R>(
-        &mut self,
-        f: impl FnOnce(&mut Pin<P, N, Input<Floating>>) -> R,
-    ) -> R {
-        self.with_mode(f)
-    }
-
-    /// Temporarily configures this pin as a pulled-down input.
-    ///
-    /// The closure `f` is called with the reconfigured pin. After it returns,
-    /// the pin will be configured back.
-    pub fn with_pull_down_input<R>(
-        &mut self,
-        f: impl FnOnce(&mut Pin<P, N, Input<PullDown>>) -> R,
-    ) -> R {
-        self.with_mode(f)
-    }
-
-    /// Temporarily configures this pin as a pulled-up input.
-    ///
-    /// The closure `f` is called with the reconfigured pin. After it returns,
-    /// the pin will be configured back.
-    pub fn with_pull_up_input<R>(
-        &mut self,
-        f: impl FnOnce(&mut Pin<P, N, Input<PullUp>>) -> R,
-    ) -> R {
+    pub fn with_input<R>(&mut self, f: impl FnOnce(&mut Pin<P, N, Input>) -> R) -> R {
         self.with_mode(f)
     }
 
@@ -607,47 +365,43 @@ pub trait PinMode: crate::Sealed {
     // They are not part of public API.
 
     #[doc(hidden)]
-    const PUPDR: u32;
-    #[doc(hidden)]
-    const MODER: u32;
+    const MODER: u32 = u32::MAX;
     #[doc(hidden)]
     const OTYPER: Option<u32> = None;
+    #[doc(hidden)]
+    const AFR: Option<u32> = None;
 }
 
-impl crate::Sealed for Input<Floating> {}
-impl PinMode for Input<Floating> {
-    const PUPDR: u32 = 0b00;
-    const MODER: u32 = 0b00;
-}
-
-impl crate::Sealed for Input<PullDown> {}
-impl PinMode for Input<PullDown> {
-    const PUPDR: u32 = 0b10;
-    const MODER: u32 = 0b00;
-}
-
-impl crate::Sealed for Input<PullUp> {}
-impl PinMode for Input<PullUp> {
-    const PUPDR: u32 = 0b01;
+impl crate::Sealed for Input {}
+impl PinMode for Input {
     const MODER: u32 = 0b00;
 }
 
 impl crate::Sealed for Analog {}
 impl PinMode for Analog {
-    const PUPDR: u32 = 0b00;
     const MODER: u32 = 0b11;
 }
 
-impl crate::Sealed for Output<OpenDrain> {}
+impl<Otype> crate::Sealed for Output<Otype> {}
 impl PinMode for Output<OpenDrain> {
-    const PUPDR: u32 = 0b00;
     const MODER: u32 = 0b01;
     const OTYPER: Option<u32> = Some(0b1);
 }
 
-impl crate::Sealed for Output<PushPull> {}
 impl PinMode for Output<PushPull> {
-    const PUPDR: u32 = 0b00;
     const MODER: u32 = 0b01;
     const OTYPER: Option<u32> = Some(0b0);
+}
+
+impl<const A: u8, Otype> crate::Sealed for Alternate<A, Otype> {}
+impl<const A: u8> PinMode for Alternate<A, OpenDrain> {
+    const MODER: u32 = 0b10;
+    const OTYPER: Option<u32> = Some(0b1);
+    const AFR: Option<u32> = Some(A as _);
+}
+
+impl<const A: u8> PinMode for Alternate<A, PushPull> {
+    const MODER: u32 = 0b10;
+    const OTYPER: Option<u32> = Some(0b0);
+    const AFR: Option<u32> = Some(A as _);
 }
