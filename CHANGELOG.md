@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - CI updates + cache
-- Remove pull resistor from `Input` mode, use `Pull` enum instead
+- Remove pull resistor from `Input` mode, use `Pull` enum instead, add universal `into_mode` pin converter
 - Move pin mode at the end of generics, add defaults for modes,
   bump MSRV to 1.59 [#418]
 - Move hd44780-driver to dev-dependencies

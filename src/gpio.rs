@@ -135,6 +135,9 @@ pub type Debugger = Alternate<0, PushPull>;
 impl sealed::Active for Input {}
 impl<Otype> sealed::Active for Output<Otype> {}
 impl<const A: u8, Otype> sealed::Active for Alternate<A, Otype> {}
+impl sealed::NotAlt for Input {}
+impl<Otype> sealed::NotAlt for Output<Otype> {}
+impl sealed::NotAlt for Analog {}
 
 /// GPIO Pin speed selection
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -159,6 +162,7 @@ mod sealed {
     pub trait Interruptable {}
     /// Marker trait for active pin modes
     pub trait Active {}
+    pub trait NotAlt {}
 }
 
 use sealed::Interruptable;
