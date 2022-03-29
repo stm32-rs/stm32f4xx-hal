@@ -132,7 +132,20 @@ pub struct Analog;
 
 pub type Debugger = Alternate<0, PushPull>;
 
+mod sealed {
+    /// Marker trait that show if `ExtiPin` can be implemented
+    pub trait Interruptable {}
+    /// Marker trait for slew rate configurable pin modes
+    pub trait OutputSpeed {}
+    /// Marker trait for active pin modes
+    pub trait Active {}
+    /// Marker trait for all pin modes except alternate
+    pub trait NotAlt {}
+}
+
 impl sealed::Active for Input {}
+impl<Otype> sealed::OutputSpeed for Output<Otype> {}
+impl<const A: u8, Otype> sealed::OutputSpeed for Alternate<A, Otype> {}
 impl<Otype> sealed::Active for Output<Otype> {}
 impl<const A: u8, Otype> sealed::Active for Alternate<A, Otype> {}
 impl sealed::NotAlt for Input {}
@@ -155,14 +168,6 @@ pub enum Edge {
     Rising,
     Falling,
     RisingFalling,
-}
-
-mod sealed {
-    /// Marker trait that show if `ExtiPin` can be implemented
-    pub trait Interruptable {}
-    /// Marker trait for active pin modes
-    pub trait Active {}
-    pub trait NotAlt {}
 }
 
 use sealed::Interruptable;
@@ -313,22 +318,10 @@ impl<const P: char, const N: u8, MODE> PinExt for Pin<P, N, MODE> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
-    /// Set pin speed
-    pub fn set_speed(self, speed: Speed) -> Self {
-        let offset = 2 * { N };
-
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .ospeedr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
-        };
-
-        self
-    }
-}
-
-impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
+impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
+where
+    MODE: sealed::OutputSpeed,
+{
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 2 * { N };
