@@ -140,31 +140,36 @@ impl Instance for pac::I2C3 {}
 pub type I2c3<PINS> = I2c<pac::I2C3, PINS>;
 
 pub trait I2cExt: Sized + Instance {
-    fn i2c<PINS: Pins<Self>>(
+    fn i2c<SCL, SDA>(
         self,
-        pins: PINS,
+        pins: (SCL, SDA),
         mode: impl Into<Mode>,
         clocks: &Clocks,
-    ) -> I2c<Self, PINS>;
+    ) -> I2c<Self, (SCL, SDA)>
+    where
+        (SCL, SDA): Pins<Self>;
 }
 
 impl<I2C: Instance> I2cExt for I2C {
-    fn i2c<PINS: Pins<Self>>(
+    fn i2c<SCL, SDA>(
         self,
-        pins: PINS,
+        pins: (SCL, SDA),
         mode: impl Into<Mode>,
         clocks: &Clocks,
-    ) -> I2c<Self, PINS> {
+    ) -> I2c<Self, (SCL, SDA)>
+    where
+        (SCL, SDA): Pins<Self>,
+    {
         I2c::new(self, pins, mode, clocks)
     }
 }
 
-impl<I2C, PINS> I2c<I2C, PINS>
+impl<I2C, SCL, SDA> I2c<I2C, (SCL, SDA)>
 where
     I2C: Instance,
-    PINS: Pins<I2C>,
+    (SCL, SDA): Pins<I2C>,
 {
-    pub fn new(i2c: I2C, mut pins: PINS, mode: impl Into<Mode>, clocks: &Clocks) -> Self {
+    pub fn new(i2c: I2C, mut pins: (SCL, SDA), mode: impl Into<Mode>, clocks: &Clocks) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -181,10 +186,10 @@ where
         i2c
     }
 
-    pub fn release(mut self) -> (I2C, PINS) {
+    pub fn release(mut self) -> (I2C, (SCL, SDA)) {
         self.pins.restore_mode();
 
-        (self.i2c, self.pins)
+        (self.i2c, (self.pins.0, self.pins.1))
     }
 }
 

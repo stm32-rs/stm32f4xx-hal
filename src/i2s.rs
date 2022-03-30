@@ -103,32 +103,45 @@ macro_rules! i2s {
 }
 
 pub trait I2sExt: Sized + Instance {
-    fn i2s<PINS: Pins<Self>>(self, pins: PINS, clocks: &Clocks) -> I2s<Self, PINS>;
+    fn i2s<WS, CK, MCLK, SD>(
+        self,
+        pins: (WS, CK, MCLK, SD),
+        clocks: &Clocks,
+    ) -> I2s<Self, (WS, CK, MCLK, SD)>
+    where
+        (WS, CK, MCLK, SD): Pins<Self>;
 }
 
 impl<SPI: Instance> I2sExt for SPI {
-    fn i2s<PINS: Pins<Self>>(self, pins: PINS, clocks: &Clocks) -> I2s<Self, PINS> {
+    fn i2s<WS, CK, MCLK, SD>(
+        self,
+        pins: (WS, CK, MCLK, SD),
+        clocks: &Clocks,
+    ) -> I2s<Self, (WS, CK, MCLK, SD)>
+    where
+        (WS, CK, MCLK, SD): Pins<Self>,
+    {
         I2s::new(self, pins, clocks)
     }
 }
 
-impl<SPI, PINS> I2s<SPI, PINS>
+impl<SPI, WS, CK, MCLK, SD> I2s<SPI, (WS, CK, MCLK, SD)>
 where
     SPI: Instance,
-    PINS: Pins<SPI>,
+    (WS, CK, MCLK, SD): Pins<SPI>,
 {
     /// Creates an I2s object around an SPI peripheral and pins
     ///
     /// This function enables and resets the SPI peripheral, but does not configure it.
     ///
-    /// The returned I2s object implements [stm32_i2s_v12x::Instance], so it can be used
+    /// The returned I2s object implements `stm32_i2s_v12x::Instance`, so it can be used
     /// to configure the peripheral and communicate.
     ///
     /// # Panics
     ///
     /// This function panics if the I2S clock input (from the I2S PLL or similar)
     /// is not configured.
-    pub fn new(spi: SPI, mut pins: PINS, clocks: &Clocks) -> Self {
+    pub fn new(spi: SPI, mut pins: (WS, CK, MCLK, SD), clocks: &Clocks) -> Self {
         let input_clock = SPI::i2s_freq(clocks);
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
@@ -147,10 +160,13 @@ where
         }
     }
 
-    pub fn release(mut self) -> (SPI, PINS) {
+    pub fn release(mut self) -> (SPI, (WS, CK, MCLK, SD)) {
         self.pins.restore_mode();
 
-        (self.spi, self.pins)
+        (
+            self.spi,
+            (self.pins.0, self.pins.1, self.pins.2, self.pins.3),
+        )
     }
 }
 

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Explicit order for PINS, more smart aliases for peripherals
 - Add `AFn` type aliases for `Alternate<n>`
 - CI updates + cache
 - Add missing `embedded-hal 1.0` for `DynamicPin`
