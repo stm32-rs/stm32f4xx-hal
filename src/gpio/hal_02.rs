@@ -49,21 +49,10 @@ impl<const P: char, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<
     }
 }
 
-impl<const P: char, const N: u8> InputPin for Pin<P, N, Output<OpenDrain>> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl<const P: char, const N: u8> InputPin for Pin<P, N, Input> {
+impl<const P: char, const N: u8, MODE> InputPin for Pin<P, N, MODE>
+where
+    MODE: super::sealed::Readable,
+{
     type Error = Infallible;
 
     #[inline(always)]
@@ -156,21 +145,10 @@ impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl InputPin for ErasedPin<Output<OpenDrain>> {
-    type Error = core::convert::Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl InputPin for ErasedPin<Input> {
+impl<MODE> InputPin for ErasedPin<MODE>
+where
+    MODE: super::sealed::Readable,
+{
     type Error = core::convert::Infallible;
 
     #[inline(always)]
@@ -224,21 +202,10 @@ impl<const P: char, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<M
     }
 }
 
-impl<const P: char> InputPin for PartiallyErasedPin<P, Output<OpenDrain>> {
-    type Error = Infallible;
-
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl<const P: char> InputPin for PartiallyErasedPin<P, Input> {
+impl<const P: char, MODE> InputPin for PartiallyErasedPin<P, MODE>
+where
+    MODE: super::sealed::Readable,
+{
     type Error = Infallible;
 
     #[inline(always)]

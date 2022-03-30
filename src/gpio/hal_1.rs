@@ -1,6 +1,9 @@
 use core::convert::Infallible;
 
-use super::{ErasedPin, Input, OpenDrain, Output, PartiallyErasedPin, Pin, PinMode};
+use super::{
+    dynamic::PinModeError, DynamicPin, ErasedPin, Input, OpenDrain, Output, PartiallyErasedPin,
+    Pin, PinMode,
+};
 
 pub use embedded_hal_one::digital::PinState;
 use embedded_hal_one::digital::{
@@ -54,19 +57,10 @@ impl<const P: char, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<
     }
 }
 
-impl<const P: char, const N: u8> InputPin for Pin<P, N, Output<OpenDrain>> {
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl<const P: char, const N: u8> InputPin for Pin<P, N, Input> {
+impl<const P: char, const N: u8, MODE> InputPin for Pin<P, N, MODE>
+where
+    MODE: super::sealed::Readable,
+{
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_high())
@@ -156,19 +150,10 @@ impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl InputPin for ErasedPin<Output<OpenDrain>> {
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl InputPin for ErasedPin<Input> {
+impl<MODE> InputPin for ErasedPin<MODE>
+where
+    MODE: super::sealed::Readable,
+{
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_high())
@@ -219,7 +204,10 @@ impl<const P: char, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<M
     }
 }
 
-impl<const P: char> InputPin for PartiallyErasedPin<P, Output<OpenDrain>> {
+impl<const P: char, MODE> InputPin for PartiallyErasedPin<P, MODE>
+where
+    MODE: super::sealed::Readable,
+{
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_high())
@@ -231,14 +219,25 @@ impl<const P: char> InputPin for PartiallyErasedPin<P, Output<OpenDrain>> {
     }
 }
 
-impl<const P: char> InputPin for PartiallyErasedPin<P, Input> {
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
+// Implementations for `DynamicPin
+impl<const P: char, const N: u8> ErrorType for DynamicPin<P, N> {
+    type Error = PinModeError;
+}
 
-    #[inline(always)]
+impl<const P: char, const N: u8> OutputPin for DynamicPin<P, N> {
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        self.set_high()
+    }
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        self.set_low()
+    }
+}
+
+impl<const P: char, const N: u8> InputPin for DynamicPin<P, N> {
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_high()
+    }
     fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
+        self.is_low()
     }
 }
