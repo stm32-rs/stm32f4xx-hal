@@ -4,16 +4,17 @@ use crate::{pac::RCC, rcc, timer::General};
 pub trait Pins<TIM> {}
 use crate::timer::CPin;
 
-pub trait QeiExt<PINS>: Sized {
-    fn qei(self, pins: PINS) -> Qei<Self, PINS>;
+pub trait QeiExt: Sized {
+    fn qei<PC1, PC2>(self, pins: (PC1, PC2)) -> Qei<Self, (PC1, PC2)>
+    where
+        (PC1, PC2): Pins<Self>;
 }
 
-impl<TIM, PINS> QeiExt<PINS> for TIM
-where
-    TIM: Instance,
-    PINS: Pins<TIM>,
-{
-    fn qei(self, pins: PINS) -> Qei<Self, PINS> {
+impl<TIM: Instance> QeiExt for TIM {
+    fn qei<PC1, PC2>(self, pins: (PC1, PC2)) -> Qei<Self, (PC1, PC2)>
+    where
+        (PC1, PC2): Pins<Self>,
+    {
         Qei::new(self, pins)
     }
 }
@@ -31,12 +32,12 @@ pub struct Qei<TIM, PINS> {
     pins: PINS,
 }
 
-impl<TIM: Instance, PINS> Qei<TIM, PINS>
+impl<TIM: Instance, PC1, PC2> Qei<TIM, (PC1, PC2)>
 where
-    PINS: Pins<TIM>,
+    (PC1, PC2): Pins<TIM>,
 {
     /// Configures a TIM peripheral as a quadrature encoder interface input
-    pub fn new(mut tim: TIM, pins: PINS) -> Self {
+    pub fn new(mut tim: TIM, pins: (PC1, PC2)) -> Self {
         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
         let rcc = unsafe { &(*RCC::ptr()) };
         // Enable and reset clock.
@@ -47,12 +48,10 @@ where
 
         Qei { tim, pins }
     }
-}
 
-impl<TIM: Instance, PINS> Qei<TIM, PINS> {
     /// Releases the TIM peripheral and QEI pins
-    pub fn release(self) -> (TIM, PINS) {
-        (self.tim, self.pins)
+    pub fn release(self) -> (TIM, (PC1, PC2)) {
+        (self.tim, (self.pins.0, self.pins.1))
     }
 }
 

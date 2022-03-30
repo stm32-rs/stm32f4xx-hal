@@ -76,7 +76,7 @@ pub mod config {
 
     /// Stop Bit configuration parameter for serial.
     ///
-    /// Wrapper around [`STOP_A`]
+    /// Wrapper around `STOP_A`
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Clone, Copy, Debug, PartialEq)]
     pub enum StopBits {
@@ -144,6 +144,11 @@ pub mod config {
             self.stopbits = stopbits;
             self
         }
+
+        pub fn dma(mut self, dma: DmaConfig) -> Self {
+            self.dma = dma;
+            self
+        }
     }
 
     #[derive(Debug)]
@@ -171,6 +176,8 @@ pub mod config {
         }
     }
 }
+
+pub use config::Config;
 
 pub struct TxPin;
 impl crate::Sealed for TxPin {}
@@ -221,10 +228,7 @@ pub struct Tx<USART, WORD = u8> {
     _word: PhantomData<WORD>,
 }
 
-impl<USART, WORD> Rx<USART, WORD>
-where
-    USART: Instance,
-{
+impl<USART: Instance, WORD> Rx<USART, WORD> {
     fn new() -> Self {
         Self {
             _usart: PhantomData,
@@ -277,10 +281,7 @@ where
     }
 }
 
-impl<USART, WORD> Tx<USART, WORD>
-where
-    USART: Instance,
-{
+impl<USART: Instance, WORD> Tx<USART, WORD> {
     fn new() -> Self {
         Self {
             _usart: PhantomData,
@@ -332,12 +333,14 @@ impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
 }
 
 pub trait SerialExt: Sized + Instance {
-    fn serial<PINS: Pins<Self>, WORD>(
+    fn serial<TX, RX, WORD>(
         self,
-        pins: PINS,
+        pins: (TX, RX),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Serial<Self, PINS, WORD>, config::InvalidConfig>;
+    ) -> Result<Serial<Self, (TX, RX), WORD>, config::InvalidConfig>
+    where
+        (TX, RX): Pins<Self>;
     fn tx<TX, WORD>(
         self,
         tx_pin: TX,
@@ -357,12 +360,15 @@ pub trait SerialExt: Sized + Instance {
 }
 
 impl<USART: Instance> SerialExt for USART {
-    fn serial<PINS: Pins<Self>, WORD>(
+    fn serial<TX, RX, WORD>(
         self,
-        pins: PINS,
+        pins: (TX, RX),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Serial<Self, PINS, WORD>, config::InvalidConfig> {
+    ) -> Result<Serial<Self, (TX, RX), WORD>, config::InvalidConfig>
+    where
+        (TX, RX): Pins<Self>,
+    {
         Serial::new(self, pins, config, clocks)
     }
     fn tx<TX, WORD>(
@@ -389,9 +395,9 @@ impl<USART: Instance> SerialExt for USART {
     }
 }
 
-impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
+impl<USART, TX, RX, WORD> Serial<USART, (TX, RX), WORD>
 where
-    PINS: Pins<USART>,
+    (TX, RX): Pins<USART>,
     USART: Instance,
 {
     /*
@@ -401,7 +407,7 @@ where
     */
     pub fn new(
         usart: USART,
-        mut pins: PINS,
+        mut pins: (TX, RX),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig> {
@@ -520,10 +526,11 @@ where
         }
         .config_stop(config))
     }
-    pub fn release(mut self) -> (USART, PINS) {
+
+    pub fn release(mut self) -> (USART, (TX, RX)) {
         self.pins.restore_mode();
 
-        (self.usart, self.pins)
+        (self.usart, (self.pins.0, self.pins.1))
     }
 }
 
@@ -557,10 +564,7 @@ where
     }
 }
 
-impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
-where
-    USART: Instance,
-{
+impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
     /// Starts listening for an interrupt event
     ///
     /// Note, you will also have to enable the corresponding interrupt
@@ -610,10 +614,7 @@ where
     }
 }
 
-impl<USART, PINS> Serial<USART, PINS, u8>
-where
-    USART: Instance,
-{
+impl<USART: Instance, PINS> Serial<USART, PINS, u8> {
     /// Converts this Serial into a version that can read and write `u16` values instead of `u8`s
     ///
     /// This can be used with a word length of 9 bits.
@@ -627,10 +628,7 @@ where
     }
 }
 
-impl<USART, PINS> Serial<USART, PINS, u16>
-where
-    USART: Instance,
-{
+impl<USART: Instance, PINS> Serial<USART, PINS, u16> {
     /// Converts this Serial into a version that can read and write `u8` values instead of `u16`s
     ///
     /// This can be used with a word length of 8 bits.
@@ -644,10 +642,7 @@ where
     }
 }
 
-unsafe impl<USART> PeriAddress for Rx<USART, u8>
-where
-    USART: Instance,
-{
+unsafe impl<USART: Instance> PeriAddress for Rx<USART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
         &(unsafe { &(*USART::ptr()) }.dr) as *const _ as u32
@@ -656,10 +651,7 @@ where
     type MemSize = u8;
 }
 
-unsafe impl<USART> PeriAddress for Tx<USART, u8>
-where
-    USART: Instance,
-{
+unsafe impl<USART: Instance> PeriAddress for Tx<USART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
         &(unsafe { &(*USART::ptr()) }.dr) as *const _ as u32
@@ -668,10 +660,7 @@ where
     type MemSize = u8;
 }
 
-impl<USART, PINS, WORD> Serial<USART, PINS, WORD>
-where
-    USART: Instance,
-{
+impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
     fn config_stop(self, config: config::Config) -> Self {
         self.usart.set_stopbits(config.stopbits);
         self
@@ -718,9 +707,9 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock {
 
 macro_rules! halUsart {
     ($USART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
-        pub type $Serial<PINS> = Serial<$USART, PINS, u8>;
-        pub type $Tx = Tx<$USART, u8>;
-        pub type $Rx = Rx<$USART, u8>;
+        pub type $Serial<PINS, WORD = u8> = Serial<$USART, PINS, WORD>;
+        pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
+        pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
 
         impl Instance for $USART {
             fn ptr() -> *const uart_base::RegisterBlock {
@@ -756,9 +745,9 @@ macro_rules! halUsart {
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
     ($USART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
-        pub type $Serial<PINS> = Serial<$USART, PINS, u8>;
-        pub type $Tx = Tx<$USART, u8>;
-        pub type $Rx = Rx<$USART, u8>;
+        pub type $Serial<PINS, WORD = u8> = Serial<$USART, PINS, WORD>;
+        pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
+        pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
 
         impl Instance for $USART {
             fn ptr() -> *const uart_base::RegisterBlock {

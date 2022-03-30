@@ -58,7 +58,9 @@ mod can3 {
 }
 
 pub trait CanExt: Sized + Instance {
-    fn can<PINS: Pins<Self>>(self, pins: PINS) -> Can<Self, PINS>;
+    fn can<TX, RX>(self, pins: (TX, RX)) -> Can<Self, (TX, RX)>
+    where
+        (TX, RX): Pins<Self>;
     fn tx<TX>(self, tx_pin: TX) -> Can<Self, (TX, NoPin)>
     where
         (TX, NoPin): Pins<Self>;
@@ -68,7 +70,10 @@ pub trait CanExt: Sized + Instance {
 }
 
 impl<CAN: Instance> CanExt for CAN {
-    fn can<PINS: Pins<Self>>(self, pins: PINS) -> Can<Self, PINS> {
+    fn can<TX, RX>(self, pins: (TX, RX)) -> Can<Self, (TX, RX)>
+    where
+        (TX, RX): Pins<Self>,
+    {
         Can::new(self, pins)
     }
     fn tx<TX>(self, tx_pin: TX) -> Can<Self, (TX, NoPin)>
@@ -91,13 +96,13 @@ pub struct Can<CAN, PINS> {
     pins: PINS,
 }
 
-impl<CAN, PINS> Can<CAN, PINS>
+impl<CAN, TX, RX> Can<CAN, (TX, RX)>
 where
     CAN: Instance,
-    PINS: Pins<CAN>,
+    (TX, RX): Pins<CAN>,
 {
     /// Creates a CAN interface.
-    pub fn new(can: CAN, mut pins: PINS) -> Self {
+    pub fn new(can: CAN, mut pins: (TX, RX)) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*crate::pac::RCC::ptr());
@@ -110,10 +115,10 @@ where
         Can { can, pins }
     }
 
-    pub fn release(mut self) -> (CAN, PINS) {
+    pub fn release(mut self) -> (CAN, (TX, RX)) {
         self.pins.restore_mode();
 
-        (self.can, self.pins)
+        (self.can, (self.pins.0, self.pins.1))
     }
 }
 
