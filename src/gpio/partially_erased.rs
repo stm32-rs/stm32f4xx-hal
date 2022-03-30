@@ -112,20 +112,10 @@ impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
     }
 }
 
-impl<const P: char> PartiallyErasedPin<P, Output<OpenDrain>> {
-    #[inline(always)]
-    pub fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    #[inline(always)]
-    pub fn is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 }
-    }
-}
-
-impl<const P: char> PartiallyErasedPin<P, Input> {
+impl<const P: char, MODE> PartiallyErasedPin<P, MODE>
+where
+    MODE: super::sealed::Readable,
+{
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()

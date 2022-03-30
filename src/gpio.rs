@@ -135,6 +135,8 @@ pub type Debugger = Alternate<0, PushPull>;
 mod sealed {
     /// Marker trait that show if `ExtiPin` can be implemented
     pub trait Interruptable {}
+    /// Marker trait for readable pin modes
+    pub trait Readable {}
     /// Marker trait for slew rate configurable pin modes
     pub trait OutputSpeed {}
     /// Marker trait for active pin modes
@@ -143,6 +145,8 @@ mod sealed {
     pub trait NotAlt {}
 }
 
+impl sealed::Readable for Input {}
+impl sealed::Readable for Output<OpenDrain> {}
 impl sealed::Active for Input {}
 impl<Otype> sealed::OutputSpeed for Output<Otype> {}
 impl<const A: u8, Otype> sealed::OutputSpeed for Alternate<A, Otype> {}
@@ -479,19 +483,10 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     }
 }
 
-impl<const P: char, const N: u8> Pin<P, N, Output<OpenDrain>> {
-    #[inline(always)]
-    pub fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    #[inline(always)]
-    pub fn is_low(&self) -> bool {
-        self._is_low()
-    }
-}
-
-impl<const P: char, const N: u8> Pin<P, N, Input> {
+impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
+where
+    MODE: sealed::Readable,
+{
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()

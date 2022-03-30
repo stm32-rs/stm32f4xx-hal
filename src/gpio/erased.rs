@@ -131,19 +131,10 @@ impl<MODE> ErasedPin<Output<MODE>> {
     }
 }
 
-impl ErasedPin<Output<OpenDrain>> {
-    #[inline(always)]
-    pub fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    #[inline(always)]
-    pub fn is_low(&self) -> bool {
-        self.block().idr.read().bits() & (1 << self.pin_id()) == 0
-    }
-}
-
-impl ErasedPin<Input> {
+impl<MODE> ErasedPin<MODE>
+where
+    MODE: super::sealed::Readable,
+{
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()

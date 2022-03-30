@@ -1,6 +1,9 @@
 use core::convert::Infallible;
 
-use super::{ErasedPin, Input, OpenDrain, Output, PartiallyErasedPin, Pin, PushPull};
+use super::{
+    dynamic::PinModeError, DynamicPin, ErasedPin, Input, OpenDrain, Output, PartiallyErasedPin,
+    Pin, PinMode,
+};
 
 pub use embedded_hal_one::digital::PinState;
 use embedded_hal_one::digital::{
@@ -54,19 +57,10 @@ impl<const P: char, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<
     }
 }
 
-impl<const P: char, const N: u8> InputPin for Pin<P, N, Output<OpenDrain>> {
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl<const P: char, const N: u8> InputPin for Pin<P, N, Input> {
+impl<const P: char, const N: u8, MODE> InputPin for Pin<P, N, MODE>
+where
+    MODE: super::sealed::Readable,
+{
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_high())
@@ -89,7 +83,10 @@ impl<const P: char, const N: u8> IoPin<Self, Self> for Pin<P, N, Output<OpenDrai
     }
 }
 
-impl<const P: char, const N: u8> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Output<OpenDrain>> {
+impl<const P: char, const N: u8, Otype> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Output<Otype>>
+where
+    Output<Otype>: PinMode,
+{
     type Error = Infallible;
     fn into_input_pin(self) -> Result<Pin<P, N, Input>, Self::Error> {
         Ok(self.into_input())
@@ -100,34 +97,17 @@ impl<const P: char, const N: u8> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Out
     }
 }
 
-impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<OpenDrain>>> for Pin<P, N, Input> {
+impl<const P: char, const N: u8, Otype> IoPin<Self, Pin<P, N, Output<Otype>>> for Pin<P, N, Input>
+where
+    Output<Otype>: PinMode,
+{
     type Error = Infallible;
     fn into_input_pin(self) -> Result<Self, Self::Error> {
         Ok(self)
     }
-    fn into_output_pin(self, state: PinState) -> Result<Pin<P, N, Output<OpenDrain>>, Self::Error> {
-        Ok(self.into_open_drain_output_in_state(into_state(state)))
-    }
-}
-
-impl<const P: char, const N: u8> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Output<PushPull>> {
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Pin<P, N, Input>, Self::Error> {
-        Ok(self.into_input())
-    }
-    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
-        self.set_state(into_state(state));
-        Ok(self)
-    }
-}
-
-impl<const P: char, const N: u8> IoPin<Self, Pin<P, N, Output<PushPull>>> for Pin<P, N, Input> {
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Self, Self::Error> {
-        Ok(self)
-    }
-    fn into_output_pin(self, state: PinState) -> Result<Pin<P, N, Output<PushPull>>, Self::Error> {
-        Ok(self.into_push_pull_output_in_state(into_state(state)))
+    fn into_output_pin(mut self, state: PinState) -> Result<Pin<P, N, Output<Otype>>, Self::Error> {
+        self._set_state(into_state(state));
+        Ok(self.into_mode())
     }
 }
 
@@ -170,19 +150,10 @@ impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl InputPin for ErasedPin<Output<OpenDrain>> {
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
-
-    #[inline(always)]
-    fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
-    }
-}
-
-impl InputPin for ErasedPin<Input> {
+impl<MODE> InputPin for ErasedPin<MODE>
+where
+    MODE: super::sealed::Readable,
+{
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_high())
@@ -233,7 +204,10 @@ impl<const P: char, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<M
     }
 }
 
-impl<const P: char> InputPin for PartiallyErasedPin<P, Output<OpenDrain>> {
+impl<const P: char, MODE> InputPin for PartiallyErasedPin<P, MODE>
+where
+    MODE: super::sealed::Readable,
+{
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_high())
@@ -245,14 +219,25 @@ impl<const P: char> InputPin for PartiallyErasedPin<P, Output<OpenDrain>> {
     }
 }
 
-impl<const P: char> InputPin for PartiallyErasedPin<P, Input> {
-    #[inline(always)]
-    fn is_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_high())
-    }
+// Implementations for `DynamicPin
+impl<const P: char, const N: u8> ErrorType for DynamicPin<P, N> {
+    type Error = PinModeError;
+}
 
-    #[inline(always)]
+impl<const P: char, const N: u8> OutputPin for DynamicPin<P, N> {
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        self.set_high()
+    }
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        self.set_low()
+    }
+}
+
+impl<const P: char, const N: u8> InputPin for DynamicPin<P, N> {
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_high()
+    }
     fn is_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.is_low())
+        self.is_low()
     }
 }
