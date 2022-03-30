@@ -735,10 +735,7 @@ fn main() -> ! {
         };
 
         // Setup the RESET pin
-        let rst = gpiob
-            .pb13
-            .into_push_pull_output()
-            .set_speed(Speed::VeryHigh);
+        let rst = gpiob.pb13.into_push_pull_output().speed(Speed::VeryHigh);
 
         // We're not using the "tearing" signal from the display
         let mut _te = gpiob.pb14.into_floating_input();

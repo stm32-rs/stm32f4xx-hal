@@ -1,6 +1,6 @@
 //! Sdio host
 
-use crate::gpio::{self, Alternate, PushPull};
+use crate::gpio::{self, AF12};
 use crate::pac::{self, RCC, SDIO};
 use crate::rcc::{Clocks, Enable, Reset};
 #[allow(unused_imports)]
@@ -121,44 +121,44 @@ macro_rules! pins {
     feature = "stm32f479"
 ))]
 pins! {
-    CLK: [gpio::PC12<Alternate<12, PushPull>>]
-    CMD: [gpio::PD2<Alternate<12, PushPull>>]
-    D0: [gpio::PC8<Alternate<12, PushPull>>]
-    D1: [gpio::PC9<Alternate<12, PushPull>>]
-    D2: [gpio::PC10<Alternate<12, PushPull>>]
-    D3: [gpio::PC11<Alternate<12, PushPull>>]
-    D4: [gpio::PB8<Alternate<12, PushPull>>]
-    D5: [gpio::PB9<Alternate<12, PushPull>>]
-    D6: [gpio::PC6<Alternate<12, PushPull>>]
-    D7: [gpio::PC7<Alternate<12, PushPull>>]
+    CLK: [gpio::PC12<AF12>]
+    CMD: [gpio::PD2<AF12>]
+    D0: [gpio::PC8<AF12>]
+    D1: [gpio::PC9<AF12>]
+    D2: [gpio::PC10<AF12>]
+    D3: [gpio::PC11<AF12>]
+    D4: [gpio::PB8<AF12>]
+    D5: [gpio::PB9<AF12>]
+    D6: [gpio::PC6<AF12>]
+    D7: [gpio::PC7<AF12>]
 }
 
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 pins! {
-    CLK: [gpio::PB15<Alternate<12, PushPull>>]
-    CMD: [gpio::PA6<Alternate<12, PushPull>>]
-    D0: [gpio::PB4<Alternate<12, PushPull>>, gpio::PB6<Alternate<12, PushPull>>]
-    D1: [gpio::PA8<Alternate<12, PushPull>>]
-    D2: [gpio::PA9<Alternate<12, PushPull>>]
-    D3: [gpio::PB5<Alternate<12, PushPull>>]
+    CLK: [gpio::PB15<AF12>]
+    CMD: [gpio::PA6<AF12>]
+    D0: [gpio::PB4<AF12>, gpio::PB6<AF12>]
+    D1: [gpio::PA8<AF12>]
+    D2: [gpio::PA9<AF12>]
+    D3: [gpio::PB5<AF12>]
     D4: []
     D5: []
-    D6: [gpio::PB14<Alternate<12, PushPull>>]
-    D7: [gpio::PB10<Alternate<12, PushPull>>]
+    D6: [gpio::PB14<AF12>]
+    D7: [gpio::PB10<AF12>]
 }
 
 #[cfg(feature = "stm32f411")]
 pins! {
-    CLK: [gpio::PB15<Alternate<12, PushPull>>]
-    CMD: [gpio::PA6<Alternate<12, PushPull>>]
-    D0: [gpio::PB4<Alternate<12, PushPull>>, gpio::PB7<Alternate<12, PushPull>>]
-    D1: [gpio::PA8<Alternate<12, PushPull>>]
-    D2: [gpio::PA9<Alternate<12, PushPull>>]
-    D3: [gpio::PB5<Alternate<12, PushPull>>]
+    CLK: [gpio::PB15<AF12>]
+    CMD: [gpio::PA6<AF12>]
+    D0: [gpio::PB4<AF12>, gpio::PB7<AF12>]
+    D1: [gpio::PA8<AF12>]
+    D2: [gpio::PA9<AF12>]
+    D3: [gpio::PB5<AF12>]
     D4: []
     D5: []
-    D6: [gpio::PB14<Alternate<12, PushPull>>]
-    D7: [gpio::PB10<Alternate<12, PushPull>>]
+    D6: [gpio::PB14<AF12>]
+    D7: [gpio::PB10<AF12>]
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]

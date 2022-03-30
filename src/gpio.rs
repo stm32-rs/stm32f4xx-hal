@@ -174,6 +174,34 @@ pub enum Edge {
     RisingFalling,
 }
 
+macro_rules! af {
+    ($($i:literal: $AFi:ident),+) => {
+        $(
+            #[doc = concat!("Alternate function ", $i, " (type state)" )]
+            pub type $AFi<Otype = PushPull> = Alternate<$i, Otype>;
+        )+
+    };
+}
+
+af!(
+    0: AF0,
+    1: AF1,
+    2: AF2,
+    3: AF3,
+    4: AF4,
+    5: AF5,
+    6: AF6,
+    7: AF7,
+    8: AF8,
+    9: AF9,
+    10: AF10,
+    11: AF11,
+    12: AF12,
+    13: AF13,
+    14: AF14,
+    15: AF15
+);
+
 use sealed::Interruptable;
 impl<MODE> Interruptable for Output<MODE> {}
 impl Interruptable for Input {}
@@ -327,30 +355,19 @@ where
     MODE: sealed::OutputSpeed,
 {
     /// Set pin speed
-    pub fn set_speed(self, speed: Speed) -> Self {
+    pub fn set_speed(&mut self, speed: Speed) {
         let offset = 2 * { N };
 
         unsafe {
             (*Gpio::<P>::ptr())
                 .ospeedr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
-        };
-
-        self
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)));
+        }
     }
-}
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
-    /// Set the internal pull-up and pull-down resistor
-    fn _internal_resistor(self, resistor: Pull) -> Self {
-        let offset = 2 * { N };
-        let value = resistor as u32;
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .pupdr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)))
-        };
-
+    /// Set pin speed
+    pub fn speed(mut self, speed: Speed) -> Self {
+        self.set_speed(speed);
         self
     }
 }
@@ -360,8 +377,20 @@ where
     MODE: sealed::Active,
 {
     /// Set the internal pull-up and pull-down resistor
-    pub fn internal_resistor(self, resistor: Pull) -> Self {
-        self._internal_resistor(resistor)
+    pub fn set_internal_resistor(&mut self, resistor: Pull) {
+        let offset = 2 * { N };
+        let value = resistor as u32;
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .pupdr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)));
+        }
+    }
+
+    /// Set the internal pull-up and pull-down resistor
+    pub fn internal_resistor(mut self, resistor: Pull) -> Self {
+        self.set_internal_resistor(resistor);
+        self
     }
 
     /// Enables / disables the internal pull up
