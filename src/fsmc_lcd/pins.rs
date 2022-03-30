@@ -598,161 +598,93 @@ mod common_pins {
         PinD8, PinD9, PinReadEnable, PinWriteEnable,
     };
     use crate::gpio::{
-        Alternate, PushPull, PD0, PD1, PD10, PD11, PD12, PD13, PD14, PD15, PD4, PD5, PD7, PD8, PD9,
-        PE10, PE11, PE12, PE13, PE14, PE15, PE2, PE3, PE4, PE5, PE6, PE7, PE8, PE9, PF0, PF1, PF12,
-        PF13, PF14, PF15, PF2, PF3, PF4, PF5, PG0, PG1, PG10, PG12, PG13, PG2, PG3, PG4, PG5, PG9,
+        Pin, AF12, PD0, PD1, PD10, PD11, PD12, PD13, PD14, PD15, PD4, PD5, PD7, PD8, PD9, PE10,
+        PE11, PE12, PE13, PE14, PE15, PE2, PE3, PE4, PE5, PE6, PE7, PE8, PE9, PF0, PF1, PF12, PF13,
+        PF14, PF15, PF2, PF3, PF4, PF5, PG0, PG1, PG10, PG12, PG13, PG2, PG3, PG4, PG5, PG9,
     };
 
+    impl<const P: char, const N: u8, MODE> Sealed for Pin<P, N, MODE> {}
+
     // All FSMC/FMC pins use AF12
-    type FmcAlternate = Alternate<12, PushPull>;
 
-    impl PinD2 for PD0<FmcAlternate> {}
-    impl PinD3 for PD1<FmcAlternate> {}
-    impl PinReadEnable for PD4<FmcAlternate> {}
-    impl PinWriteEnable for PD5<FmcAlternate> {}
-    impl PinChipSelect1 for PD7<FmcAlternate> {}
-    impl Sealed for PD7<FmcAlternate> {}
-    impl PinD13 for PD8<FmcAlternate> {}
-    impl PinD14 for PD9<FmcAlternate> {}
-    impl PinD15 for PD10<FmcAlternate> {}
-    impl PinAddress for PD11<FmcAlternate> {}
-    impl Sealed for PD11<FmcAlternate> {}
-    impl PinAddress for PD12<FmcAlternate> {}
-    impl Sealed for PD12<FmcAlternate> {}
-    impl PinAddress for PD13<FmcAlternate> {}
-    impl Sealed for PD13<FmcAlternate> {}
-    impl PinD0 for PD14<FmcAlternate> {}
-    impl PinD1 for PD15<FmcAlternate> {}
-    impl PinAddress for PE2<FmcAlternate> {}
-    impl Sealed for PE2<FmcAlternate> {}
-    impl PinAddress for PE3<FmcAlternate> {}
-    impl Sealed for PE3<FmcAlternate> {}
-    impl PinAddress for PE4<FmcAlternate> {}
-    impl Sealed for PE4<FmcAlternate> {}
-    impl PinAddress for PE5<FmcAlternate> {}
-    impl Sealed for PE5<FmcAlternate> {}
-    impl PinAddress for PE6<FmcAlternate> {}
-    impl Sealed for PE6<FmcAlternate> {}
-    impl PinD4 for PE7<FmcAlternate> {}
-    impl PinD5 for PE8<FmcAlternate> {}
-    impl PinD6 for PE9<FmcAlternate> {}
-    impl PinD7 for PE10<FmcAlternate> {}
-    impl PinD8 for PE11<FmcAlternate> {}
-    impl PinD9 for PE12<FmcAlternate> {}
-    impl PinD10 for PE13<FmcAlternate> {}
-    impl PinD11 for PE14<FmcAlternate> {}
-    impl PinD12 for PE15<FmcAlternate> {}
+    impl PinD2 for PD0<AF12> {}
+    impl PinD3 for PD1<AF12> {}
+    impl PinReadEnable for PD4<AF12> {}
+    impl PinWriteEnable for PD5<AF12> {}
+    impl PinChipSelect1 for PD7<AF12> {}
+    impl PinD13 for PD8<AF12> {}
+    impl PinD14 for PD9<AF12> {}
+    impl PinD15 for PD10<AF12> {}
+    impl PinAddress for PD11<AF12> {}
+    impl PinAddress for PD12<AF12> {}
+    impl PinAddress for PD13<AF12> {}
+    impl PinD0 for PD14<AF12> {}
+    impl PinD1 for PD15<AF12> {}
+    impl PinAddress for PE2<AF12> {}
+    impl PinAddress for PE3<AF12> {}
+    impl PinAddress for PE4<AF12> {}
+    impl PinAddress for PE5<AF12> {}
+    impl PinAddress for PE6<AF12> {}
+    impl PinD4 for PE7<AF12> {}
+    impl PinD5 for PE8<AF12> {}
+    impl PinD6 for PE9<AF12> {}
+    impl PinD7 for PE10<AF12> {}
+    impl PinD8 for PE11<AF12> {}
+    impl PinD9 for PE12<AF12> {}
+    impl PinD10 for PE13<AF12> {}
+    impl PinD11 for PE14<AF12> {}
+    impl PinD12 for PE15<AF12> {}
 
-    impl PinAddress for PF0<FmcAlternate> {}
-    impl Sealed for PF0<FmcAlternate> {}
-    impl PinAddress for PF1<FmcAlternate> {}
-    impl Sealed for PF1<FmcAlternate> {}
-    impl PinAddress for PF2<FmcAlternate> {}
-    impl Sealed for PF2<FmcAlternate> {}
-    impl PinAddress for PF3<FmcAlternate> {}
-    impl Sealed for PF3<FmcAlternate> {}
-    impl PinAddress for PF4<FmcAlternate> {}
-    impl Sealed for PF4<FmcAlternate> {}
-    impl PinAddress for PF5<FmcAlternate> {}
-    impl Sealed for PF5<FmcAlternate> {}
-    impl PinAddress for PF12<FmcAlternate> {}
-    impl Sealed for PF12<FmcAlternate> {}
-    impl PinAddress for PF13<FmcAlternate> {}
-    impl Sealed for PF13<FmcAlternate> {}
-    impl PinAddress for PF14<FmcAlternate> {}
-    impl Sealed for PF14<FmcAlternate> {}
-    impl PinAddress for PF15<FmcAlternate> {}
-    impl Sealed for PF15<FmcAlternate> {}
-    impl PinAddress for PG0<FmcAlternate> {}
-    impl Sealed for PG0<FmcAlternate> {}
-    impl PinAddress for PG1<FmcAlternate> {}
-    impl Sealed for PG1<FmcAlternate> {}
-    impl PinAddress for PG2<FmcAlternate> {}
-    impl Sealed for PG2<FmcAlternate> {}
-    impl PinAddress for PG3<FmcAlternate> {}
-    impl Sealed for PG3<FmcAlternate> {}
-    impl PinAddress for PG4<FmcAlternate> {}
-    impl Sealed for PG4<FmcAlternate> {}
-    impl PinAddress for PG5<FmcAlternate> {}
-    impl Sealed for PG5<FmcAlternate> {}
-    impl PinChipSelect2 for PG9<FmcAlternate> {}
-    impl Sealed for PG9<FmcAlternate> {}
-    impl PinChipSelect3 for PG10<FmcAlternate> {}
-    impl Sealed for PG10<FmcAlternate> {}
-    impl PinChipSelect4 for PG12<FmcAlternate> {}
-    impl Sealed for PG12<FmcAlternate> {}
-    impl PinAddress for PG13<FmcAlternate> {}
-    impl Sealed for PG13<FmcAlternate> {}
+    impl PinAddress for PF0<AF12> {}
+    impl PinAddress for PF1<AF12> {}
+    impl PinAddress for PF2<AF12> {}
+    impl PinAddress for PF3<AF12> {}
+    impl PinAddress for PF4<AF12> {}
+    impl PinAddress for PF5<AF12> {}
+    impl PinAddress for PF12<AF12> {}
+    impl PinAddress for PF13<AF12> {}
+    impl PinAddress for PF14<AF12> {}
+    impl PinAddress for PF15<AF12> {}
+    impl PinAddress for PG0<AF12> {}
+    impl PinAddress for PG1<AF12> {}
+    impl PinAddress for PG2<AF12> {}
+    impl PinAddress for PG3<AF12> {}
+    impl PinAddress for PG4<AF12> {}
+    impl PinAddress for PG5<AF12> {}
+    impl PinChipSelect2 for PG9<AF12> {}
+    impl PinChipSelect3 for PG10<AF12> {}
+    impl PinChipSelect4 for PG12<AF12> {}
+    impl PinAddress for PG13<AF12> {}
     // PG14<Alternate<12> can be used as address 25 (A25), but that pin is not available here.
     // Because external addresses are in units of 16 bits, external address line 25 can never
     // be high. The internal memory address would overflow into the next sub-bank.
-
-    // Sealed trait boilerplate
-    impl Sealed for PD0<FmcAlternate> {}
-    impl Sealed for PD1<FmcAlternate> {}
-    impl Sealed for PD4<FmcAlternate> {}
-    impl Sealed for PD5<FmcAlternate> {}
-    impl Sealed for PD8<FmcAlternate> {}
-    impl Sealed for PD9<FmcAlternate> {}
-    impl Sealed for PD10<FmcAlternate> {}
-    impl Sealed for PD14<FmcAlternate> {}
-    impl Sealed for PD15<FmcAlternate> {}
-
-    impl Sealed for PE7<FmcAlternate> {}
-    impl Sealed for PE8<FmcAlternate> {}
-    impl Sealed for PE9<FmcAlternate> {}
-    impl Sealed for PE10<FmcAlternate> {}
-    impl Sealed for PE11<FmcAlternate> {}
-    impl Sealed for PE12<FmcAlternate> {}
-    impl Sealed for PE13<FmcAlternate> {}
-    impl Sealed for PE14<FmcAlternate> {}
-    impl Sealed for PE15<FmcAlternate> {}
 }
 
 /// Additional pins available on some models
 #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
 mod extra_pins {
-    use super::sealed::Sealed;
     use super::{
         PinAddress, PinChipSelect4, PinD0, PinD1, PinD13, PinD2, PinD3, PinD4, PinD5, PinD6, PinD7,
         PinReadEnable, PinWriteEnable,
     };
     use crate::gpio::{
-        Alternate, PushPull, PA2, PA3, PA4, PA5, PB12, PB14, PC11, PC12, PC2, PC3, PC4, PC5, PC6,
-        PD2,
+        AF10, AF12, PA2, PA3, PA4, PA5, PB12, PB14, PC11, PC12, PC2, PC3, PC4, PC5, PC6, PD2,
     };
 
     // Most FSMC/FMC pins use AF12, but a few use AF10
-    type FmcAlternate = Alternate<12, PushPull>;
 
-    impl PinD4 for PA2<FmcAlternate> {}
-    impl PinD5 for PA3<FmcAlternate> {}
-    impl PinD6 for PA4<FmcAlternate> {}
-    impl PinD7 for PA5<FmcAlternate> {}
-    impl PinD13 for PB12<FmcAlternate> {}
-    impl PinD0 for PB14<Alternate<10, PushPull>> {}
-    impl PinWriteEnable for PC2<FmcAlternate> {}
-    impl PinAddress for PC3<FmcAlternate> {}
-    impl Sealed for PC3<FmcAlternate> {}
-    impl PinChipSelect4 for PC4<FmcAlternate> {}
-    impl Sealed for PC4<FmcAlternate> {}
-    impl PinReadEnable for PC5<FmcAlternate> {}
-    impl PinD1 for PC6<Alternate<10, PushPull>> {}
-    impl PinD2 for PC11<Alternate<10, PushPull>> {}
-    impl PinD3 for PC12<Alternate<10, PushPull>> {}
-    impl PinWriteEnable for PD2<Alternate<10, PushPull>> {}
-
-    // Sealed trait boilerplate
-    impl Sealed for PA2<FmcAlternate> {}
-    impl Sealed for PA3<FmcAlternate> {}
-    impl Sealed for PA4<FmcAlternate> {}
-    impl Sealed for PA5<FmcAlternate> {}
-    impl Sealed for PB12<FmcAlternate> {}
-    impl Sealed for PB14<Alternate<10, PushPull>> {}
-    impl Sealed for PC2<FmcAlternate> {}
-    impl Sealed for PC5<FmcAlternate> {}
-    impl Sealed for PC6<Alternate<10, PushPull>> {}
-    impl Sealed for PC11<Alternate<10, PushPull>> {}
-    impl Sealed for PC12<Alternate<10, PushPull>> {}
-    impl Sealed for PD2<Alternate<10, PushPull>> {}
+    impl PinD4 for PA2<AF12> {}
+    impl PinD5 for PA3<AF12> {}
+    impl PinD6 for PA4<AF12> {}
+    impl PinD7 for PA5<AF12> {}
+    impl PinD13 for PB12<AF12> {}
+    impl PinD0 for PB14<AF10> {}
+    impl PinWriteEnable for PC2<AF12> {}
+    impl PinAddress for PC3<AF12> {}
+    impl PinChipSelect4 for PC4<AF12> {}
+    impl PinReadEnable for PC5<AF12> {}
+    impl PinD1 for PC6<AF10> {}
+    impl PinD2 for PC11<AF10> {}
+    impl PinD3 for PC12<AF10> {}
+    impl PinWriteEnable for PD2<AF10> {}
 }

@@ -22,7 +22,9 @@ mod pins;
 pub use pins::*;
 pub mod pwm;
 pub use pwm::*;
+#[cfg(not(feature = "stm32f410"))]
 pub mod pwm_input;
+#[cfg(not(feature = "stm32f410"))]
 pub use pwm_input::PwmInput;
 #[cfg(feature = "rtic")]
 pub mod monotonic;

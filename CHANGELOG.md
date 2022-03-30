@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Add `AFn` type aliases for `Alternate<n>`
 - CI updates + cache
 - Add missing `embedded-hal 1.0` for `DynamicPin`
 - Remove pull resistor from `Input` mode, use `Pull` enum instead, add universal `into_mode` pin converter

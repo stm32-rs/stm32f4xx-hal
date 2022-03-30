@@ -145,17 +145,17 @@ impl<const P: char, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
 
     /// Configures the pin to operate as a floating input pin
     pub fn into_floating_input(self) -> Pin<P, N, Input> {
-        self.into_mode()._internal_resistor(Pull::None)
+        self.into_mode().internal_resistor(Pull::None)
     }
 
     /// Configures the pin to operate as a pulled down input pin
     pub fn into_pull_down_input(self) -> Pin<P, N, Input> {
-        self.into_mode()._internal_resistor(Pull::Down)
+        self.into_mode().internal_resistor(Pull::Down)
     }
 
     /// Configures the pin to operate as a pulled up input pin
     pub fn into_pull_up_input(self) -> Pin<P, N, Input> {
-        self.into_mode()._internal_resistor(Pull::Up)
+        self.into_mode().internal_resistor(Pull::Up)
     }
 
     /// Configures the pin to operate as an open drain output pin
