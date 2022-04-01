@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move hd44780-driver to dev-dependencies
 
 ### Fixed
+- Fixed RCC example.
 - Enable the defmt feature on fugit when the defmt feature on the
   crate is enabled
 
