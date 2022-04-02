@@ -1,12 +1,5 @@
 use super::*;
 
-/// Const assert hack
-struct Assert<const L: u8, const R: u8>;
-
-impl<const L: u8, const R: u8> Assert<L, R> {
-    pub const LESS: () = assert!(L < R);
-}
-
 impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Turns pin alternate configuration pin into open drain
     pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
@@ -14,7 +7,7 @@ impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> 
     }
 }
 
-impl<const P: char, const N: u8, MODE: PinMode + sealed::NotAlt, const A: u8, Otype>
+impl<const P: char, const N: u8, MODE: PinMode + marker::NotAlt, const A: u8, Otype>
     From<Pin<P, N, MODE>> for Pin<P, N, Alternate<A, Otype>>
 where
     Alternate<A, Otype>: PinMode,
@@ -55,7 +48,7 @@ impl<const P: char, const N: u8, const A: u8, Otype, MODE> From<Pin<P, N, Altern
     for Pin<P, N, MODE>
 where
     Alternate<A, Otype>: PinMode,
-    MODE: PinMode + sealed::NotAlt,
+    MODE: PinMode + marker::NotAlt,
 {
     #[inline(always)]
     fn from(f: Pin<P, N, Alternate<A, Otype>>) -> Self {
@@ -120,21 +113,19 @@ where
 
 impl<const P: char, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
     /// Configures the pin to operate alternate mode
-    pub fn into_alternate<const A: u8>(self) -> Pin<P, N, Alternate<A, PushPull>> {
-        #[allow(path_statements, clippy::no_effect)]
-        {
-            Assert::<A, 16>::LESS;
-        }
+    pub fn into_alternate<const A: u8>(self) -> Pin<P, N, Alternate<A, PushPull>>
+    where
+        Self: marker::IntoAf<A>,
+    {
         self.into_mode()
     }
 
     /// Configures the pin to operate in alternate open drain mode
     #[allow(path_statements)]
-    pub fn into_alternate_open_drain<const A: u8>(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
-        #[allow(path_statements, clippy::no_effect)]
-        {
-            Assert::<A, 16>::LESS;
-        }
+    pub fn into_alternate_open_drain<const A: u8>(self) -> Pin<P, N, Alternate<A, OpenDrain>>
+    where
+        Self: marker::IntoAf<A>,
+    {
         self.into_mode()
     }
 

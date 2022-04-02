@@ -1,4 +1,4 @@
-use super::{Alternate, NoPin, OpenDrain, Pin, PinMode, PushPull};
+use super::{marker, Alternate, NoPin, OpenDrain, Pin, PinMode, PushPull};
 use crate::{gpio, i2c, i2s, pac, serial, spi};
 
 pub struct Const<const A: u8>;
@@ -11,7 +11,7 @@ impl<Otype> SetAlternate<0, Otype> for NoPin {
     fn set_alt_mode(&mut self) {}
     fn restore_mode(&mut self) {}
 }
-impl<const P: char, const N: u8, MODE: PinMode + super::sealed::NotAlt, const A: u8>
+impl<const P: char, const N: u8, MODE: PinMode + marker::NotAlt, const A: u8>
     SetAlternate<A, PushPull> for Pin<P, N, MODE>
 {
     fn set_alt_mode(&mut self) {
@@ -23,7 +23,7 @@ impl<const P: char, const N: u8, MODE: PinMode + super::sealed::NotAlt, const A:
     }
 }
 
-impl<const P: char, const N: u8, MODE: PinMode + super::sealed::NotAlt, const A: u8>
+impl<const P: char, const N: u8, MODE: PinMode + marker::NotAlt, const A: u8>
     SetAlternate<A, OpenDrain> for Pin<P, N, MODE>
 {
     fn set_alt_mode(&mut self) {

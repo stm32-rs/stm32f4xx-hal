@@ -1,8 +1,8 @@
 use core::convert::Infallible;
 
 use super::{
-    dynamic::PinModeError, DynamicPin, ErasedPin, Input, OpenDrain, Output, PartiallyErasedPin,
-    Pin, PinMode,
+    dynamic::PinModeError, marker, DynamicPin, ErasedPin, Input, OpenDrain, Output,
+    PartiallyErasedPin, Pin, PinMode,
 };
 
 pub use embedded_hal_one::digital::PinState;
@@ -59,7 +59,7 @@ impl<const P: char, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<
 
 impl<const P: char, const N: u8, MODE> InputPin for Pin<P, N, MODE>
 where
-    MODE: super::sealed::Readable,
+    MODE: marker::Readable,
 {
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -152,7 +152,7 @@ impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
 
 impl<MODE> InputPin for ErasedPin<MODE>
 where
-    MODE: super::sealed::Readable,
+    MODE: marker::Readable,
 {
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -206,7 +206,7 @@ impl<const P: char, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<M
 
 impl<const P: char, MODE> InputPin for PartiallyErasedPin<P, MODE>
 where
-    MODE: super::sealed::Readable,
+    MODE: marker::Readable,
 {
     #[inline(always)]
     fn is_high(&self) -> Result<bool, Self::Error> {

@@ -1,8 +1,8 @@
 use core::convert::Infallible;
 
 use super::{
-    dynamic::PinModeError, DynamicPin, ErasedPin, Input, OpenDrain, Output, PartiallyErasedPin,
-    Pin, PinMode, PinState,
+    dynamic::PinModeError, marker, DynamicPin, ErasedPin, Input, OpenDrain, Output,
+    PartiallyErasedPin, Pin, PinMode, PinState,
 };
 
 use embedded_hal::digital::v2::{
@@ -51,7 +51,7 @@ impl<const P: char, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<
 
 impl<const P: char, const N: u8, MODE> InputPin for Pin<P, N, MODE>
 where
-    MODE: super::sealed::Readable,
+    MODE: marker::Readable,
 {
     type Error = Infallible;
 
@@ -147,7 +147,7 @@ impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
 
 impl<MODE> InputPin for ErasedPin<MODE>
 where
-    MODE: super::sealed::Readable,
+    MODE: marker::Readable,
 {
     type Error = core::convert::Infallible;
 
@@ -204,7 +204,7 @@ impl<const P: char, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<M
 
 impl<const P: char, MODE> InputPin for PartiallyErasedPin<P, MODE>
 where
-    MODE: super::sealed::Readable,
+    MODE: marker::Readable,
 {
     type Error = Infallible;
 
