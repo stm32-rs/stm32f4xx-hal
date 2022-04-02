@@ -58,12 +58,14 @@ impl<const P: char, MODE> PinExt for PartiallyErasedPin<P, MODE> {
 }
 
 impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
+    /// Drives the pin high
     #[inline(always)]
     pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
         unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << self.i)) }
     }
 
+    /// Drives the pin low
     #[inline(always)]
     pub fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
@@ -74,6 +76,7 @@ impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
         }
     }
 
+    /// Is the pin in drive high or low mode?
     #[inline(always)]
     pub fn get_state(&self) -> PinState {
         if self.is_set_low() {
@@ -83,6 +86,7 @@ impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
         }
     }
 
+    /// Drives the pin high or low depending on the provided value
     #[inline(always)]
     pub fn set_state(&mut self, state: PinState) {
         match state {
@@ -91,17 +95,20 @@ impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
         }
     }
 
+    /// Is the pin in drive high mode?
     #[inline(always)]
     pub fn is_set_high(&self) -> bool {
         !self.is_set_low()
     }
 
+    /// Is the pin in drive low mode?
     #[inline(always)]
     pub fn is_set_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
         unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << self.i) == 0 }
     }
 
+    /// Toggle pin output
     #[inline(always)]
     pub fn toggle(&mut self) {
         if self.is_set_low() {
@@ -114,13 +121,15 @@ impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
 
 impl<const P: char, MODE> PartiallyErasedPin<P, MODE>
 where
-    MODE: super::sealed::Readable,
+    MODE: marker::Readable,
 {
+    /// Is the input pin high?
     #[inline(always)]
     pub fn is_high(&self) -> bool {
         !self.is_low()
     }
 
+    /// Is the input pin low?
     #[inline(always)]
     pub fn is_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
