@@ -6,6 +6,7 @@
 //!
 //! ```
 //! let dp = pac::Peripherals::take().unwrap();
+//! let rcc = dp.RCC.constrain();
 //! let clocks = rcc
 //!     .cfgr
 //!     .use_hse(8.MHz())
