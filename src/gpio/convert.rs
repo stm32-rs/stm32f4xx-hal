@@ -11,6 +11,7 @@ impl<const P: char, const N: u8, MODE: PinMode + marker::NotAlt, const A: u8, Ot
     From<Pin<P, N, MODE>> for Pin<P, N, Alternate<A, Otype>>
 where
     Alternate<A, Otype>: PinMode,
+    Self: marker::IntoAf<A>,
 {
     #[inline(always)]
     fn from(f: Pin<P, N, MODE>) -> Self {
@@ -20,6 +21,8 @@ where
 
 impl<const P: char, const N: u8, const A: u8, const B: u8> From<Pin<P, N, Alternate<B, PushPull>>>
     for Pin<P, N, Alternate<A, OpenDrain>>
+where
+    Self: marker::IntoAf<A>,
 {
     #[inline(always)]
     fn from(f: Pin<P, N, Alternate<B, PushPull>>) -> Self {

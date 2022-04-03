@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Add `Pin::interrupt()` helper method
 - Add restriction for setting pins in alternate mode (`IntoAF`), add docs
 - Explicit order for PINS, more smart aliases for peripherals
 - Add `AFn` type aliases for `Alternate<n>`
