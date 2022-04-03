@@ -25,11 +25,22 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
 
 /// External Interrupt Pin
 pub trait ExtiPin {
+    /// Make corresponding EXTI line sensitive to this pin
     fn make_interrupt_source(&mut self, syscfg: &mut SysCfg);
+
+    /// Generate interrupt on rising edge, falling edge or both
     fn trigger_on_edge(&mut self, exti: &mut EXTI, level: Edge);
+
+    /// Enable external interrupts from this pin.
     fn enable_interrupt(&mut self, exti: &mut EXTI);
+
+    /// Disable external interrupts from this pin
     fn disable_interrupt(&mut self, exti: &mut EXTI);
+
+    /// Clear the interrupt pending bit for this pin
     fn clear_interrupt_pending_bit(&mut self);
+
+    /// Reads the interrupt pending bit for this pin
     fn check_interrupt(&self) -> bool;
 }
 
@@ -38,7 +49,6 @@ where
     PIN: PinExt,
     PIN::Mode: marker::Interruptable,
 {
-    /// Make corresponding EXTI line sensitive to this pin
     #[inline(always)]
     fn make_interrupt_source(&mut self, syscfg: &mut SysCfg) {
         let i = self.pin_id();
@@ -69,7 +79,6 @@ where
         }
     }
 
-    /// Generate interrupt on rising edge, falling edge or both
     #[inline(always)]
     fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
         let i = self.pin_id();
@@ -95,27 +104,23 @@ where
         }
     }
 
-    /// Enable external interrupts from this pin.
     #[inline(always)]
     fn enable_interrupt(&mut self, exti: &mut EXTI) {
         exti.imr
             .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.pin_id())) });
     }
 
-    /// Disable external interrupts from this pin
     #[inline(always)]
     fn disable_interrupt(&mut self, exti: &mut EXTI) {
         exti.imr
             .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.pin_id())) });
     }
 
-    /// Clear the interrupt pending bit for this pin
     #[inline(always)]
     fn clear_interrupt_pending_bit(&mut self) {
         unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << self.pin_id())) };
     }
 
-    /// Reads the interrupt pending bit for this pin
     #[inline(always)]
     fn check_interrupt(&self) -> bool {
         unsafe { ((*EXTI::ptr()).pr.read().bits() & (1 << self.pin_id())) != 0 }
