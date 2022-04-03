@@ -103,7 +103,6 @@ pub use stm32f4::stm32f469 as pac;
 pub use stm32f4::stm32f469 as pac;
 
 // Enable use of interrupt macro
-#[cfg(feature = "rt")]
 pub use crate::pac::interrupt;
 
 #[cfg(feature = "device-selected")]

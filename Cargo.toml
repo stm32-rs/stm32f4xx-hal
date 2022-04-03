@@ -23,7 +23,7 @@ repository = "https://github.com/stm32-rs/stm32f4xx-hal"
 version = "0.12.0"
 
 [package.metadata.docs.rs]
-features = ["stm32f429", "rt", "usb_fs", "can", "i2s", "fsmc_lcd"]
+features = ["stm32f429", "usb_fs", "can", "i2s", "fsmc_lcd"]
 targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]
@@ -88,7 +88,7 @@ features = ["macros"]
 
 [features]
 device-selected = []
-rt = ["stm32f4/rt"]
+rt = [] # deprecated
 # Note: stm32f4 has only one feature for some very similar device families,
 # so it's intended for e.g. stm32f405/415 to both enable stm32f4/stm32f405.
 stm32f401 = ["stm32f4/stm32f401", "device-selected", "gpio-f401",
@@ -355,7 +355,7 @@ uart8 = []
 uart9 = []
 uart10 = []
 
-rtic = ["rt", "rtic-monotonic"]
+rtic = ["rtic-monotonic"]
 
 [profile.dev]
 debug = true
@@ -368,7 +368,7 @@ opt-level = "s"
 
 [[example]]
 name = "blinky-timer-irq"
-required-features = ["rt", "tim2"] # stm32f411
+required-features = ["tim2"] # stm32f411
 
 [[example]]
 name = "usb_serial"
@@ -396,11 +396,11 @@ required-features = ["device-selected"] # stm32f411
 
 [[example]]
 name = "stopwatch-with-ssd1306-and-interrupts"
-required-features = ["rt", "tim2"] # stm32f411
+required-features = ["tim2"] # stm32f411
 
 [[example]]
 name = "analog-stopwatch-with-spi-ssd1306"
-required-features = ["rt", "spi4", "tim2", "gpioe", "gpiog"] # stm32f429
+required-features = ["spi4", "tim2", "gpioe", "gpiog"] # stm32f429
 
 [[example]]
 name = "rng-display"
@@ -420,7 +420,7 @@ required-features = ["stm32f411", "i2s"]
 
 [[example]]
 name = "i2s-audio-out-dma"
-required-features = ["stm32f411", "rt", "i2s"]
+required-features = ["stm32f411", "i2s"]
 
 [[example]]
 name = "rtic"
@@ -460,7 +460,7 @@ required-features = ["device-selected"]
 
 [[example]]
 name = "spi_dma"
-required-features = ["rt", "stm32f411"]
+required-features = ["stm32f411"]
 
 [[example]]
 name = "dynamic_gpio"

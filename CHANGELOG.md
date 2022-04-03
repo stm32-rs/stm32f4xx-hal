@@ -9,31 +9,42 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Add `Pin::interrupt()` helper method
-- Add restriction for setting pins in alternate mode (`IntoAF`), add docs
-- Explicit order for PINS, more smart aliases for peripherals
-- Add `AFn` type aliases for `Alternate<n>`
-- CI updates + cache
-- Add missing `embedded-hal 1.0` for `DynamicPin`
-- Remove pull resistor from `Input` mode, use `Pull` enum instead, add universal `into_mode` pin converter
+- Depracate "rt" feature as enabled by-default in `pac` [#476]
+- Add `Pin::interrupt()` helper method [#476]
+- Add restriction for setting pins in alternate mode (`IntoAF`), add docs [#474]
+- Explicit order for PINS, more smart aliases for peripherals [#472]
+- Add `AFn` type aliases for `Alternate<n>` [#471]
+- CI updates + cache [#468]
+- Add missing `embedded-hal 1.0` for `DynamicPin` [#470]
+- Remove pull resistor from `Input` mode, use `Pull` enum instead, add universal `into_mode` pin converter [#467]
 - Move pin mode at the end of generics, add defaults for modes,
   bump MSRV to 1.59 [#418]
-- Move hd44780-driver to dev-dependencies
+- Move hd44780-driver to dev-dependencies [#465]
 
 ### Fixed
-- Fixed RCC example.
+- Fixed RCC example [#473]
 - Enable the defmt feature on fugit when the defmt feature on the
-  crate is enabled
+  crate is enabled [#465]
 
 ### Added
 
 - Support eMMC peripherals using SDIO module [#458]
-- `defmt::Format` derive on enums behind `defmt` feature
+- `defmt::Format` derive on enums behind `defmt` feature [#460]
 - SPI transactional impl [#464]
 
 [#418]: https://github.com/stm32-rs/stm32f4xx-hal/pull/418
 [#458]: https://github.com/stm32-rs/stm32f4xx-hal/pull/458
+[#460]: https://github.com/stm32-rs/stm32f4xx-hal/pull/460
 [#464]: https://github.com/stm32-rs/stm32f4xx-hal/pull/464
+[#465]: https://github.com/stm32-rs/stm32f4xx-hal/pull/465
+[#467]: https://github.com/stm32-rs/stm32f4xx-hal/pull/467
+[#468]: https://github.com/stm32-rs/stm32f4xx-hal/pull/468
+[#470]: https://github.com/stm32-rs/stm32f4xx-hal/pull/470
+[#471]: https://github.com/stm32-rs/stm32f4xx-hal/pull/471
+[#472]: https://github.com/stm32-rs/stm32f4xx-hal/pull/472
+[#473]: https://github.com/stm32-rs/stm32f4xx-hal/pull/473
+[#474]: https://github.com/stm32-rs/stm32f4xx-hal/pull/474
+[#476]: https://github.com/stm32-rs/stm32f4xx-hal/pull/476
 
 ## [v0.12.0] - 2022-02-23
 
