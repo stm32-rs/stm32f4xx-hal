@@ -6,7 +6,7 @@
 //!
 //! Procedure: Compile this example, load it onto the microcontroller, and run it.
 //!
-//! Example run command: `cargo run --release --features stm32f412,rt,fsmc_lcd --example st7789-lcd`
+//! Example run command: `cargo run --release --features stm32f412,fsmc_lcd --example st7789-lcd`
 //!
 //! Expected behavior: The display shows a black background with four colored circles. Periodically,
 //! the color of each circle changes.

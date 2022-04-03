@@ -4,7 +4,7 @@
 //! To run this feature you can (after installing `probe-run` use:
 //!
 //! ```bash
-//! cargo run --release --example f413disco_lcd_ferris --features="stm32f413,rt,fsmc_lcd"
+//! cargo run --release --example f413disco_lcd_ferris --features="stm32f413,fsmc_lcd"
 //! ```
 
 #![no_main]

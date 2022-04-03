@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Depracate "rt" feature as enabled by-default in `pac` [#476]
 - Add `Pin::interrupt()` helper method [#476]
 - Add restriction for setting pins in alternate mode (`IntoAF`), add docs [#474]
 - Explicit order for PINS, more smart aliases for peripherals [#472]

@@ -26,4 +26,4 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --examples --features=stm32f479,rt,usb_fs,sdio-host
+          args: --examples --features=stm32f479,usb_fs,sdio-host

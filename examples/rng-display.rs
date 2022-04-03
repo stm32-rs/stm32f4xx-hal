@@ -1,10 +1,10 @@
 //! Generate random numbers using the RNG peripheral and display the values.
 //! This example is specifically tuned to run correctly on the
 //! stm32f4-discovery board (model STM32F407G-DISC1)
-//! This example requires the `rt` feature to be enabled. For example:
+//! For example:
 //!
 //! ```bash
-//! cargo run --release --features stm32f407,rt  --example rng-display
+//! cargo run --release --features stm32f407 --example rng-display
 //! ```
 //!
 //! Note that this example requires the `--release` build flag because it is too

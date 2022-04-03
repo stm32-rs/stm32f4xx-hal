@@ -53,4 +53,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --features=${{ matrix.mcu }},rt,usb_fs,sdio-host,can,i2s,fsmc_lcd --examples
+          args: --features=${{ matrix.mcu }},usb_fs,sdio-host,can,i2s,fsmc_lcd --examples

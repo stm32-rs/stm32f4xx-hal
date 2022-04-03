@@ -1,10 +1,10 @@
 //! A simple stopwatch app running on an SSD1306 display
 //!
-//! This example requires the `rt` feature to be enabled. For example, to run on an STM32F411 Nucleo
+//! For example, to run on an STM32F411 Nucleo
 //! dev board, run the following:
 //!
 //! ```bash
-//! cargo run --features stm32f411,rt --release --example stopwatch-with-ssd1306-and-interrupts
+//! cargo run --features stm32f411 --release --example stopwatch-with-ssd1306-and-interrupts
 //! ```
 //!
 //! Note that `--release` is required to fix link errors for smaller devices.

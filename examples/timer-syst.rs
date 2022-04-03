@@ -4,7 +4,7 @@
 //! stm32f4-discovery board (model STM32F407G-DISC1).
 //!
 //! ```bash
-//! cargo run --release --features stm32f407,rt  --example timer-syst
+//! cargo run --release --features stm32f407  --example timer-syst
 //! ```
 
 #![no_std]
