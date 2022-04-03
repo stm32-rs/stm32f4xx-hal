@@ -95,6 +95,8 @@ fn main() -> ! {
         timer.start(1.secs()).unwrap();
         timer.listen(Event::Update);
 
+        let btn_int_num = board_btn.interrupt(); // hal::pac::Interrupt::EXTI15_10
+
         free(|cs| {
             TIMER_TIM2.borrow(cs).replace(Some(timer));
             BUTTON.borrow(cs).replace(Some(board_btn));
@@ -102,9 +104,9 @@ fn main() -> ! {
 
         // Enable interrupts
         pac::NVIC::unpend(hal::pac::Interrupt::TIM2);
-        pac::NVIC::unpend(hal::pac::Interrupt::EXTI15_10);
+        pac::NVIC::unpend(btn_int_num);
         unsafe {
-            pac::NVIC::unmask(hal::pac::Interrupt::EXTI15_10);
+            pac::NVIC::unmask(btn_int_num);
         };
 
         let mut delay = Timer::syst(cp.SYST, &clocks).delay();
