@@ -51,12 +51,12 @@ use stm32_i2s_v12x::{MasterClock, MasterConfig, Polarity, TransmitMode};
 use stm32f4xx_hal::dma::config::DmaConfig;
 use stm32f4xx_hal::dma::MemoryToPeripheral;
 use stm32f4xx_hal::dma::{Stream5, StreamsTuple, Transfer};
-use stm32f4xx_hal::gpio::{Alternate, PA4, PC10, PC12, PC7};
+use stm32f4xx_hal::gpio::{AF6, PA4, PC10, PC12, PC7};
 use stm32f4xx_hal::i2c::I2c;
-use stm32f4xx_hal::i2s::I2s;
+use stm32f4xx_hal::i2s::I2s3;
+use stm32f4xx_hal::pac::DMA1;
 use stm32f4xx_hal::pac::{interrupt, Interrupt};
 use stm32f4xx_hal::pac::{CorePeripherals, Peripherals};
-use stm32f4xx_hal::pac::{DMA1, SPI3};
 use stm32f4xx_hal::prelude::*;
 
 use cs43l22::{Cs43L22, Register};
@@ -210,21 +210,13 @@ fn main() -> ! {
 
 type I2sDmaTransfer = Transfer<
     Stream5<DMA1>,
+    0,
     stm32_i2s_v12x::I2s<
-        I2s<
-            SPI3,
-            (
-                PA4<Alternate<6>>,
-                PC10<Alternate<6>>,
-                PC7<Alternate<6>>,
-                PC12<Alternate<6>>,
-            ),
-        >,
+        I2s3<(PA4<AF6>, PC10<AF6>, PC7<AF6>, PC12<AF6>)>,
         TransmitMode<Data16Frame16>,
     >,
     MemoryToPeripheral,
     &'static mut [u16; SINE_SAMPLES * 2],
-    0,
 >;
 
 /// DMA transfer handoff from main() to interrupt handler

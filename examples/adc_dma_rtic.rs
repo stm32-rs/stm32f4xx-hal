@@ -25,7 +25,7 @@ mod app {
     type MyMono = DwtSystick<MONO_HZ>;
 
     type DMATransfer =
-        Transfer<Stream0<DMA2>, Adc<ADC1>, PeripheralToMemory, &'static mut [u16; 2], 0>;
+        Transfer<Stream0<DMA2>, 0, Adc<ADC1>, PeripheralToMemory, &'static mut [u16; 2]>;
 
     #[shared]
     struct Shared {
