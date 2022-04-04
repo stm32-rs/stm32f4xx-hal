@@ -291,14 +291,14 @@ pub trait Channel {}
 /// # Safety
 ///
 /// Memory corruption might occur if this trait is implemented for an invalid combination.
-pub unsafe trait DMASet<STREAM, DIRECTION, const CHANNEL: u8> {}
+pub unsafe trait DMASet<STREAM, const CHANNEL: u8, DIRECTION> {}
 
 tim_channels!(CCR1, CCR2, CCR3, CCR4, DMAR, ARR);
 
 macro_rules! dma_map {
     ($(($Stream:ty, $C:literal, $Peripheral:ty, $Dir:ty)),+ $(,)*) => {
         $(
-            unsafe impl DMASet<$Stream, $Dir, $C> for $Peripheral {}
+            unsafe impl DMASet<$Stream, $C, $Dir> for $Peripheral {}
         )+
     };
 }

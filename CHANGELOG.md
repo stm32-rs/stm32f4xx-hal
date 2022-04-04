@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- `DmaSet` & `Transfer` take channel after stream generic, then other [#477]
 - Depracate "rt" feature as enabled by-default in `pac` [#476]
 - Add `Pin::interrupt()` helper method [#476]
 - Add restriction for setting pins in alternate mode (`IntoAF`), add docs [#474]
@@ -45,6 +46,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#473]: https://github.com/stm32-rs/stm32f4xx-hal/pull/473
 [#474]: https://github.com/stm32-rs/stm32f4xx-hal/pull/474
 [#476]: https://github.com/stm32-rs/stm32f4xx-hal/pull/476
+[#477]: https://github.com/stm32-rs/stm32f4xx-hal/pull/477
 
 ## [v0.12.0] - 2022-02-23
 

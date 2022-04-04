@@ -869,7 +869,7 @@ pub mod config {
 }
 
 /// DMA Transfer.
-pub struct Transfer<STREAM, PERIPHERAL, DIRECTION, BUF, const CHANNEL: u8>
+pub struct Transfer<STREAM, const CHANNEL: u8, PERIPHERAL, DIRECTION, BUF>
 where
     STREAM: Stream,
     PERIPHERAL: PeriAddress,
@@ -883,12 +883,12 @@ where
     transfer_length: u16,
 }
 
-impl<STREAM, PERIPHERAL, BUF, const CHANNEL: u8>
-    Transfer<STREAM, PERIPHERAL, MemoryToPeripheral, BUF, CHANNEL>
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, BUF>
+    Transfer<STREAM, CHANNEL, PERIPHERAL, MemoryToPeripheral, BUF>
 where
     STREAM: Stream,
     ChannelX<CHANNEL>: Channel,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, MemoryToPeripheral, CHANNEL>,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, MemoryToPeripheral>,
     BUF: ReadBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Configures the DMA stream to the correct channel for the peripheral, configures source and
@@ -1014,12 +1014,12 @@ where
     }
 }
 
-impl<STREAM, PERIPHERAL, BUF, const CHANNEL: u8>
-    Transfer<STREAM, PERIPHERAL, PeripheralToMemory, BUF, CHANNEL>
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, BUF>
+    Transfer<STREAM, CHANNEL, PERIPHERAL, PeripheralToMemory, BUF>
 where
     STREAM: Stream,
     ChannelX<CHANNEL>: Channel,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, PeripheralToMemory, CHANNEL> + SafePeripheralRead,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, PeripheralToMemory> + SafePeripheralRead,
     BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Access the owned peripheral for reading
@@ -1028,12 +1028,12 @@ where
     }
 }
 
-impl<STREAM, PERIPHERAL, BUF, const CHANNEL: u8>
-    Transfer<STREAM, PERIPHERAL, PeripheralToMemory, BUF, CHANNEL>
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, BUF>
+    Transfer<STREAM, CHANNEL, PERIPHERAL, PeripheralToMemory, BUF>
 where
     STREAM: Stream,
     ChannelX<CHANNEL>: Channel,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, PeripheralToMemory, CHANNEL>,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, PeripheralToMemory>,
     BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Configures the DMA stream to the correct channel for the peripheral, configures source and
@@ -1162,12 +1162,12 @@ where
     }
 }
 
-impl<STREAM, PERIPHERAL, BUF, S, const CHANNEL: u8>
-    Transfer<STREAM, PERIPHERAL, MemoryToMemory<S>, BUF, CHANNEL>
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, BUF, S>
+    Transfer<STREAM, CHANNEL, PERIPHERAL, MemoryToMemory<S>, BUF>
 where
     STREAM: Stream,
     ChannelX<CHANNEL>: Channel,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, MemoryToMemory<S>, CHANNEL>,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, MemoryToMemory<S>>,
     MemoryToMemory<S>: PeriAddress,
     BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
@@ -1261,13 +1261,13 @@ where
     }
 }
 
-impl<STREAM, PERIPHERAL, DIR, BUF, const CHANNEL: u8>
-    Transfer<STREAM, PERIPHERAL, DIR, BUF, CHANNEL>
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, DIR, BUF>
+    Transfer<STREAM, CHANNEL, PERIPHERAL, DIR, BUF>
 where
     STREAM: Stream,
     ChannelX<CHANNEL>: Channel,
     DIR: Direction,
-    PERIPHERAL: PeriAddress + DMASet<STREAM, DIR, CHANNEL>,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
 {
     /// Starts the transfer, the closure will be executed right after enabling the stream.
     pub fn start<F>(&mut self, f: F)
@@ -1589,8 +1589,8 @@ where
     }
 }
 
-impl<STREAM, PERIPHERAL, DIR, BUF, const CHANNEL: u8> Drop
-    for Transfer<STREAM, PERIPHERAL, DIR, BUF, CHANNEL>
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, DIR, BUF> Drop
+    for Transfer<STREAM, CHANNEL, PERIPHERAL, DIR, BUF>
 where
     STREAM: Stream,
     PERIPHERAL: PeriAddress,

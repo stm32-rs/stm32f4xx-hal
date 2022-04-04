@@ -20,10 +20,10 @@ const ARRAY_SIZE: usize = 100;
 
 type SpiDma = Transfer<
     Stream4<pac::DMA1>,
+    0,
     Tx<pac::SPI2>,
     MemoryToPeripheral,
     &'static mut [u8; ARRAY_SIZE],
-    0,
 >;
 
 static G_TRANSFER: Mutex<RefCell<Option<SpiDma>>> = Mutex::new(RefCell::new(None));
