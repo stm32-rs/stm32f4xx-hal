@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- Remove the defmt feature/dependency name workaround
+
 ## [v0.13.0] - 2022-04-04
 
 ### Changed
