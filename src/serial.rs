@@ -722,10 +722,10 @@ macro_rules! halUsart {
 
                 self.cr2.write(|w| {
                     w.stop().variant(match bits {
-                        StopBits::STOP0P5 => STOP_A::STOP0P5,
-                        StopBits::STOP1 => STOP_A::STOP1,
-                        StopBits::STOP1P5 => STOP_A::STOP1P5,
-                        StopBits::STOP2 => STOP_A::STOP2,
+                        StopBits::STOP0P5 => STOP_A::Stop0p5,
+                        StopBits::STOP1 => STOP_A::Stop1,
+                        StopBits::STOP1P5 => STOP_A::Stop1p5,
+                        StopBits::STOP2 => STOP_A::Stop2,
                     })
                 });
             }
@@ -760,10 +760,10 @@ macro_rules! halUart {
 
                 self.cr2.write(|w| {
                     w.stop().variant(match bits {
-                        StopBits::STOP0P5 => STOP_A::STOP1,
-                        StopBits::STOP1 => STOP_A::STOP1,
-                        StopBits::STOP1P5 => STOP_A::STOP2,
-                        StopBits::STOP2 => STOP_A::STOP2,
+                        StopBits::STOP0P5 => STOP_A::Stop1,
+                        StopBits::STOP1 => STOP_A::Stop1,
+                        StopBits::STOP1P5 => STOP_A::Stop2,
+                        StopBits::STOP2 => STOP_A::Stop2,
                     })
                 });
             }

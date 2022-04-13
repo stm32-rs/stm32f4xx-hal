@@ -245,7 +245,6 @@ impl MonoTimer {
         dwt.enable_cycle_counter();
 
         // now the CYCCNT counter can't be stopped or reset
-        drop(dwt);
 
         MonoTimer {
             frequency: clocks.hclk(),
