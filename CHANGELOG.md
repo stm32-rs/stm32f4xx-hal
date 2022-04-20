@@ -5,10 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [v0.13.1] - 2022-04-20
 
 ### Fixed
-- Remove the defmt feature/dependency name workaround
+
+- Fix `embedded_hal 1.0-alpha.7` version, public `PinMode`, update deps [#485]
+- Remove the defmt feature/dependency name workaround [#479]
+
+[#479]: https://github.com/stm32-rs/stm32f4xx-hal/pull/479
+[#485]: https://github.com/stm32-rs/stm32f4xx-hal/pull/485
 
 ## [v0.13.0] - 2022-04-04
 
@@ -647,7 +652,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.1...HEAD
+[v0.13.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.0...v0.13.1
 [v0.13.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.12.0...v0.13.0
 [v0.12.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.11.1...v0.12.0
 [v0.11.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.11.0...v0.11.1
