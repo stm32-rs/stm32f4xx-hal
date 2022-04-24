@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- `Spi` can be operated as `Slave` [#487]
+
+[#487]: https://github.com/stm32-rs/stm32f4xx-hal/pull/487
+
 ## [v0.13.1] - 2022-04-20
 
 ### Fixed
