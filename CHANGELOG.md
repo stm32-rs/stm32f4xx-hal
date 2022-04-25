@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+ - use `stm32_i2s_v12x` version 0.3, reexport it, and implements requirement for it
+ - i2s module don't reuse marker from spi module and define its own.
+ - `i2s-audio-out` example updated and now use pcm5102 dac module instead one from discovery board.
+ - extend visibility of gpio/marker to crate since i2s module require it.
+
+### Added
+ - example of using i2s in out with rtic and interrupt.
+
+### Removed
+ - `i2s-audio-out-dma.rs` example, too difficult to fix.
+
 ## [v0.13.2] - 2022-05-16
 
 ### Fixed
