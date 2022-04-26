@@ -7,11 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `Pin::with_mode` [#489]
+
 ### Changed
 
 - `Spi` can be operated as `Slave` [#487]
 
 [#487]: https://github.com/stm32-rs/stm32f4xx-hal/pull/487
+[#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
 
 ## [v0.13.1] - 2022-04-20
 

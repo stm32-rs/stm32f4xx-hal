@@ -255,15 +255,13 @@ where
         M: PinMode,
         F: FnOnce(&mut Pin<P, N, M>) -> R,
     {
-        self.mode::<M>();
+        self.mode::<M>(); // change physical mode, without changing typestate
 
         // This will reset the pin back to the original mode when dropped.
         // (so either when `with_mode` returns or when `f` unwinds)
-        let _resetti = ResetMode { pin: self };
+        let mut resetti = ResetMode::<P, N, M, MODE>::new();
 
-        let mut witness = Pin::new();
-
-        f(&mut witness)
+        f(&mut resetti.pin)
     }
 
     /// Temporarily configures this pin as a input.
@@ -341,11 +339,22 @@ where
     }
 }
 
-struct ResetMode<'a, const P: char, const N: u8, ORIG: PinMode> {
-    pin: &'a mut Pin<P, N, ORIG>,
+/// Wrapper around a pin that transitions the pin to mode ORIG when dropped
+struct ResetMode<const P: char, const N: u8, CURRENT: PinMode, ORIG: PinMode> {
+    pub pin: Pin<P, N, CURRENT>,
+    _mode: PhantomData<ORIG>,
 }
-
-impl<'a, const P: char, const N: u8, ORIG: PinMode> Drop for ResetMode<'a, P, N, ORIG> {
+impl<const P: char, const N: u8, CURRENT: PinMode, ORIG: PinMode> ResetMode<P, N, CURRENT, ORIG> {
+    fn new() -> Self {
+        Self {
+            pin: Pin::new(),
+            _mode: PhantomData,
+        }
+    }
+}
+impl<const P: char, const N: u8, CURRENT: PinMode, ORIG: PinMode> Drop
+    for ResetMode<P, N, CURRENT, ORIG>
+{
     fn drop(&mut self) {
         self.pin.mode::<ORIG>();
     }
