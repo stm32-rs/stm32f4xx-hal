@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.13.2] - 2022-05-16
+
 ### Fixed
 
 - `Pin::with_mode` [#489]
@@ -665,7 +667,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.1...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.2...HEAD
+[v0.13.2]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.1...v0.13.2
 [v0.13.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.0...v0.13.1
 [v0.13.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.12.0...v0.13.0
 [v0.12.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.11.1...v0.12.0
