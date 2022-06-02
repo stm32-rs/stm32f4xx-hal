@@ -4,6 +4,7 @@ use crate::rcc::Clocks;
 use core::ops::{Deref, DerefMut};
 pub use fugit::{self, ExtU32};
 use rtic_monotonic::Monotonic;
+use systick_monotonic::Systick;
 
 pub struct MonoTimer<TIM, const FREQ: u32>(FTimer<TIM, FREQ>);
 
@@ -45,6 +46,19 @@ where
 {
     fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> MonoTimer<Self, FREQ> {
         FTimer::new(self, clocks).monotonic()
+    }
+}
+
+pub trait SysMonoTimerExt: Sized {
+    fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> Systick<FREQ>;
+    fn monotonic_us(self, clocks: &Clocks) -> Systick<1_000_000> {
+        self.monotonic::<1_000_000>(clocks)
+    }
+}
+
+impl SysMonoTimerExt for crate::pac::SYST {
+    fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> Systick<FREQ> {
+        Systick::new(self, clocks.hclk().raw())
     }
 }
 
