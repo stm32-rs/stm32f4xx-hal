@@ -1,62 +1,63 @@
+//! # I2S transfer example
 //!
-//! # I2S example for STM32F411
-//!
-//! This application demonstrates I2S communication with the DAC on an STM32F411E-DISCO board
+//! This application show I2s transfer usage for audio output. WARNING! This example generates very
+//! loud sine tones (full scale), so turn down the volume before running this example.
 //!
 //! # Hardware required
 //!
-//! * STM32F407G-DISC1 or STM32F411E-DISCO evaluation board
-//! * Headphones or speakers with a headphone plug
+//! * a STM32F411 based board
+//! * I2S DAC, eg PCM5102 from TI
 //!
-//! # Procedure
+//! # Hardware Wiring
 //!
-//! 1. Connect the headphones or speakers to the headphone jack on the evaluation board
-//!    (warning: the DAC may produce a powerful signal that becomes a very loud sound.
-//!    Set the speaker volume to minimum, or do not put on the headphones.)
-//! 2. Load this compiled application on the microcontroller and run it
+//! The wiring assume using a PCM5102 module that can be found on Aliexpress, ebay, Amazon...
 //!
-//! Expected behavior: the speakers/headphones emit 1 second of 375 Hz tone followed by 1 second of
-//! 750 Hz tone, repeating indefinitely.
+//! ## Stm32
 //!
-//! # Pins and addresses
+//! | stm32 | PCM5102 |
+//! |-------|---------|
+//! | pa4   | LCK     |
+//! | pc10  | BCK     |
+//! | pc12  | DIN     |
 //!
-//! * PD4 -> DAC ~RESET (pulled low)
 //!
-//! * PB9 -> SDA (pulled high)
-//! * PB6 -> SCL (pulled high)
+//! ## PCM5102 module
 //!
-//! * PC7 -> MCLK
-//! * PC10 -> SCK (bit clock)
-//! * PC12 -> SD
-//! * PA4 -> WS
+//! | Pin   | Connected to    |
+//! |-------|-----------------|
+//! | BCK   | pc10            |
+//! | DIN   | pc12            |
+//! | LCK   | pa4             |
+//! | GND   | Gnd             |
+//! | VIN   | +3V3            |
+//! | FLT   | Gnd or +3V3     |
+//! | DEMP  | Gnd             |
+//! | XSMT  | +3V3            |
+//! | A3V3  |                 |
+//! | AGND  | audio out gnd   |
+//! | ROUT  | audio out left  |
+//! | LROUT | audio out right |
 //!
-//! DAC I2C address 0x94
+//! Notes: on the module (not the chip) A3V3 is connected to VIN and AGND is connected to GND
 //!
+//!
+//! Expected behavior: two different sine tone.
 
 #![no_std]
 #![no_main]
 
-mod cs43l22;
-
-use panic_halt as _;
-
 use cortex_m_rt::entry;
 
-use stm32_i2s_v12x::format::{Data16Frame16, FrameFormat};
-use stm32_i2s_v12x::{MasterClock, MasterConfig, Polarity};
+use rtt_target::{rprintln, rtt_init_print};
 
-use stm32f4xx_hal::i2c::I2c;
+use stm32f4xx_hal::gpio::NoPin;
+use stm32f4xx_hal::i2s::stm32_i2s_v12x::transfer::*;
 use stm32f4xx_hal::i2s::I2s;
 use stm32f4xx_hal::nb::block;
-use stm32f4xx_hal::pac::{CorePeripherals, Peripherals};
+use stm32f4xx_hal::pac::Peripherals;
 use stm32f4xx_hal::prelude::*;
 
-use cs43l22::{Cs43L22, Register};
-
-/// Volume in decibels
-///
-/// Depending on your speakers, you may need to adjust this value.
-const VOLUME: i8 = -100;
+const SAMPLE_RATE: u32 = 48_000;
 
 /// A sine wave spanning 64 samples
 ///
@@ -87,107 +88,63 @@ const SINE_375: [i16; 128] = [
 
 #[entry]
 fn main() -> ! {
-    let cp = CorePeripherals::take().unwrap();
+    rtt_init_print!();
     let dp = Peripherals::take().unwrap();
 
     let gpioa = dp.GPIOA.split();
-    let gpiob = dp.GPIOB.split();
     let gpioc = dp.GPIOC.split();
-    let gpiod = dp.GPIOD.split();
 
     let rcc = dp.RCC.constrain();
-    // The 86 MHz frequency can be divided to get a sample rate very close to 48 kHz.
-    let clocks = rcc.cfgr.use_hse(8.MHz()).i2s_clk(86.MHz()).freeze();
+    // The 61440 kHz frequency can be divided to get exactly 48 kHz sample rate even when
+    // generating master clock
+    let clocks = rcc
+        .cfgr
+        .use_hse(8u32.MHz())
+        .sysclk(96.MHz())
+        .i2s_clk(61440.kHz())
+        .freeze();
 
-    let mut delay = cp.SYST.delay(&clocks);
+    let i2s_pins = (gpioa.pa4, gpioc.pc10, NoPin, gpioc.pc12);
+    let i2s = I2s::new(dp.SPI3, i2s_pins, &clocks);
+    let i2s_config = I2sTransferConfig::new_master()
+        .transmit()
+        .standard(Philips)
+        .data_format(Data32Channel32)
+        .request_frequency(SAMPLE_RATE);
+    let mut i2s_transfer = I2sTransfer::new(i2s, i2s_config);
+    rprintln!("Actual sample rate is {}", i2s_transfer.sample_rate());
 
-    let i2c = I2c::new(
-        dp.I2C1,
-        (
-            gpiob.pb6.into_alternate_open_drain(),
-            gpiob.pb9.into_alternate_open_drain(),
-        ),
-        100.kHz(),
-        &clocks,
-    );
-    // Shift the address to deal with different ways of representing I2C addresses
-    let mut dac = Cs43L22::new(i2c, 0x94 >> 1);
-
-    let mut dac_reset = gpiod.pd4.into_push_pull_output();
-
-    // I2S pins: (WS, CK, MCLK, SD) for I2S3
-    let i2s_pins = (
-        gpioa.pa4.into_alternate(),
-        gpioc.pc10.into_alternate(),
-        gpioc.pc7.into_alternate(),
-        gpioc.pc12.into_alternate(),
-    );
-    let hal_i2s = I2s::new(dp.SPI3, i2s_pins, &clocks);
-    let i2s_clock = hal_i2s.input_clock();
-
-    // Audio timing configuration:
-    // Sample rate 48 kHz
-    // 16 bits per sample -> SCK rate 1.536 MHz
-    // MCK frequency = 256 * sample rate -> MCK rate 12.228 MHz (also equal to 8 * SCK rate)
-    let sample_rate = 48000;
-
-    let i2s = stm32_i2s_v12x::I2s::new(hal_i2s);
-    let mut i2s = i2s.configure_master_transmit(MasterConfig::with_sample_rate(
-        i2s_clock.raw(),
-        sample_rate,
-        Data16Frame16,
-        FrameFormat::PhilipsI2s,
-        Polarity::IdleHigh,
-        MasterClock::Enable,
-    ));
-
-    // Keep DAC reset low for at least one millisecond
-    delay.delay_ms(1u8);
-    // Release the DAC from reset
-    dac_reset.set_high();
-    // Wait at least 550 ns before starting I2C communication
-    delay.delay_us(1u8);
-
-    dac.basic_setup().unwrap();
-    // Clocking control from the table in section 4.6 of the datasheet:
-    // Auto mode: disabled
-    // Speed mode: 01 (single-speed)
-    // 8 kHz, 16 kHz, or 32 kHz sample rate: no
-    // 27 MHz video clock: no
-    // Internal MCLK/LRCLCK ratio: 00
-    // MCLK divide by 2: no
-    dac.write(Register::ClockingCtl, 0b0_01_0_0_00_0).unwrap();
-    // Interface control:
-    // Slave mode
-    // SCLK not inverted
-    // DSP mode disabled
-    // Interface format I2S
-    // Word length 16 bits
-    dac.write(Register::InterfaceCtl1, 0b0_0_0_0_01_11).unwrap();
-
-    // Reduce the headphone volume something more comfortable
-    dac.write(Register::HeadphoneAVol, VOLUME as u8).unwrap();
-    dac.write(Register::HeadphoneBVol, VOLUME as u8).unwrap();
-
-    // Power up DAC
-    dac.write(Register::PowerCtl1, 0b1001_1110).unwrap();
-
-    // Start sending samples
-    i2s.enable();
-    let sine_375_1sec = SINE_375.iter().cloned().cycle().take(sample_rate as usize);
-    let sine_750_1sec = SINE_750.iter().cloned().cycle().take(sample_rate as usize);
+    let sine_375_1sec = SINE_375
+        .iter()
+        .map(|&x| {
+            let x = (x as i32) << 16;
+            (x, x)
+        })
+        .cycle()
+        .take(SAMPLE_RATE as usize);
+    let sine_750_1sec = SINE_750
+        .iter()
+        .map(|&x| {
+            let x = (x as i32) << 16;
+            (x, x)
+        })
+        .cycle()
+        .take(SAMPLE_RATE as usize);
 
     loop {
-        // Play one second of each tone
+        // Play 375.1 Hz using non blocking api
         for sample in sine_375_1sec.clone() {
-            // Transmit the same sample on the left and right channels
-            block!(i2s.transmit(sample)).unwrap();
-            block!(i2s.transmit(sample)).unwrap();
+            block!(i2s_transfer.write(sample)).ok();
         }
-        for sample in sine_750_1sec.clone() {
-            // Transmit the same sample on the left and right channels
-            block!(i2s.transmit(sample)).unwrap();
-            block!(i2s.transmit(sample)).unwrap();
-        }
+        // Play 750 Hz using blocking api
+        i2s_transfer.write_iter(sine_750_1sec.clone());
     }
+}
+
+use core::panic::PanicInfo;
+#[inline(never)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    rprintln!("{}", info);
+    loop {} // You might need a compiler fence in here.
 }

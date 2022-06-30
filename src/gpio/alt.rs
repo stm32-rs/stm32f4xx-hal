@@ -306,8 +306,7 @@ pin! {
     <spi::Sck,  SPI2> for [PB10<5>, PB13<5>],
     <spi::Miso, SPI2> for [PB14<5>, PC2<5>],
     <spi::Mosi, SPI2> for [PB15<5>, PC3<5>],
-    <spi::Nss,  SPI2> for [PB9<5>, PB12<5>],
-    <i2s::Mck,  SPI2> for [PC6<5>]
+    <spi::Nss,  SPI2> for [PB9<5>, PB12<5>]
 }
 
 #[cfg(feature = "spi3")]
@@ -315,8 +314,7 @@ pin! {
     <spi::Sck,  SPI3> for [PB3<6>, PC10<6>],
     <spi::Miso, SPI3> for [PB4<6>, PC11<6>],
     <spi::Mosi, SPI3> for [PB5<6>, PC12<6>],
-    <spi::Nss,  SPI3> for [PA4<6>, PA15<6>],
-    <i2s::Mck,  SPI3> for [PC7<6>]
+    <spi::Nss,  SPI3> for [PA4<6>, PA15<6>]
 }
 
 #[cfg(any(
@@ -396,10 +394,8 @@ pin! {
     feature = "stm32f423"
 ))]
 pin! {
-    <i2s::Mck,  SPI2> for [PA3<5>, PA6<6>],
 
     <spi::Sck,  SPI3> for [PB12<7>],
-    <i2s::Mck,  SPI3> for [PB10<6>],
 
     <spi::Sck,  SPI4> for [PB13<6>],
     <spi::Miso, SPI4> for [PA11<6>],
@@ -455,6 +451,154 @@ pin! {
 pin! {
     <spi::Sck,  SPI2> for [PA9<5>],
     <spi::Mosi, SPI2> for [PC1<5>]
+}
+
+// SPI pins for I2S mode
+pin! {
+    <i2s::Ck,  SPI1> for [PA5<5>, PB3<5>],
+    <i2s::Sd, SPI1> for [PA7<5>, PB5<5>],
+
+    <i2s::Ck,  SPI2> for [PB10<5>, PB13<5>],
+    <i2s::Sd, SPI2> for [PB15<5>, PC3<5>],
+    <i2s::Ws,  SPI2> for [PB9<5>, PB12<5>],
+    <i2s::Mck,  SPI2> for [PC6<5>]
+}
+
+#[cfg(feature = "spi3")]
+pin! {
+    <i2s::Ck,  SPI3> for [PB3<6>, PC10<6>],
+    <i2s::Sd, SPI3> for [PB5<6>, PC12<6>],
+    <i2s::Ws,  SPI3> for [PA4<6>, PA15<6>],
+    <i2s::Mck,  SPI3> for [PC7<6>]
+}
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+pin! {
+    <i2s::Ck,  SPI2> for [PD3<5>],
+
+    <i2s::Sd, SPI3> for [PD6<5>],
+
+    <i2s::Ck,  SPI4> for [PE2<5>, PE12<5>],
+    <i2s::Sd, SPI4> for [PE6<5>, PE14<5>]
+}
+
+#[cfg(any(
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f415",
+    feature = "stm32f417",
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+pin! {
+    <i2s::Ck,  SPI2> for [PI1<5>],
+    <i2s::Sd, SPI2> for [PI3<5>],
+    <i2s::Ws,  SPI2> for [PI0<5>]
+}
+
+#[cfg(any(
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f446"
+))]
+pin! {
+    <i2s::Ck, SPI2> for [PC7<5>],
+    <i2s::Ws,  SPI1> for [PA4<5>, PA15<5>]
+}
+
+#[cfg(any(
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+pin! {
+    <i2s::Ck,  SPI5> for [PB0<6>],
+    <i2s::Sd, SPI5> for [PA10<6>, PB8<6>],
+    <i2s::Ws,  SPI5> for [PB1<6>]
+}
+
+#[cfg(any(
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423"
+))]
+pin! {
+    <i2s::Mck,  SPI2> for [PA3<5>, PA6<6>],
+
+    <i2s::Ck,  SPI3> for [PB12<7>],
+    <i2s::Mck,  SPI3> for [PB10<6>],
+
+    <i2s::Ck,  SPI4> for [PB13<6>],
+    <i2s::Sd, SPI4> for [PA1<5>],
+    <i2s::Ws,  SPI4> for [PB12<6>, PE4<5>, PE11<5>],
+
+    <i2s::Ck,  SPI5> for [PE2<6>, PE12<6>],
+    <i2s::Sd, SPI5> for [PE6<6>, PE14<6>],
+    <i2s::Ws,  SPI5> for [PE4<6>, PE11<6>]
+}
+
+#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+pin! {
+    <i2s::Ck,  SPI2> for [PA9<5>],
+    <i2s::Sd, SPI2> for [PA10<5>],
+    <i2s::Ws,  SPI2> for [PA11<5>]
+}
+
+#[cfg(any(
+    feature = "stm32f427",
+    feature = "stm32f429",
+    feature = "stm32f437",
+    feature = "stm32f439",
+    feature = "stm32f469",
+    feature = "stm32f479"
+))]
+pin! {
+    <i2s::Ck,  SPI5> for [PF7<5>, PH6<5>],
+    <i2s::Sd, SPI5> for [PF9<5>, PF11<5>],
+
+    <i2s::Ck,  SPI6> for [PG13<5>],
+    <i2s::Sd, SPI6> for [PG14<5>]
+}
+
+#[cfg(feature = "stm32f446")]
+pin! {
+    <i2s::Ck,  SPI2> for [PA9<5>],
+    <i2s::Sd, SPI2> for [PC1<7>],
+    <i2s::Ws,  SPI2> for [PB4<7>, PD1<7>],
+
+    <i2s::Sd, SPI3> for [PB0<7>, PB2<7>, PC1<5>, PD0<6>],
+
+    <i2s::Ck,  SPI4> for [PG11<6>],
+    <i2s::Sd, SPI4> for [PG13<6>]
+}
+
+#[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
+pin! {
+    <i2s::Ck,  SPI2> for [PA9<5>],
+    <i2s::Sd, SPI2> for [PC1<5>]
 }
 
 #[cfg(any(
