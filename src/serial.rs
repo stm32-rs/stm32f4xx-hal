@@ -803,8 +803,10 @@ impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
 #[cfg(any(
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f413",
     feature = "stm32f415",
     feature = "stm32f417",
+    feature = "stm32f423",
     feature = "stm32f427",
     feature = "stm32f429",
     feature = "stm32f437",
@@ -818,8 +820,10 @@ use crate::pac::uart4 as uart_base;
 #[cfg(not(any(
     feature = "stm32f405",
     feature = "stm32f407",
+    feature = "stm32f413",
     feature = "stm32f415",
     feature = "stm32f417",
+    feature = "stm32f423",
     feature = "stm32f427",
     feature = "stm32f429",
     feature = "stm32f437",
@@ -866,7 +870,6 @@ macro_rules! halUsart {
     };
 }
 
-// TODO: fix stm32f413 UARTs
 #[cfg(any(
     feature = "uart4",
     feature = "uart5",
@@ -875,7 +878,6 @@ macro_rules! halUsart {
     feature = "uart9",
     feature = "uart10"
 ))]
-#[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
     ($USART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
         pub type $Serial<PINS, WORD = u8> = Serial<$USART, PINS, WORD>;
@@ -910,29 +912,18 @@ halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
 
 #[cfg(feature = "usart3")]
 halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
-
 #[cfg(feature = "uart4")]
-#[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
 halUart! { pac::UART4, Serial4, Rx4, Tx4 }
 #[cfg(feature = "uart5")]
-#[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
 halUart! { pac::UART5, Serial5, Rx5, Tx5 }
-
-//#[cfg(feature = "uart4")]
-//#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-//halUsart! { pac::UART4, Serial4, Rx4, Tx4 }
-#[cfg(feature = "uart5")]
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { pac::UART5, Serial5, Rx5, Tx5 }
-
 #[cfg(feature = "uart7")]
-halUsart! { pac::UART7, Serial7, Rx7, Tx7 }
+halUart! { pac::UART7, Serial7, Rx7, Tx7 }
 #[cfg(feature = "uart8")]
-halUsart! { pac::UART8, Serial8, Rx8, Tx8 }
+halUart! { pac::UART8, Serial8, Rx8, Tx8 }
 #[cfg(feature = "uart9")]
-halUsart! { pac::UART9, Serial9, Rx9, Tx9 }
+halUart! { pac::UART9, Serial9, Rx9, Tx9 }
 #[cfg(feature = "uart10")]
-halUsart! { pac::UART10, Serial10, Rx10, Tx10 }
+halUart! { pac::UART10, Serial10, Rx10, Tx10 }
 
 impl<USART: Instance, PINS> fmt::Write for Serial<USART, PINS> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
