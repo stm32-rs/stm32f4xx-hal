@@ -785,9 +785,9 @@ halUart! { pac::UART4, Serial4, Rx4, Tx4 }
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
 halUart! { pac::UART5, Serial5, Rx5, Tx5 }
 
-#[cfg(feature = "uart4")]
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { pac::UART4, Serial4, Rx4, Tx4 }
+//#[cfg(feature = "uart4")]
+//#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+//halUsart! { pac::UART4, Serial4, Rx4, Tx4 }
 #[cfg(feature = "uart5")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 halUsart! { pac::UART5, Serial5, Rx5, Tx5 }
