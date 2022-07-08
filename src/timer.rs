@@ -353,11 +353,11 @@ macro_rules! hal {
                 }
                 #[inline(always)]
                 fn start_one_pulse(&mut self) {
-                    self.cr1.write(|w| unsafe { w.bits(1 << 3) }.cen().set_bit());
+                    self.cr1.modify(|_, w| unsafe { w.bits(1 << 3) }.cen().set_bit());
                 }
                 #[inline(always)]
                 fn start_no_update(&mut self) {
-                    self.cr1.write(|w| w.cen().set_bit().udis().set_bit());
+                    self.cr1.modify(|_, w| w.cen().set_bit().udis().set_bit());
                 }
                 #[inline(always)]
                 fn cr1_reset(&mut self) {
@@ -417,7 +417,7 @@ macro_rules! with_pwm {
 
             #[inline(always)]
             fn start_pwm(&mut self) {
-                self.cr1.write(|w| w.cen().set_bit());
+                self.cr1.modify(|_, w| w.cen().set_bit());
             }
 
             #[inline(always)]
@@ -483,7 +483,7 @@ macro_rules! with_pwm {
 
             #[inline(always)]
             fn start_pwm(&mut self) {
-                self.cr1.write(|w| w.cen().set_bit());
+                self.cr1.modify(|_, w| w.cen().set_bit());
             }
 
             #[inline(always)]
@@ -568,7 +568,7 @@ macro_rules! with_pwm {
             #[inline(always)]
             fn start_pwm(&mut self) {
                 $(let $aoe = self.bdtr.modify(|_, w| w.aoe().set_bit());)?
-                self.cr1.write(|w| w.cen().set_bit());
+                self.cr1.modify(|_, w| w.cen().set_bit());
             }
 
             #[inline(always)]
