@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
 
+### Fixed
+ - use register.modify instead of register.write to start PWM [#504]
+
+[#504]: https://github.com/stm32-rs/stm32f4xx-hal/pull/504
+
 ## [v0.13.2] - 2022-05-16
 
 ### Fixed
