@@ -136,3 +136,12 @@ where
         unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << self.i) == 0 }
     }
 }
+
+impl<const P: char, MODE> From<PartiallyErasedPin<P, MODE>> for ErasedPin<MODE> {
+    /// Partially erased pin-to-erased pin conversion using the [`From`] trait.
+    ///
+    /// Note that [`From`] is the reciprocal of [`Into`].
+    fn from(p: PartiallyErasedPin<P, MODE>) -> Self {
+        ErasedPin::new(P as u8 - b'A', p.i)
+    }
+}
