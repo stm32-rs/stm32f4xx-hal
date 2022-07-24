@@ -341,21 +341,21 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for ErasedPin<MODE> {
-    /// Pin-to-erased pin conversion using the [`From`] trait.
-    ///
-    /// Note that [`From`] is the reciprocal of [`Into`].
-    fn from(p: Pin<P, N, MODE>) -> Self {
-        p.erase()
-    }
-}
-
 impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for PartiallyErasedPin<P, MODE> {
     /// Pin-to-partially erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
     fn from(p: Pin<P, N, MODE>) -> Self {
         p.erase_number()
+    }
+}
+
+impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for ErasedPin<MODE> {
+    /// Pin-to-erased pin conversion using the [`From`] trait.
+    ///
+    /// Note that [`From`] is the reciprocal of [`Into`].
+    fn from(p: Pin<P, N, MODE>) -> Self {
+        p.erase()
     }
 }
 

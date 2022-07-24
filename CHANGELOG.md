@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
+- Implementation of From trait for Pin-to-ErasedPin [#507]
+- Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
+
+[#507]: https://github.com/stm32-rs/stm32f4xx-hal/pull/507
+
 ### Changed
  - use `stm32_i2s_v12x` version 0.3, reexport it, and implements requirement for it
  - i2s module don't reuse marker from spi module and define its own.
