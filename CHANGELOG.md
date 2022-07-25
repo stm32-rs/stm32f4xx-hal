@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#507]: https://github.com/stm32-rs/stm32f4xx-hal/pull/507
 
 ### Changed
+ - update `stm32f4` to 0.15.1
  - use `stm32_i2s_v12x` version 0.3, reexport it, and implements requirement for it
  - i2s module don't reuse marker from spi module and define its own.
  - `i2s-audio-out` example updated and now use pcm5102 dac module instead one from discovery board.

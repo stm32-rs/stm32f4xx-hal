@@ -182,11 +182,11 @@ macro_rules! hal {
         {
             /// Period of PWM signal in terms of clock cycles
             pub fn get_period_clocks(&self) -> <$TIM as General>::Width {
-                self.tim.ccr1.read().ccr().bits()
+                self.tim.ccr1().read().ccr().bits()
             }
             /// Duty cycle in terms of clock cycles
             pub fn get_duty_cycle_clocks(&self) -> <$TIM as General>::Width {
-                self.tim.ccr2.read().ccr().bits()
+                self.tim.ccr2().read().ccr().bits()
             }
             /// Observed duty cycle as a float in range [0.00, 1.00]
             pub fn get_duty_cycle(&self) -> f32 {

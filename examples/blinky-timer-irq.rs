@@ -58,7 +58,7 @@ fn TIM2() {
         })
     });
 
-    let _ = led.toggle();
+    led.toggle();
     let _ = tim.wait();
 }
 
@@ -72,7 +72,7 @@ fn main() -> ! {
     // Configure PA5 pin to blink LED
     let gpioa = dp.GPIOA.split();
     let mut led = gpioa.pa5.into_push_pull_output();
-    let _ = led.set_high(); // Turn off
+    led.set_high(); // Turn off
 
     // Move the pin into our global storage
     cortex_m::interrupt::free(|cs| *G_LED.borrow(cs).borrow_mut() = Some(led));

@@ -841,10 +841,24 @@ macro_rules! adc {
                 /// Sets which external trigger to use and if it is disabled, rising, falling or both
                 pub fn set_external_trigger(&mut self, (edge, extsel): (config::TriggerMode, config::ExternalTrigger)) {
                     self.config.external_trigger = (edge, extsel);
+                    #[cfg(any(
+                        feature = "stm32f401",
+                        feature = "stm32f410",
+                        feature = "stm32f411",
+                    ))] // TODO: fix pac
                     self.adc_reg.cr2.modify(|_, w| unsafe { w
                         .extsel().bits(extsel.into())
                         .exten().bits(edge.into())
                     });
+                    #[cfg(not(any(
+                        feature = "stm32f401",
+                        feature = "stm32f410",
+                        feature = "stm32f411",
+                    )))]
+                    self.adc_reg.cr2.modify(|_, w| w
+                        .extsel().bits(extsel.into())
+                        .exten().bits(edge.into())
+                    );
                 }
 
                 /// Enables and disables continuous mode

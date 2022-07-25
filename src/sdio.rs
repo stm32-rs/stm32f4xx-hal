@@ -266,9 +266,9 @@ impl<P: SdioPeripheral> Sdio<P> {
 
         self.sdio.power.modify(|_, w| {
             w.pwrctrl().variant(if on {
-                PWRCTRL_A::POWERON
+                PWRCTRL_A::PowerOn
             } else {
-                PWRCTRL_A::POWEROFF
+                PWRCTRL_A::PowerOff
             })
         });
 
@@ -353,7 +353,7 @@ impl<P: SdioPeripheral> Sdio<P> {
                     let mut wb = [0u8; 4];
                     wb.copy_from_slice(&block[i..i + 4]);
                     let word = u32::from_le_bytes(wb);
-                    self.sdio.fifo.write(|w| unsafe { w.bits(word) });
+                    self.sdio.fifo.write(|w| w.bits(word));
                     i += 4;
                 }
             }
@@ -398,9 +398,9 @@ impl<P: SdioPeripheral> Sdio<P> {
         }
 
         let dtdir = if card_to_controller {
-            DTDIR_A::CARDTOCONTROLLER
+            DTDIR_A::CardToController
         } else {
-            DTDIR_A::CONTROLLERTOCARD
+            DTDIR_A::ControllerToCard
         };
 
         // Data timeout, in bus cycles
@@ -463,9 +463,9 @@ impl<P: SdioPeripheral> Sdio<P> {
 
         // Determine what kind of response the CPSM should wait for
         let waitresp = match cmd.response_len() {
-            ResponseLen::Zero => WAITRESP_A::NORESPONSE,
-            ResponseLen::R48 => WAITRESP_A::SHORTRESPONSE,
-            ResponseLen::R136 => WAITRESP_A::LONGRESPONSE,
+            ResponseLen::Zero => WAITRESP_A::NoResponse,
+            ResponseLen::R48 => WAITRESP_A::ShortResponse,
+            ResponseLen::R136 => WAITRESP_A::LongResponse,
         };
 
         // Send the command
@@ -688,12 +688,12 @@ impl Sdio<SdCard> {
         let card_widebus = self.card()?.supports_widebus();
 
         let width = match width {
-            Buswidth::Buswidth4 if card_widebus => WIDBUS_A::BUSWIDTH4,
+            Buswidth::Buswidth4 if card_widebus => WIDBUS_A::BusWidth4,
             // Buswidth8 is not supported for SD cards
-            _ => WIDBUS_A::BUSWIDTH1,
+            _ => WIDBUS_A::BusWidth1,
         };
 
-        self.app_cmd(sd_cmd::set_bus_width(width == WIDBUS_A::BUSWIDTH4))?;
+        self.app_cmd(sd_cmd::set_bus_width(width == WIDBUS_A::BusWidth4))?;
 
         self.sdio.clkcr.modify(|_, w| {
             w.clkdiv()
@@ -793,9 +793,9 @@ impl Sdio<Emmc> {
         ))?;
 
         let width = match width {
-            Buswidth::Buswidth1 => WIDBUS_A::BUSWIDTH1,
-            Buswidth::Buswidth4 => WIDBUS_A::BUSWIDTH4,
-            Buswidth::Buswidth8 => WIDBUS_A::BUSWIDTH8,
+            Buswidth::Buswidth1 => WIDBUS_A::BusWidth1,
+            Buswidth::Buswidth4 => WIDBUS_A::BusWidth4,
+            Buswidth::Buswidth8 => WIDBUS_A::BusWidth8,
         };
 
         // CMD6 is R1b, so wait for the card to be ready again before proceeding.

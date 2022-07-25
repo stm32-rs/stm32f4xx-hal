@@ -11,6 +11,7 @@ use cortex_m::peripheral::SYST;
 use crate::bb;
 use crate::pac::{self, RCC};
 
+use crate::dma::traits::PeriAddress;
 use crate::rcc::{self, Clocks};
 use fugit::HertzU32 as Hertz;
 
@@ -214,6 +215,16 @@ pub enum Ocm {
     PwmMode2 = 7,
 }
 
+/// Wrapper type that indicates which register of the contained timer to use for DMA.
+pub struct CCR<T, const C: u8>(T);
+pub type CCR1<T> = CCR<T, 0>;
+pub type CCR2<T> = CCR<T, 1>;
+pub type CCR3<T> = CCR<T, 2>;
+pub type CCR4<T> = CCR<T, 3>;
+
+/// Wrapper type that indicates which register of the contained timer to use for DMA.
+pub struct DMAR<T>(T);
+
 mod sealed {
     use super::{Channel, Event, Ocm};
     pub trait General {
@@ -264,6 +275,7 @@ macro_rules! hal {
     ($($TIM:ty: [
         $Timer:ident,
         $bits:ty,
+        $(dmar: $memsize:ty,)?
         $(c: ($cnum:ident $(, $aoe:ident)?),)?
         $(m: $timbase:ident,)?
     ],)+) => {
@@ -364,7 +376,20 @@ macro_rules! hal {
                     self.cr1.reset();
                 }
             }
-            $(with_pwm!($TIM: $cnum $(, $aoe)?);)?
+
+            $(with_dmar!($TIM, $memsize);)?
+
+            $(
+                with_pwm!($TIM: $cnum $(, $aoe)?);
+                unsafe impl<const C: u8> PeriAddress for CCR<$TIM, C> {
+                    #[inline(always)]
+                    fn address(&self) -> u32 {
+                        &self.0.ccr[C as usize] as *const _ as u32
+                    }
+
+                    type MemSize = $bits;
+                }
+            )?
 
             $(impl MasterTimer for $TIM {
                 type Mms = pac::$timbase::cr2::MMS_A;
@@ -376,6 +401,19 @@ macro_rules! hal {
     }
 }
 
+macro_rules! with_dmar {
+    ($TIM:ty, $memsize:ty) => {
+        unsafe impl PeriAddress for DMAR<$TIM> {
+            #[inline(always)]
+            fn address(&self) -> u32 {
+                &self.0.dmar as *const _ as u32
+            }
+
+            type MemSize = $memsize;
+        }
+    };
+}
+
 macro_rules! with_pwm {
     ($TIM:ty: CH1) => {
         impl WithPwm for $TIM {
@@ -384,24 +422,14 @@ macro_rules! with_pwm {
             #[inline(always)]
             fn read_cc_value(channel: u8) -> u32 {
                 let tim = unsafe { &*<$TIM>::ptr() };
-                match channel {
-                    0 => {
-                        tim.ccr1.read().bits()
-                    }
-                    _ => 0,
-                }
+                tim.ccr[channel as usize].read().bits()
             }
 
             #[inline(always)]
             fn set_cc_value(channel: u8, value: u32) {
                 let tim = unsafe { &*<$TIM>::ptr() };
                 #[allow(unused_unsafe)]
-                match channel {
-                    0 => {
-                        tim.ccr1.write(|w| unsafe { w.bits(value) })
-                    }
-                    _ => {},
-                }
+                tim.ccr[channel as usize].write(|w| unsafe { w.bits(value) })
             }
 
             #[inline(always)]
@@ -440,30 +468,14 @@ macro_rules! with_pwm {
             #[inline(always)]
             fn read_cc_value(channel: u8) -> u32 {
                 let tim = unsafe { &*<$TIM>::ptr() };
-                match channel {
-                    0 => {
-                        tim.ccr1.read().bits()
-                    }
-                    1 => {
-                        tim.ccr2.read().bits()
-                    }
-                    _ => 0,
-                }
+                tim.ccr[channel as usize].read().bits()
             }
 
             #[inline(always)]
             fn set_cc_value(channel: u8, value: u32) {
                 let tim = unsafe { &*<$TIM>::ptr() };
                 #[allow(unused_unsafe)]
-                match channel {
-                    0 => {
-                        tim.ccr1.write(|w| unsafe { w.bits(value) })
-                    }
-                    1 => {
-                        tim.ccr2.write(|w| unsafe { w.bits(value) })
-                    }
-                    _ => {},
-                }
+                tim.ccr[channel as usize].write(|w| unsafe { w.bits(value) });
             }
 
             #[inline(always)]
@@ -506,41 +518,14 @@ macro_rules! with_pwm {
             #[inline(always)]
             fn read_cc_value(channel: u8) -> u32 {
                 let tim = unsafe { &*<$TIM>::ptr() };
-                let ccr = match channel {
-                    0 => {
-                        &tim.ccr1
-                    }
-                    1 => {
-                        &tim.ccr2
-                    }
-                    2 => {
-                        &tim.ccr3
-                    }
-                    _ => {
-                        &tim.ccr4
-                    }
-                };
-                ccr.read().bits()
+                tim.ccr[channel as usize].read().bits()
             }
 
             #[inline(always)]
             fn set_cc_value(channel: u8, value: u32) {
                 let tim = unsafe { &*<$TIM>::ptr() };
-                let ccr = match channel {
-                    0 => {
-                        &tim.ccr1
-                    }
-                    1 => {
-                        &tim.ccr2
-                    }
-                    2 => {
-                        &tim.ccr3
-                    }
-                    _ => {
-                        &tim.ccr4
-                    }
-                };
-                ccr.write(|w| unsafe { w.bits(value) })
+                #[allow(unused_unsafe)]
+                tim.ccr[channel as usize].write(|w| unsafe { w.bits(value) })
             }
 
             #[inline(always)]
@@ -746,30 +731,30 @@ hal!(
 // All parts except for F410 add these timers.
 #[cfg(not(feature = "stm32f410"))]
 hal!(
-    pac::TIM1: [Timer1, u16, c: (CH4, _aoe), m: tim1,],
-    pac::TIM5: [Timer5, u32, c: (CH4), m: tim5,],
-    pac::TIM2: [Timer2, u32, c: (CH4), m: tim2,],
-    pac::TIM3: [Timer3, u16, c: (CH4), m: tim3,],
-    pac::TIM4: [Timer4, u16, c: (CH4), m: tim3,],
+    pac::TIM1: [Timer1, u16, dmar: u32, c: (CH4, _aoe), m: tim1,],
+    pac::TIM5: [Timer5, u32, dmar: u16, c: (CH4), m: tim5,],
+    pac::TIM2: [Timer2, u32, dmar: u16, c: (CH4), m: tim2,],
+    pac::TIM3: [Timer3, u16, dmar: u16, c: (CH4), m: tim3,],
+    pac::TIM4: [Timer4, u16, dmar: u16, c: (CH4), m: tim3,],
     pac::TIM10: [Timer10, u16, c: (CH1),],
 );
 
 // TIM5 on F410 is 16-bit
 #[cfg(feature = "stm32f410")]
 hal!(
-    pac::TIM1: [Timer1, u16, c: (CH4, _aoe), /*m: tim1,*/], // TODO: fix SVD
-    pac::TIM5: [Timer5, u16, c: (CH4), /*m: tim5,*/], // TODO: fix SVD
+    pac::TIM1: [Timer1, u16, dmar: u16, c: (CH4, _aoe), m: tim1,],
+    pac::TIM5: [Timer5, u16, dmar: u16, c: (CH4), m: tim5,],
 );
 
 // All parts except F401 and F411.
 #[cfg(not(any(feature = "stm32f401", feature = "stm32f411",)))]
-hal!(pac::TIM6: [Timer6, u16, /*m: tim7,*/],); // TODO: fix SVD
+hal!(pac::TIM6: [Timer6, u16, m: tim6,],);
 
 // All parts except F401, F410, F411.
 #[cfg(not(any(feature = "stm32f401", feature = "stm32f410", feature = "stm32f411",)))]
 hal!(
-    pac::TIM7: [Timer7, u16, /*m: tim7,*/], // TODO: fix SVD
-    pac::TIM8: [Timer8, u16, c: (CH4, _aoe), m: tim1,],
+    pac::TIM7: [Timer7, u16, m: tim7,],
+    pac::TIM8: [Timer8, u16, dmar: u32, c: (CH4, _aoe), m: tim8,],
     pac::TIM12: [Timer12, u16, c: (CH2),],
     pac::TIM13: [Timer13, u16, c: (CH1),],
     pac::TIM14: [Timer14, u16, c: (CH1),],

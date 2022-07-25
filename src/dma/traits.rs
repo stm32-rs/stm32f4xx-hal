@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     adc::Adc,
     pac::{self, DMA1, DMA2},
-    serial, spi,
+    serial, spi, timer,
 };
 use core::ops::Deref;
 
@@ -265,24 +265,6 @@ impl Instance for DMA2 {
     }
 }
 
-macro_rules! tim_channels {
-    ($($name:ident),+ $(,)*) => {
-        $(
-            /// Wrapper type that indicates which register of the contained timer to use for DMA.
-            pub struct $name<T> (pub T);
-
-            impl<T> Deref for $name<T> {
-                type Target = T;
-
-                #[inline(always)]
-                fn deref(&self) -> &T {
-                    &self.0
-                }
-            }
-        )+
-    };
-}
-
 /// A channel that can be configured on a DMA stream.
 pub trait Channel {}
 
@@ -292,8 +274,6 @@ pub trait Channel {}
 ///
 /// Memory corruption might occur if this trait is implemented for an invalid combination.
 pub unsafe trait DMASet<STREAM, const CHANNEL: u8, DIRECTION> {}
-
-tim_channels!(CCR1, CCR2, CCR3, CCR4, DMAR, ARR);
 
 macro_rules! dma_map {
     ($(($Stream:ty, $C:literal, $Peripheral:ty, $Dir:ty)),+ $(,)*) => {
@@ -322,32 +302,32 @@ macro_rules! dma_map {
     feature = "stm32f479",
 ))]
 dma_map!(
-    (Stream0<DMA1>, 2, CCR1<pac::TIM4>, MemoryToPeripheral), //TIM4_CH1
-    (Stream0<DMA1>, 2, CCR1<pac::TIM4>, PeripheralToMemory), //TIM4_CH1
-    (Stream2<DMA1>, 5, CCR4<pac::TIM3>, MemoryToPeripheral), //TIM3_CH4
-    (Stream2<DMA1>, 5, CCR4<pac::TIM3>, PeripheralToMemory), //TIM3_CH4
-    (Stream2<DMA1>, 5, DMAR<pac::TIM3>, MemoryToPeripheral), //TIM3_UP
-    (Stream2<DMA1>, 5, DMAR<pac::TIM3>, PeripheralToMemory), //TIM3_UP
-    (Stream3<DMA1>, 2, CCR2<pac::TIM4>, MemoryToPeripheral), //TIM4_CH2
-    (Stream3<DMA1>, 2, CCR2<pac::TIM4>, PeripheralToMemory), //TIM4_CH2
-    (Stream4<DMA1>, 5, CCR1<pac::TIM3>, MemoryToPeripheral), //TIM3_CH1
-    (Stream4<DMA1>, 5, CCR1<pac::TIM3>, PeripheralToMemory), //TIM3_CH1
-    (Stream4<DMA1>, 5, DMAR<pac::TIM3>, MemoryToPeripheral), //TIM3_TRIG
-    (Stream4<DMA1>, 5, DMAR<pac::TIM3>, PeripheralToMemory), //TIM3_TRIG
-    (Stream5<DMA1>, 3, CCR1<pac::TIM2>, MemoryToPeripheral), //TIM2_CH1
-    (Stream5<DMA1>, 3, CCR1<pac::TIM2>, PeripheralToMemory), //TIM2_CH1
-    (Stream5<DMA1>, 5, CCR2<pac::TIM3>, MemoryToPeripheral), //TIM3_CH2
-    (Stream5<DMA1>, 5, CCR2<pac::TIM3>, PeripheralToMemory), //TIM3_CH2
-    (Stream6<DMA1>, 2, DMAR<pac::TIM4>, MemoryToPeripheral), //TIM4_UP
-    (Stream6<DMA1>, 2, DMAR<pac::TIM4>, PeripheralToMemory), //TIM4_UP
-    (Stream6<DMA1>, 3, CCR2<pac::TIM2>, MemoryToPeripheral), //TIM2_CH2
-    (Stream6<DMA1>, 3, CCR2<pac::TIM2>, PeripheralToMemory), //TIM2_CH2
-    (Stream6<DMA1>, 3, CCR4<pac::TIM2>, MemoryToPeripheral), //TIM2_CH4
-    (Stream6<DMA1>, 3, CCR4<pac::TIM2>, PeripheralToMemory), //TIM2_CH4
-    (Stream7<DMA1>, 2, CCR3<pac::TIM4>, MemoryToPeripheral), //TIM4_CH3
-    (Stream7<DMA1>, 2, CCR3<pac::TIM4>, PeripheralToMemory), //TIM4_CH3
-    (Stream7<DMA1>, 5, CCR3<pac::TIM3>, MemoryToPeripheral), //TIM3_CH3
-    (Stream7<DMA1>, 5, CCR3<pac::TIM3>, PeripheralToMemory), //TIM3_CH3
+    (Stream0<DMA1>, 2, timer::CCR1<pac::TIM4>, MemoryToPeripheral), //TIM4_CH1
+    (Stream0<DMA1>, 2, timer::CCR1<pac::TIM4>, PeripheralToMemory), //TIM4_CH1
+    (Stream2<DMA1>, 5, timer::CCR4<pac::TIM3>, MemoryToPeripheral), //TIM3_CH4
+    (Stream2<DMA1>, 5, timer::CCR4<pac::TIM3>, PeripheralToMemory), //TIM3_CH4
+    (Stream2<DMA1>, 5, timer::DMAR<pac::TIM3>, MemoryToPeripheral), //TIM3_UP
+    (Stream2<DMA1>, 5, timer::DMAR<pac::TIM3>, PeripheralToMemory), //TIM3_UP
+    (Stream3<DMA1>, 2, timer::CCR2<pac::TIM4>, MemoryToPeripheral), //TIM4_CH2
+    (Stream3<DMA1>, 2, timer::CCR2<pac::TIM4>, PeripheralToMemory), //TIM4_CH2
+    (Stream4<DMA1>, 5, timer::CCR1<pac::TIM3>, MemoryToPeripheral), //TIM3_CH1
+    (Stream4<DMA1>, 5, timer::CCR1<pac::TIM3>, PeripheralToMemory), //TIM3_CH1
+    (Stream4<DMA1>, 5, timer::DMAR<pac::TIM3>, MemoryToPeripheral), //TIM3_TRIG
+    (Stream4<DMA1>, 5, timer::DMAR<pac::TIM3>, PeripheralToMemory), //TIM3_TRIG
+    (Stream5<DMA1>, 3, timer::CCR1<pac::TIM2>, MemoryToPeripheral), //TIM2_CH1
+    (Stream5<DMA1>, 3, timer::CCR1<pac::TIM2>, PeripheralToMemory), //TIM2_CH1
+    (Stream5<DMA1>, 5, timer::CCR2<pac::TIM3>, MemoryToPeripheral), //TIM3_CH2
+    (Stream5<DMA1>, 5, timer::CCR2<pac::TIM3>, PeripheralToMemory), //TIM3_CH2
+    (Stream6<DMA1>, 2, timer::DMAR<pac::TIM4>, MemoryToPeripheral), //TIM4_UP
+    (Stream6<DMA1>, 2, timer::DMAR<pac::TIM4>, PeripheralToMemory), //TIM4_UP
+    (Stream6<DMA1>, 3, timer::CCR2<pac::TIM2>, MemoryToPeripheral), //TIM2_CH2
+    (Stream6<DMA1>, 3, timer::CCR2<pac::TIM2>, PeripheralToMemory), //TIM2_CH2
+    (Stream6<DMA1>, 3, timer::CCR4<pac::TIM2>, MemoryToPeripheral), //TIM2_CH4
+    (Stream6<DMA1>, 3, timer::CCR4<pac::TIM2>, PeripheralToMemory), //TIM2_CH4
+    (Stream7<DMA1>, 2, timer::CCR3<pac::TIM4>, MemoryToPeripheral), //TIM4_CH3
+    (Stream7<DMA1>, 2, timer::CCR3<pac::TIM4>, PeripheralToMemory), //TIM4_CH3
+    (Stream7<DMA1>, 5, timer::CCR3<pac::TIM3>, MemoryToPeripheral), //TIM3_CH3
+    (Stream7<DMA1>, 5, timer::CCR3<pac::TIM3>, PeripheralToMemory), //TIM3_CH3
     (Stream0<DMA1>, 0, pac::SPI3, PeripheralToMemory),       //SPI3_RX
     (Stream0<DMA1>, 0, spi::Rx<pac::SPI3>, PeripheralToMemory), //SPI3_RX
     (Stream2<DMA1>, 0, pac::SPI3, PeripheralToMemory),       //SPI3_RX
@@ -377,22 +357,7 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!(
-    (CCR1<pac::TIM4>, ccr1, u16),
-    (CCR4<pac::TIM3>, ccr4, u16),
-    (CCR1<pac::TIM2>, ccr1, u16),
-    (CCR1<pac::TIM3>, ccr1, u16),
-    (CCR2<pac::TIM2>, ccr2, u16),
-    (CCR2<pac::TIM3>, ccr2, u16),
-    (CCR2<pac::TIM4>, ccr2, u16),
-    (CCR3<pac::TIM3>, ccr3, u16),
-    (CCR3<pac::TIM4>, ccr3, u16),
-    (CCR4<pac::TIM2>, ccr4, u16),
-    (DMAR<pac::TIM3>, dmar, u16),
-    (DMAR<pac::TIM4>, dmar, u16),
-    (pac::SPI3, dr, u8),
-    (pac::I2C3, dr, u8),
-);
+address!((pac::SPI3, dr, u8), (pac::I2C3, dr, u8),);
 
 #[cfg(not(any(feature = "stm32f410")))]
 dma_map!(
@@ -425,46 +390,46 @@ address!((pac::SDIO, fifo, u32),);
     feature = "stm32f479",
 ))]
 dma_map!(
-    (Stream0<DMA1>, 6, CCR3<pac::TIM5>, MemoryToPeripheral), //TIM5_CH3
-    (Stream0<DMA1>, 6, CCR3<pac::TIM5>, PeripheralToMemory), //TIM5_CH3
-    (Stream0<DMA1>, 6, DMAR<pac::TIM5>, MemoryToPeripheral), //TIM5_UP
-    (Stream0<DMA1>, 6, DMAR<pac::TIM5>, PeripheralToMemory), //TIM5_UP
-    (Stream1<DMA1>, 6, CCR4<pac::TIM5>, MemoryToPeripheral), //TIM5_CH4
-    (Stream1<DMA1>, 6, CCR4<pac::TIM5>, PeripheralToMemory), //TIM5_CH4
-    (Stream1<DMA1>, 6, DMAR<pac::TIM5>, MemoryToPeripheral), //TIM5_TRIG
-    (Stream1<DMA1>, 6, DMAR<pac::TIM5>, PeripheralToMemory), //TIM5_TRIG
-    (Stream2<DMA1>, 6, CCR1<pac::TIM5>, MemoryToPeripheral), //TIM5_CH1
-    (Stream2<DMA1>, 6, CCR1<pac::TIM5>, PeripheralToMemory), //TIM5_CH1
-    (Stream3<DMA1>, 6, CCR4<pac::TIM5>, MemoryToPeripheral), //TIM5_CH4
-    (Stream3<DMA1>, 6, CCR4<pac::TIM5>, PeripheralToMemory), //TIM5_CH4
-    (Stream3<DMA1>, 6, DMAR<pac::TIM5>, MemoryToPeripheral), //TIM5_TRIG
-    (Stream3<DMA1>, 6, DMAR<pac::TIM5>, PeripheralToMemory), //TIM5_TRIG
-    (Stream4<DMA1>, 6, CCR2<pac::TIM5>, MemoryToPeripheral), //TIM5_CH2
-    (Stream4<DMA1>, 6, CCR2<pac::TIM5>, PeripheralToMemory), //TIM5_CH2
-    (Stream6<DMA1>, 6, DMAR<pac::TIM5>, MemoryToPeripheral), //TIM5_UP
-    (Stream6<DMA1>, 6, DMAR<pac::TIM5>, PeripheralToMemory), //TIM5_UP
-    (Stream0<DMA2>, 6, DMAR<pac::TIM1>, MemoryToPeripheral), //TIM1_TRIG
-    (Stream0<DMA2>, 6, DMAR<pac::TIM1>, PeripheralToMemory), //TIM1_TRIG
-    (Stream1<DMA2>, 6, CCR1<pac::TIM1>, MemoryToPeripheral), //TIM1_CH1
-    (Stream1<DMA2>, 6, CCR1<pac::TIM1>, PeripheralToMemory), //TIM1_CH1
-    (Stream2<DMA2>, 6, CCR2<pac::TIM1>, MemoryToPeripheral), //TIM1_CH2
-    (Stream2<DMA2>, 6, CCR2<pac::TIM1>, PeripheralToMemory), //TIM1_CH2
-    (Stream3<DMA2>, 6, CCR1<pac::TIM1>, MemoryToPeripheral), //TIM1_CH1
-    (Stream3<DMA2>, 6, CCR1<pac::TIM1>, PeripheralToMemory), //TIM1_CH1
-    (Stream4<DMA2>, 6, CCR4<pac::TIM1>, MemoryToPeripheral), //TIM1_CH4
-    (Stream4<DMA2>, 6, CCR4<pac::TIM1>, PeripheralToMemory), //TIM1_CH4
-    (Stream4<DMA2>, 6, DMAR<pac::TIM1>, MemoryToPeripheral), //TIM1_TRIG/COM
-    (Stream4<DMA2>, 6, DMAR<pac::TIM1>, PeripheralToMemory), //TIM1_TRIG/COM
-    (Stream5<DMA2>, 6, DMAR<pac::TIM1>, MemoryToPeripheral), //TIM1_UP
-    (Stream5<DMA2>, 6, DMAR<pac::TIM1>, PeripheralToMemory), //TIM1_UP
-    (Stream6<DMA2>, 0, CCR1<pac::TIM1>, MemoryToPeripheral), //TIM1_CH1
-    (Stream6<DMA2>, 0, CCR1<pac::TIM1>, PeripheralToMemory), //TIM1_CH1
-    (Stream6<DMA2>, 0, CCR2<pac::TIM1>, MemoryToPeripheral), //TIM1_CH2
-    (Stream6<DMA2>, 0, CCR2<pac::TIM1>, PeripheralToMemory), //TIM1_CH2
-    (Stream6<DMA2>, 0, CCR3<pac::TIM1>, MemoryToPeripheral), //TIM1_CH3
-    (Stream6<DMA2>, 0, CCR3<pac::TIM1>, PeripheralToMemory), //TIM1_CH3
-    (Stream6<DMA2>, 6, CCR3<pac::TIM1>, MemoryToPeripheral), //TIM1_CH3
-    (Stream6<DMA2>, 6, CCR3<pac::TIM1>, PeripheralToMemory), //TIM1_CH3
+    (Stream0<DMA1>, 6, timer::CCR3<pac::TIM5>, MemoryToPeripheral), //TIM5_CH3
+    (Stream0<DMA1>, 6, timer::CCR3<pac::TIM5>, PeripheralToMemory), //TIM5_CH3
+    (Stream0<DMA1>, 6, timer::DMAR<pac::TIM5>, MemoryToPeripheral), //TIM5_UP
+    (Stream0<DMA1>, 6, timer::DMAR<pac::TIM5>, PeripheralToMemory), //TIM5_UP
+    (Stream1<DMA1>, 6, timer::CCR4<pac::TIM5>, MemoryToPeripheral), //TIM5_CH4
+    (Stream1<DMA1>, 6, timer::CCR4<pac::TIM5>, PeripheralToMemory), //TIM5_CH4
+    (Stream1<DMA1>, 6, timer::DMAR<pac::TIM5>, MemoryToPeripheral), //TIM5_TRIG
+    (Stream1<DMA1>, 6, timer::DMAR<pac::TIM5>, PeripheralToMemory), //TIM5_TRIG
+    (Stream2<DMA1>, 6, timer::CCR1<pac::TIM5>, MemoryToPeripheral), //TIM5_CH1
+    (Stream2<DMA1>, 6, timer::CCR1<pac::TIM5>, PeripheralToMemory), //TIM5_CH1
+    (Stream3<DMA1>, 6, timer::CCR4<pac::TIM5>, MemoryToPeripheral), //TIM5_CH4
+    (Stream3<DMA1>, 6, timer::CCR4<pac::TIM5>, PeripheralToMemory), //TIM5_CH4
+    (Stream3<DMA1>, 6, timer::DMAR<pac::TIM5>, MemoryToPeripheral), //TIM5_TRIG
+    (Stream3<DMA1>, 6, timer::DMAR<pac::TIM5>, PeripheralToMemory), //TIM5_TRIG
+    (Stream4<DMA1>, 6, timer::CCR2<pac::TIM5>, MemoryToPeripheral), //TIM5_CH2
+    (Stream4<DMA1>, 6, timer::CCR2<pac::TIM5>, PeripheralToMemory), //TIM5_CH2
+    (Stream6<DMA1>, 6, timer::DMAR<pac::TIM5>, MemoryToPeripheral), //TIM5_UP
+    (Stream6<DMA1>, 6, timer::DMAR<pac::TIM5>, PeripheralToMemory), //TIM5_UP
+    (Stream0<DMA2>, 6, timer::DMAR<pac::TIM1>, MemoryToPeripheral), //TIM1_TRIG
+    (Stream0<DMA2>, 6, timer::DMAR<pac::TIM1>, PeripheralToMemory), //TIM1_TRIG
+    (Stream1<DMA2>, 6, timer::CCR1<pac::TIM1>, MemoryToPeripheral), //TIM1_CH1
+    (Stream1<DMA2>, 6, timer::CCR1<pac::TIM1>, PeripheralToMemory), //TIM1_CH1
+    (Stream2<DMA2>, 6, timer::CCR2<pac::TIM1>, MemoryToPeripheral), //TIM1_CH2
+    (Stream2<DMA2>, 6, timer::CCR2<pac::TIM1>, PeripheralToMemory), //TIM1_CH2
+    (Stream3<DMA2>, 6, timer::CCR1<pac::TIM1>, MemoryToPeripheral), //TIM1_CH1
+    (Stream3<DMA2>, 6, timer::CCR1<pac::TIM1>, PeripheralToMemory), //TIM1_CH1
+    (Stream4<DMA2>, 6, timer::CCR4<pac::TIM1>, MemoryToPeripheral), //TIM1_CH4
+    (Stream4<DMA2>, 6, timer::CCR4<pac::TIM1>, PeripheralToMemory), //TIM1_CH4
+    (Stream4<DMA2>, 6, timer::DMAR<pac::TIM1>, MemoryToPeripheral), //TIM1_TRIG/COM
+    (Stream4<DMA2>, 6, timer::DMAR<pac::TIM1>, PeripheralToMemory), //TIM1_TRIG/COM
+    (Stream5<DMA2>, 6, timer::DMAR<pac::TIM1>, MemoryToPeripheral), //TIM1_UP
+    (Stream5<DMA2>, 6, timer::DMAR<pac::TIM1>, PeripheralToMemory), //TIM1_UP
+    (Stream6<DMA2>, 0, timer::CCR1<pac::TIM1>, MemoryToPeripheral), //TIM1_CH1
+    (Stream6<DMA2>, 0, timer::CCR1<pac::TIM1>, PeripheralToMemory), //TIM1_CH1
+    (Stream6<DMA2>, 0, timer::CCR2<pac::TIM1>, MemoryToPeripheral), //TIM1_CH2
+    (Stream6<DMA2>, 0, timer::CCR2<pac::TIM1>, PeripheralToMemory), //TIM1_CH2
+    (Stream6<DMA2>, 0, timer::CCR3<pac::TIM1>, MemoryToPeripheral), //TIM1_CH3
+    (Stream6<DMA2>, 0, timer::CCR3<pac::TIM1>, PeripheralToMemory), //TIM1_CH3
+    (Stream6<DMA2>, 6, timer::CCR3<pac::TIM1>, MemoryToPeripheral), //TIM1_CH3
+    (Stream6<DMA2>, 6, timer::CCR3<pac::TIM1>, PeripheralToMemory), //TIM1_CH3
     (Stream0<DMA1>, 1, pac::I2C1, PeripheralToMemory),       //I2C1_RX
     (Stream2<DMA1>, 7, pac::I2C2, PeripheralToMemory),       //I2C2_RX
     (Stream3<DMA1>, 0, pac::SPI2, PeripheralToMemory),       //SPI2_RX
@@ -545,16 +510,6 @@ dma_map!(
     feature = "stm32f479",
 ))]
 address!(
-    (CCR1<pac::TIM1>, ccr1, u16),
-    (CCR2<pac::TIM1>, ccr2, u16),
-    (CCR3<pac::TIM1>, ccr3, u16),
-    (CCR4<pac::TIM1>, ccr4, u16),
-    (DMAR<pac::TIM1>, dmar, u16),
-    (CCR1<pac::TIM5>, ccr1, u16),
-    (CCR2<pac::TIM5>, ccr2, u16),
-    (CCR3<pac::TIM5>, ccr3, u16),
-    (CCR4<pac::TIM5>, ccr4, u16),
-    (DMAR<pac::TIM5>, dmar, u16),
     (pac::ADC1, dr, u16),
     (pac::I2C1, dr, u8),
     (pac::I2C2, dr, u8),
@@ -580,18 +535,15 @@ dma_map!(
 
 #[cfg(any(feature = "stm32f401", feature = "stm32f411",))]
 dma_map!(
-    (Stream1<DMA1>, 3, CCR3<pac::TIM2>, MemoryToPeripheral), //TIM2_CH3
-    (Stream1<DMA1>, 3, CCR3<pac::TIM2>, PeripheralToMemory), //TIM2_CH3
-    (Stream1<DMA1>, 3, DMAR<pac::TIM2>, MemoryToPeripheral), //TIM2_UP
-    (Stream1<DMA1>, 3, DMAR<pac::TIM2>, PeripheralToMemory), //TIM2_UP
-    (Stream7<DMA1>, 3, CCR4<pac::TIM2>, MemoryToPeripheral), //TIM2_CH4
-    (Stream7<DMA1>, 3, CCR4<pac::TIM2>, PeripheralToMemory), //TIM2_CH4
-    (Stream7<DMA1>, 3, DMAR<pac::TIM2>, MemoryToPeripheral), //TIM2_UP
-    (Stream7<DMA1>, 3, DMAR<pac::TIM2>, PeripheralToMemory), //TIM2_UP
+    (Stream1<DMA1>, 3, timer::CCR3<pac::TIM2>, MemoryToPeripheral), //TIM2_CH3
+    (Stream1<DMA1>, 3, timer::CCR3<pac::TIM2>, PeripheralToMemory), //TIM2_CH3
+    (Stream1<DMA1>, 3, timer::DMAR<pac::TIM2>, MemoryToPeripheral), //TIM2_UP
+    (Stream1<DMA1>, 3, timer::DMAR<pac::TIM2>, PeripheralToMemory), //TIM2_UP
+    (Stream7<DMA1>, 3, timer::CCR4<pac::TIM2>, MemoryToPeripheral), //TIM2_CH4
+    (Stream7<DMA1>, 3, timer::CCR4<pac::TIM2>, PeripheralToMemory), //TIM2_CH4
+    (Stream7<DMA1>, 3, timer::DMAR<pac::TIM2>, MemoryToPeripheral), //TIM2_UP
+    (Stream7<DMA1>, 3, timer::DMAR<pac::TIM2>, PeripheralToMemory), //TIM2_UP
 );
-
-#[cfg(any(feature = "stm32f401", feature = "stm32f411",))]
-address!((CCR3<pac::TIM2>, ccr3, u16), (DMAR<pac::TIM2>, dmar, u16),);
 
 #[cfg(any(
     feature = "stm32f401",
@@ -726,36 +678,36 @@ address!(
     feature = "stm32f479",
 ))]
 dma_map!(
-    (Stream1<DMA1>, 3, DMAR<pac::TIM2>, MemoryToPeripheral), //TIM2_UP
-    (Stream1<DMA1>, 3, DMAR<pac::TIM2>, PeripheralToMemory), //TIM2_UP
-    (Stream1<DMA1>, 3, CCR3<pac::TIM2>, MemoryToPeripheral), //TIM2_CH3
-    (Stream1<DMA1>, 3, CCR3<pac::TIM2>, PeripheralToMemory), //TIM2_CH3
-    //(pac::DMA1, Stream2, 1, DMAR<pac::TIM7>, MemoryToPeripheral), //TIM7_UP //dmar register appears to be missing
-    //(pac::DMA1, Stream2, 1, DMAR<pac::TIM7>, PeripheralToMemory), //TIM7_UP //dmar register appears to be missing
-    //(pac::DMA1, Stream4, 1, DMAR<pac::TIM7>, MemoryToPeripheral), //TIM7_UP //dmar register appears to be missing
-    //(pac::DMA1, Stream4, 1, DMAR<pac::TIM7>, PeripheralToMemory), //TIM7_UP //dmar register appears to be missing
-    (Stream7<DMA1>, 3, DMAR<pac::TIM2>, MemoryToPeripheral), //TIM2_UP
-    (Stream7<DMA1>, 3, DMAR<pac::TIM2>, PeripheralToMemory), //TIM2_UP
-    (Stream7<DMA1>, 3, CCR4<pac::TIM2>, MemoryToPeripheral), //TIM2_CH4
-    (Stream7<DMA1>, 3, CCR4<pac::TIM2>, PeripheralToMemory), //TIM2_CH4
-    (Stream1<DMA2>, 7, DMAR<pac::TIM8>, MemoryToPeripheral), //TIM8_UP
-    (Stream1<DMA2>, 7, DMAR<pac::TIM8>, PeripheralToMemory), //TIM8_UP
-    (Stream2<DMA2>, 0, CCR1<pac::TIM8>, MemoryToPeripheral), //TIM8_CH1
-    (Stream2<DMA2>, 0, CCR1<pac::TIM8>, PeripheralToMemory), //TIM8_CH1
-    (Stream2<DMA2>, 0, CCR2<pac::TIM8>, MemoryToPeripheral), //TIM8_CH2
-    (Stream2<DMA2>, 0, CCR2<pac::TIM8>, PeripheralToMemory), //TIM8_CH2
-    (Stream2<DMA2>, 0, CCR3<pac::TIM8>, MemoryToPeripheral), //TIM8_CH3
-    (Stream2<DMA2>, 0, CCR3<pac::TIM8>, PeripheralToMemory), //TIM8_CH3
-    (Stream2<DMA2>, 7, CCR1<pac::TIM8>, MemoryToPeripheral), //TIM8_CH1
-    (Stream2<DMA2>, 7, CCR1<pac::TIM8>, PeripheralToMemory), //TIM8_CH1
-    (Stream3<DMA2>, 7, CCR2<pac::TIM8>, MemoryToPeripheral), //TIM8_CH2
-    (Stream3<DMA2>, 7, CCR2<pac::TIM8>, PeripheralToMemory), //TIM8_CH2
-    (Stream4<DMA2>, 7, CCR3<pac::TIM8>, MemoryToPeripheral), //TIM8_CH3
-    (Stream4<DMA2>, 7, CCR3<pac::TIM8>, PeripheralToMemory), //TIM8_CH3
-    (Stream7<DMA2>, 7, CCR4<pac::TIM8>, MemoryToPeripheral), //TIM8_CH4
-    (Stream7<DMA2>, 7, CCR4<pac::TIM8>, PeripheralToMemory), //TIM8_CH4
-    (Stream7<DMA2>, 7, DMAR<pac::TIM8>, MemoryToPeripheral), //TIM8_COM/TRIG
-    (Stream7<DMA2>, 7, DMAR<pac::TIM8>, PeripheralToMemory), //TIM8_COM/TRIG
+    (Stream1<DMA1>, 3, timer::DMAR<pac::TIM2>, MemoryToPeripheral), //TIM2_UP
+    (Stream1<DMA1>, 3, timer::DMAR<pac::TIM2>, PeripheralToMemory), //TIM2_UP
+    (Stream1<DMA1>, 3, timer::CCR3<pac::TIM2>, MemoryToPeripheral), //TIM2_CH3
+    (Stream1<DMA1>, 3, timer::CCR3<pac::TIM2>, PeripheralToMemory), //TIM2_CH3
+    //(pac::DMA1, Stream2, 1, timer::DMAR<pac::TIM7>, MemoryToPeripheral), //TIM7_UP //dmar register appears to be missing
+    //(pac::DMA1, Stream2, 1, timer::DMAR<pac::TIM7>, PeripheralToMemory), //TIM7_UP //dmar register appears to be missing
+    //(pac::DMA1, Stream4, 1, timer::DMAR<pac::TIM7>, MemoryToPeripheral), //TIM7_UP //dmar register appears to be missing
+    //(pac::DMA1, Stream4, 1, timer::DMAR<pac::TIM7>, PeripheralToMemory), //TIM7_UP //dmar register appears to be missing
+    (Stream7<DMA1>, 3, timer::DMAR<pac::TIM2>, MemoryToPeripheral), //TIM2_UP
+    (Stream7<DMA1>, 3, timer::DMAR<pac::TIM2>, PeripheralToMemory), //TIM2_UP
+    (Stream7<DMA1>, 3, timer::CCR4<pac::TIM2>, MemoryToPeripheral), //TIM2_CH4
+    (Stream7<DMA1>, 3, timer::CCR4<pac::TIM2>, PeripheralToMemory), //TIM2_CH4
+    (Stream1<DMA2>, 7, timer::DMAR<pac::TIM8>, MemoryToPeripheral), //TIM8_UP
+    (Stream1<DMA2>, 7, timer::DMAR<pac::TIM8>, PeripheralToMemory), //TIM8_UP
+    (Stream2<DMA2>, 0, timer::CCR1<pac::TIM8>, MemoryToPeripheral), //TIM8_CH1
+    (Stream2<DMA2>, 0, timer::CCR1<pac::TIM8>, PeripheralToMemory), //TIM8_CH1
+    (Stream2<DMA2>, 0, timer::CCR2<pac::TIM8>, MemoryToPeripheral), //TIM8_CH2
+    (Stream2<DMA2>, 0, timer::CCR2<pac::TIM8>, PeripheralToMemory), //TIM8_CH2
+    (Stream2<DMA2>, 0, timer::CCR3<pac::TIM8>, MemoryToPeripheral), //TIM8_CH3
+    (Stream2<DMA2>, 0, timer::CCR3<pac::TIM8>, PeripheralToMemory), //TIM8_CH3
+    (Stream2<DMA2>, 7, timer::CCR1<pac::TIM8>, MemoryToPeripheral), //TIM8_CH1
+    (Stream2<DMA2>, 7, timer::CCR1<pac::TIM8>, PeripheralToMemory), //TIM8_CH1
+    (Stream3<DMA2>, 7, timer::CCR2<pac::TIM8>, MemoryToPeripheral), //TIM8_CH2
+    (Stream3<DMA2>, 7, timer::CCR2<pac::TIM8>, PeripheralToMemory), //TIM8_CH2
+    (Stream4<DMA2>, 7, timer::CCR3<pac::TIM8>, MemoryToPeripheral), //TIM8_CH3
+    (Stream4<DMA2>, 7, timer::CCR3<pac::TIM8>, PeripheralToMemory), //TIM8_CH3
+    (Stream7<DMA2>, 7, timer::CCR4<pac::TIM8>, MemoryToPeripheral), //TIM8_CH4
+    (Stream7<DMA2>, 7, timer::CCR4<pac::TIM8>, PeripheralToMemory), //TIM8_CH4
+    (Stream7<DMA2>, 7, timer::DMAR<pac::TIM8>, MemoryToPeripheral), //TIM8_COM/TRIG
+    (Stream7<DMA2>, 7, timer::DMAR<pac::TIM8>, PeripheralToMemory), //TIM8_COM/TRIG
     (Stream1<DMA1>, 4, pac::USART3, PeripheralToMemory),     //USART3_RX
     (Stream1<DMA1>, 4, serial::Rx<pac::USART3>, PeripheralToMemory), //USART3_RX
     (Stream3<DMA1>, 4, pac::USART3, MemoryToPeripheral),     //USART3_TX
@@ -780,17 +732,7 @@ dma_map!(
     feature = "stm32f469",
     feature = "stm32f479",
 ))]
-address!(
-    (CCR1<pac::TIM8>, ccr1, u16),
-    (CCR2<pac::TIM8>, ccr2, u16),
-    (CCR3<pac::TIM8>, ccr3, u16),
-    (CCR4<pac::TIM8>, ccr4, u16),
-    (DMAR<pac::TIM8>, dmar, u16),
-    (CCR3<pac::TIM2>, ccr3, u16),
-    (DMAR<pac::TIM2>, dmar, u16),
-    //(DMAR<pac::TIM7>, dmar), //Missing?
-    (pac::USART3, dr, u8),
-);
+address!((pac::USART3, dr, u8),);
 
 /*
 DMAR register appears to be missing from TIM6 derived timers on these devices
@@ -813,29 +755,8 @@ DMAR register appears to be missing from TIM6 derived timers on these devices
     feature = "stm32f479",
 ))]
 dma_map!(
-    (pac::DMA1, Stream1, 7, DMAR<pac::TIM6>, MemoryToPeripheral), //TIM6_UP
-    (pac::DMA1, Stream1, 7, DMAR<pac::TIM6>, PeripheralToMemory), //TIM6_UP
-);
-
-#[cfg(any(
-    feature = "stm32f417",
-    feature = "stm32f415",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f410",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f439",
-    feature = "stm32f437",
-    feature = "stm32f429",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
-address!(
-    (DMAR<pac::TIM6>, dmar),
+    (pac::DMA1, Stream1, 7, timer::DMAR<pac::TIM6>, MemoryToPeripheral), //TIM6_UP
+    (pac::DMA1, Stream1, 7, timer::DMAR<pac::TIM6>, PeripheralToMemory), //TIM6_UP
 );
 */
 

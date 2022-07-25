@@ -500,7 +500,7 @@ impl SingleOutputPll {
                     return None;
                 }
                 let output = vco_out / outdiv;
-                let error = (output as i32 - target as i32).abs() as u32;
+                let error = (output as i32 - target as i32).unsigned_abs();
                 Some((n, outdiv, output, error))
             })
             .min_by_key(|(_, _, _, error)| *error)?;

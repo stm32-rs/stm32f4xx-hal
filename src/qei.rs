@@ -99,10 +99,7 @@ macro_rules! hal {
                             .cc2p()
                             .clear_bit()
                     });
-                    #[cfg(not(feature = "stm32f410"))]
                     self.smcr.write(|w| w.sms().encoder_mode_3());
-                    #[cfg(feature = "stm32f410")]
-                    self.smcr.write(|w| unsafe { w.sms().bits(3) });
                     self.set_auto_reload(<$TIM as General>::Width::MAX as u32).unwrap();
                     self.cr1.write(|w| w.cen().set_bit());
                 }

@@ -47,7 +47,7 @@ impl Crc32 {
     pub fn update(&mut self, data: &[u32]) -> u32 {
         // Feed each word into the engine
         for word in data {
-            self.periph.dr.write(|w| unsafe { w.bits(*word) });
+            self.periph.dr.write(|w| w.bits(*word));
         }
         // Retrieve the resulting CRC
         self.periph.dr.read().bits()
@@ -112,7 +112,7 @@ impl Crc32 {
             scratch[..remainder.len()].copy_from_slice(remainder);
             self.periph
                 .dr
-                .write(|w| unsafe { w.bits(u32::from_ne_bytes(scratch)) });
+                .write(|w| w.bits(u32::from_ne_bytes(scratch)));
         }
 
         self.periph.dr.read().bits()
