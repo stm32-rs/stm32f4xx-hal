@@ -77,11 +77,12 @@ mod nb {
 mod blocking {
     use super::super::{Error, Instance, Spi, TransferModeBidi, TransferModeNormal};
     use embedded_hal_one::spi::{
-        blocking::{SpiBus, SpiBusRead, SpiBusWrite, SpiBusFlush},
+        blocking::{SpiBus, SpiBusFlush, SpiBusRead, SpiBusWrite},
         nb::FullDuplex,
     };
 
-    impl<SPI, PINS, TRANSFER_MODE, W: Copy + Default + 'static> SpiBus<W> for Spi<SPI, PINS, TRANSFER_MODE>
+    impl<SPI, PINS, TRANSFER_MODE, W: Copy + Default + 'static> SpiBus<W>
+        for Spi<SPI, PINS, TRANSFER_MODE>
     where
         Self: FullDuplex<W, Error = Error> + SpiBusWrite<W>,
         SPI: Instance,
