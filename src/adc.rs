@@ -34,11 +34,6 @@ macro_rules! adc_pins {
                 type ID = u8;
                 fn channel() -> u8 { $chan }
             }
-
-            impl embedded_hal_one::adc::nb::Channel<pac::$adc> for $pin {
-                type ID = u8;
-                fn channel(&self) -> u8 { $chan }
-            }
         )+
     };
 }
@@ -1067,17 +1062,6 @@ macro_rules! adc {
             impl<PIN> embedded_hal::adc::OneShot<pac::$adc_type, u16, PIN> for Adc<pac::$adc_type>
             where
                 PIN: embedded_hal::adc::Channel<pac::$adc_type, ID=u8>,
-            {
-                type Error = ();
-
-                fn read(&mut self, pin: &mut PIN) -> nb::Result<u16, Self::Error> {
-                    self.read::<PIN>(pin)
-                }
-            }
-
-            impl<PIN> embedded_hal_one::adc::nb::OneShot<pac::$adc_type, u16, PIN> for Adc<pac::$adc_type>
-            where
-                PIN: embedded_hal::adc::Channel<pac::$adc_type, ID=u8> + embedded_hal_one::adc::nb::Channel<pac::$adc_type, ID=u8>,
             {
                 type Error = ();
 
