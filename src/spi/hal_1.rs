@@ -77,17 +77,17 @@ mod nb {
 mod blocking {
     use super::super::{Error, Instance, Spi, TransferModeBidi, TransferModeNormal};
     use embedded_hal_one::spi::{
-        blocking::{Operation, Read, Transactional, Transfer, TransferInplace, Write, WriteIter},
+        blocking::{SpiBus, SpiBusFlush, SpiBusRead, SpiBusWrite},
         nb::FullDuplex,
     };
 
-    impl<SPI, PINS, TRANSFER_MODE, W: Copy + 'static> TransferInplace<W>
+    impl<SPI, PINS, TRANSFER_MODE, W: Copy + Default + 'static> SpiBus<W>
         for Spi<SPI, PINS, TRANSFER_MODE>
     where
-        Self: FullDuplex<W, Error = Error>,
+        Self: FullDuplex<W, Error = Error> + SpiBusWrite<W>,
         SPI: Instance,
     {
-        fn transfer_inplace(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
+        fn transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
             for word in words.iter_mut() {
                 nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
                 *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
@@ -95,13 +95,7 @@ mod blocking {
 
             Ok(())
         }
-    }
 
-    impl<SPI, PINS, TRANSFER_MODE, W: Copy + 'static> Transfer<W> for Spi<SPI, PINS, TRANSFER_MODE>
-    where
-        Self: FullDuplex<W, Error = Error>,
-        SPI: Instance,
-    {
         fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Self::Error> {
             assert_eq!(data.len(), buff.len());
 
@@ -114,7 +108,16 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, W: Copy + 'static> Write<W> for Spi<SPI, PINS, TransferModeNormal>
+    impl<SPI, PINS, TRANSFER_MODE> SpiBusFlush for Spi<SPI, PINS, TRANSFER_MODE>
+    where
+        SPI: Instance,
+    {
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
+    impl<SPI, PINS, W: Copy + 'static> SpiBusWrite<W> for Spi<SPI, PINS, TransferModeNormal>
     where
         Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
@@ -129,7 +132,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, W: Copy + 'static> Write<W> for Spi<SPI, PINS, TransferModeBidi>
+    impl<SPI, PINS, W: Copy + 'static> SpiBusWrite<W> for Spi<SPI, PINS, TransferModeBidi>
     where
         Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
@@ -143,42 +146,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, W: Copy + 'static> WriteIter<W> for Spi<SPI, PINS, TransferModeNormal>
-    where
-        Self: FullDuplex<W, Error = Error>,
-        SPI: Instance,
-    {
-        fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
-        where
-            WI: IntoIterator<Item = W>,
-        {
-            for word in words.into_iter() {
-                nb::block!(<Self as FullDuplex<W>>::write(self, word))?;
-                nb::block!(<Self as FullDuplex<W>>::read(self))?;
-            }
-
-            Ok(())
-        }
-    }
-
-    impl<SPI, PINS, W: Copy + 'static> WriteIter<W> for Spi<SPI, PINS, TransferModeBidi>
-    where
-        Self: FullDuplex<W, Error = Error>,
-        SPI: Instance,
-    {
-        fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
-        where
-            WI: IntoIterator<Item = W>,
-        {
-            for word in words.into_iter() {
-                nb::block!(<Self as FullDuplex<W>>::write(self, word))?;
-            }
-
-            Ok(())
-        }
-    }
-
-    impl<SPI, PINS, TRANSFER_MODE, W: Copy + Default + 'static> Read<W>
+    impl<SPI, PINS, TRANSFER_MODE, W: Copy + Default + 'static> SpiBusRead<W>
         for Spi<SPI, PINS, TRANSFER_MODE>
     where
         Self: FullDuplex<W, Error = Error>,
@@ -188,27 +156,6 @@ mod blocking {
             for word in words {
                 nb::block!(<Self as FullDuplex<W>>::write(self, W::default()))?;
                 *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
-            }
-
-            Ok(())
-        }
-    }
-
-    impl<SPI, PINS, TRANSFER_MODE, W: Copy + 'static> Transactional<W> for Spi<SPI, PINS, TRANSFER_MODE>
-    where
-        Self: Write<W, Error = Error>
-            + Read<W, Error = Error>
-            + TransferInplace<W, Error = Error>
-            + Transfer<W, Error = Error>,
-    {
-        fn exec<'a>(&mut self, operations: &mut [Operation<'a, W>]) -> Result<(), Error> {
-            for op in operations {
-                match op {
-                    Operation::Write(w) => self.write(w)?,
-                    Operation::TransferInplace(t) => self.transfer_inplace(t)?,
-                    Operation::Read(r) => self.read(r)?,
-                    Operation::Transfer(w, r) => self.transfer(w, r)?,
-                }
             }
 
             Ok(())

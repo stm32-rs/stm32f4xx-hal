@@ -52,7 +52,7 @@ version = "0.3"
 default-features = false
 
 [dependencies.embedded-hal-one]
-version = "=1.0.0-alpha.7"
+version = "=1.0.0-alpha.8"
 package = "embedded-hal"
 
 [dependencies.stm32_i2s_v12x]
