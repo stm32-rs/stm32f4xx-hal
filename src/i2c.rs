@@ -18,7 +18,7 @@ pub enum DutyCycle {
     Ratio16to9,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Mode {
     Standard {
         frequency: Hertz,

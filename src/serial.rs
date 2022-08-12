@@ -52,7 +52,7 @@ pub mod config {
     use crate::time::U32Ext;
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum WordLength {
         DataBits8,
         DataBits9,
@@ -62,7 +62,7 @@ pub mod config {
     /// underlying USART will be configured to send/receive the parity bit in
     /// addtion to the data bits.
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum Parity {
         /// No parity bit will be added/checked.
         ParityNone,
@@ -78,7 +78,7 @@ pub mod config {
     ///
     /// Wrapper around `STOP_A`
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub enum StopBits {
         #[doc = "1 stop bit"]
         STOP1,
@@ -91,7 +91,7 @@ pub mod config {
     }
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum DmaConfig {
         None,
         Tx,
@@ -100,7 +100,7 @@ pub mod config {
     }
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct Config {
         pub baudrate: Bps,
         pub wordlength: WordLength,
