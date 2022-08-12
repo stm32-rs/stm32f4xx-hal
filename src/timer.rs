@@ -41,7 +41,7 @@ pub struct Timer<TIM> {
     pub(crate) clk: Hertz,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Channel {
@@ -52,7 +52,7 @@ pub enum Channel {
 }
 
 /// Interrupt events
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum SysEvent {
     /// [Timer] timed out / count down ended
@@ -201,7 +201,7 @@ impl Timer<SYST> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Ocm {

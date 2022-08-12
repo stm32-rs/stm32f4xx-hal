@@ -27,7 +27,7 @@ use traits::{
 };
 
 /// Errors.
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum DMAError<T> {
     /// DMA not ready to change buffers.
     NotReady(T),
@@ -51,7 +51,7 @@ impl<T> Debug for DMAError<T> {
 }
 
 /// Possible DMA's directions.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DmaDirection {
     /// Memory to Memory transfer.
     MemoryToMemory,
@@ -180,7 +180,7 @@ impl From<u8> for FifoLevel {
 }
 
 /// Which DMA buffer is in use.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CurrentBuffer {
     /// The first buffer (m0ar) is in use.
     FirstBuffer,
