@@ -46,9 +46,9 @@ jobs:
           override: true
 
       - name: Cache Dependencies
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
-          key: pac-v0.14-${{ matrix.mcu }}
+          key: pac-v0.15.1-${{ matrix.mcu }}
 
       - uses: actions-rs/cargo@v1
         with:

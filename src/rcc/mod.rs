@@ -979,15 +979,15 @@ impl CFGR {
         let hclk = self.hclk.unwrap_or(sysclk);
         let (hpre_bits, hpre_div) = match (sysclk + hclk - 1) / hclk {
             0 => unreachable!(),
-            1 => (HPRE_A::DIV1, 1),
-            2 => (HPRE_A::DIV2, 2),
-            3..=5 => (HPRE_A::DIV4, 4),
-            6..=11 => (HPRE_A::DIV8, 8),
-            12..=39 => (HPRE_A::DIV16, 16),
-            40..=95 => (HPRE_A::DIV64, 64),
-            96..=191 => (HPRE_A::DIV128, 128),
-            192..=383 => (HPRE_A::DIV256, 256),
-            _ => (HPRE_A::DIV512, 512),
+            1 => (HPRE_A::Div1, 1),
+            2 => (HPRE_A::Div2, 2),
+            3..=5 => (HPRE_A::Div4, 4),
+            6..=11 => (HPRE_A::Div8, 8),
+            12..=39 => (HPRE_A::Div16, 16),
+            40..=95 => (HPRE_A::Div64, 64),
+            96..=191 => (HPRE_A::Div128, 128),
+            192..=383 => (HPRE_A::Div256, 256),
+            _ => (HPRE_A::Div512, 512),
         };
 
         // Calculate real AHB clock
@@ -1130,11 +1130,11 @@ impl CFGR {
         // Select system clock source
         rcc.cfgr.modify(|_, w| {
             w.sw().variant(if sysclk_on_pll {
-                SW_A::PLL
+                SW_A::Pll
             } else if self.hse.is_some() {
-                SW_A::HSE
+                SW_A::Hse
             } else {
-                SW_A::HSI
+                SW_A::Hsi
             })
         });
 
