@@ -8,16 +8,32 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Changed
- - use `stm32_i2s_v12x` version 0.3, reexport it, and implements requirement for it
- - i2s module don't reuse marker from spi module and define its own.
- - `i2s-audio-out` example updated and now use pcm5102 dac module instead one from discovery board.
- - extend visibility of gpio/marker to crate since i2s module require it.
 
-### Added
- - example of using i2s in out with rtic and interrupt.
+ - update `stm32f4` to 0.15.1 [#481]
+ - use `stm32_i2s_v12x` version 0.3, reexport it, and implements requirement for it [#490]
+ - i2s module don't reuse marker from spi module and define its own [#490]
+ - `i2s-audio-out` example updated and now use pcm5102 dac module instead one from discovery board [#490]
+ - extend visibility of gpio/marker to crate since i2s module require it [#490]
+ - Bump `synopsys-usb-otg` to `0.3.0` [#508]
+ - Bump `embedded-hal` to `1.0.0-alpha.8` [#510]
 
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
+
+### Added
+
+- Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
+- Implementation of From trait for Pin-to-ErasedPin [#507]
+- Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
+- `SysMonoTimerExt` helper trait, `Pwm::(get/set)_duty_time` [#497]
+- example of using i2s in out with rtic and interrupt.
+
+[#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
+[#490]: https://github.com/stm32-rs/stm32f4xx-hal/pull/490
+[#497]: https://github.com/stm32-rs/stm32f4xx-hal/pull/497
+[#507]: https://github.com/stm32-rs/stm32f4xx-hal/pull/507
+[#508]: https://github.com/stm32-rs/stm32f4xx-hal/pull/508
+[#510]: https://github.com/stm32-rs/stm32f4xx-hal/pull/510
 
 ## [v0.13.2] - 2022-05-16
 

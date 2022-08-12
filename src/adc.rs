@@ -34,11 +34,6 @@ macro_rules! adc_pins {
                 type ID = u8;
                 fn channel() -> u8 { $chan }
             }
-
-            impl embedded_hal_one::adc::nb::Channel<pac::$adc> for $pin {
-                type ID = u8;
-                fn channel(&self) -> u8 { $chan }
-            }
         )+
     };
 }
@@ -841,10 +836,24 @@ macro_rules! adc {
                 /// Sets which external trigger to use and if it is disabled, rising, falling or both
                 pub fn set_external_trigger(&mut self, (edge, extsel): (config::TriggerMode, config::ExternalTrigger)) {
                     self.config.external_trigger = (edge, extsel);
+                    #[cfg(any(
+                        feature = "stm32f401",
+                        feature = "stm32f410",
+                        feature = "stm32f411",
+                    ))] // TODO: fix pac
                     self.adc_reg.cr2.modify(|_, w| unsafe { w
                         .extsel().bits(extsel.into())
                         .exten().bits(edge.into())
                     });
+                    #[cfg(not(any(
+                        feature = "stm32f401",
+                        feature = "stm32f410",
+                        feature = "stm32f411",
+                    )))]
+                    self.adc_reg.cr2.modify(|_, w| w
+                        .extsel().bits(extsel.into())
+                        .exten().bits(edge.into())
+                    );
                 }
 
                 /// Enables and disables continuous mode
@@ -1067,17 +1076,6 @@ macro_rules! adc {
             impl<PIN> embedded_hal::adc::OneShot<pac::$adc_type, u16, PIN> for Adc<pac::$adc_type>
             where
                 PIN: embedded_hal::adc::Channel<pac::$adc_type, ID=u8>,
-            {
-                type Error = ();
-
-                fn read(&mut self, pin: &mut PIN) -> nb::Result<u16, Self::Error> {
-                    self.read::<PIN>(pin)
-                }
-            }
-
-            impl<PIN> embedded_hal_one::adc::nb::OneShot<pac::$adc_type, u16, PIN> for Adc<pac::$adc_type>
-            where
-                PIN: embedded_hal::adc::Channel<pac::$adc_type, ID=u8> + embedded_hal_one::adc::nb::Channel<pac::$adc_type, ID=u8>,
             {
                 type Error = ();
 

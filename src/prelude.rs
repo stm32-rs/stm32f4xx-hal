@@ -75,5 +75,7 @@ pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;
 #[cfg(feature = "rtic")]
 pub use crate::timer::MonoTimerExt as _stm32f4xx_hal_timer_MonoTimerExt;
 pub use crate::timer::PwmExt as _stm32f4xx_hal_timer_PwmExt;
+#[cfg(feature = "rtic")]
+pub use crate::timer::SysMonoTimerExt as _stm32f4xx_hal_timer_SysMonoTimerExt;
 pub use crate::timer::SysTimerExt as _stm32f4xx_hal_timer_SysCounterExt;
 pub use crate::timer::TimerExt as _stm32f4xx_hal_timer_TimerExt;

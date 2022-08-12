@@ -58,7 +58,7 @@ unsafe impl UsbPeripheral for USB {
     }
 
     fn ahb_frequency_hz(&self) -> u32 {
-        self.hclk.0
+        self.hclk.raw()
     }
 }
 

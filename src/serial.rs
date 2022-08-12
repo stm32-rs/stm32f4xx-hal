@@ -52,7 +52,7 @@ pub mod config {
     use crate::time::U32Ext;
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum WordLength {
         DataBits8,
         DataBits9,
@@ -62,7 +62,7 @@ pub mod config {
     /// underlying USART will be configured to send/receive the parity bit in
     /// addtion to the data bits.
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum Parity {
         /// No parity bit will be added/checked.
         ParityNone,
@@ -78,7 +78,7 @@ pub mod config {
     ///
     /// Wrapper around `STOP_A`
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub enum StopBits {
         #[doc = "1 stop bit"]
         STOP1,
@@ -91,7 +91,7 @@ pub mod config {
     }
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum DmaConfig {
         None,
         Tx,
@@ -100,7 +100,7 @@ pub mod config {
     }
 
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct Config {
         pub baudrate: Bps,
         pub wordlength: WordLength,
@@ -722,10 +722,10 @@ macro_rules! halUsart {
 
                 self.cr2.write(|w| {
                     w.stop().variant(match bits {
-                        StopBits::STOP0P5 => STOP_A::STOP0P5,
-                        StopBits::STOP1 => STOP_A::STOP1,
-                        StopBits::STOP1P5 => STOP_A::STOP1P5,
-                        StopBits::STOP2 => STOP_A::STOP2,
+                        StopBits::STOP0P5 => STOP_A::Stop0p5,
+                        StopBits::STOP1 => STOP_A::Stop1,
+                        StopBits::STOP1P5 => STOP_A::Stop1p5,
+                        StopBits::STOP2 => STOP_A::Stop2,
                     })
                 });
             }
@@ -760,10 +760,10 @@ macro_rules! halUart {
 
                 self.cr2.write(|w| {
                     w.stop().variant(match bits {
-                        StopBits::STOP0P5 => STOP_A::STOP1,
-                        StopBits::STOP1 => STOP_A::STOP1,
-                        StopBits::STOP1P5 => STOP_A::STOP2,
-                        StopBits::STOP2 => STOP_A::STOP2,
+                        StopBits::STOP0P5 => STOP_A::Stop1,
+                        StopBits::STOP1 => STOP_A::Stop1,
+                        StopBits::STOP1P5 => STOP_A::Stop2,
+                        StopBits::STOP2 => STOP_A::Stop2,
                     })
                 });
             }
@@ -785,9 +785,9 @@ halUart! { pac::UART4, Serial4, Rx4, Tx4 }
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
 halUart! { pac::UART5, Serial5, Rx5, Tx5 }
 
-#[cfg(feature = "uart4")]
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { pac::UART4, Serial4, Rx4, Tx4 }
+//#[cfg(feature = "uart4")]
+//#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+//halUsart! { pac::UART4, Serial4, Rx4, Tx4 }
 #[cfg(feature = "uart5")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 halUsart! { pac::UART5, Serial5, Rx5, Tx5 }
