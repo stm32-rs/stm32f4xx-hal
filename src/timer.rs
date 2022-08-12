@@ -445,7 +445,7 @@ macro_rules! with_pwm {
 
             #[inline(always)]
             fn start_pwm(&mut self) {
-                self.enable_counter();
+                self.cr1.modify(|_, w| w.cen().set_bit());
             }
 
             #[inline(always)]
@@ -495,7 +495,7 @@ macro_rules! with_pwm {
 
             #[inline(always)]
             fn start_pwm(&mut self) {
-                self.enable_counter();
+                self.cr1.modify(|_, w| w.cen().set_bit());
             }
 
             #[inline(always)]
@@ -553,7 +553,7 @@ macro_rules! with_pwm {
             #[inline(always)]
             fn start_pwm(&mut self) {
                 $(let $aoe = self.bdtr.modify(|_, w| w.aoe().set_bit());)?
-                self.enable_counter();
+                self.cr1.modify(|_, w| w.cen().set_bit());
             }
 
             #[inline(always)]

@@ -28,9 +28,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `SysMonoTimerExt` helper trait, `Pwm::(get/set)_duty_time` [#497]
 - example of using i2s in out with rtic and interrupt.
 
+### Fixed
+ - use register.modify instead of register.write to start PWM [#504]
+
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
 [#490]: https://github.com/stm32-rs/stm32f4xx-hal/pull/490
 [#497]: https://github.com/stm32-rs/stm32f4xx-hal/pull/497
+[#504]: https://github.com/stm32-rs/stm32f4xx-hal/pull/504
 [#507]: https://github.com/stm32-rs/stm32f4xx-hal/pull/507
 [#508]: https://github.com/stm32-rs/stm32f4xx-hal/pull/508
 [#510]: https://github.com/stm32-rs/stm32f4xx-hal/pull/510
