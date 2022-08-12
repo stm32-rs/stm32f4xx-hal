@@ -421,8 +421,16 @@ where
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
 
+    pub fn get_duty_time(&self, channel: Channel) -> TimerDurationU32<FREQ> {
+        TimerDurationU32::from_ticks(TIM::read_cc_value(PINS::check_used(channel) as u8))
+    }
+
     pub fn set_duty(&mut self, channel: Channel, duty: u16) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty.into())
+    }
+
+    pub fn set_duty_time(&mut self, channel: Channel, duty: TimerDurationU32<FREQ>) {
+        TIM::set_cc_value(PINS::check_used(channel) as u8, duty.ticks())
     }
 
     /// If `0` returned means max_duty is 2^16
