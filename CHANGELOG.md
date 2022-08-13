@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
 
+### Fixed
+ - use register.modify instead of register.write to start PWM [#501]
+
 ### Added
 
 - Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
@@ -31,6 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
 [#490]: https://github.com/stm32-rs/stm32f4xx-hal/pull/490
 [#497]: https://github.com/stm32-rs/stm32f4xx-hal/pull/497
+[#501]: https://github.com/stm32-rs/stm32f4xx-hal/issues/501
 [#507]: https://github.com/stm32-rs/stm32f4xx-hal/pull/507
 [#508]: https://github.com/stm32-rs/stm32f4xx-hal/pull/508
 [#510]: https://github.com/stm32-rs/stm32f4xx-hal/pull/510
