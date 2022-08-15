@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Serial Tx, Rx containing pins [#514]
+- Serial Tx, Rx containing pins [#514] [#515]
 - Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
 - Implementation of From trait for Pin-to-ErasedPin [#507]
 - Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
@@ -39,7 +39,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#507]: https://github.com/stm32-rs/stm32f4xx-hal/pull/507
 [#508]: https://github.com/stm32-rs/stm32f4xx-hal/pull/508
 [#510]: https://github.com/stm32-rs/stm32f4xx-hal/pull/510
-[#510]: https://github.com/stm32-rs/stm32f4xx-hal/pull/514
+[#514]: https://github.com/stm32-rs/stm32f4xx-hal/pull/514
+[#515]: https://github.com/stm32-rs/stm32f4xx-hal/pull/515
 
 ## [v0.13.2] - 2022-05-16
 
