@@ -1,4 +1,6 @@
-use super::{compute_arr_presc, Channel, FTimer, Instance, Ocm, Timer, WithPwm};
+use super::{
+    compute_arr_presc, Advanced, Channel, FTimer, Instance, Ocm, Polarity, Timer, WithPwm,
+};
 use crate::rcc::Clocks;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
@@ -150,9 +152,7 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
             _tim: core::marker::PhantomData,
         }
     }
-}
 
-impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     #[inline]
     pub fn disable(&mut self) {
         TIM::enable_channel(C, false);
@@ -161,6 +161,16 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     #[inline]
     pub fn enable(&mut self) {
         TIM::enable_channel(C, true);
+    }
+
+    #[inline]
+    pub fn set_polarity(&mut self, p: Polarity) {
+        TIM::set_channel_polarity(C, p);
+    }
+
+    #[inline]
+    pub fn set_complementary_polarity(&mut self, p: Polarity) {
+        TIM::set_nchannel_polarity(C, p);
     }
 
     #[inline]
@@ -177,6 +187,13 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     #[inline]
     pub fn set_duty(&mut self, duty: u16) {
         TIM::set_cc_value(C, duty as u32)
+    }
+}
+
+impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C> {
+    #[inline]
+    pub fn enable_complementary(&mut self) {
+        TIM::enable_nchannel(C, true);
     }
 }
 

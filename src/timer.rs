@@ -57,6 +57,13 @@ pub enum Channel {
     C4 = 3,
 }
 
+/// Enum for IO polarity
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Polarity {
+    ActiveHigh,
+    ActiveLow,
+}
+
 /// Interrupt events
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -232,7 +239,7 @@ pub type CCR4<T> = CCR<T, 3>;
 pub struct DMAR<T>(T);
 
 mod sealed {
-    use super::{Channel, Event, Ocm};
+    use super::{Channel, Event, Ocm, Polarity};
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
@@ -256,13 +263,22 @@ mod sealed {
         fn cr1_reset(&mut self);
     }
 
-    pub trait WithPwm: General {
+    pub trait WithPwmCommon: General {
         const CH_NUMBER: u8;
         fn read_cc_value(channel: u8) -> u32;
         fn set_cc_value(channel: u8, value: u32);
+        fn enable_channel(channel: u8, b: bool);
+        fn set_channel_polarity(channel: u8, p: Polarity);
+        fn set_nchannel_polarity(channel: u8, p: Polarity);
+    }
+
+    pub trait Advanced: WithPwmCommon {
+        fn enable_nchannel(channel: u8, b: bool);
+    }
+
+    pub trait WithPwm: WithPwmCommon {
         fn preload_output_channel_in_mode(&mut self, channel: Channel, mode: Ocm);
         fn start_pwm(&mut self);
-        fn enable_channel(channel: u8, b: bool);
     }
 
     pub trait MasterTimer: General {
@@ -270,7 +286,7 @@ mod sealed {
         fn master_mode(&mut self, mode: Self::Mms);
     }
 }
-pub(crate) use sealed::{General, MasterTimer, WithPwm};
+pub(crate) use sealed::{Advanced, General, MasterTimer, WithPwm, WithPwmCommon};
 
 pub trait Instance:
     crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock + General
@@ -282,7 +298,7 @@ macro_rules! hal {
         $Timer:ident,
         $bits:ty,
         $(dmar: $memsize:ty,)?
-        $(c: ($cnum:ident $(, $aoe:ident)?),)?
+        $(c: ($CNUM:ident, $cnum:literal $(, $aoe:ident)?),)?
         $(m: $timbase:ident,)?
     ],)+) => {
         $(
@@ -386,7 +402,66 @@ macro_rules! hal {
             $(with_dmar!($TIM, $memsize);)?
 
             $(
-                with_pwm!($TIM: $cnum $(, $aoe)?);
+                impl WithPwmCommon for $TIM {
+                    const CH_NUMBER: u8 = $cnum;
+
+                    #[inline(always)]
+                    fn read_cc_value(c: u8) -> u32 {
+                        let tim = unsafe { &*<$TIM>::ptr() };
+                        if c < Self::CH_NUMBER {
+                            tim.ccr[c as usize].read().bits()
+                        } else {
+                            0
+                        }
+                    }
+
+                    #[inline(always)]
+                    fn set_cc_value(c: u8, value: u32) {
+                        let tim = unsafe { &*<$TIM>::ptr() };
+                        if c < Self::CH_NUMBER {
+                            #[allow(unused_unsafe)]
+                            tim.ccr[c as usize].write(|w| unsafe { w.bits(value) })
+                        }
+                    }
+
+                    #[inline(always)]
+                    fn enable_channel(c: u8, b: bool) {
+                        let tim = unsafe { &*<$TIM>::ptr() };
+                        if c < Self::CH_NUMBER {
+                            unsafe { bb::write(&tim.ccer, c*4, b); }
+                        }
+                    }
+
+                    #[inline(always)]
+                    fn set_channel_polarity(c: u8, p: Polarity) {
+                        let tim = unsafe { &*<$TIM>::ptr() };
+                        if c < Self::CH_NUMBER {
+                            unsafe { bb::write(&tim.ccer, c*4 + 1, p == Polarity::ActiveLow); }
+                        }
+                    }
+
+                    #[inline(always)]
+                    fn set_nchannel_polarity(c: u8, p: Polarity) {
+                        let tim = unsafe { &*<$TIM>::ptr() };
+                        if c < Self::CH_NUMBER {
+                            unsafe { bb::write(&tim.ccer, c*4 + 3, p == Polarity::ActiveLow); }
+                        }
+                    }
+                }
+
+                $(
+                    impl Advanced for $TIM {
+                        fn enable_nchannel(c: u8, b: bool) {
+                            let $aoe = ();
+                            let tim = unsafe { &*<$TIM>::ptr() };
+                            if c < Self::CH_NUMBER {
+                                unsafe { bb::write(&tim.ccer, c*4 + 2, b); }
+                            }
+                        }
+                    }
+                )?
+
+                with_pwm!($TIM: $CNUM $(, $aoe)?);
                 unsafe impl<const C: u8> PeriAddress for CCR<$TIM, C> {
                     #[inline(always)]
                     fn address(&self) -> u32 {
@@ -423,21 +498,6 @@ macro_rules! with_dmar {
 macro_rules! with_pwm {
     ($TIM:ty: CH1) => {
         impl WithPwm for $TIM {
-            const CH_NUMBER: u8 = 1;
-
-            #[inline(always)]
-            fn read_cc_value(channel: u8) -> u32 {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                tim.ccr[channel as usize].read().bits()
-            }
-
-            #[inline(always)]
-            fn set_cc_value(channel: u8, value: u32) {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                #[allow(unused_unsafe)]
-                tim.ccr[channel as usize].write(|w| unsafe { w.bits(value) })
-            }
-
             #[inline(always)]
             fn preload_output_channel_in_mode(&mut self, channel: Channel, mode: Ocm) {
                 match channel {
@@ -453,33 +513,10 @@ macro_rules! with_pwm {
             fn start_pwm(&mut self) {
                 self.cr1.modify(|_, w| w.cen().set_bit());
             }
-
-            #[inline(always)]
-            fn enable_channel(c: u8, b: bool) {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                if c < Self::CH_NUMBER {
-                    unsafe { bb::write(&tim.ccer, c*4, b); }
-                }
-            }
         }
     };
     ($TIM:ty: CH2) => {
         impl WithPwm for $TIM {
-            const CH_NUMBER: u8 = 2;
-
-            #[inline(always)]
-            fn read_cc_value(channel: u8) -> u32 {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                tim.ccr[channel as usize].read().bits()
-            }
-
-            #[inline(always)]
-            fn set_cc_value(channel: u8, value: u32) {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                #[allow(unused_unsafe)]
-                tim.ccr[channel as usize].write(|w| unsafe { w.bits(value) });
-            }
-
             #[inline(always)]
             fn preload_output_channel_in_mode(&mut self, channel: Channel, mode: Ocm) {
                 match channel {
@@ -499,33 +536,10 @@ macro_rules! with_pwm {
             fn start_pwm(&mut self) {
                 self.cr1.modify(|_, w| w.cen().set_bit());
             }
-
-            #[inline(always)]
-            fn enable_channel(c: u8, b: bool) {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                if c < Self::CH_NUMBER {
-                    unsafe { bb::write(&tim.ccer, c*4, b); }
-                }
-            }
         }
     };
     ($TIM:ty: CH4 $(, $aoe:ident)?) => {
         impl WithPwm for $TIM {
-            const CH_NUMBER: u8 = 4;
-
-            #[inline(always)]
-            fn read_cc_value(channel: u8) -> u32 {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                tim.ccr[channel as usize].read().bits()
-            }
-
-            #[inline(always)]
-            fn set_cc_value(channel: u8, value: u32) {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                #[allow(unused_unsafe)]
-                tim.ccr[channel as usize].write(|w| unsafe { w.bits(value) })
-            }
-
             #[inline(always)]
             fn preload_output_channel_in_mode(&mut self, channel: Channel, mode: Ocm) {
                 match channel {
@@ -553,16 +567,8 @@ macro_rules! with_pwm {
                 $(let $aoe = self.bdtr.modify(|_, w| w.aoe().set_bit());)?
                 self.cr1.modify(|_, w| w.cen().set_bit());
             }
-
-            #[inline(always)]
-            fn enable_channel(c: u8, b: bool) {
-                let tim = unsafe { &*<$TIM>::ptr() };
-                if c < Self::CH_NUMBER {
-                    unsafe { bb::write(&tim.ccer, c*4, b); }
-                }
-            }
         }
-    }
+    };
 }
 
 impl<TIM: Instance> Timer<TIM> {
@@ -718,26 +724,26 @@ pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
 
 // All F4xx parts have these timers.
 hal!(
-    pac::TIM9: [Timer9, u16, c: (CH2),],
-    pac::TIM11: [Timer11, u16, c: (CH1),],
+    pac::TIM9: [Timer9, u16, c: (CH2, 2),],
+    pac::TIM11: [Timer11, u16, c: (CH1, 1),],
 );
 
 // All parts except for F410 add these timers.
 #[cfg(not(feature = "stm32f410"))]
 hal!(
-    pac::TIM1: [Timer1, u16, dmar: u32, c: (CH4, _aoe), m: tim1,],
-    pac::TIM5: [Timer5, u32, dmar: u16, c: (CH4), m: tim5,],
-    pac::TIM2: [Timer2, u32, dmar: u16, c: (CH4), m: tim2,],
-    pac::TIM3: [Timer3, u16, dmar: u16, c: (CH4), m: tim3,],
-    pac::TIM4: [Timer4, u16, dmar: u16, c: (CH4), m: tim3,],
-    pac::TIM10: [Timer10, u16, c: (CH1),],
+    pac::TIM1: [Timer1, u16, dmar: u32, c: (CH4, 4, _aoe), m: tim1,],
+    pac::TIM5: [Timer5, u32, dmar: u16, c: (CH4, 4), m: tim5,],
+    pac::TIM2: [Timer2, u32, dmar: u16, c: (CH4, 4), m: tim2,],
+    pac::TIM3: [Timer3, u16, dmar: u16, c: (CH4, 4), m: tim3,],
+    pac::TIM4: [Timer4, u16, dmar: u16, c: (CH4, 4), m: tim3,],
+    pac::TIM10: [Timer10, u16, c: (CH1, 1),],
 );
 
 // TIM5 on F410 is 16-bit
 #[cfg(feature = "stm32f410")]
 hal!(
-    pac::TIM1: [Timer1, u16, dmar: u16, c: (CH4, _aoe), m: tim1,],
-    pac::TIM5: [Timer5, u16, dmar: u16, c: (CH4), m: tim5,],
+    pac::TIM1: [Timer1, u16, dmar: u16, c: (CH4, 4, _aoe), m: tim1,],
+    pac::TIM5: [Timer5, u16, dmar: u16, c: (CH4, 4), m: tim5,],
 );
 
 // All parts except F401 and F411.
@@ -748,8 +754,8 @@ hal!(pac::TIM6: [Timer6, u16, m: tim6,],);
 #[cfg(not(any(feature = "stm32f401", feature = "stm32f410", feature = "stm32f411",)))]
 hal!(
     pac::TIM7: [Timer7, u16, m: tim7,],
-    pac::TIM8: [Timer8, u16, dmar: u32, c: (CH4, _aoe), m: tim8,],
-    pac::TIM12: [Timer12, u16, c: (CH2),],
-    pac::TIM13: [Timer13, u16, c: (CH1),],
-    pac::TIM14: [Timer14, u16, c: (CH1),],
+    pac::TIM8: [Timer8, u16, dmar: u32, c: (CH4, 4, _aoe), m: tim8,],
+    pac::TIM12: [Timer12, u16, c: (CH2, 2),],
+    pac::TIM13: [Timer13, u16, c: (CH1, 1),],
+    pac::TIM14: [Timer14, u16, c: (CH1, 1),],
 );
