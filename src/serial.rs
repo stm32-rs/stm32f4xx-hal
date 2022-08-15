@@ -310,24 +310,28 @@ impl<USART: Instance, WORD> Tx<USART, WORD> {
 }
 
 impl<USART, PINS, WORD> AsRef<Tx<USART, WORD>> for Serial<USART, PINS, WORD> {
+    #[inline(always)]
     fn as_ref(&self) -> &Tx<USART, WORD> {
         &self.tx
     }
 }
 
 impl<USART, PINS, WORD> AsRef<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
+    #[inline(always)]
     fn as_ref(&self) -> &Rx<USART, WORD> {
         &self.rx
     }
 }
 
 impl<USART, PINS, WORD> AsMut<Tx<USART, WORD>> for Serial<USART, PINS, WORD> {
+    #[inline(always)]
     fn as_mut(&mut self) -> &mut Tx<USART, WORD> {
         &mut self.tx
     }
 }
 
 impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
+    #[inline(always)]
     fn as_mut(&mut self) -> &mut Rx<USART, WORD> {
         &mut self.rx
     }
@@ -398,6 +402,7 @@ impl<USART: Instance, TX, WORD> UTx<USART, TX, WORD> {
 }
 
 impl<USART, TX, WORD> AsRef<Tx<USART, WORD>> for UTx<USART, TX, WORD> {
+    #[inline(always)]
     fn as_ref(&self) -> &Tx<USART, WORD> {
         &self.inner
     }
@@ -405,12 +410,14 @@ impl<USART, TX, WORD> AsRef<Tx<USART, WORD>> for UTx<USART, TX, WORD> {
 
 impl<USART, TX, WORD> Deref for UTx<USART, TX, WORD> {
     type Target = Tx<USART, WORD>;
+    #[inline(always)]
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
 impl<USART, RX, WORD> AsRef<Rx<USART, WORD>> for URx<USART, RX, WORD> {
+    #[inline(always)]
     fn as_ref(&self) -> &Rx<USART, WORD> {
         &self.inner
     }
@@ -418,30 +425,35 @@ impl<USART, RX, WORD> AsRef<Rx<USART, WORD>> for URx<USART, RX, WORD> {
 
 impl<USART, RX, WORD> Deref for URx<USART, RX, WORD> {
     type Target = Rx<USART, WORD>;
+    #[inline(always)]
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
 impl<USART, TX, WORD> AsMut<Tx<USART, WORD>> for UTx<USART, TX, WORD> {
+    #[inline(always)]
     fn as_mut(&mut self) -> &mut Tx<USART, WORD> {
         &mut self.inner
     }
 }
 
 impl<USART, TX, WORD> DerefMut for UTx<USART, TX, WORD> {
+    #[inline(always)]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
 }
 
 impl<USART, RX, WORD> AsMut<Rx<USART, WORD>> for URx<USART, RX, WORD> {
+    #[inline(always)]
     fn as_mut(&mut self) -> &mut Rx<USART, WORD> {
         &mut self.inner
     }
 }
 
 impl<USART, RX, WORD> DerefMut for URx<USART, RX, WORD> {
+    #[inline(always)]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
