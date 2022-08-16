@@ -1,5 +1,5 @@
 mod nb {
-    use super::super::{Error, Instance, Rx, Serial, Tx, URx, UTx};
+    use super::super::{Error, Instance, Rx, Serial, Tx};
     use embedded_hal::serial::{Read, Write};
 
     impl<USART, PINS, WORD> Read<WORD> for Serial<USART, PINS, WORD>
@@ -22,28 +22,12 @@ mod nb {
         }
     }
 
-    impl<USART: Instance, RX> Read<u8> for URx<USART, RX, u8> {
-        type Error = Error;
-
-        fn read(&mut self) -> nb::Result<u8, Self::Error> {
-            self.read()
-        }
-    }
-
     /// Reads 9-bit words from the UART/USART
     ///
     /// If the UART/USART was configured with `WordLength::DataBits9`, the returned value will contain
     /// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
     /// 8 received data bits and all other bits set to zero.
     impl<USART: Instance> Read<u16> for Rx<USART, u16> {
-        type Error = Error;
-
-        fn read(&mut self) -> nb::Result<u16, Self::Error> {
-            self.read()
-        }
-    }
-
-    impl<USART: Instance, RX> Read<u16> for URx<USART, RX, u16> {
         type Error = Error;
 
         fn read(&mut self) -> nb::Result<u16, Self::Error> {
@@ -67,18 +51,6 @@ mod nb {
         }
     }
 
-    impl<USART: Instance, TX> Write<u8> for UTx<USART, TX, u8> {
-        type Error = Error;
-
-        fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
-            self.write(word)
-        }
-
-        fn flush(&mut self) -> nb::Result<(), Self::Error> {
-            self.flush()
-        }
-    }
-
     /// Writes 9-bit words to the UART/USART
     ///
     /// If the UART/USART was configured with `WordLength::DataBits9`, the 9 least significant bits will
@@ -95,37 +67,13 @@ mod nb {
             self.flush()
         }
     }
-
-    impl<USART: Instance, TX> Write<u16> for UTx<USART, TX, u16> {
-        type Error = Error;
-
-        fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
-            self.write(word)
-        }
-
-        fn flush(&mut self) -> nb::Result<(), Self::Error> {
-            self.flush()
-        }
-    }
 }
 
 mod blocking {
-    use super::super::{Error, Instance, Serial, Tx, UTx};
+    use super::super::{Error, Instance, Serial, Tx};
     use embedded_hal::blocking::serial::Write;
 
     impl<USART: Instance> Write<u8> for Tx<USART, u8> {
-        type Error = Error;
-
-        fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
-            self.bwrite_all(bytes)
-        }
-
-        fn bflush(&mut self) -> Result<(), Self::Error> {
-            self.bflush()
-        }
-    }
-
-    impl<USART: Instance, TX> Write<u8> for UTx<USART, TX, u8> {
         type Error = Error;
 
         fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
@@ -150,18 +98,6 @@ mod blocking {
     }
 
     impl<USART: Instance> Write<u16> for Tx<USART, u16> {
-        type Error = Error;
-
-        fn bwrite_all(&mut self, slice: &[u16]) -> Result<(), Self::Error> {
-            self.bwrite_all(slice)
-        }
-
-        fn bflush(&mut self) -> Result<(), Self::Error> {
-            self.bflush()
-        }
-    }
-
-    impl<USART: Instance, TX> Write<u16> for UTx<USART, TX, u16> {
         type Error = Error;
 
         fn bwrite_all(&mut self, slice: &[u16]) -> Result<(), Self::Error> {
