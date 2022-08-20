@@ -372,6 +372,14 @@ impl<I: DualInstance> DualI2s<I> {
 /// $i2s: module containing the Ws pin definition. (example: i2s1).
 /// $clock: The name of the Clocks function that returns the frequency of the I2S clock input
 /// to this SPI peripheral (i2s_cl, i2s_apb1_clk, or i2s2_apb_clk)
+#[cfg(any(
+    feature = "gpio-f401",
+    feature = "gpio-f411",
+    feature = "gpio-f412",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f469",
+))]
 macro_rules! dual_i2s {
     ($SPI:ty,$I2SEXT:ty, $DualI2s:ident, $i2s:ident, $clock:ident) => {
         pub type $DualI2s = DualI2s<$SPI>;
