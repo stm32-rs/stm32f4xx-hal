@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+ - apply #[inline] attribute to bitbanding functions [#517]
  - update `stm32f4` to 0.15.1 [#481]
  - use `stm32_i2s_v12x` version 0.3, reexport it, and implements requirement for it [#490]
  - i2s module don't reuse marker from spi module and define its own [#490]
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#510]: https://github.com/stm32-rs/stm32f4xx-hal/pull/510
 [#514]: https://github.com/stm32-rs/stm32f4xx-hal/pull/514
 [#515]: https://github.com/stm32-rs/stm32f4xx-hal/pull/515
+[#517]: https://github.com/stm32-rs/stm32f4xx-hal/pull/517
 
 ## [v0.13.2] - 2022-05-16
 
