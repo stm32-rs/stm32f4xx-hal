@@ -18,6 +18,7 @@ const PERI_BIT_BAND_BASE: usize = 0x4200_0000;
 /// # Safety
 ///
 /// Some registers have reserved bits which should not be modified.
+#[inline]
 pub unsafe fn clear<T>(register: *const T, bit: u8) {
     write(register, bit, false);
 }
@@ -27,6 +28,7 @@ pub unsafe fn clear<T>(register: *const T, bit: u8) {
 /// # Safety
 ///
 /// Some registers have reserved bits which should not be modified.
+#[inline]
 pub unsafe fn set<T>(register: *const T, bit: u8) {
     write(register, bit, true);
 }
@@ -36,6 +38,7 @@ pub unsafe fn set<T>(register: *const T, bit: u8) {
 /// # Safety
 ///
 /// Some registers have reserved bits which should not be modified.
+#[inline]
 pub unsafe fn write<T>(register: *const T, bit: u8, set: bool) {
     let addr = register as usize;
 
