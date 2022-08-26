@@ -103,13 +103,16 @@ fn main() -> ! {
     // https://github.com/STMicroelectronics/STM32CubeF4/blob/e084518f363e04344dc37822210a75e87377b200/Drivers/BSP/Components/st7789h2/st7789h2.c
 
     // Add LCD controller driver
-    let mut lcd = ST7789::new(interface, lcd_reset, 240, 240);
+    let mut lcd = ST7789::new(
+        interface,
+        Some(lcd_reset),
+        Some(backlight_control),
+        240,
+        240,
+    );
     // Initialise the display and clear the screen
     lcd.init(&mut delay).unwrap();
     lcd.clear(Rgb565::BLACK).unwrap();
-
-    // Turn on backlight
-    backlight_control.set_high();
 
     // Draw some circles
     let test_colors = [

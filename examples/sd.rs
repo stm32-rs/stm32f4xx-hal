@@ -42,7 +42,7 @@ fn main() -> ! {
     let cmd = gpiod.pd2.into_alternate().internal_pull_up(true);
     let mut sdio: Sdio<SdCard> = Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3), &clocks);
 
-    hprintln!("Waiting for card...").ok();
+    hprintln!("Waiting for card...");
 
     // Wait for card to be ready
     loop {
@@ -55,7 +55,7 @@ fn main() -> ! {
     }
 
     let nblocks = sdio.card().map(|c| c.block_count()).unwrap_or(0);
-    hprintln!("Card detected: nbr of blocks: {:?}", nblocks).ok();
+    hprintln!("Card detected: nbr of blocks: {:?}", nblocks);
 
     // Read a block from the card and print the data
     let mut block = [0u8; 512];
@@ -63,12 +63,12 @@ fn main() -> ! {
     match sdio.read_block(0, &mut block) {
         Ok(()) => (),
         Err(err) => {
-            hprintln!("Failed to read block: {:?}", err).ok();
+            hprintln!("Failed to read block: {:?}", err);
         }
     }
 
     for b in block.iter() {
-        hprint!("{:X} ", b).ok();
+        hprint!("{:X} ", b);
     }
 
     loop {

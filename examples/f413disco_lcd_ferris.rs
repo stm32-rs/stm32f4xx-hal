@@ -740,9 +740,6 @@ fn main() -> ! {
         // We're not using the "tearing" signal from the display
         let mut _te = gpiob.pb14.into_floating_input();
 
-        // Enable backlight
-        gpioe.pe5.into_push_pull_output().set_high();
-
         // Get delay provider
         let mut delay = cp.SYST.delay(&clocks);
 
@@ -754,7 +751,13 @@ fn main() -> ! {
         let (_fsmc, interface) = FsmcLcd::new(p.FSMC, lcd_pins, &read_timing, &write_timing);
 
         // Pass display-interface instance ST7789 driver to setup a new display
-        let mut disp = ST7789::new(interface, rst, 240, 240);
+        let mut disp = ST7789::new(
+            interface,
+            Some(rst),
+            Some(gpioe.pe5.into_push_pull_output()),
+            240,
+            240,
+        );
 
         // Initialise the display and clear the screen
         disp.init(&mut delay).unwrap();
