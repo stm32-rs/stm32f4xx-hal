@@ -452,11 +452,7 @@ macro_rules! with_pwm {
             fn enable_channel(c: u8, b: bool) {
                 let tim = unsafe { &*<$TIM>::ptr() };
                 if c < Self::CH_NUMBER {
-                    if b {
-                        unsafe { bb::set(&tim.ccer, c*4) }
-                    } else {
-                        unsafe { bb::clear(&tim.ccer, c*4) }
-                    }
+                    unsafe { bb::write(&tim.ccer, c*4, b); }
                 }
             }
         }
@@ -502,11 +498,7 @@ macro_rules! with_pwm {
             fn enable_channel(c: u8, b: bool) {
                 let tim = unsafe { &*<$TIM>::ptr() };
                 if c < Self::CH_NUMBER {
-                    if b {
-                        unsafe { bb::set(&tim.ccer, c*4) }
-                    } else {
-                        unsafe { bb::clear(&tim.ccer, c*4) }
-                    }
+                    unsafe { bb::write(&tim.ccer, c*4, b); }
                 }
             }
         }
@@ -560,11 +552,7 @@ macro_rules! with_pwm {
             fn enable_channel(c: u8, b: bool) {
                 let tim = unsafe { &*<$TIM>::ptr() };
                 if c < Self::CH_NUMBER {
-                    if b {
-                        unsafe { bb::set(&tim.ccer, c*4) }
-                    } else {
-                        unsafe { bb::clear(&tim.ccer, c*4) }
-                    }
+                    unsafe { bb::write(&tim.ccer, c*4, b); }
                 }
             }
         }
