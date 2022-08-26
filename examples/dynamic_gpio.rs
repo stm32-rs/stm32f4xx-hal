@@ -36,7 +36,7 @@ fn main() -> ! {
     loop {
         pin.make_floating_input();
         block!(timer.wait()).unwrap();
-        hprintln!("{}", pin.is_high().unwrap()).unwrap();
+        hprintln!("{}", pin.is_high().unwrap());
 
         pin.make_push_pull_output_in_state(PinState::High);
         block!(timer.wait()).unwrap();

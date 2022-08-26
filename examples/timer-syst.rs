@@ -31,15 +31,15 @@ fn main() -> ! {
     let mut timer = cp.SYST.counter_us(&clocks);
     timer.start(42.millis()).unwrap();
 
-    hprintln!("hello!").unwrap();
+    hprintln!("hello!");
     // wait until timer expires
     nb::block!(timer.wait()).unwrap();
-    hprintln!("timer expired 1").unwrap();
+    hprintln!("timer expired 1");
 
     // the function syst() creates a periodic timer, so it is automatically
     // restarted
     nb::block!(timer.wait()).unwrap();
-    hprintln!("timer expired 2").unwrap();
+    hprintln!("timer expired 2");
 
     // cancel current timer
     timer.cancel().unwrap();
@@ -47,16 +47,16 @@ fn main() -> ! {
     // start it again
     timer.start(42.millis()).unwrap();
     nb::block!(timer.wait()).unwrap();
-    hprintln!("timer expired 3").unwrap();
+    hprintln!("timer expired 3");
 
     timer.cancel().unwrap();
     let cancel_outcome = timer.cancel();
     assert_eq!(cancel_outcome, Err(Error::Disabled));
-    hprintln!("ehy, you cannot cancel a timer two times!").unwrap();
+    hprintln!("ehy, you cannot cancel a timer two times!");
     // this time the timer was not restarted, therefore this function should
     // wait forever
     nb::block!(timer.wait()).unwrap();
     // you should never see this print
-    hprintln!("if you see this there is something wrong").unwrap();
+    hprintln!("if you see this there is something wrong");
     panic!();
 }

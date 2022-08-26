@@ -7,7 +7,7 @@
 use panic_halt as _;
 
 use bxcan::filter::Mask32;
-use bxcan::{Frame, StandardId};
+use bxcan::{Fifo, Frame, StandardId};
 use cortex_m_rt::entry;
 use nb::block;
 use stm32f4xx_hal::{pac, prelude::*};
@@ -41,7 +41,7 @@ fn main() -> ! {
 
     // Configure filters so that can frames can be received.
     let mut filters = can1.modify_filters();
-    filters.enable_bank(0, Mask32::accept_all());
+    filters.enable_bank(0, Fifo::Fifo0, Mask32::accept_all());
 
     let _can2 = {
         let tx = gpiob.pb13.into_alternate();
@@ -59,7 +59,7 @@ fn main() -> ! {
         // Split them equally between CAN1 and CAN2.
         filters.set_split(14);
         let mut slave_filters = filters.slave_filters();
-        slave_filters.enable_bank(14, Mask32::accept_all());
+        slave_filters.enable_bank(14, Fifo::Fifo0, Mask32::accept_all());
         can2
     };
 

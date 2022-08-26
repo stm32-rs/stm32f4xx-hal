@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - extend visibility of gpio/marker to crate since i2s module require it [#490]
  - Bump `synopsys-usb-otg` to `0.3.0` [#508]
  - Bump `embedded-hal` to `1.0.0-alpha.8` [#510]
+ - Update `bxcan`, `rtic` and other dependencies [#519]
 
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
@@ -43,6 +44,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#514]: https://github.com/stm32-rs/stm32f4xx-hal/pull/514
 [#515]: https://github.com/stm32-rs/stm32f4xx-hal/pull/515
 [#517]: https://github.com/stm32-rs/stm32f4xx-hal/pull/517
+[#519]: https://github.com/stm32-rs/stm32f4xx-hal/pull/519
 
 ## [v0.13.2] - 2022-05-16
 
