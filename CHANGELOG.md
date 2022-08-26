@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- `PwmHz::get_period`: fix computation of return value, prevent division by zero
  - apply #[inline] attribute to bitbanding functions [#517]
  - update `stm32f4` to 0.15.1 [#481]
  - use `stm32_i2s_v12x` version 0.3, reexport it, and implements requirement for it [#490]

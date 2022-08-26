@@ -301,7 +301,7 @@ where
         let arr = TIM::read_auto_reload();
 
         // Length in ms of an internal clock pulse
-        clk / (psc * arr)
+        clk / ((psc + 1) * (arr + 1))
     }
 
     pub fn set_period(&mut self, period: Hertz) {
