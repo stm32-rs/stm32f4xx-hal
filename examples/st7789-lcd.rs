@@ -75,7 +75,7 @@ fn main() -> ! {
         chip_select: ChipSelect1(gpiod.pd7.into_alternate()),
     };
     let lcd_reset = gpiod.pd11.into_push_pull_output();
-    let mut backlight_control = gpiof.pf5.into_push_pull_output();
+    let backlight_control = gpiof.pf5.into_push_pull_output();
 
     // Speed up timing settings, assuming HCLK is 100 MHz (1 cycle = 10 nanoseconds)
     // These read timings work to read settings, but slower timings are needed to read from the
