@@ -21,10 +21,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
  - RTIC2 monotonics fix: CC1 instead of CC3
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
- - Clean SPI write impls
+ - Optimized version of blocking SPI write [#523]
  - `steal` UART peripheral on `Rx::new`
 
 [#248]: https://github.com/stm32-rs/stm32f4xx-hal/pull/248
+[#523]: https://github.com/stm32-rs/stm32f4xx-hal/pull/523
 [#566]: https://github.com/stm32-rs/stm32f4xx-hal/pull/566
 [#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
