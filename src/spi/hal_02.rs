@@ -97,7 +97,7 @@ mod blocking {
         type Error = Error;
 
         fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-            self.write_iter(words.iter().copied())
+            self.spi_write(words.iter().copied())
         }
     }
 
@@ -111,14 +111,7 @@ mod blocking {
         where
             WI: IntoIterator<Item = u8>,
         {
-            for word in words.into_iter() {
-                nb::block!(self.send(word))?;
-                if !BIDI {
-                    nb::block!(self.read())?;
-                }
-            }
-
-            Ok(())
+            self.spi_write(words)
         }
     }
 
@@ -129,7 +122,7 @@ mod blocking {
         type Error = Error;
 
         fn write(&mut self, words: &[u16]) -> Result<(), Self::Error> {
-            self.write_iter(words.iter().copied())
+            self.spi_write(words.iter().copied())
         }
     }
 

@@ -605,6 +605,19 @@ impl<SPI: Instance, PINS, const BIDI: bool, W, OPERATION> Spi<SPI, PINS, BIDI, W
     pub fn is_overrun(&self) -> bool {
         self.spi.sr.read().ovr().bit_is_set()
     }
+
+    fn check_errors(&self) -> Result<(), Error> {
+        let sr = self.spi.sr.read();
+        if sr.ovr().bit_is_set() {
+            Err(Error::Overrun)
+        } else if sr.modf().bit_is_set() {
+            Err(Error::ModeFault)
+        } else if sr.crcerr().bit_is_set() {
+            Err(Error::Crc)
+        } else {
+            Ok(())
+        }
+    }
 }
 
 trait ReadWriteReg<W> {
@@ -675,6 +688,42 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
         } else {
             nb::Error::WouldBlock
         })
+    }
+
+    // Implement write as per the "Transmit only procedure"
+    // RM SPI::3.5. This is more than twice as fast as the
+    // default Write<> implementation (which reads and drops each
+    // received value)
+    fn spi_write<WI>(&mut self, words: WI) -> Result<(), Error>
+    where
+        WI: IntoIterator<Item = W>,
+    {
+        if BIDI {
+            self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+        }
+        // Write each word when the tx buffer is empty
+        for word in words {
+            loop {
+                let sr = self.spi.sr.read();
+                if sr.txe().bit_is_set() {
+                    self.write_data_reg(word);
+                    if sr.modf().bit_is_set() {
+                        return Err(Error::ModeFault);
+                    }
+                    break;
+                }
+            }
+        }
+        // Wait for final TXE
+        while !self.is_tx_empty() {}
+        // Wait for final !BSY
+        while self.is_busy() {}
+        if !BIDI {
+            // Clear OVR set due to dropped received values
+            let _ = self.read_data_reg();
+        }
+        let _ = self.spi.sr.read();
+        self.check_errors()
     }
 }
 

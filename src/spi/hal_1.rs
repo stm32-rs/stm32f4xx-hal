@@ -111,14 +111,7 @@ mod blocking {
         SPI: Instance,
     {
         fn write(&mut self, words: &[W]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
-                if !BIDI {
-                    nb::block!(<Self as FullDuplex<W>>::read(self))?;
-                }
-            }
-
-            Ok(())
+            self.spi_write(words.iter().copied())
         }
     }
 
