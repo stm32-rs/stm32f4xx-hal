@@ -81,14 +81,7 @@ mod blocking {
         type Error = Error;
 
         fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(self.send(*word))?;
-                if !BIDI {
-                    nb::block!(self.read())?;
-                }
-            }
-
-            Ok(())
+            self.write_iter(words.iter().copied())
         }
     }
 

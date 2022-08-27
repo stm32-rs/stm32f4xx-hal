@@ -78,7 +78,7 @@ mod blocking {
         SPI: Instance,
     {
         fn transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
-            for word in words.iter_mut() {
+            for word in words {
                 nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
                 *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
             }
@@ -89,9 +89,9 @@ mod blocking {
         fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Self::Error> {
             assert_eq!(data.len(), buff.len());
 
-            for i in 0..data.len() {
-                nb::block!(<Self as FullDuplex<W>>::write(self, data[i]))?;
-                buff[i] = nb::block!(<Self as FullDuplex<W>>::read(self))?;
+            for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
+                nb::block!(<Self as FullDuplex<W>>::write(self, d))?;
+                *b = nb::block!(<Self as FullDuplex<W>>::read(self))?;
             }
 
             Ok(())

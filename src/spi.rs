@@ -119,6 +119,18 @@ pub struct Master;
 /// Spi in Slave mode (type state)
 pub struct Slave;
 
+pub trait Ms {
+    const MSTR: bool;
+}
+
+impl Ms for Slave {
+    const MSTR: bool = false;
+}
+
+impl Ms for Master {
+    const MSTR: bool = true;
+}
+
 #[derive(Debug)]
 pub struct Spi<SPI, PINS, const BIDI: bool = false, OPERATION = Master> {
     spi: SPI,
@@ -253,12 +265,14 @@ impl<SPI: Instance> SpiExt for SPI {
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPERATION> {
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION: Ms> Spi<SPI, PINS, BIDI, OPERATION> {
     pub fn init(self) -> Self {
         self.spi.cr1.modify(|_, w| {
             // bidimode: 2-line or 1-line unidirectional
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
+            // master/slave mode
+            w.mstr().bit(OPERATION::MSTR);
             // spe: enable the SPI bus
             w.spe().set_bit()
         });
@@ -267,35 +281,27 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPER
     }
 }
 
-impl<SPI: Instance, PINS, OPERATION> Spi<SPI, PINS, false, OPERATION> {
+impl<SPI: Instance, PINS, OPERATION: Ms> Spi<SPI, PINS, false, OPERATION> {
     pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, true, OPERATION> {
-        let mut dev_w_new_t_mode = self.into_mode::<true>();
-        dev_w_new_t_mode.enable(false);
-        dev_w_new_t_mode.init()
+        self.into_mode()
     }
 }
 
-impl<SPI: Instance, PINS, OPERATION> Spi<SPI, PINS, true, OPERATION> {
+impl<SPI: Instance, PINS, OPERATION: Ms> Spi<SPI, PINS, true, OPERATION> {
     pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, false, OPERATION> {
-        let mut dev_w_new_t_mode = self.into_mode::<false>();
-        dev_w_new_t_mode.enable(false);
-        dev_w_new_t_mode.init()
+        self.into_mode()
     }
 }
 
 impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, Master> {
     pub fn to_slave_operation(self) -> Spi<SPI, PINS, BIDI, Slave> {
-        let mut dev_w_new_operation = self.into_operation::<Slave>();
-        dev_w_new_operation.enable(false);
-        dev_w_new_operation.init()
+        self.into_mode()
     }
 }
 
 impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, Slave> {
     pub fn to_master_operation(self) -> Spi<SPI, PINS, BIDI, Master> {
-        let mut dev_w_new_operation = self.into_operation::<Master>();
-        dev_w_new_operation.enable(false);
-        dev_w_new_operation.init()
+        self.into_mode()
     }
 }
 
@@ -424,14 +430,11 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPER
         }
     }
 
-    /// Convert the spi to another transfer mode.
-    fn into_mode<const BIDI2: bool>(self) -> Spi<SPI, PINS, BIDI2, OPERATION> {
-        Spi::_new(self.spi, self.pins)
-    }
-
-    /// Convert the spi to another operation mode.
-    fn into_operation<OPERATION2>(self) -> Spi<SPI, PINS, BIDI, OPERATION2> {
-        Spi::_new(self.spi, self.pins)
+    /// Convert the spi to another mode.
+    fn into_mode<const BIDI2: bool, OPERATION2: Ms>(self) -> Spi<SPI, PINS, BIDI2, OPERATION2> {
+        let mut spi = Spi::_new(self.spi, self.pins);
+        spi.enable(false);
+        spi.init()
     }
 
     /// Enable/disable spi
@@ -505,18 +508,32 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPER
 
     /// Return `true` if the TXE flag is set, i.e. new data to transmit
     /// can be written to the SPI.
+    #[inline]
     pub fn is_tx_empty(&self) -> bool {
         self.spi.sr.read().txe().bit_is_set()
+    }
+    #[inline]
+    #[deprecated(since = "0.14.0", note = "please use `is_tx_empty` instead")]
+    pub fn is_txe(&self) -> bool {
+        self.is_tx_empty()
     }
 
     /// Return `true` if the RXNE flag is set, i.e. new data has been received
     /// and can be read from the SPI.
+    #[inline]
     pub fn is_rx_not_empty(&self) -> bool {
         self.spi.sr.read().rxne().bit_is_set()
     }
 
+    #[inline]
+    #[deprecated(since = "0.14.0", note = "please use `is_rx_not_empty` instead")]
+    pub fn is_rxne(&self) -> bool {
+        self.is_rx_not_empty()
+    }
+
     /// Return `true` if the MODF flag is set, i.e. the SPI has experienced a
     /// Master Mode Fault. (see chapter 28.3.10 of the STM32F4 Reference Manual)
+    #[inline]
     pub fn is_modf(&self) -> bool {
         self.spi.sr.read().modf().bit_is_set()
     }
@@ -529,6 +546,7 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPER
 
     /// Return `true` if the OVR flag is set, i.e. new data has been received
     /// while the receive data register was already filled.
+    #[inline]
     pub fn is_overrun(&self) -> bool {
         self.spi.sr.read().ovr().bit_is_set()
     }
