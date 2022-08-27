@@ -143,6 +143,15 @@ impl FrameSize for u16 {
     const DFF: bool = true;
 }
 
+/// The bit format to send the data in
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BitFormat {
+    /// Least significant bit first
+    LsbFirst,
+    /// Most significant bit first
+    MsbFirst,
+}
+
 #[derive(Debug)]
 pub struct Spi<SPI, PINS, const BIDI: bool = false, W = u8, OPERATION = Master> {
     spi: SPI,
@@ -518,6 +527,14 @@ impl<SPI: Instance, PINS, const BIDI: bool, W, OPERATION> Spi<SPI, PINS, BIDI, W
         });
 
         self
+    }
+
+    /// Select which frame format is used for data transfers
+    pub fn bit_format(&mut self, format: BitFormat) {
+        match format {
+            BitFormat::LsbFirst => self.spi.cr1.modify(|_, w| w.lsbfirst().set_bit()),
+            BitFormat::MsbFirst => self.spi.cr1.modify(|_, w| w.lsbfirst().clear_bit()),
+        }
     }
 
     /// Enable interrupts for the given `event`:
