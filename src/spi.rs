@@ -108,9 +108,11 @@ pub enum Event {
 }
 
 /// Normal mode - RX and TX pins are independent
-pub struct TransferModeNormal;
+#[allow(non_upper_case_globals)]
+pub const TransferModeNormal: bool = false;
 /// BIDI mode - use TX pin as RX then spi receive data
-pub struct TransferModeBidi;
+#[allow(non_upper_case_globals)]
+pub const TransferModeBidi: bool = true;
 
 /// Spi in Master mode (type state)
 pub struct Master;
@@ -118,10 +120,9 @@ pub struct Master;
 pub struct Slave;
 
 #[derive(Debug)]
-pub struct Spi<SPI, PINS, TRANSFER_MODE = TransferModeNormal, OPERATION = Master> {
+pub struct Spi<SPI, PINS, const BIDI: bool = false, OPERATION = Master> {
     spi: SPI,
     pins: PINS,
-    _transfer_mode: PhantomData<TRANSFER_MODE>,
     _operation: PhantomData<OPERATION>,
 }
 
@@ -136,8 +137,8 @@ pub trait Instance:
 // Implemented by all SPI instances
 macro_rules! spi {
     ($SPI:ty: $Spi:ident) => {
-        pub type $Spi<PINS, TRANSFER_MODE = TransferModeNormal, OPERATION = Master> =
-            Spi<$SPI, PINS, TRANSFER_MODE, OPERATION>;
+        pub type $Spi<PINS, const BIDI: bool = false, OPERATION = Master> =
+            Spi<$SPI, PINS, BIDI, OPERATION>;
 
         impl Instance for $SPI {
             fn ptr() -> *const spi1::RegisterBlock {
@@ -169,7 +170,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), TransferModeNormal, Master>
+    ) -> Spi<Self, (SCK, MISO, MOSI), false, Master>
     where
         (SCK, MISO, MOSI): Pins<Self>;
     fn spi_bidi<SCK, MISO, MOSI>(
@@ -178,7 +179,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), TransferModeBidi, Master>
+    ) -> Spi<Self, (SCK, MISO, MOSI), true, Master>
     where
         (SCK, MISO, MOSI): Pins<Self>;
     fn spi_slave<SCK, MISO, MOSI>(
@@ -187,7 +188,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), TransferModeNormal, Slave>
+    ) -> Spi<Self, (SCK, MISO, MOSI), false, Slave>
     where
         (SCK, MISO, MOSI): Pins<Self>;
     fn spi_bidi_slave<SCK, MISO, MOSI>(
@@ -196,7 +197,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), TransferModeBidi, Slave>
+    ) -> Spi<Self, (SCK, MISO, MOSI), true, Slave>
     where
         (SCK, MISO, MOSI): Pins<Self>;
 }
@@ -208,7 +209,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), TransferModeNormal, Master>
+    ) -> Spi<Self, (SCK, MISO, MOSI), false, Master>
     where
         (SCK, MISO, MOSI): Pins<Self>,
     {
@@ -220,7 +221,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), TransferModeBidi, Master>
+    ) -> Spi<Self, (SCK, MISO, MOSI), true, Master>
     where
         (SCK, MISO, MOSI): Pins<Self>,
     {
@@ -232,7 +233,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), TransferModeNormal, Slave>
+    ) -> Spi<Self, (SCK, MISO, MOSI), false, Slave>
     where
         (SCK, MISO, MOSI): Pins<Self>,
     {
@@ -244,7 +245,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), TransferModeBidi, Slave>
+    ) -> Spi<Self, (SCK, MISO, MOSI), true, Slave>
     where
         (SCK, MISO, MOSI): Pins<Self>,
     {
@@ -252,7 +253,53 @@ impl<SPI: Instance> SpiExt for SPI {
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal, Master> {
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPERATION> {
+    pub fn init(self) -> Self {
+        self.spi.cr1.modify(|_, w| {
+            // bidimode: 2-line or 1-line unidirectional
+            w.bidimode().bit(BIDI);
+            w.bidioe().bit(BIDI);
+            // spe: enable the SPI bus
+            w.spe().set_bit()
+        });
+
+        self
+    }
+}
+
+impl<SPI: Instance, PINS, OPERATION> Spi<SPI, PINS, false, OPERATION> {
+    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, true, OPERATION> {
+        let mut dev_w_new_t_mode = self.into_mode::<true>();
+        dev_w_new_t_mode.enable(false);
+        dev_w_new_t_mode.init()
+    }
+}
+
+impl<SPI: Instance, PINS, OPERATION> Spi<SPI, PINS, true, OPERATION> {
+    pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, false, OPERATION> {
+        let mut dev_w_new_t_mode = self.into_mode::<false>();
+        dev_w_new_t_mode.enable(false);
+        dev_w_new_t_mode.init()
+    }
+}
+
+impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, Master> {
+    pub fn to_slave_operation(self) -> Spi<SPI, PINS, BIDI, Slave> {
+        let mut dev_w_new_operation = self.into_operation::<Slave>();
+        dev_w_new_operation.enable(false);
+        dev_w_new_operation.init()
+    }
+}
+
+impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, Slave> {
+    pub fn to_master_operation(self) -> Spi<SPI, PINS, BIDI, Master> {
+        let mut dev_w_new_operation = self.into_operation::<Master>();
+        dev_w_new_operation.enable(false);
+        dev_w_new_operation.init()
+    }
+}
+
+impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, Master> {
     pub fn new(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -278,36 +325,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeNor
     }
 }
 
-impl<SPI: Instance, PINS> Spi<SPI, PINS, TransferModeNormal, Master> {
-    pub fn init(self) -> Self {
-        self.spi.cr1.modify(|_, w| {
-            // bidimode: 2-line unidirectional
-            w.bidimode()
-                .clear_bit()
-                .bidioe()
-                .clear_bit()
-                // spe: enable the SPI bus
-                .spe()
-                .set_bit()
-        });
-
-        self
-    }
-
-    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, TransferModeBidi, Master> {
-        let mut dev_w_new_t_mode = self.into_mode::<TransferModeBidi>();
-        dev_w_new_t_mode.enable(false);
-        dev_w_new_t_mode.init()
-    }
-
-    pub fn to_slave_operation(self) -> Spi<SPI, PINS, TransferModeNormal, Slave> {
-        let mut dev_w_new_operation = self.into_operation::<Slave>();
-        dev_w_new_operation.enable(false);
-        dev_w_new_operation.init()
-    }
-}
-
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi, Master> {
+impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, Master> {
     pub fn new_bidi(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -333,36 +351,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeBid
     }
 }
 
-impl<SPI: Instance, PINS> Spi<SPI, PINS, TransferModeBidi, Master> {
-    pub fn init(self) -> Self {
-        self.spi.cr1.modify(|_, w| {
-            // bidimode: 1-line unidirectional
-            w.bidimode()
-                .set_bit()
-                .bidioe()
-                .set_bit()
-                // spe: enable the SPI bus
-                .spe()
-                .set_bit()
-        });
-
-        self
-    }
-
-    pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, TransferModeNormal, Master> {
-        let mut dev_w_new_t_mode = self.into_mode::<TransferModeNormal>();
-        dev_w_new_t_mode.enable(false);
-        dev_w_new_t_mode.init()
-    }
-
-    pub fn to_slave_operation(self) -> Spi<SPI, PINS, TransferModeBidi, Slave> {
-        let mut dev_w_new_operation = self.into_operation::<Slave>();
-        dev_w_new_operation.enable(false);
-        dev_w_new_operation.init()
-    }
-}
-
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeNormal, Slave> {
+impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, Slave> {
     pub fn new_slave(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -388,36 +377,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeNor
     }
 }
 
-impl<SPI: Instance, PINS> Spi<SPI, PINS, TransferModeNormal, Slave> {
-    pub fn init(self) -> Self {
-        self.spi.cr1.modify(|_, w| {
-            // bidimode: 2-line unidirectional
-            w.bidimode()
-                .clear_bit()
-                .bidioe()
-                .clear_bit()
-                // spe: enable the SPI bus
-                .spe()
-                .set_bit()
-        });
-
-        self
-    }
-
-    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, TransferModeBidi, Slave> {
-        let mut dev_w_new_t_mode = self.into_mode::<TransferModeBidi>();
-        dev_w_new_t_mode.enable(false);
-        dev_w_new_t_mode.init()
-    }
-
-    pub fn to_master_operation(self) -> Spi<SPI, PINS, TransferModeNormal, Master> {
-        let mut dev_w_new_operation = self.into_operation::<Master>();
-        dev_w_new_operation.enable(false);
-        dev_w_new_operation.init()
-    }
-}
-
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeBidi, Slave> {
+impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, Slave> {
     pub fn new_bidi_slave(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -443,37 +403,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), TransferModeBid
     }
 }
 
-impl<SPI: Instance, PINS> Spi<SPI, PINS, TransferModeBidi, Slave> {
-    pub fn init(self) -> Self {
-        self.spi.cr1.modify(|_, w| {
-            // bidimode: 1-line unidirectional
-            w.bidimode()
-                .set_bit()
-                .bidioe()
-                .set_bit()
-                // spe: enable the SPI bus
-                .spe()
-                .set_bit()
-        });
-
-        self
-    }
-
-    pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, TransferModeNormal, Slave> {
-        let mut dev_w_new_t_mode = self.into_mode::<TransferModeNormal>();
-        dev_w_new_t_mode.enable(false);
-        dev_w_new_t_mode.init()
-    }
-
-    pub fn to_master_operation(self) -> Spi<SPI, PINS, TransferModeBidi, Master> {
-        let mut dev_w_new_operation = self.into_operation::<Master>();
-        dev_w_new_operation.enable(false);
-        dev_w_new_operation.init()
-    }
-}
-
-impl<SPI, SCK, MISO, MOSI, TRANSFER_MODE, OPERATION>
-    Spi<SPI, (SCK, MISO, MOSI), TRANSFER_MODE, OPERATION>
+impl<SPI, SCK, MISO, MOSI, const BIDI: bool, OPERATION> Spi<SPI, (SCK, MISO, MOSI), BIDI, OPERATION>
 where
     SPI: Instance,
     (SCK, MISO, MOSI): Pins<SPI>,
@@ -485,23 +415,22 @@ where
     }
 }
 
-impl<SPI: Instance, PINS, TRANSFER_MODE, OPERATION> Spi<SPI, PINS, TRANSFER_MODE, OPERATION> {
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPERATION> {
     fn _new(spi: SPI, pins: PINS) -> Self {
         Self {
             spi,
             pins,
-            _transfer_mode: PhantomData,
             _operation: PhantomData,
         }
     }
 
     /// Convert the spi to another transfer mode.
-    fn into_mode<TRANSFER_MODE2>(self) -> Spi<SPI, PINS, TRANSFER_MODE2, OPERATION> {
+    fn into_mode<const BIDI2: bool>(self) -> Spi<SPI, PINS, BIDI2, OPERATION> {
         Spi::_new(self.spi, self.pins)
     }
 
     /// Convert the spi to another operation mode.
-    fn into_operation<OPERATION2>(self) -> Spi<SPI, PINS, TRANSFER_MODE, OPERATION2> {
+    fn into_operation<OPERATION2>(self) -> Spi<SPI, PINS, BIDI, OPERATION2> {
         Spi::_new(self.spi, self.pins)
     }
 
@@ -531,29 +460,20 @@ impl<SPI: Instance, PINS, TRANSFER_MODE, OPERATION> Spi<SPI, PINS, TRANSFER_MODE
         };
 
         self.spi.cr1.write(|w| {
-            w.cpha()
-                .bit(mode.phase == Phase::CaptureOnSecondTransition)
-                .cpol()
-                .bit(mode.polarity == Polarity::IdleHigh)
-                // mstr: master configuration
-                .mstr()
-                .bit(is_master)
-                .br()
-                .bits(br)
-                // lsbfirst: MSB first
-                .lsbfirst()
-                .clear_bit()
-                // ssm: enable software slave management (NSS pin free for other uses)
-                .ssm()
-                .set_bit()
-                // ssi: set nss high = master mode
-                .ssi()
-                .bit(is_master)
-                .rxonly()
-                .clear_bit()
-                // dff: 8 bit frames
-                .dff()
-                .clear_bit()
+            w.cpha().bit(mode.phase == Phase::CaptureOnSecondTransition);
+            w.cpol().bit(mode.polarity == Polarity::IdleHigh);
+            // mstr: master configuration
+            w.mstr().bit(is_master);
+            w.br().bits(br);
+            // lsbfirst: MSB first
+            w.lsbfirst().clear_bit();
+            // ssm: enable software slave management (NSS pin free for other uses)
+            w.ssm().set_bit();
+            // ssi: set nss high = master mode
+            w.ssi().bit(is_master);
+            w.rxonly().clear_bit();
+            // dff: 8 bit frames
+            w.dff().clear_bit()
         });
 
         self
@@ -585,13 +505,13 @@ impl<SPI: Instance, PINS, TRANSFER_MODE, OPERATION> Spi<SPI, PINS, TRANSFER_MODE
 
     /// Return `true` if the TXE flag is set, i.e. new data to transmit
     /// can be written to the SPI.
-    pub fn is_txe(&self) -> bool {
+    pub fn is_tx_empty(&self) -> bool {
         self.spi.sr.read().txe().bit_is_set()
     }
 
     /// Return `true` if the RXNE flag is set, i.e. new data has been received
     /// and can be read from the SPI.
-    pub fn is_rxne(&self) -> bool {
+    pub fn is_rx_not_empty(&self) -> bool {
         self.spi.sr.read().rxne().bit_is_set()
     }
 
@@ -601,9 +521,15 @@ impl<SPI: Instance, PINS, TRANSFER_MODE, OPERATION> Spi<SPI, PINS, TRANSFER_MODE
         self.spi.sr.read().modf().bit_is_set()
     }
 
+    /// Returns true if the transfer is in progress
+    #[inline]
+    pub fn is_busy(&self) -> bool {
+        self.spi.sr.read().bsy().bit_is_set()
+    }
+
     /// Return `true` if the OVR flag is set, i.e. new data has been received
     /// while the receive data register was already filled.
-    pub fn is_ovr(&self) -> bool {
+    pub fn is_overrun(&self) -> bool {
         self.spi.sr.read().ovr().bit_is_set()
     }
 
