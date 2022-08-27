@@ -131,11 +131,23 @@ impl Ms for Master {
     const MSTR: bool = true;
 }
 
+pub trait FrameSize: Copy + Default {
+    const DFF: bool;
+}
+
+impl FrameSize for u8 {
+    const DFF: bool = false;
+}
+
+impl FrameSize for u16 {
+    const DFF: bool = true;
+}
+
 #[derive(Debug)]
-pub struct Spi<SPI, PINS, const BIDI: bool = false, OPERATION = Master> {
+pub struct Spi<SPI, PINS, const BIDI: bool = false, W = u8, OPERATION = Master> {
     spi: SPI,
     pins: PINS,
-    _operation: PhantomData<OPERATION>,
+    _operation: PhantomData<(W, OPERATION)>,
 }
 
 // Implemented by all SPI instances
@@ -149,8 +161,8 @@ pub trait Instance:
 // Implemented by all SPI instances
 macro_rules! spi {
     ($SPI:ty: $Spi:ident) => {
-        pub type $Spi<PINS, const BIDI: bool = false, OPERATION = Master> =
-            Spi<$SPI, PINS, BIDI, OPERATION>;
+        pub type $Spi<PINS, const BIDI: bool = false, W = u8, OPERATION = Master> =
+            Spi<$SPI, PINS, BIDI, W, OPERATION>;
 
         impl Instance for $SPI {
             fn ptr() -> *const spi1::RegisterBlock {
@@ -182,7 +194,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), false, Master>
+    ) -> Spi<Self, (SCK, MISO, MOSI), false, u8, Master>
     where
         (SCK, MISO, MOSI): Pins<Self>;
     fn spi_bidi<SCK, MISO, MOSI>(
@@ -191,7 +203,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), true, Master>
+    ) -> Spi<Self, (SCK, MISO, MOSI), true, u8, Master>
     where
         (SCK, MISO, MOSI): Pins<Self>;
     fn spi_slave<SCK, MISO, MOSI>(
@@ -200,7 +212,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), false, Slave>
+    ) -> Spi<Self, (SCK, MISO, MOSI), false, u8, Slave>
     where
         (SCK, MISO, MOSI): Pins<Self>;
     fn spi_bidi_slave<SCK, MISO, MOSI>(
@@ -209,7 +221,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), true, Slave>
+    ) -> Spi<Self, (SCK, MISO, MOSI), true, u8, Slave>
     where
         (SCK, MISO, MOSI): Pins<Self>;
 }
@@ -221,7 +233,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), false, Master>
+    ) -> Spi<Self, (SCK, MISO, MOSI), false, u8, Master>
     where
         (SCK, MISO, MOSI): Pins<Self>,
     {
@@ -233,7 +245,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), true, Master>
+    ) -> Spi<Self, (SCK, MISO, MOSI), true, u8, Master>
     where
         (SCK, MISO, MOSI): Pins<Self>,
     {
@@ -245,7 +257,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), false, Slave>
+    ) -> Spi<Self, (SCK, MISO, MOSI), false, u8, Slave>
     where
         (SCK, MISO, MOSI): Pins<Self>,
     {
@@ -257,7 +269,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), true, Slave>
+    ) -> Spi<Self, (SCK, MISO, MOSI), true, u8, Slave>
     where
         (SCK, MISO, MOSI): Pins<Self>,
     {
@@ -265,7 +277,9 @@ impl<SPI: Instance> SpiExt for SPI {
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, OPERATION: Ms> Spi<SPI, PINS, BIDI, OPERATION> {
+impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION: Ms>
+    Spi<SPI, PINS, BIDI, W, OPERATION>
+{
     pub fn init(self) -> Self {
         self.spi.cr1.modify(|_, w| {
             // bidimode: 2-line or 1-line unidirectional
@@ -273,6 +287,8 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION: Ms> Spi<SPI, PINS, BIDI, 
             w.bidioe().bit(BIDI);
             // master/slave mode
             w.mstr().bit(OPERATION::MSTR);
+            // data frame size
+            w.dff().bit(W::DFF);
             // spe: enable the SPI bus
             w.spe().set_bit()
         });
@@ -281,31 +297,51 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION: Ms> Spi<SPI, PINS, BIDI, 
     }
 }
 
-impl<SPI: Instance, PINS, OPERATION: Ms> Spi<SPI, PINS, false, OPERATION> {
-    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, true, OPERATION> {
+impl<SPI: Instance, PINS, W: FrameSize, OPERATION: Ms> Spi<SPI, PINS, false, W, OPERATION> {
+    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, true, W, OPERATION> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, PINS, OPERATION: Ms> Spi<SPI, PINS, true, OPERATION> {
-    pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, false, OPERATION> {
+impl<SPI: Instance, PINS, W: FrameSize, OPERATION: Ms> Spi<SPI, PINS, true, W, OPERATION> {
+    pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, false, W, OPERATION> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, Master> {
-    pub fn to_slave_operation(self) -> Spi<SPI, PINS, BIDI, Slave> {
+impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize> Spi<SPI, PINS, BIDI, W, Master> {
+    pub fn to_slave_operation(self) -> Spi<SPI, PINS, BIDI, W, Slave> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, Slave> {
-    pub fn to_master_operation(self) -> Spi<SPI, PINS, BIDI, Master> {
+impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize> Spi<SPI, PINS, BIDI, W, Slave> {
+    pub fn to_master_operation(self) -> Spi<SPI, PINS, BIDI, W, Master> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, Master> {
+impl<SPI, PINS, const BIDI: bool, OPERATION: Ms> Spi<SPI, PINS, BIDI, u8, OPERATION>
+where
+    SPI: Instance,
+{
+    /// Converts from 8bit dataframe to 16bit.
+    pub fn frame_size_16bit(self) -> Spi<SPI, PINS, BIDI, u16, OPERATION> {
+        self.into_mode()
+    }
+}
+
+impl<SPI, PINS, const BIDI: bool, OPERATION: Ms> Spi<SPI, PINS, BIDI, u16, OPERATION>
+where
+    SPI: Instance,
+{
+    /// Converts from 16bit dataframe to 8bit.
+    pub fn frame_size_8bit(self) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+        self.into_mode()
+    }
+}
+
+impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Master> {
     pub fn new(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -331,7 +367,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, Master> 
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, Master> {
+impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Master> {
     pub fn new_bidi(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -357,7 +393,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, Master> {
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, Slave> {
+impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Slave> {
     pub fn new_slave(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -383,7 +419,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, Slave> {
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, Slave> {
+impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Slave> {
     pub fn new_bidi_slave(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -421,7 +457,7 @@ where
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPERATION> {
+impl<SPI: Instance, PINS, const BIDI: bool, W, OPERATION> Spi<SPI, PINS, BIDI, W, OPERATION> {
     fn _new(spi: SPI, pins: PINS) -> Self {
         Self {
             spi,
@@ -431,7 +467,9 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPER
     }
 
     /// Convert the spi to another mode.
-    fn into_mode<const BIDI2: bool, OPERATION2: Ms>(self) -> Spi<SPI, PINS, BIDI2, OPERATION2> {
+    fn into_mode<const BIDI2: bool, W2: FrameSize, OPERATION2: Ms>(
+        self,
+    ) -> Spi<SPI, PINS, BIDI2, W2, OPERATION2> {
         let mut spi = Spi::_new(self.spi, self.pins);
         spi.enable(false);
         spi.init()
@@ -550,13 +588,36 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPER
     pub fn is_overrun(&self) -> bool {
         self.spi.sr.read().ovr().bit_is_set()
     }
+}
 
-    pub fn use_dma(self) -> DmaBuilder<SPI> {
-        DmaBuilder { spi: self.spi }
+trait ReadWriteReg<W> {
+    fn read_data_reg(&mut self) -> W;
+    fn write_data_reg(&mut self, data: W);
+}
+
+impl<SPI, PINS, const BIDI: bool, W, OPERATION> ReadWriteReg<W>
+    for Spi<SPI, PINS, BIDI, W, OPERATION>
+where
+    SPI: Instance,
+    W: FrameSize,
+{
+    fn read_data_reg(&mut self) -> W {
+        // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
+        // reading a half-word)
+        unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const W) }
     }
 
+    fn write_data_reg(&mut self, data: W) {
+        // NOTE(write_volatile) see note above
+        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut W, data) }
+    }
+}
+
+impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
+    Spi<SPI, PINS, BIDI, W, OPERATION>
+{
     #[inline(always)]
-    fn check_read(&mut self) -> nb::Result<u8, Error> {
+    fn check_read(&mut self) -> nb::Result<W, Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
@@ -566,14 +627,14 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPER
         } else if sr.crcerr().bit_is_set() {
             Error::Crc.into()
         } else if sr.rxne().bit_is_set() {
-            return Ok(self.read_u8());
+            return Ok(self.read_data_reg());
         } else {
             nb::Error::WouldBlock
         })
     }
 
     #[inline(always)]
-    fn check_send(&mut self, byte: u8) -> nb::Result<(), Error> {
+    fn check_send(&mut self, byte: W) -> nb::Result<(), Error> {
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
@@ -592,23 +653,19 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, OPER
             });
             Error::Crc.into()
         } else if sr.txe().bit_is_set() {
-            self.send_u8(byte);
+            self.write_data_reg(byte);
             return Ok(());
         } else {
             nb::Error::WouldBlock
         })
     }
+}
 
-    #[inline(always)]
-    fn read_u8(&mut self) -> u8 {
-        // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows reading a half-word)
-        unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const u8) }
-    }
+// Spi DMA
 
-    #[inline(always)]
-    fn send_u8(&mut self, byte: u8) {
-        // NOTE(write_volatile) see note above
-        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
+impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, u8, Master> {
+    pub fn use_dma(self) -> DmaBuilder<SPI> {
+        DmaBuilder { spi: self.spi }
     }
 }
 

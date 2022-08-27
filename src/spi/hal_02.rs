@@ -28,23 +28,23 @@ impl From<Mode> for super::Mode {
 }
 
 mod nb {
-    use super::super::{Error, Instance, Spi};
+    use super::super::{Error, FrameSize, Instance, Spi};
     use embedded_hal::spi::FullDuplex;
 
-    impl<SPI, PINS, const BIDI: bool> FullDuplex<u8> for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, PINS, BIDI, W>
     where
         SPI: Instance,
     {
         type Error = Error;
 
-        fn read(&mut self) -> nb::Result<u8, Error> {
+        fn read(&mut self) -> nb::Result<W, Error> {
             if BIDI {
                 self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
             }
             self.check_read()
         }
 
-        fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+        fn send(&mut self, byte: W) -> nb::Result<(), Error> {
             if BIDI {
                 self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
             }
@@ -58,7 +58,7 @@ mod blocking {
     use embedded_hal::blocking::spi::{Operation, Transactional, Transfer, Write, WriteIter};
     use embedded_hal::spi::FullDuplex;
 
-    impl<SPI, PINS, const BIDI: bool> Transfer<u8> for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool> Transfer<u8> for Spi<SPI, PINS, BIDI, u8>
     where
         SPI: Instance,
     {
@@ -74,7 +74,23 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> Write<u8> for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool> Transfer<u16> for Spi<SPI, PINS, BIDI, u16>
+    where
+        SPI: Instance,
+    {
+        type Error = Error;
+
+        fn transfer<'w>(&mut self, words: &'w mut [u16]) -> Result<&'w [u16], Self::Error> {
+            for word in words.iter_mut() {
+                nb::block!(self.send(*word))?;
+                *word = nb::block!(self.read())?;
+            }
+
+            Ok(words)
+        }
+    }
+
+    impl<SPI, PINS, const BIDI: bool> Write<u8> for Spi<SPI, PINS, BIDI, u8>
     where
         SPI: Instance,
     {
@@ -85,7 +101,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> WriteIter<u8> for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool> WriteIter<u8> for Spi<SPI, PINS, BIDI, u8>
     where
         SPI: Instance,
     {
@@ -106,13 +122,46 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> Transactional<u8> for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool> Write<u16> for Spi<SPI, PINS, BIDI, u16>
     where
         SPI: Instance,
     {
         type Error = Error;
 
-        fn exec<'a>(&mut self, operations: &mut [Operation<'a, u8>]) -> Result<(), Error> {
+        fn write(&mut self, words: &[u16]) -> Result<(), Self::Error> {
+            self.write_iter(words.iter().copied())
+        }
+    }
+
+    impl<SPI, PINS, const BIDI: bool> WriteIter<u16> for Spi<SPI, PINS, BIDI, u16>
+    where
+        SPI: Instance,
+    {
+        type Error = Error;
+
+        fn write_iter<WI>(&mut self, words: WI) -> Result<(), Self::Error>
+        where
+            WI: IntoIterator<Item = u16>,
+        {
+            for word in words.into_iter() {
+                nb::block!(self.send(word))?;
+                if !BIDI {
+                    nb::block!(self.read())?;
+                }
+            }
+
+            Ok(())
+        }
+    }
+
+    impl<SPI, PINS, const BIDI: bool, W: Copy + 'static> Transactional<W> for Spi<SPI, PINS, BIDI, W>
+    where
+        Self: Transfer<W, Error = Error> + Write<W, Error = Error>,
+        SPI: Instance,
+    {
+        type Error = Error;
+
+        fn exec<'a>(&mut self, operations: &mut [Operation<'a, W>]) -> Result<(), Error> {
             for op in operations {
                 match op {
                     Operation::Write(w) => self.write(w)?,
