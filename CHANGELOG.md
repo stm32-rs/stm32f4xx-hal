@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 - Bump `stm32f4-staging`
+ - Optimized version of blocking SPI write [#523]
+
+[#523]: https://github.com/stm32-rs/stm32f4xx-hal/pull/523
 
 ## [v0.22.1] - 2024-11-03
 

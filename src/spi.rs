@@ -607,7 +607,7 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
     /// Convert the spi to another mode.
     fn into_mode<const BIDI2: bool, W2: FrameSize>(self) -> Spi<SPI, BIDI2, W2> {
         let mut spi = Spi::_new(self.inner.spi, self.pins);
-        spi.enable(false);
+        spi.disable();
         spi.init()
     }
 }
@@ -624,7 +624,7 @@ impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
     /// Convert the spi to another mode.
     fn into_mode<const BIDI2: bool, W2: FrameSize>(self) -> SpiSlave<SPI, BIDI2, W2> {
         let mut spi = SpiSlave::_new(self.inner.spi, self.pins);
-        spi.enable(false);
+        spi.disable();
         spi.init()
     }
 }
@@ -703,12 +703,18 @@ impl<SPI: Instance> Inner<SPI> {
         Self { spi }
     }
 
-    /// Enable/disable spi
-    pub fn enable(&mut self, enable: bool) {
-        self.spi.cr1().modify(|_, w| {
-            // spe: enable the SPI bus
-            w.spe().bit(enable)
-        });
+    /// Enable SPI
+    pub fn enable(&mut self) {
+        // spe: enable the SPI bus
+        self.spi.cr1().modify(|_, w| w.spe().set_bit());
+    }
+
+    /// Disable SPI
+    pub fn disable(&mut self) {
+        // Wait for !BSY
+        while self.is_busy() {}
+        // spe: disable the SPI bus
+        self.spi.cr1().modify(|_, w| w.spe().clear_bit());
     }
 
     /// Select which frame format is used for data transfers
@@ -750,6 +756,19 @@ impl<SPI: Instance> Inner<SPI> {
     #[inline]
     pub fn is_overrun(&self) -> bool {
         self.spi.sr().read().ovr().bit_is_set()
+    }
+
+    fn check_errors(&self) -> Result<(), Error> {
+        let sr = self.spi.sr().read();
+        if sr.ovr().bit_is_set() {
+            Err(Error::Overrun)
+        } else if sr.modf().bit_is_set() {
+            Err(Error::ModeFault)
+        } else if sr.crcerr().bit_is_set() {
+            Err(Error::Crc)
+        } else {
+            Ok(())
+        }
     }
 
     #[inline]
@@ -811,23 +830,38 @@ impl<SPI: Instance> Inner<SPI> {
         })
     }
 
+    // Implement write as per the "Transmit only procedure"
+    // RM SPI::3.5. This is more than twice as fast as the
+    // default Write<> implementation (which reads and drops each
+    // received value)
     fn spi_write<const BIDI: bool, W: FrameSize>(
         &mut self,
         words: impl IntoIterator<Item = W>,
     ) -> Result<(), Error> {
         if BIDI {
             self.bidi_output();
-            for word in words.into_iter() {
-                nb::block!(self.check_send(word))?;
-            }
-        } else {
-            for word in words.into_iter() {
-                nb::block!(self.check_send(word))?;
-                nb::block!(self.check_read::<W>())?;
+        }
+        // Write each word when the tx buffer is empty
+        for word in words {
+            loop {
+                let sr = self.spi.sr().read();
+                if sr.txe().bit_is_set() {
+                    self.write_data_reg(word);
+                    if sr.modf().bit_is_set() {
+                        return Err(Error::ModeFault);
+                    }
+                    break;
+                }
             }
         }
-
-        Ok(())
+        // Wait for final TXE
+        while !self.is_tx_empty() {}
+        if !BIDI {
+            // Clear OVR set due to dropped received values
+            let _: W = self.read_data_reg();
+        }
+        let _ = self.spi.sr().read();
+        self.check_errors()
     }
 
     fn listen_event(&mut self, disable: Option<BitFlags<Event>>, enable: Option<BitFlags<Event>>) {
