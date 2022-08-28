@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
 - `SysMonoTimerExt` helper trait, `Pwm::(get/set)_duty_time` [#497]
 - example of using i2s in out with rtic and interrupt.
+- example of using USB CDC with interrupts.
 
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
 [#490]: https://github.com/stm32-rs/stm32f4xx-hal/pull/490

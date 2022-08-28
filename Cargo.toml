@@ -372,8 +372,12 @@ name = "blinky-timer-irq"
 required-features = ["tim2"] # stm32f411
 
 [[example]]
-name = "usb_serial"
+name = "usb_serial_poll"
 required-features = ["otg-fs", "usb_fs"] # stm32f401
+
+[[example]]
+name = "usb_serial_irq"
+required-features = ["otg-fs", "usb_fs"] # stm32f407
 
 [[example]]
 name = "sd"
