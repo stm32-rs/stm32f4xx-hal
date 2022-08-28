@@ -37,26 +37,26 @@ impl Error for super::Error {
     }
 }
 
-impl<SPI, PINS, const BIDI: bool> ErrorType for super::Spi<SPI, PINS, BIDI> {
+impl<SPI, PINS, const BIDI: bool, W> ErrorType for super::Spi<SPI, PINS, BIDI, W> {
     type Error = super::Error;
 }
 
 mod nb {
-    use super::super::{Error, Instance, Spi};
+    use super::super::{Error, FrameSize, Instance, Spi};
     use embedded_hal_one::spi::nb::FullDuplex;
 
-    impl<SPI, PINS, const BIDI: bool> FullDuplex<u8> for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, PINS, BIDI, W>
     where
         SPI: Instance,
     {
-        fn read(&mut self) -> nb::Result<u8, Error> {
+        fn read(&mut self) -> nb::Result<W, Error> {
             if BIDI {
                 self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
             }
             self.check_read()
         }
 
-        fn write(&mut self, byte: u8) -> nb::Result<(), Error> {
+        fn write(&mut self, byte: W) -> nb::Result<(), Error> {
             if BIDI {
                 self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
             }
@@ -66,15 +66,14 @@ mod nb {
 }
 
 mod blocking {
-    use super::super::{Error, Instance, Spi};
+    use super::super::{FrameSize, Instance, Spi};
     use embedded_hal_one::spi::{
         blocking::{SpiBus, SpiBusFlush, SpiBusRead, SpiBusWrite},
         nb::FullDuplex,
     };
 
-    impl<SPI, PINS, const BIDI: bool, W: Copy + Default + 'static> SpiBus<W> for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, PINS, BIDI, W>
     where
-        Self: FullDuplex<W, Error = Error> + SpiBusWrite<W>,
         SPI: Instance,
     {
         fn transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
@@ -98,7 +97,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> SpiBusFlush for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool, W> SpiBusFlush for Spi<SPI, PINS, BIDI, W>
     where
         SPI: Instance,
     {
@@ -107,9 +106,8 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool, W: Copy + 'static> SpiBusWrite<W> for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool, W: FrameSize + 'static> SpiBusWrite<W> for Spi<SPI, PINS, BIDI, W>
     where
-        Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
     {
         fn write(&mut self, words: &[W]) -> Result<(), Self::Error> {
@@ -124,10 +122,8 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool, W: Copy + Default + 'static> SpiBusRead<W>
-        for Spi<SPI, PINS, BIDI>
+    impl<SPI, PINS, const BIDI: bool, W: FrameSize + 'static> SpiBusRead<W> for Spi<SPI, PINS, BIDI, W>
     where
-        Self: FullDuplex<W, Error = Error>,
         SPI: Instance,
     {
         fn read(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
