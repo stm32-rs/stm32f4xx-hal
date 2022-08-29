@@ -652,11 +652,12 @@ where
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
-    Spi<SPI, PINS, BIDI, W, OPERATION>
-{
+impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize> Spi<SPI, PINS, BIDI, W, Master> {
     #[inline(always)]
     fn check_read(&mut self) -> nb::Result<W, Error> {
+        if BIDI {
+            self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
+        }
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
@@ -674,6 +675,9 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
 
     #[inline(always)]
     fn check_send(&mut self, byte: W) -> nb::Result<(), Error> {
+        if BIDI {
+            self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+        }
         let sr = self.spi.sr.read();
 
         Err(if sr.ovr().bit_is_set() {
@@ -698,12 +702,97 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
             nb::Error::WouldBlock
         })
     }
+}
 
-    // Implement write as per the "Transmit only procedure"
-    // RM SPI::3.5. This is more than twice as fast as the
-    // default Write<> implementation (which reads and drops each
-    // received value)
-    fn spi_write<WI>(&mut self, words: WI) -> Result<(), Error>
+impl<SPI: Instance, PINS, W: FrameSize> Spi<SPI, PINS, false, W, Master> {
+    // Implement write as per the "Transmit only procedure" RM SPI::3.5
+    fn master_transfer<WI>(&mut self, buff: &mut [W], words: WI) -> Result<(), Error>
+    where
+        WI: IntoIterator<Item = W>,
+    {
+        let mut buff = buff.into_iter();
+        let mut words = words.into_iter();
+        if let Some(first) = words.next() {
+            // p.2
+            self.write_data_reg(first);
+            // Write each word when the tx buffer is empty
+            // p.3
+            'main: loop {
+                let word = words.next();
+                let mut sr;
+                loop {
+                    sr = self.spi.sr.read();
+                    if sr.txe().bit_is_set() {
+                        if let (Some(word), Some(b)) = (word, buff.next()) {
+                            self.write_data_reg(word);
+                            while self.is_rx_not_empty() {}
+                            *b = self.read_data_reg();
+                            break;
+                        } else {
+                            break 'main;
+                        }
+                    }
+                }
+                if sr.modf().bit_is_set() {
+                    return Err(Error::ModeFault);
+                }
+            }
+            // p.4
+            if let Some(b) = buff.next() {
+                while self.is_rx_not_empty() {}
+                *b = self.read_data_reg();
+            }
+            // p.5
+            while self.is_tx_empty() {} // ???
+            self.check_errors()
+        } else {
+            Ok(())
+        }
+    }
+
+    fn master_transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Error> {
+        let len = words.len();
+        if len > 0 {
+            // p.2
+            self.write_data_reg(words[0]);
+            // Write each word when the tx buffer is empty
+            let mut nums = 1..len;
+            // p.3
+            'main: loop {
+                let i = nums.next();
+                let mut sr;
+                loop {
+                    sr = self.spi.sr.read();
+                    if sr.txe().bit_is_set() {
+                        if let Some(i) = i {
+                            self.write_data_reg(words[i]);
+                            while self.is_rx_not_empty() {}
+                            words[i - 1] = self.read_data_reg();
+                            break;
+                        } else {
+                            break 'main;
+                        }
+                    }
+                }
+                if sr.modf().bit_is_set() {
+                    return Err(Error::ModeFault);
+                }
+            }
+            // p.4
+            while self.is_rx_not_empty() {}
+            words[len - 1] = self.read_data_reg();
+            // p.5
+            while self.is_tx_empty() {} // ???
+
+            self.check_errors()
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize> Spi<SPI, PINS, BIDI, W, Master> {
+    fn master_write_only<WI>(&mut self, words: WI) -> Result<(), Error>
     where
         WI: IntoIterator<Item = W>,
     {
@@ -730,6 +819,29 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
             let _ = self.read_data_reg();
         }
         let _ = self.spi.sr.read();
+        self.check_errors()
+    }
+
+    fn master_read_only(&mut self, words: &mut [W]) -> Result<(), Error> {
+        if BIDI {
+            self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
+        } else {
+            self.disable();
+            self.spi.cr1.modify(|_, w| {
+                w.rxonly().set_bit();
+                w.spe().set_bit()
+            });
+        }
+        for word in words {
+            while self.is_rx_not_empty() {}
+            *word = self.read_data_reg();
+        }
+        // Should we disable SPE before last word receive ??
+        if BIDI {
+            self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+        } else {
+            self.spi.cr1.modify(|_, w| w.rxonly().clear_bit());
+        }
         self.check_errors()
     }
 }

@@ -38,16 +38,10 @@ mod nb {
         type Error = Error;
 
         fn read(&mut self) -> nb::Result<W, Error> {
-            if BIDI {
-                self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
-            }
             self.check_read()
         }
 
         fn send(&mut self, byte: W) -> nb::Result<(), Error> {
-            if BIDI {
-                self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
-            }
             self.check_send(byte)
         }
     }
@@ -56,35 +50,28 @@ mod nb {
 mod blocking {
     use super::super::{Error, Instance, Spi};
     use embedded_hal::blocking::spi::{Operation, Transactional, Transfer, Write, WriteIter};
-    use embedded_hal::spi::FullDuplex;
 
-    impl<SPI, PINS, const BIDI: bool> Transfer<u8> for Spi<SPI, PINS, BIDI, u8>
+    impl<SPI, PINS> Transfer<u8> for Spi<SPI, PINS, false, u8>
     where
         SPI: Instance,
     {
         type Error = Error;
 
         fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-            for word in words.iter_mut() {
-                nb::block!(self.send(*word))?;
-                *word = nb::block!(self.read())?;
-            }
+            self.master_transfer_in_place(words)?;
 
             Ok(words)
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> Transfer<u16> for Spi<SPI, PINS, BIDI, u16>
+    impl<SPI, PINS> Transfer<u16> for Spi<SPI, PINS, false, u16>
     where
         SPI: Instance,
     {
         type Error = Error;
 
         fn transfer<'w>(&mut self, words: &'w mut [u16]) -> Result<&'w [u16], Self::Error> {
-            for word in words.iter_mut() {
-                nb::block!(self.send(*word))?;
-                *word = nb::block!(self.read())?;
-            }
+            self.master_transfer_in_place(words)?;
 
             Ok(words)
         }
@@ -97,7 +84,7 @@ mod blocking {
         type Error = Error;
 
         fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-            self.spi_write(words.iter().copied())
+            self.master_write_only(words.iter().copied())
         }
     }
 
@@ -111,7 +98,7 @@ mod blocking {
         where
             WI: IntoIterator<Item = u8>,
         {
-            self.spi_write(words)
+            self.master_write_only(words)
         }
     }
 
@@ -122,7 +109,7 @@ mod blocking {
         type Error = Error;
 
         fn write(&mut self, words: &[u16]) -> Result<(), Self::Error> {
-            self.spi_write(words.iter().copied())
+            self.master_write_only(words.iter().copied())
         }
     }
 
@@ -136,14 +123,7 @@ mod blocking {
         where
             WI: IntoIterator<Item = u16>,
         {
-            for word in words.into_iter() {
-                nb::block!(self.send(word))?;
-                if !BIDI {
-                    nb::block!(self.read())?;
-                }
-            }
-
-            Ok(())
+            self.master_write_only(words)
         }
     }
 

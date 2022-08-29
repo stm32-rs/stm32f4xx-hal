@@ -67,33 +67,19 @@ mod nb {
 
 mod blocking {
     use super::super::{FrameSize, Instance, Spi};
-    use embedded_hal_one::spi::{
-        blocking::{SpiBus, SpiBusFlush, SpiBusRead, SpiBusWrite},
-        nb::FullDuplex,
-    };
+    use embedded_hal_one::spi::blocking::{SpiBus, SpiBusFlush, SpiBusRead, SpiBusWrite};
 
-    impl<SPI, PINS, const BIDI: bool, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, PINS, BIDI, W>
+    impl<SPI, PINS, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, PINS, false, W>
     where
         SPI: Instance,
     {
         fn transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
-                *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
-            }
-
-            Ok(())
+            self.master_transfer_in_place(words)
         }
 
         fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Self::Error> {
             assert_eq!(data.len(), buff.len());
-
-            for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
-                nb::block!(<Self as FullDuplex<W>>::write(self, d))?;
-                *b = nb::block!(<Self as FullDuplex<W>>::read(self))?;
-            }
-
-            Ok(())
+            self.master_transfer(buff, data.iter().cloned())
         }
     }
 
@@ -111,7 +97,7 @@ mod blocking {
         SPI: Instance,
     {
         fn write(&mut self, words: &[W]) -> Result<(), Self::Error> {
-            self.spi_write(words.iter().copied())
+            self.master_write_only(words.iter().copied())
         }
     }
 
@@ -120,12 +106,7 @@ mod blocking {
         SPI: Instance,
     {
         fn read(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(<Self as FullDuplex<W>>::write(self, W::default()))?;
-                *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
-            }
-
-            Ok(())
+            self.master_read_only(words)
         }
     }
 }
