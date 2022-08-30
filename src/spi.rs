@@ -477,18 +477,27 @@ impl<SPI: Instance, PINS, const BIDI: bool, W, OPERATION> Spi<SPI, PINS, BIDI, W
 
     /// Convert the spi to another mode.
     fn into_mode<const BIDI2: bool, W2: FrameSize, OPERATION2: Ms>(
-        self,
+        mut self,
     ) -> Spi<SPI, PINS, BIDI2, W2, OPERATION2> {
-        let mut spi = Spi::_new(self.spi, self.pins);
-        spi.enable(false);
-        spi.init()
+        self.disable();
+        Spi::_new(self.spi, self.pins).init()
     }
 
     /// Enable/disable spi
-    pub fn enable(&mut self, enable: bool) {
+    pub fn enable(&mut self) {
         self.spi.cr1.modify(|_, w| {
             // spe: enable the SPI bus
-            w.spe().bit(enable)
+            w.spe().set_bit()
+        });
+    }
+
+    /// Enable/disable spi
+    pub fn disable(&mut self) {
+        // Wait for !BSY
+        while self.is_busy() {}
+        self.spi.cr1.modify(|_, w| {
+            // spe: enable the SPI bus
+            w.spe().clear_bit()
         });
     }
 
@@ -716,8 +725,6 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
         }
         // Wait for final TXE
         while !self.is_tx_empty() {}
-        // Wait for final !BSY
-        while self.is_busy() {}
         if !BIDI {
             // Clear OVR set due to dropped received values
             let _ = self.read_data_reg();
