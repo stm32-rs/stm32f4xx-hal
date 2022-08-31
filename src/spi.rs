@@ -725,7 +725,7 @@ impl<SPI: Instance, PINS, W: FrameSize> Spi<SPI, PINS, false, W, Master> {
                     if sr.txe().bit_is_set() {
                         if let (Some(word), Some(b)) = (word, buff.next()) {
                             self.write_data_reg(word);
-                            while self.is_rx_not_empty() {}
+                            while !self.is_rx_not_empty() {}
                             *b = self.read_data_reg();
                             break;
                         } else {
@@ -739,11 +739,9 @@ impl<SPI: Instance, PINS, W: FrameSize> Spi<SPI, PINS, false, W, Master> {
             }
             // p.4
             if let Some(b) = buff.next() {
-                while self.is_rx_not_empty() {}
+                while !self.is_rx_not_empty() {}
                 *b = self.read_data_reg();
             }
-            // p.5
-            while self.is_tx_empty() {} // ???
             self.check_errors()
         } else {
             Ok(())
@@ -756,33 +754,25 @@ impl<SPI: Instance, PINS, W: FrameSize> Spi<SPI, PINS, false, W, Master> {
             // p.2
             self.write_data_reg(words[0]);
             // Write each word when the tx buffer is empty
-            let mut nums = 1..len;
             // p.3
-            'main: loop {
-                let i = nums.next();
-                let mut sr;
+            for i in 1..len {
                 loop {
-                    sr = self.spi.sr.read();
+                    let sr = self.spi.sr.read();
                     if sr.txe().bit_is_set() {
-                        if let Some(i) = i {
-                            self.write_data_reg(words[i]);
-                            while self.is_rx_not_empty() {}
-                            words[i - 1] = self.read_data_reg();
-                            break;
-                        } else {
-                            break 'main;
+                        self.write_data_reg(words[i]);
+                        if sr.modf().bit_is_set() {
+                            return Err(Error::ModeFault);
                         }
+                        while !self.is_rx_not_empty() {}
+                        words[i - 1] = self.read_data_reg();
+                        break;
                     }
                 }
-                if sr.modf().bit_is_set() {
-                    return Err(Error::ModeFault);
-                }
             }
+            while !self.is_tx_empty() {}
             // p.4
-            while self.is_rx_not_empty() {}
+            while !self.is_rx_not_empty() {}
             words[len - 1] = self.read_data_reg();
-            // p.5
-            while self.is_tx_empty() {} // ???
 
             self.check_errors()
         } else {
@@ -833,7 +823,7 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize> Spi<SPI, PINS, BIDI, W
             });
         }
         for word in words {
-            while self.is_rx_not_empty() {}
+            while !self.is_rx_not_empty() {}
             *word = self.read_data_reg();
         }
         // Should we disable SPE before last word receive ??
