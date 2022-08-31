@@ -78,23 +78,11 @@ mod blocking {
         }
 
         fn read(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(self.write_nonblocking(W::default()))?;
-                *word = nb::block!(self.read_nonblocking())?;
-            }
-
-            Ok(())
+            self.read(words)
         }
 
         fn write(&mut self, words: &[W]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(self.write_nonblocking(*word))?;
-                if !BIDI {
-                    nb::block!(self.read_nonblocking())?;
-                }
-            }
-
-            Ok(())
+            self.write(words)
         }
 
         fn flush(&mut self) -> Result<(), Self::Error> {
