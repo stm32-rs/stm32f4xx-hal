@@ -82,6 +82,7 @@ smart-leds = "0.3.0"
 ws2812-spi = { version = "0.4.0", features = [] }
 hd44780-driver = "0.4.0"
 display-interface = "0.4"
+ft6x06 = "0.1.2"
 
 [dev-dependencies.time]
 version = "0.3"
@@ -367,6 +368,10 @@ lto = true
 debug = true
 lto = true
 opt-level = "s"
+
+[[example]]
+name= "display_touch"
+required-features = ["fsmc_lcd", "stm32f412"] #or stm32f413
 
 [[example]]
 name = "blinky-timer-irq"
