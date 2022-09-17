@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+ - Revised temperature sensor input pins for all MCUs #529
  - Support `u16` read/write for SPI
  - Use `bool` for BIDI mode type
  - `PwmHz::get_period`: fix computation of return value, prevent division by zero
@@ -49,6 +50,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#515]: https://github.com/stm32-rs/stm32f4xx-hal/pull/515
 [#517]: https://github.com/stm32-rs/stm32f4xx-hal/pull/517
 [#519]: https://github.com/stm32-rs/stm32f4xx-hal/pull/519
+[#529]: https://github.com/stm32-rs/stm32f4xx-hal/pull/529
 
 ## [v0.13.2] - 2022-05-16
 
