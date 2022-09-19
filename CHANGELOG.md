@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
- - Revised temperature sensor input pins for all MCUs #529
+ - Revised temperature sensor input pins for all MCUs [#529]
  - Support `u16` read/write for SPI
  - Use `bool` for BIDI mode type
  - `PwmHz::get_period`: fix computation of return value, prevent division by zero
@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - example of using i2s in out with rtic and interrupt.
 - example of using USB CDC with interrupts.
 
+[#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
 [#490]: https://github.com/stm32-rs/stm32f4xx-hal/pull/490
 [#497]: https://github.com/stm32-rs/stm32f4xx-hal/pull/497

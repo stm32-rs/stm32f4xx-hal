@@ -58,7 +58,32 @@ impl SysDelay {
     }
 }
 
-/// Periodic non-blocking timer that imlements [embedded_hal::blocking::delay] traits
+/// Periodic non-blocking timer that imlements [embedded_hal::blocking::delay] traits.
+///
+/// ### Example: Millisecond precision
+///
+/// To instantiate this with the TIM2 timer and millisecond precision:
+///
+/// ```rust
+/// let mut delay = dp.TIM2.delay_ms(&clocks);
+/// delay.delay_ms(320_u32);
+/// ```
+///
+/// With millisecond precision, you can wait from 2 ms to 49 days.
+///
+/// ### Example: Microsecond precision
+///
+/// To instantiate this with the TIM5 timer and microsecond precision:
+///
+/// ```rust
+/// let delay = dp.TIM5.delay_us(&clocks);
+/// delay.delay_us(30_u32);
+/// delay.delay_ms(5_u32);
+/// delay.delay(5.millis());
+/// delay.delay(3.secs());
+/// ```
+///
+/// With microsecond precision, you can wait from 2 µs to 71 min.
 pub struct Delay<TIM, const FREQ: u32>(pub(super) FTimer<TIM, FREQ>);
 
 impl<T, const FREQ: u32> Deref for Delay<T, FREQ> {
