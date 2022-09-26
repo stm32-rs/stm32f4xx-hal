@@ -35,7 +35,13 @@ pub use monotonic::*;
 mod hal_02;
 mod hal_1;
 
-/// Timer wrapper
+/// Timer wrapper.
+///
+/// This wrapper can be used both for the system timer (SYST) or the
+/// general-purpose timers (TIMx).
+///
+/// Note: If you want to use the timer to sleep a certain amount of time, use
+/// [`Delay`](`crate::timer::delay::Delay`).
 pub struct Timer<TIM> {
     pub(crate) tim: TIM,
     pub(crate) clk: Hertz,
