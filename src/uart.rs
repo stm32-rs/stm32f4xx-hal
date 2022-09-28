@@ -1,8 +1,8 @@
-//! Asynchronous serial communication using USART peripherals
+//! Asynchronous serial communication using UART peripherals
 //!
 //! # Word length
 //!
-//! By default, the USART uses 8 data bits. The `Serial`, `Rx`, and `Tx` structs implement
+//! By default, the UART uses 8 data bits. The `Serial`, `Rx`, and `Tx` structs implement
 //! the embedded-hal read and write traits with `u8` as the word type.
 //!
 //! You can also configure the hardware to use 9 data bits with the `Config` `wordlength_9()`
@@ -22,11 +22,12 @@ use core::ops::{Deref, DerefMut};
 use crate::rcc;
 use nb::block;
 
+#[path = "./serial/hal_02.rs"]
 mod hal_02;
+#[path = "./serial/hal_1.rs"]
 mod hal_1;
+#[path = "./serial/uart_impls.rs"]
 mod uart_impls;
-
-use crate::gpio::{Const, PinA, PushPull, SetAlternate};
 
 use crate::pac::{self, RCC};
 
@@ -35,179 +36,10 @@ use crate::rcc::Clocks;
 
 use crate::dma::traits::PeriAddress;
 
+pub use crate::serial::{config, Event, NoRx, NoTx, Pins, RxPin, TxPin};
+pub use config::Config;
 /// Serial error
 pub use embedded_hal_one::serial::ErrorKind as Error;
-
-/// Interrupt event
-pub enum Event {
-    /// New data has been received
-    Rxne,
-    /// New data can be sent
-    Txe,
-    /// Idle line state detected
-    Idle,
-}
-
-pub mod config {
-    use crate::time::Bps;
-    use crate::time::U32Ext;
-
-    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub enum WordLength {
-        DataBits8,
-        DataBits9,
-    }
-
-    /// Parity generation and checking. If odd or even parity is selected, the
-    /// underlying USART will be configured to send/receive the parity bit in
-    /// addtion to the data bits.
-    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub enum Parity {
-        /// No parity bit will be added/checked.
-        ParityNone,
-        /// The MSB transmitted/received will be generated/checked to have a
-        /// even number of bits set.
-        ParityEven,
-        /// The MSB transmitted/received will be generated/checked to have a
-        /// odd number of bits set.
-        ParityOdd,
-    }
-
-    /// Stop Bit configuration parameter for serial.
-    ///
-    /// Wrapper around `STOP_A`
-    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    pub enum StopBits {
-        #[doc = "1 stop bit"]
-        STOP1,
-        #[doc = "0.5 stop bits"]
-        STOP0P5,
-        #[doc = "2 stop bits"]
-        STOP2,
-        #[doc = "1.5 stop bits"]
-        STOP1P5,
-    }
-
-    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub enum DmaConfig {
-        None,
-        Tx,
-        Rx,
-        TxRx,
-    }
-
-    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct Config {
-        pub baudrate: Bps,
-        pub wordlength: WordLength,
-        pub parity: Parity,
-        pub stopbits: StopBits,
-        pub dma: DmaConfig,
-    }
-
-    impl Config {
-        pub fn baudrate(mut self, baudrate: Bps) -> Self {
-            self.baudrate = baudrate;
-            self
-        }
-
-        pub fn parity_none(mut self) -> Self {
-            self.parity = Parity::ParityNone;
-            self
-        }
-
-        pub fn parity_even(mut self) -> Self {
-            self.parity = Parity::ParityEven;
-            self
-        }
-
-        pub fn parity_odd(mut self) -> Self {
-            self.parity = Parity::ParityOdd;
-            self
-        }
-
-        pub fn wordlength_8(mut self) -> Self {
-            self.wordlength = WordLength::DataBits8;
-            self
-        }
-
-        pub fn wordlength_9(mut self) -> Self {
-            self.wordlength = WordLength::DataBits9;
-            self
-        }
-
-        pub fn stopbits(mut self, stopbits: StopBits) -> Self {
-            self.stopbits = stopbits;
-            self
-        }
-
-        pub fn dma(mut self, dma: DmaConfig) -> Self {
-            self.dma = dma;
-            self
-        }
-    }
-
-    #[derive(Debug)]
-    pub struct InvalidConfig;
-
-    impl Default for Config {
-        fn default() -> Config {
-            let baudrate = 115_200_u32.bps();
-            Config {
-                baudrate,
-                wordlength: WordLength::DataBits8,
-                parity: Parity::ParityNone,
-                stopbits: StopBits::STOP1,
-                dma: DmaConfig::None,
-            }
-        }
-    }
-
-    impl<T: Into<Bps>> From<T> for Config {
-        fn from(b: T) -> Config {
-            Config {
-                baudrate: b.into(),
-                ..Default::default()
-            }
-        }
-    }
-}
-
-pub use config::Config;
-
-pub struct TxPin;
-impl crate::Sealed for TxPin {}
-pub struct RxPin;
-impl crate::Sealed for RxPin {}
-
-pub trait Pins<USART> {
-    fn set_alt_mode(&mut self);
-    fn restore_mode(&mut self);
-}
-impl<USART, TX, RX, const TXA: u8, const RXA: u8> Pins<USART> for (TX, RX)
-where
-    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<TXA, PushPull>,
-    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<RXA, PushPull>,
-{
-    fn set_alt_mode(&mut self) {
-        self.0.set_alt_mode();
-        self.1.set_alt_mode();
-    }
-    fn restore_mode(&mut self) {
-        self.0.restore_mode();
-        self.1.restore_mode();
-    }
-}
-
-/// A filler type for when the Tx pin is unnecessary
-pub type NoTx = NoPin;
-/// A filler type for when the Rx pin is unnecessary
-pub type NoRx = NoPin;
 
 /// Serial abstraction
 pub struct Serial<USART, PINS, WORD = u8> {
@@ -694,21 +526,21 @@ impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
     }
 
     fn set_stopbits(&self, bits: config::StopBits) {
-        use crate::pac::usart1::cr2::STOP_A;
+        use crate::pac::uart4::cr2::STOP_A;
         use config::StopBits;
 
         unsafe { &(*USART::ptr()) }.cr2.write(|w| {
             w.stop().variant(match bits {
-                StopBits::STOP0P5 => STOP_A::Stop0p5,
+                StopBits::STOP0P5 => STOP_A::Stop1,
                 StopBits::STOP1 => STOP_A::Stop1,
-                StopBits::STOP1P5 => STOP_A::Stop1p5,
+                StopBits::STOP1P5 => STOP_A::Stop2,
                 StopBits::STOP2 => STOP_A::Stop2,
             })
         });
     }
 }
 
-use crate::pac::usart1 as uart_base;
+use crate::pac::uart4 as uart_base;
 
 // Implemented by all USART instances
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock {
@@ -716,7 +548,7 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock {
     fn ptr() -> *const uart_base::RegisterBlock;
 }
 
-macro_rules! halUsart {
+macro_rules! halUart {
     ($USART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
         pub type $Serial<PINS, WORD = u8> = Serial<$USART, PINS, WORD>;
         pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
@@ -730,9 +562,15 @@ macro_rules! halUsart {
     };
 }
 
-halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
-halUsart! { pac::USART2, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
-
-#[cfg(feature = "usart3")]
-halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
+#[cfg(feature = "uart4")]
+halUart! { pac::UART4, Serial4, Rx4, Tx4 }
+#[cfg(feature = "uart5")]
+halUart! { pac::UART5, Serial5, Rx5, Tx5 }
+#[cfg(feature = "uart7")]
+halUart! { pac::UART7, Serial7, Rx7, Tx7 }
+#[cfg(feature = "uart8")]
+halUart! { pac::UART8, Serial8, Rx8, Tx8 }
+#[cfg(feature = "uart9")]
+halUart! { pac::UART9, Serial9, Rx9, Tx9 }
+#[cfg(feature = "uart10")]
+halUart! { pac::UART10, Serial10, Rx10, Tx10 }
