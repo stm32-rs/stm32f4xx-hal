@@ -12,8 +12,7 @@ use fugit::{HertzU32 as Hertz, RateExtU32};
 mod hal_02;
 mod hal_1;
 
-mod dma;
-// For DMA mapping
+pub mod dma;
 pub(crate) use dma::{Rx, Tx};
 
 #[derive(Debug, Eq, PartialEq)]
