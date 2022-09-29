@@ -12,6 +12,10 @@ use fugit::{HertzU32 as Hertz, RateExtU32};
 mod hal_02;
 mod hal_1;
 
+mod dma;
+// For DMA mapping
+pub(crate) use dma::{Rx, Tx};
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum DutyCycle {
     Ratio2to1,
@@ -127,17 +131,29 @@ impl Error {
     }
 }
 
-pub trait Instance: crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {}
+pub trait Instance: crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {
+    #[doc(hidden)]
+    fn ptr() -> *const i2c1::RegisterBlock;
+}
 
-impl Instance for pac::I2C1 {}
-pub type I2c1<PINS> = I2c<pac::I2C1, PINS>;
-impl Instance for pac::I2C2 {}
-pub type I2c2<PINS> = I2c<pac::I2C2, PINS>;
+// Implemented by all I2C instances
+macro_rules! i2c {
+    ($I2C:ty: $I2c:ident) => {
+        pub type $I2c<PINS> = I2c<$I2C, PINS>;
+
+        impl Instance for $I2C {
+            fn ptr() -> *const i2c1::RegisterBlock {
+                <$I2C>::ptr() as *const _
+            }
+        }
+    };
+}
+
+i2c! { pac::I2C1: I2c1 }
+i2c! { pac::I2C2: I2c2 }
 
 #[cfg(feature = "i2c3")]
-impl Instance for pac::I2C3 {}
-#[cfg(feature = "i2c3")]
-pub type I2c3<PINS> = I2c<pac::I2C3, PINS>;
+i2c! { pac::I2C3: I2c3 }
 
 pub trait I2cExt: Sized + Instance {
     fn i2c<SCL, SDA>(
