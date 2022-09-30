@@ -262,7 +262,7 @@ where
         self.send_start()?;
 
         // Send address
-        self.send_address(addr, true)?;
+        self.send_address(addr, false)?;
 
         // Clear condition by reading SR2. This will clear ADDR flag
         self.hal_i2c.i2c.sr2.read();
