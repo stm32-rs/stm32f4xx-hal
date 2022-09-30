@@ -370,9 +370,7 @@ where
             if RX_STREAM::get_transfer_error_flag() {
                 rx_t.clear_transfer_error_interrupt();
 
-                self.disable_dma_requests();
-                self.call_callback_once(Err(Error::TransferError));
-                self.destroy_rx_transfer();
+                self.finish_transfer_with_result(Err(Error::TransferError));
 
                 return;
             }
@@ -380,9 +378,7 @@ where
             if RX_STREAM::get_transfer_complete_flag() {
                 rx_t.clear_transfer_complete_interrupt();
 
-                self.disable_dma_requests();
-                self.call_callback_once(Ok(()));
-                self.destroy_rx_transfer();
+                self.finish_transfer_with_result(Ok(()));
 
                 // Clear ACK
                 self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
