@@ -199,9 +199,12 @@ where
         self.hal_i2c.i2c.cr2.modify(|_, w| w.dmaen().disabled());
     }
 
-    fn send_start(&mut self) -> Result<(), super::Error> {
+    fn send_start(&mut self, read: bool) -> Result<(), super::Error> {
         let i2c = &self.hal_i2c.i2c;
         i2c.cr1.modify(|_, w| w.start().set_bit());
+        if read {
+            i2c.cr1.modify(|_, w| w.ack().set_bit());
+        }
 
         // Wait until START condition was generated
         while self
@@ -259,7 +262,7 @@ where
 
     fn prepare_write(&mut self, addr: u8) -> Result<(), super::Error> {
         // Start
-        self.send_start()?;
+        self.send_start(false)?;
 
         // Send address
         self.send_address(addr, false)?;
@@ -273,7 +276,7 @@ where
     /// Generates start and send addres for read commands
     fn prepare_read(&mut self, addr: u8, buf_len: usize) -> Result<(), super::Error> {
         // Start
-        self.send_start()?;
+        self.send_start(true)?;
 
         // Send address
         self.send_address(addr, true)?;
