@@ -11,6 +11,7 @@ use nb;
 
 #[non_exhaustive]
 pub enum Error {
+    I2CError(super::Error),
     TransferError,
 }
 
@@ -23,6 +24,27 @@ pub trait I2CMasterWriteDMA {
         &mut self,
         addr: u8,
         bytes: &[u8],
+        callback: Option<I2cCompleteCallback>,
+    ) -> nb::Result<(), super::Error>;
+}
+
+pub trait I2CMasterReadDMA {
+    /// This function is unsafe because user must ensure that `buf` will live until `callback` called
+    unsafe fn read_dma(
+        &mut self,
+        addr: u8,
+        buf: &mut [u8],
+        callback: Option<I2cCompleteCallback>,
+    ) -> nb::Result<(), super::Error>;
+}
+
+pub trait I2CMasterWriteReadDMA {
+    /// This function is unsafe because user must ensure that `bytes` and `buf` will live until `callback` called
+    unsafe fn write_read_dma(
+        &mut self,
+        addr: u8,
+        bytes: &[u8],
+        buf: &mut [u8],
         callback: Option<I2cCompleteCallback>,
     ) -> nb::Result<(), super::Error>;
 }
@@ -45,6 +67,9 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
             hal_i2c: self,
             callback: None,
 
+            address: 0,
+            rx_len: 0,
+
             tx: Some(tx),
             tx_stream: Some(tx_stream),
             tx_transfer: None,
@@ -65,6 +90,11 @@ where
     hal_i2c: I2c<I2C, PINS>,
 
     callback: Option<I2cCompleteCallback>,
+
+    /// Last address used in `write_read_dma` method
+    address: u8,
+    /// Len of `buf` in `write_read_dma` method
+    rx_len: usize,
 
     tx: Option<Tx<I2C>>,
     tx_stream: Option<TX_STREAM>,
@@ -199,10 +229,16 @@ where
         while self.hal_i2c.i2c.cr1.read().stop().bit_is_set() {}
     }
 
-    fn send_address(&mut self, addr: u8) -> Result<(), super::Error> {
+    fn send_address(&mut self, addr: u8, read: bool) -> Result<(), super::Error> {
         let i2c = &self.hal_i2c.i2c;
+
+        let mut to_send_addr = u32::from(addr) << 1;
+        if read {
+            to_send_addr += 1;
+        }
+
         // Set up current address, we're trying to talk to
-        i2c.dr.write(|w| unsafe { w.bits(u32::from(addr) << 1) });
+        i2c.dr.write(|w| unsafe { w.bits(to_send_addr) });
 
         // Wait until address was sent
         loop {
@@ -221,9 +257,55 @@ where
         Ok(())
     }
 
+    fn prepare_write(&mut self, addr: u8) -> Result<(), super::Error> {
+        // Start
+        self.send_start()?;
+
+        // Send address
+        self.send_address(addr, true)?;
+
+        // Clear condition by reading SR2. This will clear ADDR flag
+        self.hal_i2c.i2c.sr2.read();
+
+        Ok(())
+    }
+
+    /// Generates start and send addres for read commands
+    fn prepare_read(&mut self, addr: u8, buf_len: usize) -> Result<(), super::Error> {
+        // Start
+        self.send_start()?;
+
+        // Send address
+        self.send_address(addr, true)?;
+
+        // On small sized array we need to set ACK=0 before ADDR cleared
+        if buf_len <= 1 {
+            self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
+        }
+
+        // Clear condition by reading SR2. This will clear ADDR flag
+        self.hal_i2c.i2c.sr2.read();
+
+        Ok(())
+    }
+
+    fn finish_transfer_with_result(&mut self, result: Result<(), Error>) {
+        self.disable_dma_requests();
+        self.call_callback_once(result);
+
+        if self.tx_transfer.is_some() {
+            self.destroy_tx_transfer();
+        }
+
+        if self.rx_transfer.is_some() {
+            self.destroy_rx_transfer();
+        }
+    }
+
     /// Handles DMA interrupt.
     /// This method a client must call in DMAx_STREAMy interrupt
     pub fn handle_dma_interrupt(&mut self) {
+        // Handle Transmit
         if let Some(tx_t) = &mut self.tx_transfer {
             if TX_STREAM::get_fifo_error_flag() {
                 tx_t.clear_fifo_error_interrupt();
@@ -234,9 +316,7 @@ where
             if TX_STREAM::get_transfer_error_flag() {
                 tx_t.clear_transfer_error_interrupt();
 
-                self.disable_dma_requests();
-                self.call_callback_once(Err(Error::TransferError));
-                self.destroy_tx_transfer();
+                self.finish_transfer_with_result(Err(Error::TransferError));
 
                 return;
             }
@@ -244,12 +324,62 @@ where
             if TX_STREAM::get_transfer_complete_flag() {
                 tx_t.clear_transfer_complete_interrupt();
 
-                self.disable_dma_requests();
-                self.call_callback_once(Ok(()));
+                // If we have prepared Rx Transfer, there are write_read command, generate restart signal and do not disable DMA requests
+                // Indicate that we have read after this transmit
+                let have_read_after = self.rx_transfer.is_some();
+
                 self.destroy_tx_transfer();
+                if !have_read_after {
+                    self.finish_transfer_with_result(Ok(()));
+                }
 
                 // Wait for BTF
                 while self.hal_i2c.i2c.sr1.read().btf().bit_is_clear() {}
+
+                // If we have prepared Rx Transfer, there are write_read command, generate restart signal
+                if have_read_after {
+                    // Prepare for reading
+                    if let Err(e) = self.prepare_read(self.address, self.rx_len) {
+                        self.finish_transfer_with_result(Err(Error::I2CError(e)))
+                    }
+
+                    self.rx_transfer.as_mut().unwrap().start(|_| {});
+                } else {
+                    // Generate stop and wait for it
+                    self.send_stop();
+                }
+
+                return;
+            }
+
+            // If Transmit handled then receive should not be handled even if exists.
+            // This return protects for handling Tx and Rx events in one interrupt.
+            return;
+        }
+
+        if let Some(rx_t) = &mut self.rx_transfer {
+            if RX_STREAM::get_fifo_error_flag() {
+                rx_t.clear_fifo_error_interrupt();
+
+                return;
+            }
+
+            if RX_STREAM::get_transfer_error_flag() {
+                rx_t.clear_transfer_error_interrupt();
+
+                self.disable_dma_requests();
+                self.call_callback_once(Err(Error::TransferError));
+                self.destroy_rx_transfer();
+
+                return;
+            }
+
+            if RX_STREAM::get_transfer_complete_flag() {
+                rx_t.clear_transfer_complete_interrupt();
+
+                self.disable_dma_requests();
+                self.call_callback_once(Ok(()));
+                self.destroy_rx_transfer();
 
                 // Generate stop and wait for it
                 self.send_stop();
@@ -318,18 +448,84 @@ where
         self.create_tx_transfer(static_bytes);
         self.callback = callback;
 
-        // Start
-        if let Err(e) = self.send_start() {
-            return Err(nb::Error::Other(e));
-        }
+        self.prepare_write(addr)?;
 
-        // Send address
-        if let Err(e) = self.send_address(addr) {
-            return Err(nb::Error::Other(e));
-        }
+        // Start DMA processing
+        self.tx_transfer.as_mut().unwrap().start(|_| {});
 
-        // Clear condition by reading SR2
-        self.hal_i2c.i2c.sr2.read();
+        Ok(())
+    }
+}
+
+impl<I2C, PINS, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterReadDMA
+    for I2CMasterDma<I2C, PINS, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
+where
+    I2C: Instance,
+    TX_STREAM: Stream,
+    ChannelX<TX_CH>: Channel,
+    Tx<I2C>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
+
+    RX_STREAM: Stream,
+    ChannelX<RX_CH>: Channel,
+    Rx<I2C>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
+{
+    unsafe fn read_dma(
+        &mut self,
+        addr: u8,
+        buf: &mut [u8],
+        callback: Option<I2cCompleteCallback>,
+    ) -> nb::Result<(), super::Error> {
+        self.busy_res()?;
+
+        //  If size is small we need to set ACK=0 before cleaning ADDR(reading SR2)
+        let buf_len = buf.len();
+
+        self.enable_dma_requests();
+        let static_buf: &'static mut [u8] = transmute(buf);
+        self.create_rx_transfer(static_buf);
+        self.callback = callback;
+
+        self.prepare_read(addr, buf_len)?;
+
+        // Start DMA processing
+        self.rx_transfer.as_mut().unwrap().start(|_| {});
+
+        Ok(())
+    }
+}
+
+impl<I2C, PINS, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterWriteReadDMA
+    for I2CMasterDma<I2C, PINS, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
+where
+    I2C: Instance,
+    TX_STREAM: Stream,
+    ChannelX<TX_CH>: Channel,
+    Tx<I2C>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
+
+    RX_STREAM: Stream,
+    ChannelX<RX_CH>: Channel,
+    Rx<I2C>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
+{
+    unsafe fn write_read_dma(
+        &mut self,
+        addr: u8,
+        bytes: &[u8],
+        buf: &mut [u8],
+        callback: Option<I2cCompleteCallback>,
+    ) -> nb::Result<(), super::Error> {
+        self.busy_res()?;
+
+        self.address = addr;
+        self.rx_len = buf.len();
+
+        self.enable_dma_requests();
+        let static_bytes: &'static [u8] = transmute(bytes);
+        self.create_tx_transfer(static_bytes);
+        let static_buf: &'static mut [u8] = transmute(buf);
+        self.create_rx_transfer(static_buf);
+        self.callback = callback;
+
+        self.prepare_write(addr)?;
 
         // Start DMA processing
         self.tx_transfer.as_mut().unwrap().start(|_| {});
