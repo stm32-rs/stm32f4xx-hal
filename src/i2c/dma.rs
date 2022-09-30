@@ -384,6 +384,8 @@ where
                 self.call_callback_once(Ok(()));
                 self.destroy_rx_transfer();
 
+                // Clear ACK
+                self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
                 // Generate stop and wait for it
                 self.send_stop();
 
