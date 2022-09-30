@@ -229,7 +229,6 @@ where
 
     fn send_stop(&mut self) {
         self.hal_i2c.i2c.cr1.modify(|_, w| w.stop().set_bit());
-        while self.hal_i2c.i2c.cr1.read().stop().bit_is_set() {}
     }
 
     fn send_address(&mut self, addr: u8, read: bool) -> Result<(), super::Error> {
