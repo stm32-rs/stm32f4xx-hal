@@ -448,7 +448,10 @@ where
         self.create_tx_transfer(static_bytes);
         self.callback = callback;
 
-        self.prepare_write(addr)?;
+        if let Err(e) = self.prepare_write(addr) {
+            // Reset struct on errors
+            self.finish_transfer_with_result(Err(Error::I2CError(e)));
+        }
 
         // Start DMA processing
         self.tx_transfer.as_mut().unwrap().start(|_| {});
@@ -485,7 +488,10 @@ where
         self.create_rx_transfer(static_buf);
         self.callback = callback;
 
-        self.prepare_read(addr, buf_len)?;
+        if let Err(e) = self.prepare_read(addr, buf_len) {
+            // Reset struct on errors
+            self.finish_transfer_with_result(Err(Error::I2CError(e)));
+        }
 
         // Start DMA processing
         self.rx_transfer.as_mut().unwrap().start(|_| {});
@@ -525,7 +531,10 @@ where
         self.create_rx_transfer(static_buf);
         self.callback = callback;
 
-        self.prepare_write(addr)?;
+        if let Err(e) = self.prepare_write(addr) {
+            // Reset struct on errors
+            self.finish_transfer_with_result(Err(Error::I2CError(e)));
+        }
 
         // Start DMA processing
         self.tx_transfer.as_mut().unwrap().start(|_| {});
