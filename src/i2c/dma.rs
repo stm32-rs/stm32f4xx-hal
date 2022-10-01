@@ -464,6 +464,7 @@ where
         if let Err(e) = self.prepare_write(addr) {
             // Reset struct on errors
             self.finish_transfer_with_result(Err(Error::I2CError(e)));
+            return Err(nb::Error::Other(e));
         }
 
         // Start DMA processing
@@ -504,6 +505,7 @@ where
         if let Err(e) = self.prepare_read(addr, buf_len) {
             // Reset struct on errors
             self.finish_transfer_with_result(Err(Error::I2CError(e)));
+            return Err(nb::Error::Other(e));
         }
 
         // Start DMA processing
@@ -547,6 +549,7 @@ where
         if let Err(e) = self.prepare_write(addr) {
             // Reset struct on errors
             self.finish_transfer_with_result(Err(Error::I2CError(e)));
+            return Err(nb::Error::Other(e));
         }
 
         // Start DMA processing
