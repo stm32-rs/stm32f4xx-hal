@@ -407,6 +407,10 @@ where
         self.busy_res()?;
         match self.hal_i2c.read(addr, buffer) {
             Ok(_) => Ok(()),
+            Err(super::Error::NoAcknowledge(source)) => {
+                self.send_stop();
+                return Err(nb::Error::Other(super::Error::NoAcknowledge(source)));
+            }
             Err(error) => Err(nb::Error::Other(error)),
         }
     }
@@ -421,6 +425,10 @@ where
         self.busy_res()?;
         match self.hal_i2c.write_read(addr, bytes, buffer) {
             Ok(_) => Ok(()),
+            Err(super::Error::NoAcknowledge(source)) => {
+                self.send_stop();
+                return Err(nb::Error::Other(super::Error::NoAcknowledge(source)));
+            }
             Err(error) => Err(nb::Error::Other(error)),
         }
     }
@@ -430,6 +438,10 @@ where
         self.busy_res()?;
         match self.hal_i2c.write(addr, bytes) {
             Ok(_) => Ok(()),
+            Err(super::Error::NoAcknowledge(source)) => {
+                self.send_stop();
+                return Err(nb::Error::Other(super::Error::NoAcknowledge(source)));
+            }
             Err(error) => Err(nb::Error::Other(error)),
         }
     }
