@@ -81,6 +81,7 @@ ist7920 = "0.1.1"
 smart-leds = "0.3.0"
 ws2812-spi = { version = "0.4.0", features = [] }
 hd44780-driver = "0.4.0"
+display-interface = "0.4"
 
 [dev-dependencies.time]
 version = "0.3"
@@ -401,6 +402,10 @@ required-features = ["device-selected"] # stm32f411
 
 [[example]]
 name = "stopwatch-with-ssd1306-and-interrupts"
+required-features = ["tim2"] # stm32f411
+
+[[example]]
+name = "stopwatch-with-ssd1306-and-interrupts-and-dma-i2c"
 required-features = ["tim2"] # stm32f411
 
 [[example]]
