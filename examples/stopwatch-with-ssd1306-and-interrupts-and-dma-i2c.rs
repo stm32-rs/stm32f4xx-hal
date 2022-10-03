@@ -32,13 +32,10 @@ use crate::hal::{
     rcc::{Clocks, Rcc},
     timer::{CounterUs, Event, Timer},
 };
+use core::cell::{Cell, RefCell};
 use core::fmt::Write;
 use core::ops::DerefMut;
 use core::sync::atomic::{AtomicBool, Ordering};
-use core::{
-    cell::{Cell, RefCell},
-    mem::transmute,
-};
 use cortex_m::interrupt::{free, CriticalSection, Mutex};
 use cortex_m_rt::entry;
 use display_interface::{DataFormat, DisplayError, WriteOnlyDataCommand};
