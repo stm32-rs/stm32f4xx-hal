@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Bump `synopsys-usb-otg` to `0.3.0` [#508]
  - Bump `embedded-hal` to `1.0.0-alpha.8` [#510]
  - Update `bxcan`, `rtic` and other dependencies [#519]
+ - Bump `synopsys-usb-otg` to `0.3.1` [#535]
 
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
