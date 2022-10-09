@@ -122,12 +122,8 @@ impl Rtc<Lse> {
             // Enable the LSE.
             // Set BDCR - Bit 0 (LSEON)
             bb::set(&rcc.bdcr, 0);
-            match mode {
-                // Set BDCR - Bit 2 (LSEBYP)
-                LSEClockMode::Bypass => bb::set(&rcc.bdcr, 2),
-                // Clear BDCR - Bit 2 (LSEBYP)
-                LSEClockMode::Oscillator => bb::clear(&rcc.bdcr, 2),
-            }
+            // Set or clear BDCR - Bit 2 (LSEBYP)
+            bb::write(&rcc.bdcr, 2, mode == LSEClockMode::Bypass);
             while rcc.bdcr.read().lserdy().bit_is_clear() {}
         }
     }
