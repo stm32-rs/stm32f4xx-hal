@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `SysMonoTimerExt` helper trait, `Pwm::(get/set)_duty_time` [#497]
 - example of using i2s in out with rtic and interrupt.
 - example of using USB CDC with interrupts.
+- Capability to release and reuse SPI peripheral after using it with DMA.
 
 [#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
