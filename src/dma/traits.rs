@@ -283,6 +283,15 @@ macro_rules! dma_map {
     };
 }
 
+macro_rules! dma_spi_map {
+    ($(($Stream:ty, $C:literal, $RxTx:ident, $Peripheral:ty, $Dir:ty)),+ $(,)*) => {
+        $(
+            unsafe impl<PINS, const BIDI: bool, OPERATION>
+            DMASet<$Stream, $C, $Dir> for spi::$RxTx<$Peripheral, PINS, BIDI, OPERATION> {}
+        )+
+    };
+}
+
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f417",
@@ -329,14 +338,35 @@ dma_map!(
     (Stream7<DMA1>, 5, timer::CCR3<pac::TIM3>, MemoryToPeripheral), //TIM3_CH3
     (Stream7<DMA1>, 5, timer::CCR3<pac::TIM3>, PeripheralToMemory), //TIM3_CH3
     (Stream0<DMA1>, 0, pac::SPI3, PeripheralToMemory),       //SPI3_RX
-    (Stream0<DMA1>, 0, spi::Rx<pac::SPI3>, PeripheralToMemory), //SPI3_RX
     (Stream2<DMA1>, 0, pac::SPI3, PeripheralToMemory),       //SPI3_RX
-    (Stream2<DMA1>, 0, spi::Rx<pac::SPI3>, PeripheralToMemory), //SPI3_RX
     (Stream4<DMA1>, 3, pac::I2C3, MemoryToPeripheral),       //I2C3_TX
     (Stream5<DMA1>, 0, pac::SPI3, MemoryToPeripheral),       //SPI3_TX
-    (Stream5<DMA1>, 0, spi::Tx<pac::SPI3>, MemoryToPeripheral), //SPI3_TX
     (Stream7<DMA1>, 0, pac::SPI3, MemoryToPeripheral),       //SPI3_TX
-    (Stream7<DMA1>, 0, spi::Tx<pac::SPI3>, MemoryToPeripheral), //SPI3_TX
+);
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f417",
+    feature = "stm32f415",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f439",
+    feature = "stm32f437",
+    feature = "stm32f429",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479",
+))]
+dma_spi_map!(
+    (Stream0<DMA1>, 0, Rx, pac::SPI3, PeripheralToMemory), //SPI3_RX
+    (Stream2<DMA1>, 0, Rx, pac::SPI3, PeripheralToMemory), //SPI3_RX
+    (Stream5<DMA1>, 0, Tx, pac::SPI3, MemoryToPeripheral), //SPI3_TX
+    (Stream7<DMA1>, 0, Tx, pac::SPI3, MemoryToPeripheral), //SPI3_TX
 );
 
 #[cfg(any(
@@ -433,10 +463,8 @@ dma_map!(
     (Stream0<DMA1>, 1, pac::I2C1, PeripheralToMemory),       //I2C1_RX
     (Stream2<DMA1>, 7, pac::I2C2, PeripheralToMemory),       //I2C2_RX
     (Stream3<DMA1>, 0, pac::SPI2, PeripheralToMemory),       //SPI2_RX
-    (Stream3<DMA1>, 0, spi::Rx<pac::SPI2>, PeripheralToMemory), //SPI2_RX
     (Stream3<DMA1>, 7, pac::I2C2, PeripheralToMemory),       //I2C2_RX
     (Stream4<DMA1>, 0, pac::SPI2, MemoryToPeripheral),       //SPI2_TX
-    (Stream4<DMA1>, 0, spi::Tx<pac::SPI2>, MemoryToPeripheral), // SPI2_TX
     (Stream5<DMA1>, 1, pac::I2C1, PeripheralToMemory),       //I2C1_RX
     (Stream5<DMA1>, 4, pac::USART2, PeripheralToMemory),     //USART2_RX
     (Stream5<DMA1>, 4, serial::Rx<pac::USART2>, PeripheralToMemory), //USART2_RX
@@ -446,11 +474,9 @@ dma_map!(
     (Stream0<DMA2>, 0, pac::ADC1, PeripheralToMemory),       //ADC1
     (Stream0<DMA2>, 0, Adc<pac::ADC1>, PeripheralToMemory),
     (Stream0<DMA2>, 3, pac::SPI1, PeripheralToMemory), //SPI1_RX
-    (Stream0<DMA2>, 3, spi::Rx<pac::SPI1>, PeripheralToMemory), //SPI1_RX
     (Stream1<DMA2>, 5, pac::USART6, PeripheralToMemory), //USART6_RX
     (Stream1<DMA2>, 5, serial::Rx<pac::USART6>, PeripheralToMemory), //USART6_RX
     (Stream2<DMA2>, 3, pac::SPI1, PeripheralToMemory), //SPI1_RX
-    (Stream2<DMA2>, 3, spi::Rx<pac::SPI1>, PeripheralToMemory), //SPI1_RX
     (Stream2<DMA2>, 4, pac::USART1, PeripheralToMemory), //USART1_RX
     (Stream2<DMA2>, 4, serial::Rx<pac::USART1>, PeripheralToMemory), //USART1_RX
     (Stream2<DMA2>, 5, pac::USART6, PeripheralToMemory), //USART6_RX
@@ -489,6 +515,33 @@ dma_map!(
     (Stream6<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
     (Stream7<DMA2>, 0, MemoryToMemory<u32>, MemoryToMemory<u32>),
 );
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f417",
+    feature = "stm32f415",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f439",
+    feature = "stm32f437",
+    feature = "stm32f429",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479",
+))]
+dma_spi_map!(
+    (Stream3<DMA1>, 0, Rx, pac::SPI2, PeripheralToMemory), //SPI2_RX
+    (Stream4<DMA1>, 0, Tx, pac::SPI2, MemoryToPeripheral), // SPI2_TX
+    (Stream0<DMA2>, 3, Rx, pac::SPI1, PeripheralToMemory), //SPI1_RX
+    (Stream2<DMA2>, 3, Rx, pac::SPI1, PeripheralToMemory), //SPI1_RX
+);
+
 
 #[cfg(any(
     feature = "stm32f401",
@@ -572,9 +625,26 @@ dma_map!(
     (Stream6<DMA1>, 1, pac::I2C1, MemoryToPeripheral), //I2C1_TX
     (Stream7<DMA1>, 1, pac::I2C1, MemoryToPeripheral), //I2C1_TX
     (Stream3<DMA2>, 3, pac::SPI1, MemoryToPeripheral), //SPI1_TX
-    (Stream3<DMA2>, 3, spi::Tx<pac::SPI1>, MemoryToPeripheral), //SPI1_TX
     (Stream5<DMA2>, 3, pac::SPI1, MemoryToPeripheral), //SPI1_TX
-    (Stream5<DMA2>, 3, spi::Tx<pac::SPI1>, MemoryToPeripheral), //SPI1_TX
+);
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f417",
+    feature = "stm32f415",
+    feature = "stm32f405",
+    feature = "stm32f407",
+    feature = "stm32f427",
+    feature = "stm32f439",
+    feature = "stm32f437",
+    feature = "stm32f429",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479",
+))]
+dma_spi_map!(
+    (Stream3<DMA2>, 3, Tx, pac::SPI1, MemoryToPeripheral), //SPI1_TX
+    (Stream5<DMA2>, 3, Tx, pac::SPI1, MemoryToPeripheral), //SPI1_TX
 );
 
 #[cfg(any(
@@ -593,13 +663,30 @@ dma_map!(
 ))]
 dma_map!(
     (Stream0<DMA2>, 4, pac::SPI4, PeripheralToMemory), //SPI4_RX
-    (Stream0<DMA2>, 4, spi::Rx<pac::SPI4>, PeripheralToMemory), //SPI4_RX
     (Stream1<DMA2>, 4, pac::SPI4, MemoryToPeripheral), //SPI4_TX
-    (Stream1<DMA2>, 4, spi::Tx<pac::SPI4>, MemoryToPeripheral), //SPI4_TX
     (Stream3<DMA2>, 5, pac::SPI4, PeripheralToMemory), //SPI4_RX:DMA_CHANNEL_5
-    (Stream3<DMA2>, 5, spi::Rx<pac::SPI4>, PeripheralToMemory), //SPI4_RX:DMA_CHANNEL_5
     (Stream4<DMA2>, 5, pac::SPI4, MemoryToPeripheral), //SPI4_TX:DMA_CHANNEL_5
-    (Stream4<DMA2>, 5, spi::Tx<pac::SPI4>, MemoryToPeripheral), //SPI4_TX:DMA_CHANNEL_5
+);
+
+#[cfg(any(
+    feature = "stm32f401",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f439",
+    feature = "stm32f437",
+    feature = "stm32f429",
+    feature = "stm32f446",
+    feature = "stm32f469",
+    feature = "stm32f479",
+))]
+dma_spi_map!(
+    (Stream0<DMA2>, 4, Rx, pac::SPI4, PeripheralToMemory), //SPI4_RX
+    (Stream1<DMA2>, 4, Tx, pac::SPI4, MemoryToPeripheral), //SPI4_TX
+    (Stream3<DMA2>, 5, Rx, pac::SPI4, PeripheralToMemory), //SPI4_RX:DMA_CHANNEL_5
+    (Stream4<DMA2>, 5, Tx, pac::SPI4, MemoryToPeripheral), //SPI4_TX:DMA_CHANNEL_5
 );
 
 #[cfg(any(
@@ -918,13 +1005,23 @@ dma_map!(
     (Stream7<DMA1>, 1, pac::I2C1, MemoryToPeripheral), //I2C1_TX:DMA_CHANNEL_1
     (Stream7<DMA1>, 6, pac::USART2, PeripheralToMemory), //USART2_RX:DMA_CHANNEL_6
     (Stream2<DMA2>, 2, pac::SPI1, MemoryToPeripheral), //SPI1_TX
-    (Stream2<DMA2>, 2, spi::Tx<pac::SPI1>, MemoryToPeripheral), //SPI1_TX
     (Stream3<DMA2>, 3, pac::SPI1, MemoryToPeripheral), //SPI1_TX:DMA_CHANNEL_3
-    (Stream3<DMA2>, 3, spi::Tx<pac::SPI1>, MemoryToPeripheral), //SPI1_TX:DMA_CHANNEL_3
     (Stream5<DMA2>, 3, pac::SPI1, MemoryToPeripheral), //SPI1_TX:DMA_CHANNEL_3
-    (Stream5<DMA2>, 3, spi::Tx<pac::SPI1>, MemoryToPeripheral), //SPI1_TX:DMA_CHANNEL_3
     (Stream5<DMA2>, 5, pac::SPI5, MemoryToPeripheral), //SPI5_TX:DMA_CHANNEL_5
-    (Stream5<DMA2>, 5, spi::Tx<pac::SPI5>, MemoryToPeripheral), //SPI5_TX:DMA_CHANNEL_5
+);
+
+#[cfg(any(
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+))]
+dma_spi_map!(
+    (Stream2<DMA2>, 2, Tx, pac::SPI1, MemoryToPeripheral), //SPI1_TX
+    (Stream3<DMA2>, 3, Tx, pac::SPI1, MemoryToPeripheral), //SPI1_TX:DMA_CHANNEL_3
+    (Stream5<DMA2>, 3, Tx, pac::SPI1, MemoryToPeripheral), //SPI1_TX:DMA_CHANNEL_3
+    (Stream5<DMA2>, 5, Tx, pac::SPI5, MemoryToPeripheral), //SPI5_TX:DMA_CHANNEL_5
 );
 
 #[cfg(any(
@@ -942,13 +1039,29 @@ dma_map!(
 ))]
 dma_map!(
     (Stream3<DMA2>, 2, pac::SPI5, PeripheralToMemory), //SPI5_RX
-    (Stream3<DMA2>, 2, spi::Rx<pac::SPI5>, PeripheralToMemory), //SPI5_RX
     (Stream4<DMA2>, 2, pac::SPI5, MemoryToPeripheral), //SPI5_TX
-    (Stream4<DMA2>, 2, spi::Tx<pac::SPI5>, MemoryToPeripheral), //SPI5_TX
     (Stream5<DMA2>, 7, pac::SPI5, PeripheralToMemory), //SPI5_RX:DMA_CHANNEL_7
-    (Stream5<DMA2>, 7, spi::Rx<pac::SPI5>, PeripheralToMemory), //SPI5_RX:DMA_CHANNEL_7
     (Stream6<DMA2>, 7, pac::SPI5, MemoryToPeripheral), //SPI5_TX:DMA_CHANNEL_7
-    (Stream6<DMA2>, 7, spi::Tx<pac::SPI5>, MemoryToPeripheral), //SPI5_TX:DMA_CHANNEL_7
+);
+
+#[cfg(any(
+    feature = "stm32f410",
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+    feature = "stm32f427",
+    feature = "stm32f439",
+    feature = "stm32f437",
+    feature = "stm32f429",
+    feature = "stm32f469",
+    feature = "stm32f479",
+))]
+dma_spi_map!(
+    (Stream3<DMA2>, 2, Rx, pac::SPI5, PeripheralToMemory), //SPI5_RX
+    (Stream4<DMA2>, 2, Tx, pac::SPI5, MemoryToPeripheral), //SPI5_TX
+    (Stream5<DMA2>, 7, Rx, pac::SPI5, PeripheralToMemory), //SPI5_RX:DMA_CHANNEL_7
+    (Stream6<DMA2>, 7, Tx, pac::SPI5, MemoryToPeripheral), //SPI5_TX:DMA_CHANNEL_7
 );
 
 #[cfg(any(
@@ -974,8 +1087,17 @@ address!((pac::SPI5, dr, u8),);
 ))]
 dma_map!(
     (Stream4<DMA2>, 4, pac::SPI4, PeripheralToMemory), //SPI4_RX);
-    (Stream4<DMA2>, 4, spi::Rx<pac::SPI4>, PeripheralToMemory),
-); //SPI4_RX);
+);
+
+#[cfg(any(
+    feature = "stm32f411",
+    feature = "stm32f412",
+    feature = "stm32f413",
+    feature = "stm32f423",
+))]
+dma_spi_map!(
+    (Stream4<DMA2>, 4, Rx, pac::SPI4, PeripheralToMemory), // SPI4_RX
+);
 
 /* TODO: DFSDM support
 #[cfg(feature = "stm32f412")]
@@ -1129,9 +1251,20 @@ address!(
 ))]
 dma_map!(
     (Stream5<DMA2>, 1, pac::SPI6, MemoryToPeripheral), //SPI6_TX
-    (Stream5<DMA2>, 1, spi::Tx<pac::SPI6>, MemoryToPeripheral), //SPI6_TX
     (Stream6<DMA2>, 1, pac::SPI6, PeripheralToMemory), //SPI6_RX
-    (Stream6<DMA2>, 1, spi::Rx<pac::SPI6>, PeripheralToMemory), //SPI6_RX
+);
+
+#[cfg(any(
+    feature = "stm32f427",
+    feature = "stm32f439",
+    feature = "stm32f437",
+    feature = "stm32f429",
+    feature = "stm32f469",
+    feature = "stm32f479",
+))]
+dma_spi_map!(
+    (Stream5<DMA2>, 1, Tx, pac::SPI6, MemoryToPeripheral), //SPI6_TX
+    (Stream6<DMA2>, 1, Rx, pac::SPI6, PeripheralToMemory), //SPI6_RX
 );
 
 #[cfg(any(

@@ -681,48 +681,54 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
 // Spi DMA
 
 impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, u8, OPERATION> {
-    pub fn use_dma(self) -> DmaBuilder<SPI> {
-        DmaBuilder { spi: self.spi }
+    pub fn use_dma(self) -> DmaBuilder<SPI, PINS, BIDI, OPERATION> {
+        DmaBuilder { spi: self }
     }
 }
 
-pub struct DmaBuilder<SPI> {
-    spi: SPI,
+pub struct DmaBuilder<SPI: Instance, PINS, const BIDI: bool, OPERATION> {
+    spi: Spi<SPI, PINS, BIDI, u8, OPERATION>,
 }
 
-pub struct Tx<SPI> {
-    spi: PhantomData<SPI>,
+pub struct Tx<SPI: Instance, PINS, const BIDI: bool, OPERATION> {
+    spi: Spi<SPI, PINS, BIDI, u8, OPERATION>,
 }
 
-pub struct Rx<SPI> {
-    spi: PhantomData<SPI>,
+pub struct Rx<SPI: Instance, PINS, const BIDI: bool, OPERATION> {
+    spi: Spi<SPI, PINS, BIDI, u8, OPERATION>,
 }
 
-impl<SPI: Instance> DmaBuilder<SPI> {
-    pub fn tx(self) -> Tx<SPI> {
-        self.new_tx()
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> DmaBuilder<SPI, PINS, BIDI, OPERATION> {
+    pub fn tx(self) -> Tx<SPI, PINS, BIDI, OPERATION> {
+        self.spi.spi.cr2.modify(|_, w| w.txdmaen().enabled());
+        Tx { spi: self.spi }
     }
 
-    pub fn rx(self) -> Rx<SPI> {
-        self.new_rx()
+    pub fn rx(self) -> Rx<SPI, PINS, BIDI, OPERATION> {
+        self.spi.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
+        Rx { spi: self.spi }
     }
 
-    pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
-        (self.new_tx(), self.new_rx())
-    }
+    // pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
+    //     (self.new_tx(), self.new_rx())
+    // }
+}
 
-    fn new_tx(&self) -> Tx<SPI> {
-        self.spi.cr2.modify(|_, w| w.txdmaen().enabled());
-        Tx { spi: PhantomData }
-    }
-
-    fn new_rx(self) -> Rx<SPI> {
-        self.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
-        Rx { spi: PhantomData }
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Rx<SPI, PINS, BIDI, OPERATION> {
+    pub fn release(self) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+        self.spi.spi.cr2.modify(|_, w| w.rxdmaen().disabled());
+        self.spi
     }
 }
 
-unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Tx<SPI, PINS, BIDI, OPERATION> {
+    pub fn release(self) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+        self.spi.spi.cr2.modify(|_, w| w.txdmaen().disabled());
+        self.spi
+    }
+}
+
+unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress for Rx<SPI, PINS, BIDI, OPERATION> {
     #[inline(always)]
     fn address(&self) -> u32 {
         unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
@@ -731,7 +737,7 @@ unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
     type MemSize = u8;
 }
 
-unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
+unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress for Tx<SPI, PINS, BIDI, OPERATION> {
     #[inline(always)]
     fn address(&self) -> u32 {
         unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
