@@ -698,6 +698,14 @@ pub struct Rx<SPI: Instance, PINS, const BIDI: bool, OPERATION> {
     spi: Spi<SPI, PINS, BIDI, u8, OPERATION>,
 }
 
+pub struct TxCoupled<SPI: Instance, PINS, const BIDI: bool, OPERATION> {
+    spi: Spi<SPI, PINS, BIDI, u8, OPERATION>,
+}
+
+pub struct RxCoupled<SPI: Instance, PINS, const BIDI: bool, OPERATION> {
+    spi: PhantomData<Spi<SPI, PINS, BIDI, u8, OPERATION>>,
+}
+
 impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> DmaBuilder<SPI, PINS, BIDI, OPERATION> {
     pub fn tx(self) -> Tx<SPI, PINS, BIDI, OPERATION> {
         self.spi.spi.cr2.modify(|_, w| w.txdmaen().enabled());
@@ -709,9 +717,25 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> DmaBuilder<SPI, PINS, BID
         Rx { spi: self.spi }
     }
 
-    // pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
-    //     (self.new_tx(), self.new_rx())
-    // }
+    pub fn txrx(
+        self,
+    ) -> (
+        TxCoupled<SPI, PINS, BIDI, OPERATION>,
+        RxCoupled<SPI, PINS, BIDI, OPERATION>,
+    ) {
+        self.spi
+            .spi
+            .cr2
+            .modify(|_, w| w.txdmaen().enabled().rxdmaen().enabled());
+        (
+            TxCoupled {
+                spi: self.spi
+            },
+            RxCoupled {
+                spi: PhantomData
+            }
+        )
+    }
 }
 
 impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Rx<SPI, PINS, BIDI, OPERATION> {
@@ -728,7 +752,22 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Tx<SPI, PINS, BIDI, OPERA
     }
 }
 
-unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress for Rx<SPI, PINS, BIDI, OPERATION> {
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> TxCoupled<SPI, PINS, BIDI, OPERATION> {
+    pub fn release(self, _couple: RxCoupled<SPI, PINS, BIDI, OPERATION>) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+        self.spi.spi.cr2.modify(|_, w| w.rxdmaen().disabled().txdmaen().disabled());
+        self.spi
+    }
+}
+
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> RxCoupled<SPI, PINS, BIDI, OPERATION> {
+    pub fn release(self, couple: TxCoupled<SPI, PINS, BIDI, OPERATION>) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+        couple.release(self)
+    }
+}
+
+unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress
+    for Rx<SPI, PINS, BIDI, OPERATION>
+{
     #[inline(always)]
     fn address(&self) -> u32 {
         unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
@@ -737,7 +776,31 @@ unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress for Rx
     type MemSize = u8;
 }
 
-unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress for Tx<SPI, PINS, BIDI, OPERATION> {
+unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress
+    for Tx<SPI, PINS, BIDI, OPERATION>
+{
+    #[inline(always)]
+    fn address(&self) -> u32 {
+        unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
+    }
+
+    type MemSize = u8;
+}
+
+unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress
+    for RxCoupled<SPI, PINS, BIDI, OPERATION>
+{
+    #[inline(always)]
+    fn address(&self) -> u32 {
+        unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
+    }
+
+    type MemSize = u8;
+}
+
+unsafe impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> PeriAddress
+    for TxCoupled<SPI, PINS, BIDI, OPERATION>
+{
     #[inline(always)]
     fn address(&self) -> u32 {
         unsafe { &(*SPI::ptr()).dr as *const _ as u32 }

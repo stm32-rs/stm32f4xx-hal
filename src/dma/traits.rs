@@ -5,6 +5,7 @@ use crate::{
     serial, spi, timer,
 };
 use core::ops::Deref;
+use paste::paste;
 
 pub(crate) mod sealed {
     /// Converts value to bits for setting a register value.
@@ -288,6 +289,11 @@ macro_rules! dma_spi_map {
         $(
             unsafe impl<PINS, const BIDI: bool, OPERATION>
             DMASet<$Stream, $C, $Dir> for spi::$RxTx<$Peripheral, PINS, BIDI, OPERATION> {}
+
+            paste! {
+                unsafe impl<PINS, const BIDI: bool, OPERATION>
+                DMASet<$Stream, $C, $Dir> for spi::[<$RxTx Coupled>]<$Peripheral, PINS, BIDI, OPERATION> {}
+            }
         )+
     };
 }
