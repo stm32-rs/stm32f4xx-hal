@@ -727,14 +727,7 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> DmaBuilder<SPI, PINS, BID
             .spi
             .cr2
             .modify(|_, w| w.txdmaen().enabled().rxdmaen().enabled());
-        (
-            TxCoupled {
-                spi: self.spi
-            },
-            RxCoupled {
-                spi: PhantomData
-            }
-        )
+        (TxCoupled { spi: self.spi }, RxCoupled { spi: PhantomData })
     }
 }
 
@@ -753,14 +746,23 @@ impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Tx<SPI, PINS, BIDI, OPERA
 }
 
 impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> TxCoupled<SPI, PINS, BIDI, OPERATION> {
-    pub fn release(self, _couple: RxCoupled<SPI, PINS, BIDI, OPERATION>) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
-        self.spi.spi.cr2.modify(|_, w| w.rxdmaen().disabled().txdmaen().disabled());
+    pub fn release(
+        self,
+        _couple: RxCoupled<SPI, PINS, BIDI, OPERATION>,
+    ) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+        self.spi
+            .spi
+            .cr2
+            .modify(|_, w| w.rxdmaen().disabled().txdmaen().disabled());
         self.spi
     }
 }
 
 impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> RxCoupled<SPI, PINS, BIDI, OPERATION> {
-    pub fn release(self, couple: TxCoupled<SPI, PINS, BIDI, OPERATION>) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+    pub fn release(
+        self,
+        couple: TxCoupled<SPI, PINS, BIDI, OPERATION>,
+    ) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
         couple.release(self)
     }
 }

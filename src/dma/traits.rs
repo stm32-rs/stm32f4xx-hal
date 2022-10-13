@@ -548,7 +548,6 @@ dma_spi_map!(
     (Stream2<DMA2>, 3, Rx, pac::SPI1, PeripheralToMemory), //SPI1_RX
 );
 
-
 #[cfg(any(
     feature = "stm32f401",
     feature = "stm32f417",
