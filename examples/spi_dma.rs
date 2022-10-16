@@ -14,6 +14,7 @@ use stm32f4xx_hal::{
     pac,
     prelude::*,
     spi::*,
+    gpio::{PB13, PB15},
 };
 
 const ARRAY_SIZE: usize = 100;
@@ -21,7 +22,7 @@ const ARRAY_SIZE: usize = 100;
 type SpiDma = Transfer<
     Stream4<pac::DMA1>,
     0,
-    Tx<pac::SPI2>,
+    Tx<pac::SPI2, (PB13, NoMiso, PB15), false, Master>,
     MemoryToPeripheral,
     &'static mut [u8; ARRAY_SIZE],
 >;
@@ -39,8 +40,8 @@ fn main() -> ! {
         let stream = steams.4;
 
         let gpiob = dp.GPIOB.split();
-        let pb15 = gpiob.pb15.into_alternate().internal_pull_up(true);
-        let pb13 = gpiob.pb13.into_alternate();
+        let pb15 = gpiob.pb15.internal_pull_up(true);
+        let pb13 = gpiob.pb13;
 
         let mode = Mode {
             polarity: Polarity::IdleLow,
