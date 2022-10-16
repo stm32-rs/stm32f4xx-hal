@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
  - use register.modify instead of register.write to start PWM [#501]
+ - add missing generic param for Spi::release implementation.
 
 ### Added
 
