@@ -454,7 +454,8 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Slave
     }
 }
 
-impl<SPI, SCK, MISO, MOSI, const BIDI: bool, W, OPERATION> Spi<SPI, (SCK, MISO, MOSI), BIDI, W, OPERATION>
+impl<SPI, SCK, MISO, MOSI, const BIDI: bool, W, OPERATION>
+    Spi<SPI, (SCK, MISO, MOSI), BIDI, W, OPERATION>
 where
     SPI: Instance,
     (SCK, MISO, MOSI): Pins<SPI>,
