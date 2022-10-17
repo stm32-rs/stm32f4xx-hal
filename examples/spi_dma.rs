@@ -11,10 +11,10 @@ use embedded_hal::spi::{Mode, Phase, Polarity};
 use stm32f4xx_hal::pac::interrupt;
 use stm32f4xx_hal::{
     dma::{config, traits::StreamISR, MemoryToPeripheral, Stream4, StreamsTuple, Transfer},
+    gpio::{PB13, PB15},
     pac,
     prelude::*,
     spi::*,
-    gpio::{PB13, PB15},
 };
 
 const ARRAY_SIZE: usize = 100;
