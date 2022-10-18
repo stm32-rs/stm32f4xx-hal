@@ -51,6 +51,17 @@ mod nb {
         }
     }
 
+    impl<USART: Instance> Write<u8> for Tx<USART, u8> {
+        type Error = Error;
+
+        fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+            self.write(word)
+        }
+        fn flush(&mut self) -> nb::Result<(), Self::Error> {
+            self.flush()
+        }
+    }
+
     /// Writes 9-bit words to the UART/USART
     ///
     /// If the UART/USART was configured with `WordLength::DataBits9`, the 9 least significant bits will
