@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - example of using i2s in out with rtic and interrupt.
 - example of using USB CDC with interrupts.
 - Added non-blocking I2C based on DMA [#534]
+- Added Transactional I2C API [#542]
 
 [#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
@@ -59,6 +60,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#536]: https://github.com/stm32-rs/stm32f4xx-hal/pull/536
 [#534]: https://github.com/stm32-rs/stm32f4xx-hal/pull/529
 [#540]: https://github.com/stm32-rs/stm32f4xx-hal/pull/540
+[#542]: https://github.com/stm32-rs/stm32f4xx-hal/pull/542
 
 ## [v0.13.2] - 2022-05-16
 
