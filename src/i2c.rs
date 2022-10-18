@@ -458,11 +458,11 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         }
 
         self.prepare_read(addr)?;
-        self.read_wo_start(buffer)
+        self.read_wo_prepare(buffer)
     }
 
     /// Reads like normal but does'n genereate start and don't send address
-    fn read_wo_start(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    fn read_wo_prepare(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
         if let Some((last, buffer)) = buffer.split_last_mut() {
             // Read all bytes but not last
             self.read_bytes(buffer)?;
@@ -487,11 +487,11 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
 
     pub fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
         self.prepare_write(addr)?;
-        self.write_wo_start(bytes)
+        self.write_wo_prepare(bytes)
     }
 
-    /// Reads like normal but does'n genereate start and don't send address
-    fn write_wo_start(&mut self, bytes: &[u8]) -> Result<(), Error> {
+    /// Writes like normal but does'n genereate start and don't send address
+    fn write_wo_prepare(&mut self, bytes: &[u8]) -> Result<(), Error> {
         self.write_bytes(bytes.iter().cloned())?;
 
         // Send a STOP condition
@@ -566,8 +566,8 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
 
             // 4. Now, prev_op is last command use methods variations that will generate stop
             match prev_op {
-                Operation::Read(rb) => self.read_wo_start(rb)?,
-                Operation::Write(wb) => self.write_wo_start(wb)?,
+                Operation::Read(rb) => self.read_wo_prepare(rb)?,
+                Operation::Write(wb) => self.write_wo_prepare(wb)?,
             };
         }
 
@@ -607,8 +607,8 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
 
             // 4. Now, prev_op is last command use methods variations that will generate stop
             match prev_op {
-                Operation::Read(rb) => self.read_wo_start(rb)?,
-                Operation::Write(wb) => self.write_wo_start(wb)?,
+                Operation::Read(rb) => self.read_wo_prepare(rb)?,
+                Operation::Write(wb) => self.write_wo_prepare(wb)?,
             };
         }
 
