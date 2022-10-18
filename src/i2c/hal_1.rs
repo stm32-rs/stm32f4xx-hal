@@ -59,17 +59,18 @@ mod blocking {
 
         fn transaction<'a>(
             &mut self,
-            _addr: u8,
-            _operations: &mut [Operation<'a>],
+            addr: u8,
+            operations: &mut [Operation<'a>],
         ) -> Result<(), Self::Error> {
-            todo!()
+            self.transaction_slice(addr, operations)
         }
 
-        fn transaction_iter<'a, O>(&mut self, _addr: u8, _operations: O) -> Result<(), Self::Error>
+        fn transaction_iter<'a, O>(&mut self, addr: u8, operations: O) -> Result<(), Self::Error>
         where
             O: IntoIterator<Item = Operation<'a>>,
         {
-            todo!()
+            let it = operations.into_iter();
+            self.transaction(addr, it)
         }
     }
 }

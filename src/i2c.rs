@@ -7,6 +7,7 @@ use crate::gpio::{Const, OpenDrain, PinA, SetAlternate};
 use crate::pac::RCC;
 
 use crate::rcc::Clocks;
+use embedded_hal_one::i2c::blocking::Operation;
 use fugit::{HertzU32 as Hertz, RateExtU32};
 
 mod hal_02;
@@ -313,7 +314,9 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         Ok(sr1)
     }
 
-    fn write_bytes(&mut self, addr: u8, bytes: impl Iterator<Item = u8>) -> Result<(), Error> {
+    /// Sends START and Address for writing
+    #[inline(always)]
+    fn prepare_write(&self, addr: u8) -> Result<(), Error> {
         // Send a START condition
         self.i2c.cr1.modify(|_, w| w.start().set_bit());
 
@@ -351,6 +354,46 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         // Clear condition by reading SR2
         self.i2c.sr2.read();
 
+        Ok(())
+    }
+
+    /// Sends START and Address for reading
+    fn prepare_read(&self, addr: u8) -> Result<(), Error> {
+        // Send a START condition and set ACK bit
+        self.i2c
+            .cr1
+            .modify(|_, w| w.start().set_bit().ack().set_bit());
+
+        // Wait until START condition was generated
+        while self.i2c.sr1.read().sb().bit_is_clear() {}
+
+        // Also wait until signalled we're master and everything is waiting for us
+        while {
+            let sr2 = self.i2c.sr2.read();
+            sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
+        } {}
+
+        // Set up current address, we're trying to talk to
+        self.i2c
+            .dr
+            .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
+
+        // Wait until address was sent
+        loop {
+            self.check_and_clear_error_flags()
+                .map_err(Error::nack_addr)?;
+            if self.i2c.sr1.read().addr().bit_is_set() {
+                break;
+            }
+        }
+
+        // Clear condition by reading SR2
+        self.i2c.sr2.read();
+
+        Ok(())
+    }
+
+    fn write_bytes(&mut self, bytes: impl Iterator<Item = u8>) -> Result<(), Error> {
         // Send bytes
         for c in bytes {
             self.send_byte(c)?;
@@ -400,43 +443,29 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         Ok(value)
     }
 
+    fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        // Receive bytes into buffer
+        for c in buffer {
+            *c = self.recv_byte()?;
+        }
+
+        Ok(())
+    }
+
     pub fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Error> {
+        if buffer.is_empty() {
+            return Err(Error::Overrun);
+        }
+
+        self.prepare_read(addr)?;
+        self.read_wo_start(buffer)
+    }
+
+    /// Reads like normal but does'n genereate start and don't send address
+    fn read_wo_start(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
         if let Some((last, buffer)) = buffer.split_last_mut() {
-            // Send a START condition and set ACK bit
-            self.i2c
-                .cr1
-                .modify(|_, w| w.start().set_bit().ack().set_bit());
-
-            // Wait until START condition was generated
-            while self.i2c.sr1.read().sb().bit_is_clear() {}
-
-            // Also wait until signalled we're master and everything is waiting for us
-            while {
-                let sr2 = self.i2c.sr2.read();
-                sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
-            } {}
-
-            // Set up current address, we're trying to talk to
-            self.i2c
-                .dr
-                .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
-
-            // Wait until address was sent
-            loop {
-                self.check_and_clear_error_flags()
-                    .map_err(Error::nack_addr)?;
-                if self.i2c.sr1.read().addr().bit_is_set() {
-                    break;
-                }
-            }
-
-            // Clear condition by reading SR2
-            self.i2c.sr2.read();
-
-            // Receive bytes into buffer
-            for c in buffer {
-                *c = self.recv_byte()?;
-            }
+            // Read all bytes but not last
+            self.read_bytes(buffer)?;
 
             // Prepare to send NACK then STOP after next byte
             self.i2c
@@ -457,7 +486,13 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
     }
 
     pub fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
-        self.write_bytes(addr, bytes.iter().cloned())?;
+        self.prepare_write(addr)?;
+        self.write_wo_start(bytes)
+    }
+
+    /// Reads like normal but does'n genereate start and don't send address
+    fn write_wo_start(&mut self, bytes: &[u8]) -> Result<(), Error> {
+        self.write_bytes(bytes.iter().cloned())?;
 
         // Send a STOP condition
         self.i2c.cr1.modify(|_, w| w.stop().set_bit());
@@ -473,7 +508,8 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
     where
         B: IntoIterator<Item = u8>,
     {
-        self.write_bytes(addr, bytes.into_iter())?;
+        self.prepare_write(addr)?;
+        self.write_bytes(bytes.into_iter())?;
 
         // Send a STOP condition
         self.i2c.cr1.modify(|_, w| w.stop().set_bit());
@@ -486,7 +522,8 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
     }
 
     pub fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
-        self.write_bytes(addr, bytes.iter().cloned())?;
+        self.prepare_write(addr)?;
+        self.write_bytes(bytes.iter().cloned())?;
         self.read(addr, buffer)
     }
 
@@ -494,7 +531,88 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
     where
         B: IntoIterator<Item = u8>,
     {
-        self.write_bytes(addr, bytes.into_iter())?;
+        self.prepare_write(addr)?;
+        self.write_bytes(bytes.into_iter())?;
         self.read(addr, buffer)
+    }
+
+    pub fn transaction<'a>(
+        &mut self,
+        addr: u8,
+        mut ops: impl Iterator<Item = Operation<'a>>,
+    ) -> Result<(), Error> {
+        if let Some(mut prev_op) = ops.next() {
+            // 1. Generate Start for operation
+            match &prev_op {
+                Operation::Read(_) => self.prepare_read(addr)?,
+                Operation::Write(_) => self.prepare_write(addr)?,
+            };
+
+            for op in ops {
+                // 2. Execute previous operations.
+                match &mut prev_op {
+                    Operation::Read(rb) => self.read_bytes(*rb)?,
+                    Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
+                };
+                // 3. If operation changes type we must generate new start
+                match (&prev_op, &op) {
+                    (Operation::Read(_), Operation::Write(_)) => self.prepare_write(addr)?,
+                    (Operation::Write(_), Operation::Read(_)) => self.prepare_read(addr)?,
+                    _ => {} // No changes if operation have not changed
+                }
+
+                prev_op = op;
+            }
+
+            // 4. Now, prev_op is last command use methods variations that will generate stop
+            match prev_op {
+                Operation::Read(rb) => self.read_wo_start(rb)?,
+                Operation::Write(wb) => self.write_wo_start(wb)?,
+            };
+        }
+
+        // Fallthrough is success
+        Ok(())
+    }
+
+    pub fn transaction_slice<'a>(
+        &mut self,
+        addr: u8,
+        ops_slice: &mut [Operation<'a>],
+    ) -> Result<(), Error> {
+        let mut ops = ops_slice.iter_mut();
+
+        if let Some(mut prev_op) = ops.next() {
+            // 1. Generate Start for operation
+            match &prev_op {
+                Operation::Read(_) => self.prepare_read(addr)?,
+                Operation::Write(_) => self.prepare_write(addr)?,
+            };
+
+            for op in ops {
+                // 2. Execute previous operations.
+                match &mut prev_op {
+                    Operation::Read(rb) => self.read_bytes(*rb)?,
+                    Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
+                };
+                // 3. If operation changes type we must generate new start
+                match (&prev_op, &op) {
+                    (Operation::Read(_), Operation::Write(_)) => self.prepare_write(addr)?,
+                    (Operation::Write(_), Operation::Read(_)) => self.prepare_read(addr)?,
+                    _ => {} // No changes if operation have not changed
+                }
+
+                prev_op = op;
+            }
+
+            // 4. Now, prev_op is last command use methods variations that will generate stop
+            match prev_op {
+                Operation::Read(rb) => self.read_wo_start(rb)?,
+                Operation::Write(wb) => self.write_wo_start(wb)?,
+            };
+        }
+
+        // Fallthrough is success
+        Ok(())
     }
 }
