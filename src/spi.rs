@@ -606,6 +606,12 @@ impl<SPI: Instance, PINS, const BIDI: bool, W, OPERATION> Spi<SPI, PINS, BIDI, W
     pub fn is_overrun(&self) -> bool {
         self.spi.sr.read().ovr().bit_is_set()
     }
+
+    /// Set the slave select bit programmatically.
+    #[inline]
+    pub fn set_internal_nss(&mut self, value: bool) {
+        self.spi.cr1.modify(|_, w| w.ssi().bit(value));
+    }
 }
 
 trait ReadWriteReg<W> {

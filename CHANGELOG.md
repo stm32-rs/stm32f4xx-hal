@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Docs in `rtic-adc-dma` example [#532]
  - `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
  - `restore` for `ErasedPin` and `PartiallyErasedPin`
+ - Added a public method to set SSI bit in SPI. [#543]
 
 ### Fixed
 
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
 [#532]: https://github.com/stm32-rs/stm32f4xx-hal/pull/532
+[#543]: https://github.com/stm32-rs/stm32f4xx-hal/pull/543
 [#571]: https://github.com/stm32-rs/stm32f4xx-hal/pull/571
 [#572]: https://github.com/stm32-rs/stm32f4xx-hal/pull/572
 [#577]: https://github.com/stm32-rs/stm32f4xx-hal/pull/577
@@ -88,6 +90,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Added rtic-usb-cdc-echo example [#553]
  - Add possibility to clear a Serial `Rx` idle interrupt from a DMA `Transfer` [#556]
 
+- Serial Tx, Rx containing pins [#514] [#515] [#540]
+- Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
+- Implementation of From trait for Pin-to-ErasedPin [#507]
+- Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
+- `SysMonoTimerExt` helper trait, `Pwm::(get/set)_duty_time` [#497]
+- example of using i2s in out with rtic and interrupt.
+- example of using USB CDC with interrupts.
+- Added non-blocking I2C based on DMA [#534]
+- Added Transactional I2C API [#542]
 
 [#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
