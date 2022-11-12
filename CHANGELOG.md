@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Serial Tx, Rx containing pins [#514] [#515] [#540]
+- example of using ft6x06 touchscreen driver for stm32f412 and stm32f413 [#527]
+- Serial Tx, Rx containing pins [#514] [#515]
 - Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
 - Implementation of From trait for Pin-to-ErasedPin [#507]
 - Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
@@ -61,6 +63,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#534]: https://github.com/stm32-rs/stm32f4xx-hal/pull/529
 [#540]: https://github.com/stm32-rs/stm32f4xx-hal/pull/540
 [#542]: https://github.com/stm32-rs/stm32f4xx-hal/pull/542
+[#527]: https://github.com/stm32-rs/stm32f4xx-hal/pull/527
 
 ## [v0.13.2] - 2022-05-16
 
