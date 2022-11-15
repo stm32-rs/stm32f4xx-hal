@@ -438,8 +438,8 @@ name = "i2s-rtic-audio-in-out"
 required-features = ["stm32f411", "i2s", "rtic"]
 
 [[example]]
-name = "rtic"
-required-features = ["gpiod", "rtic"] # stm32f407
+name = "rtic-button"
+required-features = ["rtic"] # stm32f411
 
 [[example]]
 name = "rtic-tick"
