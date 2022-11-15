@@ -451,6 +451,10 @@ name = "rtic-usart-shell"
 required-features = ["stm32f411", "rtic"] # stm32f411
 
 [[example]]
+name = "rtic-usart-shell-ssd1306"
+required-features = ["stm32f411", "rtic"] # stm32f411
+
+[[example]]
 name = "adc_dma_rtic"
 required-features = ["device-selected", "rtic"] # stm32f401
 
