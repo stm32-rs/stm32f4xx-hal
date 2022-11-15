@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Bump `embedded-hal` to `1.0.0-alpha.8` [#510]
  - Update `bxcan`, `rtic` and other dependencies [#519]
  - Bump `synopsys-usb-otg` to `0.3.1` [#535]
+ - Renamed and updated rtic-button example (was rtic) [#551]
+ - Added rtic-usart-shell example [#551]
+ - Added rtic-usart-shell-ssd1306 example [#551]
 
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
