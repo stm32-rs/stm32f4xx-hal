@@ -687,6 +687,12 @@ impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, u8, Master> {
     }
 }
 
+impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, u8, Slave> {
+    pub fn use_dma(self) -> DmaBuilder<SPI> {
+        DmaBuilder { spi: self.spi }
+    }
+}
+
 pub struct DmaBuilder<SPI> {
     spi: SPI,
 }

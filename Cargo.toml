@@ -501,6 +501,6 @@ name = "hd44780"
 required-features = ["device-selected"]
 
 [[example]]
-name = "spi_slave_dma_rtic"
+name = "rtic-spi-slave-dma"
 required-features = ["stm32f411", "rtic"]
 

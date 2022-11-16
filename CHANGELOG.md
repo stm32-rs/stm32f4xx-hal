@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Bump `synopsys-usb-otg` to `0.3.1` [#535]
  - Renamed and updated rtic-button example (was rtic) [#551]
  - Rename adc_dma_rtic to rtic-adc-dma and move it ot defmt [#552]
+ - Rename spi_slave_dma_rtic to rtic-spi-slave-dma and unbroke it [#552]
 
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
