@@ -373,7 +373,7 @@ lto = true
 opt-level = "s"
 
 [[example]]
-name= "display_touch"
+name = "display-touch"
 required-features = ["fsmc_lcd", "stm32f412"] #or stm32f413
 
 [[example]]
@@ -381,11 +381,11 @@ name = "blinky-timer-irq"
 required-features = ["tim2"] # stm32f411
 
 [[example]]
-name = "usb_serial_poll"
+name = "usb-serial-poll"
 required-features = ["otg-fs", "usb_fs"] # stm32f401
 
 [[example]]
-name = "usb_serial_irq"
+name = "usb-serial-irq"
 required-features = ["otg-fs", "usb_fs"] # stm32f407
 
 [[example]]
@@ -469,27 +469,27 @@ name = "st7789-lcd"
 required-features = ["fsmc", "fsmc_lcd"] # stm32f412
 
 [[example]]
-name = "f413disco_lcd_ferris"
+name = "f413disco-lcd-ferris"
 required-features = ["gpiod", "gpioe", "gpiof", "gpiog", "fsmc", "fsmc_lcd"] # stm32f413
 
 [[example]]
-name= "pwm-input"
+name = "pwm-input"
 required-features = ["tim8"] # stm32f446
 
 [[example]]
-name= "pwm-sinus"
+name = "pwm-sinus"
 required-features = ["stm32f411"]
 
 [[example]]
-name = "ist7920_bidi_normal_spi"
+name = "ist7920-bidi-normal-spi"
 required-features = ["device-selected"]
 
 [[example]]
-name = "spi_dma"
+name = "spi-dma"
 required-features = ["stm32f411"]
 
 [[example]]
-name = "dynamic_gpio"
+name = "dynamic-gpio"
 required-features = ["device-selected"]
 
 [[example]]
@@ -504,3 +504,22 @@ required-features = ["device-selected"]
 name = "rtic-spi-slave-dma"
 required-features = ["stm32f411", "rtic"]
 
+[[example]]
+name = "ws2812-spi"
+required-features = ["device-selected"]
+
+[[example]]
+name = "pwm"
+required-features = ["device-selected"]
+
+[[example]]
+name = "serial"
+required-features = ["device-selected"]
+
+[[example]]
+name = "timer-periph"
+required-features = ["device-selected"]
+
+[[example]]
+name = "timer-syst"
+required-features = ["device-selected"]
