@@ -1,11 +1,11 @@
 #![no_std]
 #![no_main]
 
-use panic_semihosting as _;
+use defmt_rtt as _; // global logger
+use panic_probe as _;
 
 #[rtic::app(device = stm32f4xx_hal::pac, dispatchers = [EXTI0])]
 mod app {
-    use cortex_m_semihosting::hprintln;
     use dwt_systick_monotonic::DwtSystick;
 
     use stm32f4xx_hal::{
@@ -126,6 +126,6 @@ mod app {
         let temperature = (110.0 - 30.0) * ((raw_temp as f32) - cal30) / (cal110 - cal30) + 30.0;
         let voltage = sample_to_millivolts(raw_volt);
 
-        hprintln!("temperature: {}, voltage: {}", temperature, voltage).unwrap();
+        defmt::info!("temperature: {}, voltage: {}", temperature, voltage);
     }
 }

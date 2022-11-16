@@ -61,7 +61,9 @@ version = "0.3.0"
 optional = true
 
 [dev-dependencies]
+defmt = "0.3.2"
 defmt-rtt = "0.3.2"
+panic-probe = { version = "0.3.0", features = [ "print-defmt" ] }
 panic-semihosting = "0.6.0"
 cortex-m-semihosting = "0.5.0"
 heapless = "0.7.16"
@@ -455,7 +457,7 @@ name = "rtic-usart-shell-ssd1306"
 required-features = ["stm32f411", "rtic"] # stm32f411
 
 [[example]]
-name = "adc_dma_rtic"
+name = "rtic-adc-dma"
 required-features = ["device-selected", "rtic"] # stm32f401
 
 [[example]]
