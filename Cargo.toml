@@ -437,7 +437,7 @@ name = "i2s-audio-out"
 required-features = ["stm32f411", "i2s"]
 
 [[example]]
-name = "i2s-rtic-audio-in-out"
+name = "rtic-i2s-audio-in-out"
 required-features = ["stm32f411", "i2s", "rtic"]
 
 [[example]]
