@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Update `bxcan`, `rtic` and other dependencies [#519]
  - Bump `synopsys-usb-otg` to `0.3.1` [#535]
  - Renamed and updated rtic-button example (was rtic) [#551]
+ - Rename adc_dma_rtic to rtic-adc-dma and move it ot defmt [#552]
 
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
@@ -69,6 +70,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#542]: https://github.com/stm32-rs/stm32f4xx-hal/pull/542
 [#527]: https://github.com/stm32-rs/stm32f4xx-hal/pull/527
 [#551]: https://github.com/stm32-rs/stm32f4xx-hal/pull/551
+[#552]: https://github.com/stm32-rs/stm32f4xx-hal/pull/552
 
 ## [v0.13.2] - 2022-05-16
 
