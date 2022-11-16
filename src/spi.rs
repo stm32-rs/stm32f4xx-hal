@@ -681,13 +681,7 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
 
 // Spi DMA
 
-impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, u8, Master> {
-    pub fn use_dma(self) -> DmaBuilder<SPI> {
-        DmaBuilder { spi: self.spi }
-    }
-}
-
-impl<SPI: Instance, PINS, const BIDI: bool> Spi<SPI, PINS, BIDI, u8, Slave> {
+impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, u8, OPERATION> {
     pub fn use_dma(self) -> DmaBuilder<SPI> {
         DmaBuilder { spi: self.spi }
     }
