@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Bump `embedded-hal` to `1.0.0-alpha.8` [#510]
  - Update `bxcan`, `rtic` and other dependencies [#519]
  - Bump `synopsys-usb-otg` to `0.3.1` [#535]
+ - Renamed and updated rtic-button example (was rtic) [#551]
 
 ### Removed
  - `i2s-audio-out-dma.rs` example, too difficult to fix.
@@ -34,17 +35,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Serial Tx, Rx containing pins [#514] [#515] [#540]
-- example of using ft6x06 touchscreen driver for stm32f412 and stm32f413 [#527]
-- Serial Tx, Rx containing pins [#514] [#515]
-- Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
-- Implementation of From trait for Pin-to-ErasedPin [#507]
-- Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
-- `SysMonoTimerExt` helper trait, `Pwm::(get/set)_duty_time` [#497]
-- example of using i2s in out with rtic and interrupt.
-- example of using USB CDC with interrupts.
-- Added non-blocking I2C based on DMA [#534]
-- Added Transactional I2C API [#542]
+ - Serial Tx, Rx containing pins [#514] [#515] [#540]
+ - example of using ft6x06 touchscreen driver for stm32f412 and stm32f413 [#527]
+ - Serial Tx, Rx containing pins [#514] [#515]
+ - Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
+ - Implementation of From trait for Pin-to-ErasedPin [#507]
+ - Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
+ - `SysMonoTimerExt` helper trait, `Pwm::(get/set)_duty_time` [#497]
+ - example of using i2s in out with rtic and interrupt.
+ - example of using USB CDC with interrupts.
+ - Added non-blocking I2C based on DMA [#534]
+ - Added Transactional I2C API [#542]
+ - Added rtic-usart-shell example [#551]
+ - Added rtic-usart-shell-ssd1306 example [#551]
+
 
 [#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
@@ -64,6 +68,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#540]: https://github.com/stm32-rs/stm32f4xx-hal/pull/540
 [#542]: https://github.com/stm32-rs/stm32f4xx-hal/pull/542
 [#527]: https://github.com/stm32-rs/stm32f4xx-hal/pull/527
+[#551]: https://github.com/stm32-rs/stm32f4xx-hal/pull/551
 
 ## [v0.13.2] - 2022-05-16
 

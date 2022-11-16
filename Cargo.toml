@@ -83,6 +83,7 @@ ws2812-spi = { version = "0.4.0", features = [] }
 hd44780-driver = "0.4.0"
 display-interface = "0.4"
 ft6x06 = "0.1.2"
+ushell = "0.3.5"
 
 [dev-dependencies.time]
 version = "0.3"
@@ -438,12 +439,20 @@ name = "i2s-rtic-audio-in-out"
 required-features = ["stm32f411", "i2s", "rtic"]
 
 [[example]]
-name = "rtic"
-required-features = ["gpiod", "rtic"] # stm32f407
+name = "rtic-button"
+required-features = ["stm32f411", "rtic"] # stm32f411
 
 [[example]]
 name = "rtic-tick"
 required-features = ["tim2", "rtic"]
+
+[[example]]
+name = "rtic-usart-shell"
+required-features = ["stm32f411", "rtic"] # stm32f411
+
+[[example]]
+name = "rtic-usart-shell-ssd1306"
+required-features = ["stm32f411", "rtic"] # stm32f411
 
 [[example]]
 name = "adc_dma_rtic"
