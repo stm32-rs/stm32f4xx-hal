@@ -372,25 +372,19 @@ debug = true
 lto = true
 opt-level = "s"
 
+# Keep examples sorted
+
 [[example]]
-name = "display-touch"
-required-features = ["fsmc_lcd", "stm32f412"] #or stm32f413
+name = "analog-stopwatch-with-spi-ssd1306"
+required-features = ["spi4", "tim2", "gpioe", "gpiog"] # stm32f429
 
 [[example]]
 name = "blinky-timer-irq"
 required-features = ["tim2"] # stm32f411
 
 [[example]]
-name = "usb-serial-poll"
-required-features = ["otg-fs", "usb_fs"] # stm32f401
-
-[[example]]
-name = "usb-serial-irq"
-required-features = ["otg-fs", "usb_fs"] # stm32f407
-
-[[example]]
-name = "sd"
-required-features = ["gpiod", "sdio", "sdio-host"] # stm32f405
+name = "can-send"
+required-features = ["can", "stm32f405"]
 
 [[example]]
 name = "delay-syst-blinky"
@@ -401,48 +395,72 @@ name = "delay-timer-blinky"
 required-features = ["device-selected"] # stm32f411
 
 [[example]]
+name = "display-touch"
+required-features = ["fsmc_lcd", "stm32f412"] #or stm32f413
+
+[[example]]
 name = "dwt-blinky"
 required-features = ["gpiog"] # "stm32f429"
 
 [[example]]
-name = "ssd1306-image"
-required-features = ["device-selected"] # stm32f411
+name = "dynamic-gpio"
+required-features = ["device-selected"]
 
 [[example]]
-name = "stopwatch-with-ssd1306-and-interrupts"
-required-features = ["tim2"] # stm32f411
+name = "f413disco-lcd-ferris"
+required-features = ["gpiod", "gpioe", "gpiof", "gpiog", "fsmc", "fsmc_lcd"] # stm32f413
 
 [[example]]
-name = "stopwatch-with-ssd1306-and-interrupts-and-dma-i2c"
-required-features = ["tim2", "stm32f411"] # stm32f411
-
-[[example]]
-name = "analog-stopwatch-with-spi-ssd1306"
-required-features = ["spi4", "tim2", "gpioe", "gpiog"] # stm32f429
-
-[[example]]
-name = "rng-display"
-required-features = ["rng"] # stm32f407
-
-[[example]]
-name = "qei"
-required-features = ["tim2"] # stm32f411
-
-[[example]]
-name = "can-send"
-required-features = ["can", "stm32f405"]
+name = "hd44780"
+required-features = ["device-selected"]
 
 [[example]]
 name = "i2s-audio-out"
 required-features = ["stm32f411", "i2s"]
 
 [[example]]
-name = "rtic-i2s-audio-in-out"
-required-features = ["stm32f411", "i2s", "rtic"]
+name = "ist7920-bidi-normal-spi"
+required-features = ["device-selected"]
+
+[[example]]
+name = "pwm"
+required-features = ["device-selected"]
+
+[[example]]
+name = "pwm-input"
+required-features = ["tim8"] # stm32f446
+
+[[example]]
+name = "pwm-sinus"
+required-features = ["stm32f411"]
+
+[[example]]
+name = "qei"
+required-features = ["tim2"] # stm32f411
+
+[[example]]
+name = "rng-display"
+required-features = ["rng"] # stm32f407
+
+[[example]]
+name = "rtc"
+required-features = ["device-selected"]
+
+[[example]]
+name = "rtic-adc-dma"
+required-features = ["device-selected", "rtic"] # stm32f401
 
 [[example]]
 name = "rtic-button"
 required-features = ["stm32f411", "rtic"] # stm32f411
+
+[[example]]
+name = "rtic-i2s-audio-in-out"
+required-features = ["stm32f411", "i2s", "rtic"]
+
+[[example]]
+name = "rtic-spi-slave-dma"
+required-features = ["stm32f411", "rtic"]
 
 [[example]]
 name = "rtic-tick"
@@ -457,64 +475,36 @@ name = "rtic-usart-shell-ssd1306"
 required-features = ["stm32f411", "rtic"] # stm32f411
 
 [[example]]
-name = "rtic-adc-dma"
-required-features = ["device-selected", "rtic"] # stm32f401
+name = "sd"
+required-features = ["gpiod", "sdio", "sdio-host"] # stm32f405
+
+[[example]]
+name = "serial"
+required-features = ["device-selected"]
 
 [[example]]
 name = "serial-9bit"
 required-features = ["gpiod"] # stm32f411
 
 [[example]]
-name = "st7789-lcd"
-required-features = ["fsmc", "fsmc_lcd"] # stm32f412
-
-[[example]]
-name = "f413disco-lcd-ferris"
-required-features = ["gpiod", "gpioe", "gpiof", "gpiog", "fsmc", "fsmc_lcd"] # stm32f413
-
-[[example]]
-name = "pwm-input"
-required-features = ["tim8"] # stm32f446
-
-[[example]]
-name = "pwm-sinus"
-required-features = ["stm32f411"]
-
-[[example]]
-name = "ist7920-bidi-normal-spi"
-required-features = ["device-selected"]
-
-[[example]]
 name = "spi-dma"
 required-features = ["stm32f411"]
 
 [[example]]
-name = "dynamic-gpio"
-required-features = ["device-selected"]
+name = "ssd1306-image"
+required-features = ["device-selected"] # stm32f411
 
 [[example]]
-name = "rtc"
-required-features = ["device-selected"]
+name = "st7789-lcd"
+required-features = ["fsmc", "fsmc_lcd"] # stm32f412
 
 [[example]]
-name = "hd44780"
-required-features = ["device-selected"]
+name = "stopwatch-with-ssd1306-and-interrupts"
+required-features = ["tim2"] # stm32f411
 
 [[example]]
-name = "rtic-spi-slave-dma"
-required-features = ["stm32f411", "rtic"]
-
-[[example]]
-name = "ws2812-spi"
-required-features = ["device-selected"]
-
-[[example]]
-name = "pwm"
-required-features = ["device-selected"]
-
-[[example]]
-name = "serial"
-required-features = ["device-selected"]
+name = "stopwatch-with-ssd1306-and-interrupts-and-dma-i2c"
+required-features = ["tim2", "stm32f411"] # stm32f411
 
 [[example]]
 name = "timer-periph"
@@ -523,3 +513,16 @@ required-features = ["device-selected"]
 [[example]]
 name = "timer-syst"
 required-features = ["device-selected"]
+
+[[example]]
+name = "usb-serial-irq"
+required-features = ["otg-fs", "usb_fs"] # stm32f407
+
+[[example]]
+name = "usb-serial-poll"
+required-features = ["otg-fs", "usb_fs"] # stm32f401
+
+[[example]]
+name = "ws2812-spi"
+required-features = ["device-selected"]
+
