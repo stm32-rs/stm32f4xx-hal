@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Added Transactional I2C API [#542]
  - Added rtic-usart-shell example [#551]
  - Added rtic-usart-shell-ssd1306 example [#551]
+ - Added rtic-usb-cdc-echo example [#553]
 
 
 [#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
@@ -73,6 +74,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#527]: https://github.com/stm32-rs/stm32f4xx-hal/pull/527
 [#551]: https://github.com/stm32-rs/stm32f4xx-hal/pull/551
 [#552]: https://github.com/stm32-rs/stm32f4xx-hal/pull/552
+[#553]: https://github.com/stm32-rs/stm32f4xx-hal/pull/552
 
 ## [v0.13.2] - 2022-05-16
 
