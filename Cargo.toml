@@ -475,6 +475,10 @@ name = "rtic-usart-shell-ssd1306"
 required-features = ["stm32f411", "rtic"] # stm32f411
 
 [[example]]
+name = "rtic-usb-cdc-echo"
+required-features = ["stm32f411", "rtic"] # stm32f411
+
+[[example]]
 name = "sd"
 required-features = ["gpiod", "sdio", "sdio-host"] # stm32f405
 
