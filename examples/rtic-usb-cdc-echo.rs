@@ -89,11 +89,6 @@ mod app {
         )
     }
 
-    #[idle]
-    fn idle(_: idle::Context) -> ! {
-        loop {}
-    }
-
     #[task(local = [led])]
     fn tick(ctx: tick::Context) {
         tick::spawn_after(1.secs()).ok();
