@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
  - use register.modify instead of register.write to start PWM [#501]
  - add missing generic param for Spi::release implementation.
+ - build rtic-usb-cdc-echo example [#554]
 
 ### Added
 
@@ -74,7 +75,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#527]: https://github.com/stm32-rs/stm32f4xx-hal/pull/527
 [#551]: https://github.com/stm32-rs/stm32f4xx-hal/pull/551
 [#552]: https://github.com/stm32-rs/stm32f4xx-hal/pull/552
-[#553]: https://github.com/stm32-rs/stm32f4xx-hal/pull/552
+[#553]: https://github.com/stm32-rs/stm32f4xx-hal/pull/553
+[#554]: https://github.com/stm32-rs/stm32f4xx-hal/pull/554
 
 ## [v0.13.2] - 2022-05-16
 

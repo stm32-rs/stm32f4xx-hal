@@ -476,7 +476,7 @@ required-features = ["stm32f411", "rtic"] # stm32f411
 
 [[example]]
 name = "rtic-usb-cdc-echo"
-required-features = ["stm32f411", "rtic"] # stm32f411
+required-features = ["stm32f411", "rtic", "otg-fs", "usb_fs"] # stm32f411
 
 [[example]]
 name = "sd"
