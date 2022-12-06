@@ -445,5 +445,6 @@ where
 
     pub fn set_period(&mut self, period: TimerDurationU32<FREQ>) {
         self.tim.set_auto_reload(period.ticks() - 1).unwrap();
+        self.tim.cnt_reset();
     }
 }
