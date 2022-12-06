@@ -310,6 +310,7 @@ where
         let (psc, arr) = compute_arr_presc(period.raw(), clk.raw());
         self.tim.set_prescaler(psc);
         self.tim.set_auto_reload(arr).unwrap();
+        self.tim.cnt_reset();
     }
 }
 
