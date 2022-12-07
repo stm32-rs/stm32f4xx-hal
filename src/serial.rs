@@ -715,25 +715,22 @@ impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
 
     /// Return true if the line idle status is set
     pub fn is_idle(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().idle().bit_is_set() }
+        self.rx.is_idle()
     }
 
     /// Return true if the tx register is empty (and can accept data)
     pub fn is_tx_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
+        self.tx.is_tx_empty()
     }
 
     /// Return true if the rx register is not empty (and can be read)
     pub fn is_rx_not_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
+        self.rx.is_rx_not_empty()
     }
 
     /// Clear idle line interrupt flag
     pub fn clear_idle_interrupt(&self) {
-        unsafe {
-            let _ = (*USART::ptr()).sr.read();
-            let _ = (*USART::ptr()).dr.read();
-        }
+        self.rx.clear_idle_interrupt();
     }
 
     pub fn split(self) -> (Tx<USART, WORD>, Rx<USART, WORD>) {
