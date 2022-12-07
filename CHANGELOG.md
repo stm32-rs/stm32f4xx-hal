@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Added rtic-usart-shell example [#551]
  - Added rtic-usart-shell-ssd1306 example [#551]
  - Added rtic-usb-cdc-echo example [#553]
+ - Add possibility to clear a Serial `Rx` idle interrupt from a DMA `Transfer` [#556]
 
 
 [#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
@@ -79,6 +80,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#553]: https://github.com/stm32-rs/stm32f4xx-hal/pull/553
 [#554]: https://github.com/stm32-rs/stm32f4xx-hal/pull/554
 [#555]: https://github.com/stm32-rs/stm32f4xx-hal/pull/555
+[#556]: https://github.com/stm32-rs/stm32f4xx-hal/pull/556
 
 ## [v0.13.2] - 2022-05-16
 

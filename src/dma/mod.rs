@@ -21,6 +21,7 @@ use crate::pac::RCC;
 use crate::{pac, rcc};
 
 pub mod traits;
+use crate::serial::RxISR;
 use traits::{
     sealed::{Bits, Sealed},
     Channel, DMASet, Direction, Instance, PeriAddress, SafePeripheralRead, Stream, StreamISR,
@@ -1011,6 +1012,20 @@ where
         };
         self.next_transfer_with_common(new_buf, ptr_and_len, false, CurrentBuffer::FirstBuffer);
         Ok(r.1)
+    }
+}
+
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, BUF>
+    Transfer<STREAM, CHANNEL, PERIPHERAL, PeripheralToMemory, BUF>
+where
+    STREAM: Stream,
+    ChannelX<CHANNEL>: Channel,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, PeripheralToMemory> + RxISR,
+    BUF: ReadBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
+{
+    /// Clear idle line interrupt flag
+    pub fn clear_idle_interrupt(&self) {
+        self.peripheral.clear_idle_interrupt();
     }
 }
 
