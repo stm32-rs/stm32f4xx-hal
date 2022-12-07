@@ -310,6 +310,7 @@ where
         let (psc, arr) = compute_arr_presc(period.raw(), clk.raw());
         self.tim.set_prescaler(psc);
         self.tim.set_auto_reload(arr).unwrap();
+        self.tim.cnt_reset();
     }
 }
 
@@ -444,5 +445,6 @@ where
 
     pub fn set_period(&mut self, period: TimerDurationU32<FREQ>) {
         self.tim.set_auto_reload(period.ticks() - 1).unwrap();
+        self.tim.cnt_reset();
     }
 }

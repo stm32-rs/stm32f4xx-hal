@@ -254,6 +254,7 @@ mod sealed {
         fn start_one_pulse(&mut self);
         fn start_no_update(&mut self);
         fn cr1_reset(&mut self);
+        fn cnt_reset(&mut self);
     }
 
     pub trait WithPwm: General {
@@ -380,6 +381,10 @@ macro_rules! hal {
                 #[inline(always)]
                 fn cr1_reset(&mut self) {
                     self.cr1.reset();
+                }
+                #[inline(always)]
+                fn cnt_reset(&mut self) {
+                    self.cnt.reset();
                 }
             }
 
