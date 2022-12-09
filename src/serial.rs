@@ -262,19 +262,33 @@ impl<USART: Instance, WORD> Rx<USART, WORD> {
     pub fn unlisten_idle(&mut self) {
         unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) }
     }
+}
 
+/// Trait for [`Rx`] interrupt handling.
+pub trait RxISR {
     /// Return true if the line idle status is set
-    pub fn is_idle(&self) -> bool {
+    fn is_idle(&self) -> bool;
+
+    /// Return true if the rx register is not empty (and can be read)
+    fn is_rx_not_empty(&self) -> bool;
+
+    /// Clear idle line interrupt flag
+    fn clear_idle_interrupt(&self);
+}
+
+impl<USART: Instance, WORD> RxISR for Rx<USART, WORD> {
+    /// Return true if the line idle status is set
+    fn is_idle(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().idle().bit_is_set() }
     }
 
     /// Return true if the rx register is not empty (and can be read)
-    pub fn is_rx_not_empty(&self) -> bool {
+    fn is_rx_not_empty(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
     }
 
     /// Clear idle line interrupt flag
-    pub fn clear_idle_interrupt(&self) {
+    fn clear_idle_interrupt(&self) {
         unsafe {
             let _ = (*USART::ptr()).sr.read();
             let _ = (*USART::ptr()).dr.read();
@@ -302,9 +316,17 @@ impl<USART: Instance, WORD> Tx<USART, WORD> {
     pub fn unlisten(&mut self) {
         unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) }
     }
+}
 
+/// Trait for [`Tx`] interrupt handling.
+pub trait TxISR {
     /// Return true if the tx register is empty (and can accept data)
-    pub fn is_tx_empty(&self) -> bool {
+    fn is_tx_empty(&self) -> bool;
+}
+
+impl<USART: Instance, WORD> TxISR for Tx<USART, WORD> {
+    /// Return true if the tx register is empty (and can accept data)
+    fn is_tx_empty(&self) -> bool {
         unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
     }
 }
@@ -713,31 +735,32 @@ impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
         }
     }
 
-    /// Return true if the line idle status is set
-    pub fn is_idle(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().idle().bit_is_set() }
+    pub fn split(self) -> (Tx<USART, WORD>, Rx<USART, WORD>) {
+        (self.tx, self.rx)
     }
+}
 
-    /// Return true if the tx register is empty (and can accept data)
-    pub fn is_tx_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().txe().bit_is_set() }
+impl<USART: Instance, PINS, WORD> RxISR for Serial<USART, PINS, WORD> {
+    /// Return true if the line idle status is set
+    fn is_idle(&self) -> bool {
+        self.rx.is_idle()
     }
 
     /// Return true if the rx register is not empty (and can be read)
-    pub fn is_rx_not_empty(&self) -> bool {
-        unsafe { (*USART::ptr()).sr.read().rxne().bit_is_set() }
+    fn is_rx_not_empty(&self) -> bool {
+        self.rx.is_rx_not_empty()
     }
 
     /// Clear idle line interrupt flag
-    pub fn clear_idle_interrupt(&self) {
-        unsafe {
-            let _ = (*USART::ptr()).sr.read();
-            let _ = (*USART::ptr()).dr.read();
-        }
+    fn clear_idle_interrupt(&self) {
+        self.rx.clear_idle_interrupt();
     }
+}
 
-    pub fn split(self) -> (Tx<USART, WORD>, Rx<USART, WORD>) {
-        (self.tx, self.rx)
+impl<USART: Instance, PINS, WORD> TxISR for Serial<USART, PINS, WORD> {
+    /// Return true if the tx register is empty (and can accept data)
+    fn is_tx_empty(&self) -> bool {
+        self.tx.is_tx_empty()
     }
 }
 

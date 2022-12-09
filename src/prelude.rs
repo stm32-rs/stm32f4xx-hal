@@ -68,7 +68,9 @@ pub use crate::qei::QeiExt as _stm32f4xx_hal_QeiExt;
 pub use crate::rcc::RccExt as _stm32f4xx_hal_rcc_RccExt;
 #[cfg(all(feature = "device-selected", feature = "rng"))]
 pub use crate::rng::RngExt as _stm32f4xx_hal_rng_RngExt;
+pub use crate::serial::RxISR as _stm32f4xx_hal_serial_RxISR;
 pub use crate::serial::SerialExt as _stm32f4xx_hal_serial_SerialExt;
+pub use crate::serial::TxISR as _stm32f4xx_hal_serial_TxISR;
 pub use crate::spi::SpiExt as _stm32f4xx_hal_spi_SpiExt;
 pub use crate::syscfg::SysCfgExt as _stm32f4xx_hal_syscfg_SysCfgExt;
 pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;
