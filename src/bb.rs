@@ -47,5 +47,5 @@ pub unsafe fn write<T>(register: *const T, bit: u8, set: bool) {
 
     let bit = bit as usize;
     let bb_addr = (PERI_BIT_BAND_BASE + (addr - PERI_ADDRESS_START) * 32) + 4 * bit;
-    ptr::write_volatile(bb_addr as *mut u32, if set { 1 } else { 0 });
+    ptr::write_volatile(bb_addr as *mut u32, u32::from(set));
 }

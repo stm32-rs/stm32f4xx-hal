@@ -20,10 +20,10 @@ license = "0BSD"
 name = "stm32f4xx-hal"
 readme = "README.md"
 repository = "https://github.com/stm32-rs/stm32f4xx-hal"
-version = "0.13.2"
+version = "0.14.0"
 
 [package.metadata.docs.rs]
-features = ["stm32f429", "usb_fs", "can", "i2s", "fsmc_lcd", "rtic"]
+features = ["stm32f429", "usb_fs", "can", "i2s", "fsmc_lcd", "rtic", "defmt"]
 targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]
@@ -62,7 +62,7 @@ optional = true
 
 [dev-dependencies]
 defmt = "0.3.2"
-defmt-rtt = "0.3.2"
+defmt-rtt = "0.4.0"
 panic-probe = { version = "0.3.0", features = [ "print-defmt" ] }
 panic-semihosting = "0.6.0"
 cortex-m-semihosting = "0.5.0"

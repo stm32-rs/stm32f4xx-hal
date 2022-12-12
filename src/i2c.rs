@@ -551,7 +551,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
             for op in ops {
                 // 2. Execute previous operations.
                 match &mut prev_op {
-                    Operation::Read(rb) => self.read_bytes(*rb)?,
+                    Operation::Read(rb) => self.read_bytes(rb)?,
                     Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
                 };
                 // 3. If operation changes type we must generate new start
@@ -592,7 +592,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
             for op in ops {
                 // 2. Execute previous operations.
                 match &mut prev_op {
-                    Operation::Read(rb) => self.read_bytes(*rb)?,
+                    Operation::Read(rb) => self.read_bytes(rb)?,
                     Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
                 };
                 // 3. If operation changes type we must generate new start

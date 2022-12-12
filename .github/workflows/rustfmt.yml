@@ -11,12 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt
+      - name: Use the latest stable rustc
+        run: rustup update stable && rustup default stable
+
       - uses: actions-rs/cargo@v1
         with:
           command: fmt

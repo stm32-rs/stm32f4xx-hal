@@ -9,19 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: thumbv7em-none-eabihf
-          override: true
-          components: clippy
+      - name: Use the latest stable rustc
+        run: rustup update stable && rustup default stable
+      - name: Add Cortex-M4F target
+        run: rustup target add thumbv7em-none-eabihf
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: pac-v0.15.1
+          key: v0.14.0
 
       - uses: actions-rs/clippy-check@v1
         with:
