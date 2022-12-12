@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - add missing generic param for Spi::release implementation.
  - build rtic-usb-cdc-echo example [#554]
  - reset timer cnt register when changing pwm period [#555]
+ - Trait typo preventing ADC2 being used with DMA2 [#557]
 
 ### Added
 
