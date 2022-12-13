@@ -505,7 +505,7 @@ fn decode_day(dr: &dr::R) -> u8 {
 
 #[inline(always)]
 fn decode_month(dr: &dr::R) -> u8 {
-    let mt: u8 = if dr.mt().bit() { 1 } else { 0 };
+    let mt = u8::from(dr.mt().bit());
     bcd2_decode(mt, dr.mu().bits()) as u8
 }
 

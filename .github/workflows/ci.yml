@@ -37,18 +37,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          target: thumbv7em-none-eabihf
-          override: true
+      - name: Use the latest ${{ matrix.rust }} rustc
+        run: rustup update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
+      - name: Add Cortex-M4F target
+        run: rustup target add thumbv7em-none-eabihf
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: pac-v0.15.1-${{ matrix.mcu }}
+          key: v0.14.0-${{ matrix.mcu }}
 
       - uses: actions-rs/cargo@v1
         with:
