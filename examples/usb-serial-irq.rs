@@ -65,6 +65,7 @@ fn main() -> ! {
         cortex_m::peripheral::NVIC::unmask(Interrupt::OTG_FS);
     }
 
+    #[allow(clippy::empty_loop)]
     loop {
         // Do nothing. Everything is done in the IRQ handler
     }

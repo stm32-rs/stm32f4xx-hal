@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
- - Update readme
+ - Update readme, clippy fixes
 
 ## [v0.14.0] - 2022-12-12
 
