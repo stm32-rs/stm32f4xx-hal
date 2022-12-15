@@ -13,28 +13,48 @@ peripheral access API for the STMicro STM32F4 series microcontrollers. The
 selection of the MCU is done by feature gates, typically specified by board
 support crates. Currently supported configurations are:
 
+<table>
+<tr>
+<td>
+
 * stm32f401
 * stm32f405
 * stm32f407
 * stm32f410
 * stm32f411
 * stm32f412
+<td>
+
 * stm32f413
 * stm32f415
 * stm32f417
 * stm32f423
 * stm32f427
 * stm32f429
+<td>
+
 * stm32f437
 * stm32f439
 * stm32f446
 * stm32f469
 * stm32f479
+</tr>
+</table>
 
 The idea behind this crate is to gloss over the slight differences in the
 various peripherals available on those MCUs so a HAL can be written for all
 chips in that same family without having to cut and paste crates for every
 single model.
+
+### Other optional features
+
+* `rtic` — support monotonic timers that can be used by [RTIC framework](https://crates.io/crates/cortex-m-rtic).
+* `defmt` — implementation of `defmt::Format` for public enums and structures. See [defmt](https://crates.io/crates/defmt).
+* `can` — bxCAN peripheral support. See [bxcan](https://crates.io/crates/bxcan).
+* `i2s` — I2S peripheral support. See [stm32_i2s_v12x](https://crates.io/crates/stm32_i2s_v12x).
+* `usb_fs` or `usb_hs` — USB OTG FS/HS peripheral support. See [synopsys-usb-otg](https://crates.io/crates/synopsys-usb-otg).
+* `fsmc_lcd` — LCD support via FMC/FSMC peripheral. See [display-interface](https://crates.io/crates/display-interface).
+* `sdio-host` — SDIO peripheral support. See [sdio-host](https://crates.io/crates/sdio-host).
 
 Collaboration on this crate is highly welcome as are pull requests!
 
@@ -76,6 +96,7 @@ panic-halt = "0.2"
 [dependencies.stm32f4xx-hal]
 version = "0.14.0"
 features = ["stm32f407"] # replace the model of your microcontroller here
+                         # and add other required features
 ```
 
 We also need to tell Rust how to link our executable and how to lay out the
