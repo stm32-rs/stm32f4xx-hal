@@ -1413,7 +1413,7 @@ where
         let (buf_ptr, buf_len) = buf;
 
         // Set the memory address
-        stream.set_memory_address(buf_ptr as u32);
+        stream.set_memory_address(buf_ptr);
 
         let is_mem2mem = DIR::direction() == DmaDirection::MemoryToMemory;
         if is_mem2mem {
@@ -1431,9 +1431,9 @@ where
         let db_len = if let Some((db_ptr, db_len)) = db {
             if is_mem2mem {
                 // Double buffer is the source in mem2mem mode
-                stream.set_peripheral_address(db_ptr as u32);
+                stream.set_peripheral_address(db_ptr);
             } else {
-                stream.set_memory_double_buffer_address(db_ptr as u32);
+                stream.set_memory_double_buffer_address(db_ptr);
             }
             Some(db_len)
         } else {
@@ -1445,9 +1445,9 @@ where
         };
 
         let n_transfers = if let Some(db) = db_len {
-            buf_len.min(db) as u16
+            buf_len.min(db)
         } else {
-            buf_len as u16
+            buf_len
         };
         stream.set_number_of_transfers(n_transfers);
 
@@ -1477,10 +1477,10 @@ where
             if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
-                self.stream.set_memory_address(new_buf_ptr as u32);
+                self.stream.set_memory_address(new_buf_ptr);
 
                 // Check if an overrun occurred, the buffer address won't be updated in that case
-                if self.stream.get_memory_address() != new_buf_ptr as u32 {
+                if self.stream.get_memory_address() != new_buf_ptr {
                     self.stream.clear_transfer_complete_interrupt();
                     return Err(DMAError::Overrun(new_buf));
                 }
@@ -1495,11 +1495,10 @@ where
             } else {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
-                self.stream
-                    .set_memory_double_buffer_address(new_buf_ptr as u32);
+                self.stream.set_memory_double_buffer_address(new_buf_ptr);
 
                 // Check if an overrun occurred, the buffer address won't be updated in that case
-                if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
+                if self.stream.get_memory_double_buffer_address() != new_buf_ptr {
                     self.stream.clear_transfer_complete_interrupt();
                     return Err(DMAError::Overrun(new_buf));
                 }
@@ -1520,8 +1519,8 @@ where
         compiler_fence(Ordering::SeqCst);
 
         let (buf_ptr, buf_len) = ptr_and_len;
-        self.stream.set_memory_address(buf_ptr as u32);
-        self.stream.set_number_of_transfers(buf_len as u16);
+        self.stream.set_memory_address(buf_ptr);
+        self.stream.set_number_of_transfers(buf_len);
         let old_buf = self.buf.replace(new_buf);
 
         unsafe {
@@ -1566,11 +1565,11 @@ where
             if current_buffer == CurrentBuffer::DoubleBuffer {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
-                self.stream.set_memory_address(new_buf_ptr as u32);
+                self.stream.set_memory_address(new_buf_ptr);
 
                 // Check again if an overrun occurred, the buffer address won't be updated in that
                 // case
-                if self.stream.get_memory_address() != new_buf_ptr as u32 {
+                if self.stream.get_memory_address() != new_buf_ptr {
                     panic!("Overrun");
                 }
 
@@ -1581,10 +1580,9 @@ where
             } else {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
-                self.stream
-                    .set_memory_double_buffer_address(new_buf_ptr as u32);
+                self.stream.set_memory_double_buffer_address(new_buf_ptr);
 
-                if self.stream.get_memory_double_buffer_address() != new_buf_ptr as u32 {
+                if self.stream.get_memory_double_buffer_address() != new_buf_ptr {
                     panic!("Overrun");
                 }
 
@@ -1596,8 +1594,8 @@ where
             return;
         }
         let (buf_ptr, buf_len) = ptr_and_len;
-        self.stream.set_memory_address(buf_ptr as u32);
-        self.stream.set_number_of_transfers(buf_len as u16);
+        self.stream.set_memory_address(buf_ptr);
+        self.stream.set_number_of_transfers(buf_len);
         self.buf.replace(new_buf);
 
         self.stream.enable();
