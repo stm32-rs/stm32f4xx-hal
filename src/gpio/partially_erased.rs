@@ -1,6 +1,6 @@
 use super::*;
 
-pub type PEPin<const P: char, MODE> = PartiallyErasedPin<P, MODE>;
+pub use PartiallyErasedPin as PEPin;
 
 /// Partially erased pin
 ///
@@ -17,6 +17,12 @@ impl<const P: char, MODE> PartiallyErasedPin<P, MODE> {
             i,
             _mode: PhantomData,
         }
+    }
+
+    /// Convert partially type erased pin to `Pin` with fixed type
+    pub fn restore<const N: u8>(self) -> Pin<P, N, MODE> {
+        assert_eq!(self.i, N);
+        Pin::new()
     }
 }
 
