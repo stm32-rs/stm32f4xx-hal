@@ -1,31 +1,26 @@
 use super::*;
 
+/// Convert tuple or array of pins to output port
 pub trait OutPort {
     type Target;
     fn outport(self) -> Self::Target;
 }
 
 macro_rules! out_port {
-    ( $name:ident => $n:literal, ( $($i:literal),+ ), ( $($N:ident),+ ), ( $($d:ident),* )) => {
-        pub struct $name<const P: char $(, const $N: u8)+> {
-            $(pub $d: Pin<P, $N, Output<PushPull>>,)+
-        }
+    ( $name:ident => $n:literal, ( $($i:literal),+ ), ( $($N:ident),+ )) => {
+        pub struct $name<const P: char $(, const $N: u8)+> (
+            pub ($(Pin<P, $N, Output<PushPull>>,)+)
+        );
 
         impl<const P: char $(, const $N: u8)+> OutPort for ($(Pin<P, $N, Output<PushPull>>),+) {
             type Target = $name<P $(, $N)+>;
             fn outport(self) -> Self::Target {
-                let ($($d),+) = self;
-                Self::Target { $($d),+ }
+                $name(self)
             }
         }
 
-        #[allow(clippy::too_many_arguments)]
+        /// Wrapper for tuple of `Pin`s
         impl<const P: char $(, const $N: u8)+> $name<P $(, $N)+> {
-            pub const fn new(
-                $($d: Pin<P, $N, Output<PushPull>>,)+
-            ) -> Self {
-                Self { $($d),+ }
-            }
             const fn mask() -> u32 {
                 0 $( | (1 << { $N }))+
             }
@@ -43,7 +38,7 @@ macro_rules! out_port {
                 }
             }
 
-            /// Sets all pins to `PinState::High`
+            /// Set all pins to `PinState::High`
             pub fn all_high(&mut self) {
                 unsafe {
                     (*Gpio::<P>::ptr())
@@ -52,7 +47,7 @@ macro_rules! out_port {
                 }
             }
 
-            /// Sets all pins to `PinState::Low`
+            /// Reset all pins to `PinState::Low`
             pub fn all_low(&mut self) {
                 unsafe {
                     (*Gpio::<P>::ptr())
@@ -64,14 +59,15 @@ macro_rules! out_port {
     }
 }
 
-out_port!(OutPort2 => 2, (0, 1), (N0, N1), (d0, d1));
-out_port!(OutPort3 => 3, (0, 1, 2), (N0, N1, N2), (d0, d1, d2));
-out_port!(OutPort4 => 4, (0, 1, 2, 3), (N0, N1, N2, N3), (d0, d1, d2, d3));
-out_port!(OutPort5 => 5, (0, 1, 2, 3, 4), (N0, N1, N2, N3, N4), (d0, d1, d2, d3, d4));
-out_port!(OutPort6 => 6, (0, 1, 2, 3, 4, 5), (N0, N1, N2, N3, N4, N5), (d0, d1, d2, d3, d4, d5));
-out_port!(OutPort7 => 7, (0, 1, 2, 3, 4, 5, 6), (N0, N1, N2, N3, N4, N5, N6), (d0, d1, d2, d3, d4, d5, d6));
-out_port!(OutPort8 => 8, (0, 1, 2, 3, 4, 5, 6, 7), (N0, N1, N2, N3, N4, N5, N6, N7), (d0, d1, d2, d3, d4, d5, d6, d7));
+out_port!(OutPort2 => 2, (0, 1), (N0, N1));
+out_port!(OutPort3 => 3, (0, 1, 2), (N0, N1, N2));
+out_port!(OutPort4 => 4, (0, 1, 2, 3), (N0, N1, N2, N3));
+out_port!(OutPort5 => 5, (0, 1, 2, 3, 4), (N0, N1, N2, N3, N4));
+out_port!(OutPort6 => 6, (0, 1, 2, 3, 4, 5), (N0, N1, N2, N3, N4, N5));
+out_port!(OutPort7 => 7, (0, 1, 2, 3, 4, 5, 6), (N0, N1, N2, N3, N4, N5, N6));
+out_port!(OutPort8 => 8, (0, 1, 2, 3, 4, 5, 6, 7), (N0, N1, N2, N3, N4, N5, N6, N7));
 
+/// Wrapper for array of `PartiallyErasedPin`s
 pub struct OutPortArray<const P: char, const SIZE: usize>(pub [PEPin<P, Output<PushPull>>; SIZE]);
 
 impl<const P: char, const SIZE: usize> OutPort for [PEPin<P, Output<PushPull>>; SIZE] {
@@ -84,18 +80,16 @@ impl<const P: char, const SIZE: usize> OutPort for [PEPin<P, Output<PushPull>>; 
 impl<const P: char, const SIZE: usize> OutPortArray<P, SIZE> {
     fn mask(&self) -> u32 {
         let mut msk = 0;
-        let mut iter = self.0.iter();
-        while let Some(pin) = iter.next() {
+        for pin in self.0.iter() {
             msk |= 1 << pin.i;
         }
         msk
     }
     fn value_for_write_bsrr(&self, val: u32) -> u32 {
         let mut msk = 0;
-        let mut iter = 0..SIZE;
-        while let Some(pin) = iter.next() {
-            let n = self.0[pin].i;
-            msk |= 1 << (1 << (if val & (1 << pin) != 0 { n } else { n + 16 }));
+        for (idx, pin) in self.0.iter().enumerate() {
+            let n = pin.i;
+            msk |= 1 << (if val & (1 << idx) != 0 { n } else { n + 16 });
         }
         msk
     }
@@ -110,12 +104,12 @@ impl<const P: char, const SIZE: usize> OutPortArray<P, SIZE> {
         }
     }
 
-    /// Sets all pins to `PinState::High`
+    /// Set all pins to `PinState::High`
     pub fn all_high(&mut self) {
         unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(self.mask())) }
     }
 
-    /// Sets all pins to `PinState::Low`
+    /// Reset all pins to `PinState::Low`
     pub fn all_low(&mut self) {
         unsafe {
             (*Gpio::<P>::ptr())
