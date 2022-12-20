@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
+### Added
+
+ - `restore` for `ErasedPin` and `PartiallyErasedPin`
 
 ## [v0.14.0] - 2022-12-12
 

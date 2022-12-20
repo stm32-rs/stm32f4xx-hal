@@ -1,6 +1,6 @@
 use super::*;
 
-pub type EPin<MODE> = ErasedPin<MODE>;
+pub use ErasedPin as EPin;
 
 /// Fully erased pin
 ///
@@ -54,6 +54,13 @@ impl<MODE> ErasedPin<MODE> {
             pin_port: port << 4 | pin,
             _mode: PhantomData,
         }
+    }
+
+    /// Convert type erased pin to `Pin` with fixed type
+    pub fn restore<const P: char, const N: u8>(self) -> Pin<P, N, MODE> {
+        assert_eq!(self.port_id(), P as u8 - b'A');
+        assert_eq!(self.pin_id(), N);
+        Pin::new()
     }
 
     #[inline]
