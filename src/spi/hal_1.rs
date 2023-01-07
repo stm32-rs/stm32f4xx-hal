@@ -85,14 +85,26 @@ mod blocking {
             Ok(())
         }
 
-        fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Self::Error> {
-            assert_eq!(data.len(), buff.len());
-
-            for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
-                nb::block!(<Self as FullDuplex<W>>::write(self, d))?;
-                *b = nb::block!(<Self as FullDuplex<W>>::read(self))?;
+        fn transfer(&mut self, read: &mut [W], write: &[W]) -> Result<(), Self::Error> {
+            let mut iter_r = read.iter_mut();
+            let mut iter_w = write.iter().cloned();
+            loop {
+                match (iter_r.next(), iter_w.next()) {
+                    (Some(r), Some(w)) => {
+                        nb::block!(<Self as FullDuplex<W>>::write(self, w))?;
+                        *r = nb::block!(<Self as FullDuplex<W>>::read(self))?;
+                    },
+                    (Some(r), None) => {
+                        nb::block!(<Self as FullDuplex<W>>::write(self, W::default()))?;
+                        *r = nb::block!(<Self as FullDuplex<W>>::read(self))?;
+                    },
+                    (None, Some(w)) => {
+                        nb::block!(<Self as FullDuplex<W>>::write(self, w))?;
+                        let _ = nb::block!(<Self as FullDuplex<W>>::read(self))?;
+                    }
+                    (None, None) => break
+                }
             }
-
             Ok(())
         }
     }
