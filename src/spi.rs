@@ -950,11 +950,31 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 
     pub fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Error> {
-        assert_eq!(data.len(), buff.len());
-
-        for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
-            nb::block!(self.write_nonblocking(d))?;
-            *b = nb::block!(self.read_nonblocking())?;
+        if data.len() == buff.len() {
+            for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
+                nb::block!(self.write_nonblocking(d))?;
+                *b = nb::block!(self.read_nonblocking())?;
+            }
+        } else {
+            let mut iter_r = buff.iter_mut();
+            let mut iter_w = data.iter().cloned();
+            loop {
+                match (iter_r.next(), iter_w.next()) {
+                    (Some(r), Some(w)) => {
+                        nb::block!(self.write_nonblocking(w))?;
+                        *r = nb::block!(self.read_nonblocking())?;
+                    }
+                    (Some(r), None) => {
+                        nb::block!(self.write_nonblocking(W::default()))?;
+                        *r = nb::block!(self.read_nonblocking())?;
+                    }
+                    (None, Some(w)) => {
+                        nb::block!(self.write_nonblocking(w))?;
+                        let _ = nb::block!(self.read_nonblocking())?;
+                    }
+                    (None, None) => break,
+                }
+            }
         }
 
         Ok(())
@@ -1038,11 +1058,31 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     }
 
     pub fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Error> {
-        assert_eq!(data.len(), buff.len());
-
-        for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
-            nb::block!(self.write_nonblocking(d))?;
-            *b = nb::block!(self.read_nonblocking())?;
+        if data.len() == buff.len() {
+            for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
+                nb::block!(self.write_nonblocking(d))?;
+                *b = nb::block!(self.read_nonblocking())?;
+            }
+        } else {
+            let mut iter_r = buff.iter_mut();
+            let mut iter_w = data.iter().cloned();
+            loop {
+                match (iter_r.next(), iter_w.next()) {
+                    (Some(r), Some(w)) => {
+                        nb::block!(self.write_nonblocking(w))?;
+                        *r = nb::block!(self.read_nonblocking())?;
+                    }
+                    (Some(r), None) => {
+                        nb::block!(self.write_nonblocking(W::default()))?;
+                        *r = nb::block!(self.read_nonblocking())?;
+                    }
+                    (None, Some(w)) => {
+                        nb::block!(self.write_nonblocking(w))?;
+                        let _ = nb::block!(self.read_nonblocking())?;
+                    }
+                    (None, None) => break,
+                }
+            }
         }
 
         Ok(())
