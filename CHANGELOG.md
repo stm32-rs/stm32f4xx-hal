@@ -10,12 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
  - Update readme, clippy fixes
-
-- `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
+ - `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
+ - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
 
 ### Added
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
+[#566]: https://github.com/stm32-rs/stm32f4xx-hal/pull/566
 ### Added
 
  - `restore` for `ErasedPin` and `PartiallyErasedPin`
