@@ -93,16 +93,16 @@ mod blocking {
                     (Some(r), Some(w)) => {
                         nb::block!(<Self as FullDuplex<W>>::write(self, w))?;
                         *r = nb::block!(<Self as FullDuplex<W>>::read(self))?;
-                    },
+                    }
                     (Some(r), None) => {
                         nb::block!(<Self as FullDuplex<W>>::write(self, W::default()))?;
                         *r = nb::block!(<Self as FullDuplex<W>>::read(self))?;
-                    },
+                    }
                     (None, Some(w)) => {
                         nb::block!(<Self as FullDuplex<W>>::write(self, w))?;
                         let _ = nb::block!(<Self as FullDuplex<W>>::read(self))?;
                     }
-                    (None, None) => break
+                    (None, None) => break,
                 }
             }
             Ok(())
