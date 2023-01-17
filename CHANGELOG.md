@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Bump `synopsys-usb-otg` to 0.3.2 (bug fix)
  - Update readme, clippy fixes
+ - Added possibility to pass complementary pins to `Pwm` and change pwm channel polarity [#571]
 
 ### Added
 
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Fix alternate function pin definitions for FMPI2C1 [#572]
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
+[#571]: https://github.com/stm32-rs/stm32f4xx-hal/pull/571
 [#572]: https://github.com/stm32-rs/stm32f4xx-hal/pull/572
 
 

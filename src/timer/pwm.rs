@@ -1,4 +1,6 @@
-use super::{compute_arr_presc, Channel, FTimer, Instance, Ocm, Timer, WithPwm, NCPin};
+use super::{
+    compute_arr_presc, Advanced, Channel, FTimer, Instance, NCPin, Ocm, Polarity, Timer, WithPwm,
+};
 use crate::rcc::Clocks;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
@@ -27,6 +29,18 @@ pub trait Pins<TIM, P> {
         }
     }
 
+    fn check_complementary_used(c: Channel) -> Channel {
+        if (c == Channel::C1 && Self::NC1)
+            || (c == Channel::C2 && Self::NC2)
+            || (c == Channel::C3 && Self::NC3)
+            || (c == Channel::C4 && Self::NC4)
+        {
+            c
+        } else {
+            panic!("Unused channel")
+        }
+    }
+
     fn split() -> Self::Channels;
 }
 pub use super::{CPin, Ch, C1, C2, C3, C4};
@@ -34,6 +48,8 @@ pub use super::{CPin, Ch, C1, C2, C3, C4};
 pub struct PwmChannel<TIM, const C: u8, const COMP: bool = false> {
     pub(super) _tim: PhantomData<TIM>,
 }
+
+pub trait PwmPin<TIM, const C: u8, const COMP: bool = false> {}
 
 macro_rules! pins_impl {
     ( $( ( $($PINX:ident),+ ), ( $($ENCHX:ident),+ ), ( $($COMP:ident),+ ); )+ ) => {
@@ -94,13 +110,15 @@ tuples! {
     NCPin, (P1, P2, P3, P4);
 }
 
-pub trait PwmPin<TIM, const C: u8, const COMP: bool = false> { }
+impl<P, TIM, const C: u8> PwmPin<TIM, C> for P where P: CPin<TIM, C> {}
+impl<P, NP, TIM, const C: u8> PwmPin<TIM, C, true> for (P, NP)
+where
+    P: CPin<TIM, C>,
+    NP: NCPin<TIM, C>,
+{
+}
 
-impl<P, TIM, const C: u8> PwmPin<TIM, C> for P where P: CPin<TIM, C> { }
-impl<P, NP, TIM, const C: u8> PwmPin<TIM, C, true> for (P, NP) where P: CPin<TIM, C>, NP: NCPin<TIM, C> { }
-
-
- pub trait PwmExt
+pub trait PwmExt
 where
     Self: Sized + Instance + WithPwm,
 {
@@ -162,7 +180,7 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     }
 }
 
-impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
+impl<TIM: Instance + WithPwm, const C: u8, const COMP: bool> PwmChannel<TIM, C, COMP> {
     #[inline]
     pub fn disable(&mut self) {
         TIM::enable_channel(C, false);
@@ -171,6 +189,11 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     #[inline]
     pub fn enable(&mut self) {
         TIM::enable_channel(C, true);
+    }
+
+    #[inline]
+    pub fn set_polarity(&mut self, p: Polarity) {
+        TIM::set_channel_polarity(C, p);
     }
 
     #[inline]
@@ -187,6 +210,23 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     #[inline]
     pub fn set_duty(&mut self, duty: u16) {
         TIM::set_cc_value(C, duty as u32)
+    }
+}
+
+impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
+    #[inline]
+    pub fn disable_complementary(&mut self) {
+        TIM::enable_nchannel(C, false);
+    }
+
+    #[inline]
+    pub fn enable_complementary(&mut self) {
+        TIM::enable_nchannel(C, true);
+    }
+
+    #[inline]
+    pub fn set_complementary_polarity(&mut self, p: Polarity) {
+        TIM::set_nchannel_polarity(C, p);
     }
 }
 
@@ -292,6 +332,10 @@ where
         TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
+    pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
+        TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
+    }
+
     pub fn get_duty(&self, channel: Channel) -> u16 {
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
@@ -321,6 +365,24 @@ where
         self.tim.set_prescaler(psc);
         self.tim.set_auto_reload(arr).unwrap();
         self.tim.cnt_reset();
+    }
+}
+
+impl<TIM, P, PINS> PwmHz<TIM, P, PINS>
+where
+    TIM: Instance + WithPwm + Advanced,
+    PINS: Pins<TIM, P>,
+{
+    pub fn enable_complementary(&mut self, channel: Channel) {
+        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
+    }
+
+    pub fn disable_complementary(&mut self, channel: Channel) {
+        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
+    }
+
+    pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
+        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
 }
 
@@ -428,6 +490,10 @@ where
         TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
+    pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
+        TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
+    }
+
     pub fn get_duty(&self, channel: Channel) -> u16 {
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
@@ -456,5 +522,23 @@ where
     pub fn set_period(&mut self, period: TimerDurationU32<FREQ>) {
         self.tim.set_auto_reload(period.ticks() - 1).unwrap();
         self.tim.cnt_reset();
+    }
+}
+
+impl<TIM, P, PINS, const FREQ: u32> Pwm<TIM, P, PINS, FREQ>
+where
+    TIM: Instance + WithPwm + Advanced,
+    PINS: Pins<TIM, P>,
+{
+    pub fn enable_complementary(&mut self, channel: Channel) {
+        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
+    }
+
+    pub fn disable_complementary(&mut self, channel: Channel) {
+        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
+    }
+
+    pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
+        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
 }
