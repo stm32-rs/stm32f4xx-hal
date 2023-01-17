@@ -1,4 +1,4 @@
-use super::{compute_arr_presc, Channel, FTimer, Instance, Ocm, Timer, WithPwm};
+use super::{compute_arr_presc, Channel, FTimer, Instance, Ocm, Timer, WithPwm, NCPin};
 use crate::rcc::Clocks;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
@@ -9,6 +9,10 @@ pub trait Pins<TIM, P> {
     const C2: bool = false;
     const C3: bool = false;
     const C4: bool = false;
+    const NC1: bool = false;
+    const NC2: bool = false;
+    const NC3: bool = false;
+    const NC4: bool = false;
     type Channels;
 
     fn check_used(c: Channel) -> Channel {
@@ -27,20 +31,21 @@ pub trait Pins<TIM, P> {
 }
 pub use super::{CPin, Ch, C1, C2, C3, C4};
 
-pub struct PwmChannel<TIM, const C: u8> {
+pub struct PwmChannel<TIM, const C: u8, const COMP: bool = false> {
     pub(super) _tim: PhantomData<TIM>,
 }
 
 macro_rules! pins_impl {
-    ( $( ( $($PINX:ident),+ ), ( $($ENCHX:ident),+ ); )+ ) => {
+    ( $( ( $($PINX:ident),+ ), ( $($ENCHX:ident),+ ), ( $($COMP:ident),+ ); )+ ) => {
         $(
             #[allow(unused_parens)]
-            impl<TIM, $($PINX,)+> Pins<TIM, ($(Ch<$ENCHX>),+)> for ($($PINX),+)
+            impl<TIM, $($PINX,)+ $(const $COMP: bool,)+> Pins<TIM, ($(Ch<$ENCHX, $COMP>),+)> for ($($PINX),+)
             where
                 TIM: Instance + WithPwm,
-                $($PINX: CPin<TIM, $ENCHX>,)+
+                $($PINX: PwmPin<TIM, $ENCHX, $COMP>,)+
             {
                 $(const $ENCHX: bool = true;)+
+                $(const $COMP: bool = true;)+
                 type Channels = ($(PwmChannel<TIM, $ENCHX>),+);
                 fn split() -> Self::Channels {
                     ($(PwmChannel::<TIM, $ENCHX>::new()),+)
@@ -51,46 +56,51 @@ macro_rules! pins_impl {
 }
 
 pins_impl!(
-    (P1, P2, P3, P4), (C1, C2, C3, C4);
-    (P2, P3, P4), (C2, C3, C4);
-    (P1, P3, P4), (C1, C3, C4);
-    (P1, P2, P4), (C1, C2, C4);
-    (P1, P2, P3), (C1, C2, C3);
-    (P3, P4), (C3, C4);
-    (P2, P4), (C2, C4);
-    (P2, P3), (C2, C3);
-    (P1, P4), (C1, C4);
-    (P1, P3), (C1, C3);
-    (P1, P2), (C1, C2);
-    (P1), (C1);
-    (P2), (C2);
-    (P3), (C3);
-    (P4), (C4);
+    (P1, P2, P3, P4), (C1, C2, C3, C4), (NC1, NC2, NC3, NC4);
+    (P2, P3, P4), (C2, C3, C4), (NC2, NC3, NC4);
+    (P1, P3, P4), (C1, C3, C4), (NC1, NC3, NC4);
+    (P1, P2, P4), (C1, C2, C4), (NC1, NC2, NC4);
+    (P1, P2, P3), (C1, C2, C3), (NC1, NC2, NC3);
+    (P3, P4), (C3, C4), (NC3, NC4);
+    (P2, P4), (C2, C4), (NC2, NC4);
+    (P2, P3), (C2, C3), (NC2, NC3);
+    (P1, P4), (C1, C4), (NC1, NC4);
+    (P1, P3), (C1, C3), (NC1, NC3);
+    (P1, P2), (C1, C2), (NC1, NC2);
+    (P1), (C1), (NC1);
+    (P2), (C2), (NC2);
+    (P3), (C3), (NC3);
+    (P4), (C4), (NC4);
 );
 
-impl<TIM, P1, P2, const C: u8> CPin<TIM, C> for (P1, P2)
-where
-    P1: CPin<TIM, C>,
-    P2: CPin<TIM, C>,
-{
-}
-impl<TIM, P1, P2, P3, const C: u8> CPin<TIM, C> for (P1, P2, P3)
-where
-    P1: CPin<TIM, C>,
-    P2: CPin<TIM, C>,
-    P3: CPin<TIM, C>,
-{
-}
-impl<TIM, P1, P2, P3, P4, const C: u8> CPin<TIM, C> for (P1, P2, P3, P4)
-where
-    P1: CPin<TIM, C>,
-    P2: CPin<TIM, C>,
-    P3: CPin<TIM, C>,
-    P4: CPin<TIM, C>,
-{
+macro_rules! tuples {
+    ( $( $trait:ident, ( $($PX:ident),+ ); )+ ) => {
+        $(
+            impl<TIM, $($PX,)+ const C: u8> $trait<TIM, C> for ($($PX),+)
+            where
+                $($PX: CPin<TIM, C>,)+
+            {
+            }
+        )+
+    };
 }
 
-pub trait PwmExt
+tuples! {
+    CPin, (P1, P2);
+    CPin, (P1, P2, P3);
+    CPin, (P1, P2, P3, P4);
+    NCPin, (P1, P2);
+    NCPin, (P1, P2, P3);
+    NCPin, (P1, P2, P3, P4);
+}
+
+pub trait PwmPin<TIM, const C: u8, const COMP: bool = false> { }
+
+impl<P, TIM, const C: u8> PwmPin<TIM, C> for P where P: CPin<TIM, C> { }
+impl<P, NP, TIM, const C: u8> PwmPin<TIM, C, true> for (P, NP) where P: CPin<TIM, C>, NP: NCPin<TIM, C> { }
+
+
+ pub trait PwmExt
 where
     Self: Sized + Instance + WithPwm,
 {
