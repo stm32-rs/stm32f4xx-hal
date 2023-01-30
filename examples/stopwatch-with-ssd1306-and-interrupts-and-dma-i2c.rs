@@ -14,7 +14,7 @@
 //!
 //! Video of this example running: https://imgur.com/a/lQTQFLy
 
-#![allow(clippy::empty_loop)]
+#![allow(clippy::empty_loop, clippy::new_without_default)]
 #![no_std]
 #![no_main]
 
@@ -100,7 +100,9 @@ impl DMAI2cInterface {
 
 impl WriteOnlyDataCommand for DMAI2cInterface {
     fn send_commands(&mut self, cmd: DataFormat<'_>) -> Result<(), DisplayError> {
-        while COMMAND_SEND.load(Ordering::SeqCst) {}
+        while COMMAND_SEND.load(Ordering::SeqCst) {
+            core::hint::spin_loop()
+        }
 
         match cmd {
             DataFormat::U8(slice) => {
@@ -129,7 +131,9 @@ impl WriteOnlyDataCommand for DMAI2cInterface {
     }
 
     fn send_data(&mut self, buf: DataFormat<'_>) -> Result<(), DisplayError> {
-        while DRAWING.load(Ordering::SeqCst) {}
+        while DRAWING.load(Ordering::SeqCst) {
+            core::hint::spin_loop()
+        }
 
         match buf {
             DataFormat::U8(slice) => {
@@ -352,7 +356,7 @@ fn format_elapsed(buf: &mut String<10>, elapsed: u32) {
     let minutes = elapsed_to_m(elapsed);
     let seconds = elapsed_to_s(elapsed);
     let millis = elapsed_to_ms(elapsed);
-    write!(buf, "{}:{:02}.{:03}", minutes, seconds, millis).unwrap();
+    write!(buf, "{minutes}:{seconds:02}.{millis:03}").unwrap();
 }
 
 fn elapsed_to_ms(elapsed: u32) -> u32 {

@@ -161,7 +161,7 @@ mod blocking {
     {
         type Error = Error;
 
-        fn exec<'a>(&mut self, operations: &mut [Operation<'a, W>]) -> Result<(), Error> {
+        fn exec(&mut self, operations: &mut [Operation<'_, W>]) -> Result<(), Error> {
             for op in operations {
                 match op {
                     Operation::Write(w) => self.write(w)?,

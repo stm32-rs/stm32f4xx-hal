@@ -7,19 +7,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+ - Bump `synopsys-usb-otg` to 0.3.2 (bug fix)
+ - Update readme, clippy fixes
+
 ### Added
+
+ - `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
  - `restore` for `ErasedPin` and `PartiallyErasedPin`
 
-### Changed
- - Update readme, clippy fixes
- - `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
-
 ### Fixed
- - Fix alternate function pin definitions for FMPI2C1 [#572]
 
+ - Fix alternate function pin definitions for FMPI2C1 [#572]
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
 [#572]: https://github.com/stm32-rs/stm32f4xx-hal/pull/572
+
 
 ## [v0.14.0] - 2022-12-12
 

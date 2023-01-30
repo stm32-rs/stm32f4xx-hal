@@ -575,10 +575,10 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         Ok(())
     }
 
-    pub fn transaction_slice<'a>(
+    pub fn transaction_slice(
         &mut self,
         addr: u8,
-        ops_slice: &mut [Operation<'a>],
+        ops_slice: &mut [Operation<'_>],
     ) -> Result<(), Error> {
         let mut ops = ops_slice.iter_mut();
 
