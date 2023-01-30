@@ -217,7 +217,7 @@ fn format_elapsed(buf: &mut String<10>, elapsed: u32) {
     let minutes = elapsed_to_m(elapsed);
     let seconds = elapsed_to_s(elapsed);
     let millis = elapsed_to_ms(elapsed);
-    write!(buf, "{}:{:02}.{:03}", minutes, seconds, millis).unwrap();
+    write!(buf, "{minutes}:{seconds:02}.{millis:03}").unwrap();
 }
 
 fn elapsed_to_ms(elapsed: u32) -> u32 {
