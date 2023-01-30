@@ -57,10 +57,10 @@ mod blocking {
             self.write_iter_read(addr, bytes, buffer)
         }
 
-        fn transaction<'a>(
+        fn transaction(
             &mut self,
             addr: u8,
-            operations: &mut [Operation<'a>],
+            operations: &mut [Operation<'_>],
         ) -> Result<(), Self::Error> {
             self.transaction_slice(addr, operations)
         }

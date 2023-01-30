@@ -35,7 +35,7 @@ use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 use hal::{i2c::I2c, pac, prelude::*};
 use rand_core::RngCore;
 
-use core::fmt;
+use core::fmt::Write;
 use heapless::String;
 
 // dimensions of SSD1306 OLED display known to work
@@ -93,7 +93,7 @@ fn main() -> ! {
             let rand_val = rand_source.next_u32();
 
             format_buf.clear();
-            if fmt::write(&mut format_buf, format_args!("{}", rand_val)).is_ok() {
+            if write!(&mut format_buf, "{rand_val}").is_ok() {
                 let text_style = MonoTextStyleBuilder::new()
                     .font(&FONT_5X8)
                     .text_color(BinaryColor::On)
