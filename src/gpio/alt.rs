@@ -282,18 +282,18 @@ pin! {
 
 #[cfg(feature = "fmpi2c1")]
 pin! {
-    <i2c::Scl, FMPI2C1> for [PC6<4>],
-    <i2c::Sda, FMPI2C1> for [PC7<4>],
     <i2c::Sda, FMPI2C1> for [PB3<4>],
     <i2c::Scl, FMPI2C1> for [PB10<9>],
     <i2c::Sda, FMPI2C1> for [PB14<4>],
     <i2c::Scl, FMPI2C1> for [PB15<4>],
+    <i2c::Scl, FMPI2C1> for [PC6<4>],
+    <i2c::Sda, FMPI2C1> for [PC7<4>],
     <i2c::Scl, FMPI2C1> for [PD12<4>],
-    <i2c::Scl, FMPI2C1> for [PB13<4>],
+    <i2c::Sda, FMPI2C1> for [PD13<4>],
     <i2c::Scl, FMPI2C1> for [PD14<4>],
-    <i2c::Scl, FMPI2C1> for [PD15<4>],
+    <i2c::Sda, FMPI2C1> for [PD15<4>],
     <i2c::Scl, FMPI2C1> for [PF14<4>],
-    <i2c::Scl, FMPI2C1> for [PF15<4>]
+    <i2c::Sda, FMPI2C1> for [PF15<4>]
 }
 
 // SPI pins
