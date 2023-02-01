@@ -606,14 +606,14 @@ where
             // We also add `baud / 2` to the `pclk_freq` to ensure
             // rounding of values to the closest scale, rather than the
             // floored behavior of normal integer division.
-            let div = (pclk_freq + (baud / 2)) / baud;
+            let div = ((pclk_freq + (baud / 2)) / baud) as u16;
             (false, div)
         } else if (pclk_freq / 8) >= baud {
             // We are close enough to pclk where we can only
             // oversample 8.
             //
             // See note above regarding `baud` and rounding.
-            let div = ((pclk_freq * 2) + (baud / 2)) / baud;
+            let div = (((pclk_freq * 2) + (baud / 2)) / baud) as u16;
 
             // Ensure the the fractional bits (only 3) are
             // right-aligned.

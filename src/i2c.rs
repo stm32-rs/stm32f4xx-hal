@@ -336,7 +336,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         // Set up current address, we're trying to talk to
         self.i2c
             .dr
-            .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
+            .write(|w| unsafe { w.bits(u16::from(addr) << 1) });
 
         // Wait until address was sent
         loop {
@@ -376,7 +376,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         // Set up current address, we're trying to talk to
         self.i2c
             .dr
-            .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
+            .write(|w| unsafe { w.bits((u16::from(addr) << 1) + 1) });
 
         // Wait until address was sent
         loop {
@@ -414,7 +414,7 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
         {}
 
         // Push out a byte of data
-        self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
+        self.i2c.dr.write(|w| unsafe { w.bits(u16::from(byte)) });
 
         // Wait until byte is transferred
         // Check for any potential error conditions.
