@@ -1,5 +1,40 @@
+//! Provides basic Pulse-width modulation (PWM) capabilities
+//!
+//! There are 2 main stuctures [`Pwm`] and [`PwmHz`]. Both structures implement [`embedded_hal::Pwm`] and have some additional API.
+//!
+//! First one is based on [`FTimer`] with fixed prescaler
+//! and easy to use with [`fugit::TimerDurationU32`] for setting pulse width and period without advanced calculations.
+//!
+//! Second one is based on [`Timer`] with dynamic internally calculated prescaler and require [`fugit::Hertz`] to set period.
+//!
+//! You can [`split`](Pwm::split) any of those structures on independent `PwmChannel`s if you need that implement [`embedded_hal::PwmPin`]
+//! but can't change PWM period.
+//!
+//! Also there is [`PwmExt`] trait implemented on `pac::TIMx` to simplify creating new structure.
+//!
+//! You need to pass pins you plan to use and initial `time`/`frequency` corresponding PWM period.
+//! Pins can be collected in tuples in sequence corresponding to the channel number. Smaller channel number first.
+//! Each channel group can contain 1 or several main pins and 0, 1 or several complementary pins. Main pins first.
+//!
+//! For example:
+//! ```plain,ignore
+//! ( (CH1, CHN1),    CH2,    ( (CH3_1, CH3_2), CHN3 ) )
+//!   | chan. 1 |  |chan. 2|  |       chan. 3        |
+//! ```
+//! or
+//! ```rust,ignore
+//! let channels = (gpioa.pa7.into_alternate(), gpioa.pa8.into_alternate()); // error: (CHN1, CH1)
+//!
+//! let channels = (gpioa.pa8.into_alternate(), gpioa.pa7.into_alternate()); // good: (CH1, CHN1)
+//! ```
+//!
+//! where `CHx` and `CHx_n` are main pins of PWM channel `x` and `CHNx` are complementary pins of PWM channel `x`.
+//!
+//! After creating structures you can dynamically enable main or complementary channels with `enable` and `enable_complementary`
+//! and change their polarity with `set_polarity` and `set_complementary_polarity`.
+
 use super::{
-    compute_arr_presc, Advanced, Channel, FTimer, Instance, NCPin, Ocm, Polarity, Timer, WithPwm,
+    compute_arr_presc, Advanced, Channel, FTimer, Instance, Ocm, Polarity, Timer, WithPwm,
 };
 use crate::rcc::Clocks;
 use core::marker::PhantomData;
@@ -43,7 +78,7 @@ pub trait Pins<TIM, P> {
 
     fn split() -> Self::Channels;
 }
-pub use super::{CPin, Ch, C1, C2, C3, C4};
+pub use super::{CPin, Ch, NCPin, C1, C2, C3, C4};
 
 pub struct PwmChannel<TIM, const C: u8, const COMP: bool = false> {
     pub(super) _tim: PhantomData<TIM>,
