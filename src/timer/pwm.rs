@@ -246,6 +246,11 @@ impl<TIM: Instance + WithPwm, const C: u8, const COMP: bool> PwmChannel<TIM, C, 
     pub fn set_duty(&mut self, duty: u16) {
         TIM::set_cc_value(C, duty as u32)
     }
+
+    #[inline]
+    pub fn set_complementary_polarity(&mut self, p: Polarity) {
+        TIM::set_nchannel_polarity(C, p);
+    }
 }
 
 impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
@@ -257,11 +262,6 @@ impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
     #[inline]
     pub fn enable_complementary(&mut self) {
         TIM::enable_nchannel(C, true);
-    }
-
-    #[inline]
-    pub fn set_complementary_polarity(&mut self, p: Polarity) {
-        TIM::set_nchannel_polarity(C, p);
     }
 }
 
@@ -401,6 +401,10 @@ where
         self.tim.set_auto_reload(arr).unwrap();
         self.tim.cnt_reset();
     }
+
+    pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
+        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
+    }
 }
 
 impl<TIM, P, PINS> PwmHz<TIM, P, PINS>
@@ -414,10 +418,6 @@ where
 
     pub fn disable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
-    }
-
-    pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
 }
 
@@ -558,6 +558,10 @@ where
         self.tim.set_auto_reload(period.ticks() - 1).unwrap();
         self.tim.cnt_reset();
     }
+
+    pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
+        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
+    }
 }
 
 impl<TIM, P, PINS, const FREQ: u32> Pwm<TIM, P, PINS, FREQ>
@@ -571,9 +575,5 @@ where
 
     pub fn disable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
-    }
-
-    pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
 }
