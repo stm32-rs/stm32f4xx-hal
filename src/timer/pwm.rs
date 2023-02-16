@@ -419,6 +419,15 @@ where
     pub fn disable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
     }
+
+    pub fn set_dead_time(&mut self, dts_ticks: u16) {
+        let bits = pack_ceil_dead_time(dts_ticks);
+        TIM::set_dtg_value(bits);
+    }
+
+    pub fn get_dead_time(&self) -> u16 {
+        unpack_dead_time(TIM::read_dtg_value())
+    }
 }
 
 pub struct Pwm<TIM, P, PINS, const FREQ: u32>
@@ -575,5 +584,36 @@ where
 
     pub fn disable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
+    }
+
+    pub fn set_dead_time(&mut self, dts_ticks: u16) {
+        let bits = pack_ceil_dead_time(dts_ticks);
+        TIM::set_dtg_value(bits);
+    }
+
+    pub fn get_dead_time(&self) -> u16 {
+        unpack_dead_time(TIM::read_dtg_value())
+    }
+}
+
+const fn pack_ceil_dead_time(dts_ticks: u16) -> u8 {
+    match dts_ticks {
+        0..=127 => dts_ticks as u8,
+        128..=254 => ((((dts_ticks + 1) >> 1) - 64) as u8) | 0b_1000_0000,
+        255..=504 => ((((dts_ticks + 7) >> 3) - 32) as u8) | 0b_1100_0000,
+        505..=1008 => ((((dts_ticks + 15) >> 4) - 32) as u8) | 0b_1110_0000,
+        1009.. => 0xff,
+    }
+}
+
+const fn unpack_dead_time(bits: u8) -> u16 {
+    if bits & 0b_1000_0000 == 0 {
+        bits as u16
+    } else if bits & 0b_0100_0000 == 0 {
+        (((bits & !0b_1000_0000) as u16) + 64) * 2
+    } else if bits & 0b_0010_0000 == 0 {
+        (((bits & !0b_1100_0000) as u16) + 32) * 8
+    } else {
+        (((bits & !0b_1110_0000) as u16) + 32) * 16
     }
 }

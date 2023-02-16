@@ -275,6 +275,8 @@ mod sealed {
 
     pub trait Advanced: WithPwmCommon {
         fn enable_nchannel(channel: u8, b: bool);
+        fn set_dtg_value(value: u8);
+        fn read_dtg_value() -> u8;
     }
 
     pub trait WithPwm: WithPwmCommon {
@@ -462,6 +464,14 @@ macro_rules! hal {
                             if c < Self::CH_NUMBER {
                                 unsafe { bb::write(&tim.ccer, c*4 + 2, b); }
                             }
+                        }
+                        fn set_dtg_value(value: u8) {
+                            let tim = unsafe { &*<$TIM>::ptr() };
+                            tim.bdtr.modify(|_,w| unsafe { w.dtg().bits(value) });
+                        }
+                        fn read_dtg_value() -> u8 {
+                            let tim = unsafe { &*<$TIM>::ptr() };
+                            tim.bdtr.read().dtg().bits()
                         }
                     }
                 )?
