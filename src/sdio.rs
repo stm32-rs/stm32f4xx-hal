@@ -245,8 +245,11 @@ impl<P: SdioPeripheral> Sdio<P> {
                 .disabled()
                 .negedge()
                 .rising()
+                // Do not use hardware flow control.
+                // Using it causes clock glitches and CRC errors.
+                // See chip errata SDIO section.
                 .hwfc_en()
-                .enabled()
+                .disabled()
         });
 
         let mut host = Self {
