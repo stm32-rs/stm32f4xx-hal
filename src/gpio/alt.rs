@@ -766,22 +766,7 @@ pin! {
     <serial::RxPin, USART6> for [PA12<8>]
 }
 
-#[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
+#[cfg(feature = "gpiog")]
 pin! {
     <serial::TxPin, USART6> for [PG14<8>],
     <serial::RxPin, USART6> for [PG9<8>]

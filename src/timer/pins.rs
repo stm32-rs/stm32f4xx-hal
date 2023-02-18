@@ -10,7 +10,7 @@ pub trait EtrPin<TIM> {}
 pub trait BkinPin<TIM> {}
 
 /// Channel wrapper
-pub struct Ch<const C: u8>;
+pub struct Ch<const C: u8, const COMP: bool>;
 pub const C1: u8 = 0;
 pub const C2: u8 = 1;
 pub const C3: u8 = 2;
