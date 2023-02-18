@@ -21,11 +21,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
  - Fix alternate function pin definitions for FMPI2C1 [#572]
+ - Fix SDIO hardware flow control errata [#577]
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
 [#571]: https://github.com/stm32-rs/stm32f4xx-hal/pull/571
 [#572]: https://github.com/stm32-rs/stm32f4xx-hal/pull/572
-
+[#577]: https://github.com/stm32-rs/stm32f4xx-hal/pull/577
 
 ## [v0.14.0] - 2022-12-12
 

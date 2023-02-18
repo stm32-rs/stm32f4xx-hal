@@ -245,8 +245,13 @@ impl<P: SdioPeripheral> Sdio<P> {
                 .disabled()
                 .negedge()
                 .rising()
+                // Do not use hardware flow control.
+                // Using it causes clock glitches and CRC errors.
+                // See chip errata SDIO section:
+                // - F42x/F43x: https://www.st.com/resource/en/errata_sheet/es0206-stm32f427437-and-stm32f429439-line-limitations-stmicroelectronics.pdf
+                // - F40x/F41x: https://www.st.com/resource/en/errata_sheet/es0182-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
                 .hwfc_en()
-                .enabled()
+                .disabled()
         });
 
         let mut host = Self {
