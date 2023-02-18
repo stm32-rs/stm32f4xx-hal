@@ -369,22 +369,27 @@ where
     TIM: Instance + WithPwm,
     PINS: Pins<TIM, P>,
 {
+    #[inline]
     pub fn enable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, true)
     }
 
+    #[inline]
     pub fn disable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
+    #[inline]
     pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
     }
 
+    #[inline]
     pub fn get_duty(&self, channel: Channel) -> u16 {
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
 
+    #[inline]
     pub fn set_duty(&mut self, channel: Channel, duty: u16) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty as u32)
     }
@@ -412,6 +417,7 @@ where
         self.tim.cnt_reset();
     }
 
+    #[inline]
     pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
@@ -550,30 +556,37 @@ where
     TIM: Instance + WithPwm,
     PINS: Pins<TIM, P>,
 {
+    #[inline]
     pub fn enable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, true)
     }
 
+    #[inline]
     pub fn disable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
+    #[inline]
     pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
     }
 
+    #[inline]
     pub fn get_duty(&self, channel: Channel) -> u16 {
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
 
+    #[inline]
     pub fn get_duty_time(&self, channel: Channel) -> TimerDurationU32<FREQ> {
         TimerDurationU32::from_ticks(TIM::read_cc_value(PINS::check_used(channel) as u8))
     }
 
+    #[inline]
     pub fn set_duty(&mut self, channel: Channel, duty: u16) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty.into())
     }
 
+    #[inline]
     pub fn set_duty_time(&mut self, channel: Channel, duty: TimerDurationU32<FREQ>) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty.ticks())
     }
@@ -592,6 +605,7 @@ where
         self.tim.cnt_reset();
     }
 
+    #[inline]
     pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
