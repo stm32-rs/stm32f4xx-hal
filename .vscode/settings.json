@@ -1,18 +1,8 @@
 {
-  "rust.all_targets": false,
-  "rust.target": "thumbv7em-none-eabihf",
-  "rust.all_features": false,
-  "rust.features": [
-    "rtic",
-    "stm32f411"
-  ],
-  "rust-analyzer.checkOnSave.allTargets": false,
-  "rust-analyzer.checkOnSave.extraArgs": [
-      "--target",
-      "thumbv7em-none-eabihf"
-  ],
+  "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.check.targets": "thumbv7em-none-eabihf",
   "rust-analyzer.cargo.features": [
     "rtic",
     "stm32f411"
-  ]
+  ],
 }
