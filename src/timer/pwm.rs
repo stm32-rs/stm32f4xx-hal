@@ -34,7 +34,8 @@
 //! and change their polarity with `set_polarity` and `set_complementary_polarity`.
 
 use super::{
-    compute_arr_presc, Advanced, Channel, FTimer, Instance, Ocm, Polarity, Timer, WithPwm,
+    compute_arr_presc, Advanced, Channel, FTimer, IdleState, Instance, Ocm, Polarity, Timer,
+    WithPwm,
 };
 use crate::rcc::Clocks;
 use core::marker::PhantomData;
@@ -263,6 +264,16 @@ impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
     pub fn enable_complementary(&mut self) {
         TIM::enable_nchannel(C, true);
     }
+
+    #[inline]
+    pub fn set_idle_state(&mut self, s: IdleState) {
+        TIM::idle_state(C, false, s);
+    }
+
+    #[inline]
+    pub fn set_complementary_idle_state(&mut self, s: IdleState) {
+        TIM::idle_state(C, true, s);
+    }
 }
 
 pub struct PwmHz<TIM, P, PINS>
@@ -359,22 +370,27 @@ where
     TIM: Instance + WithPwm,
     PINS: Pins<TIM, P>,
 {
+    #[inline]
     pub fn enable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, true)
     }
 
+    #[inline]
     pub fn disable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
+    #[inline]
     pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
     }
 
+    #[inline]
     pub fn get_duty(&self, channel: Channel) -> u16 {
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
 
+    #[inline]
     pub fn set_duty(&mut self, channel: Channel, duty: u16) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty as u32)
     }
@@ -402,6 +418,7 @@ where
         self.tim.cnt_reset();
     }
 
+    #[inline]
     pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
@@ -412,12 +429,49 @@ where
     TIM: Instance + WithPwm + Advanced,
     PINS: Pins<TIM, P>,
 {
+    #[inline]
     pub fn enable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
     }
 
+    #[inline]
     pub fn disable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
+    }
+
+    /// Set number DTS ticks during that complementary pin is `dead`
+    #[inline]
+    pub fn set_dead_time(&mut self, dts_ticks: u16) {
+        let bits = pack_ceil_dead_time(dts_ticks);
+        TIM::set_dtg_value(bits);
+    }
+
+    /// Set raw dead time (DTG) bits
+    #[inline]
+    pub fn set_dead_time_bits(&mut self, bits: u8) {
+        TIM::set_dtg_value(bits);
+    }
+
+    /// Return dead time for complementary pins in DTS ticks
+    #[inline]
+    pub fn get_dead_time(&self) -> u16 {
+        unpack_dead_time(TIM::read_dtg_value())
+    }
+
+    /// Get raw dead time (DTG) bits
+    #[inline]
+    pub fn get_dead_time_bits(&self) -> u8 {
+        TIM::read_dtg_value()
+    }
+
+    #[inline]
+    pub fn set_idle_state(&mut self, channel: Channel, s: IdleState) {
+        TIM::idle_state(PINS::check_used(channel) as u8, false, s);
+    }
+
+    #[inline]
+    pub fn set_complementary_idle_state(&mut self, channel: Channel, s: IdleState) {
+        TIM::idle_state(PINS::check_complementary_used(channel) as u8, true, s);
     }
 }
 
@@ -517,30 +571,37 @@ where
     TIM: Instance + WithPwm,
     PINS: Pins<TIM, P>,
 {
+    #[inline]
     pub fn enable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, true)
     }
 
+    #[inline]
     pub fn disable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
+    #[inline]
     pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
     }
 
+    #[inline]
     pub fn get_duty(&self, channel: Channel) -> u16 {
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
 
+    #[inline]
     pub fn get_duty_time(&self, channel: Channel) -> TimerDurationU32<FREQ> {
         TimerDurationU32::from_ticks(TIM::read_cc_value(PINS::check_used(channel) as u8))
     }
 
+    #[inline]
     pub fn set_duty(&mut self, channel: Channel, duty: u16) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty.into())
     }
 
+    #[inline]
     pub fn set_duty_time(&mut self, channel: Channel, duty: TimerDurationU32<FREQ>) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty.ticks())
     }
@@ -559,6 +620,7 @@ where
         self.tim.cnt_reset();
     }
 
+    #[inline]
     pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
@@ -569,11 +631,70 @@ where
     TIM: Instance + WithPwm + Advanced,
     PINS: Pins<TIM, P>,
 {
+    #[inline]
     pub fn enable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
     }
 
+    #[inline]
     pub fn disable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
+    }
+
+    /// Set number DTS ticks during that complementary pin is `dead`
+    #[inline]
+    pub fn set_dead_time(&mut self, dts_ticks: u16) {
+        let bits = pack_ceil_dead_time(dts_ticks);
+        TIM::set_dtg_value(bits);
+    }
+
+    /// Set raw dead time (DTG) bits
+    #[inline]
+    pub fn set_dead_time_bits(&mut self, bits: u8) {
+        TIM::set_dtg_value(bits);
+    }
+
+    /// Return dead time for complementary pins in DTS ticks
+    #[inline]
+    pub fn get_dead_time(&self) -> u16 {
+        unpack_dead_time(TIM::read_dtg_value())
+    }
+
+    /// Get raw dead time (DTG) bits
+    #[inline]
+    pub fn get_dead_time_bits(&self) -> u8 {
+        TIM::read_dtg_value()
+    }
+
+    #[inline]
+    pub fn set_idle_state(&mut self, channel: Channel, s: IdleState) {
+        TIM::idle_state(PINS::check_used(channel) as u8, false, s);
+    }
+
+    #[inline]
+    pub fn set_complementary_idle_state(&mut self, channel: Channel, s: IdleState) {
+        TIM::idle_state(PINS::check_complementary_used(channel) as u8, true, s);
+    }
+}
+
+const fn pack_ceil_dead_time(dts_ticks: u16) -> u8 {
+    match dts_ticks {
+        0..=127 => dts_ticks as u8,
+        128..=254 => ((((dts_ticks + 1) >> 1) - 64) as u8) | 0b_1000_0000,
+        255..=504 => ((((dts_ticks + 7) >> 3) - 32) as u8) | 0b_1100_0000,
+        505..=1008 => ((((dts_ticks + 15) >> 4) - 32) as u8) | 0b_1110_0000,
+        1009.. => 0xff,
+    }
+}
+
+const fn unpack_dead_time(bits: u8) -> u16 {
+    if bits & 0b_1000_0000 == 0 {
+        bits as u16
+    } else if bits & 0b_0100_0000 == 0 {
+        (((bits & !0b_1000_0000) as u16) + 64) * 2
+    } else if bits & 0b_0010_0000 == 0 {
+        (((bits & !0b_1100_0000) as u16) + 32) * 8
+    } else {
+        (((bits & !0b_1110_0000) as u16) + 32) * 16
     }
 }

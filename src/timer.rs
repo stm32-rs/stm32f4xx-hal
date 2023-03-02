@@ -64,6 +64,13 @@ pub enum Polarity {
     ActiveLow,
 }
 
+/// Output Idle state
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IdleState {
+    Reset,
+    Set,
+}
+
 /// Interrupt events
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -239,7 +246,7 @@ pub type CCR4<T> = CCR<T, 3>;
 pub struct DMAR<T>(T);
 
 mod sealed {
-    use super::{Channel, Event, Ocm, Polarity};
+    use super::{Channel, Event, IdleState, Ocm, Polarity};
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
@@ -266,6 +273,7 @@ mod sealed {
 
     pub trait WithPwmCommon: General {
         const CH_NUMBER: u8;
+        const COMP_CH_NUMBER: u8;
         fn read_cc_value(channel: u8) -> u32;
         fn set_cc_value(channel: u8, value: u32);
         fn enable_channel(channel: u8, b: bool);
@@ -275,6 +283,9 @@ mod sealed {
 
     pub trait Advanced: WithPwmCommon {
         fn enable_nchannel(channel: u8, b: bool);
+        fn set_dtg_value(value: u8);
+        fn read_dtg_value() -> u8;
+        fn idle_state(channel: u8, comp: bool, s: IdleState);
     }
 
     pub trait WithPwm: WithPwmCommon {
@@ -409,6 +420,7 @@ macro_rules! hal {
             $(
                 impl WithPwmCommon for $TIM {
                     const CH_NUMBER: u8 = $cnum;
+                    const COMP_CH_NUMBER: u8 = $cnum;
 
                     #[inline(always)]
                     fn read_cc_value(c: u8) -> u32 {
@@ -448,7 +460,7 @@ macro_rules! hal {
                     #[inline(always)]
                     fn set_nchannel_polarity(c: u8, p: Polarity) {
                         let tim = unsafe { &*<$TIM>::ptr() };
-                        if c < Self::CH_NUMBER {
+                        if c < Self::COMP_CH_NUMBER {
                             unsafe { bb::write(&tim.ccer, c*4 + 3, p == Polarity::ActiveLow); }
                         }
                     }
@@ -459,8 +471,28 @@ macro_rules! hal {
                         fn enable_nchannel(c: u8, b: bool) {
                             let $aoe = ();
                             let tim = unsafe { &*<$TIM>::ptr() };
-                            if c < Self::CH_NUMBER {
+                            if c < Self::COMP_CH_NUMBER {
                                 unsafe { bb::write(&tim.ccer, c*4 + 2, b); }
+                            }
+                        }
+                        fn set_dtg_value(value: u8) {
+                            let tim = unsafe { &*<$TIM>::ptr() };
+                            tim.bdtr.modify(|_,w| unsafe { w.dtg().bits(value) });
+                        }
+                        fn read_dtg_value() -> u8 {
+                            let tim = unsafe { &*<$TIM>::ptr() };
+                            tim.bdtr.read().dtg().bits()
+                        }
+                        fn idle_state(c: u8, comp: bool, s: IdleState) {
+                            let tim = unsafe { &*<$TIM>::ptr() };
+                            if !comp {
+                                if c < Self::CH_NUMBER {
+                                    unsafe { bb::write(&tim.cr2, c*2 + 8, s == IdleState::Set); }
+                                }
+                            } else {
+                                if c < Self::COMP_CH_NUMBER {
+                                    unsafe { bb::write(&tim.cr2, c*2 + 9, s == IdleState::Set); }
+                                }
                             }
                         }
                     }
