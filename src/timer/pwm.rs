@@ -34,7 +34,8 @@
 //! and change their polarity with `set_polarity` and `set_complementary_polarity`.
 
 use super::{
-    compute_arr_presc, Advanced, Channel, FTimer, Instance, Ocm, Polarity, Timer, WithPwm, IdleState,
+    compute_arr_presc, Advanced, Channel, FTimer, IdleState, Instance, Ocm, Polarity, Timer,
+    WithPwm,
 };
 use crate::rcc::Clocks;
 use core::marker::PhantomData;
@@ -438,15 +439,29 @@ where
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
     }
 
+    /// Set number DTS ticks during that complementary pin is `dead`
     #[inline]
     pub fn set_dead_time(&mut self, dts_ticks: u16) {
         let bits = pack_ceil_dead_time(dts_ticks);
         TIM::set_dtg_value(bits);
     }
 
+    /// Set raw dead time (DTG) bits
+    #[inline]
+    pub fn set_dead_time_bits(&mut self, bits: u8) {
+        TIM::set_dtg_value(bits);
+    }
+
+    /// Return dead time for complementary pins in DTS ticks
     #[inline]
     pub fn get_dead_time(&self) -> u16 {
         unpack_dead_time(TIM::read_dtg_value())
+    }
+
+    /// Get raw dead time (DTG) bits
+    #[inline]
+    pub fn get_dead_time_bits(&self) -> u8 {
+        TIM::read_dtg_value()
     }
 
     #[inline]
@@ -626,15 +641,29 @@ where
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
     }
 
+    /// Set number DTS ticks during that complementary pin is `dead`
     #[inline]
     pub fn set_dead_time(&mut self, dts_ticks: u16) {
         let bits = pack_ceil_dead_time(dts_ticks);
         TIM::set_dtg_value(bits);
     }
 
+    /// Set raw dead time (DTG) bits
+    #[inline]
+    pub fn set_dead_time_bits(&mut self, bits: u8) {
+        TIM::set_dtg_value(bits);
+    }
+
+    /// Return dead time for complementary pins in DTS ticks
     #[inline]
     pub fn get_dead_time(&self) -> u16 {
         unpack_dead_time(TIM::read_dtg_value())
+    }
+
+    /// Get raw dead time (DTG) bits
+    #[inline]
+    pub fn get_dead_time_bits(&self) -> u8 {
+        TIM::read_dtg_value()
     }
 
     #[inline]

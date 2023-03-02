@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Bump `synopsys-usb-otg` to 0.3.2 (bug fix)
  - Update readme, clippy fixes
- - Added possibility to pass complementary pins to `Pwm` and change pwm channel polarity [#571]
+ - Added possibility to pass complementary pins to `Pwm` and change pwm channel polarity [#571],
+   set dead time and idle state for advanced timers [#578]
 
 ### Added
 
@@ -27,6 +28,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#571]: https://github.com/stm32-rs/stm32f4xx-hal/pull/571
 [#572]: https://github.com/stm32-rs/stm32f4xx-hal/pull/572
 [#577]: https://github.com/stm32-rs/stm32f4xx-hal/pull/577
+[#578]: https://github.com/stm32-rs/stm32f4xx-hal/pull/578
+
 
 ## [v0.14.0] - 2022-12-12
 

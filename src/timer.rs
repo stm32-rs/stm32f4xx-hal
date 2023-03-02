@@ -246,7 +246,7 @@ pub type CCR4<T> = CCR<T, 3>;
 pub struct DMAR<T>(T);
 
 mod sealed {
-    use super::{Channel, Event, Ocm, Polarity, IdleState};
+    use super::{Channel, Event, IdleState, Ocm, Polarity};
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
@@ -485,11 +485,14 @@ macro_rules! hal {
                         }
                         fn idle_state(c: u8, comp: bool, s: IdleState) {
                             let tim = unsafe { &*<$TIM>::ptr() };
-                            if !comp && (c < Self::CH_NUMBER) {
-                                unsafe { bb::write(&tim.cr2, c*2 + 8, s == IdleState::Set); }
-                            }
-                            if comp && (c < Self::COMP_CH_NUMBER) {
-                                unsafe { bb::write(&tim.cr2, c*2 + 9, s == IdleState::Set); }
+                            if !comp {
+                                if c < Self::CH_NUMBER {
+                                    unsafe { bb::write(&tim.cr2, c*2 + 8, s == IdleState::Set); }
+                                }
+                            } else {
+                                if c < Self::COMP_CH_NUMBER {
+                                    unsafe { bb::write(&tim.cr2, c*2 + 9, s == IdleState::Set); }
+                                }
                             }
                         }
                     }
