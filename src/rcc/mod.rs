@@ -319,29 +319,9 @@ impl RccExt for RCC {
                     feature = "stm32f446",
                 ))]
                 i2s_apb2_clk: None,
-                #[cfg(any(
-                    feature = "stm32f413",
-                    feature = "stm32f423",
-                    feature = "stm32f427",
-                    feature = "stm32f429",
-                    feature = "stm32f437",
-                    feature = "stm32f439",
-                    feature = "stm32f446",
-                    feature = "stm32f469",
-                    feature = "stm32f479",
-                ))]
+                #[cfg(feature = "sai")]
                 sai1_clk: None,
-                #[cfg(any(
-                    feature = "stm32f413",
-                    feature = "stm32f423",
-                    feature = "stm32f427",
-                    feature = "stm32f429",
-                    feature = "stm32f437",
-                    feature = "stm32f439",
-                    feature = "stm32f446",
-                    feature = "stm32f469",
-                    feature = "stm32f479",
-                ))]
+                #[cfg(feature = "sai")]
                 sai2_clk: None,
             },
         }
@@ -377,7 +357,7 @@ pub const HSI: u32 = 16_000_000; // Hz
 /// Minimum system clock frequency
 pub const SYSCLK_MIN: u32 = 24_000_000;
 
-#[cfg(any(feature = "stm32f446"))]
+#[cfg(feature = "stm32f446")]
 /// Minimum system clock frequency
 pub const SYSCLK_MIN: u32 = 12_500_000;
 
@@ -481,29 +461,9 @@ pub struct CFGR {
         feature = "stm32f446",
     ))]
     i2s_apb2_clk: Option<u32>,
-    #[cfg(any(
-        feature = "stm32f413",
-        feature = "stm32f423",
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-        feature = "stm32f446",
-        feature = "stm32f469",
-        feature = "stm32f479",
-    ))]
+    #[cfg(feature = "sai")]
     sai1_clk: Option<u32>,
-    #[cfg(any(
-        feature = "stm32f413",
-        feature = "stm32f423",
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-        feature = "stm32f446",
-        feature = "stm32f469",
-        feature = "stm32f479",
-    ))]
+    #[cfg(feature = "sai")]
     sai2_clk: Option<u32>,
 }
 
@@ -641,14 +601,14 @@ impl CFGR {
     }
 
     /// Selects a SAI1 clock frequency and enables the SAI1 clock.
-    #[cfg(any(feature = "stm32f446",))]
+    #[cfg(feature = "stm32f446")]
     pub fn sai1_clk(mut self, freq: Hertz) -> Self {
         self.sai1_clk = Some(freq.raw());
         self
     }
 
     /// Selects a SAI2 clock frequency and enables the SAI2 clock.
-    #[cfg(any(feature = "stm32f446",))]
+    #[cfg(feature = "stm32f446")]
     pub fn sai2_clk(mut self, freq: Hertz) -> Self {
         self.sai2_clk = Some(freq.raw());
         self
@@ -828,17 +788,7 @@ impl CFGR {
         }
     }
 
-    #[cfg(any(
-        feature = "stm32f413",
-        feature = "stm32f423",
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-        feature = "stm32f446",
-        feature = "stm32f469",
-        feature = "stm32f479",
-    ))]
+    #[cfg(feature = "sai")]
     fn sai_clocks(&self) -> SaiClocks {
         let sai1_ext = self.sai1_clk.is_some() && self.sai1_clk == self.i2s_ckin;
         #[cfg(not(feature = "stm32f446"))]
@@ -1100,17 +1050,7 @@ impl CFGR {
 
         // Select I2S and SAI clocks
         plls.i2s.config_clocksel();
-        #[cfg(any(
-            feature = "stm32f413",
-            feature = "stm32f423",
-            feature = "stm32f427",
-            feature = "stm32f429",
-            feature = "stm32f437",
-            feature = "stm32f439",
-            feature = "stm32f446",
-            feature = "stm32f469",
-            feature = "stm32f479",
-        ))]
+        #[cfg(feature = "sai")]
         plls.sai.config_clocksel();
 
         // Set scaling factors
@@ -1227,17 +1167,7 @@ struct PllSetup {
 
     i2s: RealI2sClocks,
 
-    #[cfg(any(
-        feature = "stm32f413",
-        feature = "stm32f423",
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-        feature = "stm32f446",
-        feature = "stm32f469",
-        feature = "stm32f479",
-    ))]
+    #[cfg(feature = "sai")]
     sai: RealSaiClocks,
 }
 
@@ -1386,17 +1316,7 @@ impl RealI2sClocks {
     }
 }
 
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
+#[cfg(feature = "sai")]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct SaiClocks {
@@ -1409,17 +1329,7 @@ struct SaiClocks {
     pll_sai_clk: Option<u32>,
 }
 
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
+#[cfg(feature = "sai")]
 impl SaiClocks {
     fn real(&self, pll_sai_clk: Option<u32>, i2s_ckin: Option<u32>) -> RealSaiClocks {
         RealSaiClocks {
@@ -1435,17 +1345,7 @@ impl SaiClocks {
     }
 }
 
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
+#[cfg(feature = "sai")]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealSaiClocks {
@@ -1456,29 +1356,19 @@ struct RealSaiClocks {
     sai2_clk: Option<u32>,
 }
 
-#[cfg(any(
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
+#[cfg(feature = "sai")]
 impl RealSaiClocks {
     fn config_clocksel(&self) {
         let rcc = unsafe { &*RCC::ptr() };
 
         // Configure SAI clocks.
-        #[cfg(not(feature = "stm32f446",))]
+        #[cfg(not(feature = "stm32f446"))]
         if self.sai1_ext {
             rcc.dckcfgr.modify(|_, w| w.sai1asrc().i2s_ckin());
         } else {
             rcc.dckcfgr.modify(|_, w| w.sai1asrc().pllsai());
         }
-        #[cfg(not(feature = "stm32f446",))]
+        #[cfg(not(feature = "stm32f446"))]
         if self.sai2_ext {
             rcc.dckcfgr.modify(|_, w| w.sai1bsrc().i2s_ckin());
         } else {
