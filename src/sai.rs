@@ -17,13 +17,13 @@
 //! let rcc = ctx.device.RCC.constrain();
 //! let clocks = rcc
 //!     .cfgr
-//!     .use_hse(8.mhz())
-//!     .saia_clk(172.mhz())
-//!     .saib_clk(172.mhz())
+//!     .use_hse(8.MHz())
+//!     .saia_clk(172.MHz())
+//!     .saib_clk(172.MHz())
 //!     .freeze();
 //! // Test that the SAI clock is suitable for 48000KHz audio.
-//! assert!(clocks.saia_clk().unwrap() == 172.mhz().into());
-//! assert!(clocks.saib_clk().unwrap() == 172.mhz().into());
+//! assert!(clocks.saia_clk().unwrap() == 172.MHz().into());
+//! assert!(clocks.saib_clk().unwrap() == 172.MHz().into());
 //!
 //! let gpioe = ctx.device.GPIOE.split();
 //! // SAIB is made synchronous to A.
@@ -36,16 +36,16 @@
 //! };
 //! let tx = saia.master_tx(
 //!     (
-//!         gpioe.pe2.into_alternate_af6(),
-//!         gpioe.pe4.into_alternate_af6(),
-//!         gpioe.pe5.into_alternate_af6(),
-//!         gpioe.pe6.into_alternate_af6(),
+//!         gpioe.pe2.into_alternate(),
+//!         gpioe.pe4.into_alternate(),
+//!         gpioe.pe5.into_alternate(),
+//!         gpioe.pe6.into_alternate(),
 //!     ),
 //!     protocol,
-//!     48000.hz(),
+//!     48.kHz(),
 //!     clocks,
 //! );
-//! let rx = saib.slave_rx(gpioe.pe3.into_alternate_af6(), protocol);
+//! let rx = saib.slave_rx(gpioe.pe3.into_alternate(), protocol);
 //!
 //! let mut duplex = Duplex::new(rx, tx);
 //! duplex.start();
@@ -63,11 +63,11 @@
 //! let rcc = ctx.device.RCC.constrain();
 //! let clocks = rcc
 //!     .cfgr
-//!     .use_hse(8.mhz())
-//!     .saia_clk(172.mhz())
+//!     .use_hse(8.MHz())
+//!     .saia_clk(172.MHz())
 //!     .freeze();
 //! // Test that the SAI clock is suitable for 48000KHz audio.
-//! assert!(clocks.saia_clk().unwrap() == 172.mhz().into());
+//! assert!(clocks.saia_clk().unwrap() == 172.MHz());
 //!
 //! let gpioe = ctx.device.GPIOE.split();
 //! let (saia, _) = ctx.device.SAI.split();
@@ -80,13 +80,13 @@
 //! };
 //! let mut tx = saia.master_tx(
 //!     (
-//!         gpioe.pe2.into_alternate_af6(),
-//!         gpioe.pe4.into_alternate_af6(),
-//!         gpioe.pe5.into_alternate_af6(),
-//!         gpioe.pe6.into_alternate_af6(),
+//!         gpioe.pe2.into_alternate(),
+//!         gpioe.pe4.into_alternate(),
+//!         gpioe.pe5.into_alternate(),
+//!         gpioe.pe6.into_alternate(),
 //!     ),
 //!     protocol,
-//!     48000.hz(),
+//!     48.kHz(),
 //!     clocks,
 //! );
 //! tx.start();
@@ -106,16 +106,13 @@
 use core::marker::PhantomData;
 use core::ops::Deref;
 
-use crate::gpio::gpiod::PD6;
-use crate::gpio::gpioe::{PE2, PE3, PE4, PE5, PE6};
-use crate::gpio::gpiof::{PF6, PF7, PF8, PF9};
-use crate::gpio::{Alternate, AF6};
+use crate::gpio::{self, AF6, NoPin};
 use crate::rcc::Clocks;
-use crate::stm32::RCC;
+use crate::pac::RCC;
 #[cfg(not(feature = "stm32f446"))]
-use crate::stm32::{sai, SAI};
+use crate::pac::{sai, SAI};
 #[cfg(feature = "stm32f446")]
-use crate::stm32::{SAI1, SAI2};
+use crate::pac::{SAI1, SAI2};
 use crate::time::Hertz;
 
 /// SAI A sub-block.
@@ -175,7 +172,7 @@ where
 }
 
 /// A filler type for when the MCK pin is unnecessary
-pub struct NoMck;
+pub type NoMck = NoPin;
 
 macro_rules! pins {
     ($($CH:ty: MCK: [$($MCK:ty),*] FS: [$($FS:ty),*] SCK: [$($SCK:ty),*] SD: [$($SD:ty),*])+) => {
@@ -206,32 +203,32 @@ pins! {
     SAI1A:
         MCK: [
             NoMck,
-            PE2<Alternate<AF6>>
+            gpio::PE2<AF6>
         ]
         FS: [
-            PE4<Alternate<AF6>>
+            gpio::PE4<AF6>
         ]
         SCK: [
-            PE5<Alternate<AF6>>
+            gpio::PE5<AF6>
         ]
         SD: [
-            PD6<Alternate<AF6>>,
-            PE6<Alternate<AF6>>
+            gpio::PD6<AF6>,
+            gpio::PE6<AF6>
         ]
     SAI1B:
         MCK: [
             NoMck,
-            PF7<Alternate<AF6>>
+            gpio::PF7<AF6>
         ]
         FS: [
-            PF9<Alternate<AF6>>
+            gpio::PF9<AF6>
         ]
         SCK: [
-            PF8<Alternate<AF6>>
+            gpio::PF8<AF6>
         ]
         SD: [
-            PE3<Alternate<AF6>>,
-            PF6<Alternate<AF6>>
+            gpio::PE3<AF6>,
+            gpio::PF6<AF6>
         ]
 }
 
@@ -336,7 +333,7 @@ impl Deref for SAIA<SAI> {
     type Target = sai::CH;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { &(*SAI::ptr()).cha }
+        unsafe { &(*SAI::ptr()).cha() }
     }
 }
 
@@ -344,7 +341,7 @@ impl Deref for SAIB<SAI> {
     type Target = sai::CH;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { &(*SAI::ptr()).chb }
+        unsafe { &(*SAI::ptr()).chb() }
     }
 }
 
@@ -400,17 +397,17 @@ where
     }
 
     fn set_clock_gen(&self, sample_freq: Hertz, clocks: Clocks) {
-        let mclk = sample_freq.0 * 256;
+        let mclk = sample_freq.raw() * 256;
         // TODO: Use saib_clock for SAIB.
-        let sai_clock = clocks.saia_clk().expect("no SAI clock available").0;
+        let sai_clock = clocks.saia_clk().expect("no SAI clock available").raw();
         if (sai_clock + (mclk >> 1)) / mclk == 1 {
             // TODO: Typo in stm32f4
-            self.cr1.modify(|_, w| unsafe { w.mcjdiv().bits(0) });
+            self.cr1.modify(|_, w| unsafe { w.mckdiv().bits(0) });
         } else {
             let best_divider = (sai_clock + mclk) / (mclk << 1);
             assert!(best_divider < 16);
             self.cr1
-                .modify(|_, w| unsafe { w.mcjdiv().bits(best_divider as u8) });
+                .modify(|_, w| unsafe { w.mckdiv().bits(best_divider as u8) });
         }
     }
 
@@ -503,7 +500,7 @@ where
     }
 
     fn start(&self) {
-        self.clrfr.modify(|_, w| {
+        self.clrfr.write(|w| {
             w.clfsdet().set_bit();
             w.cafsdet().set_bit();
             w.ccnrdy().set_bit();

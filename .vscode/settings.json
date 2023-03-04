@@ -3,6 +3,6 @@
   "rust-analyzer.check.targets": "thumbv7em-none-eabihf",
   "rust-analyzer.cargo.features": [
     "rtic",
-    "stm32f411"
+    "stm32f429"
   ],
 }
