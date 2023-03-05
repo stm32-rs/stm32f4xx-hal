@@ -106,13 +106,15 @@
 use core::marker::PhantomData;
 use core::ops::Deref;
 
-use crate::gpio::{self, AF6, NoPin};
-use crate::rcc::Clocks;
+use crate::gpio::{self, NoPin, AF6};
 use crate::pac::RCC;
-#[cfg(not(feature = "stm32f446"))]
-use crate::pac::{sai, SAI};
 #[cfg(feature = "stm32f446")]
-use crate::pac::{SAI1, SAI2};
+use crate::pac::SAI2;
+#[cfg(not(any(feature = "stm32f427", feature = "stm32f437", feature = "stm32f446")))]
+use crate::pac::{sai, SAI as SAI1};
+#[cfg(any(feature = "stm32f427", feature = "stm32f437", feature = "stm32f446"))]
+use crate::pac::{sai1 as sai, SAI1};
+use crate::rcc;
 use crate::time::Hertz;
 
 /// SAI A sub-block.
@@ -124,19 +126,6 @@ pub struct SAIA<SAIX> {
 pub struct SAIB<SAIX> {
     _sai: PhantomData<SAIX>,
 }
-
-#[cfg(not(feature = "stm32f446"))]
-pub type SAI1A = SAIA<SAI>;
-#[cfg(not(feature = "stm32f446"))]
-pub type SAI1B = SAIB<SAI>;
-#[cfg(feature = "stm32f446")]
-pub type SAI1A = SAIA<SAI1>;
-#[cfg(feature = "stm32f446")]
-pub type SAI1B = SAIB<SAI1>;
-#[cfg(feature = "stm32f446")]
-pub type SAI2A = SAIA<SAI2>;
-#[cfg(feature = "stm32f446")]
-pub type SAI2B = SAIB<SAI2>;
 
 /// Trait for master clock pins.
 pub trait PinMck<Ch> {}
@@ -329,7 +318,57 @@ pub struct Receive;
 /// SAI sub-block which has been configured as a transmitter.
 pub struct Transmit;
 
-impl Deref for SAIA<SAI> {
+mod sealed {
+    pub trait New {
+        fn _new() -> Self;
+    }
+}
+use sealed::New;
+
+pub trait Instance:
+    crate::Sealed + Deref<Target = sai::RegisterBlock> + rcc::Enable + rcc::Reset + rcc::BusClock
+{
+    type A: New;
+    type B: New;
+
+    #[doc(hidden)]
+    fn ptr() -> *const sai::RegisterBlock;
+}
+
+impl<T> New for SAIA<T> {
+    fn _new() -> Self {
+        Self { _sai: PhantomData }
+    }
+}
+
+impl<T> New for SAIB<T> {
+    fn _new() -> Self {
+        Self { _sai: PhantomData }
+    }
+}
+
+macro_rules! sai_impl {
+    ($SAI:ty, $SAIA:ident, $SAIB:ident) => {
+        pub type $SAIA = SAIA<$SAI>;
+        pub type $SAIB = SAIB<$SAI>;
+        impl Instance for $SAI {
+            type A = $SAIA;
+            type B = $SAIB;
+            fn ptr() -> *const sai::RegisterBlock {
+                <$SAI>::ptr()
+            }
+        }
+    };
+}
+
+sai_impl!(SAI1, SAI1A, SAI1B);
+#[cfg(feature = "stm32f446")]
+sai_impl!(SAI2, SAI2A, SAI2B);
+
+impl<SAI> Deref for SAIA<SAI>
+where
+    SAI: Instance,
+{
     type Target = sai::CH;
 
     fn deref(&self) -> &Self::Target {
@@ -337,7 +376,10 @@ impl Deref for SAIA<SAI> {
     }
 }
 
-impl Deref for SAIB<SAI> {
+impl<SAI> Deref for SAIB<SAI>
+where
+    SAI: Instance,
+{
     type Target = sai::CH;
 
     fn deref(&self) -> &Self::Target {
@@ -353,7 +395,7 @@ pub trait Channel {
 
     fn is_slave(&self) -> bool;
 
-    fn set_clock_gen(&self, sample_freq: Hertz, clocks: Clocks);
+    fn set_clock_gen(&self, sample_freq: Hertz, clocks: &rcc::Clocks);
     fn set_protocol(&self, protocol: Protocol, tx: bool);
 
     fn start(&self);
@@ -396,12 +438,11 @@ where
         mode.is_slave_tx() || mode.is_slave_rx()
     }
 
-    fn set_clock_gen(&self, sample_freq: Hertz, clocks: Clocks) {
+    fn set_clock_gen(&self, sample_freq: Hertz, clocks: &rcc::Clocks) {
         let mclk = sample_freq.raw() * 256;
         // TODO: Use saib_clock for SAIB.
         let sai_clock = clocks.saia_clk().expect("no SAI clock available").raw();
         if (sai_clock + (mclk >> 1)) / mclk == 1 {
-            // TODO: Typo in stm32f4
             self.cr1.modify(|_, w| unsafe { w.mckdiv().bits(0) });
         } else {
             let best_divider = (sai_clock + mclk) / (mclk << 1);
@@ -546,13 +587,16 @@ pub struct SubBlock<Channel, Config, Direction> {
 ///
 /// For the two sub-blocks of a single SAI instance, only specific combinations of modes are valid.
 /// This trait has one method for each such combination.
-pub trait SAIExt {
+pub trait SAIExt
+where
+    Self: Instance,
+{
     /// Splits the SAI instance into two asynchronous sub-blocks.
     fn split(
         self,
     ) -> (
-        SubBlock<SAIA<Self>, Asynchronous, NoDir>,
-        SubBlock<SAIB<Self>, Asynchronous, NoDir>,
+        SubBlock<Self::A, Asynchronous, NoDir>,
+        SubBlock<Self::B, Asynchronous, NoDir>,
     )
     where
         Self: Sized;
@@ -562,8 +606,8 @@ pub trait SAIExt {
     fn split_sync_a(
         self,
     ) -> (
-        SubBlock<SAIA<Self>, Synchronous, NoDir>,
-        SubBlock<SAIB<Self>, Asynchronous, NoDir>,
+        SubBlock<Self::A, Synchronous, NoDir>,
+        SubBlock<Self::B, Asynchronous, NoDir>,
     )
     where
         Self: Sized;
@@ -573,8 +617,8 @@ pub trait SAIExt {
     fn split_sync_b(
         self,
     ) -> (
-        SubBlock<SAIA<Self>, Asynchronous, NoDir>,
-        SubBlock<SAIB<Self>, Synchronous, NoDir>,
+        SubBlock<Self::A, Asynchronous, NoDir>,
+        SubBlock<Self::B, Synchronous, NoDir>,
     )
     where
         Self: Sized;
@@ -583,30 +627,32 @@ pub trait SAIExt {
     fn uninit<ConfigA, ConfigB>(a: SubBlock<SAIA, ConfigA>, b: SubBlock<SAIB, ConfigB>) -> Self
     where
         Self: Sized;*/
-
-    /// Enables and resets the SAI instance.
-    fn reset(&mut self);
 }
 
-impl SAIExt for SAI {
+impl<SAI> SAIExt for SAI
+where
+    SAI: Instance,
+{
     fn split(
-        mut self,
+        self,
     ) -> (
-        SubBlock<SAI1A, Asynchronous, NoDir>,
-        SubBlock<SAI1B, Asynchronous, NoDir>,
+        SubBlock<SAI::A, Asynchronous, NoDir>,
+        SubBlock<SAI::B, Asynchronous, NoDir>,
     )
     where
         Self: Sized,
     {
-        self.reset();
+        let rcc = unsafe { &*RCC::ptr() };
+        SAI::enable(rcc);
+        SAI::reset(rcc);
         (
             SubBlock {
-                channel: SAIA { _sai: PhantomData },
+                channel: SAI::A::_new(),
                 config: Asynchronous,
                 direction: NoDir,
             },
             SubBlock {
-                channel: SAIB { _sai: PhantomData },
+                channel: SAI::B::_new(),
                 config: Asynchronous,
                 direction: NoDir,
             },
@@ -614,23 +660,25 @@ impl SAIExt for SAI {
     }
 
     fn split_sync_a(
-        mut self,
+        self,
     ) -> (
-        SubBlock<SAI1A, Synchronous, NoDir>,
-        SubBlock<SAI1B, Asynchronous, NoDir>,
+        SubBlock<SAI::A, Synchronous, NoDir>,
+        SubBlock<SAI::B, Asynchronous, NoDir>,
     )
     where
         Self: Sized,
     {
-        self.reset();
+        let rcc = unsafe { &*RCC::ptr() };
+        SAI::enable(rcc);
+        SAI::reset(rcc);
         (
             SubBlock {
-                channel: SAIA { _sai: PhantomData },
+                channel: SAI::A::_new(),
                 config: Synchronous,
                 direction: NoDir,
             },
             SubBlock {
-                channel: SAIB { _sai: PhantomData },
+                channel: SAI::B::_new(),
                 config: Asynchronous,
                 direction: NoDir,
             },
@@ -638,23 +686,25 @@ impl SAIExt for SAI {
     }
 
     fn split_sync_b(
-        mut self,
+        self,
     ) -> (
-        SubBlock<SAI1A, Asynchronous, NoDir>,
-        SubBlock<SAI1B, Synchronous, NoDir>,
+        SubBlock<SAI::A, Asynchronous, NoDir>,
+        SubBlock<SAI::B, Synchronous, NoDir>,
     )
     where
         Self: Sized,
     {
-        self.reset();
+        let rcc = unsafe { &*RCC::ptr() };
+        SAI::enable(rcc);
+        SAI::reset(rcc);
         (
             SubBlock {
-                channel: SAIA { _sai: PhantomData },
+                channel: SAI::A::_new(),
                 config: Asynchronous,
                 direction: NoDir,
             },
             SubBlock {
-                channel: SAIB { _sai: PhantomData },
+                channel: SAI::B::_new(),
                 config: Synchronous,
                 direction: NoDir,
             },
@@ -664,13 +714,6 @@ impl SAIExt for SAI {
     /*fn uninit<ConfigA, ConfigB>(a: SubBlock<SAIA, ConfigA>, b: SubBlock<SAIB, ConfigB>) -> Self {
         // TODO
     }*/
-
-    fn reset(&mut self) {
-        let rcc = unsafe { &*RCC::ptr() };
-        rcc.apb2enr.modify(|_, w| w.sai1en().set_bit());
-        rcc.apb2rstr.modify(|_, w| w.sai1rst().set_bit());
-        rcc.apb2rstr.modify(|_, w| w.sai1rst().clear_bit());
-    }
 }
 
 impl<Ch> SubBlock<Ch, Asynchronous, NoDir>
@@ -683,7 +726,7 @@ where
         pins: Pins,
         protocol: Protocol,
         sample_freq: F,
-        clocks: Clocks,
+        clocks: &rcc::Clocks,
     ) -> SubBlock<Ch, AsyncMaster<Pins>, Receive>
     where
         Pins: MasterPins<Ch>,
@@ -706,7 +749,7 @@ where
         pins: Pins,
         protocol: Protocol,
         sample_freq: F,
-        clocks: Clocks,
+        clocks: &rcc::Clocks,
     ) -> SubBlock<Ch, AsyncMaster<Pins>, Transmit>
     where
         Pins: MasterPins<Ch>,
