@@ -577,7 +577,7 @@ where
 }
 
 /// Wrapper for a single channel of the SAI and its configuration.
-pub struct SubBlock<Channel, Config, Direction> {
+pub struct SubBlock<Channel, Config, Direction = NoDir> {
     channel: Channel,
     config: Config,
     direction: Direction,
@@ -595,8 +595,8 @@ where
     fn split(
         self,
     ) -> (
-        SubBlock<Self::A, Asynchronous, NoDir>,
-        SubBlock<Self::B, Asynchronous, NoDir>,
+        SubBlock<Self::A, Asynchronous>,
+        SubBlock<Self::B, Asynchronous>,
     )
     where
         Self: Sized;
@@ -606,8 +606,8 @@ where
     fn split_sync_a(
         self,
     ) -> (
-        SubBlock<Self::A, Synchronous, NoDir>,
-        SubBlock<Self::B, Asynchronous, NoDir>,
+        SubBlock<Self::A, Synchronous>,
+        SubBlock<Self::B, Asynchronous>,
     )
     where
         Self: Sized;
@@ -617,8 +617,8 @@ where
     fn split_sync_b(
         self,
     ) -> (
-        SubBlock<Self::A, Asynchronous, NoDir>,
-        SubBlock<Self::B, Synchronous, NoDir>,
+        SubBlock<Self::A, Asynchronous>,
+        SubBlock<Self::B, Synchronous>,
     )
     where
         Self: Sized;
@@ -636,8 +636,8 @@ where
     fn split(
         self,
     ) -> (
-        SubBlock<SAI::A, Asynchronous, NoDir>,
-        SubBlock<SAI::B, Asynchronous, NoDir>,
+        SubBlock<SAI::A, Asynchronous>,
+        SubBlock<SAI::B, Asynchronous>,
     )
     where
         Self: Sized,
@@ -662,8 +662,8 @@ where
     fn split_sync_a(
         self,
     ) -> (
-        SubBlock<SAI::A, Synchronous, NoDir>,
-        SubBlock<SAI::B, Asynchronous, NoDir>,
+        SubBlock<SAI::A, Synchronous>,
+        SubBlock<SAI::B, Asynchronous>,
     )
     where
         Self: Sized,
@@ -688,8 +688,8 @@ where
     fn split_sync_b(
         self,
     ) -> (
-        SubBlock<SAI::A, Asynchronous, NoDir>,
-        SubBlock<SAI::B, Synchronous, NoDir>,
+        SubBlock<SAI::A, Asynchronous>,
+        SubBlock<SAI::B, Synchronous>,
     )
     where
         Self: Sized,
@@ -716,7 +716,7 @@ where
     }*/
 }
 
-impl<Ch> SubBlock<Ch, Asynchronous, NoDir>
+impl<Ch> SubBlock<Ch, Asynchronous>
 where
     Ch: Channel,
 {
@@ -743,7 +743,7 @@ where
         }
     }
 
-    /// Configures the channel as a master and a receiver.
+    /// Configures the channel as a master and a transmitter.
     pub fn master_tx<Pins, F>(
         self,
         pins: Pins,
@@ -785,7 +785,7 @@ where
         }
     }
 
-    /// Configures the channel as a master and a receiver.
+    /// Configures the channel as a master and a transmitter.
     pub fn slave_tx<Pins>(
         self,
         pins: Pins,
@@ -805,7 +805,7 @@ where
     }
 }
 
-impl<Ch> SubBlock<Ch, Synchronous, NoDir>
+impl<Ch> SubBlock<Ch, Synchronous>
 where
     Ch: Channel,
 {
@@ -824,7 +824,7 @@ where
         }
     }
 
-    /// Configures the channel as a master and a receiver.
+    /// Configures the channel as a slave and a transmitter.
     pub fn slave_tx<SD>(self, sd: SD, protocol: Protocol) -> SubBlock<Ch, SyncSlave<SD>, Transmit>
     where
         SD: PinSd<Ch>,
