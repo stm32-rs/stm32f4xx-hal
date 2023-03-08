@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+ - Bump `nb` to 1.1
  - Bump `synopsys-usb-otg` to 0.3.2 (bug fix)
  - Update readme, clippy fixes
  - Added possibility to pass complementary pins to `Pwm` and change pwm channel polarity [#571],
