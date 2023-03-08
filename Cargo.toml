@@ -31,7 +31,7 @@ defmt = { version = "0.3.1", optional = true }
 bxcan = { version = "0.7", optional = true }
 cortex-m = "0.7.4"
 cortex-m-rt = "0.7.1"
-nb = "1"
+nb = "1.1"
 rand_core = "0.6.3"
 stm32f4 = "0.15.1"
 synopsys-usb-otg = { version = "0.3.2", features = ["cortex-m"], optional = true }
@@ -333,7 +333,7 @@ i2s = ["stm32_i2s_v12x"]
 
 fsmc_lcd = ["display-interface"]
 
-defmt = ["dep:defmt", "fugit/defmt"]
+defmt = ["dep:defmt", "fugit/defmt", "nb/defmt-0-3"]
 
 adc2 = []
 adc3 = []
