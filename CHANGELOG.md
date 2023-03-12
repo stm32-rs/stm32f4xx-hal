@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+ - `spi-dma` example pins speed
  - Fix alternate function pin definitions for FMPI2C1 [#572]
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
