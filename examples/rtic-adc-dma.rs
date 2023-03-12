@@ -77,8 +77,11 @@ mod app {
         adc.configure_channel(&voltage, Sequence::Two, SampleTime::Cycles_480);
         adc.enable_temperature_and_vref();
 
+        // These buffers need to be 'static to use safely with the DMA - we can't allow them to be dropped while the DMA is accessing them.
+        // The easiest way to satisfy that is to make them static, and the safest way to do that is with `cortex_m::singleton!`
         let first_buffer = cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap();
         let second_buffer = Some(cortex_m::singleton!(: [u16; 2] = [0; 2]).unwrap());
+        // Give the first buffer to the DMA. The second buffer is held in an Option in `local.buffer` until the transfer is complete
         let transfer = Transfer::init_peripheral_to_memory(dma.0, adc, first_buffer, None, config);
 
         polling::spawn_after(1.secs()).ok();
@@ -107,6 +110,8 @@ mod app {
     fn dma(cx: dma::Context) {
         let dma::Context { mut shared, local } = cx;
         let (buffer, sample_to_millivolts) = shared.transfer.lock(|transfer| {
+            // When the DMA completes it will return the buffer we gave it last time - we now store that as `buffer`
+            // We still have our other buffer waiting in `local.buffer`, so `take` that and give it to the `transfer`
             let (buffer, _) = transfer
                 .next_transfer(local.buffer.take().unwrap())
                 .unwrap();
@@ -115,9 +120,12 @@ mod app {
             (buffer, sample_to_millivolts)
         });
 
+        // Pull the ADC data out of the buffer that the DMA transfer gave us
         let raw_temp = buffer[0];
         let raw_volt = buffer[1];
 
+        // Now that we're finished with this buffer, put it back in `local.buffer` so it's ready for the next transfer
+        // If we don't do this before the next transfer, we'll get a panic
         *local.buffer = Some(buffer);
 
         let cal30 = VtempCal30::get().read() as f32;

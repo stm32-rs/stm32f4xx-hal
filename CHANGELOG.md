@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+ - Docs in `rtic-adc-dma` example [#532]
  - `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
  - `restore` for `ErasedPin` and `PartiallyErasedPin`
 
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Fix SDIO hardware flow control errata [#577]
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
+[#532]: https://github.com/stm32-rs/stm32f4xx-hal/pull/532
 [#571]: https://github.com/stm32-rs/stm32f4xx-hal/pull/571
 [#572]: https://github.com/stm32-rs/stm32f4xx-hal/pull/572
 [#577]: https://github.com/stm32-rs/stm32f4xx-hal/pull/577
