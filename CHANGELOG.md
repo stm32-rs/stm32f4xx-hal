@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+ - `spi-dma` example pins speed
  - Fix alternate function pin definitions for FMPI2C1 [#572]
  - Fix SDIO hardware flow control errata [#577]
 
