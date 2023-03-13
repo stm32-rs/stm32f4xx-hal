@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.15.0] - 2023-03-13
+
 ### Changed
 
  - Bump `nb` to 1.1
- - Bump `synopsys-usb-otg` to 0.3.2 (bug fix)
+ - Bump `synopsys-usb-otg` to 0.3.2 (bug fix) [#575]
  - Update readme, clippy fixes
  - Added possibility to pass complementary pins to `Pwm` and change pwm channel polarity [#571],
    set dead time and idle state for advanced timers [#578] [#581]
@@ -19,7 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Docs in `rtic-adc-dma` example [#532]
  - `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
- - `restore` for `ErasedPin` and `PartiallyErasedPin`
+ - `restore` for `ErasedPin` and `PartiallyErasedPin` [#563]
  - Added a public method to set SSI bit in SPI. [#543]
 
 ### Fixed
@@ -31,8 +33,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
 [#532]: https://github.com/stm32-rs/stm32f4xx-hal/pull/532
 [#543]: https://github.com/stm32-rs/stm32f4xx-hal/pull/543
+[#563]: https://github.com/stm32-rs/stm32f4xx-hal/pull/563
 [#571]: https://github.com/stm32-rs/stm32f4xx-hal/pull/571
 [#572]: https://github.com/stm32-rs/stm32f4xx-hal/pull/572
+[#575]: https://github.com/stm32-rs/stm32f4xx-hal/pull/575
 [#577]: https://github.com/stm32-rs/stm32f4xx-hal/pull/577
 [#578]: https://github.com/stm32-rs/stm32f4xx-hal/pull/578
 [#581]: https://github.com/stm32-rs/stm32f4xx-hal/pull/581
@@ -787,7 +791,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.15.0...HEAD
+[v0.15.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.14.0...v0.15.0
 [v0.14.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.2...v0.14.0
 [v0.13.2]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.1...v0.13.2
 [v0.13.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.0...v0.13.1
