@@ -416,6 +416,10 @@ name = "rtic-i2s-audio-in-out"
 required-features = ["stm32f411", "i2s", "rtic"]
 
 [[example]]
+name = "rtic-serial-dma-rx-idle"
+required-features = ["stm32f411", "rtic"]
+
+[[example]]
 name = "rtic-spi-slave-dma"
 required-features = ["stm32f411", "rtic"]
 

@@ -42,6 +42,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#617]: https://github.com/stm32-rs/stm32f4xx-hal/pull/617
 [#618]: https://github.com/stm32-rs/stm32f4xx-hal/pull/618
 [#623]: https://github.com/stm32-rs/stm32f4xx-hal/pull/623
+### Changed
+
+### Added
+
+ - Improve SPI::new* docs [#587]
+ - Implement `serial::RxISR` for `dma::Transfer<..., PERIPHERAL, ...>` where `PERIPHERAL: serial::RxISR`, add `rtic-serial-dma-rx-idle` example [#588]
+
+### Fixed
 
 ## [v0.15.0] - 2023-03-13
 
