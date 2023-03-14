@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Improve SPI::new* docs [#587]
+
 ## [v0.15.0] - 2023-03-13
 
 ### Changed
