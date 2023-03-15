@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
  - Improve SPI::new* docs [#587]
+ - Complete advanced pwm and dead time generator documentation [#584]
 
 ## [v0.15.0] - 2023-03-13
 
