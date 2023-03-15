@@ -236,6 +236,11 @@ pub trait SpiExt: Sized + Instance {
 }
 
 impl<SPI: Instance> SpiExt for SPI {
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master Normal mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     fn spi<SCK, MISO, MOSI>(
         self,
         pins: (SCK, MISO, MOSI),
@@ -248,6 +253,11 @@ impl<SPI: Instance> SpiExt for SPI {
     {
         Spi::new(self, pins, mode, freq, clocks)
     }
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master BIDI mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     fn spi_bidi<SCK, MISO, MOSI>(
         self,
         pins: (SCK, MISO, MOSI),
@@ -260,6 +270,11 @@ impl<SPI: Instance> SpiExt for SPI {
     {
         Spi::new_bidi(self, pins, mode, freq, clocks)
     }
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     fn spi_slave<SCK, MISO, MOSI>(
         self,
         pins: (SCK, MISO, MOSI),
@@ -272,6 +287,11 @@ impl<SPI: Instance> SpiExt for SPI {
     {
         Spi::new_slave(self, pins, mode, freq, clocks)
     }
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave BIDI mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     fn spi_bidi_slave<SCK, MISO, MOSI>(
         self,
         pins: (SCK, MISO, MOSI),
@@ -351,6 +371,11 @@ where
 }
 
 impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Master> {
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master Normal mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -377,6 +402,11 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Mast
 }
 
 impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Master> {
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master BIDI mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_bidi(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -403,6 +433,11 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Maste
 }
 
 impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Slave> {
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_slave(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -429,6 +464,11 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Slav
 }
 
 impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Slave> {
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave BIDI mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_bidi_slave(
         spi: SPI,
         mut pins: (SCK, MISO, MOSI),
@@ -605,6 +645,12 @@ impl<SPI: Instance, PINS, const BIDI: bool, W, OPERATION> Spi<SPI, PINS, BIDI, W
     #[inline]
     pub fn is_overrun(&self) -> bool {
         self.spi.sr.read().ovr().bit_is_set()
+    }
+
+    /// Set the slave select bit programmatically.
+    #[inline]
+    pub fn set_internal_nss(&mut self, value: bool) {
+        self.spi.cr1.modify(|_, w| w.ssi().bit(value));
     }
 }
 

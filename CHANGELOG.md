@@ -7,28 +7,41 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Improve SPI::new* docs [#587]
+
+## [v0.15.0] - 2023-03-13
+
 ### Changed
 
- - Bump `synopsys-usb-otg` to 0.3.2 (bug fix)
+ - Bump `nb` to 1.1
+ - Bump `synopsys-usb-otg` to 0.3.2 (bug fix) [#575]
  - Update readme, clippy fixes
  - Added possibility to pass complementary pins to `Pwm` and change pwm channel polarity [#571],
-   set dead time and idle state for advanced timers [#578]
+   set dead time and idle state for advanced timers [#578] [#581]
 
 ### Added
 
+ - Docs in `rtic-adc-dma` example [#532]
  - `OutPortX` (X = 2..8) and `OutPortArray` structures which can handle several pins at once [#426]
- - `restore` for `ErasedPin` and `PartiallyErasedPin`
+ - `restore` for `ErasedPin` and `PartiallyErasedPin` [#563]
+ - Added a public method to set SSI bit in SPI. [#543]
 
 ### Fixed
 
+ - `spi-dma` example pins speed
  - Fix alternate function pin definitions for FMPI2C1 [#572]
  - Fix SDIO hardware flow control errata [#577]
 
 [#426]: https://github.com/stm32-rs/stm32f4xx-hal/pull/426
+[#532]: https://github.com/stm32-rs/stm32f4xx-hal/pull/532
+[#543]: https://github.com/stm32-rs/stm32f4xx-hal/pull/543
+[#563]: https://github.com/stm32-rs/stm32f4xx-hal/pull/563
 [#571]: https://github.com/stm32-rs/stm32f4xx-hal/pull/571
 [#572]: https://github.com/stm32-rs/stm32f4xx-hal/pull/572
+[#575]: https://github.com/stm32-rs/stm32f4xx-hal/pull/575
 [#577]: https://github.com/stm32-rs/stm32f4xx-hal/pull/577
 [#578]: https://github.com/stm32-rs/stm32f4xx-hal/pull/578
+[#581]: https://github.com/stm32-rs/stm32f4xx-hal/pull/581
 
 
 ## [v0.14.0] - 2022-12-12
@@ -83,6 +96,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Added rtic-usb-cdc-echo example [#553]
  - Add possibility to clear a Serial `Rx` idle interrupt from a DMA `Transfer` [#556]
 
+- Serial Tx, Rx containing pins [#514] [#515] [#540]
+- Implementation of From trait for Pin-to-PartiallyErasedPin [#507]
+- Implementation of From trait for Pin-to-ErasedPin [#507]
+- Implementation of From trait for PartiallyErasedPin-to-ErasedPin [#507]
+- `SysMonoTimerExt` helper trait, `Pwm::(get/set)_duty_time` [#497]
+- example of using i2s in out with rtic and interrupt.
+- example of using USB CDC with interrupts.
+- Added non-blocking I2C based on DMA [#534]
+- Added Transactional I2C API [#542]
 
 [#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
@@ -771,7 +793,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.15.0...HEAD
+[v0.15.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.14.0...v0.15.0
 [v0.14.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.2...v0.14.0
 [v0.13.2]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.1...v0.13.2
 [v0.13.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.0...v0.13.1

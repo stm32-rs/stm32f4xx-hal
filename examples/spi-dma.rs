@@ -11,6 +11,7 @@ use embedded_hal::spi::{Mode, Phase, Polarity};
 use stm32f4xx_hal::pac::interrupt;
 use stm32f4xx_hal::{
     dma::{config, traits::StreamISR, MemoryToPeripheral, Stream4, StreamsTuple, Transfer},
+    gpio::Speed,
     pac,
     prelude::*,
     spi::*,
@@ -39,8 +40,15 @@ fn main() -> ! {
         let stream = steams.4;
 
         let gpiob = dp.GPIOB.split();
-        let pb15 = gpiob.pb15.into_alternate().internal_pull_up(true);
-        let pb13 = gpiob.pb13.into_alternate();
+
+        // Note. We set GPIO speed as VeryHigh to it corresponds to SPI frequency 3MHz.
+        // Otherwise it may lead to the 'wrong last bit in every received byte' problem.
+        let pb15 = gpiob
+            .pb15
+            .into_alternate()
+            .speed(Speed::VeryHigh)
+            .internal_pull_up(true);
+        let pb13 = gpiob.pb13.into_alternate().speed(Speed::VeryHigh);
 
         let mode = Mode {
             polarity: Polarity::IdleLow,
