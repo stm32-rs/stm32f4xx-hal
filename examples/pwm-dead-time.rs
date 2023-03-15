@@ -25,21 +25,19 @@ fn main() -> ! {
         let mut pwm = dp.TIM1.pwm_hz(channels, 20.kHz(), &clocks);
 
         let max_duty: u16 = pwm.get_max_duty();
-        
+
         pwm.set_polarity(Channel::C1, Polarity::ActiveHigh);
         pwm.set_complementary_polarity(Channel::C1, Polarity::ActiveHigh);
 
         pwm.set_duty(Channel::C1, max_duty / 2);
-        
-        pwm.set_dead_time( 200 );
-        
+
+        pwm.set_dead_time(200);
+
         pwm.enable(Channel::C1);
         pwm.enable_complementary(Channel::C1);
+    }
 
-        }
-        
     loop {
         cortex_m::asm::nop();
     }
 }
-
