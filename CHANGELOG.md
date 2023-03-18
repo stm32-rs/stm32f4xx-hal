@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
  - Improve SPI::new* docs [#587]
+ - Add advanced timer dead time insertion example [#585]
 
 ## [v0.15.0] - 2023-03-13
 

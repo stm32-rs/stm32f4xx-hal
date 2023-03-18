@@ -217,37 +217,45 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
 }
 
 impl<TIM: Instance + WithPwm, const C: u8, const COMP: bool> PwmChannel<TIM, C, COMP> {
+    /// Disable PWM channel
     #[inline]
     pub fn disable(&mut self) {
         TIM::enable_channel(C, false);
     }
 
+    /// Enable PWM channel
     #[inline]
     pub fn enable(&mut self) {
         TIM::enable_channel(C, true);
     }
 
+    /// Set PWM channel polarity
     #[inline]
     pub fn set_polarity(&mut self, p: Polarity) {
         TIM::set_channel_polarity(C, p);
     }
 
+    /// Get PWM channel duty cycle
     #[inline]
     pub fn get_duty(&self) -> u16 {
         TIM::read_cc_value(C) as u16
     }
 
+    /// Get the maximum duty cycle value of the PWM channel
+    ///
     /// If `0` returned means max_duty is 2^16
     #[inline]
     pub fn get_max_duty(&self) -> u16 {
         (TIM::read_auto_reload() as u16).wrapping_add(1)
     }
 
+    /// Set PWM channel duty cycle
     #[inline]
     pub fn set_duty(&mut self, duty: u16) {
         TIM::set_cc_value(C, duty as u32)
     }
 
+    /// Set complementary PWM channel polarity
     #[inline]
     pub fn set_complementary_polarity(&mut self, p: Polarity) {
         TIM::set_nchannel_polarity(C, p);
@@ -255,21 +263,25 @@ impl<TIM: Instance + WithPwm, const C: u8, const COMP: bool> PwmChannel<TIM, C, 
 }
 
 impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
+    /// Disable complementary PWM channel
     #[inline]
     pub fn disable_complementary(&mut self) {
         TIM::enable_nchannel(C, false);
     }
 
+    /// Enable complementary PWM channel
     #[inline]
     pub fn enable_complementary(&mut self) {
         TIM::enable_nchannel(C, true);
     }
 
+    /// Set PWM channel idle state
     #[inline]
     pub fn set_idle_state(&mut self, s: IdleState) {
         TIM::idle_state(C, false, s);
     }
 
+    /// Set complementary PWM channel idle state
     #[inline]
     pub fn set_complementary_idle_state(&mut self, s: IdleState) {
         TIM::idle_state(C, true, s);
@@ -592,55 +604,66 @@ where
     TIM: Instance + WithPwm,
     PINS: Pins<TIM, P>,
 {
+    /// Enable PWM output of the timer on channel `channel`
     #[inline]
     pub fn enable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, true)
     }
 
+    /// Disable PWM output of the timer on channel `channel`
     #[inline]
     pub fn disable(&mut self, channel: Channel) {
         TIM::enable_channel(PINS::check_used(channel) as u8, false)
     }
 
+    /// Set the polarity of the active state for the primary PWM output of the timer on channel `channel`
     #[inline]
     pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
     }
 
+    /// Get the current duty cycle of the timer on channel `channel`
     #[inline]
     pub fn get_duty(&self, channel: Channel) -> u16 {
         TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
     }
-
+    /// Get the current duty cycle of the timer on channel `channel` and convert to a duration
     #[inline]
     pub fn get_duty_time(&self, channel: Channel) -> TimerDurationU32<FREQ> {
         TimerDurationU32::from_ticks(TIM::read_cc_value(PINS::check_used(channel) as u8))
     }
 
+    /// Set the duty cycle of the timer on channel `channel`
     #[inline]
     pub fn set_duty(&mut self, channel: Channel, duty: u16) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty.into())
     }
 
+    /// Set the duty cycle of the timer on channel `channel` from a duration
     #[inline]
     pub fn set_duty_time(&mut self, channel: Channel, duty: TimerDurationU32<FREQ>) {
         TIM::set_cc_value(PINS::check_used(channel) as u8, duty.ticks())
     }
 
+    /// Get the maximum duty cycle value of the timer
+    ///
     /// If `0` returned means max_duty is 2^16
     pub fn get_max_duty(&self) -> u16 {
         (TIM::read_auto_reload() as u16).wrapping_add(1)
     }
 
+    /// Get the PWM frequency of the timer as a duration
     pub fn get_period(&self) -> TimerDurationU32<FREQ> {
         TimerDurationU32::from_ticks(TIM::read_auto_reload() + 1)
     }
 
+    /// Set the PWM frequency for the timer from a duration
     pub fn set_period(&mut self, period: TimerDurationU32<FREQ>) {
         self.tim.set_auto_reload(period.ticks() - 1).unwrap();
         self.tim.cnt_reset();
     }
 
+    /// Set the polarity of the active state for the complementary PWM output of the advanced timer on channel `channel`
     #[inline]
     pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
         TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
@@ -652,17 +675,23 @@ where
     TIM: Instance + WithPwm + Advanced,
     PINS: Pins<TIM, P>,
 {
+    /// Enable complementary PWM output of the timer on channel `channel`
     #[inline]
     pub fn enable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
     }
 
+    /// Disable complementary PWM output of the timer on channel `channel`
     #[inline]
     pub fn disable_complementary(&mut self, channel: Channel) {
         TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
     }
 
-    /// Set number DTS ticks during that complementary pin is `dead`
+    /// Set number DTS ticks during that the primary and complementary PWM pins are simultaneously forced to their inactive states
+    /// ( see [`Polarity`] setting ) when changing PWM state. This duration when both channels are in an 'off' state  is called 'dead time'.
+    ///
+    /// This is necessary in applications like motor control or power converters to prevent the destruction of the switching elements by
+    /// short circuit in the moment of switching.
     #[inline]
     pub fn set_dead_time(&mut self, dts_ticks: u16) {
         let bits = pack_ceil_dead_time(dts_ticks);
@@ -670,12 +699,15 @@ where
     }
 
     /// Set raw dead time (DTG) bits
+    ///
+    /// The dead time generation is nonlinear and constrained by the DTS tick duration. DTG register configuration and calculation of
+    /// the actual resulting dead time is described in the application note RM0368 from ST Microelectronics
     #[inline]
     pub fn set_dead_time_bits(&mut self, bits: u8) {
         TIM::set_dtg_value(bits);
     }
 
-    /// Return dead time for complementary pins in DTS ticks
+    /// Return dead time for complementary pins in the unit of DTS ticks
     #[inline]
     pub fn get_dead_time(&self) -> u16 {
         unpack_dead_time(TIM::read_dtg_value())
@@ -687,17 +719,21 @@ where
         TIM::read_dtg_value()
     }
 
+    /// Set the pin idle state
     #[inline]
     pub fn set_idle_state(&mut self, channel: Channel, s: IdleState) {
         TIM::idle_state(PINS::check_used(channel) as u8, false, s);
     }
 
+    /// Set the complementary pin idle state
     #[inline]
     pub fn set_complementary_idle_state(&mut self, channel: Channel, s: IdleState) {
         TIM::idle_state(PINS::check_complementary_used(channel) as u8, true, s);
     }
 }
 
+/// Convert number dead time ticks to raw DTG register bits.
+/// Values greater than 1009 result in maximum dead time of 126 us
 const fn pack_ceil_dead_time(dts_ticks: u16) -> u8 {
     match dts_ticks {
         0..=127 => dts_ticks as u8,
@@ -708,6 +744,7 @@ const fn pack_ceil_dead_time(dts_ticks: u16) -> u8 {
     }
 }
 
+/// Convert raw DTG register bits value to number of dead time ticks
 const fn unpack_dead_time(bits: u8) -> u16 {
     if bits & 0b_1000_0000 == 0 {
         bits as u16
