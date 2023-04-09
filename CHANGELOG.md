@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Added missing U(S)ART DMA traits for HAL serial types [#593]
  - Improve SPI::new* docs [#587]
  - Add advanced timer dead time insertion example [#585]
- - Added missing U(S)ART DMA traits for HAL serial types [#593]
 
 ## [v0.15.0] - 2023-03-13
 
