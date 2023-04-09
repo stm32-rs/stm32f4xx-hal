@@ -352,7 +352,7 @@ fn draw_face() -> impl Iterator<Item = Pixel<BinaryColor>> {
         Circle::new(CENTER, SIZE * 2).into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1));
 
     // Create 12 `Line`s starting from the outer edge and drawing inwards by `tic_len` pixels
-    let tics = (0..12).into_iter().map(move |index| {
+    let tics = (0..12).map(move |index| {
         // Start angle around the circle, in radians
         let angle = START + (PI * 2.0 / 12.0) * index as f32;
 
@@ -369,7 +369,7 @@ fn draw_face() -> impl Iterator<Item = Pixel<BinaryColor>> {
 
     // Create a single iterator of pixels, first iterating over the circle, then over the 12 lines
     // generated
-    face.pixels().into_iter().chain(tics.flatten())
+    face.pixels().chain(tics.flatten())
 }
 
 /// Draw the seconds hand given a seconds value (0 - 59)
@@ -395,9 +395,7 @@ fn draw_seconds_hand(seconds: u32) -> impl Iterator<Item = Pixel<BinaryColor>> {
     // Add a fancy circle near the end of the hand
     let decoration = Circle::new(decoration_position, 3).into_styled(decoration_style);
 
-    hand.pixels()
-        .into_iter()
-        .chain(decoration.pixels().into_iter())
+    hand.pixels().chain(decoration.pixels().into_iter())
 }
 
 #[exception]
