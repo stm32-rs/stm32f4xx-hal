@@ -55,15 +55,6 @@ pub enum Error {
     Crc,
 }
 
-pub struct Sck;
-impl crate::Sealed for Sck {}
-pub struct Miso;
-impl crate::Sealed for Miso {}
-pub struct Mosi;
-impl crate::Sealed for Mosi {}
-pub struct Nss;
-impl crate::Sealed for Nss {}
-
 /// A filler type for when the SCK pin is unnecessary
 pub type NoSck = NoPin;
 /// A filler type for when the Miso pin is unnecessary

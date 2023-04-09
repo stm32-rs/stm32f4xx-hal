@@ -57,7 +57,6 @@
 use core::marker::PhantomData;
 
 pub mod alt;
-pub(crate) use alt::{Const, PinA, SetAlternate};
 mod convert;
 pub use convert::PinMode;
 mod partially_erased;
@@ -154,6 +153,8 @@ impl<MODE> marker::Interruptable for Output<MODE> {}
 impl marker::Interruptable for Input {}
 impl marker::Readable for Input {}
 impl marker::Readable for Output<OpenDrain> {}
+impl<const A: u8, Otype> marker::Interruptable for Alternate<A, Otype> {}
+impl<const A: u8, Otype> marker::Readable for Alternate<A, Otype> {}
 impl marker::Active for Input {}
 impl<Otype> marker::OutputSpeed for Output<Otype> {}
 impl<const A: u8, Otype> marker::OutputSpeed for Alternate<A, Otype> {}

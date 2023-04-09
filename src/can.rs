@@ -27,11 +27,6 @@ can! { CAN2: Can2, can2 }
 #[cfg(feature = "can3")]
 can! { crate::pac::CAN3: Can3, can3 }
 
-pub struct Tx;
-impl crate::Sealed for Tx {}
-pub struct Rx;
-impl crate::Sealed for Rx {}
-
 /// Pins and definitions for models with a third CAN peripheral
 #[cfg(feature = "can3")]
 mod can3 {

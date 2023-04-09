@@ -73,11 +73,6 @@ pub struct I2c<I2C: Instance> {
     pins: (I2C::Scl, I2C::Sda),
 }
 
-pub struct Scl;
-impl crate::Sealed for Scl {}
-pub struct Sda;
-impl crate::Sealed for Sda {}
-
 pub use embedded_hal_one::i2c::NoAcknowledgeSource;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]

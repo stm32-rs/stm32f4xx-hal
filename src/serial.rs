@@ -180,11 +180,6 @@ pub mod config {
 
 pub use config::Config;
 
-pub struct TxPin;
-impl crate::Sealed for TxPin {}
-pub struct RxPin;
-impl crate::Sealed for RxPin {}
-
 /// A filler type for when the Tx pin is unnecessary
 pub type NoTx = NoPin;
 /// A filler type for when the Rx pin is unnecessary

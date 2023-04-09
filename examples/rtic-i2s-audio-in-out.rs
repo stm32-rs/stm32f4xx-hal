@@ -80,9 +80,6 @@ mod app {
 
     use super::hal;
 
-    use hal::gpio::gpioa::*;
-    use hal::gpio::gpiob::*;
-    use hal::gpio::gpioc::*;
     use hal::gpio::Edge;
     use hal::gpio::NoPin;
     use hal::i2s::stm32_i2s_v12x::driver::*;
@@ -95,8 +92,8 @@ mod app {
 
     use rtt_target::{rprintln, rtt_init, set_print_channel};
 
-    type I2s2Driver = I2sDriver<I2s<SPI2, (PB12, PB13, PC6, PB15)>, Master, Receive, Philips>;
-    type I2s3Driver = I2sDriver<I2s<SPI3, (PA4, PC10, NoPin, PC12)>, Slave, Transmit, Philips>;
+    type I2s2Driver = I2sDriver<I2s<SPI2>, Master, Receive, Philips>;
+    type I2s3Driver = I2sDriver<I2s<SPI3>, Slave, Transmit, Philips>;
 
     // Part of the frame we currently transmit or receive
     #[derive(Copy, Clone)]
