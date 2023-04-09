@@ -78,9 +78,18 @@ macro_rules! pin {
                 pub enum $name {
                     $(
                         $(#[$attr])*
-                        $PX(gpio::$PX),
+                        $PX(gpio::$PX<Alternate<$A $(, $Otype)?>>),
                     )*
                 }
+
+                $(
+                    $(#[$attr])*
+                    impl<MODE: PinMode> From<gpio::$PX<MODE>> for $name {
+                        fn from(p: gpio::$PX<MODE>) -> Self {
+                            Self::$PX(p.into_mode())
+                        }
+                    }
+                )*
             )*
     };
 }
