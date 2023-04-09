@@ -649,8 +649,11 @@ address!((pac::SPI4, dr, u8),);
 ))]
 dma_map!(
     (Stream0<DMA1>, 4, pac::UART5, PeripheralToMemory), //UART5_RX
+    (Stream0<DMA1>, 4, serial::Rx<pac::UART5>, PeripheralToMemory), //UART5_RX
     (Stream2<DMA1>, 4, pac::UART4, PeripheralToMemory), //UART4_RX
+    (Stream2<DMA1>, 4, serial::Rx<pac::UART4>, PeripheralToMemory), //UART4_RX
     (Stream4<DMA1>, 4, pac::UART4, MemoryToPeripheral), //UART4_TX
+    (Stream4<DMA1>, 4, serial::Tx<pac::UART4>, MemoryToPeripheral), //UART4_TX
     //(Stream6<DMA1>, 7, pac::DAC2, MemoryToPeripheral), //DAC2
 );
 
@@ -864,6 +867,7 @@ address!(
 ))]
 dma_map!(
     (Stream7<DMA1>, 4, pac::UART5, MemoryToPeripheral), //UART5_TX
+    (Stream7<DMA1>, 4, serial::Tx<pac::UART5>, MemoryToPeripheral), //UART5_TX
     (Stream0<DMA2>, 2, pac::ADC3, PeripheralToMemory),  //ADC3
     (Stream1<DMA2>, 1, pac::DCMI, PeripheralToMemory),  //DCMI
     (Stream1<DMA2>, 2, pac::ADC3, PeripheralToMemory),  //ADC3
@@ -935,6 +939,7 @@ dma_map!(
     (Stream7<DMA1>, 1, pac::I2C1, MemoryToPeripheral),          //I2C1_TX:DMA_CHANNEL_1
     (Stream7<DMA1>, 1, i2c::Tx<pac::I2C1>, MemoryToPeripheral), //I2C1_TX:DMA_CHANNEL_1
     (Stream7<DMA1>, 6, pac::USART2, PeripheralToMemory), //USART2_RX:DMA_CHANNEL_6
+    (Stream7<DMA1>, 6, serial::Rx<pac::USART2>, PeripheralToMemory), //USART2_RX:DMA_CHANNEL_6
     (Stream2<DMA2>, 2, pac::SPI1, MemoryToPeripheral), //SPI1_TX
     (Stream2<DMA2>, 2, spi::Tx<pac::SPI1>, MemoryToPeripheral), //SPI1_TX
     (Stream3<DMA2>, 3, pac::SPI1, MemoryToPeripheral), //SPI1_TX:DMA_CHANNEL_3
@@ -1060,9 +1065,13 @@ address!((pac::QUADSPI, dr, u32),);
 ))]
 dma_map!(
     (Stream0<DMA1>, 5, pac::UART8, MemoryToPeripheral), //UART8_TX
+    (Stream0<DMA1>, 5, serial::Tx<pac::UART8>, MemoryToPeripheral), //UART8_TX
     (Stream1<DMA1>, 5, pac::UART7, MemoryToPeripheral), //UART7_TX
+    (Stream1<DMA1>, 5, serial::Tx<pac::UART7>, MemoryToPeripheral), //UART7_TX
     (Stream3<DMA1>, 5, pac::UART7, PeripheralToMemory), //UART7_RX
+    (Stream3<DMA1>, 5, serial::Rx<pac::UART7>, PeripheralToMemory), //UART7_RX
     (Stream6<DMA1>, 5, pac::UART8, PeripheralToMemory), //UART8_RX
+    (Stream6<DMA1>, 5, serial::Rx<pac::UART8>, PeripheralToMemory), //UART8_RX
 );
 
 #[cfg(any(
@@ -1080,12 +1089,19 @@ address!((pac::UART7, dr, u8), (pac::UART8, dr, u8),);
 #[cfg(any(feature = "stm32f413", feature = "stm32f423",))]
 dma_map!(
     (Stream7<DMA1>, 8, pac::UART5, MemoryToPeripheral), //UART5_TX
+    (Stream7<DMA1>, 8, serial::Tx<pac::UART5>, MemoryToPeripheral), //UART5_TX
     (Stream0<DMA2>, 1, pac::UART9, MemoryToPeripheral), //UART9_TX
+    (Stream0<DMA2>, 1, serial::Tx<pac::UART9>, MemoryToPeripheral), //UART9_TX
     (Stream0<DMA2>, 5, pac::UART10, PeripheralToMemory), //UART10_RX
+    (Stream0<DMA2>, 5, serial::Rx<pac::UART10>, PeripheralToMemory), //UART10_RX
     (Stream3<DMA2>, 9, pac::UART10, PeripheralToMemory), //UART10_RX:DMA_CHANNEL_9
+    (Stream3<DMA2>, 9, serial::Rx<pac::UART10>, PeripheralToMemory), //UART10_RX:DMA_CHANNEL_9
     (Stream5<DMA2>, 9, pac::UART10, MemoryToPeripheral), //UART10_TX
+    (Stream5<DMA2>, 9, serial::Tx<pac::UART10>, MemoryToPeripheral), //UART10_TX
     (Stream7<DMA2>, 0, pac::UART9, PeripheralToMemory), //UART9_RX
+    (Stream7<DMA2>, 0, serial::Rx<pac::UART9>, PeripheralToMemory), //UART9_RX
     (Stream7<DMA2>, 6, pac::UART10, MemoryToPeripheral), //UART10_TX:DMA_CHANNEL_6
+    (Stream7<DMA2>, 6, serial::Tx<pac::UART10>, MemoryToPeripheral), //UART10_TX:DMA_CHANNEL_6
     //(pac::DMA2, Stream6, 2, IN<pac::AES>, MemoryToPeripheral), //AES_IN
     //(pac::DMA2, Stream5, 2, OUT<pac::AES>, PeripheralToMemory), //AES_OUT
 );
