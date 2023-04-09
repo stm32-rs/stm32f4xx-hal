@@ -56,7 +56,7 @@
 
 use core::marker::PhantomData;
 
-mod alt;
+pub mod alt;
 pub(crate) use alt::{Const, PinA, SetAlternate};
 mod convert;
 pub use convert::PinMode;
