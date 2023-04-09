@@ -62,7 +62,7 @@ where
 }
 
 macro_rules! pin {
-    ( $($name:ident, <$Pin:ty, $I2C:ident> for [$(
+    ( $($name:ident, <$Pin:ty, $I2C:ident> for $(no: $NoPin:ty,)? [$(
             $(#[$attr:meta])* $PX:ident<$A:literal $(, $Otype:ident)?>,
         )*],)*) => {
             $(
@@ -77,16 +77,62 @@ macro_rules! pin {
                 #[derive(Debug)]
                 pub enum $name {
                     $(
+                        None($NoPin),
+                    )?
+
+                    $(
                         $(#[$attr])*
                         $PX(gpio::$PX<Alternate<$A $(, $Otype)?>>),
                     )*
                 }
 
                 $(
+                    impl From<$NoPin> for $name {
+                        fn from(p: $NoPin) -> Self {
+                            Self::None(p)
+                        }
+                    }
+
+                    #[allow(irrefutable_let_patterns)]
+                    impl TryFrom<$name> for $NoPin {
+                        type Error = ();
+
+                        fn try_from(a: $name) -> Result<Self, Self::Error> {
+                            if let $name::None(p) = a {
+                                Ok(p)
+                            } else {
+                                Err(())
+                            }
+                        }
+                    }
+                )?
+
+                $(
                     $(#[$attr])*
-                    impl<MODE: PinMode> From<gpio::$PX<MODE>> for $name {
-                        fn from(p: gpio::$PX<MODE>) -> Self {
+                    impl From<gpio::$PX> for $name {
+                        fn from(p: gpio::$PX) -> Self {
                             Self::$PX(p.into_mode())
+                        }
+                    }
+
+                    $(#[$attr])*
+                    impl From<gpio::$PX<Alternate<$A $(, $Otype)?>>> for $name {
+                        fn from(p: gpio::$PX<Alternate<$A $(, $Otype)?>>) -> Self {
+                            Self::$PX(p.into_mode())
+                        }
+                    }
+
+                    $(#[$attr])*
+                    #[allow(irrefutable_let_patterns)]
+                    impl<MODE: PinMode> TryFrom<$name> for gpio::$PX<MODE> {
+                        type Error = ();
+
+                        fn try_from(a: $name) -> Result<Self, Self::Error> {
+                            if let $name::$PX(p) = a {
+                                Ok(p.into_mode())
+                            } else {
+                                Err(())
+                            }
                         }
                     }
                 )*
@@ -102,7 +148,7 @@ pub mod can1 {
     use crate::can;
 
     pin! {
-        Tx, <can::Tx, CAN1> for [
+        Tx, <can::Tx, CAN1> for no:NoPin, [
             PA12<9>,
             PD1<9>,
 
@@ -126,23 +172,23 @@ pub mod can1 {
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
             PG1<9>,
+
+            #[cfg(any(
+                feature = "stm32f405",
+                feature = "stm32f407",
+                feature = "stm32f415",
+                feature = "stm32f417",
+                feature = "stm32f427",
+                feature = "stm32f429",
+                feature = "stm32f437",
+                feature = "stm32f439",
+                feature = "stm32f469",
+                feature = "stm32f479"
+            ))]
+            PH13<9>,
         ],
 
-        #[cfg(any(
-            feature = "stm32f405",
-            feature = "stm32f407",
-            feature = "stm32f415",
-            feature = "stm32f417",
-            feature = "stm32f427",
-            feature = "stm32f429",
-            feature = "stm32f437",
-            feature = "stm32f439",
-            feature = "stm32f469",
-            feature = "stm32f479"
-        ))]
-        PH13<9>,
-
-        Rx, <can::Rx, CAN1> for [
+        Rx, <can::Rx, CAN1> for no:NoPin, [
             PA11<9>,
             PD0<9>,
 
@@ -190,7 +236,7 @@ pub mod can2 {
     use crate::can;
 
     pin! {
-        Tx, <can::Tx, CAN2> for [
+        Tx, <can::Tx, CAN2> for no:NoPin, [
             PB13<9>,
             PB6<9>,
 
@@ -198,7 +244,7 @@ pub mod can2 {
             PG12<9>,
         ],
 
-        Rx, <can::Rx, CAN2> for [
+        Rx, <can::Rx, CAN2> for no:NoPin, [
             PB12<9>,
             PB5<9>,
 
@@ -214,8 +260,8 @@ pub mod can3 {
     use crate::can;
 
     pin! {
-        Tx, <can::Tx, CAN3> for [PA15<11>, PB4<11>,],
-        Rx, <can::Rx, CAN3> for [PA8<11>, PB3<11>,]
+        Tx, <can::Tx, CAN3> for no:NoPin, [PA15<11>, PB4<11>,],
+        Rx, <can::Rx, CAN3> for no:NoPin, [PA8<11>, PB3<11>,],
     }
 }
 
@@ -443,11 +489,11 @@ pub mod fmpi2c1 {
 pub mod spi1 {
     use super::*;
     pin! {
-        Sck, <spi::Sck,  SPI1> for [PA5<5>, PB3<5>,],
+        Sck, <spi::Sck,  SPI1> for no:NoPin, [PA5<5>, PB3<5>,],
 
-        Miso, <spi::Miso, SPI1> for [PA6<5>, PB4<5>,],
+        Miso, <spi::Miso, SPI1> for no:NoPin, [PA6<5>, PB4<5>,],
 
-        Mosi, <spi::Mosi, SPI1> for [
+        Mosi, <spi::Mosi, SPI1> for no:NoPin, [
             PA7<5>, PB5<5>,
         ],
 
@@ -477,7 +523,7 @@ pub mod spi1 {
 pub mod spi2 {
     use super::*;
     pin! {
-        Sck, <spi::Sck,  SPI2> for [
+        Sck, <spi::Sck,  SPI2> for no:NoPin, [
             PB10<5>,
             PB13<5>,
 
@@ -531,7 +577,7 @@ pub mod spi2 {
             PI1<5>,
         ],
 
-        Miso, <spi::Miso, SPI2> for [
+        Miso, <spi::Miso, SPI2> for no:NoPin, [
             PB14<5>, PC2<5>,
 
             #[cfg(any(
@@ -552,7 +598,7 @@ pub mod spi2 {
             PA12<5>,
         ],
 
-        Mosi, <spi::Mosi, SPI2> for [
+        Mosi, <spi::Mosi, SPI2> for no:NoPin, [
             PB15<5>,
             PC3<5>,
 
@@ -614,7 +660,7 @@ pub mod spi2 {
 pub mod spi3 {
     use super::*;
     pin! {
-        Sck, <spi::Sck,  SPI3> for [
+        Sck, <spi::Sck,  SPI3> for no:NoPin, [
             PB3<6>,
             PC10<6>,
 
@@ -627,9 +673,9 @@ pub mod spi3 {
             PB12<7>,
         ],
 
-        Miso, <spi::Miso, SPI3> for [PB4<6>, PC11<6>,],
+        Miso, <spi::Miso, SPI3> for no:NoPin, [PB4<6>, PC11<6>,],
 
-        Mosi, <spi::Mosi, SPI3> for [
+        Mosi, <spi::Mosi, SPI3> for no:NoPin, [
             PB5<6>,
             PC12<6>,
 
@@ -668,7 +714,7 @@ pub mod spi4 {
     use super::*;
 
     pin! {
-        Sck, <spi::Sck,  SPI4> for [
+        Sck, <spi::Sck,  SPI4> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f401",
                 feature = "stm32f411",
@@ -713,7 +759,7 @@ pub mod spi4 {
             PG11<6>,
         ],
 
-        Miso, <spi::Miso, SPI4> for [
+        Miso, <spi::Miso, SPI4> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f401",
                 feature = "stm32f411",
@@ -761,7 +807,7 @@ pub mod spi4 {
             PD0<5>,
         ],
 
-        Mosi, <spi::Mosi, SPI4> for [
+        Mosi, <spi::Mosi, SPI4> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f401",
                 feature = "stm32f411",
@@ -805,9 +851,7 @@ pub mod spi4 {
             #[cfg(feature = "stm32f446")]
             PG13<6>,
         ],
-    }
 
-    pin! {
         Nss, <spi::Nss,  SPI4> for [
             #[cfg(any(
                 feature = "stm32f411",
@@ -841,7 +885,7 @@ pub mod spi5 {
     use super::*;
 
     pin! {
-        Sck, <spi::Sck,  SPI5> for [
+        Sck, <spi::Sck,  SPI5> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -887,7 +931,7 @@ pub mod spi5 {
             PH6<5>,
         ],
 
-        Miso, <spi::Miso, SPI5> for [
+        Miso, <spi::Miso, SPI5> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -934,7 +978,7 @@ pub mod spi5 {
             PH7<5>,
         ],
 
-        Mosi, <spi::Mosi, SPI5> for [
+        Mosi, <spi::Mosi, SPI5> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -1024,9 +1068,10 @@ pub mod spi6 {
     use super::*;
 
     pin! {
-        Sck, <spi::Sck,  SPI6> for [PG13<5>,],
-        Miso, <spi::Miso, SPI6> for [PG12<5>,],
-        Mosi, <spi::Mosi, SPI6> for [PG14<5>,],
+        Sck, <spi::Sck,  SPI6> for no:NoPin, [PG13<5>,],
+        Miso, <spi::Miso, SPI6> for no:NoPin, [PG12<5>,],
+        Mosi, <spi::Mosi, SPI6> for no:NoPin, [PG14<5>,],
+        Nss, <spi::Nss, SPI6> for [],
     }
 }
 
@@ -1503,7 +1548,7 @@ pub mod usart1 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, USART1> for [
+        Tx, <serial::TxPin, USART1> for no:NoPin, [
             PA9<7>,
             PB6<7>,
 
@@ -1517,7 +1562,7 @@ pub mod usart1 {
             PA15<7>,
         ],
 
-        Rx, <serial::RxPin, USART1> for [
+        Rx, <serial::RxPin, USART1> for no:NoPin, [
             PA10<7>,
             PB7<7>,
 
@@ -1537,7 +1582,7 @@ pub mod usart2 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, USART2> for [
+        Tx, <serial::TxPin, USART2> for no:NoPin, [
             PA2<7>,
 
             #[cfg(any(
@@ -1561,7 +1606,7 @@ pub mod usart2 {
             PD5<7>,
         ],
 
-        Rx, <serial::RxPin, USART2> for [
+        Rx, <serial::RxPin, USART2> for no:NoPin, [
             PA3<7>,
 
             #[cfg(any(
@@ -1592,7 +1637,7 @@ pub mod usart3 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, USART3> for [
+        Tx, <serial::TxPin, USART3> for no:NoPin, [
             PB10<7>,
 
             #[cfg(any(
@@ -1632,7 +1677,7 @@ pub mod usart3 {
             PD8<7>,
         ],
 
-        Rx, <serial::RxPin, USART3> for [
+        Rx, <serial::RxPin, USART3> for no:NoPin, [
             PB11<7>,
 
             #[cfg(any(
@@ -1686,7 +1731,7 @@ pub mod usart6 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, USART6> for [
+        Tx, <serial::TxPin, USART6> for no:NoPin, [
             PC6<8>,
 
             #[cfg(any(
@@ -1702,7 +1747,7 @@ pub mod usart6 {
             #[cfg(feature = "gpiog")]
             PG14<8>,
         ],
-        Rx, <serial::RxPin, USART6> for [
+        Rx, <serial::RxPin, USART6> for no:NoPin, [
             PC7<8>,
 
             #[cfg(any(
@@ -1726,7 +1771,7 @@ pub mod uart4 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, UART4> for [
+        Tx, <serial::TxPin, UART4> for no:NoPin, [
             PA0<8>,
 
             #[cfg(any(
@@ -1754,7 +1799,7 @@ pub mod uart4 {
             PD10<8>,
         ],
 
-        Rx, <serial::RxPin, UART4> for [
+        Rx, <serial::RxPin, UART4> for no:NoPin, [
             PA1<8>,
 
             #[cfg(any(
@@ -1789,7 +1834,7 @@ pub mod uart5 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, UART5> for [
+        Tx, <serial::TxPin, UART5> for no:NoPin, [
             PC12<8>,
 
             #[cfg(feature = "stm32f446")]
@@ -1805,7 +1850,7 @@ pub mod uart5 {
             PB13<11>,
         ],
 
-        Rx, <serial::RxPin, UART5> for [
+        Rx, <serial::RxPin, UART5> for no:NoPin, [
             PD2<8>,
 
             #[cfg(feature = "stm32f446")]
@@ -1828,7 +1873,7 @@ pub mod uart7 {
     use super::*;
 
     pin! {
-        Tx,<serial::TxPin, UART7> for [
+        Tx,<serial::TxPin, UART7> for no:NoPin, [
             #[cfg(feature = "gpioe")]
             PE8<8>,
 
@@ -1842,7 +1887,7 @@ pub mod uart7 {
             PB4<8>,
         ],
 
-        Rx, <serial::RxPin, UART7> for [
+        Rx, <serial::RxPin, UART7> for no:NoPin, [
             #[cfg(feature = "gpioe")]
             PE7<8>,
 
@@ -1863,7 +1908,7 @@ pub mod uart8 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, UART8> for [
+        Tx, <serial::TxPin, UART8> for no:NoPin, [
             #[cfg(feature = "gpioe")]
             PE1<8>,
 
@@ -1871,7 +1916,7 @@ pub mod uart8 {
             PF9<8>,
         ],
 
-        Rx, <serial::RxPin, UART8> for [
+        Rx, <serial::RxPin, UART8> for no:NoPin, [
             #[cfg(feature = "gpioe")]
             PE0<8>,
 
@@ -1886,8 +1931,8 @@ pub mod uart9 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, UART9> for [PD15<11>, PG1<11>,],
-        Rx, <serial::RxPin, UART9> for [PD14<11>, PG0<11>,],
+        Tx, <serial::TxPin, UART9> for no:NoPin, [PD15<11>, PG1<11>,],
+        Rx, <serial::RxPin, UART9> for no:NoPin, [PD14<11>, PG0<11>,],
     }
 }
 
@@ -1896,7 +1941,7 @@ pub mod uart10 {
     use super::*;
 
     pin! {
-        Tx, <serial::TxPin, UART10> for [PE3<11>, PG12<11>,],
-        Rx, <serial::RxPin, UART10> for [PE2<11>, PG11<11>,],
+        Tx, <serial::TxPin, UART10> for no:NoPin, [PE3<11>, PG12<11>,],
+        Rx, <serial::RxPin, UART10> for no:NoPin, [PE2<11>, PG11<11>,],
     }
 }

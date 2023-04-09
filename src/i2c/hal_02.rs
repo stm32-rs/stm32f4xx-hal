@@ -2,7 +2,7 @@ mod blocking {
     use super::super::{Error, I2c, Instance};
     use embedded_hal::blocking::i2c::{Read, Write, WriteIter, WriteIterRead, WriteRead};
 
-    impl<I2C, PINS> WriteRead for I2c<I2C, PINS>
+    impl<I2C> WriteRead for I2c<I2C>
     where
         I2C: Instance,
     {
@@ -18,7 +18,7 @@ mod blocking {
         }
     }
 
-    impl<I2C, PINS> WriteIterRead for I2c<I2C, PINS>
+    impl<I2C> WriteIterRead for I2c<I2C>
     where
         I2C: Instance,
     {
@@ -37,7 +37,7 @@ mod blocking {
         }
     }
 
-    impl<I2C, PINS> Write for I2c<I2C, PINS>
+    impl<I2C> Write for I2c<I2C>
     where
         I2C: Instance,
     {
@@ -48,7 +48,7 @@ mod blocking {
         }
     }
 
-    impl<I2C, PINS> WriteIter for I2c<I2C, PINS>
+    impl<I2C> WriteIter for I2c<I2C>
     where
         I2C: Instance,
     {
@@ -62,7 +62,7 @@ mod blocking {
         }
     }
 
-    impl<I2C, PINS> Read for I2c<I2C, PINS>
+    impl<I2C> Read for I2c<I2C>
     where
         I2C: Instance,
     {

@@ -2,7 +2,7 @@ mod nb {
     use super::super::{Error, Instance, Rx, Serial, Tx};
     use embedded_hal::serial::{Read, Write};
 
-    impl<USART, PINS, WORD> Read<WORD> for Serial<USART, PINS, WORD>
+    impl<USART, WORD> Read<WORD> for Serial<USART, WORD>
     where
         USART: Instance,
         Rx<USART, WORD>: Read<WORD, Error = Error>,
@@ -35,7 +35,7 @@ mod nb {
         }
     }
 
-    impl<USART, PINS, WORD> Write<WORD> for Serial<USART, PINS, WORD>
+    impl<USART, WORD> Write<WORD> for Serial<USART, WORD>
     where
         USART: Instance,
         Tx<USART, WORD>: Write<WORD, Error = Error>,
@@ -96,7 +96,7 @@ mod blocking {
         }
     }
 
-    impl<USART: Instance, PINS> Write<u8> for Serial<USART, PINS, u8> {
+    impl<USART: Instance> Write<u8> for Serial<USART, u8> {
         type Error = Error;
 
         fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
@@ -120,7 +120,7 @@ mod blocking {
         }
     }
 
-    impl<USART: Instance, PINS> Write<u16> for Serial<USART, PINS, u16> {
+    impl<USART: Instance> Write<u16> for Serial<USART, u16> {
         type Error = Error;
 
         fn bwrite_all(&mut self, slice: &[u16]) -> Result<(), Self::Error> {

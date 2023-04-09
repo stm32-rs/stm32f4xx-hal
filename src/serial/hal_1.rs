@@ -1,14 +1,16 @@
 use embedded_hal_one::serial::ErrorType;
 
-impl<USART, PINS, WORD> ErrorType for super::Serial<USART, PINS, WORD> {
+use super::Instance;
+
+impl<USART: Instance, WORD> ErrorType for super::Serial<USART, WORD> {
     type Error = super::Error;
 }
 
-impl<USART, WORD> ErrorType for super::Rx<USART, WORD> {
+impl<USART: Instance, WORD> ErrorType for super::Rx<USART, WORD> {
     type Error = super::Error;
 }
 
-impl<USART, WORD> ErrorType for super::Tx<USART, WORD> {
+impl<USART: Instance, WORD> ErrorType for super::Tx<USART, WORD> {
     type Error = super::Error;
 }
 
@@ -19,7 +21,7 @@ mod nb {
         ErrorType,
     };
 
-    impl<USART, PINS, WORD: Copy> Read<WORD> for Serial<USART, PINS, WORD>
+    impl<USART, WORD: Copy> Read<WORD> for Serial<USART, WORD>
     where
         USART: Instance,
         Rx<USART, WORD>: Read<WORD> + ErrorType<Error = Self::Error>,
@@ -46,7 +48,7 @@ mod nb {
         }
     }
 
-    impl<USART, PINS, WORD: Copy> Write<WORD> for Serial<USART, PINS, WORD>
+    impl<USART, WORD: Copy> Write<WORD> for Serial<USART, WORD>
     where
         USART: Instance,
         Tx<USART, WORD>: Write<WORD> + ErrorType<Error = Self::Error>,
@@ -91,7 +93,7 @@ mod blocking {
     use super::ErrorType;
     use embedded_hal_one::serial::blocking::Write;
 
-    impl<USART, PINS, WORD: Copy> Write<WORD> for Serial<USART, PINS, WORD>
+    impl<USART, WORD: Copy> Write<WORD> for Serial<USART, WORD>
     where
         USART: Instance,
         Tx<USART, WORD>: Write<WORD> + ErrorType<Error = Self::Error>,

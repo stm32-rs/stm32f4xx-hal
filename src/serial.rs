@@ -26,7 +26,7 @@ use nb::block;
 mod hal_02;
 mod hal_1;
 
-use crate::gpio::{Const, PinA, PushPull, SetAlternate};
+use crate::gpio;
 
 use crate::pac::{self, RCC};
 
@@ -185,34 +185,15 @@ impl crate::Sealed for TxPin {}
 pub struct RxPin;
 impl crate::Sealed for RxPin {}
 
-pub trait Pins<USART> {
-    fn set_alt_mode(&mut self);
-    fn restore_mode(&mut self);
-}
-impl<USART, TX, RX, const TXA: u8, const RXA: u8> Pins<USART> for (TX, RX)
-where
-    TX: PinA<TxPin, USART, A = Const<TXA>> + SetAlternate<TXA, PushPull>,
-    RX: PinA<RxPin, USART, A = Const<RXA>> + SetAlternate<RXA, PushPull>,
-{
-    fn set_alt_mode(&mut self) {
-        self.0.set_alt_mode();
-        self.1.set_alt_mode();
-    }
-    fn restore_mode(&mut self) {
-        self.0.restore_mode();
-        self.1.restore_mode();
-    }
-}
-
 /// A filler type for when the Tx pin is unnecessary
 pub type NoTx = NoPin;
 /// A filler type for when the Rx pin is unnecessary
 pub type NoRx = NoPin;
 
 /// Serial abstraction
-pub struct Serial<USART, PINS, WORD = u8> {
+pub struct Serial<USART: Instance, WORD = u8> {
     usart: USART,
-    pins: PINS,
+    pins: (USART::TxPin, USART::RxPin),
     tx: Tx<USART, WORD>,
     rx: Rx<USART, WORD>,
 }
@@ -331,28 +312,28 @@ impl<USART: Instance, WORD> TxISR for Tx<USART, WORD> {
     }
 }
 
-impl<USART, PINS, WORD> AsRef<Tx<USART, WORD>> for Serial<USART, PINS, WORD> {
+impl<USART: Instance, WORD> AsRef<Tx<USART, WORD>> for Serial<USART, WORD> {
     #[inline(always)]
     fn as_ref(&self) -> &Tx<USART, WORD> {
         &self.tx
     }
 }
 
-impl<USART, PINS, WORD> AsRef<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
+impl<USART: Instance, WORD> AsRef<Rx<USART, WORD>> for Serial<USART, WORD> {
     #[inline(always)]
     fn as_ref(&self) -> &Rx<USART, WORD> {
         &self.rx
     }
 }
 
-impl<USART, PINS, WORD> AsMut<Tx<USART, WORD>> for Serial<USART, PINS, WORD> {
+impl<USART: Instance, WORD> AsMut<Tx<USART, WORD>> for Serial<USART, WORD> {
     #[inline(always)]
     fn as_mut(&mut self) -> &mut Tx<USART, WORD> {
         &mut self.tx
     }
 }
 
-impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
+impl<USART: Instance, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, WORD> {
     #[inline(always)]
     fn as_mut(&mut self) -> &mut Rx<USART, WORD> {
         &mut self.rx
@@ -360,20 +341,20 @@ impl<USART, PINS, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, PINS, WORD> {
 }
 
 /// Serial receiver containing RX pin
-pub struct URx<USART, RX, WORD = u8> {
+pub struct URx<USART: Instance, WORD = u8> {
     inner: Rx<USART, WORD>,
-    pin: RX,
+    pin: USART::RxPin,
 }
 
 /// Serial transmitter containing TX pin
-pub struct UTx<USART, TX, WORD = u8> {
+pub struct UTx<USART: Instance, WORD = u8> {
     inner: Tx<USART, WORD>,
     usart: USART,
-    pin: TX,
+    pin: USART::TxPin,
 }
 
-impl<USART: Instance, RX, WORD> URx<USART, RX, WORD> {
-    fn new(pin: RX) -> Self {
+impl<USART: Instance, WORD> URx<USART, WORD> {
+    fn new(pin: USART::RxPin) -> Self {
         Self {
             inner: Rx::new(),
             pin,
@@ -384,10 +365,7 @@ impl<USART: Instance, RX, WORD> URx<USART, RX, WORD> {
         Rx::new()
     }
 
-    pub fn join<TX>(self, tx: UTx<USART, TX, WORD>) -> Serial<USART, (TX, RX), WORD>
-    where
-        (TX, RX): Pins<USART>,
-    {
+    pub fn join<TX>(self, tx: UTx<USART, WORD>) -> Serial<USART, WORD> {
         Serial {
             usart: tx.usart,
             pins: (tx.pin, self.pin),
@@ -397,8 +375,8 @@ impl<USART: Instance, RX, WORD> URx<USART, RX, WORD> {
     }
 }
 
-impl<USART: Instance, TX, WORD> UTx<USART, TX, WORD> {
-    fn new(usart: USART, pin: TX) -> Self {
+impl<USART: Instance, WORD> UTx<USART, WORD> {
+    fn new(usart: USART, pin: USART::TxPin) -> Self {
         Self {
             inner: Tx::new(),
             usart,
@@ -410,10 +388,7 @@ impl<USART: Instance, TX, WORD> UTx<USART, TX, WORD> {
         Tx::new()
     }
 
-    pub fn join<RX>(self, rx: URx<USART, RX, WORD>) -> Serial<USART, (TX, RX), WORD>
-    where
-        (TX, RX): Pins<USART>,
-    {
+    pub fn join(self, rx: URx<USART, WORD>) -> Serial<USART, WORD> {
         Serial {
             usart: self.usart,
             pins: (self.pin, rx.pin),
@@ -423,14 +398,14 @@ impl<USART: Instance, TX, WORD> UTx<USART, TX, WORD> {
     }
 }
 
-impl<USART, TX, WORD> AsRef<Tx<USART, WORD>> for UTx<USART, TX, WORD> {
+impl<USART: Instance, WORD> AsRef<Tx<USART, WORD>> for UTx<USART, WORD> {
     #[inline(always)]
     fn as_ref(&self) -> &Tx<USART, WORD> {
         &self.inner
     }
 }
 
-impl<USART, TX, WORD> Deref for UTx<USART, TX, WORD> {
+impl<USART: Instance, WORD> Deref for UTx<USART, WORD> {
     type Target = Tx<USART, WORD>;
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
@@ -438,14 +413,14 @@ impl<USART, TX, WORD> Deref for UTx<USART, TX, WORD> {
     }
 }
 
-impl<USART, RX, WORD> AsRef<Rx<USART, WORD>> for URx<USART, RX, WORD> {
+impl<USART: Instance, WORD> AsRef<Rx<USART, WORD>> for URx<USART, WORD> {
     #[inline(always)]
     fn as_ref(&self) -> &Rx<USART, WORD> {
         &self.inner
     }
 }
 
-impl<USART, RX, WORD> Deref for URx<USART, RX, WORD> {
+impl<USART: Instance, WORD> Deref for URx<USART, WORD> {
     type Target = Rx<USART, WORD>;
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
@@ -453,28 +428,28 @@ impl<USART, RX, WORD> Deref for URx<USART, RX, WORD> {
     }
 }
 
-impl<USART, TX, WORD> AsMut<Tx<USART, WORD>> for UTx<USART, TX, WORD> {
+impl<USART: Instance, WORD> AsMut<Tx<USART, WORD>> for UTx<USART, WORD> {
     #[inline(always)]
     fn as_mut(&mut self) -> &mut Tx<USART, WORD> {
         &mut self.inner
     }
 }
 
-impl<USART, TX, WORD> DerefMut for UTx<USART, TX, WORD> {
+impl<USART: Instance, WORD> DerefMut for UTx<USART, WORD> {
     #[inline(always)]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
 }
 
-impl<USART, RX, WORD> AsMut<Rx<USART, WORD>> for URx<USART, RX, WORD> {
+impl<USART: Instance, WORD> AsMut<Rx<USART, WORD>> for URx<USART, WORD> {
     #[inline(always)]
     fn as_mut(&mut self) -> &mut Rx<USART, WORD> {
         &mut self.inner
     }
 }
 
-impl<USART, RX, WORD> DerefMut for URx<USART, RX, WORD> {
+impl<USART: Instance, WORD> DerefMut for URx<USART, WORD> {
     #[inline(always)]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
@@ -482,73 +457,66 @@ impl<USART, RX, WORD> DerefMut for URx<USART, RX, WORD> {
 }
 
 pub trait SerialExt: Sized + Instance {
-    fn serial<TX, RX, WORD>(
+    fn serial<WORD>(
         self,
-        pins: (TX, RX),
+        pins: (impl Into<Self::TxPin>, impl Into<Self::RxPin>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Serial<Self, (TX, RX), WORD>, config::InvalidConfig>
-    where
-        (TX, RX): Pins<Self>;
-    fn tx<TX, WORD>(
+    ) -> Result<Serial<Self, WORD>, config::InvalidConfig>;
+
+    fn tx<WORD>(
         self,
-        tx_pin: TX,
+        tx_pin: impl Into<Self::TxPin>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
     where
-        (TX, NoPin): Pins<Self>;
-    fn rx<RX, WORD>(
+        NoPin: Into<Self::RxPin>;
+
+    fn rx<WORD>(
         self,
-        rx_pin: RX,
+        rx_pin: impl Into<Self::RxPin>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
     where
-        (NoPin, RX): Pins<Self>;
+        NoPin: Into<Self::TxPin>;
 }
 
 impl<USART: Instance> SerialExt for USART {
-    fn serial<TX, RX, WORD>(
+    fn serial<WORD>(
         self,
-        pins: (TX, RX),
+        pins: (impl Into<Self::TxPin>, impl Into<Self::RxPin>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Serial<Self, (TX, RX), WORD>, config::InvalidConfig>
-    where
-        (TX, RX): Pins<Self>,
-    {
+    ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
         Serial::new(self, pins, config, clocks)
     }
-    fn tx<TX, WORD>(
+    fn tx<WORD>(
         self,
-        tx_pin: TX,
+        tx_pin: impl Into<Self::TxPin>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
     where
-        (TX, NoPin): Pins<Self>,
+        NoPin: Into<Self::RxPin>,
     {
         Serial::tx(self, tx_pin, config, clocks)
     }
-    fn rx<RX, WORD>(
+    fn rx<WORD>(
         self,
-        rx_pin: RX,
+        rx_pin: impl Into<Self::RxPin>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
     where
-        (NoPin, RX): Pins<Self>,
+        NoPin: Into<Self::TxPin>,
     {
         Serial::rx(self, rx_pin, config, clocks)
     }
 }
 
-impl<USART, TX, RX, WORD> Serial<USART, (TX, RX), WORD>
-where
-    (TX, RX): Pins<USART>,
-    USART: Instance,
-{
+impl<USART: Instance, WORD> Serial<USART, WORD> {
     /*
         StopBits::STOP0P5 and StopBits::STOP1P5 aren't supported when using UART
 
@@ -556,7 +524,7 @@ where
     */
     pub fn new(
         usart: USART,
-        mut pins: (TX, RX),
+        pins: (impl Into<USART::TxPin>, impl Into<USART::RxPin>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig> {
@@ -665,7 +633,7 @@ where
             DmaConfig::None => {}
         }
 
-        pins.set_alt_mode();
+        let pins = (pins.0.into(), pins.1.into());
 
         Ok(Serial {
             usart,
@@ -676,44 +644,47 @@ where
         .config_stop(config))
     }
 
-    pub fn release(mut self) -> (USART, (TX, RX)) {
-        self.pins.restore_mode();
-
-        (self.usart, (self.pins.0, self.pins.1))
+    pub fn release<TX, RX, E>(self) -> Result<(USART, (TX, RX)), E>
+    where
+        TX: TryFrom<USART::TxPin, Error = E>,
+        RX: TryFrom<USART::RxPin, Error = E>,
+    {
+        Ok((
+            self.usart,
+            (self.pins.0.try_into()?, self.pins.1.try_into()?),
+        ))
     }
 }
 
-impl<USART, TX, WORD> Serial<USART, (TX, NoPin), WORD>
-where
-    (TX, NoPin): Pins<USART>,
-    USART: Instance,
-{
+impl<USART: Instance, WORD> Serial<USART, WORD> {
     pub fn tx(
         usart: USART,
-        tx_pin: TX,
+        tx_pin: impl Into<USART::TxPin>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Tx<USART, WORD>, config::InvalidConfig> {
+    ) -> Result<Tx<USART, WORD>, config::InvalidConfig>
+    where
+        NoPin: Into<USART::RxPin>,
+    {
         Self::new(usart, (tx_pin, NoPin), config, clocks).map(|s| s.split().0)
     }
 }
 
-impl<USART, RX, WORD> Serial<USART, (NoPin, RX), WORD>
-where
-    (NoPin, RX): Pins<USART>,
-    USART: Instance,
-{
+impl<USART: Instance, WORD> Serial<USART, WORD> {
     pub fn rx(
         usart: USART,
-        rx_pin: RX,
+        rx_pin: impl Into<USART::RxPin>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Rx<USART, WORD>, config::InvalidConfig> {
+    ) -> Result<Rx<USART, WORD>, config::InvalidConfig>
+    where
+        NoPin: Into<USART::TxPin>,
+    {
         Self::new(usart, (NoPin, rx_pin), config, clocks).map(|s| s.split().1)
     }
 }
 
-impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
+impl<USART: Instance, WORD> Serial<USART, WORD> {
     /// Starts listening for an interrupt event
     ///
     /// Note, you will also have to enable the corresponding interrupt
@@ -740,7 +711,7 @@ impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
     }
 }
 
-impl<USART: Instance, PINS, WORD> RxISR for Serial<USART, PINS, WORD> {
+impl<USART: Instance, WORD> RxISR for Serial<USART, WORD> {
     /// Return true if the line idle status is set
     fn is_idle(&self) -> bool {
         self.rx.is_idle()
@@ -757,24 +728,24 @@ impl<USART: Instance, PINS, WORD> RxISR for Serial<USART, PINS, WORD> {
     }
 }
 
-impl<USART: Instance, PINS, WORD> TxISR for Serial<USART, PINS, WORD> {
+impl<USART: Instance, WORD> TxISR for Serial<USART, WORD> {
     /// Return true if the tx register is empty (and can accept data)
     fn is_tx_empty(&self) -> bool {
         self.tx.is_tx_empty()
     }
 }
 
-impl<USART: Instance, TX, RX, WORD> Serial<USART, (TX, RX), WORD> {
-    pub fn split_nondestructive(self) -> (UTx<USART, TX, WORD>, URx<USART, RX, WORD>) {
+impl<USART: Instance, WORD> Serial<USART, WORD> {
+    pub fn split_nondestructive(self) -> (UTx<USART, WORD>, URx<USART, WORD>) {
         (UTx::new(self.usart, self.pins.0), URx::new(self.pins.1))
     }
 }
 
-impl<USART: Instance, PINS> Serial<USART, PINS, u8> {
+impl<USART: Instance> Serial<USART, u8> {
     /// Converts this Serial into a version that can read and write `u16` values instead of `u8`s
     ///
     /// This can be used with a word length of 9 bits.
-    pub fn with_u16_data(self) -> Serial<USART, PINS, u16> {
+    pub fn with_u16_data(self) -> Serial<USART, u16> {
         Serial {
             usart: self.usart,
             pins: self.pins,
@@ -784,11 +755,11 @@ impl<USART: Instance, PINS> Serial<USART, PINS, u8> {
     }
 }
 
-impl<USART: Instance, PINS> Serial<USART, PINS, u16> {
+impl<USART: Instance> Serial<USART, u16> {
     /// Converts this Serial into a version that can read and write `u8` values instead of `u16`s
     ///
     /// This can be used with a word length of 8 bits.
-    pub fn with_u8_data(self) -> Serial<USART, PINS, u8> {
+    pub fn with_u8_data(self) -> Serial<USART, u8> {
         Serial {
             usart: self.usart,
             pins: self.pins,
@@ -816,7 +787,7 @@ unsafe impl<USART: Instance> PeriAddress for Tx<USART, u8> {
     type MemSize = u8;
 }
 
-impl<USART: Instance, PINS, WORD> Serial<USART, PINS, WORD> {
+impl<USART: Instance, WORD> Serial<USART, WORD> {
     fn config_stop(self, config: config::Config) -> Self {
         self.usart.set_stopbits(config.stopbits);
         self
@@ -855,6 +826,9 @@ use crate::pac::usart1 as uart_base;
 
 // Implemented by all USART instances
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock {
+    type TxPin;
+    type RxPin;
+
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
     #[doc(hidden)]
@@ -862,12 +836,15 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock {
 }
 
 macro_rules! halUsart {
-    ($USART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
-        pub type $Serial<PINS, WORD = u8> = Serial<$USART, PINS, WORD>;
+    ($USART:ty, $usart:ident ,$Serial:ident, $Tx:ident, $Rx:ident) => {
+        pub type $Serial<WORD = u8> = Serial<$USART, WORD>;
         pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
         pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
 
         impl Instance for $USART {
+            type TxPin = gpio::alt::$usart::Tx;
+            type RxPin = gpio::alt::$usart::Rx;
+
             fn ptr() -> *const uart_base::RegisterBlock {
                 <$USART>::ptr() as *const _
             }
@@ -900,12 +877,15 @@ macro_rules! halUsart {
 ))]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
-    ($USART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
-        pub type $Serial<PINS, WORD = u8> = Serial<$USART, PINS, WORD>;
+    ($USART:ty, $usart:ident, $Serial:ident, $Tx:ident, $Rx:ident) => {
+        pub type $Serial<WORD = u8> = Serial<$USART, WORD>;
         pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
         pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
 
         impl Instance for $USART {
+            type TxPin = gpio::alt::$usart::Tx;
+            type RxPin = gpio::alt::$usart::Rx;
+
             fn ptr() -> *const uart_base::RegisterBlock {
                 <$USART>::ptr() as *const _
             }
@@ -927,37 +907,37 @@ macro_rules! halUart {
     };
 }
 
-halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
-halUsart! { pac::USART2, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
+halUsart! { pac::USART1, usart1, Serial1, Rx1, Tx1 }
+halUsart! { pac::USART2, usart2, Serial2, Rx2, Tx2 }
+halUsart! { pac::USART6, usart6, Serial6, Rx6, Tx6 }
 
 #[cfg(feature = "usart3")]
-halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
+halUsart! { pac::USART3, usart3, Serial3, Rx3, Tx3 }
 
 #[cfg(feature = "uart4")]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
-halUart! { pac::UART4, Serial4, Rx4, Tx4 }
+halUart! { pac::UART4, uart4, Serial4, Rx4, Tx4 }
 #[cfg(feature = "uart5")]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
-halUart! { pac::UART5, Serial5, Rx5, Tx5 }
+halUart! { pac::UART5, uart5, Serial5, Rx5, Tx5 }
 
 //#[cfg(feature = "uart4")]
 //#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-//halUsart! { pac::UART4, Serial4, Rx4, Tx4 }
+//halUsart! { pac::UART4, uart4, Serial4, Rx4, Tx4 }
 #[cfg(feature = "uart5")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { pac::UART5, Serial5, Rx5, Tx5 }
+halUsart! { pac::UART5, uart5, Serial5, Rx5, Tx5 }
 
 #[cfg(feature = "uart7")]
-halUsart! { pac::UART7, Serial7, Rx7, Tx7 }
+halUsart! { pac::UART7, uart7, Serial7, Rx7, Tx7 }
 #[cfg(feature = "uart8")]
-halUsart! { pac::UART8, Serial8, Rx8, Tx8 }
+halUsart! { pac::UART8, uart8, Serial8, Rx8, Tx8 }
 #[cfg(feature = "uart9")]
-halUsart! { pac::UART9, Serial9, Rx9, Tx9 }
+halUsart! { pac::UART9, uart9, Serial9, Rx9, Tx9 }
 #[cfg(feature = "uart10")]
-halUsart! { pac::UART10, Serial10, Rx10, Tx10 }
+halUsart! { pac::UART10, uart10, Serial10, Rx10, Tx10 }
 
-impl<USART: Instance, PINS> fmt::Write for Serial<USART, PINS> {
+impl<USART: Instance> fmt::Write for Serial<USART> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.tx.write_str(s)
     }

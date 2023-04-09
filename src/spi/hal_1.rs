@@ -1,5 +1,7 @@
 pub use embedded_hal_one::spi::{Error, ErrorKind, ErrorType, Mode, Phase, Polarity};
 
+use super::Instance;
+
 impl From<Polarity> for super::Polarity {
     fn from(p: Polarity) -> Self {
         match p {
@@ -37,7 +39,7 @@ impl Error for super::Error {
     }
 }
 
-impl<SPI, PINS, const BIDI: bool, W> ErrorType for super::Spi<SPI, PINS, BIDI, W> {
+impl<SPI: Instance, const BIDI: bool, W> ErrorType for super::Spi<SPI, BIDI, W> {
     type Error = super::Error;
 }
 
@@ -45,7 +47,7 @@ mod nb {
     use super::super::{Error, FrameSize, Instance, Spi};
     use embedded_hal_one::spi::nb::FullDuplex;
 
-    impl<SPI, PINS, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, PINS, BIDI, W>
+    impl<SPI, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, BIDI, W>
     where
         SPI: Instance,
     {
@@ -72,7 +74,7 @@ mod blocking {
         nb::FullDuplex,
     };
 
-    impl<SPI, PINS, const BIDI: bool, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, PINS, BIDI, W>
+    impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, BIDI, W>
     where
         SPI: Instance,
     {
@@ -97,7 +99,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool, W> SpiBusFlush for Spi<SPI, PINS, BIDI, W>
+    impl<SPI, const BIDI: bool, W> SpiBusFlush for Spi<SPI, BIDI, W>
     where
         SPI: Instance,
     {
@@ -106,7 +108,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool, W: FrameSize + 'static> SpiBusWrite<W> for Spi<SPI, PINS, BIDI, W>
+    impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBusWrite<W> for Spi<SPI, BIDI, W>
     where
         SPI: Instance,
     {
@@ -122,7 +124,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool, W: FrameSize + 'static> SpiBusRead<W> for Spi<SPI, PINS, BIDI, W>
+    impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBusRead<W> for Spi<SPI, BIDI, W>
     where
         SPI: Instance,
     {

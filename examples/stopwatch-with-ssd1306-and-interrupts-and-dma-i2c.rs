@@ -52,12 +52,11 @@ use heapless::String;
 use ssd1306::{prelude::*, Ssd1306};
 
 pub type I2c1Handle = I2CMasterDma<
-    I2C1,                                       // Instance of I2C
-    (PB8<AF4<OpenDrain>>, PB9<AF4<OpenDrain>>), // Pins
-    Stream1<DMA1>,                              // Stream used for Tx
-    0,                                          // Channel for Tx
-    Stream0<DMA1>,                              // Stream used for Rx (Not used in example)
-    1,                                          // Channel for Rx (Not used in example)
+    I2C1,          // Instance of I2C
+    Stream1<DMA1>, // Stream used for Tx
+    0,             // Channel for Tx
+    Stream0<DMA1>, // Stream used for Rx (Not used in example)
+    1,             // Channel for Rx (Not used in example)
 >;
 
 // Set up global state. It's all mutexed up for concurrency safety.

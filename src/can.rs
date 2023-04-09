@@ -1,44 +1,36 @@
 //! # Controller Area Network (CAN) Interface
 //!
 
-use crate::gpio::{Const, NoPin, PinA, PushPull, SetAlternate};
+use crate::gpio::{self, NoPin};
 use crate::pac::{CAN1, CAN2};
 use crate::rcc;
 
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset {}
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset {
+    type Tx;
+    type Rx;
+}
+
+macro_rules! can {
+    ($CAN:ty: $Can:ident, $can:ident) => {
+        pub type $Can = Can<$CAN>;
+
+        impl Instance for $CAN {
+            type Tx = gpio::alt::$can::Tx;
+            type Rx = gpio::alt::$can::Rx;
+        }
+    };
+}
 
 // Implemented by all SPI instances
-impl Instance for CAN1 {}
-pub type Can1<PINS> = Can<CAN1, PINS>;
-impl Instance for CAN2 {}
-pub type Can2<PINS> = Can<CAN2, PINS>;
+can! { CAN1: Can1, can1 }
+can! { CAN2: Can2, can2 }
 #[cfg(feature = "can3")]
-pub type Can3<PINS> = Can<crate::pac::CAN3, PINS>;
+can! { crate::pac::CAN3: Can3, can3 }
 
 pub struct Tx;
 impl crate::Sealed for Tx {}
 pub struct Rx;
 impl crate::Sealed for Rx {}
-
-pub trait Pins<CAN> {
-    fn set_alt_mode(&mut self);
-    fn restore_mode(&mut self);
-}
-
-impl<CAN, TX, RX, const TXA: u8, const RXA: u8> Pins<CAN> for (TX, RX)
-where
-    TX: PinA<Tx, CAN, A = Const<TXA>> + SetAlternate<TXA, PushPull>,
-    RX: PinA<Rx, CAN, A = Const<RXA>> + SetAlternate<RXA, PushPull>,
-{
-    fn set_alt_mode(&mut self) {
-        self.0.set_alt_mode();
-        self.1.set_alt_mode();
-    }
-    fn restore_mode(&mut self) {
-        self.0.restore_mode();
-        self.1.restore_mode();
-    }
-}
 
 /// Pins and definitions for models with a third CAN peripheral
 #[cfg(feature = "can3")]
@@ -46,63 +38,56 @@ mod can3 {
     use super::*;
     use crate::pac::CAN3;
 
-    impl Instance for CAN3 {}
-
-    unsafe impl<PINS> bxcan::Instance for Can<CAN3, PINS> {
+    unsafe impl bxcan::Instance for Can<CAN3> {
         const REGISTERS: *mut bxcan::RegisterBlock = CAN3::ptr() as *mut _;
     }
 
-    unsafe impl<PINS> bxcan::FilterOwner for Can<CAN3, PINS> {
+    unsafe impl bxcan::FilterOwner for Can<CAN3> {
         const NUM_FILTER_BANKS: u8 = 14;
     }
 }
 
 pub trait CanExt: Sized + Instance {
-    fn can<TX, RX>(self, pins: (TX, RX)) -> Can<Self, (TX, RX)>
+    fn can(self, pins: (impl Into<Self::Tx>, impl Into<Self::Rx>)) -> Can<Self>;
+
+    fn tx(self, tx_pin: impl Into<Self::Tx>) -> Can<Self>
     where
-        (TX, RX): Pins<Self>;
-    fn tx<TX>(self, tx_pin: TX) -> Can<Self, (TX, NoPin)>
+        NoPin: Into<Self::Rx>;
+
+    fn rx(self, rx_pin: impl Into<Self::Rx>) -> Can<Self>
     where
-        (TX, NoPin): Pins<Self>;
-    fn rx<RX>(self, rx_pin: RX) -> Can<Self, (NoPin, RX)>
-    where
-        (NoPin, RX): Pins<Self>;
+        NoPin: Into<Self::Tx>;
 }
 
 impl<CAN: Instance> CanExt for CAN {
-    fn can<TX, RX>(self, pins: (TX, RX)) -> Can<Self, (TX, RX)>
-    where
-        (TX, RX): Pins<Self>,
-    {
+    fn can(self, pins: (impl Into<Self::Tx>, impl Into<Self::Rx>)) -> Can<Self> {
         Can::new(self, pins)
     }
-    fn tx<TX>(self, tx_pin: TX) -> Can<Self, (TX, NoPin)>
+
+    fn tx(self, tx_pin: impl Into<Self::Tx>) -> Can<Self>
     where
-        (TX, NoPin): Pins<Self>,
+        NoPin: Into<Self::Rx>,
     {
         Can::tx(self, tx_pin)
     }
-    fn rx<RX>(self, rx_pin: RX) -> Can<Self, (NoPin, RX)>
+
+    fn rx(self, rx_pin: impl Into<Self::Rx>) -> Can<Self>
     where
-        (NoPin, RX): Pins<Self>,
+        NoPin: Into<Self::Tx>,
     {
         Can::rx(self, rx_pin)
     }
 }
 
 /// Interface to the CAN peripheral.
-pub struct Can<CAN, PINS> {
+pub struct Can<CAN: Instance> {
     can: CAN,
-    pins: PINS,
+    pins: (CAN::Tx, CAN::Rx),
 }
 
-impl<CAN, TX, RX> Can<CAN, (TX, RX)>
-where
-    CAN: Instance,
-    (TX, RX): Pins<CAN>,
-{
+impl<CAN: Instance> Can<CAN> {
     /// Creates a CAN interface.
-    pub fn new(can: CAN, mut pins: (TX, RX)) -> Self {
+    pub fn new(can: CAN, pins: (impl Into<CAN::Tx>, impl Into<CAN::Rx>)) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*crate::pac::RCC::ptr());
@@ -110,48 +95,48 @@ where
             CAN::reset(rcc);
         }
 
-        pins.set_alt_mode();
+        let pins = (pins.0.into(), pins.1.into());
 
         Can { can, pins }
     }
 
-    pub fn release(mut self) -> (CAN, (TX, RX)) {
-        self.pins.restore_mode();
-
-        (self.can, (self.pins.0, self.pins.1))
+    pub fn release<TX, RX, E>(self) -> Result<(CAN, (TX, RX)), E>
+    where
+        TX: TryFrom<CAN::Tx, Error = E>,
+        RX: TryFrom<CAN::Rx, Error = E>,
+    {
+        Ok((self.can, (self.pins.0.try_into()?, self.pins.1.try_into()?)))
     }
 }
 
-impl<CAN, TX> Can<CAN, (TX, NoPin)>
-where
-    CAN: Instance,
-    (TX, NoPin): Pins<CAN>,
-{
-    pub fn tx(usart: CAN, tx_pin: TX) -> Self {
+impl<CAN: Instance> Can<CAN> {
+    pub fn tx(usart: CAN, tx_pin: impl Into<CAN::Tx>) -> Self
+    where
+        NoPin: Into<CAN::Rx>,
+    {
         Self::new(usart, (tx_pin, NoPin))
     }
 }
 
-impl<CAN, RX> Can<CAN, (NoPin, RX)>
-where
-    CAN: Instance,
-    (NoPin, RX): Pins<CAN>,
-{
-    pub fn rx(usart: CAN, rx_pin: RX) -> Self {
+impl<CAN: Instance> Can<CAN> {
+    pub fn rx(usart: CAN, rx_pin: impl Into<CAN::Rx>) -> Self
+    where
+        NoPin: Into<CAN::Tx>,
+    {
         Self::new(usart, (NoPin, rx_pin))
     }
 }
 
-unsafe impl<PINS> bxcan::Instance for Can<CAN1, PINS> {
+unsafe impl bxcan::Instance for Can<CAN1> {
     const REGISTERS: *mut bxcan::RegisterBlock = CAN1::ptr() as *mut _;
 }
 
-unsafe impl<PINS> bxcan::Instance for Can<CAN2, PINS> {
+unsafe impl bxcan::Instance for Can<CAN2> {
     const REGISTERS: *mut bxcan::RegisterBlock = CAN2::ptr() as *mut _;
 }
 
-unsafe impl<PINS> bxcan::FilterOwner for Can<CAN1, PINS> {
+unsafe impl bxcan::FilterOwner for Can<CAN1> {
     const NUM_FILTER_BANKS: u8 = 28;
 }
 
-unsafe impl<PINS> bxcan::MasterInstance for Can<CAN1, PINS> {}
+unsafe impl bxcan::MasterInstance for Can<CAN1> {}

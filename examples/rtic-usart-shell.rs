@@ -10,10 +10,7 @@ mod usart_shell {
     use core::fmt::Write;
     use dwt_systick_monotonic::DwtSystick;
     use stm32f4xx_hal::{
-        gpio::{
-            gpioa::PA0, gpioa::PA10, gpioa::PA9, gpioc::PC13, Alternate, Edge, Input, Output,
-            PushPull,
-        },
+        gpio::{gpioa::PA0, gpioc::PC13, Edge, Input, Output, PushPull},
         pac::USART1,
         prelude::*,
         serial::{config::Config, Event::Rxne, Serial},
@@ -26,12 +23,7 @@ mod usart_shell {
 
     type LedType = PC13<Output<PushPull>>;
     type ButtonType = PA0<Input>;
-    type ShellType = UShell<
-        Serial<USART1, (PA9<Alternate<7>>, PA10<Alternate<7>>)>,
-        StaticAutocomplete<5>,
-        LRUHistory<32, 4>,
-        32,
-    >;
+    type ShellType = UShell<Serial<USART1>, StaticAutocomplete<5>, LRUHistory<32, 4>, 32>;
 
     const SHELL_PROMPT: &str = "#> ";
     const CR: &str = "\r\n";
