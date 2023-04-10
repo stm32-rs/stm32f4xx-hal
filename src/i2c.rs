@@ -3,7 +3,7 @@ use core::ops::Deref;
 use crate::pac::{self, i2c1};
 use crate::rcc::{Enable, Reset};
 
-use crate::gpio;
+use crate::gpio::{self, OpenDrain};
 use crate::pac::RCC;
 
 use crate::rcc::Clocks;
@@ -120,8 +120,8 @@ macro_rules! i2c {
         pub type $I2c = I2c<$I2C>;
 
         impl Instance for $I2C {
-            type Scl = gpio::alt::$i2c::Scl;
-            type Sda = gpio::alt::$i2c::Sda;
+            type Scl = gpio::alt::$i2c::Scl<OpenDrain>;
+            type Sda = gpio::alt::$i2c::Sda<OpenDrain>;
 
             fn ptr() -> *const i2c1::RegisterBlock {
                 <$I2C>::ptr() as *const _

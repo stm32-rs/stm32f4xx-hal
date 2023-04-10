@@ -1,5 +1,6 @@
 //! # Quadrature Encoder Interface
 use crate::{
+    gpio::PushPull,
     pac::{self, RCC},
     rcc,
     timer::{ChannelPin as Ch, General},
@@ -9,8 +10,8 @@ pub trait QeiExt: Sized + Instance {
     fn qei(
         self,
         pins: (
-            impl Into<<Self as Ch<0>>::Pin>,
-            impl Into<<Self as Ch<1>>::Pin>,
+            impl Into<<Self as Ch<0>>::Pin<PushPull>>,
+            impl Into<<Self as Ch<1>>::Pin<PushPull>>,
         ),
     ) -> Qei<Self>;
 }
@@ -19,8 +20,8 @@ impl<TIM: Instance> QeiExt for TIM {
     fn qei(
         self,
         pins: (
-            impl Into<<Self as Ch<0>>::Pin>,
-            impl Into<<Self as Ch<1>>::Pin>,
+            impl Into<<Self as Ch<0>>::Pin<PushPull>>,
+            impl Into<<Self as Ch<1>>::Pin<PushPull>>,
         ),
     ) -> Qei<Self> {
         Qei::new(self, pins)
@@ -30,7 +31,7 @@ impl<TIM: Instance> QeiExt for TIM {
 /// Hardware quadrature encoder interface peripheral
 pub struct Qei<TIM: Instance> {
     tim: TIM,
-    pins: (<TIM as Ch<0>>::Pin, <TIM as Ch<1>>::Pin),
+    pins: (<TIM as Ch<0>>::Pin<PushPull>, <TIM as Ch<1>>::Pin<PushPull>),
 }
 
 impl<TIM: Instance> Qei<TIM> {
@@ -38,8 +39,8 @@ impl<TIM: Instance> Qei<TIM> {
     pub fn new(
         mut tim: TIM,
         pins: (
-            impl Into<<TIM as Ch<0>>::Pin>,
-            impl Into<<TIM as Ch<1>>::Pin>,
+            impl Into<<TIM as Ch<0>>::Pin<PushPull>>,
+            impl Into<<TIM as Ch<1>>::Pin<PushPull>>,
         ),
     ) -> Self {
         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
@@ -57,8 +58,8 @@ impl<TIM: Instance> Qei<TIM> {
     /// Releases the TIM peripheral and QEI pins
     pub fn release<PC1, PC2, E>(self) -> Result<(TIM, (PC1, PC2)), E>
     where
-        PC1: TryFrom<<TIM as Ch<0>>::Pin, Error = E>,
-        PC2: TryFrom<<TIM as Ch<1>>::Pin, Error = E>,
+        PC1: TryFrom<<TIM as Ch<0>>::Pin<PushPull>, Error = E>,
+        PC2: TryFrom<<TIM as Ch<1>>::Pin<PushPull>, Error = E>,
     {
         Ok((self.tim, (self.pins.0.try_into()?, self.pins.1.try_into()?)))
     }

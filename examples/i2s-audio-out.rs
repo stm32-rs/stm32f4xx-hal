@@ -104,7 +104,7 @@ fn main() -> ! {
         .i2s_clk(61440.kHz())
         .freeze();
 
-    let i2s_pins = (gpioa.pa4, gpioc.pc10, NoPin, gpioc.pc12);
+    let i2s_pins = (gpioa.pa4, gpioc.pc10, NoPin::new(), gpioc.pc12);
     let i2s = I2s::new(dp.SPI3, i2s_pins, &clocks);
     let i2s_config = I2sTransferConfig::new_master()
         .transmit()

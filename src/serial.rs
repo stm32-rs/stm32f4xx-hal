@@ -576,7 +576,7 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
     where
         NoPin: Into<USART::RxPin>,
     {
-        Self::new(usart, (tx_pin, NoPin), config, clocks).map(|s| s.split().0)
+        Self::new(usart, (tx_pin, NoPin::new()), config, clocks).map(|s| s.split().0)
     }
 }
 
@@ -590,7 +590,7 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
     where
         NoPin: Into<USART::TxPin>,
     {
-        Self::new(usart, (NoPin, rx_pin), config, clocks).map(|s| s.split().1)
+        Self::new(usart, (NoPin::new(), rx_pin), config, clocks).map(|s| s.split().1)
     }
 }
 

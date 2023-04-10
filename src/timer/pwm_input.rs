@@ -1,4 +1,5 @@
 use super::{ChannelPin as Ch, General, Instance, Timer, WithPwm};
+use crate::gpio::PushPull;
 use crate::pac;
 use core::convert::TryFrom;
 use core::ops::{Deref, DerefMut};
@@ -30,7 +31,7 @@ where
     TIM: Instance + WithPwm + Ch<0>,
 {
     timer: Timer<TIM>,
-    _pins: TIM::Pin,
+    _pins: TIM::Pin<PushPull>,
 }
 
 impl<TIM> Deref for PwmInput<TIM>
@@ -76,7 +77,7 @@ macro_rules! hal {
             /// 2. When the period is captured. the duty cycle will be an observable value.
             /// See the pwm input example for an suitable interrupt handler.
             #[allow(unused_unsafe)] //for some chips the operations are considered safe.
-            pub fn pwm_input(mut self, best_guess: Hertz, pins: impl Into<<$TIM as Ch<0>>::Pin>) -> PwmInput<$TIM> {
+            pub fn pwm_input(mut self, best_guess: Hertz, pins: impl Into<<$TIM as Ch<0>>::Pin<PushPull>>) -> PwmInput<$TIM> {
                 let pins = pins.into();
 
                 /*

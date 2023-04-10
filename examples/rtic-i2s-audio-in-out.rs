@@ -188,7 +188,7 @@ mod app {
         i2s2_driver.set_error_interrupt(true);
 
         // I2S3 pins: (WS, CK, NoPin, SD) for I2S3
-        let i2s3_pins = (gpioa.pa4, gpioc.pc10, NoPin, gpioc.pc12);
+        let i2s3_pins = (gpioa.pa4, gpioc.pc10, NoPin::new(), gpioc.pc12);
         let i2s3 = I2s::new(device.SPI3, i2s3_pins, &clocks);
         let i2s3_config = i2s2_config.to_slave().transmit();
         let mut i2s3_driver = I2sDriver::new(i2s3, i2s3_config);
