@@ -4,7 +4,7 @@ use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
 
 macro_rules! pin {
-    ( $($(#[$docs:meta])* <$name:ident, $I2C:ident> for $(no: $NoPin:ty,)? [$(
+    ( $($(#[$docs:meta])* <$name:ident> for $(no: $NoPin:ty,)? [$(
             $(#[$attr:meta])* $PX:ident<$A:literal $(, $Otype:ident)?>,
         )*],)*) => {
             $(
@@ -160,7 +160,7 @@ pub mod can1 {
     use super::*;
 
     pin! {
-        <Tx, CAN1> for no:NoPin, [
+        <Tx> for no:NoPin, [
             PA12<9>,
             PD1<9>,
 
@@ -200,7 +200,7 @@ pub mod can1 {
             PH13<9>,
         ],
 
-        <Rx, CAN1> for no:NoPin, [
+        <Rx> for no:NoPin, [
             PA11<9>,
             PD0<9>,
 
@@ -247,7 +247,7 @@ pub mod can2 {
     use super::*;
 
     pin! {
-        <Tx, CAN2> for no:NoPin, [
+        <Tx> for no:NoPin, [
             PB13<9>,
             PB6<9>,
 
@@ -255,7 +255,7 @@ pub mod can2 {
             PG12<9>,
         ],
 
-        <Rx, CAN2> for no:NoPin, [
+        <Rx> for no:NoPin, [
             PB12<9>,
             PB5<9>,
 
@@ -270,8 +270,8 @@ pub mod can3 {
     use super::*;
 
     pin! {
-        <Tx, CAN3> for no:NoPin, [PA15<11>, PB4<11>,],
-        <Rx, CAN3> for no:NoPin, [PA8<11>, PB3<11>,],
+        <Tx> for no:NoPin, [PA15<11>, PB4<11>,],
+        <Rx> for no:NoPin, [PA8<11>, PB3<11>,],
     }
 }
 
@@ -281,9 +281,9 @@ pub mod i2c1 {
     use super::*;
 
     pin! {
-        <Scl, I2C1> for [PB6<4, OpenDrain>, PB8<4, OpenDrain>,],
+        <Scl> for [PB6<4, OpenDrain>, PB8<4, OpenDrain>,],
 
-        <Sda, I2C1> for [PB7<4, OpenDrain>, PB9<4, OpenDrain>,],
+        <Sda> for [PB7<4, OpenDrain>, PB9<4, OpenDrain>,],
     }
 }
 
@@ -291,7 +291,7 @@ pub mod i2c2 {
     use super::*;
 
     pin! {
-        <Sda, I2C2> for [
+        <Sda> for [
             #[cfg(any(feature = "stm32f446"))]
             PB3<4, OpenDrain>,
 
@@ -370,7 +370,7 @@ pub mod i2c2 {
             PH5<4, OpenDrain>,
         ],
 
-        <Scl, I2C2> for [
+        <Scl> for [
             PB10<4, OpenDrain>,
 
             #[cfg(any(
@@ -413,7 +413,7 @@ pub mod i2c3 {
     use super::*;
 
     pin! {
-        <Scl, I2C3> for [
+        <Scl> for [
             PA8<4, OpenDrain>,
 
             #[cfg(any(
@@ -431,7 +431,7 @@ pub mod i2c3 {
             PH7<4, OpenDrain>,
         ],
 
-        <Sda, I2C3> for [
+        <Sda> for [
             PC9<4, OpenDrain>,
 
             #[cfg(feature = "stm32f446")]
@@ -475,7 +475,7 @@ pub mod i2c3 {
 pub mod fmpi2c1 {
     use super::*;
     pin! {
-        <Sda, FMPI2C1> for [
+        <Sda> for [
             PB3<4, OpenDrain>,
             PB14<4, OpenDrain>,
             PC7<4, OpenDrain>,
@@ -483,7 +483,7 @@ pub mod fmpi2c1 {
             PD15<4, OpenDrain>,
             PF15<4, OpenDrain>,
         ],
-        <Scl, FMPI2C1> for [
+        <Scl> for [
             PB10<9, OpenDrain>,
             PB15<4, OpenDrain>,
             PC6<4, OpenDrain>,
@@ -499,15 +499,15 @@ pub mod fmpi2c1 {
 pub mod spi1 {
     use super::*;
     pin! {
-        <Sck,  SPI1> for no:NoPin, [PA5<5>, PB3<5>,],
+        <Sck> for no:NoPin, [PA5<5>, PB3<5>,],
 
-        <Miso, SPI1> for no:NoPin, [PA6<5>, PB4<5>,],
+        <Miso> for no:NoPin, [PA6<5>, PB4<5>,],
 
-        <Mosi, SPI1> for no:NoPin, [
+        <Mosi> for no:NoPin, [
             PA7<5>, PB5<5>,
         ],
 
-        <Nss,  SPI1> for [
+        <Nss> for [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -533,7 +533,7 @@ pub mod spi1 {
 pub mod spi2 {
     use super::*;
     pin! {
-        <Sck,  SPI2> for no:NoPin, [
+        <Sck> for no:NoPin, [
             PB10<5>,
             PB13<5>,
 
@@ -587,7 +587,7 @@ pub mod spi2 {
             PI1<5>,
         ],
 
-        <Miso, SPI2> for no:NoPin, [
+        <Miso> for no:NoPin, [
             PB14<5>, PC2<5>,
 
             #[cfg(any(
@@ -608,7 +608,7 @@ pub mod spi2 {
             PA12<5>,
         ],
 
-        <Mosi, SPI2> for no:NoPin, [
+        <Mosi> for no:NoPin, [
             PB15<5>,
             PC3<5>,
 
@@ -636,7 +636,7 @@ pub mod spi2 {
             PC1<7>,
         ],
 
-        <Nss,  SPI2> for [
+        <Nss> for [
             PB9<5>,
             PB12<5>,
 
@@ -670,7 +670,7 @@ pub mod spi2 {
 pub mod spi3 {
     use super::*;
     pin! {
-        <Sck,  SPI3> for no:NoPin, [
+        <Sck> for no:NoPin, [
             PB3<6>,
             PC10<6>,
 
@@ -683,9 +683,9 @@ pub mod spi3 {
             PB12<7>,
         ],
 
-        <Miso, SPI3> for no:NoPin, [PB4<6>, PC11<6>,],
+        <Miso> for no:NoPin, [PB4<6>, PC11<6>,],
 
-        <Mosi, SPI3> for no:NoPin, [
+        <Mosi> for no:NoPin, [
             PB5<6>,
             PC12<6>,
 
@@ -715,7 +715,7 @@ pub mod spi3 {
             PD0<6>,
         ],
 
-        <Nss, SPI3> for [PA4<6>, PA15<6>,],
+        <Nss> for [PA4<6>, PA15<6>,],
     }
 }
 
@@ -724,7 +724,7 @@ pub mod spi4 {
     use super::*;
 
     pin! {
-        <Sck,  SPI4> for no:NoPin, [
+        <Sck> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f401",
                 feature = "stm32f411",
@@ -769,7 +769,7 @@ pub mod spi4 {
             PG11<6>,
         ],
 
-        <Miso, SPI4> for no:NoPin, [
+        <Miso> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f401",
                 feature = "stm32f411",
@@ -817,7 +817,7 @@ pub mod spi4 {
             PD0<5>,
         ],
 
-        <Mosi, SPI4> for no:NoPin, [
+        <Mosi> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f401",
                 feature = "stm32f411",
@@ -862,7 +862,7 @@ pub mod spi4 {
             PG13<6>,
         ],
 
-        <Nss,  SPI4> for [
+        <Nss> for [
             #[cfg(any(
                 feature = "stm32f411",
                 feature = "stm32f412",
@@ -895,7 +895,7 @@ pub mod spi5 {
     use super::*;
 
     pin! {
-        <Sck,  SPI5> for no:NoPin, [
+        <Sck> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -941,7 +941,7 @@ pub mod spi5 {
             PH6<5>,
         ],
 
-        <Miso, SPI5> for no:NoPin, [
+        <Miso> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -988,7 +988,7 @@ pub mod spi5 {
             PH7<5>,
         ],
 
-        <Mosi, SPI5> for no:NoPin, [
+        <Mosi> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -1044,7 +1044,7 @@ pub mod spi5 {
             PF11<5>,
         ],
 
-        <Nss, SPI5> for [
+        <Nss> for [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -1078,10 +1078,10 @@ pub mod spi6 {
     use super::*;
 
     pin! {
-        <Sck,  SPI6> for no:NoPin, [PG13<5>,],
-        <Miso, SPI6> for no:NoPin, [PG12<5>,],
-        <Mosi, SPI6> for no:NoPin, [PG14<5>,],
-        <Nss, SPI6> for [],
+        <Sck> for no:NoPin, [PG13<5>,],
+        <Miso> for no:NoPin, [PG12<5>,],
+        <Mosi> for no:NoPin, [PG14<5>,],
+        <Nss> for [],
     }
 }
 
@@ -1090,16 +1090,16 @@ pub mod i2s1 {
     use super::*;
 
     pin! {
-        <Ck,  SPI1> for [
+        <Ck> for [
             PA5<5>,
             PB3<5>,
         ],
-        <Sd, SPI1> for [
+        <Sd> for [
             PA7<5>,
             PB5<5>,
         ],
 
-        <Ws, SPI1> for [
+        <Ws> for [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -1121,7 +1121,7 @@ pub mod i2s1 {
             PA15<5>,
         ],
 
-        <Mck, SPI1> for no:NoPin, [
+        <Mck> for no:NoPin, [
             #[cfg(any(
                 feature = "stm32f412",
                 feature = "stm32f413",
@@ -1143,7 +1143,7 @@ pub mod i2s2 {
     use super::*;
 
     pin! {
-        <Ck, SPI2> for [
+        <Ck> for [
             PB10<5>,
             PB13<5>,
 
@@ -1197,7 +1197,7 @@ pub mod i2s2 {
             PA9<5>,
         ],
 
-        <Sd, SPI2> for [
+        <Sd> for [
             PB15<5>,
             PC3<5>,
 
@@ -1225,7 +1225,7 @@ pub mod i2s2 {
             PC1<5>,
         ],
 
-        <Ws, SPI2> for [
+        <Ws> for [
             PB9<5>,
             PB12<5>,
 
@@ -1253,7 +1253,7 @@ pub mod i2s2 {
             PD1<7>,
         ],
 
-        <Mck, SPI2> for no:NoPin, [
+        <Mck> for no:NoPin, [
             PC6<5>,
 
             #[cfg(any(
@@ -1280,7 +1280,7 @@ pub mod i2s3 {
     use super::*;
 
     pin! {
-        <Ck, SPI3> for [
+        <Ck> for [
             PB3<6>,
             PC10<6>,
 
@@ -1293,7 +1293,7 @@ pub mod i2s3 {
             PB12<7>,
         ],
 
-        <Sd, SPI3> for [
+        <Sd> for [
             PB5<6>,
             PC12<6>,
 
@@ -1323,12 +1323,12 @@ pub mod i2s3 {
             PD0<6>,
         ],
 
-        <Ws,  SPI3> for [
+        <Ws> for [
             PA4<6>,
             PA15<6>,
         ],
 
-        <Mck,  SPI3> for no:NoPin, [
+        <Mck> for no:NoPin, [
             PC7<6>,
 
             #[cfg(any(
@@ -1347,7 +1347,7 @@ pub mod i2s4 {
     use super::*;
 
     pin! {
-        <Ck, SPI4> for [
+        <Ck> for [
             PE2<5>,
             PE12<5>,
 
@@ -1363,7 +1363,7 @@ pub mod i2s4 {
             PG11<6>,
         ],
 
-        <Sd, SPI4> for [
+        <Sd> for [
             PE6<5>,
             PE14<5>,
 
@@ -1379,9 +1379,9 @@ pub mod i2s4 {
             PG13<6>,
         ],
 
-        <Mck, SPI4> for no:NoPin, [ ],
+        <Mck> for no:NoPin, [ ],
 
-        <Ws, SPI4> for [
+        <Ws> for [
             #[cfg(any(
                 feature = "stm32f411",
                 feature = "stm32f412",
@@ -1412,7 +1412,7 @@ pub mod i2s5 {
     use super::*;
 
     pin! {
-        <Ck, SPI5> for [
+        <Ck> for [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -1459,7 +1459,7 @@ pub mod i2s5 {
             PH6<5>,
         ],
 
-        <Sd, SPI5> for [
+        <Sd> for [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -1515,9 +1515,9 @@ pub mod i2s5 {
             PF11<5>,
         ],
 
-        <Mck, SPI4> for no:NoPin, [ ],
+        <Mck> for no:NoPin, [ ],
 
-        <Ws, SPI5> for [
+        <Ws> for [
             #[cfg(any(
                 feature = "stm32f410",
                 feature = "stm32f411",
@@ -1551,8 +1551,8 @@ pub mod i2s6 {
     use super::*;
 
     pin! {
-        <Ck, SPI6> for [PG13<5>,],
-        <Sd, SPI6> for [PG14<5>,],
+        <Ck> for [PG13<5>,],
+        <Sd> for [PG14<5>,],
     }
 }
 
@@ -1562,7 +1562,7 @@ pub mod usart1 {
     use super::*;
 
     pin! {
-        <Tx, USART1> for no:NoPin, [
+        <Tx> for no:NoPin, [
             PA9<7>,
             PB6<7>,
 
@@ -1576,7 +1576,7 @@ pub mod usart1 {
             PA15<7>,
         ],
 
-        <Rx, USART1> for no:NoPin, [
+        <Rx> for no:NoPin, [
             PA10<7>,
             PB7<7>,
 
@@ -1596,7 +1596,7 @@ pub mod usart2 {
     use super::*;
 
     pin! {
-        <Tx, USART2> for no:NoPin, [
+        <Tx> for no:NoPin, [
             PA2<7>,
 
             #[cfg(any(
@@ -1620,7 +1620,7 @@ pub mod usart2 {
             PD5<7>,
         ],
 
-        <Rx, USART2> for no:NoPin, [
+        <Rx> for no:NoPin, [
             PA3<7>,
 
             #[cfg(any(
@@ -1651,7 +1651,7 @@ pub mod usart3 {
     use super::*;
 
     pin! {
-        <Tx, USART3> for no:NoPin, [
+        <Tx> for no:NoPin, [
             PB10<7>,
 
             #[cfg(any(
@@ -1691,7 +1691,7 @@ pub mod usart3 {
             PD8<7>,
         ],
 
-        <Rx, USART3> for no:NoPin, [
+        <Rx> for no:NoPin, [
             PB11<7>,
 
             #[cfg(any(
@@ -1745,7 +1745,7 @@ pub mod usart6 {
     use super::*;
 
     pin! {
-        <Tx, USART6> for no:NoPin, [
+        <Tx> for no:NoPin, [
             PC6<8>,
 
             #[cfg(any(
@@ -1761,7 +1761,7 @@ pub mod usart6 {
             #[cfg(feature = "gpiog")]
             PG14<8>,
         ],
-        <Rx, USART6> for no:NoPin, [
+        <Rx> for no:NoPin, [
             PC7<8>,
 
             #[cfg(any(
@@ -1785,7 +1785,7 @@ pub mod uart4 {
     use super::*;
 
     pin! {
-        <Tx, UART4> for no:NoPin, [
+        <Tx> for no:NoPin, [
             PA0<8>,
 
             #[cfg(any(
@@ -1813,7 +1813,7 @@ pub mod uart4 {
             PD10<8>,
         ],
 
-        <Rx, UART4> for no:NoPin, [
+        <Rx> for no:NoPin, [
             PA1<8>,
 
             #[cfg(any(
@@ -1848,7 +1848,7 @@ pub mod uart5 {
     use super::*;
 
     pin! {
-        <Tx, UART5> for no:NoPin, [
+        <Tx> for no:NoPin, [
             PC12<8>,
 
             #[cfg(feature = "stm32f446")]
@@ -1864,7 +1864,7 @@ pub mod uart5 {
             PB13<11>,
         ],
 
-        <Rx, UART5> for no:NoPin, [
+        <Rx> for no:NoPin, [
             PD2<8>,
 
             #[cfg(feature = "stm32f446")]
@@ -1887,7 +1887,7 @@ pub mod uart7 {
     use super::*;
 
     pin! {
-        <Tx, UART7> for no:NoPin, [
+        <Tx> for no:NoPin, [
             #[cfg(feature = "gpioe")]
             PE8<8>,
 
@@ -1901,7 +1901,7 @@ pub mod uart7 {
             PB4<8>,
         ],
 
-        <Rx, UART7> for no:NoPin, [
+        <Rx> for no:NoPin, [
             #[cfg(feature = "gpioe")]
             PE7<8>,
 
@@ -1922,7 +1922,7 @@ pub mod uart8 {
     use super::*;
 
     pin! {
-        <Tx, UART8> for no:NoPin, [
+        <Tx> for no:NoPin, [
             #[cfg(feature = "gpioe")]
             PE1<8>,
 
@@ -1930,7 +1930,7 @@ pub mod uart8 {
             PF9<8>,
         ],
 
-        <Rx, UART8> for no:NoPin, [
+        <Rx> for no:NoPin, [
             #[cfg(feature = "gpioe")]
             PE0<8>,
 
@@ -1945,8 +1945,8 @@ pub mod uart9 {
     use super::*;
 
     pin! {
-        <Tx, UART9> for no:NoPin, [PD15<11>, PG1<11>,],
-        <Rx, UART9> for no:NoPin, [PD14<11>, PG0<11>,],
+        <Tx> for no:NoPin, [PD15<11>, PG1<11>,],
+        <Rx> for no:NoPin, [PD14<11>, PG0<11>,],
     }
 }
 
@@ -1955,8 +1955,8 @@ pub mod uart10 {
     use super::*;
 
     pin! {
-        <Tx, UART10> for no:NoPin, [PE3<11>, PG12<11>,],
-        <Rx, UART10> for no:NoPin, [PE2<11>, PG11<11>,],
+        <Tx> for no:NoPin, [PE3<11>, PG12<11>,],
+        <Rx> for no:NoPin, [PE2<11>, PG11<11>,],
     }
 }
 
@@ -1965,19 +1965,19 @@ pub mod sdio {
     use super::*;
 
     pin! {
-        <Clk, SDIO> for [
+        <Clk> for [
             PC12<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
             PB15<12>,
         ],
-        <Cmd, SDIO> for [
+        <Cmd> for [
             PD2<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
             PA6<12>,
         ],
-        <D0, SDIO> for [
+        <D0> for [
             PC8<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
@@ -1989,37 +1989,37 @@ pub mod sdio {
             #[cfg(feature = "stm32f411")]
             PB7<12>,
         ],
-        <D1, SDIO> for [
+        <D1> for [
             PC9<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
             PA8<12>,
         ],
-        <D2, SDIO> for [
+        <D2> for [
             PC10<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
             PA9<12>,
         ],
-        <D3, SDIO> for [
+        <D3> for [
             PC11<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
             PB5<12>,
         ],
-        <D4, SDIO> for [
+        <D4> for [
             PB8<12>,
         ],
-        <D5, SDIO> for [
+        <D5> for [
             PB9<12>,
         ],
-        <D6, SDIO> for [
+        <D6> for [
             PC6<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
             PB14<12>,
         ],
-        <D7, SDIO> for [
+        <D7> for [
             PC7<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
@@ -2036,7 +2036,7 @@ pub mod fsmc {
     // All FSMC/FMC pins use 12
     pin! {
         /// A pin that can be used for data bus 0
-        <D0, FSMC> for [
+        <D0> for [
             PD14<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2044,7 +2044,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 1
-        <D1, FSMC> for [
+        <D1> for [
             PD15<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2052,7 +2052,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 2
-        <D2, FSMC> for [
+        <D2> for [
             PD0<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2060,7 +2060,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 3
-        <D3, FSMC> for [
+        <D3> for [
             PD1<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2068,7 +2068,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 4
-        <D4, FSMC> for [
+        <D4> for [
             PE7<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2076,7 +2076,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 5
-        <D5, FSMC> for [
+        <D5> for [
             PE8<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2084,7 +2084,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 6
-        <D6, FSMC> for [
+        <D6> for [
             PE9<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2092,7 +2092,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 7
-        <D7, FSMC> for [
+        <D7> for [
             PE10<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2100,32 +2100,32 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 8
-        <D8, FSMC> for [
+        <D8> for [
             PE11<12>,
         ],
 
         /// A pin that can be used for data bus 9
-        <D9, FSMC> for [
+        <D9> for [
             PE12<12>,
         ],
 
         /// A pin that can be used for data bus 10
-        <D10, FSMC> for [
+        <D10> for [
             PE13<12>,
         ],
 
         /// A pin that can be used for data bus 11
-        <D11, FSMC> for [
+        <D11> for [
             PE14<12>,
         ],
 
         /// A pin that can be used for data bus 12
-        <D12, FSMC> for [
+        <D12> for [
             PE15<12>,
         ],
 
         /// A pin that can be used for data bus 13
-        <D13, FSMC> for [
+        <D13> for [
             PD8<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2133,17 +2133,17 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 14
-        <D14, FSMC> for [
+        <D14> for [
             PD9<12>,
         ],
 
         /// A pin that can be used for data bus 15
-        <D15, FSMC> for [
+        <D15> for [
             PD10<12>,
         ],
 
         /// A pin that can be used for the output enable (read enable, NOE) signal
-        <ReadEnable, FSMC> for [
+        <ReadEnable> for [
             PD4<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2151,7 +2151,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for the write enable (NOE) signal
-        <WriteEnable, FSMC> for [
+        <WriteEnable> for [
             PD5<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
@@ -2164,7 +2164,7 @@ pub mod fsmc {
         /// A pin that can be used as one bit of the memory address
         ///
         /// This is used to switch between data and command mode.
-        <Address, FSMC> for [
+        <Address> for [
             PD11<12>,
             PD12<12>,
             PD13<12>,
@@ -2196,22 +2196,22 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used to enable a memory device on sub-bank 1
-        <ChipSelect1, FSMC> for [
+        <ChipSelect1> for [
             PD7<12>,
         ],
 
         /// A pin that can be used to enable a memory device on sub-bank 2
-        <ChipSelect2, FSMC> for [
+        <ChipSelect2> for [
             PG9<12>,
         ],
 
         /// A pin that can be used to enable a memory device on sub-bank 3
-        <ChipSelect3, FSMC> for [
+        <ChipSelect3> for [
             PG10<12>,
         ],
 
         /// A pin that can be used to enable a memory device on sub-bank 4
-        <ChipSelect4, FSMC> for [
+        <ChipSelect4> for [
             PG12<12>,
 
             #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
