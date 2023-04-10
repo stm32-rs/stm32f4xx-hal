@@ -18,7 +18,6 @@
 
 use core::fmt;
 use core::marker::PhantomData;
-use core::ops::{Deref, DerefMut};
 
 use crate::rcc;
 use nb::block;
@@ -187,32 +186,11 @@ pub type NoRx = NoPin;
 
 /// Serial abstraction
 pub struct Serial<USART: Instance, WORD = u8> {
-    usart: USART,
-    pins: (USART::TxPin, USART::RxPin),
     tx: Tx<USART, WORD>,
     rx: Rx<USART, WORD>,
 }
 
-/// Serial receiver
-pub struct Rx<USART, WORD = u8> {
-    _usart: PhantomData<USART>,
-    _word: PhantomData<WORD>,
-}
-
-/// Serial transmitter
-pub struct Tx<USART, WORD = u8> {
-    _usart: PhantomData<USART>,
-    _word: PhantomData<WORD>,
-}
-
 impl<USART: Instance, WORD> Rx<USART, WORD> {
-    fn new() -> Self {
-        Self {
-            _usart: PhantomData,
-            _word: PhantomData,
-        }
-    }
-
     /// Start listening for an rx not empty interrupt event
     ///
     /// Note, you will also have to enable the corresponding interrupt
@@ -237,6 +215,18 @@ impl<USART: Instance, WORD> Rx<USART, WORD> {
     /// Stop listening for the line idle interrupt event
     pub fn unlisten_idle(&mut self) {
         unsafe { (*USART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) }
+    }
+}
+
+impl<USART: Instance> Rx<USART, u8> {
+    fn with_u16_data(self) -> Rx<USART, u16> {
+        Rx::new(self.pin)
+    }
+}
+
+impl<USART: Instance> Rx<USART, u16> {
+    fn with_u8_data(self) -> Rx<USART, u8> {
+        Rx::new(self.pin)
     }
 }
 
@@ -273,13 +263,6 @@ impl<USART: Instance, WORD> RxISR for Rx<USART, WORD> {
 }
 
 impl<USART: Instance, WORD> Tx<USART, WORD> {
-    fn new() -> Self {
-        Self {
-            _usart: PhantomData,
-            _word: PhantomData,
-        }
-    }
-
     /// Start listening for a tx empty interrupt event
     ///
     /// Note, you will also have to enable the corresponding interrupt
@@ -291,6 +274,18 @@ impl<USART: Instance, WORD> Tx<USART, WORD> {
     /// Stop listening for the tx empty interrupt event
     pub fn unlisten(&mut self) {
         unsafe { (*USART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) }
+    }
+}
+
+impl<USART: Instance> Tx<USART, u8> {
+    fn with_u16_data(self) -> Tx<USART, u16> {
+        Tx::new(self.usart, self.pin)
+    }
+}
+
+impl<USART: Instance> Tx<USART, u16> {
+    fn with_u8_data(self) -> Tx<USART, u8> {
+        Tx::new(self.usart, self.pin)
     }
 }
 
@@ -336,118 +331,42 @@ impl<USART: Instance, WORD> AsMut<Rx<USART, WORD>> for Serial<USART, WORD> {
 }
 
 /// Serial receiver containing RX pin
-pub struct URx<USART: Instance, WORD = u8> {
-    inner: Rx<USART, WORD>,
+pub struct Rx<USART: Instance, WORD = u8> {
+    _word: PhantomData<(USART, WORD)>,
     pin: USART::RxPin,
 }
 
 /// Serial transmitter containing TX pin
-pub struct UTx<USART: Instance, WORD = u8> {
-    inner: Tx<USART, WORD>,
+pub struct Tx<USART: Instance, WORD = u8> {
+    _word: PhantomData<WORD>,
     usart: USART,
     pin: USART::TxPin,
 }
 
-impl<USART: Instance, WORD> URx<USART, WORD> {
+impl<USART: Instance, WORD> Rx<USART, WORD> {
     fn new(pin: USART::RxPin) -> Self {
         Self {
-            inner: Rx::new(),
+            _word: PhantomData,
             pin,
         }
     }
 
-    pub fn erase(self) -> Rx<USART, WORD> {
-        Rx::new()
-    }
-
-    pub fn join<TX>(self, tx: UTx<USART, WORD>) -> Serial<USART, WORD> {
-        Serial {
-            usart: tx.usart,
-            pins: (tx.pin, self.pin),
-            tx: tx.inner,
-            rx: self.inner,
-        }
+    pub fn join<TX>(self, tx: Tx<USART, WORD>) -> Serial<USART, WORD> {
+        Serial { tx, rx: self }
     }
 }
 
-impl<USART: Instance, WORD> UTx<USART, WORD> {
+impl<USART: Instance, WORD> Tx<USART, WORD> {
     fn new(usart: USART, pin: USART::TxPin) -> Self {
         Self {
-            inner: Tx::new(),
+            _word: PhantomData,
             usart,
             pin,
         }
     }
 
-    pub fn erase(self) -> Tx<USART, WORD> {
-        Tx::new()
-    }
-
-    pub fn join(self, rx: URx<USART, WORD>) -> Serial<USART, WORD> {
-        Serial {
-            usart: self.usart,
-            pins: (self.pin, rx.pin),
-            tx: self.inner,
-            rx: rx.inner,
-        }
-    }
-}
-
-impl<USART: Instance, WORD> AsRef<Tx<USART, WORD>> for UTx<USART, WORD> {
-    #[inline(always)]
-    fn as_ref(&self) -> &Tx<USART, WORD> {
-        &self.inner
-    }
-}
-
-impl<USART: Instance, WORD> Deref for UTx<USART, WORD> {
-    type Target = Tx<USART, WORD>;
-    #[inline(always)]
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl<USART: Instance, WORD> AsRef<Rx<USART, WORD>> for URx<USART, WORD> {
-    #[inline(always)]
-    fn as_ref(&self) -> &Rx<USART, WORD> {
-        &self.inner
-    }
-}
-
-impl<USART: Instance, WORD> Deref for URx<USART, WORD> {
-    type Target = Rx<USART, WORD>;
-    #[inline(always)]
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl<USART: Instance, WORD> AsMut<Tx<USART, WORD>> for UTx<USART, WORD> {
-    #[inline(always)]
-    fn as_mut(&mut self) -> &mut Tx<USART, WORD> {
-        &mut self.inner
-    }
-}
-
-impl<USART: Instance, WORD> DerefMut for UTx<USART, WORD> {
-    #[inline(always)]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-
-impl<USART: Instance, WORD> AsMut<Rx<USART, WORD>> for URx<USART, WORD> {
-    #[inline(always)]
-    fn as_mut(&mut self) -> &mut Rx<USART, WORD> {
-        &mut self.inner
-    }
-}
-
-impl<USART: Instance, WORD> DerefMut for URx<USART, WORD> {
-    #[inline(always)]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+    pub fn join(self, rx: Rx<USART, WORD>) -> Serial<USART, WORD> {
+        Serial { tx: self, rx }
     }
 }
 
@@ -628,13 +547,9 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
             DmaConfig::None => {}
         }
 
-        let pins = (pins.0.into(), pins.1.into());
-
         Ok(Serial {
-            usart,
-            pins,
-            tx: Tx::new(),
-            rx: Rx::new(),
+            tx: Tx::new(usart, pins.0.into()),
+            rx: Rx::new(pins.1.into()),
         }
         .config_stop(config))
     }
@@ -645,8 +560,8 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         RX: TryFrom<USART::RxPin, Error = E>,
     {
         Ok((
-            self.usart,
-            (self.pins.0.try_into()?, self.pins.1.try_into()?),
+            self.tx.usart,
+            (self.tx.pin.try_into()?, self.rx.pin.try_into()?),
         ))
     }
 }
@@ -730,22 +645,14 @@ impl<USART: Instance, WORD> TxISR for Serial<USART, WORD> {
     }
 }
 
-impl<USART: Instance, WORD> Serial<USART, WORD> {
-    pub fn split_nondestructive(self) -> (UTx<USART, WORD>, URx<USART, WORD>) {
-        (UTx::new(self.usart, self.pins.0), URx::new(self.pins.1))
-    }
-}
-
 impl<USART: Instance> Serial<USART, u8> {
     /// Converts this Serial into a version that can read and write `u16` values instead of `u8`s
     ///
     /// This can be used with a word length of 9 bits.
     pub fn with_u16_data(self) -> Serial<USART, u16> {
         Serial {
-            usart: self.usart,
-            pins: self.pins,
-            tx: Tx::new(),
-            rx: Rx::new(),
+            tx: self.tx.with_u16_data(),
+            rx: self.rx.with_u16_data(),
         }
     }
 }
@@ -756,10 +663,8 @@ impl<USART: Instance> Serial<USART, u16> {
     /// This can be used with a word length of 8 bits.
     pub fn with_u8_data(self) -> Serial<USART, u8> {
         Serial {
-            usart: self.usart,
-            pins: self.pins,
-            tx: Tx::new(),
-            rx: Rx::new(),
+            tx: self.tx.with_u8_data(),
+            rx: self.rx.with_u8_data(),
         }
     }
 }
@@ -784,7 +689,7 @@ unsafe impl<USART: Instance> PeriAddress for Tx<USART, u8> {
 
 impl<USART: Instance, WORD> Serial<USART, WORD> {
     fn config_stop(self, config: config::Config) -> Self {
-        self.usart.set_stopbits(config.stopbits);
+        self.tx.usart.set_stopbits(config.stopbits);
         self
     }
 }
@@ -831,7 +736,7 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock {
 }
 
 macro_rules! halUsart {
-    ($USART:ty, $usart:ident ,$Serial:ident, $Tx:ident, $Rx:ident) => {
+    ($USART:ty, $usart:ident, $Serial:ident, $Tx:ident, $Rx:ident) => {
         pub type $Serial<WORD = u8> = Serial<$USART, WORD>;
         pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
         pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
@@ -949,7 +854,11 @@ impl<USART: Instance> fmt::Write for Tx<USART> {
 impl<USART: Instance> Rx<USART, u8> {
     fn read(&mut self) -> nb::Result<u8, Error> {
         // Delegate to the Read<u16> implementation, then truncate to 8 bits
-        Rx::<USART, u16>::new().read().map(|word16| word16 as u8)
+        unsafe {
+            (&mut *(self as *mut Self as *mut Rx<USART, u16>))
+                .read()
+                .map(|word16| word16 as u8)
+        }
     }
 }
 
@@ -987,12 +896,12 @@ impl<USART: Instance> Rx<USART, u16> {
 impl<USART: Instance> Tx<USART, u8> {
     fn write(&mut self, word: u8) -> nb::Result<(), Error> {
         // Delegate to u16 version
-        Tx::<USART, u16>::new().write(u16::from(word))
+        unsafe { (&mut *(self as *mut Self as *mut Tx<USART, u16>)).write(u16::from(word)) }
     }
 
     fn flush(&mut self) -> nb::Result<(), Error> {
         // Delegate to u16 version
-        Tx::<USART, u16>::new().flush()
+        unsafe { (&mut *(self as *mut Self as *mut Tx<USART, u16>)).flush() }
     }
 
     fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Error> {
