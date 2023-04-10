@@ -395,7 +395,7 @@ fn draw_seconds_hand(seconds: u32) -> impl Iterator<Item = Pixel<BinaryColor>> {
     // Add a fancy circle near the end of the hand
     let decoration = Circle::new(decoration_position, 3).into_styled(decoration_style);
 
-    hand.pixels().chain(decoration.pixels().into_iter())
+    hand.pixels().chain(decoration.pixels())
 }
 
 #[exception]

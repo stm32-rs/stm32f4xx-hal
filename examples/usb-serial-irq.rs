@@ -36,14 +36,11 @@ fn main() -> ! {
 
     let gpioa = dp.GPIOA.split();
 
-    let usb = USB {
-        usb_global: dp.OTG_FS_GLOBAL,
-        usb_device: dp.OTG_FS_DEVICE,
-        usb_pwrclk: dp.OTG_FS_PWRCLK,
-        pin_dm: gpioa.pa11.into(),
-        pin_dp: gpioa.pa12.into(),
-        hclk: clocks.hclk(),
-    };
+    let usb = USB::new(
+        (dp.OTG_FS_GLOBAL, dp.OTG_FS_DEVICE, dp.OTG_FS_PWRCLK),
+        (gpioa.pa11, gpioa.pa12),
+        &clocks,
+    );
 
     *USB_BUS = Some(stm32f4xx_hal::otg_fs::UsbBusType::new(usb, EP_MEMORY));
     let usb_bus = USB_BUS.as_ref().unwrap();
