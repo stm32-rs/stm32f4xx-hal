@@ -128,7 +128,7 @@ macro_rules! pin {
                     $(#[$attr])*
                     impl From<gpio::$PX<Alternate<$A $(, $Otype)?>>> for $name {
                         fn from(p: gpio::$PX<Alternate<$A $(, $Otype)?>>) -> Self {
-                            Self::$PX(p.into_mode())
+                            Self::$PX(p)
                         }
                     }
 
