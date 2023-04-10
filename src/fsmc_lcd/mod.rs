@@ -65,12 +65,7 @@ mod timing;
 
 use core::marker::PhantomData;
 
-pub use self::pins::{
-    AddressPins, ChipSelect1, ChipSelect2, ChipSelect3, ChipSelect4, ChipSelectPins, DataPins,
-    LcdPins, PinAddress, PinChipSelect1, PinChipSelect2, PinChipSelect3, PinChipSelect4, PinD0,
-    PinD1, PinD10, PinD11, PinD12, PinD13, PinD14, PinD15, PinD2, PinD3, PinD4, PinD5, PinD6,
-    PinD7, PinD8, PinD9, PinReadEnable, PinWriteEnable, Pins,
-};
+pub use self::pins::{AddressPins, ChipSelectPins, DataPins, LcdPins, Pins};
 pub use self::timing::{AccessMode, Timing};
 
 use crate::pac::RCC;
@@ -157,39 +152,39 @@ where
     /// ```ignore
     /// let lcd_pins = LcdPins {
     ///     data: (
-    ///         gpiod.pd14.into_alternate_af12(),
-    ///         gpiod.pd15.into_alternate_af12(),
-    ///         gpiod.pd0.into_alternate_af12(),
-    ///         gpiod.pd1.into_alternate_af12(),
-    ///         gpioe.pe7.into_alternate_af12(),
-    ///         gpioe.pe8.into_alternate_af12(),
-    ///         gpioe.pe9.into_alternate_af12(),
-    ///         gpioe.pe10.into_alternate_af12(),
-    ///         gpioe.pe11.into_alternate_af12(),
-    ///         gpioe.pe12.into_alternate_af12(),
-    ///         gpioe.pe13.into_alternate_af12(),
-    ///         gpioe.pe14.into_alternate_af12(),
-    ///         gpioe.pe15.into_alternate_af12(),
-    ///         gpiod.pd8.into_alternate_af12(),
-    ///         gpiod.pd9.into_alternate_af12(),
-    ///         gpiod.pd10.into_alternate_af12(),
+    ///         gpiod.pd14.into(),
+    ///         gpiod.pd15.into(),
+    ///         gpiod.pd0.into(),
+    ///         gpiod.pd1.into(),
+    ///         gpioe.pe7.into(),
+    ///         gpioe.pe8.into(),
+    ///         gpioe.pe9.into(),
+    ///         gpioe.pe10.into(),
+    ///         gpioe.pe11.into(),
+    ///         gpioe.pe12.into(),
+    ///         gpioe.pe13.into(),
+    ///         gpioe.pe14.into(),
+    ///         gpioe.pe15.into(),
+    ///         gpiod.pd8.into(),
+    ///         gpiod.pd9.into(),
+    ///         gpiod.pd10.into(),
     ///     ),
     ///     // Four address pins, one for each LCD
     ///     // All of them will have the same output
     ///     address: (
-    ///         gpiof.pf0.into_alternate_af12(),
-    ///         gpioe.pe2.into_alternate_af12(),
-    ///         gpioe.pe3.into_alternate_af12(),
-    ///         gpiof.pf14.into_alternate_af12(),
+    ///         gpiof.pf0.into(),
+    ///         gpioe.pe2.into(),
+    ///         gpioe.pe3.into(),
+    ///         gpiof.pf14.into(),
     ///     ),
-    ///     read_enable: gpiod.pd4.into_alternate_af12(),
-    ///     write_enable: gpiod.pd5.into_alternate_af12(),
+    ///     read_enable: gpiod.pd4.into(),
+    ///     write_enable: gpiod.pd5.into(),
     ///     // Four chip select pins, one for each LCD, controlled independently
     ///     chip_select: (
-    ///         ChipSelect1(gpiod.pd7.into_alternate_af12()),
-    ///         ChipSelect2(gpiog.pg9.into_alternate_af12()),
-    ///         ChipSelect3(gpiog.pg10.into_alternate_af12()),
-    ///         ChipSelect4(gpiog.pg12.into_alternate_af12()),
+    ///         ChipSelect1::from(gpiod.pd7),
+    ///         ChipSelect2::from(gpiog.pg9),
+    ///         ChipSelect3::from(gpiog.pg10),
+    ///         ChipSelect4::from(gpiog.pg12),
     ///     ),
     /// };
     ///

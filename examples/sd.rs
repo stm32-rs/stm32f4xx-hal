@@ -34,12 +34,12 @@ fn main() -> ! {
     let gpioc = device.GPIOC.split();
     let gpiod = device.GPIOD.split();
 
-    let d0 = gpioc.pc8.into_alternate().internal_pull_up(true);
-    let d1 = gpioc.pc9.into_alternate().internal_pull_up(true);
-    let d2 = gpioc.pc10.into_alternate().internal_pull_up(true);
-    let d3 = gpioc.pc11.into_alternate().internal_pull_up(true);
-    let clk = gpioc.pc12.into_alternate().internal_pull_up(false);
-    let cmd = gpiod.pd2.into_alternate().internal_pull_up(true);
+    let d0 = gpioc.pc8.internal_pull_up(true);
+    let d1 = gpioc.pc9.internal_pull_up(true);
+    let d2 = gpioc.pc10.internal_pull_up(true);
+    let d3 = gpioc.pc11.internal_pull_up(true);
+    let clk = gpioc.pc12;
+    let cmd = gpiod.pd2.internal_pull_up(true);
     let mut sdio: Sdio<SdCard> = Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3), &clocks);
 
     hprintln!("Waiting for card...");

@@ -1,6 +1,6 @@
 //! Sdio host
 
-use crate::gpio::{self, AF12};
+use crate::gpio::alt::sdio as alt;
 use crate::pac::{self, RCC, SDIO};
 use crate::rcc::{Clocks, Enable, Reset};
 #[allow(unused_imports)]
@@ -13,152 +13,92 @@ pub use sdio_host::{
     sd_cmd, Cmd,
 };
 
-pub trait PinClk {}
-pub trait PinCmd {}
-pub trait PinD0 {}
-pub trait PinD1 {}
-pub trait PinD2 {}
-pub trait PinD3 {}
-pub trait PinD4 {}
-pub trait PinD5 {}
-pub trait PinD6 {}
-pub trait PinD7 {}
-
 pub trait Pins {
     const BUSWIDTH: Buswidth;
+
+    type SdPins;
+    fn convert(self) -> Self::SdPins;
 }
 
 impl<CLK, CMD, D0, D1, D2, D3, D4, D5, D6, D7> Pins for (CLK, CMD, D0, D1, D2, D3, D4, D5, D6, D7)
 where
-    CLK: PinClk,
-    CMD: PinCmd,
-    D0: PinD0,
-    D1: PinD1,
-    D2: PinD2,
-    D3: PinD3,
-    D4: PinD4,
-    D5: PinD5,
-    D6: PinD6,
-    D7: PinD7,
+    CLK: Into<alt::Clk>,
+    CMD: Into<alt::Cmd>,
+    D0: Into<alt::D0>,
+    D1: Into<alt::D1>,
+    D2: Into<alt::D2>,
+    D3: Into<alt::D3>,
+    D4: Into<alt::D4>,
+    D5: Into<alt::D5>,
+    D6: Into<alt::D6>,
+    D7: Into<alt::D7>,
 {
     const BUSWIDTH: Buswidth = Buswidth::Buswidth8;
+
+    type SdPins = (
+        alt::Clk,
+        alt::Cmd,
+        alt::D0,
+        alt::D1,
+        alt::D2,
+        alt::D3,
+        alt::D4,
+        alt::D5,
+        alt::D6,
+        alt::D7,
+    );
+    fn convert(self) -> Self::SdPins {
+        (
+            self.0.into(),
+            self.1.into(),
+            self.2.into(),
+            self.3.into(),
+            self.4.into(),
+            self.5.into(),
+            self.6.into(),
+            self.7.into(),
+            self.8.into(),
+            self.9.into(),
+        )
+    }
 }
 
 impl<CLK, CMD, D0, D1, D2, D3> Pins for (CLK, CMD, D0, D1, D2, D3)
 where
-    CLK: PinClk,
-    CMD: PinCmd,
-    D0: PinD0,
-    D1: PinD1,
-    D2: PinD2,
-    D3: PinD3,
+    CLK: Into<alt::Clk>,
+    CMD: Into<alt::Cmd>,
+    D0: Into<alt::D0>,
+    D1: Into<alt::D1>,
+    D2: Into<alt::D2>,
+    D3: Into<alt::D3>,
 {
     const BUSWIDTH: Buswidth = Buswidth::Buswidth4;
+
+    type SdPins = (alt::Clk, alt::Cmd, alt::D0, alt::D1, alt::D2, alt::D3);
+    fn convert(self) -> Self::SdPins {
+        (
+            self.0.into(),
+            self.1.into(),
+            self.2.into(),
+            self.3.into(),
+            self.4.into(),
+            self.5.into(),
+        )
+    }
 }
 
 impl<CLK, CMD, D0> Pins for (CLK, CMD, D0)
 where
-    CLK: PinClk,
-    CMD: PinCmd,
-    D0: PinD0,
+    CLK: Into<alt::Clk>,
+    CMD: Into<alt::Cmd>,
+    D0: Into<alt::D0>,
 {
     const BUSWIDTH: Buswidth = Buswidth::Buswidth1;
-}
 
-macro_rules! pins {
-    ($(CLK: [$($CLK:ty),*] CMD: [$($CMD:ty),*] D0: [$($D0:ty),*] D1: [$($D1:ty),*] D2: [$($D2:ty),*] D3: [$($D3:ty),*] D4: [$($D4:ty),*] D5: [$($D5:ty),*] D6: [$($D6:ty),*] D7: [$($D7:ty),*])+) => {
-        $(
-            $(
-                impl PinClk for $CLK {}
-            )*
-            $(
-                impl PinCmd for $CMD {}
-            )*
-            $(
-                impl PinD0 for $D0 {}
-            )*
-            $(
-                impl PinD1 for $D1 {}
-            )*
-            $(
-                impl PinD2 for $D2 {}
-            )*
-            $(
-                impl PinD3 for $D3 {}
-            )*
-            $(
-                impl PinD4 for $D4 {}
-            )*
-            $(
-                impl PinD5 for $D5 {}
-            )*
-            $(
-                impl PinD6 for $D6 {}
-            )*
-            $(
-                impl PinD7 for $D7 {}
-            )*
-        )+
+    type SdPins = (alt::Clk, alt::Cmd, alt::D0);
+    fn convert(self) -> Self::SdPins {
+        (self.0.into(), self.1.into(), self.2.into())
     }
-}
-
-#[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479"
-))]
-pins! {
-    CLK: [gpio::PC12<AF12>]
-    CMD: [gpio::PD2<AF12>]
-    D0: [gpio::PC8<AF12>]
-    D1: [gpio::PC9<AF12>]
-    D2: [gpio::PC10<AF12>]
-    D3: [gpio::PC11<AF12>]
-    D4: [gpio::PB8<AF12>]
-    D5: [gpio::PB9<AF12>]
-    D6: [gpio::PC6<AF12>]
-    D7: [gpio::PC7<AF12>]
-}
-
-#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
-pins! {
-    CLK: [gpio::PB15<AF12>]
-    CMD: [gpio::PA6<AF12>]
-    D0: [gpio::PB4<AF12>, gpio::PB6<AF12>]
-    D1: [gpio::PA8<AF12>]
-    D2: [gpio::PA9<AF12>]
-    D3: [gpio::PB5<AF12>]
-    D4: []
-    D5: []
-    D6: [gpio::PB14<AF12>]
-    D7: [gpio::PB10<AF12>]
-}
-
-#[cfg(feature = "stm32f411")]
-pins! {
-    CLK: [gpio::PB15<AF12>]
-    CMD: [gpio::PA6<AF12>]
-    D0: [gpio::PB4<AF12>, gpio::PB7<AF12>]
-    D1: [gpio::PA8<AF12>]
-    D2: [gpio::PA9<AF12>]
-    D3: [gpio::PB5<AF12>]
-    D4: []
-    D5: []
-    D6: [gpio::PB14<AF12>]
-    D7: [gpio::PB10<AF12>]
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -222,7 +162,7 @@ pub struct Emmc {
 
 impl<P: SdioPeripheral> Sdio<P> {
     /// Create and enable the Sdio device
-    pub fn new<PINS: Pins>(sdio: SDIO, _pins: PINS, clocks: &Clocks) -> Self {
+    pub fn new<PINS: Pins>(sdio: SDIO, pins: PINS, clocks: &Clocks) -> Self {
         unsafe {
             //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
             let rcc = &*RCC::ptr();
@@ -253,6 +193,8 @@ impl<P: SdioPeripheral> Sdio<P> {
                 .hwfc_en()
                 .disabled()
         });
+
+        let _pins = pins.convert();
 
         let mut host = Self {
             sdio,

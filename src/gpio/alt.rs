@@ -4,11 +4,12 @@ use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
 
 macro_rules! pin {
-    ( $(<$name:ident, $I2C:ident> for $(no: $NoPin:ty,)? [$(
+    ( $($(#[$docs:meta])* <$name:ident, $I2C:ident> for $(no: $NoPin:ty,)? [$(
             $(#[$attr:meta])* $PX:ident<$A:literal $(, $Otype:ident)?>,
         )*],)*) => {
             $(
                 #[derive(Debug)]
+                $(#[$docs])*
                 pub enum $name {
                     $(
                         None($NoPin),
@@ -19,6 +20,8 @@ macro_rules! pin {
                         $PX(gpio::$PX<Alternate<$A $(, $Otype)?>>),
                     )*
                 }
+
+                impl crate::Sealed for $name { }
 
                 #[allow(unreachable_patterns)]
                 impl $name {
@@ -1955,4 +1958,268 @@ pub mod uart10 {
         <Tx, UART10> for no:NoPin, [PE3<11>, PG12<11>,],
         <Rx, UART10> for no:NoPin, [PE2<11>, PG11<11>,],
     }
+}
+
+#[cfg(feature = "sdio")]
+pub mod sdio {
+    use super::*;
+
+    pin! {
+        <Clk, SDIO> for [
+            PC12<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            PB15<12>,
+        ],
+        <Cmd, SDIO> for [
+            PD2<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            PA6<12>,
+        ],
+        <D0, SDIO> for [
+            PC8<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            PB4<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PB6<12>,
+
+            #[cfg(feature = "stm32f411")]
+            PB7<12>,
+        ],
+        <D1, SDIO> for [
+            PC9<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            PA8<12>,
+        ],
+        <D2, SDIO> for [
+            PC10<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            PA9<12>,
+        ],
+        <D3, SDIO> for [
+            PC11<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            PB5<12>,
+        ],
+        <D4, SDIO> for [
+            PB8<12>,
+        ],
+        <D5, SDIO> for [
+            PB9<12>,
+        ],
+        <D6, SDIO> for [
+            PC6<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            PB14<12>,
+        ],
+        <D7, SDIO> for [
+            PC7<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            PB10<12>,
+        ],
+    }
+}
+
+/// Pins available on all STM32F4 models that have an FSMC/FMC
+#[cfg(any(feature = "fmc", feature = "fsmc"))]
+pub mod fsmc {
+    use super::*;
+
+    // All FSMC/FMC pins use 12
+    pin! {
+        /// A pin that can be used for data bus 0
+        <D0, FSMC> for [
+            PD14<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PB14<10>,
+        ],
+
+        /// A pin that can be used for data bus 1
+        <D1, FSMC> for [
+            PD15<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PC6<10>,
+        ],
+
+        /// A pin that can be used for data bus 2
+        <D2, FSMC> for [
+            PD0<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PC11<10>,
+        ],
+
+        /// A pin that can be used for data bus 3
+        <D3, FSMC> for [
+            PD1<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PC12<10>,
+        ],
+
+        /// A pin that can be used for data bus 4
+        <D4, FSMC> for [
+            PE7<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PA2<12>,
+        ],
+
+        /// A pin that can be used for data bus 5
+        <D5, FSMC> for [
+            PE8<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PA3<12>,
+        ],
+
+        /// A pin that can be used for data bus 6
+        <D6, FSMC> for [
+            PE9<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PA4<12>,
+        ],
+
+        /// A pin that can be used for data bus 7
+        <D7, FSMC> for [
+            PE10<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PA5<12>,
+        ],
+
+        /// A pin that can be used for data bus 8
+        <D8, FSMC> for [
+            PE11<12>,
+        ],
+
+        /// A pin that can be used for data bus 9
+        <D9, FSMC> for [
+            PE12<12>,
+        ],
+
+        /// A pin that can be used for data bus 10
+        <D10, FSMC> for [
+            PE13<12>,
+        ],
+
+        /// A pin that can be used for data bus 11
+        <D11, FSMC> for [
+            PE14<12>,
+        ],
+
+        /// A pin that can be used for data bus 12
+        <D12, FSMC> for [
+            PE15<12>,
+        ],
+
+        /// A pin that can be used for data bus 13
+        <D13, FSMC> for [
+            PD8<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PB12<12>,
+        ],
+
+        /// A pin that can be used for data bus 14
+        <D14, FSMC> for [
+            PD9<12>,
+        ],
+
+        /// A pin that can be used for data bus 15
+        <D15, FSMC> for [
+            PD10<12>,
+        ],
+
+        /// A pin that can be used for the output enable (read enable, NOE) signal
+        <ReadEnable, FSMC> for [
+            PD4<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PC5<12>,
+        ],
+
+        /// A pin that can be used for the write enable (NOE) signal
+        <WriteEnable, FSMC> for [
+            PD5<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PC2<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PD2<10>,
+        ],
+
+        /// A pin that can be used as one bit of the memory address
+        ///
+        /// This is used to switch between data and command mode.
+        <Address, FSMC> for [
+            PD11<12>,
+            PD12<12>,
+            PD13<12>,
+            PE2<12>,
+            PE3<12>,
+            PE4<12>,
+            PE5<12>,
+            PE6<12>,
+            PF0<12>,
+            PF1<12>,
+            PF2<12>,
+            PF3<12>,
+            PF4<12>,
+            PF5<12>,
+            PF12<12>,
+            PF13<12>,
+            PF14<12>,
+            PF15<12>,
+            PG0<12>,
+            PG1<12>,
+            PG2<12>,
+            PG3<12>,
+            PG4<12>,
+            PG5<12>,
+            PG13<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PC3<12>,
+        ],
+
+        /// A pin that can be used to enable a memory device on sub-bank 1
+        <ChipSelect1, FSMC> for [
+            PD7<12>,
+        ],
+
+        /// A pin that can be used to enable a memory device on sub-bank 2
+        <ChipSelect2, FSMC> for [
+            PG9<12>,
+        ],
+
+        /// A pin that can be used to enable a memory device on sub-bank 3
+        <ChipSelect3, FSMC> for [
+            PG10<12>,
+        ],
+
+        /// A pin that can be used to enable a memory device on sub-bank 4
+        <ChipSelect4, FSMC> for [
+            PG12<12>,
+
+            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            PC4<12>,
+        ],
+    }
+
+    // PG14<Alternate<12> can be used as address 25 (A25), but that pin is not available here.
+    // Because external addresses are in units of 16 bits, external address line 25 can never
+    // be high. The internal memory address would overflow into the next sub-bank.
 }
