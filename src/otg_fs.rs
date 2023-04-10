@@ -5,7 +5,7 @@
 
 use crate::pac;
 
-use crate::gpio::{Alternate, PushPull, PA11, PA12};
+use crate::gpio::alt::otg_fs as alt;
 use crate::rcc::{Enable, Reset};
 use fugit::HertzU32 as Hertz;
 
@@ -16,8 +16,8 @@ pub struct USB {
     pub usb_global: pac::OTG_FS_GLOBAL,
     pub usb_device: pac::OTG_FS_DEVICE,
     pub usb_pwrclk: pac::OTG_FS_PWRCLK,
-    pub pin_dm: PA11<Alternate<10, PushPull>>,
-    pub pin_dp: PA12<Alternate<10, PushPull>>,
+    pub pin_dm: alt::Dm,
+    pub pin_dp: alt::Dp,
     pub hclk: Hertz,
 }
 

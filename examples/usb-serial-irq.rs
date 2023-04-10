@@ -40,8 +40,8 @@ fn main() -> ! {
         usb_global: dp.OTG_FS_GLOBAL,
         usb_device: dp.OTG_FS_DEVICE,
         usb_pwrclk: dp.OTG_FS_PWRCLK,
-        pin_dm: gpioa.pa11.into_alternate(),
-        pin_dp: gpioa.pa12.into_alternate(),
+        pin_dm: gpioa.pa11.into(),
+        pin_dp: gpioa.pa12.into(),
         hclk: clocks.hclk(),
     };
 

@@ -2223,3 +2223,31 @@ pub mod fsmc {
     // Because external addresses are in units of 16 bits, external address line 25 can never
     // be high. The internal memory address would overflow into the next sub-bank.
 }
+
+#[cfg(feature = "otg-fs")]
+pub mod otg_fs {
+    use super::*;
+
+    pin! {
+        <Dm> for [
+            PA11<10>,
+        ],
+        <Dp> for [
+            PA12<10>,
+        ],
+    }
+}
+
+#[cfg(feature = "otg-hs")]
+pub mod otg_hs {
+    use super::*;
+
+    pin! {
+        <Dm> for [
+            PB14<12>,
+        ],
+        <Dp> for [
+            PB15<12>,
+        ],
+    }
+}
