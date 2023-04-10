@@ -1,7 +1,7 @@
 use crate::gpio::{self, Alternate};
 
 pub trait ChannelPin<const C: u8, const COMP: bool = false>: crate::Sealed {
-    type Pin;
+    type Pin<Otype>;
 }
 
 /// Output channels markers

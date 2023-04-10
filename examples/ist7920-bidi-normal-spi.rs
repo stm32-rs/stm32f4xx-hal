@@ -29,7 +29,7 @@ fn main() -> ! {
     led.set_low();
 
     let sck = gpiob.pb3.into_alternate();
-    let miso = NoMiso {};
+    let miso = NoMiso::new();
     let mosi = gpiob.pb5.into_alternate();
 
     let dc = gpiob.pb4.into_push_pull_output();
