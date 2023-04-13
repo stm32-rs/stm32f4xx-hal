@@ -164,38 +164,24 @@ pub mod can1 {
             PA12<9>,
             PD1<9>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PB9<8>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PB9<9>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PG1<9>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PH13<9>,
         ],
@@ -204,38 +190,24 @@ pub mod can1 {
             PA11<9>,
             PD0<9>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PB8<8>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PB8<9>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PG0<9>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PI9<9>,
         ],
@@ -251,7 +223,7 @@ pub mod can2 {
             PB13<9>,
             PB6<9>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PG12<9>,
         ],
 
@@ -259,7 +231,7 @@ pub mod can2 {
             PB12<9>,
             PB5<9>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PG11<9>,
         ],
     }
@@ -292,80 +264,55 @@ pub mod i2c2 {
 
     pin! {
         <Sda> for [
-            #[cfg(any(feature = "stm32f446"))]
+            #[cfg(feature = "gpio-f446")]
             PB3<4, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f401",
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB3<9, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB9<9, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PB11<4, OpenDrain>,
 
-            #[cfg(any(feature = "stm32f446"))]
+            #[cfg(feature = "gpio-f446")]
             PC12<4, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PF0<4, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PH5<4, OpenDrain>,
         ],
@@ -374,34 +321,19 @@ pub mod i2c2 {
             PB10<4, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PF1<4, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PH4<4, OpenDrain>,
         ],
@@ -417,16 +349,9 @@ pub mod i2c3 {
             PA8<4, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PH7<4, OpenDrain>,
         ],
@@ -434,37 +359,28 @@ pub mod i2c3 {
         <Sda> for [
             PC9<4, OpenDrain>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PB4<4, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB4<9, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB8<9, OpenDrain>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PH8<4, OpenDrain>,
         ],
@@ -509,21 +425,19 @@ pub mod spi1 {
 
         <Nss> for [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446"
             ))]
             PA4<5>,
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446"
             ))]
             PA15<5>,
         ],
@@ -538,51 +452,36 @@ pub mod spi2 {
             PB13<5>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PD3<5>,
 
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446"
             ))]
             PC7<5>,
 
             #[cfg(any(
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f469",
-                feature = "stm32f479",
-                feature = "stm32f446"
+                feature = "gpio-f413",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PA9<5>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PI1<5>,
         ],
@@ -591,20 +490,13 @@ pub mod spi2 {
             PB14<5>, PC2<5>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PI2<5>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA12<5>,
         ],
 
@@ -613,26 +505,19 @@ pub mod spi2 {
             PC3<5>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PI3<5>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA10<5>,
 
-            #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
+            #[cfg(feature = "gpio-f469")]
             PC1<5>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PC1<7>,
         ],
 
@@ -641,26 +526,19 @@ pub mod spi2 {
             PB12<5>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PI0<5>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA11<5>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PB4<7>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PD1<7>,
         ],
     }
@@ -675,10 +553,9 @@ pub mod spi3 {
             PC10<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB12<7>,
         ],
@@ -690,28 +567,23 @@ pub mod spi3 {
             PC12<6>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PD6<5>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PB0<7>,
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PB2<7>,
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PC1<5>,
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PD0<6>,
         ],
 
@@ -729,14 +601,13 @@ pub mod spi4 {
             PE12<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB13<6>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PG11<6>,
         ],
 
@@ -745,17 +616,16 @@ pub mod spi4 {
             PE13<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA11<6>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PG12<6>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PD0<5>,
         ],
 
@@ -764,39 +634,35 @@ pub mod spi4 {
             PE14<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA1<5>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PG13<6>,
         ],
 
         <Nss> for [
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB12<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE4<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE11<5>,
         ],
@@ -810,176 +676,139 @@ pub mod spi5 {
     pin! {
         <Sck> for no:NoPin, [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB0<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE2<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE12<6>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PF7<5>,
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PH6<5>,
         ],
 
         <Miso> for no:NoPin, [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA12<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE5<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE13<6>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PF8<5>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PH7<5>,
         ],
 
         <Mosi> for no:NoPin, [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA10<6>,
 
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB8<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE6<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE14<6>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PF9<5>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PF11<5>,
         ],
 
         <Nss> for [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB1<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE4<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE11<6>,
         ],
@@ -1014,39 +843,36 @@ pub mod i2s1 {
 
         <Ws> for [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446"
             ))]
             PA4<5>,
 
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446"
             ))]
             PA15<5>,
         ],
 
         <Mck> for no:NoPin, [
             #[cfg(any(
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446",
             ))]
             PC4<5>,
 
-            #[cfg(feature = "stm32f410")]
+            #[cfg(feature = "gpio-f410")]
             PC7<6>,
 
-            #[cfg(feature = "stm32f410")]
+            #[cfg(feature = "gpio-f410")]
             PB10<6>,
         ],
     }
@@ -1061,51 +887,36 @@ pub mod i2s2 {
             PB13<5>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PD3<5>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PI1<5>,
 
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446"
             ))]
             PC7<5>,
 
             #[cfg(any(
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f413",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PA9<5>,
         ],
@@ -1115,26 +926,19 @@ pub mod i2s2 {
             PC3<5>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PI3<5>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA10<5>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PC1<7>,
 
-            #[cfg(any(feature = "stm32f469", feature = "stm32f479"))]
+            #[cfg(feature = "gpio-f469")]
             PC1<5>,
         ],
 
@@ -1143,26 +947,19 @@ pub mod i2s2 {
             PB12<5>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PI0<5>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA11<5>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PB4<7>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PD1<7>,
         ],
 
@@ -1170,18 +967,16 @@ pub mod i2s2 {
             PC6<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA3<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA6<6>,
         ],
@@ -1198,10 +993,9 @@ pub mod i2s3 {
             PC10<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB12<7>,
         ],
@@ -1211,28 +1005,23 @@ pub mod i2s3 {
             PC12<6>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PD6<5>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PB0<7>,
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PB2<7>,
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PC1<5>,
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PD0<6>,
         ],
 
@@ -1245,10 +1034,9 @@ pub mod i2s3 {
             PC7<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB10<6>,
         ],
@@ -1265,14 +1053,13 @@ pub mod i2s4 {
             PE12<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB13<6>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PG11<6>,
         ],
 
@@ -1281,14 +1068,13 @@ pub mod i2s4 {
             PE14<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA1<5>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PG13<6>,
         ],
 
@@ -1296,26 +1082,23 @@ pub mod i2s4 {
 
         <Ws> for [
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB12<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE4<5>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE11<5>,
         ],
@@ -1329,103 +1112,80 @@ pub mod i2s5 {
     pin! {
         <Ck> for [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB0<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE2<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE12<6>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PF7<5>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PH6<5>,
         ],
 
         <Sd> for [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA10<6>,
 
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB8<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE6<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE14<6>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PF9<5>,
 
             #[cfg(any(
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f427",
+                feature = "gpio-f469",
             ))]
             PF11<5>,
         ],
@@ -1434,27 +1194,24 @@ pub mod i2s5 {
 
         <Ws> for [
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB1<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE4<6>,
 
             #[cfg(any(
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PE11<6>,
         ],
@@ -1482,11 +1239,10 @@ pub mod usart1 {
             PB6<7>,
 
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA15<7>,
         ],
@@ -1496,11 +1252,10 @@ pub mod usart1 {
             PB7<7>,
 
             #[cfg(any(
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PB3<7>,
         ],
@@ -1515,22 +1270,14 @@ pub mod usart2 {
             PA2<7>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f401",
+                feature = "gpio-f417",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PD5<7>,
         ],
@@ -1539,22 +1286,14 @@ pub mod usart2 {
             PA3<7>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f401",
+                feature = "gpio-f417",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PD6<7>,
         ],
@@ -1570,38 +1309,22 @@ pub mod usart3 {
             PB10<7>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PC10<7>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PD8<7>,
         ],
@@ -1610,46 +1333,29 @@ pub mod usart3 {
             PB11<7>,
 
             #[cfg(any(
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f446"
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446"
             ))]
             PC5<7>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PC11<7>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PD9<7>,
         ],
@@ -1664,12 +1370,11 @@ pub mod usart6 {
             PC6<8>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f401",
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA11<8>,
 
@@ -1680,12 +1385,11 @@ pub mod usart6 {
             PC7<8>,
 
             #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f410",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423"
+                feature = "gpio-f401",
+                feature = "gpio-f410",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
             ))]
             PA12<8>,
 
@@ -1704,27 +1408,20 @@ pub mod uart4 {
             PA0<8>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PC10<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA12<11>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PD1<11>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PD10<8>,
         ],
 
@@ -1732,27 +1429,20 @@ pub mod uart4 {
             PA1<8>,
 
             #[cfg(any(
-                feature = "stm32f405",
-                feature = "stm32f407",
-                feature = "stm32f415",
-                feature = "stm32f417",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
             ))]
             PC11<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA11<11>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PD0<11>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PC11<8>,
         ],
     }
@@ -1766,32 +1456,32 @@ pub mod uart5 {
         <Tx> for no:NoPin, [
             PC12<8>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PE8<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PB6<11>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PB9<11>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PB13<11>,
         ],
 
         <Rx> for no:NoPin, [
             PD2<8>,
 
-            #[cfg(feature = "stm32f446")]
+            #[cfg(feature = "gpio-f446")]
             PE7<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PB5<11>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PB8<11>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PB12<11>,
         ],
     }
@@ -1803,30 +1493,62 @@ pub mod uart7 {
 
     pin! {
         <Tx> for no:NoPin, [
-            #[cfg(feature = "gpioe")]
+            #[cfg(any(
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
+            ))]
             PE8<8>,
 
-            #[cfg(feature = "gpiof")]
+            #[cfg(any(
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
+            ))]
             PF7<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA15<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PB4<8>,
         ],
 
         <Rx> for no:NoPin, [
-            #[cfg(feature = "gpioe")]
+            #[cfg(any(
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
+            ))]
             PE7<8>,
 
-            #[cfg(feature = "gpiof")]
+            #[cfg(any(
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
+            ))]
             PF6<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PA8<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PB3<8>,
         ],
     }
@@ -1838,18 +1560,36 @@ pub mod uart8 {
 
     pin! {
         <Tx> for no:NoPin, [
-            #[cfg(feature = "gpioe")]
+            #[cfg(any(
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
+            ))]
             PE1<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PF9<8>,
         ],
 
         <Rx> for no:NoPin, [
-            #[cfg(feature = "gpioe")]
+            #[cfg(any(
+                feature = "gpio-f401",
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469",
+            ))]
             PE0<8>,
 
-            #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(feature = "gpio-f413")]
             PF8<8>,
         ],
     }
@@ -1883,43 +1623,43 @@ pub mod sdio {
         <Clk> for [
             PC12<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PB15<12>,
         ],
         <Cmd> for [
             PD2<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PA6<12>,
         ],
         <D0> for [
             PC8<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PB4<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PB6<12>,
 
-            #[cfg(feature = "stm32f411")]
+            #[cfg(feature = "gpio-f411")]
             PB7<12>,
         ],
         <D1> for [
             PC9<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PA8<12>,
         ],
         <D2> for [
             PC10<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PA9<12>,
         ],
         <D3> for [
             PC11<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PB5<12>,
         ],
         <D4> for [
@@ -1931,13 +1671,13 @@ pub mod sdio {
         <D6> for [
             PC6<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PB14<12>,
         ],
         <D7> for [
             PC7<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423", feature = "stm32f411"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PB10<12>,
         ],
     }
@@ -1954,7 +1694,7 @@ pub mod fsmc {
         <D0> for [
             PD14<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PB14<10>,
         ],
 
@@ -1962,7 +1702,7 @@ pub mod fsmc {
         <D1> for [
             PD15<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PC6<10>,
         ],
 
@@ -1970,7 +1710,7 @@ pub mod fsmc {
         <D2> for [
             PD0<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PC11<10>,
         ],
 
@@ -1978,7 +1718,7 @@ pub mod fsmc {
         <D3> for [
             PD1<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PC12<10>,
         ],
 
@@ -1986,7 +1726,7 @@ pub mod fsmc {
         <D4> for [
             PE7<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PA2<12>,
         ],
 
@@ -1994,7 +1734,7 @@ pub mod fsmc {
         <D5> for [
             PE8<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PA3<12>,
         ],
 
@@ -2002,7 +1742,7 @@ pub mod fsmc {
         <D6> for [
             PE9<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PA4<12>,
         ],
 
@@ -2010,7 +1750,7 @@ pub mod fsmc {
         <D7> for [
             PE10<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PA5<12>,
         ],
 
@@ -2043,7 +1783,7 @@ pub mod fsmc {
         <D13> for [
             PD8<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PB12<12>,
         ],
 
@@ -2061,7 +1801,7 @@ pub mod fsmc {
         <ReadEnable> for [
             PD4<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PC5<12>,
         ],
 
@@ -2069,10 +1809,10 @@ pub mod fsmc {
         <WriteEnable> for [
             PD5<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PC2<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PD2<10>,
         ],
 
@@ -2106,7 +1846,7 @@ pub mod fsmc {
             PG5<12>,
             PG13<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PC3<12>,
         ],
 
@@ -2129,7 +1869,7 @@ pub mod fsmc {
         <ChipSelect4> for [
             PG12<12>,
 
-            #[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PC4<12>,
         ],
     }
