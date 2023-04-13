@@ -725,36 +725,7 @@ pub mod spi4 {
 
     pin! {
         <Sck> for no:NoPin, [
-            #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
             PE2<5>,
-
-            #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
             PE12<5>,
 
             #[cfg(any(
@@ -770,36 +741,7 @@ pub mod spi4 {
         ],
 
         <Miso> for no:NoPin, [
-            #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
             PE5<5>,
-
-            #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
             PE13<5>,
 
             #[cfg(any(
@@ -818,36 +760,7 @@ pub mod spi4 {
         ],
 
         <Mosi> for no:NoPin, [
-            #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
             PE6<5>,
-
-            #[cfg(any(
-                feature = "stm32f401",
-                feature = "stm32f411",
-                feature = "stm32f412",
-                feature = "stm32f413",
-                feature = "stm32f423",
-                feature = "stm32f427",
-                feature = "stm32f429",
-                feature = "stm32f437",
-                feature = "stm32f439",
-                feature = "stm32f446",
-                feature = "stm32f469",
-                feature = "stm32f479"
-            ))]
             PE14<5>,
 
             #[cfg(any(
@@ -1262,8 +1175,8 @@ pub mod i2s2 {
                 feature = "stm32f413",
                 feature = "stm32f423"
             ))]
-
             PA3<5>,
+
             #[cfg(any(
                 feature = "stm32f411",
                 feature = "stm32f412",
@@ -1389,6 +1302,7 @@ pub mod i2s4 {
                 feature = "stm32f423"
             ))]
             PB12<6>,
+
             #[cfg(any(
                 feature = "stm32f411",
                 feature = "stm32f412",
@@ -1396,6 +1310,7 @@ pub mod i2s4 {
                 feature = "stm32f423"
             ))]
             PE4<5>,
+
             #[cfg(any(
                 feature = "stm32f411",
                 feature = "stm32f412",
