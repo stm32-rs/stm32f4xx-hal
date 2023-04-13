@@ -7,149 +7,149 @@ macro_rules! pin {
     ( $($(#[$docs:meta])* <$name:ident> for $(no: $NoPin:ty,)? [$(
             $(#[$attr:meta])* $PX:ident<$A:literal $(, $Otype:ident)?>,
         )*],)*) => {
-            $(
-                #[derive(Debug)]
-                $(#[$docs])*
-                pub enum $name {
-                    $(
-                        None($NoPin),
-                    )?
-
-                    $(
-                        $(#[$attr])*
-                        $PX(gpio::$PX<Alternate<$A $(, $Otype)?>>),
-                    )*
-                }
-
-                impl crate::Sealed for $name { }
-
-                #[allow(unreachable_patterns)]
-                impl $name {
-                    pub fn is_high(&self) -> bool {
-                        !self.is_low()
-                    }
-                    pub fn is_low(&self) -> bool {
-                        match self {
-                            $(
-                                $(#[$attr])*
-                                Self::$PX(p) => p.is_low(),
-                            )*
-                            _ => false,
-                        }
-                    }
-                }
-                #[allow(unreachable_patterns)]
-                impl ExtiPin for $name {
-                    fn make_interrupt_source(&mut self, _syscfg: &mut SysCfg) {
-                        match self {
-                            $(
-                                $(#[$attr])*
-                                Self::$PX(p) => p.make_interrupt_source(_syscfg),
-                            )*
-                            _ => {},
-                        }
-
-                    }
-
-                    fn trigger_on_edge(&mut self, _exti: &mut EXTI, _level: Edge) {
-                        match self {
-                            $(
-                                $(#[$attr])*
-                                Self::$PX(p) => p.trigger_on_edge(_exti, _level),
-                            )*
-                            _ => {},
-                        }
-                    }
-
-                    fn enable_interrupt(&mut self, _exti: &mut EXTI) {
-                        match self {
-                            $(
-                                $(#[$attr])*
-                                Self::$PX(p) => p.enable_interrupt(_exti),
-                            )*
-                            _ => {},
-                        }
-                    }
-                    fn disable_interrupt(&mut self, _exti: &mut EXTI) {
-                        match self {
-                            $(
-                                $(#[$attr])*
-                                Self::$PX(p) => p.disable_interrupt(_exti),
-                            )*
-                            _ => {},
-                        }
-                    }
-                    fn clear_interrupt_pending_bit(&mut self) {
-                        match self {
-                            $(
-                                $(#[$attr])*
-                                Self::$PX(p) => p.clear_interrupt_pending_bit(),
-                            )*
-                            _ => {},
-                        }
-                    }
-                    fn check_interrupt(&self) -> bool {
-                        match self {
-                            $(
-                                $(#[$attr])*
-                                Self::$PX(p) => p.check_interrupt(),
-                            )*
-                            _ => false,
-                        }
-                    }
-                }
-
+        $(
+            #[derive(Debug)]
+            $(#[$docs])*
+            pub enum $name {
                 $(
-                    impl From<$NoPin> for $name {
-                        fn from(p: $NoPin) -> Self {
-                            Self::None(p)
-                        }
-                    }
-
-                    #[allow(irrefutable_let_patterns)]
-                    impl TryFrom<$name> for $NoPin {
-                        type Error = ();
-
-                        fn try_from(a: $name) -> Result<Self, Self::Error> {
-                            if let $name::None(p) = a {
-                                Ok(p)
-                            } else {
-                                Err(())
-                            }
-                        }
-                    }
+                    None($NoPin),
                 )?
 
                 $(
                     $(#[$attr])*
-                    impl From<gpio::$PX> for $name {
-                        fn from(p: gpio::$PX) -> Self {
-                            Self::$PX(p.into_mode())
-                        }
-                    }
-
-                    $(#[$attr])*
-                    impl From<gpio::$PX<Alternate<$A $(, $Otype)?>>> for $name {
-                        fn from(p: gpio::$PX<Alternate<$A $(, $Otype)?>>) -> Self {
-                            Self::$PX(p)
-                        }
-                    }
-
-                    $(#[$attr])*
-                    #[allow(irrefutable_let_patterns)]
-                    impl<MODE: PinMode> TryFrom<$name> for gpio::$PX<MODE> {
-                        type Error = ();
-
-                        fn try_from(a: $name) -> Result<Self, Self::Error> {
-                            if let $name::$PX(p) = a {
-                                Ok(p.into_mode())
-                            } else {
-                                Err(())
-                            }
-                        }
-                    }
+                    $PX(gpio::$PX<Alternate<$A $(, $Otype)?>>),
                 )*
+            }
+
+            impl crate::Sealed for $name { }
+
+            #[allow(unreachable_patterns)]
+            impl $name {
+                pub fn is_high(&self) -> bool {
+                    !self.is_low()
+                }
+                pub fn is_low(&self) -> bool {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.is_low(),
+                        )*
+                        _ => false,
+                    }
+                }
+            }
+            #[allow(unreachable_patterns)]
+            impl ExtiPin for $name {
+                fn make_interrupt_source(&mut self, _syscfg: &mut SysCfg) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.make_interrupt_source(_syscfg),
+                        )*
+                        _ => {},
+                    }
+
+                }
+
+                fn trigger_on_edge(&mut self, _exti: &mut EXTI, _level: Edge) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.trigger_on_edge(_exti, _level),
+                        )*
+                        _ => {},
+                    }
+                }
+
+                fn enable_interrupt(&mut self, _exti: &mut EXTI) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.enable_interrupt(_exti),
+                        )*
+                        _ => {},
+                    }
+                }
+                fn disable_interrupt(&mut self, _exti: &mut EXTI) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.disable_interrupt(_exti),
+                        )*
+                        _ => {},
+                    }
+                }
+                fn clear_interrupt_pending_bit(&mut self) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.clear_interrupt_pending_bit(),
+                        )*
+                        _ => {},
+                    }
+                }
+                fn check_interrupt(&self) -> bool {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.check_interrupt(),
+                        )*
+                        _ => false,
+                    }
+                }
+            }
+
+            $(
+                impl From<$NoPin> for $name {
+                    fn from(p: $NoPin) -> Self {
+                        Self::None(p)
+                    }
+                }
+
+                #[allow(irrefutable_let_patterns)]
+                impl TryFrom<$name> for $NoPin {
+                    type Error = ();
+
+                    fn try_from(a: $name) -> Result<Self, Self::Error> {
+                        if let $name::None(p) = a {
+                            Ok(p)
+                        } else {
+                            Err(())
+                        }
+                    }
+                }
+            )?
+
+            $(
+                $(#[$attr])*
+                impl From<gpio::$PX> for $name {
+                    fn from(p: gpio::$PX) -> Self {
+                        Self::$PX(p.into_mode())
+                    }
+                }
+
+                $(#[$attr])*
+                impl From<gpio::$PX<Alternate<$A $(, $Otype)?>>> for $name {
+                    fn from(p: gpio::$PX<Alternate<$A $(, $Otype)?>>) -> Self {
+                        Self::$PX(p)
+                    }
+                }
+
+                $(#[$attr])*
+                #[allow(irrefutable_let_patterns)]
+                impl<MODE: PinMode> TryFrom<$name> for gpio::$PX<MODE> {
+                    type Error = ();
+
+                    fn try_from(a: $name) -> Result<Self, Self::Error> {
+                        if let $name::$PX(p) = a {
+                            Ok(p.into_mode())
+                        } else {
+                            Err(())
+                        }
+                    }
+                }
             )*
+        )*
     };
 }
 

@@ -866,7 +866,7 @@ impl<USART: Instance> Rx<USART, u8> {
     fn read(&mut self) -> nb::Result<u8, Error> {
         // Delegate to the Read<u16> implementation, then truncate to 8 bits
         unsafe {
-            (&mut *(self as *mut Self as *mut Rx<USART, u16>))
+            (*(self as *mut Self as *mut Rx<USART, u16>))
                 .read()
                 .map(|word16| word16 as u8)
         }
@@ -907,12 +907,12 @@ impl<USART: Instance> Rx<USART, u16> {
 impl<USART: Instance> Tx<USART, u8> {
     fn write(&mut self, word: u8) -> nb::Result<(), Error> {
         // Delegate to u16 version
-        unsafe { (&mut *(self as *mut Self as *mut Tx<USART, u16>)).write(u16::from(word)) }
+        unsafe { (*(self as *mut Self as *mut Tx<USART, u16>)).write(u16::from(word)) }
     }
 
     fn flush(&mut self) -> nb::Result<(), Error> {
         // Delegate to u16 version
-        unsafe { (&mut *(self as *mut Self as *mut Tx<USART, u16>)).flush() }
+        unsafe { (*(self as *mut Self as *mut Tx<USART, u16>)).flush() }
     }
 
     fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Error> {
