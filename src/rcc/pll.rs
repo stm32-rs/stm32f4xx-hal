@@ -101,7 +101,7 @@ impl MainPll {
         }
     }
 
-    #[cfg(feature = "stm32f410")]
+    #[cfg(feature = "gpio-f410")]
     pub fn setup_with_i2s(
         pllsrcclk: u32,
         use_hse: bool,
@@ -193,7 +193,7 @@ impl MainPll {
         }
     }
 
-    #[cfg(feature = "stm32f410")]
+    #[cfg(feature = "gpio-f410")]
     fn best_divider(
         vco_out: u32,
         min: u32,
@@ -222,7 +222,7 @@ impl MainPll {
     }
 }
 
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 pub struct I2sPll {
     pub use_pll: bool,
     /// "M" divisor, required for the other PLLs on some MCUs.
@@ -231,7 +231,7 @@ pub struct I2sPll {
     pub plli2sclk: Option<u32>,
 }
 
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 impl I2sPll {
     pub fn unused() -> I2sPll {
         I2sPll {
@@ -260,17 +260,10 @@ impl I2sPll {
     }
 
     #[cfg(any(
-        feature = "stm32f401",
-        feature = "stm32f405",
-        feature = "stm32f407",
-        feature = "stm32f415",
-        feature = "stm32f417",
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-        feature = "stm32f469",
-        feature = "stm32f479"
+        feature = "gpio-f401",
+        feature = "gpio-f417",
+        feature = "gpio-f427",
+        feature = "gpio-f469",
     ))]
     pub fn setup_shared_m(pllsrcclk: u32, m: Option<u32>, plli2sclk: Option<u32>) -> I2sPll {
         // "m" is None if the main PLL is not in use.
@@ -305,11 +298,10 @@ impl I2sPll {
     }
 
     #[cfg(not(any(
-        feature = "stm32f411",
-        feature = "stm32f412",
-        feature = "stm32f413",
-        feature = "stm32f423",
-        feature = "stm32f446",
+        feature = "gpio-f411",
+        feature = "gpio-f412",
+        feature = "gpio-f413",
+        feature = "gpio-f446",
     )))]
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
@@ -320,11 +312,10 @@ impl I2sPll {
             .modify(|_, w| unsafe { w.plli2sn().bits(config.n).plli2sr().bits(config.outdiv) });
     }
     #[cfg(any(
-        feature = "stm32f411",
-        feature = "stm32f412",
-        feature = "stm32f413",
-        feature = "stm32f423",
-        feature = "stm32f446",
+        feature = "gpio-f411",
+        feature = "gpio-f412",
+        feature = "gpio-f413",
+        feature = "gpio-f446",
     ))]
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
@@ -339,30 +330,14 @@ impl I2sPll {
     }
 }
 
-#[cfg(any(
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
+#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469",))]
 pub struct SaiPll {
     pub use_pll: bool,
     /// SAI clock (PLL output divided by the SAI clock divider).
     pub sai_clk: Option<u32>,
 }
 
-#[cfg(any(
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
-))]
+#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469",))]
 impl SaiPll {
     pub fn unused() -> SaiPll {
         SaiPll {
@@ -389,14 +364,7 @@ impl SaiPll {
         pll
     }
 
-    #[cfg(any(
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-        feature = "stm32f469",
-        feature = "stm32f479"
-    ))]
+    #[cfg(any(feature = "gpio-f427", feature = "gpio-f469",))]
     pub fn setup_shared_m(pllsrcclk: u32, m: Option<u32>, sai_clk: Option<u32>) -> SaiPll {
         // "m" is None if both other PLLs are not in use.
         let m = if let Some(m) = m {
@@ -441,7 +409,7 @@ impl SaiPll {
         )
     }
 
-    #[cfg(not(feature = "stm32f446"))]
+    #[cfg(not(feature = "gpio-f446"))]
     fn apply_config(config: SingleOutputPll, saidiv: u32) {
         let rcc = unsafe { &*RCC::ptr() };
         rcc.dckcfgr
@@ -452,7 +420,7 @@ impl SaiPll {
         rcc.pllsaicfgr
             .modify(|_, w| unsafe { w.pllsain().bits(config.n).pllsaiq().bits(config.outdiv) });
     }
-    #[cfg(feature = "stm32f446")]
+    #[cfg(feature = "gpio-f446")]
     fn apply_config(config: SingleOutputPll, saidiv: u32) {
         let rcc = unsafe { &*RCC::ptr() };
         rcc.dckcfgr
@@ -468,14 +436,14 @@ impl SaiPll {
     }
 }
 
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 struct SingleOutputPll {
     m: u8,
     n: u16,
     outdiv: u8,
 }
 
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 impl SingleOutputPll {
     fn optimize(
         pllsrcclk: u32,
