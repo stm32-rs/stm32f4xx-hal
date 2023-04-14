@@ -3,7 +3,7 @@ use core::ops::Deref;
 use core::ptr;
 
 use crate::dma::traits::PeriAddress;
-use crate::gpio::{Const, NoPin, PinA, PushPull, SetAlternate};
+use crate::gpio::{self, NoPin};
 use crate::pac;
 
 /// Clock polarity
@@ -53,39 +53,6 @@ pub enum Error {
     ModeFault,
     /// CRC error
     Crc,
-}
-
-pub struct Sck;
-impl crate::Sealed for Sck {}
-pub struct Miso;
-impl crate::Sealed for Miso {}
-pub struct Mosi;
-impl crate::Sealed for Mosi {}
-pub struct Nss;
-impl crate::Sealed for Nss {}
-
-pub trait Pins<SPI> {
-    fn set_alt_mode(&mut self);
-    fn restore_mode(&mut self);
-}
-
-impl<SPI, SCK, MISO, MOSI, const SCKA: u8, const MISOA: u8, const MOSIA: u8> Pins<SPI>
-    for (SCK, MISO, MOSI)
-where
-    SCK: PinA<Sck, SPI, A = Const<SCKA>> + SetAlternate<SCKA, PushPull>,
-    MISO: PinA<Miso, SPI, A = Const<MISOA>> + SetAlternate<MISOA, PushPull>,
-    MOSI: PinA<Mosi, SPI, A = Const<MOSIA>> + SetAlternate<MOSIA, PushPull>,
-{
-    fn set_alt_mode(&mut self) {
-        self.0.set_alt_mode();
-        self.1.set_alt_mode();
-        self.2.set_alt_mode();
-    }
-    fn restore_mode(&mut self) {
-        self.0.restore_mode();
-        self.1.restore_mode();
-        self.2.restore_mode();
-    }
 }
 
 /// A filler type for when the SCK pin is unnecessary
@@ -153,9 +120,9 @@ pub enum BitFormat {
 }
 
 #[derive(Debug)]
-pub struct Spi<SPI, PINS, const BIDI: bool = false, W = u8, OPERATION = Master> {
+pub struct Spi<SPI: Instance, const BIDI: bool = false, W = u8, OPERATION = Master> {
     spi: SPI,
-    pins: PINS,
+    pins: (SPI::Sck, SPI::Miso, SPI::Mosi),
     _operation: PhantomData<(W, OPERATION)>,
 }
 
@@ -163,17 +130,27 @@ pub struct Spi<SPI, PINS, const BIDI: bool = false, W = u8, OPERATION = Master> 
 pub trait Instance:
     crate::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset + rcc::BusClock
 {
+    type Sck;
+    type Miso;
+    type Mosi;
+    type Nss;
+
     #[doc(hidden)]
     fn ptr() -> *const spi1::RegisterBlock;
 }
 
 // Implemented by all SPI instances
 macro_rules! spi {
-    ($SPI:ty: $Spi:ident) => {
-        pub type $Spi<PINS, const BIDI: bool = false, W = u8, OPERATION = Master> =
-            Spi<$SPI, PINS, BIDI, W, OPERATION>;
+    ($SPI:ty: $Spi:ident, $spi:ident) => {
+        pub type $Spi<const BIDI: bool = false, W = u8, OPERATION = Master> =
+            Spi<$SPI, BIDI, W, OPERATION>;
 
         impl Instance for $SPI {
+            type Sck = gpio::alt::$spi::Sck;
+            type Miso = gpio::alt::$spi::Miso;
+            type Mosi = gpio::alt::$spi::Mosi;
+            type Nss = gpio::alt::$spi::Nss;
+
             fn ptr() -> *const spi1::RegisterBlock {
                 <$SPI>::ptr() as *const _
             }
@@ -181,58 +158,69 @@ macro_rules! spi {
     };
 }
 
-spi! { pac::SPI1: Spi1 }
-spi! { pac::SPI2: Spi2 }
+spi! { pac::SPI1: Spi1, spi1 }
+spi! { pac::SPI2: Spi2, spi2 }
 
 #[cfg(feature = "spi3")]
-spi! { pac::SPI3: Spi3 }
+spi! { pac::SPI3: Spi3, spi3 }
 
 #[cfg(feature = "spi4")]
-spi! { pac::SPI4: Spi4 }
+spi! { pac::SPI4: Spi4, spi4 }
 
 #[cfg(feature = "spi5")]
-spi! { pac::SPI5: Spi5 }
+spi! { pac::SPI5: Spi5, spi5 }
 
 #[cfg(feature = "spi6")]
-spi! { pac::SPI6: Spi6 }
+spi! { pac::SPI6: Spi6, spi6 }
 
 pub trait SpiExt: Sized + Instance {
-    fn spi<SCK, MISO, MOSI>(
+    fn spi(
         self,
-        pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<Self::Sck>,
+            impl Into<Self::Miso>,
+            impl Into<Self::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), false, u8, Master>
-    where
-        (SCK, MISO, MOSI): Pins<Self>;
-    fn spi_bidi<SCK, MISO, MOSI>(
+    ) -> Spi<Self, false, u8, Master>;
+
+    fn spi_bidi(
         self,
-        pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<Self::Sck>,
+            impl Into<Self::Miso>,
+            impl Into<Self::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), true, u8, Master>
-    where
-        (SCK, MISO, MOSI): Pins<Self>;
-    fn spi_slave<SCK, MISO, MOSI>(
+    ) -> Spi<Self, true, u8, Master>;
+
+    fn spi_slave(
         self,
-        pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<Self::Sck>,
+            impl Into<Self::Miso>,
+            impl Into<Self::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), false, u8, Slave>
-    where
-        (SCK, MISO, MOSI): Pins<Self>;
-    fn spi_bidi_slave<SCK, MISO, MOSI>(
+    ) -> Spi<Self, false, u8, Slave>;
+
+    fn spi_bidi_slave(
         self,
-        pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<Self::Sck>,
+            impl Into<Self::Miso>,
+            impl Into<Self::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), true, u8, Slave>
-    where
-        (SCK, MISO, MOSI): Pins<Self>;
+    ) -> Spi<Self, true, u8, Slave>;
 }
 
 impl<SPI: Instance> SpiExt for SPI {
@@ -241,16 +229,17 @@ impl<SPI: Instance> SpiExt for SPI {
     /// # Note
     /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
-    fn spi<SCK, MISO, MOSI>(
+    fn spi(
         self,
-        pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<Self::Sck>,
+            impl Into<Self::Miso>,
+            impl Into<Self::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), false, u8, Master>
-    where
-        (SCK, MISO, MOSI): Pins<Self>,
-    {
+    ) -> Spi<Self, false, u8, Master> {
         Spi::new(self, pins, mode, freq, clocks)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master BIDI mode.
@@ -258,16 +247,17 @@ impl<SPI: Instance> SpiExt for SPI {
     /// # Note
     /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
-    fn spi_bidi<SCK, MISO, MOSI>(
+    fn spi_bidi(
         self,
-        pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<Self::Sck>,
+            impl Into<Self::Miso>,
+            impl Into<Self::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), true, u8, Master>
-    where
-        (SCK, MISO, MOSI): Pins<Self>,
-    {
+    ) -> Spi<Self, true, u8, Master> {
         Spi::new_bidi(self, pins, mode, freq, clocks)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
@@ -275,16 +265,17 @@ impl<SPI: Instance> SpiExt for SPI {
     /// # Note
     /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
-    fn spi_slave<SCK, MISO, MOSI>(
+    fn spi_slave(
         self,
-        pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<Self::Sck>,
+            impl Into<Self::Miso>,
+            impl Into<Self::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), false, u8, Slave>
-    where
-        (SCK, MISO, MOSI): Pins<Self>,
-    {
+    ) -> Spi<Self, false, u8, Slave> {
         Spi::new_slave(self, pins, mode, freq, clocks)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave BIDI mode.
@@ -292,23 +283,22 @@ impl<SPI: Instance> SpiExt for SPI {
     /// # Note
     /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
-    fn spi_bidi_slave<SCK, MISO, MOSI>(
+    fn spi_bidi_slave(
         self,
-        pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<Self::Sck>,
+            impl Into<Self::Miso>,
+            impl Into<Self::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, (SCK, MISO, MOSI), true, u8, Slave>
-    where
-        (SCK, MISO, MOSI): Pins<Self>,
-    {
+    ) -> Spi<Self, true, u8, Slave> {
         Spi::new_bidi_slave(self, pins, mode, freq, clocks)
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION: Ms>
-    Spi<SPI, PINS, BIDI, W, OPERATION>
-{
+impl<SPI: Instance, const BIDI: bool, W: FrameSize, OPERATION: Ms> Spi<SPI, BIDI, W, OPERATION> {
     pub fn init(self) -> Self {
         self.spi.cr1.modify(|_, w| {
             // bidimode: 2-line or 1-line unidirectional
@@ -326,51 +316,51 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION: Ms>
     }
 }
 
-impl<SPI: Instance, PINS, W: FrameSize, OPERATION: Ms> Spi<SPI, PINS, false, W, OPERATION> {
-    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, PINS, true, W, OPERATION> {
+impl<SPI: Instance, W: FrameSize, OPERATION: Ms> Spi<SPI, false, W, OPERATION> {
+    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, true, W, OPERATION> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, PINS, W: FrameSize, OPERATION: Ms> Spi<SPI, PINS, true, W, OPERATION> {
-    pub fn to_normal_transfer_mode(self) -> Spi<SPI, PINS, false, W, OPERATION> {
+impl<SPI: Instance, W: FrameSize, OPERATION: Ms> Spi<SPI, true, W, OPERATION> {
+    pub fn to_normal_transfer_mode(self) -> Spi<SPI, false, W, OPERATION> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize> Spi<SPI, PINS, BIDI, W, Master> {
-    pub fn to_slave_operation(self) -> Spi<SPI, PINS, BIDI, W, Slave> {
+impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W, Master> {
+    pub fn to_slave_operation(self) -> Spi<SPI, BIDI, W, Slave> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize> Spi<SPI, PINS, BIDI, W, Slave> {
-    pub fn to_master_operation(self) -> Spi<SPI, PINS, BIDI, W, Master> {
+impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W, Slave> {
+    pub fn to_master_operation(self) -> Spi<SPI, BIDI, W, Master> {
         self.into_mode()
     }
 }
 
-impl<SPI, PINS, const BIDI: bool, OPERATION: Ms> Spi<SPI, PINS, BIDI, u8, OPERATION>
+impl<SPI, const BIDI: bool, OPERATION: Ms> Spi<SPI, BIDI, u8, OPERATION>
 where
     SPI: Instance,
 {
     /// Converts from 8bit dataframe to 16bit.
-    pub fn frame_size_16bit(self) -> Spi<SPI, PINS, BIDI, u16, OPERATION> {
+    pub fn frame_size_16bit(self) -> Spi<SPI, BIDI, u16, OPERATION> {
         self.into_mode()
     }
 }
 
-impl<SPI, PINS, const BIDI: bool, OPERATION: Ms> Spi<SPI, PINS, BIDI, u16, OPERATION>
+impl<SPI, const BIDI: bool, OPERATION: Ms> Spi<SPI, BIDI, u16, OPERATION>
 where
     SPI: Instance,
 {
     /// Converts from 16bit dataframe to 8bit.
-    pub fn frame_size_8bit(self) -> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+    pub fn frame_size_8bit(self) -> Spi<SPI, BIDI, u8, OPERATION> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Master> {
+impl<SPI: Instance> Spi<SPI, false, u8, Master> {
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master Normal mode.
     ///
     /// # Note
@@ -378,14 +368,15 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Mast
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new(
         spi: SPI,
-        mut pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<SPI::Sck>,
+            impl Into<SPI::Miso>,
+            impl Into<SPI::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Self
-    where
-        (SCK, MISO, MOSI): Pins<SPI>,
-    {
+    ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -393,7 +384,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Mast
             SPI::reset(rcc);
         }
 
-        pins.set_alt_mode();
+        let pins = (pins.0.into(), pins.1.into(), pins.2.into());
 
         Self::_new(spi, pins)
             .pre_init(mode.into(), freq, SPI::clock(clocks), true)
@@ -401,7 +392,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Mast
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Master> {
+impl<SPI: Instance> Spi<SPI, true, u8, Master> {
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master BIDI mode.
     ///
     /// # Note
@@ -409,14 +400,15 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Maste
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_bidi(
         spi: SPI,
-        mut pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<SPI::Sck>,
+            impl Into<SPI::Miso>,
+            impl Into<SPI::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Self
-    where
-        (SCK, MISO, MOSI): Pins<SPI>,
-    {
+    ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -424,7 +416,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Maste
             SPI::reset(rcc);
         }
 
-        pins.set_alt_mode();
+        let pins = (pins.0.into(), pins.1.into(), pins.2.into());
 
         Self::_new(spi, pins)
             .pre_init(mode.into(), freq, SPI::clock(clocks), true)
@@ -432,7 +424,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Maste
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Slave> {
+impl<SPI: Instance> Spi<SPI, false, u8, Slave> {
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
     ///
     /// # Note
@@ -440,14 +432,15 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Slav
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_slave(
         spi: SPI,
-        mut pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<SPI::Sck>,
+            impl Into<SPI::Miso>,
+            impl Into<SPI::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Self
-    where
-        (SCK, MISO, MOSI): Pins<SPI>,
-    {
+    ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -455,7 +448,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Slav
             SPI::reset(rcc);
         }
 
-        pins.set_alt_mode();
+        let pins = (pins.0.into(), pins.1.into(), pins.2.into());
 
         Self::_new(spi, pins)
             .pre_init(mode.into(), freq, SPI::clock(clocks), false)
@@ -463,7 +456,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), false, u8, Slav
     }
 }
 
-impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Slave> {
+impl<SPI: Instance> Spi<SPI, true, u8, Slave> {
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave BIDI mode.
     ///
     /// # Note
@@ -471,14 +464,15 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Slave
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_bidi_slave(
         spi: SPI,
-        mut pins: (SCK, MISO, MOSI),
+        pins: (
+            impl Into<SPI::Sck>,
+            impl Into<SPI::Miso>,
+            impl Into<SPI::Mosi>,
+        ),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Self
-    where
-        (SCK, MISO, MOSI): Pins<SPI>,
-    {
+    ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -486,7 +480,7 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Slave
             SPI::reset(rcc);
         }
 
-        pins.set_alt_mode();
+        let pins = (pins.0.into(), pins.1.into(), pins.2.into());
 
         Self::_new(spi, pins)
             .pre_init(mode.into(), freq, SPI::clock(clocks), false)
@@ -494,21 +488,26 @@ impl<SPI: Instance, SCK, MISO, MOSI> Spi<SPI, (SCK, MISO, MOSI), true, u8, Slave
     }
 }
 
-impl<SPI, SCK, MISO, MOSI, const BIDI: bool, W, OPERATION>
-    Spi<SPI, (SCK, MISO, MOSI), BIDI, W, OPERATION>
-where
-    SPI: Instance,
-    (SCK, MISO, MOSI): Pins<SPI>,
-{
-    pub fn release(mut self) -> (SPI, (SCK, MISO, MOSI)) {
-        self.pins.restore_mode();
-
-        (self.spi, (self.pins.0, self.pins.1, self.pins.2))
+impl<SPI: Instance, const BIDI: bool, W, OPERATION> Spi<SPI, BIDI, W, OPERATION> {
+    pub fn release<SCK, MISO, MOSI, E>(self) -> Result<(SPI, (SCK, MISO, MOSI)), E>
+    where
+        SCK: TryFrom<SPI::Sck, Error = E>,
+        MISO: TryFrom<SPI::Miso, Error = E>,
+        MOSI: TryFrom<SPI::Mosi, Error = E>,
+    {
+        Ok((
+            self.spi,
+            (
+                self.pins.0.try_into()?,
+                self.pins.1.try_into()?,
+                self.pins.2.try_into()?,
+            ),
+        ))
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, W, OPERATION> Spi<SPI, PINS, BIDI, W, OPERATION> {
-    fn _new(spi: SPI, pins: PINS) -> Self {
+impl<SPI: Instance, const BIDI: bool, W, OPERATION> Spi<SPI, BIDI, W, OPERATION> {
+    fn _new(spi: SPI, pins: (SPI::Sck, SPI::Miso, SPI::Mosi)) -> Self {
         Self {
             spi,
             pins,
@@ -519,7 +518,7 @@ impl<SPI: Instance, PINS, const BIDI: bool, W, OPERATION> Spi<SPI, PINS, BIDI, W
     /// Convert the spi to another mode.
     fn into_mode<const BIDI2: bool, W2: FrameSize, OPERATION2: Ms>(
         self,
-    ) -> Spi<SPI, PINS, BIDI2, W2, OPERATION2> {
+    ) -> Spi<SPI, BIDI2, W2, OPERATION2> {
         let mut spi = Spi::_new(self.spi, self.pins);
         spi.enable(false);
         spi.init()
@@ -659,8 +658,7 @@ trait ReadWriteReg<W> {
     fn write_data_reg(&mut self, data: W);
 }
 
-impl<SPI, PINS, const BIDI: bool, W, OPERATION> ReadWriteReg<W>
-    for Spi<SPI, PINS, BIDI, W, OPERATION>
+impl<SPI, const BIDI: bool, W, OPERATION> ReadWriteReg<W> for Spi<SPI, BIDI, W, OPERATION>
 where
     SPI: Instance,
     W: FrameSize,
@@ -677,9 +675,7 @@ where
     }
 }
 
-impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
-    Spi<SPI, PINS, BIDI, W, OPERATION>
-{
+impl<SPI: Instance, const BIDI: bool, W: FrameSize, OPERATION> Spi<SPI, BIDI, W, OPERATION> {
     #[inline(always)]
     fn check_read(&mut self) -> nb::Result<W, Error> {
         let sr = self.spi.sr.read();
@@ -727,7 +723,7 @@ impl<SPI: Instance, PINS, const BIDI: bool, W: FrameSize, OPERATION>
 
 // Spi DMA
 
-impl<SPI: Instance, PINS, const BIDI: bool, OPERATION> Spi<SPI, PINS, BIDI, u8, OPERATION> {
+impl<SPI: Instance, const BIDI: bool, OPERATION> Spi<SPI, BIDI, u8, OPERATION> {
     pub fn use_dma(self) -> DmaBuilder<SPI> {
         DmaBuilder { spi: self.spi }
     }

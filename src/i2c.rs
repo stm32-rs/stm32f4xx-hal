@@ -3,7 +3,7 @@ use core::ops::Deref;
 use crate::pac::{self, i2c1};
 use crate::rcc::{Enable, Reset};
 
-use crate::gpio::{Const, OpenDrain, PinA, SetAlternate};
+use crate::gpio;
 use crate::pac::RCC;
 
 use crate::rcc::Clocks;
@@ -68,34 +68,9 @@ impl From<Hertz> for Mode {
 }
 
 /// I2C abstraction
-pub struct I2c<I2C: Instance, PINS> {
+pub struct I2c<I2C: Instance> {
     i2c: I2C,
-    pins: PINS,
-}
-
-pub struct Scl;
-impl crate::Sealed for Scl {}
-pub struct Sda;
-impl crate::Sealed for Sda {}
-
-pub trait Pins<I2C> {
-    fn set_alt_mode(&mut self);
-    fn restore_mode(&mut self);
-}
-
-impl<I2C, SCL, SDA, const SCLA: u8, const SDAA: u8> Pins<I2C> for (SCL, SDA)
-where
-    SCL: PinA<Scl, I2C, A = Const<SCLA>> + SetAlternate<SCLA, OpenDrain>,
-    SDA: PinA<Sda, I2C, A = Const<SDAA>> + SetAlternate<SDAA, OpenDrain>,
-{
-    fn set_alt_mode(&mut self) {
-        self.0.set_alt_mode();
-        self.1.set_alt_mode();
-    }
-    fn restore_mode(&mut self) {
-        self.0.restore_mode();
-        self.1.restore_mode();
-    }
+    pins: (I2C::Scl, I2C::Sda),
 }
 
 pub use embedded_hal_one::i2c::NoAcknowledgeSource;
@@ -132,16 +107,22 @@ impl Error {
 }
 
 pub trait Instance: crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {
+    type Scl;
+    type Sda;
+
     #[doc(hidden)]
     fn ptr() -> *const i2c1::RegisterBlock;
 }
 
 // Implemented by all I2C instances
 macro_rules! i2c {
-    ($I2C:ty: $I2c:ident) => {
-        pub type $I2c<PINS> = I2c<$I2C, PINS>;
+    ($I2C:ty: $I2c:ident, $i2c:ident) => {
+        pub type $I2c = I2c<$I2C>;
 
         impl Instance for $I2C {
+            type Scl = gpio::alt::$i2c::Scl;
+            type Sda = gpio::alt::$i2c::Sda;
+
             fn ptr() -> *const i2c1::RegisterBlock {
                 <$I2C>::ptr() as *const _
             }
@@ -149,43 +130,42 @@ macro_rules! i2c {
     };
 }
 
-i2c! { pac::I2C1: I2c1 }
-i2c! { pac::I2C2: I2c2 }
+i2c! { pac::I2C1: I2c1, i2c1 }
+i2c! { pac::I2C2: I2c2, i2c2 }
 
 #[cfg(feature = "i2c3")]
-i2c! { pac::I2C3: I2c3 }
+i2c! { pac::I2C3: I2c3, i2c3 }
 
 pub trait I2cExt: Sized + Instance {
-    fn i2c<SCL, SDA>(
+    fn i2c(
         self,
-        pins: (SCL, SDA),
+        pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
         clocks: &Clocks,
-    ) -> I2c<Self, (SCL, SDA)>
-    where
-        (SCL, SDA): Pins<Self>;
+    ) -> I2c<Self>;
 }
 
 impl<I2C: Instance> I2cExt for I2C {
-    fn i2c<SCL, SDA>(
+    fn i2c(
         self,
-        pins: (SCL, SDA),
+        pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
         clocks: &Clocks,
-    ) -> I2c<Self, (SCL, SDA)>
-    where
-        (SCL, SDA): Pins<Self>,
-    {
+    ) -> I2c<Self> {
         I2c::new(self, pins, mode, clocks)
     }
 }
 
-impl<I2C, SCL, SDA> I2c<I2C, (SCL, SDA)>
+impl<I2C> I2c<I2C>
 where
     I2C: Instance,
-    (SCL, SDA): Pins<I2C>,
 {
-    pub fn new(i2c: I2C, mut pins: (SCL, SDA), mode: impl Into<Mode>, clocks: &Clocks) -> Self {
+    pub fn new(
+        i2c: I2C,
+        pins: (impl Into<I2C::Scl>, impl Into<I2C::Sda>),
+        mode: impl Into<Mode>,
+        clocks: &Clocks,
+    ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
@@ -195,21 +175,23 @@ where
             I2C::reset(rcc);
         }
 
-        pins.set_alt_mode();
+        let pins = (pins.0.into(), pins.1.into());
 
         let i2c = I2c { i2c, pins };
         i2c.i2c_init(mode, clocks.pclk1());
         i2c
     }
 
-    pub fn release(mut self) -> (I2C, (SCL, SDA)) {
-        self.pins.restore_mode();
-
-        (self.i2c, (self.pins.0, self.pins.1))
+    pub fn release<SCL, SDA, E>(self) -> Result<(I2C, (SCL, SDA)), E>
+    where
+        SCL: TryFrom<I2C::Scl, Error = E>,
+        SDA: TryFrom<I2C::Sda, Error = E>,
+    {
+        Ok((self.i2c, (self.pins.0.try_into()?, self.pins.1.try_into()?)))
     }
 }
 
-impl<I2C: Instance, PINS> I2c<I2C, PINS> {
+impl<I2C: Instance> I2c<I2C> {
     fn i2c_init(&self, mode: impl Into<Mode>, pclk: Hertz) {
         let mode = mode.into();
         // Make sure the I2C unit is disabled so we can configure it

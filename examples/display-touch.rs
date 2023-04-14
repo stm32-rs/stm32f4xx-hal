@@ -17,10 +17,6 @@
 use cortex_m;
 use cortex_m_rt::entry;
 use rtt_target::{rprintln, rtt_init_print};
-#[cfg(feature = "stm32f412")]
-use stm32f4xx_hal::fsmc_lcd::ChipSelect1;
-#[cfg(feature = "stm32f413")]
-use stm32f4xx_hal::fsmc_lcd::ChipSelect3;
 use stm32f4xx_hal::{
     fsmc_lcd::{FsmcLcd, LcdPins, Timing},
     gpio::Speed,
@@ -70,32 +66,33 @@ fn main() -> ! {
     let gpiog = p.GPIOG.split();
 
     // Pins connected to the LCD on the board
+    use stm32f4xx_hal::gpio::alt::fsmc as alt;
     let lcd_pins = LcdPins {
         data: (
-            gpiod.pd14.into_alternate(),
-            gpiod.pd15.into_alternate(),
-            gpiod.pd0.into_alternate(),
-            gpiod.pd1.into_alternate(),
-            gpioe.pe7.into_alternate(),
-            gpioe.pe8.into_alternate(),
-            gpioe.pe9.into_alternate(),
-            gpioe.pe10.into_alternate(),
-            gpioe.pe11.into_alternate(),
-            gpioe.pe12.into_alternate(),
-            gpioe.pe13.into_alternate(),
-            gpioe.pe14.into_alternate(),
-            gpioe.pe15.into_alternate(),
-            gpiod.pd8.into_alternate(),
-            gpiod.pd9.into_alternate(),
-            gpiod.pd10.into_alternate(),
+            gpiod.pd14.into(),
+            gpiod.pd15.into(),
+            gpiod.pd0.into(),
+            gpiod.pd1.into(),
+            gpioe.pe7.into(),
+            gpioe.pe8.into(),
+            gpioe.pe9.into(),
+            gpioe.pe10.into(),
+            gpioe.pe11.into(),
+            gpioe.pe12.into(),
+            gpioe.pe13.into(),
+            gpioe.pe14.into(),
+            gpioe.pe15.into(),
+            gpiod.pd8.into(),
+            gpiod.pd9.into(),
+            gpiod.pd10.into(),
         ),
-        address: gpiof.pf0.into_alternate(),
-        read_enable: gpiod.pd4.into_alternate(),
-        write_enable: gpiod.pd5.into_alternate(),
+        address: alt::Address::from(gpiof.pf0),
+        read_enable: gpiod.pd4.into(),
+        write_enable: gpiod.pd5.into(),
         #[cfg(feature = "stm32f413")]
-        chip_select: ChipSelect3(gpiog.pg10.into_alternate()),
+        chip_select: alt::ChipSelect3::from(gpiog.pg10),
         #[cfg(feature = "stm32f412")]
-        chip_select: ChipSelect1(gpiod.pd7.into_alternate()),
+        chip_select: alt::ChipSelect1::from(gpiod.pd7),
     };
 
     // Enable backlight

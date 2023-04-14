@@ -31,7 +31,7 @@ mod nb {
     use super::super::{Error, FrameSize, Instance, Spi};
     use embedded_hal::spi::FullDuplex;
 
-    impl<SPI, PINS, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, PINS, BIDI, W>
+    impl<SPI, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, BIDI, W>
     where
         SPI: Instance,
     {
@@ -58,7 +58,7 @@ mod blocking {
     use embedded_hal::blocking::spi::{Operation, Transactional, Transfer, Write, WriteIter};
     use embedded_hal::spi::FullDuplex;
 
-    impl<SPI, PINS, const BIDI: bool> Transfer<u8> for Spi<SPI, PINS, BIDI, u8>
+    impl<SPI, const BIDI: bool> Transfer<u8> for Spi<SPI, BIDI, u8>
     where
         SPI: Instance,
     {
@@ -74,7 +74,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> Transfer<u16> for Spi<SPI, PINS, BIDI, u16>
+    impl<SPI, const BIDI: bool> Transfer<u16> for Spi<SPI, BIDI, u16>
     where
         SPI: Instance,
     {
@@ -90,7 +90,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> Write<u8> for Spi<SPI, PINS, BIDI, u8>
+    impl<SPI, const BIDI: bool> Write<u8> for Spi<SPI, BIDI, u8>
     where
         SPI: Instance,
     {
@@ -101,7 +101,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> WriteIter<u8> for Spi<SPI, PINS, BIDI, u8>
+    impl<SPI, const BIDI: bool> WriteIter<u8> for Spi<SPI, BIDI, u8>
     where
         SPI: Instance,
     {
@@ -122,7 +122,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> Write<u16> for Spi<SPI, PINS, BIDI, u16>
+    impl<SPI, const BIDI: bool> Write<u16> for Spi<SPI, BIDI, u16>
     where
         SPI: Instance,
     {
@@ -133,7 +133,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool> WriteIter<u16> for Spi<SPI, PINS, BIDI, u16>
+    impl<SPI, const BIDI: bool> WriteIter<u16> for Spi<SPI, BIDI, u16>
     where
         SPI: Instance,
     {
@@ -154,7 +154,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, PINS, const BIDI: bool, W: Copy + 'static> Transactional<W> for Spi<SPI, PINS, BIDI, W>
+    impl<SPI, const BIDI: bool, W: Copy + 'static> Transactional<W> for Spi<SPI, BIDI, W>
     where
         Self: Transfer<W, Error = Error> + Write<W, Error = Error>,
         SPI: Instance,

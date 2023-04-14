@@ -1,15 +1,17 @@
 use embedded_hal_one::i2c::ErrorType;
 
-impl<I2C, PINS> ErrorType for super::FMPI2c<I2C, PINS> {
+use super::Instance;
+
+impl<I2C: Instance> ErrorType for super::FMPI2c<I2C> {
     type Error = super::Error;
 }
 
 mod blocking {
-    use super::super::{fmpi2c1, FMPI2c};
+    use super::super::{fmpi2c1, FMPI2c, Instance};
     use core::ops::Deref;
     use embedded_hal_one::i2c::blocking::Operation;
 
-    impl<I2C, PINS> embedded_hal_one::i2c::blocking::I2c for FMPI2c<I2C, PINS>
+    impl<I2C: Instance> embedded_hal_one::i2c::blocking::I2c for FMPI2c<I2C>
     where
         I2C: Deref<Target = fmpi2c1::RegisterBlock>,
     {

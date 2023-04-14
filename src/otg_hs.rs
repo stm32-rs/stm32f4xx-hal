@@ -8,8 +8,8 @@
 
 use crate::pac;
 
-use crate::gpio::{Alternate, PushPull, PB14, PB15};
-use crate::rcc::{Enable, Reset};
+use crate::gpio::alt::otg_hs as alt;
+use crate::rcc::{Clocks, Enable, Reset};
 use fugit::HertzU32 as Hertz;
 
 pub use synopsys_usb_otg::UsbBus;
@@ -19,9 +19,26 @@ pub struct USB {
     pub usb_global: pac::OTG_HS_GLOBAL,
     pub usb_device: pac::OTG_HS_DEVICE,
     pub usb_pwrclk: pac::OTG_HS_PWRCLK,
-    pub pin_dm: PB14<Alternate<12, PushPull>>,
-    pub pin_dp: PB15<Alternate<12, PushPull>>,
+    pub pin_dm: alt::Dm,
+    pub pin_dp: alt::Dp,
     pub hclk: Hertz,
+}
+
+impl USB {
+    pub fn new(
+        periphs: (pac::OTG_HS_GLOBAL, pac::OTG_HS_DEVICE, pac::OTG_HS_PWRCLK),
+        pins: (impl Into<alt::Dm>, impl Into<alt::Dp>),
+        clocks: &Clocks,
+    ) -> Self {
+        Self {
+            usb_global: periphs.0,
+            usb_device: periphs.1,
+            usb_pwrclk: periphs.2,
+            pin_dm: pins.0.into(),
+            pin_dp: pins.1.into(),
+            hclk: clocks.hclk(),
+        }
+    }
 }
 
 unsafe impl Sync for USB {}

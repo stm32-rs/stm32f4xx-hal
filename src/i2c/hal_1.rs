@@ -12,7 +12,7 @@ impl Error for super::Error {
     }
 }
 
-impl<I2C: super::Instance, PINS> ErrorType for super::I2c<I2C, PINS> {
+impl<I2C: super::Instance> ErrorType for super::I2c<I2C> {
     type Error = super::Error;
 }
 
@@ -20,7 +20,7 @@ mod blocking {
     use super::super::{I2c, Instance};
     use embedded_hal_one::i2c::blocking::Operation;
 
-    impl<I2C: Instance, PINS> embedded_hal_one::i2c::blocking::I2c for I2c<I2C, PINS> {
+    impl<I2C: Instance> embedded_hal_one::i2c::blocking::I2c for I2c<I2C> {
         fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
             self.read(addr, buffer)
         }

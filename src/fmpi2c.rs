@@ -1,6 +1,7 @@
 use core::ops::Deref;
 
-use crate::i2c::{Error, NoAcknowledgeSource, Pins};
+use crate::gpio;
+use crate::i2c::{Error, NoAcknowledgeSource};
 use crate::pac::{fmpi2c1, FMPI2C1, RCC};
 use crate::rcc::{Enable, Reset};
 use fugit::{HertzU32 as Hertz, RateExtU32};
@@ -8,13 +9,35 @@ use fugit::{HertzU32 as Hertz, RateExtU32};
 mod hal_02;
 mod hal_1;
 
-/// I2C FastMode+ abstraction
-pub struct FMPI2c<I2C, PINS> {
-    i2c: I2C,
-    pins: PINS,
+pub trait Instance:
+    crate::Sealed + Deref<Target = fmpi2c1::RegisterBlock> + Enable + Reset
+{
+    type Scl;
+    type Sda;
+
+    #[doc(hidden)]
+    fn ptr() -> *const fmpi2c1::RegisterBlock;
+    fn clock_hsi(rcc: &crate::pac::rcc::RegisterBlock);
 }
 
-pub type FMPI2c1<PINS> = FMPI2c<FMPI2C1, PINS>;
+impl Instance for FMPI2C1 {
+    type Sda = gpio::alt::fmpi2c1::Sda;
+    type Scl = gpio::alt::fmpi2c1::Scl;
+    fn ptr() -> *const fmpi2c1::RegisterBlock {
+        FMPI2C1::ptr() as *const _
+    }
+    fn clock_hsi(rcc: &crate::pac::rcc::RegisterBlock) {
+        rcc.dckcfgr2.modify(|_, w| w.fmpi2c1sel().hsi());
+    }
+}
+
+/// I2C FastMode+ abstraction
+pub struct FMPI2c<I2C: Instance> {
+    i2c: I2C,
+    pins: (I2C::Scl, I2C::Sda),
+}
+
+pub type FMPI2c1 = FMPI2c<FMPI2C1>;
 
 #[derive(Debug, PartialEq)]
 pub enum FmpMode {
@@ -61,40 +84,40 @@ impl From<Hertz> for FmpMode {
     }
 }
 
-impl<PINS> FMPI2c<FMPI2C1, PINS>
-where
-    PINS: Pins<FMPI2C1>,
-{
-    pub fn new<M: Into<FmpMode>>(i2c: FMPI2C1, mut pins: PINS, mode: M) -> Self {
+impl<I2C: Instance> FMPI2c<I2C> {
+    pub fn new(
+        i2c: I2C,
+        pins: (impl Into<I2C::Scl>, impl Into<I2C::Sda>),
+        mode: impl Into<FmpMode>,
+    ) -> Self {
         unsafe {
             // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
             let rcc = &(*RCC::ptr());
 
             // Enable and reset clock.
-            FMPI2C1::enable(rcc);
-            FMPI2C1::reset(rcc);
+            I2C::enable(rcc);
+            I2C::reset(rcc);
 
-            rcc.dckcfgr2.modify(|_, w| w.fmpi2c1sel().hsi());
+            I2C::clock_hsi(rcc);
         }
 
-        pins.set_alt_mode();
+        let pins = (pins.0.into(), pins.1.into());
 
         let i2c = FMPI2c { i2c, pins };
         i2c.i2c_init(mode);
         i2c
     }
 
-    pub fn release(mut self) -> (FMPI2C1, PINS) {
-        self.pins.restore_mode();
-
-        (self.i2c, self.pins)
+    pub fn release<SCL, SDA, E>(self) -> Result<(I2C, (SCL, SDA)), E>
+    where
+        SCL: TryFrom<I2C::Scl, Error = E>,
+        SDA: TryFrom<I2C::Sda, Error = E>,
+    {
+        Ok((self.i2c, (self.pins.0.try_into()?, self.pins.1.try_into()?)))
     }
 }
 
-impl<I2C, PINS> FMPI2c<I2C, PINS>
-where
-    I2C: Deref<Target = fmpi2c1::RegisterBlock>,
-{
+impl<I2C: Instance> FMPI2c<I2C> {
     fn i2c_init<M: Into<FmpMode>>(&self, mode: M) {
         let mode = mode.into();
         use core::cmp;

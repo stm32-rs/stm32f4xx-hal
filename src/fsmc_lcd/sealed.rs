@@ -1,6 +1,5 @@
 /// Private implementation details used in the fsmc_lcd module and the pins submodule
-
-pub trait Sealed {}
+pub(crate) use crate::Sealed;
 
 /// Private supertrait of SubBank
 pub trait SealedSubBank {

@@ -83,13 +83,13 @@ pub trait I2CMasterWriteReadDMA {
     ) -> nb::Result<(), super::Error>;
 }
 
-impl<I2C: Instance, PINS> I2c<I2C, PINS> {
+impl<I2C: Instance> I2c<I2C> {
     /// Converts blocking [I2c] to non-blocking [I2CMasterDma] that use `tx_stream` and `rx_stream` to send/receive data
     pub fn use_dma<TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8>(
         self,
         tx_stream: TX_STREAM,
         rx_stream: RX_STREAM,
-    ) -> I2CMasterDma<I2C, PINS, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
+    ) -> I2CMasterDma<I2C, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
     where
         TX_STREAM: Stream,
         RX_STREAM: Stream,
@@ -126,13 +126,13 @@ impl<I2C: Instance, PINS> I2c<I2C, PINS> {
 /// The struct can be also used to send/receive bytes in blocking mode with methods:
 /// [`write`](Self::write()), [`read`](Self::read()), [`write_read`](Self::write_read()).
 ///
-pub struct I2CMasterDma<I2C, PINS, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8>
+pub struct I2CMasterDma<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8>
 where
     I2C: Instance,
     TX_STREAM: Stream,
     RX_STREAM: Stream,
 {
-    hal_i2c: I2c<I2C, PINS>,
+    hal_i2c: I2c<I2C>,
 
     callback: Option<I2cCompleteCallback>,
 
@@ -150,8 +150,8 @@ where
     rx_transfer: Option<Transfer<RX_STREAM, RX_CH, Rx<I2C>, PeripheralToMemory, &'static mut [u8]>>,
 }
 
-impl<I2C, PINS, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8>
-    I2CMasterDma<I2C, PINS, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
+impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8>
+    I2CMasterDma<I2C, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -508,8 +508,8 @@ where
     }
 }
 
-impl<I2C, PINS, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterWriteDMA
-    for I2CMasterDma<I2C, PINS, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
+impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterWriteDMA
+    for I2CMasterDma<I2C, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -547,8 +547,8 @@ where
     }
 }
 
-impl<I2C, PINS, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterReadDMA
-    for I2CMasterDma<I2C, PINS, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
+impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterReadDMA
+    for I2CMasterDma<I2C, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -588,8 +588,8 @@ where
     }
 }
 
-impl<I2C, PINS, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterWriteReadDMA
-    for I2CMasterDma<I2C, PINS, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
+impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterWriteReadDMA
+    for I2CMasterDma<I2C, TX_STREAM, TX_CH, RX_STREAM, RX_CH>
 where
     I2C: Instance,
     TX_STREAM: Stream,
