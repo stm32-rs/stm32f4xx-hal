@@ -103,7 +103,7 @@ impl<I2C: Instance> I2c<I2C> {
         self,
         tx_stream: TX_STREAM,
         rx_stream: RX_STREAM,
-    ) -> I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    ) -> I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, RxDMA<I2C, RX_STREAM, RX_CH>>
     where
         TX_STREAM: Stream,
         ChannelX<TX_CH>: Channel,
@@ -113,8 +113,8 @@ impl<I2C: Instance> I2c<I2C> {
         ChannelX<RX_CH>: Channel,
         Rx<I2C>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
     {
-        let tx = TxTransfer::new(tx_stream);
-        let rx = RxTransfer::new(rx_stream);
+        let tx = TxDMA::new(tx_stream);
+        let rx = RxDMA::new(rx_stream);
 
         I2CMasterDma {
             hal_i2c: self,
@@ -132,13 +132,13 @@ impl<I2C: Instance> I2c<I2C> {
     pub fn use_dma_tx<TX_STREAM, const TX_CH: u8>(
         self,
         tx_stream: TX_STREAM,
-    ) -> I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, NoDMA>
+    ) -> I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, NoDMA>
     where
         TX_STREAM: Stream,
         ChannelX<TX_CH>: Channel,
         Tx<I2C>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
     {
-        let tx = TxTransfer::new(tx_stream);
+        let tx = TxDMA::new(tx_stream);
         let rx = NoDMA;
 
         I2CMasterDma {
@@ -157,14 +157,14 @@ impl<I2C: Instance> I2c<I2C> {
     pub fn use_dma_rx<RX_STREAM, const RX_CH: u8>(
         self,
         rx_stream: RX_STREAM,
-    ) -> I2CMasterDma<I2C, NoDMA, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    ) -> I2CMasterDma<I2C, NoDMA, RxDMA<I2C, RX_STREAM, RX_CH>>
     where
         RX_STREAM: Stream,
         ChannelX<RX_CH>: Channel,
         Rx<I2C>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
     {
         let tx = NoDMA;
-        let rx = RxTransfer::new(rx_stream);
+        let rx = RxDMA::new(rx_stream);
 
         I2CMasterDma {
             hal_i2c: self,
@@ -207,7 +207,7 @@ where
     rx: RX_TRANSFER,
 }
 
-pub struct TxTransfer<I2C, TX_STREAM, const TX_CH: u8>
+pub struct TxDMA<I2C, TX_STREAM, const TX_CH: u8>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -217,7 +217,7 @@ where
     tx_transfer: Option<Transfer<TX_STREAM, TX_CH, Tx<I2C>, MemoryToPeripheral, &'static [u8]>>,
 }
 
-impl<I2C, TX_STREAM, const TX_CH: u8> TxTransfer<I2C, TX_STREAM, TX_CH>
+impl<I2C, TX_STREAM, const TX_CH: u8> TxDMA<I2C, TX_STREAM, TX_CH>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -265,7 +265,7 @@ where
     }
 }
 
-pub struct RxTransfer<I2C, RX_STREAM, const RX_CH: u8>
+pub struct RxDMA<I2C, RX_STREAM, const RX_CH: u8>
 where
     I2C: Instance,
     RX_STREAM: Stream,
@@ -275,7 +275,7 @@ where
     rx_transfer: Option<Transfer<RX_STREAM, RX_CH, Rx<I2C>, PeripheralToMemory, &'static mut [u8]>>,
 }
 
-impl<I2C, RX_STREAM, const RX_CH: u8> RxTransfer<I2C, RX_STREAM, RX_CH>
+impl<I2C, RX_STREAM, const RX_CH: u8> RxDMA<I2C, RX_STREAM, RX_CH>
 where
     I2C: Instance,
     RX_STREAM: Stream,
@@ -524,7 +524,7 @@ where
 
 /// Only for TX DMA I2c
 impl<I2C, TX_STREAM, const TX_CH: u8, RX_TRANSFER>
-    I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, RX_TRANSFER>
+    I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, RX_TRANSFER>
 where
     I2C: Instance,
 
@@ -542,7 +542,7 @@ where
 }
 
 impl<I2C, TX_STREAM, const TX_CH: u8> I2CMasterHandleIT
-    for I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, NoDMA>
+    for I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, NoDMA>
 where
     I2C: Instance,
 
@@ -592,7 +592,7 @@ where
 }
 
 impl<I2C, TX_STREAM, const TX_CH: u8> I2CMasterFinishAndDestroyTransfers
-    for I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, NoDMA>
+    for I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, NoDMA>
 where
     I2C: Instance,
 
@@ -611,7 +611,7 @@ where
 
 /// Only for RX DMA I2c
 impl<I2C, TX_TRANSFER, RX_STREAM, const RX_CH: u8>
-    I2CMasterDma<I2C, TX_TRANSFER, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    I2CMasterDma<I2C, TX_TRANSFER, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
 
@@ -629,7 +629,7 @@ where
 }
 
 impl<I2C, RX_STREAM, const RX_CH: u8> I2CMasterHandleIT
-    for I2CMasterDma<I2C, NoDMA, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    for I2CMasterDma<I2C, NoDMA, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
 
@@ -675,7 +675,7 @@ where
 }
 
 impl<I2C, RX_STREAM, const RX_CH: u8> I2CMasterFinishAndDestroyTransfers
-    for I2CMasterDma<I2C, NoDMA, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    for I2CMasterDma<I2C, NoDMA, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
 
@@ -694,7 +694,7 @@ where
 
 /// Only for both TX and RX DMA I2c
 impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterHandleIT
-    for I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    for I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -795,7 +795,7 @@ where
 }
 
 impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterFinishAndDestroyTransfers
-    for I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    for I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -821,7 +821,7 @@ where
 
 // Write DMA implementations for TX only and TX/RX I2C DMA
 impl<I2C, TX_STREAM, const TX_CH: u8> I2CMasterWriteDMA
-    for I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, NoDMA>
+    for I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, NoDMA>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -856,7 +856,7 @@ where
 }
 
 impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterWriteDMA
-    for I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    for I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -896,7 +896,7 @@ where
 
 // Write DMA implementations for RX only and TX/RX I2C DMA
 impl<I2C, RX_STREAM, const RX_CH: u8> I2CMasterReadDMA
-    for I2CMasterDma<I2C, NoDMA, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    for I2CMasterDma<I2C, NoDMA, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
 
@@ -934,7 +934,7 @@ where
 }
 
 impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterReadDMA
-    for I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    for I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
     TX_STREAM: Stream,
@@ -975,7 +975,7 @@ where
 }
 
 impl<I2C, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> I2CMasterWriteReadDMA
-    for I2CMasterDma<I2C, TxTransfer<I2C, TX_STREAM, TX_CH>, RxTransfer<I2C, RX_STREAM, RX_CH>>
+    for I2CMasterDma<I2C, TxDMA<I2C, TX_STREAM, TX_CH>, RxDMA<I2C, RX_STREAM, RX_CH>>
 where
     I2C: Instance,
     TX_STREAM: Stream,
