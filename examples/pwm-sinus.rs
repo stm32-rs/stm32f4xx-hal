@@ -8,7 +8,11 @@ use panic_halt as _;
 use core::f32::consts::FRAC_PI_2;
 use cortex_m_rt::entry;
 use micromath::F32Ext;
-use stm32f4xx_hal::{pac, prelude::*, timer::Channel};
+use stm32f4xx_hal::{
+    pac,
+    prelude::*,
+    timer::{Channel, Channel1, Channel2},
+};
 
 #[entry]
 fn main() -> ! {
@@ -18,7 +22,7 @@ fn main() -> ! {
         let clocks = rcc.cfgr.use_hse(25.MHz()).freeze();
 
         let gpioa = dp.GPIOA.split();
-        let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
+        let channels = (Channel1::new(gpioa.pa8), Channel2::new(gpioa.pa9));
 
         let mut pwm = dp.TIM1.pwm_us(channels, 100.micros(), &clocks);
         let mut counter = dp.TIM2.counter_us(&clocks);

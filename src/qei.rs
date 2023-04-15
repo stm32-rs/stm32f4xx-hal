@@ -1,16 +1,17 @@
 //! # Quadrature Encoder Interface
 use crate::{
+    gpio::PushPull,
     pac::{self, RCC},
     rcc,
-    timer::{ChannelPin as Ch, General},
+    timer::{CPin, General},
 };
 
 pub trait QeiExt: Sized + Instance {
     fn qei(
         self,
         pins: (
-            impl Into<<Self as Ch<0>>::Pin>,
-            impl Into<<Self as Ch<1>>::Pin>,
+            impl Into<<Self as CPin<0>>::Ch<PushPull>>,
+            impl Into<<Self as CPin<1>>::Ch<PushPull>>,
         ),
     ) -> Qei<Self>;
 }
@@ -19,8 +20,8 @@ impl<TIM: Instance> QeiExt for TIM {
     fn qei(
         self,
         pins: (
-            impl Into<<Self as Ch<0>>::Pin>,
-            impl Into<<Self as Ch<1>>::Pin>,
+            impl Into<<Self as CPin<0>>::Ch<PushPull>>,
+            impl Into<<Self as CPin<1>>::Ch<PushPull>>,
         ),
     ) -> Qei<Self> {
         Qei::new(self, pins)
@@ -30,7 +31,10 @@ impl<TIM: Instance> QeiExt for TIM {
 /// Hardware quadrature encoder interface peripheral
 pub struct Qei<TIM: Instance> {
     tim: TIM,
-    pins: (<TIM as Ch<0>>::Pin, <TIM as Ch<1>>::Pin),
+    pins: (
+        <TIM as CPin<0>>::Ch<PushPull>,
+        <TIM as CPin<1>>::Ch<PushPull>,
+    ),
 }
 
 impl<TIM: Instance> Qei<TIM> {
@@ -38,8 +42,8 @@ impl<TIM: Instance> Qei<TIM> {
     pub fn new(
         mut tim: TIM,
         pins: (
-            impl Into<<TIM as Ch<0>>::Pin>,
-            impl Into<<TIM as Ch<1>>::Pin>,
+            impl Into<<TIM as CPin<0>>::Ch<PushPull>>,
+            impl Into<<TIM as CPin<1>>::Ch<PushPull>>,
         ),
     ) -> Self {
         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
@@ -55,7 +59,16 @@ impl<TIM: Instance> Qei<TIM> {
     }
 
     /// Releases the TIM peripheral and QEI pins
-    pub fn release(self) -> (TIM, (<TIM as Ch<0>>::Pin, <TIM as Ch<1>>::Pin)) {
+    #[allow(clippy::type_complexity)]
+    pub fn release(
+        self,
+    ) -> (
+        TIM,
+        (
+            <TIM as CPin<0>>::Ch<PushPull>,
+            <TIM as CPin<1>>::Ch<PushPull>,
+        ),
+    ) {
         (self.tim, self.pins)
     }
 }
@@ -76,7 +89,7 @@ impl<TIM: Instance> embedded_hal::Qei for Qei<TIM> {
     }
 }
 
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + General + Ch<0> + Ch<1> {
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + General + CPin<0> + CPin<1> {
     fn setup_qei(&mut self);
 
     fn read_direction(&self) -> bool;
@@ -95,14 +108,8 @@ macro_rules! hal {
                         .write(|w| unsafe { w.cc1s().bits(0b01).cc2s().bits(0b01) });
                     // enable and configure to capture on rising edge
                     self.ccer.write(|w| {
-                        w.cc1e()
-                            .set_bit()
-                            .cc1p()
-                            .clear_bit()
-                            .cc2e()
-                            .set_bit()
-                            .cc2p()
-                            .clear_bit()
+                        w.cc1e().set_bit().cc1p().clear_bit();
+                        w.cc2e().set_bit().cc2p().clear_bit()
                     });
                     self.smcr.write(|w| w.sms().encoder_mode_3());
                     self.set_auto_reload(<$TIM as General>::Width::MAX as u32).unwrap();
