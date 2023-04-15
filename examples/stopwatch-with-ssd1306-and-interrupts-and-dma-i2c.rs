@@ -24,7 +24,7 @@ use stm32f4xx_hal as hal;
 use crate::hal::{
     dma::{Stream1, StreamsTuple},
     gpio::*,
-    i2c::dma::{I2CMasterDma, I2CMasterHandleIT, I2CMasterWriteDMA, NoDMA, TxDMA},
+    i2c::dma::{I2CMasterDma, NoDMA, TxDMA},
     i2c::I2c,
     interrupt, pac,
     pac::{DMA1, I2C1},
