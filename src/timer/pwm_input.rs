@@ -1,12 +1,8 @@
-use super::{CPin, General, Instance, Timer, WithPwm};
+use super::{ChannelPin as Ch, General, Instance, Timer, WithPwm};
+use crate::pac;
 use core::convert::TryFrom;
 use core::ops::{Deref, DerefMut};
 use fugit::HertzU32 as Hertz;
-
-pub trait Pins<TIM> {}
-
-// implement the `Pins` trait wherever PC1 implements CPin<C1>
-impl<TIM, PC1> Pins<TIM> for PC1 where PC1: CPin<TIM, 0> {}
 
 /// Represents a TIMer configured as a PWM input.
 /// This peripheral will emit an interrupt on CC2 events, which occurs at two times in this mode:
@@ -14,13 +10,9 @@ impl<TIM, PC1> Pins<TIM> for PC1 where PC1: CPin<TIM, 0> {}
 /// 2. When the period is captured. the duty cycle will be an observable value.
 /// An example interrupt handler is provided:
 /// ```
-/// use stm32f4xx_hal::pac::TIM8;
-/// use stm32f4xx_hal::timer::Timer;
-/// use stm32f4xx_hal::pwm_input::PwmInput;
-/// use stm32f4xx_hal::gpio::gpioc::PC6;
-/// use stm32f4xx_hal::gpio::Alternate;
+/// use stm32f4xx_hal::{pac::TIM8, pwm_input::PwmInput};
 ///
-/// type Monitor = PwmInput<TIM8, PC6<Alternate<3>>>;
+/// type Monitor = PwmInput<TIM8>;
 ///
 /// fn tim8_cc2(monitor: &Monitor) {
 ///             let duty_clocks = monitor.get_duty_cycle_clocks();
@@ -33,19 +25,17 @@ impl<TIM, PC1> Pins<TIM> for PC1 where PC1: CPin<TIM, 0> {}
 ///             let duty = monitor.get_duty_cycle();
 /// }
 /// ```
-pub struct PwmInput<TIM, PINS>
+pub struct PwmInput<TIM>
 where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
+    TIM: Instance + WithPwm + Ch<0>,
 {
     timer: Timer<TIM>,
-    _pins: PINS,
+    _pins: TIM::Pin,
 }
 
-impl<TIM, PINS> Deref for PwmInput<TIM, PINS>
+impl<TIM> Deref for PwmInput<TIM>
 where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
+    TIM: Instance + WithPwm + Ch<0>,
 {
     type Target = Timer<TIM>;
     fn deref(&self) -> &Self::Target {
@@ -53,20 +43,18 @@ where
     }
 }
 
-impl<TIM, PINS> DerefMut for PwmInput<TIM, PINS>
+impl<TIM> DerefMut for PwmInput<TIM>
 where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
+    TIM: Instance + WithPwm + Ch<0>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.timer
     }
 }
 
-impl<TIM, PINS> PwmInput<TIM, PINS>
+impl<TIM> PwmInput<TIM>
 where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
+    TIM: Instance + WithPwm + Ch<0>,
 {
     pub fn release(mut self) -> Timer<TIM> {
         self.tim.cr1_reset();
@@ -74,15 +62,10 @@ where
     }
 }
 
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 macro_rules! hal {
-    ($($TIM:ident,)+) => {
+    ($($TIM:ty,)+) => {
         $(
-        // Drag the associated TIM object into scope.
-        // Note: its drawn in via the macro to avoid duplicating the feature gate this macro is
-        //       expecting to be guarded by.
-        use crate::pac::$TIM;
-
         impl Timer<$TIM> {
             /// Configures this timer for PWM input. Accepts the `best_guess` frequency of the signal
             /// Note: this should be as close as possible to the frequency of the PWM waveform for best
@@ -93,10 +76,9 @@ macro_rules! hal {
             /// 2. When the period is captured. the duty cycle will be an observable value.
             /// See the pwm input example for an suitable interrupt handler.
             #[allow(unused_unsafe)] //for some chips the operations are considered safe.
-            pub fn pwm_input<PINS>(mut self, best_guess: Hertz, pins: PINS) -> PwmInput<$TIM, PINS>
-            where
-                PINS: Pins<$TIM>,
-            {
+            pub fn pwm_input(mut self, best_guess: Hertz, pins: impl Into<<$TIM as Ch<0>>::Pin>) -> PwmInput<$TIM> {
+                let pins = pins.into();
+
                 /*
                 Borrowed from PWM implementation.
                 Sets the TIMer's prescaler such that the TIMer that it ticks at about the best-guess
@@ -176,10 +158,7 @@ macro_rules! hal {
             }
         }
 
-        impl<PINS> PwmInput<$TIM, PINS>
-        where
-            PINS: Pins<$TIM>,
-        {
+        impl PwmInput<$TIM> {
             /// Period of PWM signal in terms of clock cycles
             pub fn get_period_clocks(&self) -> <$TIM as General>::Width {
                 self.tim.ccr1().read().ccr().bits()
@@ -206,57 +185,41 @@ macro_rules! hal {
     )+
 }}
 
-#[cfg(any(feature = "stm32f411",))]
+#[cfg(feature = "gpio-f411")]
 /* red group */
 hal! {
-    TIM4,
-    TIM3,
-    TIM2,
+    pac::TIM4,
+    pac::TIM3,
+    pac::TIM2,
 }
 
 /* orange group */
 #[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
+    feature = "gpio-f401",
+    feature = "gpio-f412",
+    feature = "gpio-f413",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469",
 ))]
 hal! {
-    TIM2,
-    TIM3,
-    TIM4,
+    pac::TIM2,
+    pac::TIM3,
+    pac::TIM4,
 }
 /* green group */
 #[cfg(any(
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f423",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f446",
-    feature = "stm32f469",
-    feature = "stm32f479",
+    feature = "gpio-f412",
+    feature = "gpio-f413",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469",
 ))]
 hal! {
-    TIM8,
-    TIM12,
+    pac::TIM8,
+    pac::TIM12,
 }
 
 /* every chip across the series have these timers with support for this feature.
@@ -264,9 +227,9 @@ hal! {
    than the rest of the series.
 */
 /* yellow group */
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 hal! {
-    TIM1,
-    TIM5,
-    TIM9,
+    pac::TIM1,
+    pac::TIM5,
+    pac::TIM9,
 }

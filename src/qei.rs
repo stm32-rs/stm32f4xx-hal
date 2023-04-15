@@ -1,61 +1,70 @@
 //! # Quadrature Encoder Interface
-use crate::{pac::RCC, rcc, timer::General};
+use crate::{
+    pac::{self, RCC},
+    rcc,
+    timer::{ChannelPin as Ch, General},
+};
 
-pub trait Pins<TIM> {}
-use crate::timer::CPin;
-
-pub trait QeiExt: Sized {
-    fn qei<PC1, PC2>(self, pins: (PC1, PC2)) -> Qei<Self, (PC1, PC2)>
-    where
-        (PC1, PC2): Pins<Self>;
+pub trait QeiExt: Sized + Instance {
+    fn qei(
+        self,
+        pins: (
+            impl Into<<Self as Ch<0>>::Pin>,
+            impl Into<<Self as Ch<1>>::Pin>,
+        ),
+    ) -> Qei<Self>;
 }
 
 impl<TIM: Instance> QeiExt for TIM {
-    fn qei<PC1, PC2>(self, pins: (PC1, PC2)) -> Qei<Self, (PC1, PC2)>
-    where
-        (PC1, PC2): Pins<Self>,
-    {
+    fn qei(
+        self,
+        pins: (
+            impl Into<<Self as Ch<0>>::Pin>,
+            impl Into<<Self as Ch<1>>::Pin>,
+        ),
+    ) -> Qei<Self> {
         Qei::new(self, pins)
     }
 }
 
-impl<TIM, PC1, PC2> Pins<TIM> for (PC1, PC2)
-where
-    PC1: CPin<TIM, 0>,
-    PC2: CPin<TIM, 1>,
-{
-}
-
 /// Hardware quadrature encoder interface peripheral
-pub struct Qei<TIM, PINS> {
+pub struct Qei<TIM: Instance> {
     tim: TIM,
-    pins: PINS,
+    pins: (<TIM as Ch<0>>::Pin, <TIM as Ch<1>>::Pin),
 }
 
-impl<TIM: Instance, PC1, PC2> Qei<TIM, (PC1, PC2)>
-where
-    (PC1, PC2): Pins<TIM>,
-{
+impl<TIM: Instance> Qei<TIM> {
     /// Configures a TIM peripheral as a quadrature encoder interface input
-    pub fn new(mut tim: TIM, pins: (PC1, PC2)) -> Self {
+    pub fn new(
+        mut tim: TIM,
+        pins: (
+            impl Into<<TIM as Ch<0>>::Pin>,
+            impl Into<<TIM as Ch<1>>::Pin>,
+        ),
+    ) -> Self {
         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
         let rcc = unsafe { &(*RCC::ptr()) };
         // Enable and reset clock.
         TIM::enable(rcc);
         TIM::reset(rcc);
 
+        let pins = (pins.0.into(), pins.1.into());
         tim.setup_qei();
 
         Qei { tim, pins }
     }
 
     /// Releases the TIM peripheral and QEI pins
-    pub fn release(self) -> (TIM, (PC1, PC2)) {
-        (self.tim, (self.pins.0, self.pins.1))
+    pub fn release<PC1, PC2, E>(self) -> Result<(TIM, (PC1, PC2)), E>
+    where
+        PC1: TryFrom<<TIM as Ch<0>>::Pin, Error = E>,
+        PC2: TryFrom<<TIM as Ch<1>>::Pin, Error = E>,
+    {
+        Ok((self.tim, (self.pins.0.try_into()?, self.pins.1.try_into()?)))
     }
 }
 
-impl<TIM: Instance, PINS> embedded_hal::Qei for Qei<TIM, PINS> {
+impl<TIM: Instance> embedded_hal::Qei for Qei<TIM> {
     type Count = TIM::Width;
 
     fn count(&self) -> Self::Count {
@@ -71,7 +80,7 @@ impl<TIM: Instance, PINS> embedded_hal::Qei for Qei<TIM, PINS> {
     }
 }
 
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + General {
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + General + Ch<0> + Ch<1> {
     fn setup_qei(&mut self);
 
     fn read_direction(&self) -> bool;
@@ -83,9 +92,9 @@ macro_rules! hal {
             impl Instance for $TIM {
                 fn setup_qei(&mut self) {
                     // Configure TxC1 and TxC2 as captures
-                    #[cfg(not(feature = "stm32f410"))]
+                    #[cfg(not(feature = "gpio-f410"))]
                     self.ccmr1_input().write(|w| w.cc1s().ti1().cc2s().ti2());
-                    #[cfg(feature = "stm32f410")]
+                    #[cfg(feature = "gpio-f410")]
                     self.ccmr1_input()
                         .write(|w| unsafe { w.cc1s().bits(0b01).cc2s().bits(0b01) });
                     // enable and configure to capture on rising edge
@@ -113,18 +122,18 @@ macro_rules! hal {
 }
 
 hal! {
-    crate::pac::TIM1,
-    crate::pac::TIM5,
+    pac::TIM1,
+    pac::TIM5,
 }
 
 #[cfg(feature = "tim2")]
 hal! {
-    crate::pac::TIM2,
-    crate::pac::TIM3,
-    crate::pac::TIM4,
+    pac::TIM2,
+    pac::TIM3,
+    pac::TIM4,
 }
 
 #[cfg(feature = "tim8")]
 hal! {
-    crate::pac::TIM8,
+    pac::TIM8,
 }

@@ -195,64 +195,37 @@ macro_rules! i2s {
 // Each one has to be split into two declarations because the F412, F413, F423, and F446
 // have two different I2S clocks while other models have only one.
 
-#[cfg(any(feature = "stm32f410", feature = "stm32f411"))]
+#[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
 i2s!(pac::SPI1, I2s1, i2s1, i2s_clk);
-#[cfg(any(
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446",
-))]
+#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
 i2s!(pac::SPI1, I2s1, i2s1, i2s_apb2_clk);
 
 // All STM32F4 models support SPI2/I2S2
-#[cfg(not(any(
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446",
-)))]
+#[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",)))]
 i2s!(pac::SPI2, I2s2, i2s2, i2s_clk);
-#[cfg(any(
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446",
-))]
+#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
 i2s!(pac::SPI2, I2s2, i2s2, i2s_apb1_clk);
 
 // All STM32F4 models except STM32F410 support SPI3/I2S3
 #[cfg(any(
-    feature = "stm32f401",
-    feature = "stm32f405",
-    feature = "stm32f407",
-    feature = "stm32f411",
-    feature = "stm32f415",
-    feature = "stm32f417",
-    feature = "stm32f427",
-    feature = "stm32f429",
-    feature = "stm32f437",
-    feature = "stm32f439",
-    feature = "stm32f469",
-    feature = "stm32f479",
+    feature = "gpio-f401",
+    feature = "gpio-f411",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f469",
 ))]
 i2s!(pac::SPI3, I2s3, i2s3, i2s_clk);
-#[cfg(any(
-    feature = "stm32f412",
-    feature = "stm32f413",
-    feature = "stm32f423",
-    feature = "stm32f446",
-))]
+#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
 i2s!(pac::SPI3, I2s3, i2s3, i2s_apb1_clk);
 
-#[cfg(feature = "stm32f411")]
+#[cfg(feature = "gpio-f411")]
 i2s!(pac::SPI4, I2s4, i2s4, i2s_clk);
-#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+#[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
 i2s!(pac::SPI4, I2s4, i2s4, i2s_apb2_clk);
 
-#[cfg(any(feature = "stm32f410", feature = "stm32f411"))]
+#[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
 i2s!(pac::SPI5, I2s5, i2s5, i2s_clk);
-#[cfg(any(feature = "stm32f412", feature = "stm32f413", feature = "stm32f423"))]
+#[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
 i2s!(pac::SPI5, I2s5, i2s5, i2s_apb2_clk);
 
 // DMA support: reuse existing mappings for SPI

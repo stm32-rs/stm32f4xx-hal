@@ -49,18 +49,9 @@ unsafe impl UsbPeripheral for USB {
     const HIGH_SPEED: bool = true;
     const FIFO_DEPTH_WORDS: usize = 1024;
 
-    #[cfg(any(
-        feature = "stm32f405",
-        feature = "stm32f407",
-        feature = "stm32f415",
-        feature = "stm32f417",
-        feature = "stm32f427",
-        feature = "stm32f429",
-        feature = "stm32f437",
-        feature = "stm32f439",
-    ))]
+    #[cfg(any(feature = "gpio-f417", feature = "gpio-f427",))]
     const ENDPOINT_COUNT: usize = 6;
-    #[cfg(any(feature = "stm32f446", feature = "stm32f469", feature = "stm32f479"))]
+    #[cfg(any(feature = "gpio-f446", feature = "gpio-f469"))]
     const ENDPOINT_COUNT: usize = 9;
 
     fn enable() {
