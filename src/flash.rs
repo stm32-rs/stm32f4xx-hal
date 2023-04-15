@@ -2,7 +2,7 @@ use embedded_storage::nor_flash::{MultiwriteNorFlash, NorFlash, ReadNorFlash};
 
 use crate::pac::FLASH;
 use crate::signature::FlashSize;
-use core::{ptr, slice};
+use core::{ptr, slice, marker::PhantomData};
 
 /// Flash erase/program error
 #[derive(Debug, Clone, Copy)]
@@ -33,6 +33,46 @@ impl Error {
     }
 }
 
+pub trait Word: Copy + crate::Sealed {
+    const PSIZE: ProgramSize;
+    const BYTES: usize;
+}
+
+impl Word for u8 {
+    const PSIZE: ProgramSize = ProgramSize::X8;
+    const BYTES: usize = 1;
+}
+impl crate::Sealed for u8 { }
+
+impl Word for u16 {
+    const PSIZE: ProgramSize = ProgramSize::X16;
+    const BYTES: usize = 2;
+}
+impl crate::Sealed for u16 { }
+
+impl Word for u32 {
+    const PSIZE: ProgramSize = ProgramSize::X32;
+    const BYTES: usize = 4;
+}
+impl crate::Sealed for u32 { }
+
+impl Word for u64 {
+    const PSIZE: ProgramSize = ProgramSize::X64;
+    const BYTES: usize = 8;
+}
+impl crate::Sealed for u64 { }
+
+/// Select the program parallelism
+#[derive(Clone, Copy, Debug, Default)]
+#[repr(u8)]
+pub enum ProgramSize {
+    #[default]
+    X8 = 0b00,
+    X16 = 0b01,
+    X32 = 0b10,
+    X64 = 0b11,
+}
+
 /// Flash methods implemented for `pac::FLASH`
 #[allow(clippy::len_without_is_empty)]
 pub trait FlashExt {
@@ -47,7 +87,7 @@ pub trait FlashExt {
     }
     /// Unlock flash for erasing/programming until this method's
     /// result is dropped
-    fn unlocked(&mut self) -> UnlockedFlash;
+    fn unlocked<W: Word>(&mut self) -> UnlockedFlash<W>;
     // Returns true if flash is in dual bank organization
     fn dual_bank(&self) -> bool;
     /// Returns flash memory sector of a given offset. Returns none if offset is out of range.
@@ -63,9 +103,9 @@ impl FlashExt for FLASH {
         FlashSize::get().bytes()
     }
 
-    fn unlocked(&mut self) -> UnlockedFlash {
+    fn unlocked<W: Word>(&mut self) -> UnlockedFlash<W> {
         unlock(self);
-        UnlockedFlash { flash: self }
+        UnlockedFlash { flash: self, _marker: PhantomData }
     }
 
     fn dual_bank(&self) -> bool {
@@ -98,8 +138,6 @@ impl FlashExt for FLASH {
         flash_sectors(self.len(), self.dual_bank()).find(|s| s.contains(offset))
     }
 }
-
-const PSIZE_X8: u8 = 0b00;
 
 /// Read-only flash
 ///
@@ -137,7 +175,7 @@ impl FlashExt for LockedFlash {
         self.flash.len()
     }
 
-    fn unlocked(&mut self) -> UnlockedFlash {
+    fn unlocked<W: Word>(&mut self) -> UnlockedFlash<W> {
         self.flash.unlocked()
     }
 
@@ -175,23 +213,37 @@ impl FlashExt for LockedFlash {
 /// // Lock flash by dropping
 /// drop(unlocked_flash);
 /// ```
-pub struct UnlockedFlash<'a> {
+pub struct UnlockedFlash<'a, W: Word = u8> {
     flash: &'a mut FLASH,
+    _marker: PhantomData<W>,
 }
 
 /// Automatically lock flash erase/program when leaving scope
-impl Drop for UnlockedFlash<'_> {
+impl<W: Word> Drop for UnlockedFlash<'_, W> {
     fn drop(&mut self) {
         lock(self.flash);
     }
 }
 
-impl UnlockedFlash<'_> {
+impl<W: Word> UnlockedFlash<'_, W> {
     /// Erase a flash sector
     ///
     /// Refer to the reference manual to see which sector corresponds
     /// to which memory address.
     pub fn erase(&mut self, sector: u8) -> Result<(), Error> {
+/*        #[cfg(feature = "gpio-f401")]
+        const MINIMAL_SECTOR: u8 = 7; // or 5?
+        #[cfg(feature = "gpio-f410")]
+        const MINIMAL_SECTOR: u8 = 5;
+        #[cfg(any(feature = "gpio-f411", feature = "gpio-f446"))]
+        const MINIMAL_SECTOR: u8 = 7;
+        #[cfg(any(feature = "gpio-f412", feature = "gpio-f417"))]
+        const MINIMAL_SECTOR: u8 = 12;
+        #[cfg(feature = "gpio-f413")]
+        const MINIMAL_SECTOR: u8 = 16;
+        #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+        const MINIMAL_SECTOR: u8 = 24;
+*/
         let snb = if sector < 12 { sector } else { sector + 4 };
 
         #[rustfmt::skip]
@@ -199,7 +251,7 @@ impl UnlockedFlash<'_> {
             w
                 // start
                 .strt().set_bit()
-                .psize().bits(PSIZE_X8)
+                .psize().bits(W::PSIZE as _)
                 // sector number
                 .snb().bits(snb)
                 // sectore erase
@@ -213,11 +265,13 @@ impl UnlockedFlash<'_> {
 
     /// Program bytes with offset into flash memory,
     /// aligned to 128-bit rows
-    pub fn program<'a, I>(&mut self, mut offset: usize, mut bytes: I) -> Result<(), Error>
+    pub fn program<I>(&mut self, mut offset: usize, mut bytes: I) -> Result<(), Error>
     where
-        I: Iterator<Item = &'a u8>,
+        I: Iterator<Item = W>,
     {
-        let ptr = self.flash.address() as *mut u8;
+        // TODO!!! Fix offset and other
+
+        let ptr = self.flash.address() as *mut u8 as *mut W;
         let mut bytes_written = 1;
         while bytes_written > 0 {
             bytes_written = 0;
@@ -227,7 +281,7 @@ impl UnlockedFlash<'_> {
             #[allow(unused_unsafe)]
             self.flash.cr.modify(|_, w| unsafe {
                 w
-                    .psize().bits(PSIZE_X8)
+                    .psize().bits(W::PSIZE as _)
                     // no sector erase
                     .ser().clear_bit()
                     // programming
@@ -237,10 +291,10 @@ impl UnlockedFlash<'_> {
                 match bytes.next() {
                     Some(byte) => {
                         unsafe {
-                            ptr::write_volatile(ptr.add(offset), *byte);
+                            ptr::write_volatile(ptr.add(offset), byte);
                         }
                         offset += 1;
-                        bytes_written += 1;
+                        bytes_written += W::BYTES;
                     }
                     None => break,
                 }
@@ -413,7 +467,7 @@ impl<'a> NorFlash for UnlockedFlash<'a> {
     }
 
     fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
-        self.program(offset as usize, bytes.iter())
+        self.program(offset as usize, bytes.iter().cloned())
     }
 }
 
