@@ -98,9 +98,9 @@ macro_rules! pins_impl {
             {
                 $(const $ENCHX: bool = true;)+
                 $(const $COMP: bool = true;)+
-                type Channels = ($(PwmChannel<TIM, $ENCHX>),+);
+                type Channels = ($(PwmChannel<TIM, $ENCHX, $COMP>),+);
                 fn split() -> Self::Channels {
-                    ($(PwmChannel::<TIM, $ENCHX>::new()),+)
+                    ($(PwmChannel::<TIM, $ENCHX, $COMP>::new()),+)
                 }
             }
         )+
@@ -208,7 +208,7 @@ where
     }
 }
 
-impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
+impl<TIM, const C: u8, const COMP: bool> PwmChannel<TIM, C, COMP> {
     pub(crate) fn new() -> Self {
         Self {
             _tim: core::marker::PhantomData,
