@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
- - Use `enum`s for alternate peripheral pins
+ - Use `enum`s for alternate peripheral pins [#594]
  - Added missing U(S)ART DMA traits for HAL serial types [#593]
  - Improve SPI::new* docs [#587]
  - Add advanced timer dead time insertion example [#585]
- - Cleanups
- - Fix comlementary for independent channels
+ - Cleanups [#595]
+ - Fix comlementary for independent channels [#599]
 
 ## [v0.15.0] - 2023-03-13
 
@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#577]: https://github.com/stm32-rs/stm32f4xx-hal/pull/577
 [#578]: https://github.com/stm32-rs/stm32f4xx-hal/pull/578
 [#581]: https://github.com/stm32-rs/stm32f4xx-hal/pull/581
+[#594]: https://github.com/stm32-rs/stm32f4xx-hal/pull/594
+[#595]: https://github.com/stm32-rs/stm32f4xx-hal/pull/595
+[#599]: https://github.com/stm32-rs/stm32f4xx-hal/pull/599
 
 
 ## [v0.14.0] - 2022-12-12

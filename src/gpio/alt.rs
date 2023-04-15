@@ -1906,3 +1906,598 @@ pub mod otg_hs {
         ],
     }
 }
+
+pub mod tim1 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PA8<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE9<1>,
+        ],
+        <C2> for [
+            PA9<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE11<1>,
+        ],
+        <C3> for [
+            PA10<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE13<1>,
+        ],
+        <C4> for [
+            PA11<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE14<1>,
+        ],
+        <NC1> for [
+            PA7<1>,
+            PB13<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE8<1>,
+        ],
+        <NC2> for [
+            PB0<1>,
+            PB14<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE10<1>,
+        ],
+        <NC3> for [
+            PB1<1>,
+            PB15<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE12<1>,
+        ],
+        <Etr> for [
+            PA12<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE7<1>,
+
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            PF10<1>,
+        ],
+        <BkIn> for [
+            PA6<1>,
+            PB12<1>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE15<1>,
+        ],
+    }
+
+    use crate::pac::TIM1;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM1 {
+        type Pin = C1;
+    }
+    impl ChannelPin<1> for TIM1 {
+        type Pin = C2;
+    }
+    impl ChannelPin<2> for TIM1 {
+        type Pin = C3;
+    }
+    impl ChannelPin<3> for TIM1 {
+        type Pin = C4;
+    }
+    impl ChannelPin<0, true> for TIM1 {
+        type Pin = NC1;
+    }
+    impl ChannelPin<1, true> for TIM1 {
+        type Pin = NC2;
+    }
+    impl ChannelPin<2, true> for TIM1 {
+        type Pin = NC3;
+    }
+}
+
+#[cfg(not(feature = "gpio-f410"))]
+pub mod tim2 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PA0<1>,
+            PA5<1>,
+            PA15<1>,
+
+            #[cfg(feature = "gpio-f446")]
+            PB8<1>,
+        ],
+        <C2> for [
+            PA1<1>,
+            PB3<1>,
+
+            #[cfg(feature = "gpio-f446")]
+            PB9<1>,
+        ],
+        <C3> for [
+            PA2<1>,
+            PB10<1>,
+        ],
+        <C4> for [
+            PA3<1>,
+            PB11<1>,
+
+            #[cfg(feature = "gpio-f446")]
+            PB2<1>,
+        ],
+        <Etr> for [
+            PA0<1>,
+            PA5<1>,
+            PA15<1>,
+
+            #[cfg(feature = "gpio-f446")]
+            PB8<1>,
+        ],
+    }
+
+    use crate::pac::TIM2;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM2 {
+        type Pin = C1;
+    }
+    impl ChannelPin<1> for TIM2 {
+        type Pin = C2;
+    }
+    impl ChannelPin<2> for TIM2 {
+        type Pin = C3;
+    }
+    impl ChannelPin<3> for TIM2 {
+        type Pin = C4;
+    }
+}
+
+#[cfg(not(feature = "gpio-f410"))]
+pub mod tim3 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PA6<2>,
+            PB4<2>,
+            PC6<2>,
+        ],
+        <C2> for [
+            PA7<2>,
+            PB5<2>,
+            PC7<2>,
+        ],
+        <C3> for [
+            PB0<2>,
+            PC8<2>,
+        ],
+        <C4> for [
+            PB1<2>,
+            PC9<2>,
+        ],
+        <Etr> for [
+            PD2<2>,
+        ],
+    }
+
+    use crate::pac::TIM3;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM3 {
+        type Pin = C1;
+    }
+    impl ChannelPin<1> for TIM3 {
+        type Pin = C2;
+    }
+    impl ChannelPin<2> for TIM3 {
+        type Pin = C3;
+    }
+    impl ChannelPin<3> for TIM3 {
+        type Pin = C4;
+    }
+}
+
+#[cfg(not(feature = "gpio-f410"))]
+pub mod tim4 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PB6<2>,
+            PD12<2>,
+        ],
+        <C2> for [
+            PB7<2>,
+            PD13<2>,
+        ],
+        <C3> for [
+            PB8<2>,
+            PD14<2>,
+        ],
+        <C4> for [
+            PB9<2>,
+            PD15<2>,
+        ],
+        <Etr> for [
+            PE0<2>,
+        ],
+    }
+
+    use crate::pac::TIM4;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM4 {
+        type Pin = C1;
+    }
+    impl ChannelPin<1> for TIM4 {
+        type Pin = C2;
+    }
+    impl ChannelPin<2> for TIM4 {
+        type Pin = C3;
+    }
+    impl ChannelPin<3> for TIM4 {
+        type Pin = C4;
+    }
+}
+
+pub mod tim5 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PA0<2>,
+
+            #[cfg(feature = "gpio-f410")]
+            PB12<2>,
+
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            PF3<2>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PH10<2>,
+        ],
+        <C2> for [
+            PA1<2>,
+
+            #[cfg(feature = "gpio-f410")]
+            PC10<2>,
+
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            PF4<2>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PH11<2>,
+        ],
+        <C3> for [
+            PA2<2>,
+
+            #[cfg(feature = "gpio-f410")]
+            PC11<2>,
+
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            PF5<2>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PH12<2>,
+        ],
+        <C4> for [
+            PA3<2>,
+
+            #[cfg(feature = "gpio-f410")]
+            PB11<2>,
+
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            PF10<2>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PI0<2>,
+        ],
+    }
+
+    use crate::pac::TIM5;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM5 {
+        type Pin = C1;
+    }
+    impl ChannelPin<1> for TIM5 {
+        type Pin = C2;
+    }
+    impl ChannelPin<2> for TIM5 {
+        type Pin = C3;
+    }
+    impl ChannelPin<3> for TIM5 {
+        type Pin = C4;
+    }
+}
+
+#[cfg(any(
+    feature = "gpio-f412",
+    feature = "gpio-f413",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469"
+))]
+pub mod tim8 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PC6<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PI5<3>,
+        ],
+        <C2> for [
+            PC7<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PI6<3>,
+        ],
+        <C3> for [
+            PC8<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PI7<3>,
+        ],
+        <C4> for [
+            PC9<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PI2<3>,
+        ],
+        <NC1> for [
+            PA5<3>,
+            PA7<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PH13<3>,
+        ],
+        <NC2> for [
+            PB0<3>,
+            PB14<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PH14<3>,
+        ],
+        <NC3> for [
+            PB1<3>,
+            PB15<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PH15<3>,
+        ],
+        <Etr> for [
+            PA0<3>,
+
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            PF11<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PI3<3>,
+        ],
+        <BkIn> for [
+            PA6<3>,
+
+            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            PF12<3>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PI4<3>,
+        ],
+    }
+
+    use crate::pac::TIM8;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM8 {
+        type Pin = C1;
+    }
+    impl ChannelPin<1> for TIM8 {
+        type Pin = C2;
+    }
+    impl ChannelPin<2> for TIM8 {
+        type Pin = C3;
+    }
+    impl ChannelPin<3> for TIM8 {
+        type Pin = C4;
+    }
+    impl ChannelPin<0, true> for TIM8 {
+        type Pin = NC1;
+    }
+    impl ChannelPin<1, true> for TIM8 {
+        type Pin = NC2;
+    }
+    impl ChannelPin<2, true> for TIM8 {
+        type Pin = NC3;
+    }
+}
+
+pub mod tim9 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PA2<3>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE5<3>,
+
+            #[cfg(feature = "gpio-f410")]
+            PC4<3>,
+        ],
+        <C2> for [
+            PA3<3>,
+
+            #[cfg(not(feature = "gpio-f410"))]
+            PE6<3>,
+
+            #[cfg(feature = "gpio-f410")]
+            PC5<3>,
+        ],
+    }
+
+    use crate::pac::TIM9;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM9 {
+        type Pin = C1;
+    }
+    impl ChannelPin<1> for TIM9 {
+        type Pin = C2;
+    }
+}
+
+#[cfg(not(feature = "gpio-f410"))]
+pub mod tim10 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PB8<3>,
+
+            #[cfg(any(
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469"
+            ))]
+            PF6<3>,
+        ],
+    }
+
+    use crate::pac::TIM10;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM10 {
+        type Pin = C1;
+    }
+}
+
+pub mod tim11 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PB9<3>,
+
+            #[cfg(feature = "gpio-f410")]
+            PC12<3>,
+
+            #[cfg(any(
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f417",
+                feature = "gpio-f427",
+                feature = "gpio-f446",
+                feature = "gpio-f469"
+            ))]
+            PF7<3>,
+        ],
+    }
+
+    use crate::pac::TIM11;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM11 {
+        type Pin = C1;
+    }
+}
+
+#[cfg(any(
+    feature = "gpio-f412",
+    feature = "gpio-f413",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469"
+))]
+pub mod tim12 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PB14<9>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PH6<9>,
+        ],
+        <C2> for [
+            PB15<9>,
+
+            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            PH9<9>,
+        ],
+    }
+
+    use crate::pac::TIM12;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM12 {
+        type Pin = C1;
+    }
+    impl ChannelPin<1> for TIM12 {
+        type Pin = C2;
+    }
+}
+
+#[cfg(any(
+    feature = "gpio-f412",
+    feature = "gpio-f413",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469"
+))]
+pub mod tim13 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PA6<9>,
+            PF8<9>,
+        ],
+    }
+
+    use crate::pac::TIM13;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM13 {
+        type Pin = C1;
+    }
+}
+
+#[cfg(any(
+    feature = "gpio-f412",
+    feature = "gpio-f413",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469"
+))]
+pub mod tim14 {
+    use super::*;
+
+    pin! {
+        <C1> for [
+            PA7<9>,
+            PF9<9>,
+        ],
+    }
+
+    use crate::pac::TIM14;
+    use crate::timer::ChannelPin;
+
+    impl ChannelPin<0> for TIM14 {
+        type Pin = C1;
+    }
+}

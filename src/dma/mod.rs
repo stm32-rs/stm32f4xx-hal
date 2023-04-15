@@ -213,22 +213,12 @@ impl<DMA, const S: u8> StreamX<DMA, S> {
 }
 
 impl<DMA: Instance, const S: u8> StreamX<DMA, S> {
-    #[cfg(not(any(
-        feature = "stm32f411",
-        feature = "stm32f413",
-        feature = "stm32f423",
-        feature = "stm32f410"
-    )))]
+    #[cfg(not(any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410")))]
     #[inline(always)]
     unsafe fn st() -> &'static pac::dma2::ST {
         &(*DMA::ptr()).st[S as usize]
     }
-    #[cfg(any(
-        feature = "stm32f411",
-        feature = "stm32f413",
-        feature = "stm32f423",
-        feature = "stm32f410"
-    ))]
+    #[cfg(any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410"))]
     #[inline(always)]
     unsafe fn st() -> &'static pac::dma1::ST {
         &(*DMA::ptr()).st[S as usize]
@@ -667,7 +657,7 @@ dma_channel!(
     (Channel7, 7),
 );
 
-#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+#[cfg(feature = "gpio-f413")]
 dma_channel!((Channel8, 8), (Channel9, 9),);
 
 /// Contains types related to DMA configuration.

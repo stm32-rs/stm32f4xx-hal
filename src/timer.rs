@@ -23,9 +23,9 @@ mod pins;
 pub use pins::*;
 pub mod pwm;
 pub use pwm::*;
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 pub mod pwm_input;
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 pub use pwm_input::PwmInput;
 #[cfg(feature = "rtic")]
 pub mod monotonic;
@@ -766,7 +766,7 @@ hal!(
 );
 
 // All parts except for F410 add these timers.
-#[cfg(not(feature = "stm32f410"))]
+#[cfg(not(feature = "gpio-f410"))]
 hal!(
     pac::TIM1: [Timer1, u16, dmar: u32, c: (CH4, 4, _aoe), m: tim1,],
     pac::TIM5: [Timer5, u32, dmar: u16, c: (CH4, 4), m: tim5,],
@@ -777,18 +777,18 @@ hal!(
 );
 
 // TIM5 on F410 is 16-bit
-#[cfg(feature = "stm32f410")]
+#[cfg(feature = "gpio-f410")]
 hal!(
     pac::TIM1: [Timer1, u16, dmar: u16, c: (CH4, 4, _aoe), m: tim1,],
     pac::TIM5: [Timer5, u16, dmar: u16, c: (CH4, 4), m: tim5,],
 );
 
 // All parts except F401 and F411.
-#[cfg(not(any(feature = "stm32f401", feature = "stm32f411",)))]
+#[cfg(not(any(feature = "gpio-f401", feature = "gpio-f411")))]
 hal!(pac::TIM6: [Timer6, u16, m: tim6,],);
 
 // All parts except F401, F410, F411.
-#[cfg(not(any(feature = "stm32f401", feature = "stm32f410", feature = "stm32f411",)))]
+#[cfg(not(any(feature = "gpio-f401", feature = "gpio-f410", feature = "gpio-f411")))]
 hal!(
     pac::TIM7: [Timer7, u16, m: tim7,],
     pac::TIM8: [Timer8, u16, dmar: u32, c: (CH4, 4, _aoe), m: tim8,],
