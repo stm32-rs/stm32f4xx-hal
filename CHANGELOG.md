@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Add advanced timer dead time insertion example [#585]
  - Cleanups [#595]
  - Fix comlementary for independent channels [#599]
- - Cleanups
  - I2c dma can now use single DMA channel for TX or RX only [#598]
 
 ## [v0.15.0] - 2023-03-13
