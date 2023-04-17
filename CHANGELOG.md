@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Add `lapce` editor settrings
  - Use `enum`s for alternate peripheral pins [#594]
  - Added missing U(S)ART DMA traits for HAL serial types [#593]
  - Improve SPI::new* docs [#587]
