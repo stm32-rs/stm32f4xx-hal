@@ -22,9 +22,9 @@ use panic_semihosting as _; // logs messages to the host stderr; requires a debu
 use stm32f4xx_hal as hal;
 
 use crate::hal::{
-    dma::{Stream0, Stream1, StreamsTuple},
+    dma::{Stream1, StreamsTuple},
     gpio::*,
-    i2c::dma::{I2CMasterDma, I2CMasterWriteDMA},
+    i2c::dma::{I2CMasterDma, NoDMA, TxDMA},
     i2c::I2c,
     interrupt, pac,
     pac::{DMA1, I2C1},
@@ -52,11 +52,9 @@ use heapless::String;
 use ssd1306::{prelude::*, Ssd1306};
 
 pub type I2c1Handle = I2CMasterDma<
-    I2C1,          // Instance of I2C
-    Stream1<DMA1>, // Stream used for Tx
-    0,             // Channel for Tx
-    Stream0<DMA1>, // Stream used for Rx (Not used in example)
-    1,             // Channel for Rx (Not used in example)
+    I2C1,                          // Instance of I2C
+    TxDMA<I2C1, Stream1<DMA1>, 0>, // Stream and channel used for Tx. First parameter must be same Instance as first generic parameter of I2CMasterDma
+    NoDMA,                         // This example don't need Rx
 >;
 
 // Set up global state. It's all mutexed up for concurrency safety.
@@ -177,7 +175,7 @@ fn main() -> ! {
 
         // Then convert it to DMA
         let streams = StreamsTuple::new(dp.DMA1);
-        let i2c_dma: I2c1Handle = i2c.use_dma(streams.1, streams.0);
+        let i2c_dma: I2c1Handle = i2c.use_dma_tx(streams.1);
         free(|cs| {
             I2C1.borrow(cs).replace(Some(i2c_dma));
         });
