@@ -16,6 +16,7 @@ pub enum Error {
 }
 
 /// Tag for TX/RX channel that a corresponding channel should not be used in DMA mode
+#[non_exhaustive]
 pub struct NoDMA;
 
 /// Callback type to notify user code of completion I2C transfers
@@ -256,7 +257,7 @@ where
     I2C: Instance,
     TX_STREAM: Stream,
 {
-    pub fn new(stream: TX_STREAM) -> Self {
+    fn new(stream: TX_STREAM) -> Self {
         let tx = Tx { i2c: PhantomData };
 
         Self {
@@ -321,7 +322,7 @@ where
     I2C: Instance,
     RX_STREAM: Stream,
 {
-    pub fn new(stream: RX_STREAM) -> Self {
+    fn new(stream: RX_STREAM) -> Self {
         let tx = Rx { i2c: PhantomData };
 
         Self {
