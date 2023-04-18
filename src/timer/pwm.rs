@@ -97,7 +97,7 @@ macro_rules! pins_impl {
                 $($PINX: PwmPin<TIM, $ENCHX, $COMP>,)+
             {
                 $(const $ENCHX: bool = true;)+
-                $(const $COMP: bool = true;)+
+                $(const $COMP: bool = $COMP;)+
                 type Channels = ($(PwmChannel<TIM, $ENCHX, $COMP>),+);
                 fn split() -> Self::Channels {
                     ($(PwmChannel::<TIM, $ENCHX, $COMP>::new()),+)
