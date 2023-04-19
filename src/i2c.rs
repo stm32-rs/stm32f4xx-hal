@@ -182,12 +182,8 @@ where
         i2c
     }
 
-    pub fn release<SCL, SDA, E>(self) -> Result<(I2C, (SCL, SDA)), E>
-    where
-        SCL: TryFrom<I2C::Scl, Error = E>,
-        SDA: TryFrom<I2C::Sda, Error = E>,
-    {
-        Ok((self.i2c, (self.pins.0.try_into()?, self.pins.1.try_into()?)))
+    pub fn release(self) -> (I2C, (I2C::Scl, I2C::Sda)) {
+        (self.i2c, self.pins)
     }
 }
 

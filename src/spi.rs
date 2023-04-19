@@ -489,20 +489,9 @@ impl<SPI: Instance> Spi<SPI, true, u8, Slave> {
 }
 
 impl<SPI: Instance, const BIDI: bool, W, OPERATION> Spi<SPI, BIDI, W, OPERATION> {
-    pub fn release<SCK, MISO, MOSI, E>(self) -> Result<(SPI, (SCK, MISO, MOSI)), E>
-    where
-        SCK: TryFrom<SPI::Sck, Error = E>,
-        MISO: TryFrom<SPI::Miso, Error = E>,
-        MOSI: TryFrom<SPI::Mosi, Error = E>,
-    {
-        Ok((
-            self.spi,
-            (
-                self.pins.0.try_into()?,
-                self.pins.1.try_into()?,
-                self.pins.2.try_into()?,
-            ),
-        ))
+    #[allow(clippy::type_complexity)]
+    pub fn release(self) -> (SPI, (SPI::Sck, SPI::Miso, SPI::Mosi)) {
+        (self.spi, self.pins)
     }
 }
 

@@ -55,12 +55,8 @@ impl<TIM: Instance> Qei<TIM> {
     }
 
     /// Releases the TIM peripheral and QEI pins
-    pub fn release<PC1, PC2, E>(self) -> Result<(TIM, (PC1, PC2)), E>
-    where
-        PC1: TryFrom<<TIM as Ch<0>>::Pin, Error = E>,
-        PC2: TryFrom<<TIM as Ch<1>>::Pin, Error = E>,
-    {
-        Ok((self.tim, (self.pins.0.try_into()?, self.pins.1.try_into()?)))
+    pub fn release(self) -> (TIM, (<TIM as Ch<0>>::Pin, <TIM as Ch<1>>::Pin)) {
+        (self.tim, self.pins)
     }
 }
 

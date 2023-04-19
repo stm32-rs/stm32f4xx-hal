@@ -95,12 +95,8 @@ impl<CAN: Instance> Can<CAN> {
         Can { can, pins }
     }
 
-    pub fn release<TX, RX, E>(self) -> Result<(CAN, (TX, RX)), E>
-    where
-        TX: TryFrom<CAN::Tx, Error = E>,
-        RX: TryFrom<CAN::Rx, Error = E>,
-    {
-        Ok((self.can, (self.pins.0.try_into()?, self.pins.1.try_into()?)))
+    pub fn release(self) -> (CAN, (CAN::Tx, CAN::Rx)) {
+        (self.can, self.pins)
     }
 }
 
