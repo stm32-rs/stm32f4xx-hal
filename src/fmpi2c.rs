@@ -48,9 +48,7 @@ pub enum FmpMode {
 
 impl FmpMode {
     pub fn standard(frequency: Hertz) -> Self {
-        Self::Standard {
-            frequency: frequency.into(),
-        }
+        Self::Standard { frequency }
     }
 
     pub fn fast(frequency: Hertz) -> Self {

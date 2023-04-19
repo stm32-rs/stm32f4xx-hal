@@ -86,3 +86,5 @@ pub use crate::timer::PwmExt as _stm32f4xx_hal_timer_PwmExt;
 pub use crate::timer::SysMonoTimerExt as _stm32f4xx_hal_timer_SysMonoTimerExt;
 pub use crate::timer::SysTimerExt as _stm32f4xx_hal_timer_SysCounterExt;
 pub use crate::timer::TimerExt as _stm32f4xx_hal_timer_TimerExt;
+#[cfg(feature = "uart4")]
+pub use crate::uart::SerialExt as _stm32f4xx_hal_uart_SerialExt;

@@ -1,9 +1,9 @@
 //!
-//! Asynchronous serial communication using USART peripherals
+//! Asynchronous serial communication using UART peripherals
 //!
 //! # Word length
 //!
-//! By default, the UART/USART uses 8 data bits. The `Serial`, `Rx`, and `Tx` structs implement
+//! By default, the UART/UART uses 8 data bits. The `Serial`, `Rx`, and `Tx` structs implement
 //! the embedded-hal read and write traits with `u8` as the word type.
 //!
 //! You can also configure the hardware to use 9 data bits with the `Config` `wordlength_9()`
@@ -20,11 +20,15 @@ use core::marker::PhantomData;
 use crate::rcc;
 use nb::block;
 
+#[allow(clippy::duplicate_mod)]
+#[path = "./serial/hal_02.rs"]
 mod hal_02;
+#[allow(clippy::duplicate_mod)]
+#[path = "./serial/hal_1.rs"]
 mod hal_1;
+#[allow(clippy::duplicate_mod)]
+#[path = "./serial/uart_impls.rs"]
 mod uart_impls;
-
-use crate::gpio;
 
 use crate::pac::{self, RCC};
 
@@ -33,68 +37,28 @@ use crate::rcc::Clocks;
 
 use crate::dma::traits::PeriAddress;
 
+pub use crate::serial::{config, CommonPins, Event, NoRx, NoTx, RxISR, TxISR};
+pub use config::Config;
 /// Serial error
 pub use embedded_hal_one::serial::ErrorKind as Error;
 
-/// Interrupt event
-pub enum Event {
-    /// New data has been received
-    Rxne,
-    /// New data can be sent
-    Txe,
-    /// Idle line state detected
-    Idle,
-}
-
-pub mod config;
-
-pub use config::Config;
-
-/// A filler type for when the Tx pin is unnecessary
-pub use gpio::NoPin as NoTx;
-/// A filler type for when the Rx pin is unnecessary
-pub use gpio::NoPin as NoRx;
-
-pub trait CommonPins {
-    type TxPin;
-    type RxPin;
-}
-
-/// Trait for [`Rx`] interrupt handling.
-pub trait RxISR {
-    /// Return true if the line idle status is set
-    fn is_idle(&self) -> bool;
-
-    /// Return true if the rx register is not empty (and can be read)
-    fn is_rx_not_empty(&self) -> bool;
-
-    /// Clear idle line interrupt flag
-    fn clear_idle_interrupt(&self);
-}
-
-/// Trait for [`Tx`] interrupt handling.
-pub trait TxISR {
-    /// Return true if the tx register is empty (and can accept data)
-    fn is_tx_empty(&self) -> bool;
-}
-
 /// Serial abstraction
-pub struct Serial<USART: CommonPins, WORD = u8> {
-    tx: Tx<USART, WORD>,
-    rx: Rx<USART, WORD>,
+pub struct Serial<UART: CommonPins, WORD = u8> {
+    tx: Tx<UART, WORD>,
+    rx: Rx<UART, WORD>,
 }
 
 /// Serial receiver containing RX pin
-pub struct Rx<USART: CommonPins, WORD = u8> {
-    _word: PhantomData<(USART, WORD)>,
-    pin: USART::RxPin,
+pub struct Rx<UART: CommonPins, WORD = u8> {
+    _word: PhantomData<(UART, WORD)>,
+    pin: UART::RxPin,
 }
 
 /// Serial transmitter containing TX pin
-pub struct Tx<USART: CommonPins, WORD = u8> {
+pub struct Tx<UART: CommonPins, WORD = u8> {
     _word: PhantomData<WORD>,
-    usart: USART,
-    pin: USART::TxPin,
+    usart: UART,
+    pin: UART::TxPin,
 }
 
 pub trait SerialExt: Sized + Instance {
@@ -124,10 +88,14 @@ pub trait SerialExt: Sized + Instance {
         NoPin: Into<Self::TxPin>;
 }
 
-impl<USART: Instance, WORD> Serial<USART, WORD> {
+impl<UART: Instance, WORD> Serial<UART, WORD> {
+    /*
+        StopBits::STOP0P5 and StopBits::STOP1P5 aren't supported when using UART
+        STOP_A::STOP1 and STOP_A::STOP2 will be used, respectively
+    */
     pub fn new(
-        usart: USART,
-        pins: (impl Into<USART::TxPin>, impl Into<USART::RxPin>),
+        usart: UART,
+        pins: (impl Into<UART::TxPin>, impl Into<UART::RxPin>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig> {
@@ -139,14 +107,14 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
             let rcc = &(*RCC::ptr());
 
             // Enable clock.
-            USART::enable(rcc);
-            USART::reset(rcc);
+            UART::enable(rcc);
+            UART::reset(rcc);
         }
 
-        let pclk_freq = USART::clock(clocks).raw();
+        let pclk_freq = UART::clock(clocks).raw();
         let baud = config.baudrate.0;
 
-        // The frequency to calculate USARTDIV is this:
+        // The frequency to calculate UARTDIV is this:
         //
         // (Taken from STM32F411xC/E Reference Manual,
         // Section 19.3.4, Equation 1)
@@ -154,14 +122,14 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         // 16 bit oversample: OVER8 = 0
         // 8 bit oversample:  OVER8 = 1
         //
-        // USARTDIV =          (pclk)
+        // UARTDIV =          (pclk)
         //            ------------------------
         //            8 x (2 - OVER8) x (baud)
         //
-        // BUT, the USARTDIV has 4 "fractional" bits, which effectively
+        // BUT, the UARTDIV has 4 "fractional" bits, which effectively
         // means that we need to "correct" the equation as follows:
         //
-        // USARTDIV =      (pclk) * 16
+        // UARTDIV =      (pclk) * 16
         //            ------------------------
         //            8 x (2 - OVER8) x (baud)
         //
@@ -195,16 +163,16 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
             return Err(config::InvalidConfig);
         };
 
-        unsafe { (*USART::ptr()).brr.write(|w| w.bits(div)) };
+        unsafe { (*UART::ptr()).brr.write(|w| w.bits(div)) };
 
-        // Reset other registers to disable advanced USART features
-        unsafe { (*USART::ptr()).cr2.reset() };
-        unsafe { (*USART::ptr()).cr3.reset() };
+        // Reset other registers to disable advanced UART features
+        unsafe { (*UART::ptr()).cr2.reset() };
+        unsafe { (*UART::ptr()).cr3.reset() };
 
         // Enable transmission and receiving
         // and configure frame
         unsafe {
-            (*USART::ptr()).cr1.write(|w| {
+            (*UART::ptr()).cr1.write(|w| {
                 w.ue().set_bit();
                 w.over8().bit(over8);
                 w.te().set_bit();
@@ -216,10 +184,10 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         };
 
         match config.dma {
-            DmaConfig::Tx => unsafe { (*USART::ptr()).cr3.write(|w| w.dmat().enabled()) },
-            DmaConfig::Rx => unsafe { (*USART::ptr()).cr3.write(|w| w.dmar().enabled()) },
+            DmaConfig::Tx => unsafe { (*UART::ptr()).cr3.write(|w| w.dmat().enabled()) },
+            DmaConfig::Rx => unsafe { (*UART::ptr()).cr3.write(|w| w.dmar().enabled()) },
             DmaConfig::TxRx => unsafe {
-                (*USART::ptr())
+                (*UART::ptr())
                     .cr3
                     .write(|w| w.dmar().enabled().dmat().enabled())
             },
@@ -233,21 +201,21 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         .config_stop(config))
     }
 
-    pub fn release(self) -> (USART, (USART::TxPin, USART::RxPin)) {
+    pub fn release(self) -> (UART, (UART::TxPin, UART::RxPin)) {
         (self.tx.usart, (self.tx.pin, self.rx.pin))
     }
 }
 
-impl<USART: Instance, WORD> Serial<USART, WORD> {
+impl<UART: Instance, WORD> Serial<UART, WORD> {
     fn config_stop(self, config: config::Config) -> Self {
         self.tx.usart.set_stopbits(config.stopbits);
         self
     }
 }
 
-use crate::pac::usart1 as uart_base;
+use crate::pac::uart4 as uart_base;
 
-// Implemented by all USART instances
+// Implemented by all UART instances
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + CommonPins {
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
@@ -255,26 +223,27 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + C
     fn set_stopbits(&self, bits: config::StopBits);
 }
 
-macro_rules! halUsart {
-    ($USART:ty, $usart:ident, $Serial:ident, $Tx:ident, $Rx:ident) => {
-        pub type $Serial<WORD = u8> = Serial<$USART, WORD>;
-        pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
-        pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
+#[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
+macro_rules! halUart {
+    ($UART:ty, $usart:ident, $Serial:ident, $Tx:ident, $Rx:ident) => {
+        pub type $Serial<WORD = u8> = Serial<$UART, WORD>;
+        pub type $Tx<WORD = u8> = Tx<$UART, WORD>;
+        pub type $Rx<WORD = u8> = Rx<$UART, WORD>;
 
-        impl Instance for $USART {
+        impl Instance for $UART {
             fn ptr() -> *const uart_base::RegisterBlock {
-                <$USART>::ptr() as *const _
+                <$UART>::ptr() as *const _
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
-                use crate::pac::usart1::cr2::STOP_A;
+                use crate::pac::uart4::cr2::STOP_A;
                 use config::StopBits;
 
                 self.cr2.write(|w| {
                     w.stop().variant(match bits {
-                        StopBits::STOP0P5 => STOP_A::Stop0p5,
+                        StopBits::STOP0P5 => STOP_A::Stop1,
                         StopBits::STOP1 => STOP_A::Stop1,
-                        StopBits::STOP1P5 => STOP_A::Stop1p5,
+                        StopBits::STOP1P5 => STOP_A::Stop2,
                         StopBits::STOP2 => STOP_A::Stop2,
                     })
                 });
@@ -282,11 +251,37 @@ macro_rules! halUsart {
         }
     };
 }
-pub(crate) use halUsart;
 
-halUsart! { pac::USART1, usart1, Serial1, Rx1, Tx1 }
-halUsart! { pac::USART2, usart2, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART6, usart6, Serial6, Rx6, Tx6 }
+#[cfg(feature = "uart4")]
+#[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
+halUart! { pac::UART4, uart4, Serial4, Rx4, Tx4 }
+#[cfg(feature = "uart5")]
+#[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
+halUart! { pac::UART5, uart5, Serial5, Rx5, Tx5 }
 
-#[cfg(feature = "usart3")]
-halUsart! { pac::USART3, usart3, Serial3, Rx3, Tx3 }
+#[cfg(feature = "uart4")]
+#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+impl Instance for pac::UART4 {
+    fn ptr() -> *const uart_base::RegisterBlock {
+        pac::UART4::ptr() as *const _
+    }
+
+    fn set_stopbits(&self, _bits: config::StopBits) {
+        todo!()
+    }
+}
+
+use crate::serial::halUsart;
+
+#[cfg(feature = "uart5")]
+#[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
+halUsart! { pac::UART5, uart5, Serial5, Rx5, Tx5 }
+
+#[cfg(feature = "uart7")]
+halUsart! { pac::UART7, uart7, Serial7, Rx7, Tx7 }
+#[cfg(feature = "uart8")]
+halUsart! { pac::UART8, uart8, Serial8, Rx8, Tx8 }
+#[cfg(feature = "uart9")]
+halUsart! { pac::UART9, uart9, Serial9, Rx9, Tx9 }
+#[cfg(feature = "uart10")]
+halUsart! { pac::UART10, uart10, Serial10, Rx10, Tx10 }
