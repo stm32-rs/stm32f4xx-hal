@@ -554,15 +554,8 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         .config_stop(config))
     }
 
-    pub fn release<TX, RX, E>(self) -> Result<(USART, (TX, RX)), E>
-    where
-        TX: TryFrom<USART::TxPin, Error = E>,
-        RX: TryFrom<USART::RxPin, Error = E>,
-    {
-        Ok((
-            self.tx.usart,
-            (self.tx.pin.try_into()?, self.rx.pin.try_into()?),
-        ))
+    pub fn release(self) -> (USART, (USART::TxPin, USART::RxPin)) {
+        (self.tx.usart, (self.tx.pin, self.rx.pin))
     }
 }
 

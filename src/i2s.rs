@@ -112,22 +112,9 @@ impl<SPI: Instance> I2s<SPI> {
         }
     }
 
-    pub fn release<WS, CK, MCLK, SD, E>(self) -> Result<(SPI, (WS, CK, MCLK, SD)), E>
-    where
-        WS: TryFrom<SPI::Ws, Error = E>,
-        CK: TryFrom<SPI::Ck, Error = E>,
-        MCLK: TryFrom<SPI::Mck, Error = E>,
-        SD: TryFrom<SPI::Sd, Error = E>,
-    {
-        Ok((
-            self.spi,
-            (
-                self.pins.0.try_into()?,
-                self.pins.1.try_into()?,
-                self.pins.2.try_into()?,
-                self.pins.3.try_into()?,
-            ),
-        ))
+    #[allow(clippy::type_complexity)]
+    pub fn release(self) -> (SPI, (SPI::Ws, SPI::Ck, SPI::Mck, SPI::Sd)) {
+        (self.spi, self.pins)
     }
 }
 
