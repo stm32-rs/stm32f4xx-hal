@@ -37,7 +37,7 @@ static G_LED: Mutex<RefCell<Option<LedPin>>> = Mutex::new(RefCell::new(None));
 // Make timer interrupt registers globally available
 static G_TIM: Mutex<RefCell<Option<CounterUs<TIM2>>>> = Mutex::new(RefCell::new(None));
 
-// Define an interupt handler, i.e. function to call when interrupt occurs.
+// Define an interrupt handler, i.e. function to call when interrupt occurs.
 // This specific interrupt will "trip" when the timer TIM2 times out
 #[interrupt]
 fn TIM2() {

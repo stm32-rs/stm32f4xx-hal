@@ -19,7 +19,7 @@
 //! let rand_val = rand_source.next_u32();
 //! ```
 //!
-//! A full exaple can be found [in the examples folder on github](https://github.com/stm32-rs/stm32f4xx-hal/blob/master/examples/rng-display.rs)
+//! A full example can be found [in the examples folder on github](https://github.com/stm32-rs/stm32f4xx-hal/blob/master/examples/rng-display.rs)
 use core::cmp;
 use core::mem;
 

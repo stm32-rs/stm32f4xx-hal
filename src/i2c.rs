@@ -439,7 +439,7 @@ impl<I2C: Instance> I2c<I2C> {
         self.read_wo_prepare(buffer)
     }
 
-    /// Reads like normal but does'n genereate start and don't send address
+    /// Reads like normal but does'n generate start and don't send address
     fn read_wo_prepare(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
         if let Some((last, buffer)) = buffer.split_last_mut() {
             // Read all bytes but not last
@@ -468,7 +468,7 @@ impl<I2C: Instance> I2c<I2C> {
         self.write_wo_prepare(bytes)
     }
 
-    /// Writes like normal but does'n genereate start and don't send address
+    /// Writes like normal but does'n generate start and don't send address
     fn write_wo_prepare(&mut self, bytes: &[u8]) -> Result<(), Error> {
         self.write_bytes(bytes.iter().cloned())?;
 

@@ -60,7 +60,7 @@ pub mod config {
 
     /// Parity generation and checking. If odd or even parity is selected, the
     /// underlying USART will be configured to send/receive the parity bit in
-    /// addtion to the data bits.
+    /// addition to the data bits.
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum Parity {

@@ -341,7 +341,7 @@ mod app {
                 // in case of udr this resynchronize tracked and actual channel
                 _ => {
                     *frame_state = LeftMsb;
-                    data = 0; //garbage data to avoid additional underrrun
+                    data = 0; //garbage data to avoid additional underrun
                 }
             }
             i2s3_driver.write_data_register(data);

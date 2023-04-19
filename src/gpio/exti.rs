@@ -47,7 +47,7 @@ pub trait ExtiPin {
 impl<PIN> ExtiPin for PIN
 where
     PIN: PinExt,
-    PIN::Mode: marker::Interruptable,
+    PIN::Mode: marker::Interruptible,
 {
     #[inline(always)]
     fn make_interrupt_source(&mut self, syscfg: &mut SysCfg) {

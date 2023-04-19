@@ -63,7 +63,7 @@ fn main() -> ! {
         can2
     };
 
-    // Drop filters to leave filter configuraiton mode.
+    // Drop filters to leave filter configuration mode.
     drop(filters);
 
     // Select the interface.

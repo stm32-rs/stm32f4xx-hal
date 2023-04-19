@@ -50,7 +50,7 @@ impl Dynamic {
     }
 }
 
-// For convertion simplify
+// For conversion simplify
 struct Unknown;
 
 impl crate::Sealed for Unknown {}

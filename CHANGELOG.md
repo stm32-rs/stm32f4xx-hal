@@ -80,7 +80,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Update `bxcan`, `rtic` and other dependencies [#519]
  - Bump `synopsys-usb-otg` to `0.3.1` [#535]
  - Renamed and updated rtic-button example (was rtic) [#551]
- - Rename adc_dma_rtic to rtic-adc-dma and move it ot defmt [#552]
+ - Rename adc_dma_rtic to rtic-adc-dma and move it to defmt [#552]
  - Rename spi_slave_dma_rtic to rtic-spi-slave-dma and unbroke it [#552]
  - Rename i2s-rtic-audio-in-out to rtic-i2s-audio-in-out [#552]
 
@@ -388,7 +388,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Features corresponding to peripherals [#311]
 - Improved documentation of rng and prelude [#303]
 - Added an example of integration with RTIC [#295]
-- Added internal pullup configuaration for the AlternateOD pin type [#298]
+- Added internal pullup configuration for the AlternateOD pin type [#298]
 - Added USART support for sending and receiving 9-bit words [#299]
 - Added support for I2S communication using SPI peripherals, and two examples [#265]
 - Added support for some LCD controllers using the Flexible Static Memory
@@ -399,7 +399,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Derive `Eq`, `PartialEq`, `Copy` and `Clone` for error types [#306]
 - Added open-drain pin mode support for PWM output [#313]
 - Added missing error flags for dma streams [#318]
-- Added PWM input capability to all compatable timers [#271]
+- Added PWM input capability to all compatible timers [#271]
 - Bidi mode support for SPI [#349]
 - Added `listen` and `unlisten` for RX- and TX-only USART [#357]
 - Added function for clearing the idle line interrupt in USART [#357]
@@ -545,7 +545,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `check_interrupt` method for GPIO pins
 - Basic support for DAC
 - Add initial DMA support
-- Allow specification of ADC reference voltage in ADC configuraton structure
+- Allow specification of ADC reference voltage in ADC configuration structure
 - Added support for hardware-based CRC32 functionality
 - Add `MonoTimer` and `Instant` structs for basic time measurement.
 - Added support for I2S and SAI clocks
@@ -756,11 +756,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Made the `rt` feature of stm32f4 optionnal.
+- Made the `rt` feature of stm32f4 optional.
 
 ### Fixed
 
-- Avoid overwritting the cache bits in `flash.acr`.
+- Avoid overwriting the cache bits in `flash.acr`.
 
 ## [v0.2.3] - 2018-11-04
 

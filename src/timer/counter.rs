@@ -68,7 +68,7 @@ impl<TIM: Instance> CounterHz<TIM> {
     }
 }
 
-/// Periodic non-blocking timer that imlements [embedded_hal::timer::CountDown]
+/// Periodic non-blocking timer that implements [embedded_hal::timer::CountDown]
 pub struct Counter<TIM, const FREQ: u32>(pub(super) FTimer<TIM, FREQ>);
 
 impl<T, const FREQ: u32> Deref for Counter<T, FREQ> {
