@@ -58,7 +58,7 @@ impl SysDelay {
     }
 }
 
-/// Periodic non-blocking timer that imlements [embedded_hal::blocking::delay] traits.
+/// Periodic non-blocking timer that implements [embedded_hal::blocking::delay] traits.
 ///
 /// ### Example: Millisecond precision
 ///

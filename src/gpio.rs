@@ -136,7 +136,7 @@ pub type Debugger = Alternate<0, PushPull>;
 
 pub(crate) mod marker {
     /// Marker trait that show if `ExtiPin` can be implemented
-    pub trait Interruptable {}
+    pub trait Interruptible {}
     /// Marker trait for readable pin modes
     pub trait Readable {}
     /// Marker trait for slew rate configurable pin modes
@@ -149,11 +149,11 @@ pub(crate) mod marker {
     pub trait IntoAf<const A: u8> {}
 }
 
-impl<MODE> marker::Interruptable for Output<MODE> {}
-impl marker::Interruptable for Input {}
+impl<MODE> marker::Interruptible for Output<MODE> {}
+impl marker::Interruptible for Input {}
 impl marker::Readable for Input {}
 impl marker::Readable for Output<OpenDrain> {}
-impl<const A: u8, Otype> marker::Interruptable for Alternate<A, Otype> {}
+impl<const A: u8, Otype> marker::Interruptible for Alternate<A, Otype> {}
 impl<const A: u8, Otype> marker::Readable for Alternate<A, Otype> {}
 impl marker::Active for Input {}
 impl<Otype> marker::OutputSpeed for Output<Otype> {}

@@ -489,13 +489,13 @@ where
         // Clear condition by reading SR2. This will clear ADDR flag
         self.hal_i2c.i2c.sr2.read();
 
-        // Enable error interrups
+        // Enable error interrupts
         self.enable_error_interrupt_generation();
 
         Ok(())
     }
 
-    /// Generates start and send addres for read commands
+    /// Generates start and send address for read commands
     fn prepare_read(&mut self, addr: u8, buf_len: usize) -> Result<(), super::Error> {
         // Start
         self.send_start(true)?;
@@ -511,7 +511,7 @@ where
         // Clear condition by reading SR2. This will clear ADDR flag
         self.hal_i2c.i2c.sr2.read();
 
-        // Enable error interrups
+        // Enable error interrupts
         self.enable_error_interrupt_generation();
 
         Ok(())

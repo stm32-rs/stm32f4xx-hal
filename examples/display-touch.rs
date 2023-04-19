@@ -154,7 +154,7 @@ fn main() -> ! {
     // The touch coordinates and shapes are adjusted accordingly.
     rprintln!("The orientation set is {}", disp.orientation() as u8);
 
-    // Intializing the i2c bus for touchscreen
+    // Initializing the i2c bus for touchscreen
     rprintln!("Connecting to I2c");
 
     // Declare the pins for i2c address bus on each board.

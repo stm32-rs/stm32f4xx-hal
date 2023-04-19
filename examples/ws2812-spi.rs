@@ -33,7 +33,7 @@ fn main() -> ! {
     const NUM_LEDS: usize = 8;
     let mut data = [RGB8::default(); NUM_LEDS];
 
-    // Wait before start write for syncronization
+    // Wait before start write for synchronization
     delay.delay(200.micros());
 
     loop {

@@ -258,7 +258,7 @@ pub mod config {
         Tim_5_cc_2,
         /// TIM5 compare channel 3
         Tim_5_cc_3,
-        /// External interupt line 11
+        /// External interrupt line 11
         Exti_11,
     }
     impl From<ExternalTrigger> for u8 {

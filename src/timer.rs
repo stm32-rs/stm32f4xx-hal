@@ -673,12 +673,12 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
         self.tim.set_prescaler(u16::try_from(psc - 1).unwrap());
     }
 
-    /// Creates `Counter` that imlements [embedded_hal::timer::CountDown]
+    /// Creates `Counter` that implements [embedded_hal::timer::CountDown]
     pub fn counter(self) -> Counter<TIM, FREQ> {
         Counter(self)
     }
 
-    /// Creates `Delay` that imlements [embedded_hal::blocking::delay] traits
+    /// Creates `Delay` that implements [embedded_hal::blocking::delay] traits
     pub fn delay(self) -> Delay<TIM, FREQ> {
         Delay(self)
     }
