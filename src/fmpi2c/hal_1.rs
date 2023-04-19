@@ -51,10 +51,10 @@ mod blocking {
             todo!()
         }
 
-        fn transaction<'a>(
+        fn transaction(
             &mut self,
             _addr: u8,
-            _operations: &mut [Operation<'a>],
+            _operations: &mut [Operation<'_>],
         ) -> Result<(), Self::Error> {
             todo!()
         }

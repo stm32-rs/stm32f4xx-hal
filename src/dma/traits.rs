@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(feature = "uart4")]
+use crate::uart;
 use crate::{
     adc::Adc,
     i2c,
@@ -500,9 +502,9 @@ address!((pac::SPI4, dr, u8),);
     feature = "gpio-f469",
 ))]
 dma_map!(
-    (Stream0<DMA1>, 4, pac::UART5 | serial::Rx<pac::UART5>, PeripheralToMemory), //UART5_RX
-    (Stream2<DMA1>, 4, pac::UART4 | serial::Rx<pac::UART4>, PeripheralToMemory), //UART4_RX
-    (Stream4<DMA1>, 4, pac::UART4 | serial::Tx<pac::UART4>, MemoryToPeripheral), //UART4_TX
+    (Stream0<DMA1>, 4, pac::UART5 | uart::Rx<pac::UART5>, PeripheralToMemory), //UART5_RX
+    (Stream2<DMA1>, 4, pac::UART4 | uart::Rx<pac::UART4>, PeripheralToMemory), //UART4_RX
+    (Stream4<DMA1>, 4, pac::UART4 | uart::Tx<pac::UART4>, MemoryToPeripheral), //UART4_TX
     //(Stream6<DMA1>, 7, pac::DAC2, MemoryToPeripheral), //DAC2
 );
 
@@ -618,7 +620,7 @@ address!(
     feature = "gpio-f469",
 ))]
 dma_map!(
-    (Stream7<DMA1>, 4, pac::UART5 | serial::Tx<pac::UART5>, MemoryToPeripheral), //UART5_TX
+    (Stream7<DMA1>, 4, pac::UART5 | uart::Tx<pac::UART5>, MemoryToPeripheral), //UART5_TX
     (Stream0<DMA2>, 2, pac::ADC3 | Adc<pac::ADC3>, PeripheralToMemory), //ADC3
     (Stream1<DMA2>, 2, pac::ADC3 | Adc<pac::ADC3>, PeripheralToMemory), //ADC3
     (Stream2<DMA2>, 1, pac::ADC2 | Adc<pac::ADC2>, PeripheralToMemory), //ADC2
@@ -760,10 +762,10 @@ address!((pac::QUADSPI, dr, u32),);
 
 #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469",))]
 dma_map!(
-    (Stream0<DMA1>, 5, pac::UART8 | serial::Tx<pac::UART8>, MemoryToPeripheral), //UART8_TX
-    (Stream1<DMA1>, 5, pac::UART7 | serial::Tx<pac::UART7>, MemoryToPeripheral), //UART7_TX
-    (Stream3<DMA1>, 5, pac::UART7 | serial::Rx<pac::UART7>, PeripheralToMemory), //UART7_RX
-    (Stream6<DMA1>, 5, pac::UART8 | serial::Rx<pac::UART8>, PeripheralToMemory), //UART8_RX
+    (Stream0<DMA1>, 5, pac::UART8 | uart::Tx<pac::UART8>, MemoryToPeripheral), //UART8_TX
+    (Stream1<DMA1>, 5, pac::UART7 | uart::Tx<pac::UART7>, MemoryToPeripheral), //UART7_TX
+    (Stream3<DMA1>, 5, pac::UART7 | uart::Rx<pac::UART7>, PeripheralToMemory), //UART7_RX
+    (Stream6<DMA1>, 5, pac::UART8 | uart::Rx<pac::UART8>, PeripheralToMemory), //UART8_RX
 );
 
 #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469",))]
@@ -771,13 +773,13 @@ address!((pac::UART7, dr, u8), (pac::UART8, dr, u8),);
 
 #[cfg(feature = "gpio-f413")]
 dma_map!(
-    (Stream7<DMA1>, 8, pac::UART5 | serial::Tx<pac::UART5>, MemoryToPeripheral), //UART5_TX
-    (Stream0<DMA2>, 1, pac::UART9 | serial::Tx<pac::UART9>, MemoryToPeripheral), //UART9_TX
-    (Stream0<DMA2>, 5, pac::UART10 | serial::Rx<pac::UART10>, PeripheralToMemory), //UART10_RX
-    (Stream3<DMA2>, 9, pac::UART10 | serial::Rx<pac::UART10>, PeripheralToMemory), //UART10_RX:DMA_CHANNEL_9
-    (Stream5<DMA2>, 9, pac::UART10 | serial::Tx<pac::UART10>, MemoryToPeripheral), //UART10_TX
-    (Stream7<DMA2>, 0, pac::UART9 | serial::Rx<pac::UART9>, PeripheralToMemory), //UART9_RX
-    (Stream7<DMA2>, 6, pac::UART10 | serial::Tx<pac::UART10>, MemoryToPeripheral), //UART10_TX:DMA_CHANNEL_6
+    (Stream7<DMA1>, 8, pac::UART5 | uart::Tx<pac::UART5>, MemoryToPeripheral), //UART5_TX
+    (Stream0<DMA2>, 1, pac::UART9 | uart::Tx<pac::UART9>, MemoryToPeripheral), //UART9_TX
+    (Stream0<DMA2>, 5, pac::UART10 | uart::Rx<pac::UART10>, PeripheralToMemory), //UART10_RX
+    (Stream3<DMA2>, 9, pac::UART10 | uart::Rx<pac::UART10>, PeripheralToMemory), //UART10_RX:DMA_CHANNEL_9
+    (Stream5<DMA2>, 9, pac::UART10 | uart::Tx<pac::UART10>, MemoryToPeripheral), //UART10_TX
+    (Stream7<DMA2>, 0, pac::UART9 | uart::Rx<pac::UART9>, PeripheralToMemory), //UART9_RX
+    (Stream7<DMA2>, 6, pac::UART10 | uart::Tx<pac::UART10>, MemoryToPeripheral), //UART10_TX:DMA_CHANNEL_6
     //(pac::DMA2, Stream6, 2, IN<pac::AES>, MemoryToPeripheral), //AES_IN
     //(pac::DMA2, Stream5, 2, OUT<pac::AES>, PeripheralToMemory), //AES_OUT
 );

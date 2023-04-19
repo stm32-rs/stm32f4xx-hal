@@ -1260,6 +1260,11 @@ pub mod usart1 {
             PB3<7>,
         ],
     }
+
+    impl crate::serial::CommonPins for crate::pac::USART1 {
+        type RxPin = Rx;
+        type TxPin = Tx;
+    }
 }
 
 pub mod usart2 {
@@ -1297,6 +1302,11 @@ pub mod usart2 {
             ))]
             PD6<7>,
         ],
+    }
+
+    impl crate::serial::CommonPins for crate::pac::USART2 {
+        type RxPin = Rx;
+        type TxPin = Tx;
     }
 }
 
@@ -1360,6 +1370,11 @@ pub mod usart3 {
             PD9<7>,
         ],
     }
+
+    impl crate::serial::CommonPins for crate::pac::USART3 {
+        type RxPin = Rx;
+        type TxPin = Tx;
+    }
 }
 
 pub mod usart6 {
@@ -1396,6 +1411,11 @@ pub mod usart6 {
             #[cfg(feature = "gpiog")]
             PG9<8>,
         ],
+    }
+
+    impl crate::serial::CommonPins for crate::pac::USART6 {
+        type RxPin = Rx;
+        type TxPin = Tx;
     }
 }
 
@@ -1446,6 +1466,11 @@ pub mod uart4 {
             PC11<8>,
         ],
     }
+
+    impl crate::serial::CommonPins for crate::pac::UART4 {
+        type RxPin = Rx;
+        type TxPin = Tx;
+    }
 }
 
 #[cfg(feature = "uart5")]
@@ -1484,6 +1509,11 @@ pub mod uart5 {
             #[cfg(feature = "gpio-f413")]
             PB12<11>,
         ],
+    }
+
+    impl crate::serial::CommonPins for crate::pac::UART5 {
+        type RxPin = Rx;
+        type TxPin = Tx;
     }
 }
 
@@ -1552,6 +1582,11 @@ pub mod uart7 {
             PB3<8>,
         ],
     }
+
+    impl crate::serial::CommonPins for crate::pac::UART7 {
+        type RxPin = Rx;
+        type TxPin = Tx;
+    }
 }
 
 #[cfg(feature = "uart8")]
@@ -1593,6 +1628,11 @@ pub mod uart8 {
             PF8<8>,
         ],
     }
+
+    impl crate::serial::CommonPins for crate::pac::UART8 {
+        type RxPin = Rx;
+        type TxPin = Tx;
+    }
 }
 
 #[cfg(feature = "uart9")]
@@ -1603,6 +1643,11 @@ pub mod uart9 {
         <Tx> for no:NoPin, [PD15<11>, PG1<11>,],
         <Rx> for no:NoPin, [PD14<11>, PG0<11>,],
     }
+
+    impl crate::serial::CommonPins for crate::pac::UART9 {
+        type RxPin = Rx;
+        type TxPin = Tx;
+    }
 }
 
 #[cfg(feature = "uart10")]
@@ -1612,6 +1657,11 @@ pub mod uart10 {
     pin! {
         <Tx> for no:NoPin, [PE3<11>, PG12<11>,],
         <Rx> for no:NoPin, [PE2<11>, PG11<11>,],
+    }
+
+    impl crate::serial::CommonPins for crate::pac::UART10 {
+        type RxPin = Rx;
+        type TxPin = Tx;
     }
 }
 
