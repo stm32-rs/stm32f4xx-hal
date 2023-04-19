@@ -125,6 +125,8 @@ gpio-f401 = [
 ]
 gpio-f410 = [
     "dac",
+    "fmpi2c1",
+    "lptim1",
     "spi5",
 ]
 gpio-f411 = [
@@ -139,8 +141,11 @@ gpio-f411 = [
 gpio-f412 = [
     "gpiod", "gpioe", "gpiof", "gpiog",
     "can1", "can2",
+    "dfsdm1",
+    "fmpi2c1",
     "fsmc",
     "i2c3",
+    "quadspi",
     "otg-fs",
     "rng",
     "sdio",
@@ -152,12 +157,16 @@ gpio-f413 = [
     "gpiod", "gpioe", "gpiof", "gpiog",
     "can1", "can2", "can3",
     "dac",
+    "dfsdm1",
+    "dfsdm2",
     "fsmc",
     "fmpi2c1",
     "i2c3",
+    "lptim1",
+    "quadspi",
     "otg-fs",
     "rng",
-    "sai",
+    "sai1",
     "sdio",
     "spi3", "spi4", "spi5",
     "tim2", "tim8",
@@ -168,6 +177,8 @@ gpio-f417 = [
     "adc2", "adc3",
     "can1", "can2",
     "dac",
+    "dcmi",
+    "eth",
     "fsmc",
     "i2c3",
     "otg-fs",
@@ -183,11 +194,14 @@ gpio-f427 = [
     "adc2", "adc3",
     "can1", "can2",
     "dac",
+    "dcmi",
+    "eth",
     "i2c3",
+    "ltdc",
     "otg-fs",
     "otg-hs",
     "rng",
-    "sai",
+    "sai1",
     "sdio",
     "spi3", "spi4", "spi5", "spi6",
     "tim2", "tim8",
@@ -198,13 +212,18 @@ gpio-f446 = [
     "adc2", "adc3",
     "can1", "can2",
     "dac",
+    "dcmi",
+    "fmpi2c1",
     "fmc",
     "i2c3",
+    "quadspi",
     "otg-fs",
     "otg-hs",
-    "sai",
+    "sai1",
+    "sai2",
     #"sdio",
     "spi3", "spi4",
+    "spdifrx",
     "tim2", "tim8",
     "usart3", "uart4", "uart5",
 ]
@@ -213,12 +232,17 @@ gpio-f469 = [
     "adc2", "adc3",
     "can1", "can2",
     "dac",
+    "dcmi",
+    "dsihost",
+    "eth",
     "fmc",
     "i2c3",
+    "ltdc",
+    "quadspi",
     "otg-fs",
     "otg-hs",
     "rng",
-    "sai",
+    "sai1",
     "sdio",
     "spi3", "spi4", "spi5", "spi6",
     "tim2", "tim8",
@@ -242,6 +266,11 @@ can1 = []
 can2 = []
 can3 = []
 dac = []
+dcmi = []
+dfsdm1 = []
+dfsdm2 = []
+dsihost = []
+eth = []
 fmc = []
 fsmc = []
 fmpi2c1 = []
@@ -253,15 +282,20 @@ gpioi = []
 gpioj = []
 gpiok = []
 i2c3 = []
+lptim1 = []
+ltdc = []
+quadspi = []
 otg-fs = []
 otg-hs = []
 rng = []
-sai = []
+sai1 = []
+sai2 = []
 sdio = []
 spi3 = []
 spi4 = []
 spi5 = []
 spi6 = []
+spdifrx = []
 tim2 = []
 tim8 = []
 usart3 = []

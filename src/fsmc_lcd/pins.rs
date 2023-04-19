@@ -257,77 +257,62 @@ pub trait ChipSelectPins: sealed::Sealed {
 // 2, 3, 4
 // 1, 2, 3, 4
 
-impl ChipSelectPins for alt::ChipSelect1 {
+impl ChipSelectPins for alt::Ne1 {
     type Lcds = Lcd<SubBank1>;
 }
-impl ChipSelectPins for alt::ChipSelect2 {
+impl ChipSelectPins for alt::Ne2 {
     type Lcds = Lcd<SubBank2>;
 }
-impl ChipSelectPins for alt::ChipSelect3 {
+impl ChipSelectPins for alt::Ne3 {
     type Lcds = Lcd<SubBank3>;
 }
-impl ChipSelectPins for alt::ChipSelect4 {
+impl ChipSelectPins for alt::Ne4 {
     type Lcds = Lcd<SubBank4>;
 }
-impl ChipSelectPins for (alt::ChipSelect1, alt::ChipSelect2) {
+impl ChipSelectPins for (alt::Ne1, alt::Ne2) {
     type Lcds = (Lcd<SubBank1>, Lcd<SubBank2>);
 }
-impl sealed::Sealed for (alt::ChipSelect1, alt::ChipSelect2) {}
-impl ChipSelectPins for (alt::ChipSelect1, alt::ChipSelect3) {
+impl sealed::Sealed for (alt::Ne1, alt::Ne2) {}
+impl ChipSelectPins for (alt::Ne1, alt::Ne3) {
     type Lcds = (Lcd<SubBank1>, Lcd<SubBank3>);
 }
-impl sealed::Sealed for (alt::ChipSelect1, alt::ChipSelect3) {}
-impl ChipSelectPins for (alt::ChipSelect1, alt::ChipSelect4) {
+impl sealed::Sealed for (alt::Ne1, alt::Ne3) {}
+impl ChipSelectPins for (alt::Ne1, alt::Ne4) {
     type Lcds = (Lcd<SubBank1>, Lcd<SubBank4>);
 }
-impl sealed::Sealed for (alt::ChipSelect1, alt::ChipSelect4) {}
-impl ChipSelectPins for (alt::ChipSelect2, alt::ChipSelect3) {
+impl sealed::Sealed for (alt::Ne1, alt::Ne4) {}
+impl ChipSelectPins for (alt::Ne2, alt::Ne3) {
     type Lcds = (Lcd<SubBank2>, Lcd<SubBank3>);
 }
-impl sealed::Sealed for (alt::ChipSelect2, alt::ChipSelect3) {}
-impl ChipSelectPins for (alt::ChipSelect2, alt::ChipSelect4) {
+impl sealed::Sealed for (alt::Ne2, alt::Ne3) {}
+impl ChipSelectPins for (alt::Ne2, alt::Ne4) {
     type Lcds = (Lcd<SubBank2>, Lcd<SubBank4>);
 }
-impl sealed::Sealed for (alt::ChipSelect2, alt::ChipSelect4) {}
-impl ChipSelectPins for (alt::ChipSelect3, alt::ChipSelect4) {
+impl sealed::Sealed for (alt::Ne2, alt::Ne4) {}
+impl ChipSelectPins for (alt::Ne3, alt::Ne4) {
     type Lcds = (Lcd<SubBank3>, Lcd<SubBank4>);
 }
-impl sealed::Sealed for (alt::ChipSelect3, alt::ChipSelect4) {}
-impl ChipSelectPins for (alt::ChipSelect1, alt::ChipSelect2, alt::ChipSelect3) {
+impl sealed::Sealed for (alt::Ne3, alt::Ne4) {}
+impl ChipSelectPins for (alt::Ne1, alt::Ne2, alt::Ne3) {
     type Lcds = (Lcd<SubBank1>, Lcd<SubBank2>, Lcd<SubBank3>);
 }
-impl sealed::Sealed for (alt::ChipSelect1, alt::ChipSelect2, alt::ChipSelect3) {}
-impl ChipSelectPins for (alt::ChipSelect1, alt::ChipSelect2, alt::ChipSelect4) {
+impl sealed::Sealed for (alt::Ne1, alt::Ne2, alt::Ne3) {}
+impl ChipSelectPins for (alt::Ne1, alt::Ne2, alt::Ne4) {
     type Lcds = (Lcd<SubBank1>, Lcd<SubBank2>, Lcd<SubBank4>);
 }
-impl sealed::Sealed for (alt::ChipSelect1, alt::ChipSelect2, alt::ChipSelect4) {}
-impl ChipSelectPins for (alt::ChipSelect1, alt::ChipSelect3, alt::ChipSelect4) {
+impl sealed::Sealed for (alt::Ne1, alt::Ne2, alt::Ne4) {}
+impl ChipSelectPins for (alt::Ne1, alt::Ne3, alt::Ne4) {
     type Lcds = (Lcd<SubBank1>, Lcd<SubBank3>, Lcd<SubBank4>);
 }
-impl sealed::Sealed for (alt::ChipSelect1, alt::ChipSelect3, alt::ChipSelect4) {}
-impl ChipSelectPins for (alt::ChipSelect2, alt::ChipSelect3, alt::ChipSelect4) {
+impl sealed::Sealed for (alt::Ne1, alt::Ne3, alt::Ne4) {}
+impl ChipSelectPins for (alt::Ne2, alt::Ne3, alt::Ne4) {
     type Lcds = (Lcd<SubBank2>, Lcd<SubBank3>, Lcd<SubBank4>);
 }
-impl sealed::Sealed for (alt::ChipSelect2, alt::ChipSelect3, alt::ChipSelect4) {}
-impl ChipSelectPins
-    for (
-        alt::ChipSelect1,
-        alt::ChipSelect2,
-        alt::ChipSelect3,
-        alt::ChipSelect4,
-    )
-{
+impl sealed::Sealed for (alt::Ne2, alt::Ne3, alt::Ne4) {}
+impl ChipSelectPins for (alt::Ne1, alt::Ne2, alt::Ne3, alt::Ne4) {
     type Lcds = (Lcd<SubBank1>, Lcd<SubBank2>, Lcd<SubBank3>, Lcd<SubBank4>);
 }
-impl sealed::Sealed
-    for (
-        alt::ChipSelect1,
-        alt::ChipSelect2,
-        alt::ChipSelect3,
-        alt::ChipSelect4,
-    )
-{
-}
+impl sealed::Sealed for (alt::Ne1, alt::Ne2, alt::Ne3, alt::Ne4) {}
 
 /// A set of data pins
 ///
@@ -387,9 +372,9 @@ pub struct LcdPins<D, AD, NE> {
     /// Address pin(s) (data/command)
     pub address: AD,
     /// Output enable (read enable)
-    pub read_enable: alt::ReadEnable,
+    pub read_enable: alt::Noe,
     /// Write enable
-    pub write_enable: alt::WriteEnable,
+    pub write_enable: alt::Nwe,
     /// Chip select / bank enable pin(s)
     pub chip_select: NE,
 }
