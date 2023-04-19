@@ -155,33 +155,38 @@ pub trait Pins<TIM>: sealed::Split {
 }
 
 macro_rules! pins_impl {
-    ( $( ( $($Otype:ident),+ ), ( $($ENCHX:ident),+ ), ( $($COMP:ident),+ ); )+ ) => {
+    ( $( $(($Otype:ident, $ENCHX:ident, $COMP:ident)),+; )+ ) => {
         $(
             #[allow(unused_parens)]
-            impl<TIM, $($Otype,)+ $(const $COMP: bool,)+> Pins<TIM> for ($(ChannelBuilder<TIM, $ENCHX, $COMP, $Otype>),+) {
-                $(const $ENCHX: bool = true;)+
-                $(const $COMP: bool = $COMP;)+
+            impl<TIM, $($Otype, const $COMP: bool,)+> Pins<TIM> for ($(ChannelBuilder<TIM, $ENCHX, $COMP, $Otype>),+) {
+                $(
+                    const $ENCHX: bool = true;
+                    const $COMP: bool = $COMP;
+                )+
             }
         )+
     };
 }
 
 pins_impl!(
-    (P1, P2, P3, P4), (C1, C2, C3, C4), (NC1, NC2, NC3, NC4);
-    (P2, P3, P4), (C2, C3, C4), (NC2, NC3, NC4);
-    (P1, P3, P4), (C1, C3, C4), (NC1, NC3, NC4);
-    (P1, P2, P4), (C1, C2, C4), (NC1, NC2, NC4);
-    (P1, P2, P3), (C1, C2, C3), (NC1, NC2, NC3);
-    (P3, P4), (C3, C4), (NC3, NC4);
-    (P2, P4), (C2, C4), (NC2, NC4);
-    (P2, P3), (C2, C3), (NC2, NC3);
-    (P1, P4), (C1, C4), (NC1, NC4);
-    (P1, P3), (C1, C3), (NC1, NC3);
-    (P1, P2), (C1, C2), (NC1, NC2);
-    (P1), (C1), (NC1);
-    (P2), (C2), (NC2);
-    (P3), (C3), (NC3);
-    (P4), (C4), (NC4);
+    (O1, C1, NC1), (O2, C2, NC2), (O3, C3, NC3), (O4, C4, NC4);
+
+                   (O2, C2, NC2), (O3, C3, NC3), (O4, C4, NC4);
+    (O1, C1, NC1),                (O3, C3, NC3), (O4, C4, NC4);
+    (O1, C1, NC1), (O2, C2, NC2),                (O4, C4, NC4);
+    (O1, C1, NC1), (O2, C2, NC2), (O3, C3, NC3);
+
+                                  (O3, C3, NC3), (O4, C4, NC4);
+                   (O2, C2, NC2),                (O4, C4, NC4);
+                   (O2, C2, NC2), (O3, C3, NC3);
+    (O1, C1, NC1),                               (O4, C4, NC4);
+    (O1, C1, NC1),                (O3, C3, NC3);
+    (O1, C1, NC1), (O2, C2, NC2);
+
+    (O1, C1, NC1);
+                   (O2, C2, NC2);
+                                  (O3, C3, NC3);
+                                                 (O4, C4, NC4);
 );
 
 pub struct PwmChannel<TIM, const C: u8, const COMP: bool = false> {
