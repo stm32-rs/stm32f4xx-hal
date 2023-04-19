@@ -310,7 +310,7 @@ macro_rules! hal {
         $Timer:ident,
         $bits:ty,
         $(dmar: $memsize:ty,)?
-        $(c: ($CNUM:ident, $cnum:literal $(, $aoe:ident)?),)?
+        $(c: ($cnum:tt $(, $aoe:ident)?),)?
         $(m: $timbase:ident,)?
     ],)+) => {
         $(
@@ -498,7 +498,7 @@ macro_rules! hal {
                     }
                 )?
 
-                with_pwm!($TIM: $CNUM $(, $aoe)?);
+                with_pwm!($TIM: $cnum $(, $aoe)?);
                 unsafe impl<const C: u8> PeriAddress for CCR<$TIM, C> {
                     #[inline(always)]
                     fn address(&self) -> u32 {
@@ -533,69 +533,19 @@ macro_rules! with_dmar {
 }
 
 macro_rules! with_pwm {
-    ($TIM:ty: CH1) => {
+    ($TIM:ty: [$($Cx:ident, $ccmrx_output:ident, $ocxpe:ident, $ocxm:ident;)+] $(, $aoe:ident)?) => {
         impl WithPwm for $TIM {
             #[inline(always)]
             fn preload_output_channel_in_mode(&mut self, channel: Channel, mode: Ocm) {
                 match channel {
-                    Channel::C1 => {
-                        self.ccmr1_output()
-                        .modify(|_, w| w.oc1pe().set_bit().oc1m().bits(mode as _) );
-                    }
+                    $(
+                        Channel::$Cx => {
+                            self.$ccmrx_output()
+                            .modify(|_, w| w.$ocxpe().set_bit().$ocxm().bits(mode as _) );
+                        }
+                    )+
+                    #[allow(unreachable_patterns)]
                     _ => {},
-                }
-            }
-
-            #[inline(always)]
-            fn start_pwm(&mut self) {
-                self.cr1.modify(|_, w| w.cen().set_bit());
-            }
-        }
-    };
-    ($TIM:ty: CH2) => {
-        impl WithPwm for $TIM {
-            #[inline(always)]
-            fn preload_output_channel_in_mode(&mut self, channel: Channel, mode: Ocm) {
-                match channel {
-                    Channel::C1 => {
-                        self.ccmr1_output()
-                        .modify(|_, w| w.oc1pe().set_bit().oc1m().bits(mode as _) );
-                    }
-                    Channel::C2 => {
-                        self.ccmr1_output()
-                        .modify(|_, w| w.oc2pe().set_bit().oc2m().bits(mode as _) );
-                    }
-                    _ => {},
-                }
-            }
-
-            #[inline(always)]
-            fn start_pwm(&mut self) {
-                self.cr1.modify(|_, w| w.cen().set_bit());
-            }
-        }
-    };
-    ($TIM:ty: CH4 $(, $aoe:ident)?) => {
-        impl WithPwm for $TIM {
-            #[inline(always)]
-            fn preload_output_channel_in_mode(&mut self, channel: Channel, mode: Ocm) {
-                match channel {
-                    Channel::C1 => {
-                        self.ccmr1_output()
-                        .modify(|_, w| w.oc1pe().set_bit().oc1m().bits(mode as _) );
-                    }
-                    Channel::C2 => {
-                        self.ccmr1_output()
-                        .modify(|_, w| w.oc2pe().set_bit().oc2m().bits(mode as _) );
-                    }
-                    Channel::C3 => {
-                        self.ccmr2_output()
-                        .modify(|_, w| w.oc3pe().set_bit().oc3m().bits(mode as _) );
-                    }
-                    Channel::C4 => {
-                        self.ccmr2_output()
-                        .modify(|_, w| w.oc4pe().set_bit().oc4m().bits(mode as _) );
-                    }
                 }
             }
 
@@ -605,6 +555,25 @@ macro_rules! with_pwm {
                 self.cr1.modify(|_, w| w.cen().set_bit());
             }
         }
+    };
+    ($TIM:ty: 1) => {
+        with_pwm!($TIM: [
+            C1, ccmr1_output, oc1pe, oc1m;
+        ]);
+    };
+    ($TIM:ty: 2) => {
+        with_pwm!($TIM: [
+            C1, ccmr1_output, oc1pe, oc1m;
+            C2, ccmr1_output, oc2pe, oc2m;
+        ]);
+    };
+    ($TIM:ty: 4 $(, $aoe:ident)?) => {
+        with_pwm!($TIM: [
+            C1, ccmr1_output, oc1pe, oc1m;
+            C2, ccmr1_output, oc2pe, oc2m;
+            C3, ccmr2_output, oc3pe, oc3m;
+            C4, ccmr2_output, oc4pe, oc4m;
+        ] $(, $aoe)?);
     };
 }
 
@@ -761,26 +730,26 @@ pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
 
 // All F4xx parts have these timers.
 hal!(
-    pac::TIM9: [Timer9, u16, c: (CH2, 2),],
-    pac::TIM11: [Timer11, u16, c: (CH1, 1),],
+    pac::TIM9: [Timer9, u16, c: (2),],
+    pac::TIM11: [Timer11, u16, c: (1),],
 );
 
 // All parts except for F410 add these timers.
 #[cfg(not(feature = "gpio-f410"))]
 hal!(
-    pac::TIM1: [Timer1, u16, dmar: u32, c: (CH4, 4, _aoe), m: tim1,],
-    pac::TIM5: [Timer5, u32, dmar: u16, c: (CH4, 4), m: tim5,],
-    pac::TIM2: [Timer2, u32, dmar: u16, c: (CH4, 4), m: tim2,],
-    pac::TIM3: [Timer3, u16, dmar: u16, c: (CH4, 4), m: tim3,],
-    pac::TIM4: [Timer4, u16, dmar: u16, c: (CH4, 4), m: tim3,],
-    pac::TIM10: [Timer10, u16, c: (CH1, 1),],
+    pac::TIM1: [Timer1, u16, dmar: u32, c: (4, _aoe), m: tim1,],
+    pac::TIM5: [Timer5, u32, dmar: u16, c: (4), m: tim5,],
+    pac::TIM2: [Timer2, u32, dmar: u16, c: (4), m: tim2,],
+    pac::TIM3: [Timer3, u16, dmar: u16, c: (4), m: tim3,],
+    pac::TIM4: [Timer4, u16, dmar: u16, c: (4), m: tim3,],
+    pac::TIM10: [Timer10, u16, c: (1),],
 );
 
 // TIM5 on F410 is 16-bit
 #[cfg(feature = "gpio-f410")]
 hal!(
-    pac::TIM1: [Timer1, u16, dmar: u16, c: (CH4, 4, _aoe), m: tim1,],
-    pac::TIM5: [Timer5, u16, dmar: u16, c: (CH4, 4), m: tim5,],
+    pac::TIM1: [Timer1, u16, dmar: u16, c: (4, _aoe), m: tim1,],
+    pac::TIM5: [Timer5, u16, dmar: u16, c: (4), m: tim5,],
 );
 
 // All parts except F401 and F411.
@@ -791,8 +760,8 @@ hal!(pac::TIM6: [Timer6, u16, m: tim6,],);
 #[cfg(not(any(feature = "gpio-f401", feature = "gpio-f410", feature = "gpio-f411")))]
 hal!(
     pac::TIM7: [Timer7, u16, m: tim7,],
-    pac::TIM8: [Timer8, u16, dmar: u32, c: (CH4, 4, _aoe), m: tim8,],
-    pac::TIM12: [Timer12, u16, c: (CH2, 2),],
-    pac::TIM13: [Timer13, u16, c: (CH1, 1),],
-    pac::TIM14: [Timer14, u16, c: (CH1, 1),],
+    pac::TIM8: [Timer8, u16, dmar: u32, c: (4, _aoe), m: tim8,],
+    pac::TIM12: [Timer12, u16, c: (2),],
+    pac::TIM13: [Timer13, u16, c: (1),],
+    pac::TIM14: [Timer14, u16, c: (1),],
 );
