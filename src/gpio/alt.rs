@@ -427,21 +427,7 @@ pub mod spi1 {
         ],
 
         <Nss> for [
-            #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f446"
-            ))]
             PA4<5>,
-            #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f446"
-            ))]
             PA15<5>,
         ],
     }

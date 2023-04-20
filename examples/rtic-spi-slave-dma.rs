@@ -16,7 +16,7 @@ mod app {
         pac::{DMA1, SPI3},
         prelude::*,
         rcc::RccExt,
-        spi::{Rx, Spi, Tx},
+        spi::{Rx, SpiSlave, Tx},
     };
     use panic_semihosting as _;
     use systick_monotonic::*;
@@ -56,7 +56,7 @@ mod app {
 
         let rcc = device_peripherals.RCC;
         let rcc = rcc.constrain();
-        let clocks = rcc.cfgr.sysclk(100.MHz()).pclk1(36.MHz()).freeze();
+        let _clocks = rcc.cfgr.sysclk(100.MHz()).pclk1(36.MHz()).freeze();
 
         let mono = Systick::new(core.SYST, 100_000_000);
 
@@ -77,7 +77,8 @@ mod app {
             phase: Phase::CaptureOnFirstTransition,
         };
 
-        let spi3 = Spi::new_slave(spi, (sck, miso, mosi), mode, 8_000_000.Hz(), &clocks);
+        let mut spi3 = SpiSlave::new(spi, (sck, miso, mosi, None), mode);
+        spi3.set_internal_nss(false);
 
         let (tx, rx) = spi3.use_dma().txrx();
 

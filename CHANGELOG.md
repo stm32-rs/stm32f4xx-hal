@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
- - Simplify `gpio::Outport`
- - Split USART and UART implementations
+ - Simplify `gpio::Outport` [#611]
+ - Split SPI master and slave implementations [#609]
+ - Split USART and UART implementations [#608]
  - Add `lapce` editor settings [#601]
  - Use `enum`s for alternate peripheral pins [#594] [#610]
  - Added missing U(S)ART DMA traits for HAL serial types [#593]
@@ -27,6 +28,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#601]: https://github.com/stm32-rs/stm32f4xx-hal/pull/601
 [#603]: https://github.com/stm32-rs/stm32f4xx-hal/pull/603
 [#610]: https://github.com/stm32-rs/stm32f4xx-hal/pull/610
+[#608]: https://github.com/stm32-rs/stm32f4xx-hal/pull/608
+[#609]: https://github.com/stm32-rs/stm32f4xx-hal/pull/609
+[#611]: https://github.com/stm32-rs/stm32f4xx-hal/pull/611
 
 ## [v0.15.0] - 2023-03-13
 
