@@ -429,7 +429,6 @@ pub mod spi1 {
         <Mosi> for PushPull: no:NoPin, [
             PA7<5>, PB5<5>,
         ],
-
         <Nss> for PushPull: [
             PA4<5>,
             PA15<5>,
@@ -580,7 +579,10 @@ pub mod spi3 {
             PD0<6>,
         ],
 
-        <Nss> for PushPull: [PA4<6>, PA15<6>,],
+        <Nss> for PushPull: [
+            PA4<6>,
+            PA15<6>,
+        ],
     }
 }
 
@@ -637,27 +639,15 @@ pub mod spi4 {
             PG13<6>,
         ],
 
-        <Nss> for PushPull: no:NoPin, [
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
+        <Nss> for PushPull: [
+            PE4<5>,
+            PE11<5>,
+
+            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
             PB12<6>,
 
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
-            PE4<5>,
-
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
-            PE11<5>,
+            #[cfg(feature = "gpio-f446")]
+            PG14<6>,
         ],
     }
 }
@@ -782,28 +772,26 @@ pub mod spi5 {
             PF11<5>,
         ],
 
-        <Nss> for PushPull: no:NoPin, [
+        <Nss> for PushPull: [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
                 feature = "gpio-f412",
-                feature = "gpio-f413",
+                feature = "gpio-f413"
             ))]
             PB1<6>,
 
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
+            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
             PE4<6>,
 
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
+            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
             PE11<6>,
+
+            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            PF6<5>,
+
+            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            PH5<5>,
         ],
     }
 }
@@ -816,7 +804,7 @@ pub mod spi6 {
         <Sck> for PushPull: no:NoPin, [PG13<5>,],
         <Miso> for PushPull: no:NoPin, [PG12<5>,],
         <Mosi> for PushPull: no:NoPin, [PG14<5>,],
-        <Nss> for PushPull: [],
+        <Nss> for PushPull: no:NoPin, [PG8<5>,],
     }
 }
 
