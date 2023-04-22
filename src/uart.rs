@@ -271,17 +271,15 @@ impl Instance for pac::UART4 {
     }
 }
 
-use crate::serial::halUsart;
-
 #[cfg(feature = "uart5")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-halUsart! { pac::UART5, uart5, Serial5, Rx5, Tx5 }
+crate::serial::halUsart! { pac::UART5, uart5, Serial5, Rx5, Tx5 }
 
 #[cfg(feature = "uart7")]
-halUsart! { pac::UART7, uart7, Serial7, Rx7, Tx7 }
+crate::serial::halUsart! { pac::UART7, uart7, Serial7, Rx7, Tx7 }
 #[cfg(feature = "uart8")]
-halUsart! { pac::UART8, uart8, Serial8, Rx8, Tx8 }
+crate::serial::halUsart! { pac::UART8, uart8, Serial8, Rx8, Tx8 }
 #[cfg(feature = "uart9")]
-halUsart! { pac::UART9, uart9, Serial9, Rx9, Tx9 }
+crate::serial::halUsart! { pac::UART9, uart9, Serial9, Rx9, Tx9 }
 #[cfg(feature = "uart10")]
-halUsart! { pac::UART10, uart10, Serial10, Rx10, Tx10 }
+crate::serial::halUsart! { pac::UART10, uart10, Serial10, Rx10, Tx10 }
