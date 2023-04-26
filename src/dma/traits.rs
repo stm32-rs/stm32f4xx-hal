@@ -369,7 +369,7 @@ dma_map!(
     (Stream0<DMA1>, 1, pac::I2C1 | i2c::Rx<pac::I2C1>, PeripheralToMemory),     //I2C1_RX
     (Stream2<DMA1>, 7, pac::I2C2 | i2c::Rx<pac::I2C2>, PeripheralToMemory),     //I2C2_RX
     (Stream3<DMA1>, 0, pac::SPI2 | spi::Rx<pac::SPI2>, PeripheralToMemory), //SPI2_RX
-    (Stream3<DMA1>, 7, pac::I2C2 | spi::Rx<pac::I2C2>, PeripheralToMemory), //I2C2_RX
+    (Stream3<DMA1>, 7, pac::I2C2 | i2c::Rx<pac::I2C2>, PeripheralToMemory), //I2C2_RX
     (Stream4<DMA1>, 0, pac::SPI2 | spi::Tx<pac::SPI2>, MemoryToPeripheral), // SPI2_TX
     (Stream5<DMA1>, 1, pac::I2C1 | i2c::Rx<pac::I2C1>, PeripheralToMemory), //I2C1_RX
     (Stream5<DMA1>, 4, pac::USART2 | serial::Rx<pac::USART2>, PeripheralToMemory), //USART2_RX
