@@ -1,6 +1,6 @@
 use core::ops::Deref;
 
-use crate::gpio::{self, OpenDrain};
+use crate::gpio;
 use crate::i2c::{Error, NoAcknowledgeSource};
 use crate::pac::{fmpi2c1, FMPI2C1, RCC};
 use crate::rcc::{Enable, Reset};
@@ -21,8 +21,8 @@ pub trait Instance:
 }
 
 impl Instance for FMPI2C1 {
-    type Sda = gpio::alt::fmpi2c1::Sda<OpenDrain>;
-    type Scl = gpio::alt::fmpi2c1::Scl<OpenDrain>;
+    type Sda = gpio::alt::fmpi2c1::Sda;
+    type Scl = gpio::alt::fmpi2c1::Scl;
     fn ptr() -> *const fmpi2c1::RegisterBlock {
         FMPI2C1::ptr() as *const _
     }

@@ -105,9 +105,13 @@ pub trait PinExt {
 }
 
 /// Some alternate mode (type state)
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Alternate<const A: u8, Otype = PushPull>(PhantomData<Otype>);
 
 /// Input mode (type state)
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Input;
 
 /// Pull setting for an input.
@@ -123,17 +127,25 @@ pub enum Pull {
 }
 
 /// Open drain input or output (type state)
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct OpenDrain;
 
 /// Output mode (type state)
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Output<MODE = PushPull> {
     _mode: PhantomData<MODE>,
 }
 
 /// Push pull output (type state)
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PushPull;
 
 /// Analog mode (type state)
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Analog;
 
 /// JTAG/SWD mote (type state)
