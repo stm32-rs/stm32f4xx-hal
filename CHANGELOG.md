@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Simplify `gpio::Outport`
  - Split USART and UART implementations
  - Add `lapce` editor settings [#601]
  - Use `enum`s for alternate peripheral pins [#594] [#610]
