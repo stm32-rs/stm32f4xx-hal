@@ -831,25 +831,21 @@ pub struct Rx<SPI> {
 
 impl<SPI: Instance> DmaBuilder<SPI> {
     pub fn tx(self) -> Tx<SPI> {
-        self.new_tx()
-    }
-
-    pub fn rx(self) -> Rx<SPI> {
-        self.new_rx()
-    }
-
-    pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
-        (self.new_tx(), self.new_rx())
-    }
-
-    fn new_tx(&self) -> Tx<SPI> {
         self.spi.cr2.modify(|_, w| w.txdmaen().enabled());
         Tx { spi: PhantomData }
     }
 
-    fn new_rx(self) -> Rx<SPI> {
+    pub fn rx(self) -> Rx<SPI> {
         self.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
         Rx { spi: PhantomData }
+    }
+
+    pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
+        self.spi.cr2.modify(|_, w| {
+            w.txdmaen().enabled();
+            w.rxdmaen().enabled()
+        });
+        (Tx { spi: PhantomData }, Rx { spi: PhantomData })
     }
 }
 

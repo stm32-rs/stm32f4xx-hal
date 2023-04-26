@@ -1,6 +1,4 @@
 use super::*;
-#[cfg(feature = "uart4")]
-use crate::uart;
 use crate::{
     pac::{self, DMA1, DMA2},
     timer,
