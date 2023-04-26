@@ -2,7 +2,8 @@ use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use core::ptr;
 
-use crate::dma::traits::PeriAddress;
+use crate::dma::traits::{DMASet, PeriAddress};
+use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
 use crate::gpio::{self, NoPin};
 use crate::pac;
 
@@ -830,25 +831,21 @@ pub struct Rx<SPI> {
 
 impl<SPI: Instance> DmaBuilder<SPI> {
     pub fn tx(self) -> Tx<SPI> {
-        self.new_tx()
-    }
-
-    pub fn rx(self) -> Rx<SPI> {
-        self.new_rx()
-    }
-
-    pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
-        (self.new_tx(), self.new_rx())
-    }
-
-    fn new_tx(&self) -> Tx<SPI> {
         self.spi.cr2.modify(|_, w| w.txdmaen().enabled());
         Tx { spi: PhantomData }
     }
 
-    fn new_rx(self) -> Rx<SPI> {
+    pub fn rx(self) -> Rx<SPI> {
         self.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
         Rx { spi: PhantomData }
+    }
+
+    pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
+        self.spi.cr2.modify(|_, w| {
+            w.txdmaen().enabled();
+            w.rxdmaen().enabled()
+        });
+        (Tx { spi: PhantomData }, Rx { spi: PhantomData })
     }
 }
 
@@ -861,6 +858,11 @@ unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
     type MemSize = u8;
 }
 
+unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory> for Rx<SPI> where
+    SPI: DMASet<STREAM, CHANNEL, PeripheralToMemory>
+{
+}
+
 unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -868,6 +870,11 @@ unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     }
 
     type MemSize = u8;
+}
+
+unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral> for Tx<SPI> where
+    SPI: DMASet<STREAM, CHANNEL, MemoryToPeripheral>
+{
 }
 
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {

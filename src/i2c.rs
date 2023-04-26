@@ -14,7 +14,6 @@ mod hal_02;
 mod hal_1;
 
 pub mod dma;
-pub(crate) use dma::{Rx, Tx};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum DutyCycle {
