@@ -153,10 +153,10 @@ impl<TIM: Instance + WithPwm, const C: u8> embedded_hal::PwmPin for PwmChannel<T
     }
 }
 
-impl<TIM, P, PINS> embedded_hal::Pwm for PwmHz<TIM, P, PINS>
+impl<TIM, PINS> embedded_hal::Pwm for PwmHz<TIM, PINS>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     type Channel = Channel;
     type Duty = u16;
@@ -263,10 +263,10 @@ impl<TIM: Instance, const FREQ: u32> Cancel for Counter<TIM, FREQ> {
     }
 }
 
-impl<TIM, P, PINS, const FREQ: u32> embedded_hal::Pwm for Pwm<TIM, P, PINS, FREQ>
+impl<TIM, PINS, const FREQ: u32> embedded_hal::Pwm for Pwm<TIM, PINS, FREQ>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     type Channel = Channel;
     type Duty = u16;

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Split SPI master and slave implementations [#609]
  - Split USART and UART implementations [#608]
  - Add `lapce` editor settings [#601]
- - Use `enum`s for alternate peripheral pins [#594] [#610]
+ - Use `enum`s for alternate peripheral pins (generic over otype) [#594] [#596] [#600] [#610]
  - Added missing U(S)ART DMA traits for HAL serial types [#593]
  - Improve SPI::new* docs [#587]
  - Add advanced timer dead time insertion example [#585]
@@ -65,6 +65,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#577]: https://github.com/stm32-rs/stm32f4xx-hal/pull/577
 [#578]: https://github.com/stm32-rs/stm32f4xx-hal/pull/578
 [#581]: https://github.com/stm32-rs/stm32f4xx-hal/pull/581
+[#594]: https://github.com/stm32-rs/stm32f4xx-hal/pull/594
+[#595]: https://github.com/stm32-rs/stm32f4xx-hal/pull/595
+[#596]: https://github.com/stm32-rs/stm32f4xx-hal/pull/596
+[#599]: https://github.com/stm32-rs/stm32f4xx-hal/pull/599
+[#601]: https://github.com/stm32-rs/stm32f4xx-hal/pull/601
+[#603]: https://github.com/stm32-rs/stm32f4xx-hal/pull/603
+[#600]: https://github.com/stm32-rs/stm32f4xx-hal/pull/600
 
 
 ## [v0.14.0] - 2022-12-12

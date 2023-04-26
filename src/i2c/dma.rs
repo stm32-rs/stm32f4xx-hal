@@ -616,8 +616,6 @@ where
 
                 // Generate stop and wait for it
                 self.send_stop();
-
-                return;
             }
         }
     }

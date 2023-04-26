@@ -1,23 +1,86 @@
-use super::{marker, Alternate, NoPin, OpenDrain, PinMode};
+use super::{Alternate, NoPin, OpenDrain, PinMode, PushPull};
 use crate::gpio::{self, Edge, ExtiPin};
 use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
 
+macro_rules! extipin {
+    ($( $(#[$attr:meta])* $PX:ident,)*) => {
+        fn make_interrupt_source(&mut self, _syscfg: &mut SysCfg) {
+            match self {
+                $(
+                    $(#[$attr])*
+                    Self::$PX(p) => p.make_interrupt_source(_syscfg),
+                )*
+                _ => {},
+            }
+
+        }
+
+        fn trigger_on_edge(&mut self, _exti: &mut EXTI, _level: Edge) {
+            match self {
+                $(
+                    $(#[$attr])*
+                    Self::$PX(p) => p.trigger_on_edge(_exti, _level),
+                )*
+                _ => {},
+            }
+        }
+
+        fn enable_interrupt(&mut self, _exti: &mut EXTI) {
+            match self {
+                $(
+                    $(#[$attr])*
+                    Self::$PX(p) => p.enable_interrupt(_exti),
+                )*
+                _ => {},
+            }
+        }
+        fn disable_interrupt(&mut self, _exti: &mut EXTI) {
+            match self {
+                $(
+                    $(#[$attr])*
+                    Self::$PX(p) => p.disable_interrupt(_exti),
+                )*
+                _ => {},
+            }
+        }
+        fn clear_interrupt_pending_bit(&mut self) {
+            match self {
+                $(
+                    $(#[$attr])*
+                    Self::$PX(p) => p.clear_interrupt_pending_bit(),
+                )*
+                _ => {},
+            }
+        }
+        fn check_interrupt(&self) -> bool {
+            match self {
+                $(
+                    $(#[$attr])*
+                    Self::$PX(p) => p.check_interrupt(),
+                )*
+                _ => false,
+            }
+        }
+    };
+}
+use extipin;
+
 macro_rules! pin {
-    ( $($(#[$docs:meta])* <$name:ident> for $(no: $NoPin:ty,)? [$(
-            $(#[$attr:meta])* $PX:ident<$A:literal $(, $Otype:ident)?>,
-        )*],)*) => {
+    ( $($(#[$docs:meta])* <$name:ident, $Otype:ident> for $(no: $NoPin:ident,)? [$(
+        $(#[$attr:meta])* $PX:ident<$A:literal>,
+    )*],)*) => {
         $(
             #[derive(Debug)]
             $(#[$docs])*
             pub enum $name {
                 $(
-                    None($NoPin),
+                    None($NoPin<$Otype>),
                 )?
 
                 $(
                     $(#[$attr])*
-                    $PX(gpio::$PX<Alternate<$A $(, $Otype)?>>),
+                    $PX(gpio::$PX<Alternate<$A, $Otype>>),
                 )*
             }
 
@@ -40,74 +103,18 @@ macro_rules! pin {
             }
             #[allow(unreachable_patterns)]
             impl ExtiPin for $name {
-                fn make_interrupt_source(&mut self, _syscfg: &mut SysCfg) {
-                    match self {
-                        $(
-                            $(#[$attr])*
-                            Self::$PX(p) => p.make_interrupt_source(_syscfg),
-                        )*
-                        _ => {},
-                    }
-
-                }
-
-                fn trigger_on_edge(&mut self, _exti: &mut EXTI, _level: Edge) {
-                    match self {
-                        $(
-                            $(#[$attr])*
-                            Self::$PX(p) => p.trigger_on_edge(_exti, _level),
-                        )*
-                        _ => {},
-                    }
-                }
-
-                fn enable_interrupt(&mut self, _exti: &mut EXTI) {
-                    match self {
-                        $(
-                            $(#[$attr])*
-                            Self::$PX(p) => p.enable_interrupt(_exti),
-                        )*
-                        _ => {},
-                    }
-                }
-                fn disable_interrupt(&mut self, _exti: &mut EXTI) {
-                    match self {
-                        $(
-                            $(#[$attr])*
-                            Self::$PX(p) => p.disable_interrupt(_exti),
-                        )*
-                        _ => {},
-                    }
-                }
-                fn clear_interrupt_pending_bit(&mut self) {
-                    match self {
-                        $(
-                            $(#[$attr])*
-                            Self::$PX(p) => p.clear_interrupt_pending_bit(),
-                        )*
-                        _ => {},
-                    }
-                }
-                fn check_interrupt(&self) -> bool {
-                    match self {
-                        $(
-                            $(#[$attr])*
-                            Self::$PX(p) => p.check_interrupt(),
-                        )*
-                        _ => false,
-                    }
-                }
+                extipin! { $( $(#[$attr])* $PX, )* }
             }
 
             $(
-                impl From<$NoPin> for $name {
-                    fn from(p: $NoPin) -> Self {
+                impl From<$NoPin<$Otype>> for $name {
+                    fn from(p: $NoPin<$Otype>) -> Self {
                         Self::None(p)
                     }
                 }
 
                 #[allow(irrefutable_let_patterns)]
-                impl TryFrom<$name> for $NoPin {
+                impl TryFrom<$name> for $NoPin<$Otype> {
                     type Error = ();
 
                     fn try_from(a: $name) -> Result<Self, Self::Error> {
@@ -122,28 +129,131 @@ macro_rules! pin {
 
             $(
                 $(#[$attr])*
-                impl<MODE> From<gpio::$PX<MODE>> for $name
+                impl From<gpio::$PX> for $name
                 where
-                    MODE: marker::NotAlt + PinMode
+                    Alternate<$A, $Otype>: PinMode,
                 {
-                    fn from(p: gpio::$PX<MODE>) -> Self {
+                    fn from(p: gpio::$PX) -> Self {
                         Self::$PX(p.into_mode())
                     }
                 }
 
                 $(#[$attr])*
-                impl From<gpio::$PX<Alternate<$A $(, $Otype)?>>> for $name {
-                    fn from(p: gpio::$PX<Alternate<$A $(, $Otype)?>>) -> Self {
+                impl From<gpio::$PX<Alternate<$A, $Otype>>> for $name {
+                    fn from(p: gpio::$PX<Alternate<$A, $Otype>>) -> Self {
                         Self::$PX(p)
                     }
                 }
 
                 $(#[$attr])*
                 #[allow(irrefutable_let_patterns)]
-                impl<MODE: PinMode> TryFrom<$name> for gpio::$PX<MODE> {
+                impl<MODE> TryFrom<$name> for gpio::$PX<MODE>
+                where
+                    MODE: PinMode,
+                    Alternate<$A, $Otype>: PinMode,
+                {
                     type Error = ();
 
                     fn try_from(a: $name) -> Result<Self, Self::Error> {
+                        if let $name::$PX(p) = a {
+                            Ok(p.into_mode())
+                        } else {
+                            Err(())
+                        }
+                    }
+                }
+            )*
+        )*
+    };
+
+    ( $($(#[$docs:meta])* <$name:ident> default:$DefaultOtype:ident for $(no: $NoPin:ident,)? [$(
+            $(#[$attr:meta])* $PX:ident<$A:literal>,
+    )*],)*) => {
+        $(
+            #[derive(Debug)]
+            $(#[$docs])*
+            pub enum $name<Otype = $DefaultOtype> {
+                $(
+                    None($NoPin<Otype>),
+                )?
+
+                $(
+                    $(#[$attr])*
+                    $PX(gpio::$PX<Alternate<$A, Otype>>),
+                )*
+            }
+
+            impl<Otype> crate::Sealed for $name<Otype> { }
+
+            #[allow(unreachable_patterns)]
+            impl<Otype> $name<Otype> {
+                pub fn is_high(&self) -> bool {
+                    !self.is_low()
+                }
+                pub fn is_low(&self) -> bool {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.is_low(),
+                        )*
+                        _ => false,
+                    }
+                }
+            }
+            #[allow(unreachable_patterns)]
+            impl<Otype> ExtiPin for $name<Otype> {
+                extipin! { $( $(#[$attr])* $PX, )* }
+            }
+
+            $(
+                impl<Otype> From<$NoPin<Otype>> for $name<Otype> {
+                    fn from(p: $NoPin<Otype>) -> Self {
+                        Self::None(p)
+                    }
+                }
+
+                #[allow(irrefutable_let_patterns)]
+                impl<Otype> TryFrom<$name<Otype>> for $NoPin<Otype> {
+                    type Error = ();
+
+                    fn try_from(a: $name<Otype>) -> Result<Self, Self::Error> {
+                        if let $name::None(p) = a {
+                            Ok(p)
+                        } else {
+                            Err(())
+                        }
+                    }
+                }
+            )?
+
+            $(
+                $(#[$attr])*
+                impl<Otype> From<gpio::$PX> for $name<Otype>
+                where
+                    Alternate<$A, Otype>: PinMode,
+                {
+                    fn from(p: gpio::$PX) -> Self {
+                        Self::$PX(p.into_mode())
+                    }
+                }
+
+                $(#[$attr])*
+                impl<Otype> From<gpio::$PX<Alternate<$A, Otype>>> for $name<Otype> {
+                    fn from(p: gpio::$PX<Alternate<$A, Otype>>) -> Self {
+                        Self::$PX(p)
+                    }
+                }
+
+                $(#[$attr])*
+                #[allow(irrefutable_let_patterns)]
+                impl<MODE, Otype> TryFrom<$name<Otype>> for gpio::$PX<MODE>
+                where
+                    MODE: PinMode,
+                    Alternate<$A, Otype>: PinMode,
+                {
+                    type Error = ();
+
+                    fn try_from(a: $name<Otype>) -> Result<Self, Self::Error> {
                         if let $name::$PX(p) = a {
                             Ok(p.into_mode())
                         } else {
@@ -163,7 +273,7 @@ pub mod can1 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             PA12<9>,
             PD1<9>,
 
@@ -189,7 +299,7 @@ pub mod can1 {
             PH13<9>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             PA11<9>,
             PD0<9>,
 
@@ -222,7 +332,7 @@ pub mod can2 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             PB13<9>,
             PB6<9>,
 
@@ -230,7 +340,7 @@ pub mod can2 {
             PG12<9>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             PB12<9>,
             PB5<9>,
 
@@ -245,8 +355,8 @@ pub mod can3 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [PA15<11>, PB4<11>,],
-        <Rx> for no:NoPin, [PA8<11>, PB3<11>,],
+        <Tx> default: PushPull for no:NoPin, [PA15<11>, PB4<11>,],
+        <Rx> default: PushPull for no:NoPin, [PA8<11>, PB3<11>,],
     }
 }
 
@@ -256,9 +366,9 @@ pub mod i2c1 {
     use super::*;
 
     pin! {
-        <Scl> for [PB6<4, OpenDrain>, PB8<4, OpenDrain>,],
+        <Scl, OpenDrain> for [PB6<4>, PB8<4>,],
 
-        <Sda> for [PB7<4, OpenDrain>, PB9<4, OpenDrain>,],
+        <Sda, OpenDrain> for [PB7<4>, PB9<4>,],
     }
 }
 
@@ -266,9 +376,9 @@ pub mod i2c2 {
     use super::*;
 
     pin! {
-        <Sda> for [
+        <Sda, OpenDrain> for [
             #[cfg(feature = "gpio-f446")]
-            PB3<4, OpenDrain>,
+            PB3<4>,
 
             #[cfg(any(
                 feature = "gpio-f401",
@@ -277,7 +387,7 @@ pub mod i2c2 {
                 feature = "gpio-f412",
                 feature = "gpio-f413",
             ))]
-            PB3<9, OpenDrain>,
+            PB3<9>,
 
             #[cfg(any(
                 feature = "gpio-f410",
@@ -285,7 +395,7 @@ pub mod i2c2 {
                 feature = "gpio-f412",
                 feature = "gpio-f413",
             ))]
-            PB9<9, OpenDrain>,
+            PB9<9>,
 
             #[cfg(any(
                 feature = "gpio-f417",
@@ -297,10 +407,10 @@ pub mod i2c2 {
                 feature = "gpio-f446",
                 feature = "gpio-f469",
             ))]
-            PB11<4, OpenDrain>,
+            PB11<4>,
 
             #[cfg(feature = "gpio-f446")]
-            PC12<4, OpenDrain>,
+            PC12<4>,
 
             #[cfg(any(
                 feature = "gpio-f417",
@@ -310,18 +420,18 @@ pub mod i2c2 {
                 feature = "gpio-f446",
                 feature = "gpio-f469",
             ))]
-            PF0<4, OpenDrain>,
+            PF0<4>,
 
             #[cfg(any(
                 feature = "gpio-f417",
                 feature = "gpio-f427",
                 feature = "gpio-f469",
             ))]
-            PH5<4, OpenDrain>,
+            PH5<4>,
         ],
 
-        <Scl> for [
-            PB10<4, OpenDrain>,
+        <Scl, OpenDrain> for [
+            PB10<4>,
 
             #[cfg(any(
                 feature = "gpio-f417",
@@ -331,14 +441,14 @@ pub mod i2c2 {
                 feature = "gpio-f446",
                 feature = "gpio-f469",
             ))]
-            PF1<4, OpenDrain>,
+            PF1<4>,
 
             #[cfg(any(
                 feature = "gpio-f417",
                 feature = "gpio-f427",
                 feature = "gpio-f469",
             ))]
-            PH4<4, OpenDrain>,
+            PH4<4>,
         ],
     }
 }
@@ -348,22 +458,22 @@ pub mod i2c3 {
     use super::*;
 
     pin! {
-        <Scl> for [
-            PA8<4, OpenDrain>,
+        <Scl, OpenDrain> for [
+            PA8<4>,
 
             #[cfg(any(
                 feature = "gpio-f417",
                 feature = "gpio-f427",
                 feature = "gpio-f469",
             ))]
-            PH7<4, OpenDrain>,
+            PH7<4>,
         ],
 
-        <Sda> for [
-            PC9<4, OpenDrain>,
+        <Sda, OpenDrain> for [
+            PC9<4>,
 
             #[cfg(feature = "gpio-f446")]
-            PB4<4, OpenDrain>,
+            PB4<4>,
 
             #[cfg(any(
                 feature = "gpio-f401",
@@ -371,21 +481,21 @@ pub mod i2c3 {
                 feature = "gpio-f412",
                 feature = "gpio-f413",
             ))]
-            PB4<9, OpenDrain>,
+            PB4<9>,
 
             #[cfg(any(
                 feature = "gpio-f411",
                 feature = "gpio-f412",
                 feature = "gpio-f413",
             ))]
-            PB8<9, OpenDrain>,
+            PB8<9>,
 
             #[cfg(any(
                 feature = "gpio-f417",
                 feature = "gpio-f427",
                 feature = "gpio-f469",
             ))]
-            PH8<4, OpenDrain>,
+            PH8<4>,
         ],
     }
 }
@@ -394,21 +504,21 @@ pub mod i2c3 {
 pub mod fmpi2c1 {
     use super::*;
     pin! {
-        <Sda> for [
-            PB3<4, OpenDrain>,
-            PB14<4, OpenDrain>,
-            PC7<4, OpenDrain>,
-            PD13<4, OpenDrain>,
-            PD15<4, OpenDrain>,
-            PF15<4, OpenDrain>,
+        <Sda, OpenDrain> for [
+            PB3<4>,
+            PB14<4>,
+            PC7<4>,
+            PD13<4>,
+            PD15<4>,
+            PF15<4>,
         ],
-        <Scl> for [
-            PB10<9, OpenDrain>,
-            PB15<4, OpenDrain>,
-            PC6<4, OpenDrain>,
-            PD12<4, OpenDrain>,
-            PD14<4, OpenDrain>,
-            PF14<4, OpenDrain>,
+        <Scl, OpenDrain> for [
+            PB10<9>,
+            PB15<4>,
+            PC6<4>,
+            PD12<4>,
+            PD14<4>,
+            PF14<4>,
         ],
     }
 }
@@ -418,15 +528,14 @@ pub mod fmpi2c1 {
 pub mod spi1 {
     use super::*;
     pin! {
-        <Sck> for no:NoPin, [PA5<5>, PB3<5>,],
+        <Sck, PushPull> for no:NoPin, [PA5<5>, PB3<5>,],
 
-        <Miso> for no:NoPin, [PA6<5>, PB4<5>,],
+        <Miso, PushPull> for no:NoPin, [PA6<5>, PB4<5>,],
 
-        <Mosi> for no:NoPin, [
+        <Mosi, PushPull> for no:NoPin, [
             PA7<5>, PB5<5>,
         ],
-
-        <Nss> for [
+        <Nss, PushPull> for [
             PA4<5>,
             PA15<5>,
         ],
@@ -436,7 +545,7 @@ pub mod spi1 {
 pub mod spi2 {
     use super::*;
     pin! {
-        <Sck> for no:NoPin, [
+        <Sck, PushPull> for no:NoPin, [
             PB10<5>,
             PB13<5>,
 
@@ -475,7 +584,7 @@ pub mod spi2 {
             PI1<5>,
         ],
 
-        <Miso> for no:NoPin, [
+        <Miso, PushPull> for no:NoPin, [
             PB14<5>, PC2<5>,
 
             #[cfg(any(
@@ -489,7 +598,7 @@ pub mod spi2 {
             PA12<5>,
         ],
 
-        <Mosi> for no:NoPin, [
+        <Mosi, PushPull> for no:NoPin, [
             PB15<5>,
             PC3<5>,
 
@@ -510,7 +619,7 @@ pub mod spi2 {
             PC1<7>,
         ],
 
-        <Nss> for [
+        <Nss, PushPull> for [
             PB9<5>,
             PB12<5>,
 
@@ -537,7 +646,7 @@ pub mod spi2 {
 pub mod spi3 {
     use super::*;
     pin! {
-        <Sck> for no:NoPin, [
+        <Sck, PushPull> for [
             PB3<6>,
             PC10<6>,
 
@@ -549,9 +658,9 @@ pub mod spi3 {
             PB12<7>,
         ],
 
-        <Miso> for no:NoPin, [PB4<6>, PC11<6>,],
+        <Miso, PushPull> for no:NoPin, [PB4<6>, PC11<6>,],
 
-        <Mosi> for no:NoPin, [
+        <Mosi, PushPull> for no:NoPin, [
             PB5<6>,
             PC12<6>,
 
@@ -576,7 +685,10 @@ pub mod spi3 {
             PD0<6>,
         ],
 
-        <Nss> for [PA4<6>, PA15<6>,],
+        <Nss, PushPull> for [
+            PA4<6>,
+            PA15<6>,
+        ],
     }
 }
 
@@ -585,7 +697,7 @@ pub mod spi4 {
     use super::*;
 
     pin! {
-        <Sck> for no:NoPin, [
+        <Sck, PushPull> for [
             PE2<5>,
             PE12<5>,
 
@@ -600,7 +712,7 @@ pub mod spi4 {
             PG11<6>,
         ],
 
-        <Miso> for no:NoPin, [
+        <Miso, PushPull> for no:NoPin, [
             PE5<5>,
             PE13<5>,
 
@@ -618,7 +730,7 @@ pub mod spi4 {
             PD0<5>,
         ],
 
-        <Mosi> for no:NoPin, [
+        <Mosi, PushPull> for no:NoPin, [
             PE6<5>,
             PE14<5>,
 
@@ -633,27 +745,15 @@ pub mod spi4 {
             PG13<6>,
         ],
 
-        <Nss> for [
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
+        <Nss, PushPull> for [
+            PE4<5>,
+            PE11<5>,
+
+            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
             PB12<6>,
 
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
-            PE4<5>,
-
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
-            PE11<5>,
+            #[cfg(feature = "gpio-f446")]
+            PG14<6>,
         ],
     }
 }
@@ -663,7 +763,7 @@ pub mod spi5 {
     use super::*;
 
     pin! {
-        <Sck> for no:NoPin, [
+        <Sck, PushPull> for [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
@@ -698,7 +798,7 @@ pub mod spi5 {
             PH6<5>,
         ],
 
-        <Miso> for no:NoPin, [
+        <Miso, PushPull> for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
@@ -734,7 +834,7 @@ pub mod spi5 {
             PH7<5>,
         ],
 
-        <Mosi> for no:NoPin, [
+        <Mosi, PushPull> for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
@@ -778,28 +878,26 @@ pub mod spi5 {
             PF11<5>,
         ],
 
-        <Nss> for [
+        <Nss, PushPull> for [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
                 feature = "gpio-f412",
-                feature = "gpio-f413",
+                feature = "gpio-f413"
             ))]
             PB1<6>,
 
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
+            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
             PE4<6>,
 
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-            ))]
+            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
             PE11<6>,
+
+            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            PF6<5>,
+
+            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            PH5<5>,
         ],
     }
 }
@@ -809,28 +907,28 @@ pub mod spi6 {
     use super::*;
 
     pin! {
-        <Sck> for no:NoPin, [PG13<5>,],
-        <Miso> for no:NoPin, [PG12<5>,],
-        <Mosi> for no:NoPin, [PG14<5>,],
-        <Nss> for [],
+        <Sck, PushPull> for no:NoPin, [PG13<5>,],
+        <Miso, PushPull> for no:NoPin, [PG12<5>,],
+        <Mosi, PushPull> for no:NoPin, [PG14<5>,],
+        <Nss, PushPull> for no:NoPin, [PG8<5>,],
     }
 }
 
-// SPI pins for I2S mode
+// SPI pins default: PushPull for I2S mode
 pub mod i2s1 {
     use super::*;
 
     pin! {
-        <Ck> for [
+        <Ck, PushPull> for [
             PA5<5>,
             PB3<5>,
         ],
-        <Sd> for [
+        <Sd, PushPull> for [
             PA7<5>,
             PB5<5>,
         ],
 
-        <Ws> for [
+        <Ws, PushPull> for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
@@ -850,7 +948,7 @@ pub mod i2s1 {
             PA15<5>,
         ],
 
-        <Mck> for no:NoPin, [
+        <Mck, PushPull> for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f412",
                 feature = "gpio-f413",
@@ -871,7 +969,7 @@ pub mod i2s2 {
     use super::*;
 
     pin! {
-        <Ck> for [
+        <Ck, PushPull> for [
             PB10<5>,
             PB13<5>,
 
@@ -910,7 +1008,7 @@ pub mod i2s2 {
             PA9<5>,
         ],
 
-        <Sd> for [
+        <Sd, PushPull> for [
             PB15<5>,
             PC3<5>,
 
@@ -931,7 +1029,7 @@ pub mod i2s2 {
             PC1<5>,
         ],
 
-        <Ws> for [
+        <Ws, PushPull> for [
             PB9<5>,
             PB12<5>,
 
@@ -952,7 +1050,7 @@ pub mod i2s2 {
             PD1<7>,
         ],
 
-        <Mck> for no:NoPin, [
+        <Mck, PushPull> for no:NoPin, [
             PC6<5>,
 
             #[cfg(any(
@@ -960,8 +1058,8 @@ pub mod i2s2 {
                 feature = "gpio-f412",
                 feature = "gpio-f413",
             ))]
-            PA3<5>,
 
+            PA3<5>,
             #[cfg(any(
                 feature = "gpio-f411",
                 feature = "gpio-f412",
@@ -977,7 +1075,7 @@ pub mod i2s3 {
     use super::*;
 
     pin! {
-        <Ck> for [
+        <Ck, PushPull> for [
             PB3<6>,
             PC10<6>,
 
@@ -989,7 +1087,7 @@ pub mod i2s3 {
             PB12<7>,
         ],
 
-        <Sd> for [
+        <Sd, PushPull> for [
             PB5<6>,
             PC12<6>,
 
@@ -1014,12 +1112,12 @@ pub mod i2s3 {
             PD0<6>,
         ],
 
-        <Ws> for [
+        <Ws, PushPull> for [
             PA4<6>,
             PA15<6>,
         ],
 
-        <Mck> for no:NoPin, [
+        <Mck, PushPull> for no:NoPin, [
             PC7<6>,
 
             #[cfg(any(
@@ -1037,7 +1135,7 @@ pub mod i2s4 {
     use super::*;
 
     pin! {
-        <Ck> for [
+        <Ck, PushPull> for [
             PE2<5>,
             PE12<5>,
 
@@ -1052,7 +1150,7 @@ pub mod i2s4 {
             PG11<6>,
         ],
 
-        <Sd> for [
+        <Sd, PushPull> for [
             PE6<5>,
             PE14<5>,
 
@@ -1067,23 +1165,21 @@ pub mod i2s4 {
             PG13<6>,
         ],
 
-        <Mck> for no:NoPin, [ ],
+        <Mck, PushPull> for no:NoPin, [ ],
 
-        <Ws> for [
+        <Ws, PushPull> for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f411",
                 feature = "gpio-f412",
                 feature = "gpio-f413",
             ))]
             PB12<6>,
-
             #[cfg(any(
                 feature = "gpio-f411",
                 feature = "gpio-f412",
                 feature = "gpio-f413",
             ))]
             PE4<5>,
-
             #[cfg(any(
                 feature = "gpio-f411",
                 feature = "gpio-f412",
@@ -1099,7 +1195,7 @@ pub mod i2s5 {
     use super::*;
 
     pin! {
-        <Ck> for [
+        <Ck, PushPull> for [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
@@ -1135,7 +1231,7 @@ pub mod i2s5 {
             PH6<5>,
         ],
 
-        <Sd> for [
+        <Sd, PushPull> for [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
@@ -1179,9 +1275,9 @@ pub mod i2s5 {
             PF11<5>,
         ],
 
-        <Mck> for no:NoPin, [ ],
+        <Mck, PushPull> for no:NoPin, [ ],
 
-        <Ws> for [
+        <Ws, PushPull> for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f410",
                 feature = "gpio-f411",
@@ -1212,8 +1308,8 @@ pub mod i2s6 {
     use super::*;
 
     pin! {
-        <Ck> for [PG13<5>,],
-        <Sd> for [PG14<5>,],
+        <Ck, PushPull> for [PG13<5>,],
+        <Sd, PushPull> for [PG14<5>,],
     }
 }
 
@@ -1223,7 +1319,7 @@ pub mod usart1 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             PA9<7>,
             PB6<7>,
 
@@ -1236,7 +1332,7 @@ pub mod usart1 {
             PA15<7>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             PA10<7>,
             PB7<7>,
 
@@ -1260,7 +1356,7 @@ pub mod usart2 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             PA2<7>,
 
             #[cfg(any(
@@ -1276,7 +1372,7 @@ pub mod usart2 {
             PD5<7>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             PA3<7>,
 
             #[cfg(any(
@@ -1304,7 +1400,7 @@ pub mod usart3 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             PB10<7>,
 
             #[cfg(any(
@@ -1328,7 +1424,7 @@ pub mod usart3 {
             PD8<7>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             PB11<7>,
 
             #[cfg(any(
@@ -1370,7 +1466,7 @@ pub mod usart6 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             PC6<8>,
 
             #[cfg(any(
@@ -1385,7 +1481,7 @@ pub mod usart6 {
             #[cfg(feature = "gpiog")]
             PG14<8>,
         ],
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             PC7<8>,
 
             #[cfg(any(
@@ -1413,7 +1509,7 @@ pub mod uart4 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             PA0<8>,
 
             #[cfg(any(
@@ -1434,7 +1530,7 @@ pub mod uart4 {
             PD10<8>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             PA1<8>,
 
             #[cfg(any(
@@ -1467,7 +1563,7 @@ pub mod uart5 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             PC12<8>,
 
             #[cfg(feature = "gpio-f446")]
@@ -1483,7 +1579,7 @@ pub mod uart5 {
             PB13<11>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             PD2<8>,
 
             #[cfg(feature = "gpio-f446")]
@@ -1511,7 +1607,7 @@ pub mod uart7 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f401",
                 feature = "gpio-f411",
@@ -1541,7 +1637,7 @@ pub mod uart7 {
             PB4<8>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f401",
                 feature = "gpio-f411",
@@ -1583,7 +1679,7 @@ pub mod uart8 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [
+        <Tx> default: PushPull for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f401",
                 feature = "gpio-f411",
@@ -1600,7 +1696,7 @@ pub mod uart8 {
             PF9<8>,
         ],
 
-        <Rx> for no:NoPin, [
+        <Rx> default: PushPull for no:NoPin, [
             #[cfg(any(
                 feature = "gpio-f401",
                 feature = "gpio-f411",
@@ -1629,8 +1725,8 @@ pub mod uart9 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [PD15<11>, PG1<11>,],
-        <Rx> for no:NoPin, [PD14<11>, PG0<11>,],
+        <Tx> default: PushPull for no:NoPin, [PD15<11>, PG1<11>,],
+        <Rx> default: PushPull for no:NoPin, [PD14<11>, PG0<11>,],
     }
 
     impl crate::serial::CommonPins for crate::pac::UART9 {
@@ -1644,8 +1740,8 @@ pub mod uart10 {
     use super::*;
 
     pin! {
-        <Tx> for no:NoPin, [PE3<11>, PG12<11>,],
-        <Rx> for no:NoPin, [PE2<11>, PG11<11>,],
+        <Tx> default: PushPull for no:NoPin, [PE3<11>, PG12<11>,],
+        <Rx> default: PushPull for no:NoPin, [PE2<11>, PG11<11>,],
     }
 
     impl crate::serial::CommonPins for crate::pac::UART10 {
@@ -1659,19 +1755,19 @@ pub mod sdio {
     use super::*;
 
     pin! {
-        <Clk> for [
+        <Clk> default: PushPull for [
             PC12<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PB15<12>,
         ],
-        <Cmd> for [
+        <Cmd> default: PushPull for [
             PD2<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PA6<12>,
         ],
-        <D0> for [
+        <D0> default: PushPull for [
             PC8<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
@@ -1683,37 +1779,37 @@ pub mod sdio {
             #[cfg(feature = "gpio-f411")]
             PB7<12>,
         ],
-        <D1> for [
+        <D1> default: PushPull for [
             PC9<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PA8<12>,
         ],
-        <D2> for [
+        <D2> default: PushPull for [
             PC10<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PA9<12>,
         ],
-        <D3> for [
+        <D3> default: PushPull for [
             PC11<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PB5<12>,
         ],
-        <D4> for [
+        <D4> default: PushPull for [
             PB8<12>,
         ],
-        <D5> for [
+        <D5> default: PushPull for [
             PB9<12>,
         ],
-        <D6> for [
+        <D6> default: PushPull for [
             PC6<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
             PB14<12>,
         ],
-        <D7> for [
+        <D7> default: PushPull for [
             PC7<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f411"))]
@@ -1730,7 +1826,7 @@ pub mod fsmc {
     // All FSMC/FMC pins use 12
     pin! {
         /// A pin that can be used for data bus 0
-        <D0> for [
+        <D0> default: PushPull for [
             PD14<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1738,7 +1834,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 1
-        <D1> for [
+        <D1> default: PushPull for [
             PD15<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1746,7 +1842,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 2
-        <D2> for [
+        <D2> default: PushPull for [
             PD0<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1754,7 +1850,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 3
-        <D3> for [
+        <D3> default: PushPull for [
             PD1<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1762,7 +1858,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 4
-        <D4> for [
+        <D4> default: PushPull for [
             PE7<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1770,7 +1866,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 5
-        <D5> for [
+        <D5> default: PushPull for [
             PE8<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1778,7 +1874,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 6
-        <D6> for [
+        <D6> default: PushPull for [
             PE9<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1786,7 +1882,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 7
-        <D7> for [
+        <D7> default: PushPull for [
             PE10<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1794,32 +1890,32 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 8
-        <D8> for [
+        <D8> default: PushPull for [
             PE11<12>,
         ],
 
         /// A pin that can be used for data bus 9
-        <D9> for [
+        <D9> default: PushPull for [
             PE12<12>,
         ],
 
         /// A pin that can be used for data bus 10
-        <D10> for [
+        <D10> default: PushPull for [
             PE13<12>,
         ],
 
         /// A pin that can be used for data bus 11
-        <D11> for [
+        <D11> default: PushPull for [
             PE14<12>,
         ],
 
         /// A pin that can be used for data bus 12
-        <D12> for [
+        <D12> default: PushPull for [
             PE15<12>,
         ],
 
         /// A pin that can be used for data bus 13
-        <D13> for [
+        <D13> default: PushPull for [
             PD8<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1827,17 +1923,17 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for data bus 14
-        <D14> for [
+        <D14> default: PushPull for [
             PD9<12>,
         ],
 
         /// A pin that can be used for data bus 15
-        <D15> for [
+        <D15> default: PushPull for [
             PD10<12>,
         ],
 
         /// A pin that can be used for the output enable (read enable, NOE) signal
-        <ReadEnable> for [
+        <ReadEnable> default: PushPull for [
             PD4<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1845,7 +1941,7 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used for the write enable (NOE) signal
-        <WriteEnable> for [
+        <WriteEnable> default: PushPull for [
             PD5<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1858,7 +1954,7 @@ pub mod fsmc {
         /// A pin that can be used as one bit of the memory address
         ///
         /// This is used to switch between data and command mode.
-        <Address> for [
+        <Address> default: PushPull for [
             PD11<12>,
             PD12<12>,
             PD13<12>,
@@ -1890,22 +1986,22 @@ pub mod fsmc {
         ],
 
         /// A pin that can be used to enable a memory device on sub-bank 1
-        <ChipSelect1> for [
+        <ChipSelect1> default: PushPull for [
             PD7<12>,
         ],
 
         /// A pin that can be used to enable a memory device on sub-bank 2
-        <ChipSelect2> for [
+        <ChipSelect2> default: PushPull for [
             PG9<12>,
         ],
 
         /// A pin that can be used to enable a memory device on sub-bank 3
-        <ChipSelect3> for [
+        <ChipSelect3> default: PushPull for [
             PG10<12>,
         ],
 
         /// A pin that can be used to enable a memory device on sub-bank 4
-        <ChipSelect4> for [
+        <ChipSelect4> default: PushPull for [
             PG12<12>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -1923,10 +2019,10 @@ pub mod otg_fs {
     use super::*;
 
     pin! {
-        <Dm> for [
+        <Dm> default: PushPull for [
             PA11<10>,
         ],
-        <Dp> for [
+        <Dp> default: PushPull for [
             PA12<10>,
         ],
     }
@@ -1937,10 +2033,10 @@ pub mod otg_hs {
     use super::*;
 
     pin! {
-        <Dm> for [
+        <Dm> default: PushPull for [
             PB14<12>,
         ],
-        <Dp> for [
+        <Dp> default: PushPull for [
             PB15<12>,
         ],
     }
@@ -1950,52 +2046,52 @@ pub mod tim1 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PA8<1>,
 
             #[cfg(not(feature = "gpio-f410"))]
             PE9<1>,
         ],
-        <C2> for [
+        <Ch2> default: PushPull for [
             PA9<1>,
 
             #[cfg(not(feature = "gpio-f410"))]
             PE11<1>,
         ],
-        <C3> for [
+        <Ch3> default: PushPull for [
             PA10<1>,
 
             #[cfg(not(feature = "gpio-f410"))]
             PE13<1>,
         ],
-        <C4> for [
+        <Ch4> default: PushPull for [
             PA11<1>,
 
             #[cfg(not(feature = "gpio-f410"))]
             PE14<1>,
         ],
-        <NC1> for [
+        <Ch1N> default: PushPull for [
             PA7<1>,
             PB13<1>,
 
             #[cfg(not(feature = "gpio-f410"))]
             PE8<1>,
         ],
-        <NC2> for [
+        <Ch2N> default: PushPull for [
             PB0<1>,
             PB14<1>,
 
             #[cfg(not(feature = "gpio-f410"))]
             PE10<1>,
         ],
-        <NC3> for [
+        <Ch3N> default: PushPull for [
             PB1<1>,
             PB15<1>,
 
             #[cfg(not(feature = "gpio-f410"))]
             PE12<1>,
         ],
-        <Etr> for [
+        <Etr> default: PushPull for [
             PA12<1>,
 
             #[cfg(not(feature = "gpio-f410"))]
@@ -2004,7 +2100,7 @@ pub mod tim1 {
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
             PF10<1>,
         ],
-        <BkIn> for [
+        <Bkin> default: PushPull for [
             PA6<1>,
             PB12<1>,
 
@@ -2013,29 +2109,29 @@ pub mod tim1 {
         ],
     }
 
-    use crate::pac::TIM1;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM1 as TIM;
+    use crate::timer::{CPin, NCPin, C1, C2, C3, C4};
 
-    impl ChannelPin<0> for TIM1 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
-    impl ChannelPin<1> for TIM1 {
-        type Pin = C2;
+    impl CPin<C2> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
     }
-    impl ChannelPin<2> for TIM1 {
-        type Pin = C3;
+    impl CPin<C3> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
     }
-    impl ChannelPin<3> for TIM1 {
-        type Pin = C4;
+    impl CPin<C4> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
     }
-    impl ChannelPin<0, true> for TIM1 {
-        type Pin = NC1;
+    impl NCPin<C1> for TIM {
+        type ChN<Otype> = Ch1N<Otype>;
     }
-    impl ChannelPin<1, true> for TIM1 {
-        type Pin = NC2;
+    impl NCPin<C2> for TIM {
+        type ChN<Otype> = Ch2N<Otype>;
     }
-    impl ChannelPin<2, true> for TIM1 {
-        type Pin = NC3;
+    impl NCPin<C3> for TIM {
+        type ChN<Otype> = Ch3N<Otype>;
     }
 }
 
@@ -2044,7 +2140,7 @@ pub mod tim2 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PA0<1>,
             PA5<1>,
             PA15<1>,
@@ -2052,25 +2148,25 @@ pub mod tim2 {
             #[cfg(feature = "gpio-f446")]
             PB8<1>,
         ],
-        <C2> for [
+        <Ch2> default: PushPull for [
             PA1<1>,
             PB3<1>,
 
             #[cfg(feature = "gpio-f446")]
             PB9<1>,
         ],
-        <C3> for [
+        <Ch3> default: PushPull for [
             PA2<1>,
             PB10<1>,
         ],
-        <C4> for [
+        <Ch4> default: PushPull for [
             PA3<1>,
             PB11<1>,
 
             #[cfg(feature = "gpio-f446")]
             PB2<1>,
         ],
-        <Etr> for [
+        <Etr> default: PushPull for [
             PA0<1>,
             PA5<1>,
             PA15<1>,
@@ -2080,20 +2176,20 @@ pub mod tim2 {
         ],
     }
 
-    use crate::pac::TIM2;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM2 as TIM;
+    use crate::timer::{CPin, C1, C2, C3, C4};
 
-    impl ChannelPin<0> for TIM2 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
-    impl ChannelPin<1> for TIM2 {
-        type Pin = C2;
+    impl CPin<C2> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
     }
-    impl ChannelPin<2> for TIM2 {
-        type Pin = C3;
+    impl CPin<C3> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
     }
-    impl ChannelPin<3> for TIM2 {
-        type Pin = C4;
+    impl CPin<C4> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
     }
 }
 
@@ -2102,43 +2198,43 @@ pub mod tim3 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PA6<2>,
             PB4<2>,
             PC6<2>,
         ],
-        <C2> for [
+        <Ch2> default: PushPull for [
             PA7<2>,
             PB5<2>,
             PC7<2>,
         ],
-        <C3> for [
+        <Ch3> default: PushPull for [
             PB0<2>,
             PC8<2>,
         ],
-        <C4> for [
+        <Ch4> default: PushPull for [
             PB1<2>,
             PC9<2>,
         ],
-        <Etr> for [
+        <Etr> default: PushPull for [
             PD2<2>,
         ],
     }
 
-    use crate::pac::TIM3;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM3 as TIM;
+    use crate::timer::{CPin, C1, C2, C3, C4};
 
-    impl ChannelPin<0> for TIM3 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
-    impl ChannelPin<1> for TIM3 {
-        type Pin = C2;
+    impl CPin<C2> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
     }
-    impl ChannelPin<2> for TIM3 {
-        type Pin = C3;
+    impl CPin<C3> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
     }
-    impl ChannelPin<3> for TIM3 {
-        type Pin = C4;
+    impl CPin<C4> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
     }
 }
 
@@ -2147,41 +2243,41 @@ pub mod tim4 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PB6<2>,
             PD12<2>,
         ],
-        <C2> for [
+        <Ch2> default: PushPull for [
             PB7<2>,
             PD13<2>,
         ],
-        <C3> for [
+        <Ch3> default: PushPull for [
             PB8<2>,
             PD14<2>,
         ],
-        <C4> for [
+        <Ch4> default: PushPull for [
             PB9<2>,
             PD15<2>,
         ],
-        <Etr> for [
+        <Etr> default: PushPull for [
             PE0<2>,
         ],
     }
 
-    use crate::pac::TIM4;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM4 as TIM;
+    use crate::timer::{CPin, C1, C2, C3, C4};
 
-    impl ChannelPin<0> for TIM4 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
-    impl ChannelPin<1> for TIM4 {
-        type Pin = C2;
+    impl CPin<C2> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
     }
-    impl ChannelPin<2> for TIM4 {
-        type Pin = C3;
+    impl CPin<C3> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
     }
-    impl ChannelPin<3> for TIM4 {
-        type Pin = C4;
+    impl CPin<C4> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
     }
 }
 
@@ -2189,7 +2285,7 @@ pub mod tim5 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PA0<2>,
 
             #[cfg(feature = "gpio-f410")]
@@ -2201,7 +2297,7 @@ pub mod tim5 {
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PH10<2>,
         ],
-        <C2> for [
+        <Ch2> default: PushPull for [
             PA1<2>,
 
             #[cfg(feature = "gpio-f410")]
@@ -2213,7 +2309,7 @@ pub mod tim5 {
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PH11<2>,
         ],
-        <C3> for [
+        <Ch3> default: PushPull for [
             PA2<2>,
 
             #[cfg(feature = "gpio-f410")]
@@ -2225,7 +2321,7 @@ pub mod tim5 {
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PH12<2>,
         ],
-        <C4> for [
+        <Ch4> default: PushPull for [
             PA3<2>,
 
             #[cfg(feature = "gpio-f410")]
@@ -2239,20 +2335,20 @@ pub mod tim5 {
         ],
     }
 
-    use crate::pac::TIM5;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM5 as TIM;
+    use crate::timer::{CPin, C1, C2, C3, C4};
 
-    impl ChannelPin<0> for TIM5 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
-    impl ChannelPin<1> for TIM5 {
-        type Pin = C2;
+    impl CPin<C2> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
     }
-    impl ChannelPin<2> for TIM5 {
-        type Pin = C3;
+    impl CPin<C3> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
     }
-    impl ChannelPin<3> for TIM5 {
-        type Pin = C4;
+    impl CPin<C4> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
     }
 }
 
@@ -2268,52 +2364,52 @@ pub mod tim8 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PC6<3>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PI5<3>,
         ],
-        <C2> for [
+        <Ch2> default: PushPull for [
             PC7<3>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PI6<3>,
         ],
-        <C3> for [
+        <Ch3> default: PushPull for [
             PC8<3>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PI7<3>,
         ],
-        <C4> for [
+        <Ch4> default: PushPull for [
             PC9<3>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PI2<3>,
         ],
-        <NC1> for [
+        <Ch1N> default: PushPull for [
             PA5<3>,
             PA7<3>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PH13<3>,
         ],
-        <NC2> for [
+        <Ch2N> default: PushPull for [
             PB0<3>,
             PB14<3>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PH14<3>,
         ],
-        <NC3> for [
+        <Ch3N> default: PushPull for [
             PB1<3>,
             PB15<3>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PH15<3>,
         ],
-        <Etr> for [
+        <Etr> default: PushPull for [
             PA0<3>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -2322,7 +2418,7 @@ pub mod tim8 {
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PI3<3>,
         ],
-        <BkIn> for [
+        <Bkin> default: PushPull for [
             PA6<3>,
 
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
@@ -2333,29 +2429,29 @@ pub mod tim8 {
         ],
     }
 
-    use crate::pac::TIM8;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM8 as TIM;
+    use crate::timer::{CPin, NCPin, C1, C2, C3, C4};
 
-    impl ChannelPin<0> for TIM8 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
-    impl ChannelPin<1> for TIM8 {
-        type Pin = C2;
+    impl CPin<C2> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
     }
-    impl ChannelPin<2> for TIM8 {
-        type Pin = C3;
+    impl CPin<C3> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
     }
-    impl ChannelPin<3> for TIM8 {
-        type Pin = C4;
+    impl CPin<C4> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
     }
-    impl ChannelPin<0, true> for TIM8 {
-        type Pin = NC1;
+    impl NCPin<C1> for TIM {
+        type ChN<Otype> = Ch1N<Otype>;
     }
-    impl ChannelPin<1, true> for TIM8 {
-        type Pin = NC2;
+    impl NCPin<C2> for TIM {
+        type ChN<Otype> = Ch2N<Otype>;
     }
-    impl ChannelPin<2, true> for TIM8 {
-        type Pin = NC3;
+    impl NCPin<C3> for TIM {
+        type ChN<Otype> = Ch3N<Otype>;
     }
 }
 
@@ -2363,7 +2459,7 @@ pub mod tim9 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PA2<3>,
 
             #[cfg(not(feature = "gpio-f410"))]
@@ -2372,7 +2468,7 @@ pub mod tim9 {
             #[cfg(feature = "gpio-f410")]
             PC4<3>,
         ],
-        <C2> for [
+        <Ch2> default: PushPull for [
             PA3<3>,
 
             #[cfg(not(feature = "gpio-f410"))]
@@ -2383,14 +2479,14 @@ pub mod tim9 {
         ],
     }
 
-    use crate::pac::TIM9;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM9 as TIM;
+    use crate::timer::{CPin, C1, C2};
 
-    impl ChannelPin<0> for TIM9 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
-    impl ChannelPin<1> for TIM9 {
-        type Pin = C2;
+    impl CPin<C2> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
     }
 }
 
@@ -2399,7 +2495,7 @@ pub mod tim10 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PB8<3>,
 
             #[cfg(any(
@@ -2414,11 +2510,11 @@ pub mod tim10 {
         ],
     }
 
-    use crate::pac::TIM10;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM10 as TIM;
+    use crate::timer::{CPin, C1};
 
-    impl ChannelPin<0> for TIM10 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
 }
 
@@ -2426,7 +2522,7 @@ pub mod tim11 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PB9<3>,
 
             #[cfg(feature = "gpio-f410")]
@@ -2444,11 +2540,11 @@ pub mod tim11 {
         ],
     }
 
-    use crate::pac::TIM11;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM11 as TIM;
+    use crate::timer::{CPin, C1};
 
-    impl ChannelPin<0> for TIM11 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
 }
 
@@ -2464,13 +2560,13 @@ pub mod tim12 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PB14<9>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
             PH6<9>,
         ],
-        <C2> for [
+        <Ch2> default: PushPull for [
             PB15<9>,
 
             #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
@@ -2478,14 +2574,14 @@ pub mod tim12 {
         ],
     }
 
-    use crate::pac::TIM12;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM12 as TIM;
+    use crate::timer::{CPin, C1, C2};
 
-    impl ChannelPin<0> for TIM12 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
-    impl ChannelPin<1> for TIM12 {
-        type Pin = C2;
+    impl CPin<C2> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
     }
 }
 
@@ -2501,17 +2597,17 @@ pub mod tim13 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PA6<9>,
             PF8<9>,
         ],
     }
 
-    use crate::pac::TIM13;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM13 as TIM;
+    use crate::timer::{CPin, C1};
 
-    impl ChannelPin<0> for TIM13 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
 }
 
@@ -2527,16 +2623,16 @@ pub mod tim14 {
     use super::*;
 
     pin! {
-        <C1> for [
+        <Ch1> default: PushPull for [
             PA7<9>,
             PF9<9>,
         ],
     }
 
-    use crate::pac::TIM14;
-    use crate::timer::ChannelPin;
+    use crate::pac::TIM14 as TIM;
+    use crate::timer::{CPin, C1};
 
-    impl ChannelPin<0> for TIM14 {
-        type Pin = C1;
+    impl CPin<C1> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
     }
 }

@@ -9,7 +9,12 @@ use panic_halt as _; // panic handler
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 
-use crate::hal::{pac, prelude::*, timer::Channel, timer::Polarity};
+use hal::{
+    pac,
+    prelude::*,
+    timer::Channel,
+    timer::{Channel1, Polarity},
+};
 
 #[entry]
 fn main() -> ! {
@@ -20,7 +25,7 @@ fn main() -> ! {
 
         let gpioa = dp.GPIOA.split();
 
-        let channels = (gpioa.pa8.into_alternate(), gpioa.pa7.into_alternate());
+        let channels = Channel1::new(gpioa.pa8).with_complementary(gpioa.pa7);
 
         let mut pwm = dp.TIM1.pwm_hz(channels, 20.kHz(), &clocks);
 

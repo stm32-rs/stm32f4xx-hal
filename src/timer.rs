@@ -19,8 +19,6 @@ pub mod counter;
 pub use counter::*;
 pub mod delay;
 pub use delay::*;
-mod pins;
-pub use pins::*;
 pub mod pwm;
 pub use pwm::*;
 #[cfg(not(feature = "gpio-f410"))]
@@ -56,6 +54,19 @@ pub enum Channel {
     C3 = 2,
     C4 = 3,
 }
+pub trait CPin<const C: u8>: crate::Sealed {
+    type Ch<Otype>;
+}
+pub trait NCPin<const C: u8>: crate::Sealed {
+    type ChN<Otype>;
+}
+
+/// Channel wrapper
+pub struct Ch<const C: u8, const COMP: bool>;
+pub const C1: u8 = 0;
+pub const C2: u8 = 1;
+pub const C3: u8 = 2;
+pub const C4: u8 = 3;
 
 /// Enum for IO polarity
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

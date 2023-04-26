@@ -12,20 +12,23 @@
 //!
 //! Also there is [`PwmExt`] trait implemented on `pac::TIMx` to simplify creating new structure.
 //!
-//! You need to pass pins you plan to use and initial `time`/`frequency` corresponding PWM period.
-//! Pins can be collected in tuples in sequence corresponding to the channel number. Smaller channel number first.
-//! Each channel group can contain 1 or several main pins and 0, 1 or several complementary pins. Main pins first.
+//! You need to pass one or tuple of channels with pins you plan to use and initial `time`/`frequency` corresponding PWM period.
+//! Pins can be collected with [`ChannelBuilder`]s in sequence corresponding to the channel number. Smaller channel number first.
+//! Each channel group can contain 1 or several main pins and 0, 1 or several complementary pins.
+//! Start constructing channel with `new(first_main_pin)`.
+//! Then use `.with(other_main_pin)` and `.with_complementary(other_complementary_pin)` accordingly
+//! to add advanced pins on same channel.
 //!
 //! For example:
-//! ```plain,ignore
-//! ( (CH1, CHN1),    CH2,    ( (CH3_1, CH3_2), CHN3 ) )
-//!   | chan. 1 |  |chan. 2|  |       chan. 3        |
+//! ```rust
+//! let channels = (
+//!     Channel1::new(gpioa.pa8),
+//!     Channel2::new(gpioa.pa9), // use Channel2OD` for `OpenDrain` pin
+//! );
 //! ```
 //! or
 //! ```rust,ignore
-//! let channels = (gpioa.pa7.into_alternate(), gpioa.pa8.into_alternate()); // error: (CHN1, CH1)
-//!
-//! let channels = (gpioa.pa8.into_alternate(), gpioa.pa7.into_alternate()); // good: (CH1, CHN1)
+//! let channels = Channel1::new(gpioa.pa8).with_complementary(gpioa.pa7); // (CH1, CHN1)
 //! ```
 //!
 //! where `CHx` and `CHx_n` are main pins of PWM channel `x` and `CHNx` are complementary pins of PWM channel `x`.
@@ -34,15 +37,89 @@
 //! and change their polarity with `set_polarity` and `set_complementary_polarity`.
 
 use super::{
-    compute_arr_presc, Advanced, Channel, FTimer, IdleState, Instance, Ocm, Polarity, Timer,
-    WithPwm,
+    compute_arr_presc, Advanced, CPin, Channel, FTimer, IdleState, Instance, NCPin, Ocm, Polarity,
+    Timer, WithPwm,
 };
+pub use super::{Ch, C1, C2, C3, C4};
+use crate::gpio::{OpenDrain, PushPull};
 use crate::rcc::Clocks;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use fugit::{HertzU32 as Hertz, TimerDurationU32};
 
-pub trait Pins<TIM, P> {
+pub type Channel1<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C1, COMP, PushPull>;
+pub type Channel2<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C2, COMP, PushPull>;
+pub type Channel3<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C3, COMP, PushPull>;
+pub type Channel4<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C4, COMP, PushPull>;
+pub type Channel1OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C1, COMP, OpenDrain>;
+pub type Channel2OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C2, COMP, OpenDrain>;
+pub type Channel3OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C3, COMP, OpenDrain>;
+pub type Channel4OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C4, COMP, OpenDrain>;
+
+pub struct ChannelBuilder<TIM, const C: u8, const COMP: bool = false, Otype = PushPull> {
+    pub(super) _tim: PhantomData<(TIM, Otype)>,
+}
+
+impl<TIM, Otype, const C: u8> ChannelBuilder<TIM, C, false, Otype>
+where
+    TIM: CPin<C>,
+{
+    pub fn new(_pin: impl Into<TIM::Ch<Otype>>) -> Self {
+        Self { _tim: PhantomData }
+    }
+}
+impl<TIM, Otype, const C: u8, const COMP: bool> ChannelBuilder<TIM, C, COMP, Otype>
+where
+    TIM: CPin<C>,
+{
+    pub fn with(self, _pin: impl Into<TIM::Ch<Otype>>) -> Self {
+        self
+    }
+}
+impl<TIM, Otype, const C: u8, const COMP: bool> ChannelBuilder<TIM, C, COMP, Otype>
+where
+    TIM: NCPin<C>,
+{
+    pub fn with_complementary(
+        self,
+        _pin: impl Into<TIM::ChN<Otype>>,
+    ) -> ChannelBuilder<TIM, C, true, Otype> {
+        ChannelBuilder { _tim: PhantomData }
+    }
+}
+
+impl<TIM, Otype, const C: u8, const COMP: bool> sealed::Split
+    for ChannelBuilder<TIM, C, COMP, Otype>
+{
+    type Channels = PwmChannel<TIM, C, COMP>;
+    fn split() -> Self::Channels {
+        PwmChannel::new()
+    }
+}
+
+mod sealed {
+    pub trait Split {
+        type Channels;
+        fn split() -> Self::Channels;
+    }
+    macro_rules! split {
+        ($($T:ident),+) => {
+            impl<$($T),+> Split for ($($T),+)
+            where
+                $($T: Split,)+
+            {
+                type Channels = ($($T::Channels),+);
+                fn split() -> Self::Channels {
+                    ($($T::split()),+)
+                }
+            }
+        };
+    }
+    split!(T1, T2);
+    split!(T1, T2, T3);
+    split!(T1, T2, T3, T4);
+}
+pub trait Pins<TIM>: sealed::Split {
     const C1: bool = false;
     const C2: bool = false;
     const C3: bool = false;
@@ -51,7 +128,6 @@ pub trait Pins<TIM, P> {
     const NC2: bool = false;
     const NC3: bool = false;
     const NC4: bool = false;
-    type Channels;
 
     fn check_used(c: Channel) -> Channel {
         if (c == Channel::C1 && Self::C1)
@@ -76,111 +152,74 @@ pub trait Pins<TIM, P> {
             panic!("Unused channel")
         }
     }
-
-    fn split() -> Self::Channels;
 }
-pub use super::{CPin, Ch, NCPin, C1, C2, C3, C4};
-
-pub struct PwmChannel<TIM, const C: u8, const COMP: bool = false> {
-    pub(super) _tim: PhantomData<TIM>,
-}
-
-pub trait PwmPin<TIM, const C: u8, const COMP: bool = false> {}
 
 macro_rules! pins_impl {
-    ( $( ( $($PINX:ident),+ ), ( $($ENCHX:ident),+ ), ( $($COMP:ident),+ ); )+ ) => {
+    ( $( $(($Otype:ident, $ENCHX:ident, $COMP:ident)),+; )+ ) => {
         $(
             #[allow(unused_parens)]
-            impl<TIM, $($PINX,)+ $(const $COMP: bool,)+> Pins<TIM, ($(Ch<$ENCHX, $COMP>),+)> for ($($PINX),+)
-            where
-                TIM: Instance + WithPwm,
-                $($PINX: PwmPin<TIM, $ENCHX, $COMP>,)+
-            {
-                $(const $ENCHX: bool = true;)+
-                $(const $COMP: bool = $COMP;)+
-                type Channels = ($(PwmChannel<TIM, $ENCHX, $COMP>),+);
-                fn split() -> Self::Channels {
-                    ($(PwmChannel::<TIM, $ENCHX, $COMP>::new()),+)
-                }
+            impl<TIM, $($Otype, const $COMP: bool,)+> Pins<TIM> for ($(ChannelBuilder<TIM, $ENCHX, $COMP, $Otype>),+) {
+                $(
+                    const $ENCHX: bool = true;
+                    const $COMP: bool = $COMP;
+                )+
             }
         )+
     };
 }
 
 pins_impl!(
-    (P1, P2, P3, P4), (C1, C2, C3, C4), (NC1, NC2, NC3, NC4);
-    (P2, P3, P4), (C2, C3, C4), (NC2, NC3, NC4);
-    (P1, P3, P4), (C1, C3, C4), (NC1, NC3, NC4);
-    (P1, P2, P4), (C1, C2, C4), (NC1, NC2, NC4);
-    (P1, P2, P3), (C1, C2, C3), (NC1, NC2, NC3);
-    (P3, P4), (C3, C4), (NC3, NC4);
-    (P2, P4), (C2, C4), (NC2, NC4);
-    (P2, P3), (C2, C3), (NC2, NC3);
-    (P1, P4), (C1, C4), (NC1, NC4);
-    (P1, P3), (C1, C3), (NC1, NC3);
-    (P1, P2), (C1, C2), (NC1, NC2);
-    (P1), (C1), (NC1);
-    (P2), (C2), (NC2);
-    (P3), (C3), (NC3);
-    (P4), (C4), (NC4);
+    (O1, C1, NC1), (O2, C2, NC2), (O3, C3, NC3), (O4, C4, NC4);
+
+                   (O2, C2, NC2), (O3, C3, NC3), (O4, C4, NC4);
+    (O1, C1, NC1),                (O3, C3, NC3), (O4, C4, NC4);
+    (O1, C1, NC1), (O2, C2, NC2),                (O4, C4, NC4);
+    (O1, C1, NC1), (O2, C2, NC2), (O3, C3, NC3);
+
+                                  (O3, C3, NC3), (O4, C4, NC4);
+                   (O2, C2, NC2),                (O4, C4, NC4);
+                   (O2, C2, NC2), (O3, C3, NC3);
+    (O1, C1, NC1),                               (O4, C4, NC4);
+    (O1, C1, NC1),                (O3, C3, NC3);
+    (O1, C1, NC1), (O2, C2, NC2);
+
+    (O1, C1, NC1);
+                   (O2, C2, NC2);
+                                  (O3, C3, NC3);
+                                                 (O4, C4, NC4);
 );
 
-macro_rules! tuples {
-    ( $( $trait:ident, ( $($PX:ident),+ ); )+ ) => {
-        $(
-            impl<TIM, $($PX,)+ const C: u8> $trait<TIM, C> for ($($PX),+)
-            where
-                $($PX: CPin<TIM, C>,)+
-            {
-            }
-        )+
-    };
-}
-
-tuples! {
-    CPin, (P1, P2);
-    CPin, (P1, P2, P3);
-    CPin, (P1, P2, P3, P4);
-    NCPin, (P1, P2);
-    NCPin, (P1, P2, P3);
-    NCPin, (P1, P2, P3, P4);
-}
-
-impl<P, TIM, const C: u8> PwmPin<TIM, C> for P where P: CPin<TIM, C> {}
-impl<P, NP, TIM, const C: u8> PwmPin<TIM, C, true> for (P, NP)
-where
-    P: CPin<TIM, C>,
-    NP: NCPin<TIM, C>,
-{
+pub struct PwmChannel<TIM, const C: u8, const COMP: bool = false> {
+    pub(super) _tim: PhantomData<TIM>,
 }
 
 pub trait PwmExt
 where
     Self: Sized + Instance + WithPwm,
 {
-    fn pwm<P, PINS, const FREQ: u32>(
+    fn pwm<PINS, const FREQ: u32>(
         self,
         pins: PINS,
         time: TimerDurationU32<FREQ>,
         clocks: &Clocks,
-    ) -> Pwm<Self, P, PINS, FREQ>
+    ) -> Pwm<Self, PINS, FREQ>
     where
-        PINS: Pins<Self, P>;
+        PINS: Pins<Self>;
 
-    fn pwm_hz<P, PINS>(self, pins: PINS, freq: Hertz, clocks: &Clocks) -> PwmHz<Self, P, PINS>
+    fn pwm_hz<PINS>(self, pins: PINS, freq: Hertz, clocks: &Clocks) -> PwmHz<Self, PINS>
     where
-        PINS: Pins<Self, P>;
+        PINS: Pins<Self>;
 
-    fn pwm_us<P, PINS>(
+    fn pwm_us<PINS>(
         self,
         pins: PINS,
         time: TimerDurationU32<1_000_000>,
         clocks: &Clocks,
-    ) -> Pwm<Self, P, PINS, 1_000_000>
+    ) -> Pwm<Self, PINS, 1_000_000>
     where
-        PINS: Pins<Self, P>,
+        PINS: Pins<Self>,
     {
-        self.pwm::<_, _, 1_000_000>(pins, time, clocks)
+        self.pwm::<_, 1_000_000>(pins, time, clocks)
     }
 }
 
@@ -188,21 +227,21 @@ impl<TIM> PwmExt for TIM
 where
     Self: Sized + Instance + WithPwm,
 {
-    fn pwm<P, PINS, const FREQ: u32>(
+    fn pwm<PINS, const FREQ: u32>(
         self,
         pins: PINS,
         time: TimerDurationU32<FREQ>,
         clocks: &Clocks,
-    ) -> Pwm<TIM, P, PINS, FREQ>
+    ) -> Pwm<TIM, PINS, FREQ>
     where
-        PINS: Pins<Self, P>,
+        PINS: Pins<Self>,
     {
         FTimer::<Self, FREQ>::new(self, clocks).pwm(pins, time)
     }
 
-    fn pwm_hz<P, PINS>(self, pins: PINS, time: Hertz, clocks: &Clocks) -> PwmHz<TIM, P, PINS>
+    fn pwm_hz<PINS>(self, pins: PINS, time: Hertz, clocks: &Clocks) -> PwmHz<TIM, PINS>
     where
-        PINS: Pins<Self, P>,
+        PINS: Pins<Self>,
     {
         Timer::new(self, clocks).pwm_hz(pins, time)
     }
@@ -288,19 +327,19 @@ impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
     }
 }
 
-pub struct PwmHz<TIM, P, PINS>
+pub struct PwmHz<TIM, PINS>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     timer: Timer<TIM>,
-    _pins: PhantomData<(P, PINS)>,
+    _pins: PhantomData<PINS>,
 }
 
-impl<TIM, P, PINS> PwmHz<TIM, P, PINS>
+impl<TIM, PINS> PwmHz<TIM, PINS>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     pub fn release(mut self) -> Timer<TIM> {
         // stop timer
@@ -313,10 +352,10 @@ where
     }
 }
 
-impl<TIM, P, PINS> Deref for PwmHz<TIM, P, PINS>
+impl<TIM, PINS> Deref for PwmHz<TIM, PINS>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     type Target = Timer<TIM>;
     fn deref(&self) -> &Self::Target {
@@ -324,10 +363,10 @@ where
     }
 }
 
-impl<TIM, P, PINS> DerefMut for PwmHz<TIM, P, PINS>
+impl<TIM, PINS> DerefMut for PwmHz<TIM, PINS>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.timer
@@ -335,9 +374,9 @@ where
 }
 
 impl<TIM: Instance + WithPwm> Timer<TIM> {
-    pub fn pwm_hz<P, PINS>(mut self, _pins: PINS, freq: Hertz) -> PwmHz<TIM, P, PINS>
+    pub fn pwm_hz<PINS>(mut self, _pins: PINS, freq: Hertz) -> PwmHz<TIM, PINS>
     where
-        PINS: Pins<TIM, P>,
+        PINS: Pins<TIM>,
     {
         if PINS::C1 {
             self.tim
@@ -377,10 +416,10 @@ impl<TIM: Instance + WithPwm> Timer<TIM> {
     }
 }
 
-impl<TIM, P, PINS> PwmHz<TIM, P, PINS>
+impl<TIM, PINS> PwmHz<TIM, PINS>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     /// Enable PWM output of the timer on channel `channel`
     #[inline]
@@ -446,10 +485,10 @@ where
     }
 }
 
-impl<TIM, P, PINS> PwmHz<TIM, P, PINS>
+impl<TIM, PINS> PwmHz<TIM, PINS>
 where
     TIM: Instance + WithPwm + Advanced,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     /// Enable complementary PWM output of the timer on channel `channel`
     #[inline]
@@ -491,7 +530,7 @@ where
 
     /// Get raw dead time (DTG) bits
     #[inline]
-    pub fn get_dead_time_bits(&self) -> u8 {
+    pub fn get_dead_time_bit(&self) -> u8 {
         TIM::read_dtg_value()
     }
 
@@ -508,19 +547,19 @@ where
     }
 }
 
-pub struct Pwm<TIM, P, PINS, const FREQ: u32>
+pub struct Pwm<TIM, PINS, const FREQ: u32>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     timer: FTimer<TIM, FREQ>,
-    _pins: PhantomData<(P, PINS)>,
+    _pins: PhantomData<PINS>,
 }
 
-impl<TIM, P, PINS, const FREQ: u32> Pwm<TIM, P, PINS, FREQ>
+impl<TIM, PINS, const FREQ: u32> Pwm<TIM, PINS, FREQ>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     pub fn split(self) -> PINS::Channels {
         PINS::split()
@@ -533,10 +572,10 @@ where
     }
 }
 
-impl<TIM, P, PINS, const FREQ: u32> Deref for Pwm<TIM, P, PINS, FREQ>
+impl<TIM, PINS, const FREQ: u32> Deref for Pwm<TIM, PINS, FREQ>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     type Target = FTimer<TIM, FREQ>;
     fn deref(&self) -> &Self::Target {
@@ -544,10 +583,10 @@ where
     }
 }
 
-impl<TIM, P, PINS, const FREQ: u32> DerefMut for Pwm<TIM, P, PINS, FREQ>
+impl<TIM, PINS, const FREQ: u32> DerefMut for Pwm<TIM, PINS, FREQ>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.timer
@@ -555,13 +594,9 @@ where
 }
 
 impl<TIM: Instance + WithPwm, const FREQ: u32> FTimer<TIM, FREQ> {
-    pub fn pwm<P, PINS>(
-        mut self,
-        _pins: PINS,
-        time: TimerDurationU32<FREQ>,
-    ) -> Pwm<TIM, P, PINS, FREQ>
+    pub fn pwm<PINS>(mut self, _pins: PINS, time: TimerDurationU32<FREQ>) -> Pwm<TIM, PINS, FREQ>
     where
-        PINS: Pins<TIM, P>,
+        PINS: Pins<TIM>,
     {
         if PINS::C1 {
             self.tim
@@ -599,10 +634,10 @@ impl<TIM: Instance + WithPwm, const FREQ: u32> FTimer<TIM, FREQ> {
     }
 }
 
-impl<TIM, P, PINS, const FREQ: u32> Pwm<TIM, P, PINS, FREQ>
+impl<TIM, PINS, const FREQ: u32> Pwm<TIM, PINS, FREQ>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     /// Enable PWM output of the timer on channel `channel`
     #[inline]
@@ -670,10 +705,10 @@ where
     }
 }
 
-impl<TIM, P, PINS, const FREQ: u32> Pwm<TIM, P, PINS, FREQ>
+impl<TIM, PINS, const FREQ: u32> Pwm<TIM, PINS, FREQ>
 where
     TIM: Instance + WithPwm + Advanced,
-    PINS: Pins<TIM, P>,
+    PINS: Pins<TIM>,
 {
     /// Enable complementary PWM output of the timer on channel `channel`
     #[inline]

@@ -6,7 +6,11 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
-use stm32f4xx_hal::{pac, prelude::*};
+use stm32f4xx_hal::{
+    pac,
+    prelude::*,
+    timer::{Channel1, Channel2},
+};
 
 #[entry]
 fn main() -> ! {
@@ -16,7 +20,7 @@ fn main() -> ! {
         let clocks = rcc.cfgr.freeze();
 
         let gpioa = dp.GPIOA.split();
-        let channels = (gpioa.pa8.into_alternate(), gpioa.pa9.into_alternate());
+        let channels = (Channel1::new(gpioa.pa8), Channel2::new(gpioa.pa9));
 
         let pwm = dp.TIM1.pwm_hz(channels, 20.kHz(), &clocks).split();
         let (mut ch1, _ch2) = pwm;
