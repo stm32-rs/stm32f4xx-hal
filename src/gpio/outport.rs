@@ -7,15 +7,15 @@ pub trait OutPort {
 }
 
 macro_rules! out_port {
-    ( $name:ident => $n:literal, ( $($i:literal),+ ), ( $($N:ident),+ )) => {
+    ( $name:ident => $n:literal, ( $($i:tt),+ ), ( $($N:ident),+ )) => {
         pub struct $name<const P: char $(, const $N: u8)+> (
-            pub ($(Pin<P, $N, Output<PushPull>>,)+)
+            $(pub Pin<P, $N, Output<PushPull>>,)+
         );
 
         impl<const P: char $(, const $N: u8)+> OutPort for ($(Pin<P, $N, Output<PushPull>>),+) {
             type Target = $name<P $(, $N)+>;
             fn outport(self) -> Self::Target {
-                $name(self)
+                $name($(self.$i),+)
             }
         }
 
