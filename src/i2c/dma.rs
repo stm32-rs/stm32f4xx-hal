@@ -924,3 +924,13 @@ unsafe impl<I2C: Instance> PeriAddress for Tx<I2C> {
 
     type MemSize = u8;
 }
+
+unsafe impl<I2C, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory> for Rx<I2C> where
+    I2C: DMASet<STREAM, CHANNEL, PeripheralToMemory>
+{
+}
+
+unsafe impl<I2C, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral> for Tx<I2C> where
+    I2C: DMASet<STREAM, CHANNEL, MemoryToPeripheral>
+{
+}

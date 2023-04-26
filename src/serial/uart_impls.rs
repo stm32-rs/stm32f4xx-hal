@@ -1,3 +1,5 @@
+use crate::dma::{traits::DMASet, MemoryToPeripheral, PeripheralToMemory};
+
 use super::*;
 
 impl<UART: CommonPins> Rx<UART, u8> {
@@ -410,6 +412,13 @@ unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     type MemSize = u8;
 }
 
+unsafe impl<UART: CommonPins, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory>
+    for Rx<UART>
+where
+    UART: DMASet<STREAM, CHANNEL, PeripheralToMemory>,
+{
+}
+
 unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -417,4 +426,11 @@ unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     }
 
     type MemSize = u8;
+}
+
+unsafe impl<UART: CommonPins, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral>
+    for Tx<UART>
+where
+    UART: DMASet<STREAM, CHANNEL, MemoryToPeripheral>,
+{
 }

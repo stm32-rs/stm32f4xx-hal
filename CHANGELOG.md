@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Add autoimplementations of `DMASet` [#614]
  - Simplify `gpio::Outport` [#611]
  - Split SPI master and slave implementations [#609]
  - Split USART and UART implementations [#608]
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#608]: https://github.com/stm32-rs/stm32f4xx-hal/pull/608
 [#609]: https://github.com/stm32-rs/stm32f4xx-hal/pull/609
 [#611]: https://github.com/stm32-rs/stm32f4xx-hal/pull/611
+[#614]: https://github.com/stm32-rs/stm32f4xx-hal/pull/614
 
 ## [v0.15.0] - 2023-03-13
 

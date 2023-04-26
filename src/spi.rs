@@ -2,7 +2,8 @@ use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use core::ptr;
 
-use crate::dma::traits::PeriAddress;
+use crate::dma::traits::{DMASet, PeriAddress};
+use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
 use crate::gpio::{self, NoPin};
 use crate::pac;
 
@@ -861,6 +862,11 @@ unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
     type MemSize = u8;
 }
 
+unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory> for Rx<SPI> where
+    SPI: DMASet<STREAM, CHANNEL, PeripheralToMemory>
+{
+}
+
 unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -868,6 +874,11 @@ unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     }
 
     type MemSize = u8;
+}
+
+unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral> for Tx<SPI> where
+    SPI: DMASet<STREAM, CHANNEL, MemoryToPeripheral>
+{
 }
 
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {

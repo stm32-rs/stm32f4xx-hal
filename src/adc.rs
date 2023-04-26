@@ -8,7 +8,8 @@
     Temperature in °C = (110-30) * (adc_sample - VtempCal30::get().read()) / (VtempCal110::get().read()-VtempCal30::get().read()) + 30
 */
 
-use crate::dma::traits::{PeriAddress, SafePeripheralRead};
+use crate::dma::traits::{DMASet, PeriAddress, SafePeripheralRead};
+use crate::dma::PeripheralToMemory;
 use crate::rcc::{Enable, Reset};
 use crate::{
     gpio::{self, Analog},
@@ -1094,6 +1095,11 @@ macro_rules! adc {
             }
         )+
     };
+}
+
+unsafe impl<ADC, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory> for Adc<ADC> where
+    ADC: DMASet<STREAM, CHANNEL, PeripheralToMemory>
+{
 }
 
 adc!(ADC1 => (adc1, ADC_COMMON, 8));
