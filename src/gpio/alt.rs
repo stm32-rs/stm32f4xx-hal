@@ -1,4 +1,4 @@
-use super::{Alternate, NoPin, OpenDrain, PinMode, PushPull};
+use super::{marker, Alternate, NoPin, OpenDrain, PinMode, PushPull};
 use crate::gpio::{self, Edge, ExtiPin};
 use crate::pac::EXTI;
 use crate::syscfg::SysCfg;
@@ -129,11 +129,11 @@ macro_rules! pin {
 
             $(
                 $(#[$attr])*
-                impl From<gpio::$PX> for $name
+                impl<MODE> From<gpio::$PX<MODE>> for $name
                 where
-                    Alternate<$A, $Otype>: PinMode,
+                    MODE: marker::NotAlt + PinMode
                 {
-                    fn from(p: gpio::$PX) -> Self {
+                    fn from(p: gpio::$PX<MODE>) -> Self {
                         Self::$PX(p.into_mode())
                     }
                 }
@@ -228,11 +228,12 @@ macro_rules! pin {
 
             $(
                 $(#[$attr])*
-                impl<Otype> From<gpio::$PX> for $name<Otype>
+                impl<MODE, Otype> From<gpio::$PX<MODE>> for $name<Otype>
                 where
+                    MODE: marker::NotAlt + PinMode,
                     Alternate<$A, Otype>: PinMode,
                 {
-                    fn from(p: gpio::$PX) -> Self {
+                    fn from(p: gpio::$PX<MODE>) -> Self {
                         Self::$PX(p.into_mode())
                     }
                 }
