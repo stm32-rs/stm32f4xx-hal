@@ -52,17 +52,11 @@ mod nb {
         SPI: Instance,
     {
         fn read(&mut self) -> nb::Result<W, Error> {
-            if BIDI {
-                self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
-            }
-            self.check_read()
+            self.read_nonblocking()
         }
 
         fn write(&mut self, byte: W) -> nb::Result<(), Error> {
-            if BIDI {
-                self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
-            }
-            self.check_send(byte)
+            self.write_nonblocking(byte)
         }
     }
 }
@@ -79,23 +73,11 @@ mod blocking {
         SPI: Instance,
     {
         fn transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
-                *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
-            }
-
-            Ok(())
+            self.transfer_in_place(words)
         }
 
         fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Self::Error> {
-            assert_eq!(data.len(), buff.len());
-
-            for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
-                nb::block!(<Self as FullDuplex<W>>::write(self, d))?;
-                *b = nb::block!(<Self as FullDuplex<W>>::read(self))?;
-            }
-
-            Ok(())
+            self.transfer(buff, data)
         }
     }
 
@@ -114,9 +96,9 @@ mod blocking {
     {
         fn write(&mut self, words: &[W]) -> Result<(), Self::Error> {
             for word in words {
-                nb::block!(<Self as FullDuplex<W>>::write(self, *word))?;
+                nb::block!(self.write_nonblocking(*word))?;
                 if !BIDI {
-                    nb::block!(<Self as FullDuplex<W>>::read(self))?;
+                    nb::block!(self.read_nonblocking())?;
                 }
             }
 
