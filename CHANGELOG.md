@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Cleanups [#595]
  - Fix comlementary for independent channels [#599] [#603]
  - I2c dma can now use single DMA channel for TX or RX only [#598]
+ - `ws2812::prerendered` in example
 
 [#585]: https://github.com/stm32-rs/stm32f4xx-hal/pull/585
 [#593]: https://github.com/stm32-rs/stm32f4xx-hal/pull/593
