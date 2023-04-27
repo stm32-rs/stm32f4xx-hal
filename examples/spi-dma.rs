@@ -22,7 +22,7 @@ const ARRAY_SIZE: usize = 100;
 type SpiDma = Transfer<
     Stream4<pac::DMA1>,
     0,
-    Tx<pac::SPI2>,
+    Tx<pac::SPI2, false>,
     MemoryToPeripheral,
     &'static mut [u8; ARRAY_SIZE],
 >;
