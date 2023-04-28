@@ -105,7 +105,7 @@ impl<CAN: Instance> Can<CAN> {
     where
         NoPin: Into<CAN::Rx>,
     {
-        Self::new(usart, (tx_pin, NoPin::new()))
+        Self::new(usart, (tx_pin, NoPin))
     }
 }
 
@@ -114,7 +114,7 @@ impl<CAN: Instance> Can<CAN> {
     where
         NoPin: Into<CAN::Tx>,
     {
-        Self::new(usart, (NoPin::new(), rx_pin))
+        Self::new(usart, (NoPin, rx_pin))
     }
 }
 

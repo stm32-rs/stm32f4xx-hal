@@ -75,7 +75,7 @@ macro_rules! pin {
             $(#[$docs])*
             pub enum $name {
                 $(
-                    None($NoPin<$Otype>),
+                    $NoPin,
                 )?
 
                 $(
@@ -107,22 +107,9 @@ macro_rules! pin {
             }
 
             $(
-                impl From<$NoPin<$Otype>> for $name {
-                    fn from(p: $NoPin<$Otype>) -> Self {
-                        Self::None(p)
-                    }
-                }
-
-                #[allow(irrefutable_let_patterns)]
-                impl TryFrom<$name> for $NoPin<$Otype> {
-                    type Error = ();
-
-                    fn try_from(a: $name) -> Result<Self, Self::Error> {
-                        if let $name::None(p) = a {
-                            Ok(p)
-                        } else {
-                            Err(())
-                        }
+                impl From<$NoPin> for $name {
+                    fn from(_p: $NoPin) -> Self {
+                        Self::$NoPin
                     }
                 }
             )?
@@ -174,7 +161,7 @@ macro_rules! pin {
             $(#[$docs])*
             pub enum $name<Otype = $DefaultOtype> {
                 $(
-                    None($NoPin<Otype>),
+                    $NoPin,
                 )?
 
                 $(
@@ -206,22 +193,9 @@ macro_rules! pin {
             }
 
             $(
-                impl<Otype> From<$NoPin<Otype>> for $name<Otype> {
-                    fn from(p: $NoPin<Otype>) -> Self {
-                        Self::None(p)
-                    }
-                }
-
-                #[allow(irrefutable_let_patterns)]
-                impl<Otype> TryFrom<$name<Otype>> for $NoPin<Otype> {
-                    type Error = ();
-
-                    fn try_from(a: $name<Otype>) -> Result<Self, Self::Error> {
-                        if let $name::None(p) = a {
-                            Ok(p)
-                        } else {
-                            Err(())
-                        }
+                impl<Otype> From<$NoPin> for $name<Otype> {
+                    fn from(_p: $NoPin) -> Self {
+                        Self::$NoPin
                     }
                 }
             )?

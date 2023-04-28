@@ -4,7 +4,7 @@ use core::ptr;
 
 use crate::dma::traits::{DMASet, PeriAddress};
 use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
-use crate::gpio::{self, NoPin};
+use crate::gpio;
 use crate::pac;
 
 /// Clock polarity
@@ -57,11 +57,11 @@ pub enum Error {
 }
 
 /// A filler type for when the SCK pin is unnecessary
-pub type NoSck = NoPin;
+pub use gpio::NoPin as NoSck;
 /// A filler type for when the Miso pin is unnecessary
-pub type NoMiso = NoPin;
+pub use gpio::NoPin as NoMiso;
 /// A filler type for when the Mosi pin is unnecessary
-pub type NoMosi = NoPin;
+pub use gpio::NoPin as NoMosi;
 
 /// Interrupt events
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
