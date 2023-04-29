@@ -351,12 +351,31 @@ macro_rules! dma_map {
 }
 use dma_map;
 
+/*
+#[cfg(feature = "c0")]
+mod c0;
+#[allow(unused)]
+#[cfg(feature = "c0")]
+pub use c0::*;
+
+#[cfg(feature = "f0")]
+mod f0;
+#[allow(unused)]
+#[cfg(feature = "f0")]
+pub use f0::*;
+
 #[cfg(feature = "f2")]
 mod f2;
 #[allow(unused)]
 #[cfg(feature = "f2")]
 pub use f2::*;
 
+#[cfg(feature = "f3")]
+mod f3;
+#[allow(unused)]
+#[cfg(feature = "f3")]
+pub use f3::*;
+*/
 #[cfg(feature = "f4")]
 mod f4;
 #[allow(unused)]
@@ -368,6 +387,73 @@ mod f7;
 #[allow(unused)]
 #[cfg(feature = "f7")]
 pub use f7::*;
+/*
+#[cfg(feature = "g0")]
+mod g0;
+#[allow(unused)]
+#[cfg(feature = "g0")]
+pub use g0::*;
+*/
+#[cfg(feature = "g4")]
+mod g4;
+#[allow(unused)]
+#[cfg(feature = "g4")]
+pub use g4::*;
+/*
+#[cfg(feature = "h7")]
+mod h7;
+#[allow(unused)]
+#[cfg(feature = "h7")]
+pub use h7::*;
+
+#[cfg(feature = "l0")]
+mod l0;
+#[allow(unused)]
+#[cfg(feature = "l0")]
+pub use l0::*;
+
+#[cfg(feature = "l1")]
+mod l1;
+#[allow(unused)]
+#[cfg(feature = "l1")]
+pub use l1::*;
+*/
+#[cfg(feature = "l4x")]
+mod l4;
+#[allow(unused)]
+#[cfg(feature = "l4x")]
+pub use l4::*;
+/*
+#[cfg(feature = "l4p")]
+mod l4p;
+#[allow(unused)]
+#[cfg(feature = "l4p")]
+pub use l4p::*;
+
+#[cfg(feature = "l5")]
+mod l5;
+#[allow(unused)]
+#[cfg(feature = "l5")]
+pub use l5::*;
+
+#[cfg(feature = "u5")]
+mod u5;
+#[allow(unused)]
+#[cfg(feature = "u5")]
+pub use u5::*;
+
+#[cfg(feature = "wl")]
+mod wl;
+#[allow(unused)]
+#[cfg(feature = "wl")]
+pub use wl::*;
+
+#[cfg(feature = "wb")]
+mod wb;
+#[allow(unused)]
+#[cfg(feature = "wb")]
+pub use wb::*;
+*/
 
 #[cfg(feature = "dfsdm")]
 pub struct FLT<T, const F: u8> {

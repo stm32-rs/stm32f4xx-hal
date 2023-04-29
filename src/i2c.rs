@@ -15,6 +15,7 @@ mod hal_1;
 pub use common::{Address, Error, NoAcknowledgeSource};
 use common::{Hal02Operation, Hal1Operation};
 
+#[cfg(feature = "dma")]
 pub mod dma;
 
 #[derive(Debug, Eq, PartialEq)]

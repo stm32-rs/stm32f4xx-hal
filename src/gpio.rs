@@ -618,10 +618,25 @@ macro_rules! gpio {
 }
 use gpio;
 
+#[cfg(feature = "c0")]
+mod c0;
+#[cfg(feature = "c0")]
+pub use c0::*;
+
+#[cfg(feature = "f0")]
+mod f0;
+#[cfg(feature = "f0")]
+pub use f0::*;
+
 #[cfg(feature = "f2")]
 mod f2;
 #[cfg(feature = "f2")]
 pub use f2::*;
+
+#[cfg(feature = "f3")]
+mod f3;
+#[cfg(feature = "f3")]
+pub use f3::*;
 
 #[cfg(feature = "f4")]
 mod f4;
@@ -633,10 +648,66 @@ mod f7;
 #[cfg(feature = "f7")]
 pub use f7::*;
 
+#[cfg(feature = "g0")]
+mod g0;
+#[cfg(feature = "g0")]
+pub use g0::*;
+
+#[cfg(feature = "g4")]
+mod g4;
+#[cfg(feature = "g4")]
+pub use g4::*;
+
+#[cfg(feature = "h7")]
+mod h7;
+#[cfg(feature = "h7")]
+pub use h7::*;
+
+#[cfg(feature = "l0")]
+mod l0;
+#[cfg(feature = "l0")]
+pub use l0::*;
+
+#[cfg(feature = "l1")]
+mod l1;
+#[cfg(feature = "l1")]
+pub use l1::*;
+
+#[cfg(feature = "l4x")]
+mod l4;
+#[cfg(feature = "l4x")]
+pub use l4::*;
+
+#[cfg(feature = "l4p")]
+mod l4p;
+#[cfg(feature = "l4p")]
+pub use l4p::*;
+
+#[cfg(feature = "l5")]
+mod l5;
+#[cfg(feature = "l5")]
+pub use l5::*;
+
+#[cfg(feature = "u5")]
+mod u5;
+#[cfg(feature = "u5")]
+pub use u5::*;
+
+#[cfg(feature = "wl")]
+mod wl;
+#[cfg(feature = "wl")]
+pub use wl::*;
+
+#[cfg(feature = "wb")]
+mod wb;
+#[cfg(feature = "wb")]
+pub use wb::*;
+
 const fn gpiox<const P: char>() -> *const crate::pac::gpioa::RegisterBlock {
     match P {
         'A' => crate::pac::GPIOA::ptr(),
         'B' => crate::pac::GPIOB::ptr() as _,
+        #[cfg(feature = "gpioc")]
         'C' => crate::pac::GPIOC::ptr() as _,
         #[cfg(feature = "gpiod")]
         'D' => crate::pac::GPIOD::ptr() as _,
@@ -646,6 +717,7 @@ const fn gpiox<const P: char>() -> *const crate::pac::gpioa::RegisterBlock {
         'F' => crate::pac::GPIOF::ptr() as _,
         #[cfg(feature = "gpiog")]
         'G' => crate::pac::GPIOG::ptr() as _,
+        #[cfg(feature = "gpioh")]
         'H' => crate::pac::GPIOH::ptr() as _,
         #[cfg(feature = "gpioi")]
         'I' => crate::pac::GPIOI::ptr() as _,

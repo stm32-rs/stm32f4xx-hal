@@ -282,331 +282,331 @@ pub mod fmc {
 
     pin! {
         <A0, PushPull> for [
-            PF0<12>,
+            PF0<12, Speed::VeryHigh>,
         ],
 
         <A1, PushPull> for [
-            PF1<12>,
+            PF1<12, Speed::VeryHigh>,
         ],
 
         <A10, PushPull> for [
-            PG0<12>,
+            PG0<12, Speed::VeryHigh>,
         ],
 
         <A11, PushPull> for [
-            PG1<12>,
+            PG1<12, Speed::VeryHigh>,
         ],
 
         <A12, PushPull> for [
-            PG2<12>,
+            PG2<12, Speed::VeryHigh>,
         ],
 
         <A13, PushPull> for [
-            PG3<12>,
+            PG3<12, Speed::VeryHigh>,
         ],
 
         <A14, PushPull> for [
-            PG4<12>,
+            PG4<12, Speed::VeryHigh>,
         ],
 
         <A15, PushPull> for [
-            PG5<12>,
+            PG5<12, Speed::VeryHigh>,
         ],
 
         <A16, PushPull> for [
-            PD11<12>,
+            PD11<12, Speed::VeryHigh>,
         ],
 
         <A17, PushPull> for [
-            PD12<12>,
+            PD12<12, Speed::VeryHigh>,
         ],
 
         <A18, PushPull> for [
-            PD13<12>,
+            PD13<12, Speed::VeryHigh>,
         ],
 
         <A19, PushPull> for [
-            PE3<12>,
+            PE3<12, Speed::VeryHigh>,
         ],
 
         <A2, PushPull> for [
-            PF2<12>,
+            PF2<12, Speed::VeryHigh>,
         ],
 
         <A20, PushPull> for [
-            PE4<12>,
+            PE4<12, Speed::VeryHigh>,
         ],
 
         <A21, PushPull> for [
-            PE5<12>,
+            PE5<12, Speed::VeryHigh>,
         ],
 
         <A22, PushPull> for [
-            PE6<12>,
+            PE6<12, Speed::VeryHigh>,
         ],
 
         <A23, PushPull> for [
-            PE2<12>,
+            PE2<12, Speed::VeryHigh>,
         ],
 
         <A24, PushPull> for [
-            PG13<12>,
+            PG13<12, Speed::VeryHigh>,
         ],
 
         <A25, PushPull> for [
-            PG14<12>,
+            PG14<12, Speed::VeryHigh>,
         ],
 
         <A3, PushPull> for [
-            PF3<12>,
+            PF3<12, Speed::VeryHigh>,
         ],
 
         <A4, PushPull> for [
-            PF4<12>,
+            PF4<12, Speed::VeryHigh>,
         ],
 
         <A5, PushPull> for [
-            PF5<12>,
+            PF5<12, Speed::VeryHigh>,
         ],
 
         <A6, PushPull> for [
-            PF12<12>,
+            PF12<12, Speed::VeryHigh>,
         ],
 
         <A7, PushPull> for [
-            PF13<12>,
+            PF13<12, Speed::VeryHigh>,
         ],
 
         <A8, PushPull> for [
-            PF14<12>,
+            PF14<12, Speed::VeryHigh>,
         ],
 
         <A9, PushPull> for [
-            PF15<12>,
+            PF15<12, Speed::VeryHigh>,
         ],
 
         <Ale, PushPull> for [
-            PD12<12>,
+            PD12<12, Speed::VeryHigh>,
         ],
 
         <Cd, PushPull> for [
-            PF9<12>,
+            PF9<12, Speed::VeryHigh>,
         ],
 
         <Cle, PushPull> for [
-            PD11<12>,
+            PD11<12, Speed::VeryHigh>,
         ],
 
         <Clk, PushPull> for [
-            PD3<12>,
+            PD3<12, Speed::VeryHigh>,
         ],
 
         <D0, PushPull> for [
-            PD14<12>,
+            PD14<12, Speed::VeryHigh>,
         ],
 
         <D1, PushPull> for [
-            PD15<12>,
+            PD15<12, Speed::VeryHigh>,
         ],
 
         <D10, PushPull> for [
-            PE13<12>,
+            PE13<12, Speed::VeryHigh>,
         ],
 
         <D11, PushPull> for [
-            PE14<12>,
+            PE14<12, Speed::VeryHigh>,
         ],
 
         <D12, PushPull> for [
-            PE15<12>,
+            PE15<12, Speed::VeryHigh>,
         ],
 
         <D13, PushPull> for [
-            PD8<12>,
+            PD8<12, Speed::VeryHigh>,
         ],
 
         <D14, PushPull> for [
-            PD9<12>,
+            PD9<12, Speed::VeryHigh>,
         ],
 
         <D15, PushPull> for [
-            PD10<12>,
+            PD10<12, Speed::VeryHigh>,
         ],
 
         <D2, PushPull> for [
-            PD0<12>,
+            PD0<12, Speed::VeryHigh>,
         ],
 
         <D3, PushPull> for [
-            PD1<12>,
+            PD1<12, Speed::VeryHigh>,
         ],
 
         <D4, PushPull> for [
-            PE7<12>,
+            PE7<12, Speed::VeryHigh>,
         ],
 
         <D5, PushPull> for [
-            PE8<12>,
+            PE8<12, Speed::VeryHigh>,
         ],
 
         <D6, PushPull> for [
-            PE9<12>,
+            PE9<12, Speed::VeryHigh>,
         ],
 
         <D7, PushPull> for [
-            PE10<12>,
+            PE10<12, Speed::VeryHigh>,
         ],
 
         <D8, PushPull> for [
-            PE11<12>,
+            PE11<12, Speed::VeryHigh>,
         ],
 
         <D9, PushPull> for [
-            PE12<12>,
+            PE12<12, Speed::VeryHigh>,
         ],
 
         <Da0, PushPull> for [
-            PD14<12>,
+            PD14<12, Speed::VeryHigh>,
         ],
 
         <Da1, PushPull> for [
-            PD15<12>,
+            PD15<12, Speed::VeryHigh>,
         ],
 
         <Da10, PushPull> for [
-            PE13<12>,
+            PE13<12, Speed::VeryHigh>,
         ],
 
         <Da11, PushPull> for [
-            PE14<12>,
+            PE14<12, Speed::VeryHigh>,
         ],
 
         <Da12, PushPull> for [
-            PE15<12>,
+            PE15<12, Speed::VeryHigh>,
         ],
 
         <Da13, PushPull> for [
-            PD8<12>,
+            PD8<12, Speed::VeryHigh>,
         ],
 
         <Da14, PushPull> for [
-            PD9<12>,
+            PD9<12, Speed::VeryHigh>,
         ],
 
         <Da15, PushPull> for [
-            PD10<12>,
+            PD10<12, Speed::VeryHigh>,
         ],
 
         <Da2, PushPull> for [
-            PD0<12>,
+            PD0<12, Speed::VeryHigh>,
         ],
 
         <Da3, PushPull> for [
-            PD1<12>,
+            PD1<12, Speed::VeryHigh>,
         ],
 
         <Da4, PushPull> for [
-            PE7<12>,
+            PE7<12, Speed::VeryHigh>,
         ],
 
         <Da5, PushPull> for [
-            PE8<12>,
+            PE8<12, Speed::VeryHigh>,
         ],
 
         <Da6, PushPull> for [
-            PE9<12>,
+            PE9<12, Speed::VeryHigh>,
         ],
 
         <Da7, PushPull> for [
-            PE10<12>,
+            PE10<12, Speed::VeryHigh>,
         ],
 
         <Da8, PushPull> for [
-            PE11<12>,
+            PE11<12, Speed::VeryHigh>,
         ],
 
         <Da9, PushPull> for [
-            PE12<12>,
+            PE12<12, Speed::VeryHigh>,
         ],
 
         <Int2, PushPull> for [
-            PG6<12>,
+            PG6<12, Speed::VeryHigh>,
         ],
 
         <Int3, PushPull> for [
-            PG7<12>,
+            PG7<12, Speed::VeryHigh>,
         ],
 
         <Intr, PushPull> for [
-            PF10<12>,
+            PF10<12, Speed::VeryHigh>,
         ],
 
         <Nbl0, PushPull> for [
-            PE0<12>,
+            PE0<12, Speed::VeryHigh>,
         ],
 
         <Nbl1, PushPull> for [
-            PE1<12>,
+            PE1<12, Speed::VeryHigh>,
         ],
 
         <Nce2, PushPull> for [
-            PD7<12>,
+            PD7<12, Speed::VeryHigh>,
         ],
 
         <Nce3, PushPull> for [
-            PG9<12>,
+            PG9<12, Speed::VeryHigh>,
         ],
 
         <Nce41, PushPull> for [
-            PG10<12>,
+            PG10<12, Speed::VeryHigh>,
         ],
 
         <Nce42, PushPull> for [
-            PG11<12>,
+            PG11<12, Speed::VeryHigh>,
         ],
 
         <Ne1, PushPull> for [
-            PD7<12>,
+            PD7<12, Speed::VeryHigh>,
         ],
 
         <Ne2, PushPull> for [
-            PG9<12>,
+            PG9<12, Speed::VeryHigh>,
         ],
 
         <Ne3, PushPull> for [
-            PG10<12>,
+            PG10<12, Speed::VeryHigh>,
         ],
 
         <Ne4, PushPull> for [
-            PG12<12>,
+            PG12<12, Speed::VeryHigh>,
         ],
 
         <Niord, PushPull> for [
-            PF6<12>,
+            PF6<12, Speed::VeryHigh>,
         ],
 
         <Niowr, PushPull> for [
-            PF8<12>,
+            PF8<12, Speed::VeryHigh>,
         ],
 
         <Nl, PushPull> for [
-            PB7<12>,
+            PB7<12, Speed::VeryHigh>,
         ],
 
         <Noe, PushPull> for [
-            PD4<12>,
+            PD4<12, Speed::VeryHigh>,
         ],
 
         <Nreg, PushPull> for [
-            PF7<12>,
+            PF7<12, Speed::VeryHigh>,
         ],
 
         <Nwait, PushPull> for [
-            PD6<12>,
+            PD6<12, Speed::VeryHigh>,
         ],
 
         <Nwe, PushPull> for [
-            PD5<12>,
+            PD5<12, Speed::VeryHigh>,
         ],
     }
 }
@@ -826,43 +826,43 @@ pub mod sdio {
 
     pin! {
         <Ck, PushPull> for [
-            PC12<12>,
+            PC12<12, Speed::VeryHigh>,
         ],
 
         <Cmd, PushPull> for [
-            PD2<12>,
+            PD2<12, Speed::VeryHigh>,
         ],
 
         <D0, PushPull> for [
-            PC8<12>,
+            PC8<12, Speed::VeryHigh>,
         ],
 
         <D1, PushPull> for [
-            PC9<12>,
+            PC9<12, Speed::VeryHigh>,
         ],
 
         <D2, PushPull> for [
-            PC10<12>,
+            PC10<12, Speed::VeryHigh>,
         ],
 
         <D3, PushPull> for [
-            PC11<12>,
+            PC11<12, Speed::VeryHigh>,
         ],
 
         <D4, PushPull> for [
-            PB8<12>,
+            PB8<12, Speed::VeryHigh>,
         ],
 
         <D5, PushPull> for [
-            PB9<12>,
+            PB9<12, Speed::VeryHigh>,
         ],
 
         <D6, PushPull> for [
-            PC6<12>,
+            PC6<12, Speed::VeryHigh>,
         ],
 
         <D7, PushPull> for [
-            PC7<12>,
+            PC7<12, Speed::VeryHigh>,
         ],
     }
 }
@@ -1642,7 +1642,7 @@ pub mod usart1 {
     impl SerialSync for USART {
         type Ck = Ck;
     }
-    impl SerialRs232 for USART {
+    impl SerialFlowControl for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -1692,7 +1692,7 @@ pub mod usart2 {
     impl SerialSync for USART {
         type Ck = Ck;
     }
-    impl SerialRs232 for USART {
+    impl SerialFlowControl for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -1748,7 +1748,7 @@ pub mod usart3 {
     impl SerialSync for USART {
         type Ck = Ck;
     }
-    impl SerialRs232 for USART {
+    impl SerialFlowControl for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -1798,7 +1798,7 @@ pub mod usart6 {
     impl SerialSync for USART {
         type Ck = Ck;
     }
-    impl SerialRs232 for USART {
+    impl SerialFlowControl for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -1847,59 +1847,59 @@ pub mod otg_hs {
         ],
 
         <UlpiCk, PushPull> for [
-            PA5<10>,
+            PA5<10, Speed::VeryHigh>,
         ],
 
         <UlpiD0, PushPull> for [
-            PA3<10>,
+            PA3<10, Speed::VeryHigh>,
         ],
 
         <UlpiD1, PushPull> for [
-            PB0<10>,
+            PB0<10, Speed::VeryHigh>,
         ],
 
         <UlpiD2, PushPull> for [
-            PB1<10>,
+            PB1<10, Speed::VeryHigh>,
         ],
 
         <UlpiD3, PushPull> for [
-            PB10<10>,
+            PB10<10, Speed::VeryHigh>,
         ],
 
         <UlpiD4, PushPull> for [
-            PB11<10>,
+            PB11<10, Speed::VeryHigh>,
         ],
 
         <UlpiD5, PushPull> for [
-            PB12<10>,
+            PB12<10, Speed::VeryHigh>,
         ],
 
         <UlpiD6, PushPull> for [
-            PB13<10>,
+            PB13<10, Speed::VeryHigh>,
         ],
 
         <UlpiD7, PushPull> for [
-            PB5<10>,
+            PB5<10, Speed::VeryHigh>,
         ],
 
         <UlpiDir, PushPull> for [
-            PC2<10>,
+            PC2<10, Speed::VeryHigh>,
 
-            PI11<10>,
+            PI11<10, Speed::VeryHigh>,
         ],
 
         <UlpiNxt, PushPull> for [
-            PC3<10>,
+            PC3<10, Speed::VeryHigh>,
 
-            PH4<10>,
+            PH4<10, Speed::VeryHigh>,
         ],
 
         <UlpiStp, PushPull> for [
-            PC0<10>,
+            PC0<10, Speed::VeryHigh>,
         ],
 
         <Vbus, PushPull> for [
-            PB13<12>,
+            PB13<12, Speed::VeryHigh>,
         ],
     }
 }

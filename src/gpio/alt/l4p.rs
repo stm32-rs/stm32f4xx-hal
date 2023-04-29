@@ -1,0 +1,3254 @@
+use super::*;
+use crate::gpio::{self, NoPin, OpenDrain, PushPull};
+
+pub mod can1 {
+    use super::*;
+
+    pin! {
+        <Rx, PushPull> for no:NoPin, [
+            PA11<9>,
+
+            PB8<9>,
+
+            PD0<9>,
+
+            PI9<9>,
+        ],
+
+        <Tx, PushPull> for no:NoPin, [
+            PA12<9>,
+
+            PB9<9>,
+
+            PD1<9>,
+
+            PH13<9>,
+        ],
+    }
+    impl CanCommon for crate::pac::CAN1 {
+        type Rx = Rx;
+        type Tx = Tx;
+    }
+}
+
+pub mod comp1 {
+    use super::*;
+
+    pin! {
+        <Out, PushPull> for [
+            PB0<12>,
+
+            PB10<12>,
+        ],
+    }
+}
+
+pub mod comp2 {
+    use super::*;
+
+    pin! {
+        <Out, PushPull> for [
+            PB5<12>,
+
+            PB11<12>,
+        ],
+    }
+}
+
+/*pub mod crs {
+    use super::*;
+
+    pin! {
+        <Sync> for [
+            PB3<10>,
+        ],
+    }
+}*/
+
+pub mod dcmi {
+    use super::*;
+
+    pin! {
+        <D0, PushPull> for [
+            PA9<5>,
+
+            PC6<10>,
+
+            PH9<10>,
+        ],
+
+        <D1, PushPull> for [
+            PA10<5>,
+
+            PC7<10>,
+
+            PH10<10>,
+        ],
+
+        <D10, PushPull> for [
+            PB5<10>,
+
+            PD6<4>,
+
+            PI3<10>,
+        ],
+
+        <D11, PushPull> for [
+            PD2<10>,
+
+            PF10<10>,
+
+            PH15<10>,
+        ],
+
+        <D12, PushPull> for [
+            PB4<10>,
+
+            PF11<10>,
+
+            PI8<10>,
+        ],
+
+        <D13, PushPull> for [
+            PG15<10>,
+
+            PI0<10>,
+        ],
+
+        <D2, PushPull> for [
+            PC8<10>,
+
+            PC11<4>,
+
+            PE0<10>,
+
+            PH11<10>,
+        ],
+
+        <D3, PushPull> for [
+            PC9<4>,
+
+            PE1<10>,
+
+            PH12<10>,
+        ],
+
+        <D4, PushPull> for [
+            PC11<10>,
+
+            PE4<10>,
+
+            PH14<10>,
+        ],
+
+        <D5, PushPull> for [
+            PB6<10>,
+
+            PD3<4>,
+
+            PI4<10>,
+        ],
+
+        <D6, PushPull> for [
+            PB8<10>,
+
+            PE5<10>,
+
+            PI6<10>,
+        ],
+
+        <D7, PushPull> for [
+            PB9<10>,
+
+            PE6<10>,
+
+            PI7<10>,
+        ],
+
+        <D8, PushPull> for [
+            PC10<10>,
+
+            PH6<10>,
+
+            PI1<10>,
+        ],
+
+        <D9, PushPull> for [
+            PC12<10>,
+
+            PH7<10>,
+
+            PI2<10>,
+        ],
+
+        <Hsync, PushPull> for [
+            PA4<10>,
+
+            PD8<10>,
+
+            PH8<10>,
+        ],
+
+        <Pixclk, PushPull> for [
+            PA6<4>,
+
+            PD9<10>,
+
+            PH5<10>,
+        ],
+
+        <Vsync, PushPull> for [
+            PB7<10>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PC10<4>,
+
+            PI5<10>,
+        ],
+    }
+}
+
+pub mod dfsdm1 {
+    use super::*;
+
+    pin! {
+        <Ckin0, PushPull> for [
+            PB2<6>,
+
+            PD4<6>,
+        ],
+
+        <Ckin1, PushPull> for [
+            PB13<6>,
+
+            PD7<6>,
+        ],
+
+        <Ckin2, PushPull> for [
+            PB15<6>,
+
+            PE8<6>,
+        ],
+
+        <Ckin3, PushPull> for [
+            PC6<6>,
+
+            PE5<6>,
+        ],
+
+        <Ckout, PushPull> for [
+            PB8<5>,
+
+            PC2<6>,
+
+            PE9<6>,
+
+            PF10<6>,
+
+            PG7<6>,
+        ],
+
+        <Datin0, PushPull> for [
+            PB1<6>,
+
+            PD3<6>,
+        ],
+
+        <Datin1, PushPull> for [
+            PB12<6>,
+
+            PD6<6>,
+        ],
+
+        <Datin2, PushPull> for [
+            PB14<6>,
+
+            PE7<6>,
+        ],
+
+        <Datin3, PushPull> for [
+            PC7<6>,
+
+            PE4<6>,
+        ],
+    }
+
+    #[cfg(feature = "gpio-l4rx")]
+    pin! {
+        <Ckin4, PushPull> for [
+            PC1<6>,
+
+            PE11<6>,
+        ],
+
+        <Ckin5, PushPull> for [
+            PB7<6>,
+
+            PE13<6>,
+        ],
+
+        <Ckin6, PushPull> for [
+            PB9<6>,
+
+            PF14<6>,
+        ],
+
+        <Ckin7, PushPull> for [
+            PB11<6>,
+
+            PD1<6>,
+        ],
+
+        <Datin4, PushPull> for [
+            PC0<6>,
+
+            PE10<6>,
+        ],
+
+        <Datin5, PushPull> for [
+            PB6<6>,
+
+            PE12<6>,
+        ],
+
+        <Datin6, PushPull> for [
+            PB8<6>,
+
+            PF13<6>,
+        ],
+
+        <Datin7, PushPull> for [
+            PB10<6>,
+
+            PD0<6>,
+        ],
+    }
+
+    use crate::pac::DFSDM1 as DFSDM;
+    impl DfsdmBasic for DFSDM {
+        type Ckin0 = Ckin0;
+        type Ckin1 = Ckin1;
+        type Ckout = Ckout;
+        type Datin0 = Datin0;
+        type Datin1 = Datin1;
+    }
+    impl DfsdmGeneral for DFSDM {
+        type Ckin2 = Ckin2;
+        type Ckin3 = Ckin3;
+        type Datin2 = Datin2;
+        type Datin3 = Datin3;
+    }
+
+    #[cfg(feature = "gpio-l4rx")]
+    impl DfsdmAdvanced for DFSDM {
+        type Ckin4 = Ckin4;
+        type Ckin5 = Ckin5;
+        type Ckin6 = Ckin6;
+        type Ckin7 = Ckin7;
+        type Datin4 = Datin4;
+        type Datin5 = Datin5;
+        type Datin6 = Datin6;
+        type Datin7 = Datin7;
+    }
+}
+
+#[cfg(feature = "gpio-l4rx")]
+pub mod dsihost {
+    use super::*;
+
+    pin! {
+        <Te, PushPull> for [
+            PB7<11>,
+
+            PB11<11>,
+
+            PF11<11>,
+
+            PG6<11>,
+        ],
+    }
+}
+
+pub mod fmc {
+    use super::*;
+
+    pin! {
+        <A0, PushPull> for [
+            PF0<12, Speed::VeryHigh>,
+        ],
+
+        <A1, PushPull> for [
+            PF1<12, Speed::VeryHigh>,
+        ],
+
+        <A10, PushPull> for [
+            PG0<12, Speed::VeryHigh>,
+        ],
+
+        <A11, PushPull> for [
+            PG1<12, Speed::VeryHigh>,
+        ],
+
+        <A12, PushPull> for [
+            PG2<12, Speed::VeryHigh>,
+        ],
+
+        <A13, PushPull> for [
+            PG3<12, Speed::VeryHigh>,
+        ],
+
+        <A14, PushPull> for [
+            PG4<12, Speed::VeryHigh>,
+        ],
+
+        <A15, PushPull> for [
+            PG5<12, Speed::VeryHigh>,
+        ],
+
+        <A16, PushPull> for [
+            PD11<12, Speed::VeryHigh>,
+        ],
+
+        <A17, PushPull> for [
+            PD12<12, Speed::VeryHigh>,
+        ],
+
+        <A18, PushPull> for [
+            PD13<12, Speed::VeryHigh>,
+        ],
+
+        <A19, PushPull> for [
+            PE3<12, Speed::VeryHigh>,
+        ],
+
+        <A2, PushPull> for [
+            PF2<12, Speed::VeryHigh>,
+        ],
+
+        <A20, PushPull> for [
+            PE4<12, Speed::VeryHigh>,
+        ],
+
+        <A21, PushPull> for [
+            PE5<12, Speed::VeryHigh>,
+        ],
+
+        <A22, PushPull> for [
+            PE6<12, Speed::VeryHigh>,
+        ],
+
+        <A23, PushPull> for [
+            PE2<12, Speed::VeryHigh>,
+        ],
+
+        <A24, PushPull> for [
+            PG13<12, Speed::VeryHigh>,
+        ],
+
+        <A25, PushPull> for [
+            PG14<12, Speed::VeryHigh>,
+        ],
+
+        <A3, PushPull> for [
+            PF3<12, Speed::VeryHigh>,
+        ],
+
+        <A4, PushPull> for [
+            PF4<12, Speed::VeryHigh>,
+        ],
+
+        <A5, PushPull> for [
+            PF5<12, Speed::VeryHigh>,
+        ],
+
+        <A6, PushPull> for [
+            PF12<12, Speed::VeryHigh>,
+        ],
+
+        <A7, PushPull> for [
+            PF13<12, Speed::VeryHigh>,
+        ],
+
+        <A8, PushPull> for [
+            PF14<12, Speed::VeryHigh>,
+        ],
+
+        <A9, PushPull> for [
+            PF15<12, Speed::VeryHigh>,
+        ],
+
+        <Clk, PushPull> for [
+            PD3<12, Speed::VeryHigh>,
+        ],
+
+        <D0, PushPull> for [
+            PD14<12, Speed::VeryHigh>,
+        ],
+
+        <D1, PushPull> for [
+            PD15<12, Speed::VeryHigh>,
+        ],
+
+        <D10, PushPull> for [
+            PE13<12, Speed::VeryHigh>,
+        ],
+
+        <D11, PushPull> for [
+            PE14<12, Speed::VeryHigh>,
+        ],
+
+        <D12, PushPull> for [
+            PE15<12, Speed::VeryHigh>,
+        ],
+
+        <D13, PushPull> for [
+            PD8<12, Speed::VeryHigh>,
+        ],
+
+        <D14, PushPull> for [
+            PD9<12, Speed::VeryHigh>,
+        ],
+
+        <D15, PushPull> for [
+            PD10<12, Speed::VeryHigh>,
+        ],
+
+        <D2, PushPull> for [
+            PD0<12, Speed::VeryHigh>,
+        ],
+
+        <D3, PushPull> for [
+            PD1<12, Speed::VeryHigh>,
+        ],
+
+        <D4, PushPull> for [
+            PE7<12, Speed::VeryHigh>,
+        ],
+
+        <D5, PushPull> for [
+            PE8<12, Speed::VeryHigh>,
+        ],
+
+        <D6, PushPull> for [
+            PE9<12, Speed::VeryHigh>,
+        ],
+
+        <D7, PushPull> for [
+            PE10<12, Speed::VeryHigh>,
+        ],
+
+        <D8, PushPull> for [
+            PE11<12, Speed::VeryHigh>,
+        ],
+
+        <D9, PushPull> for [
+            PE12<12, Speed::VeryHigh>,
+        ],
+
+        <Da0, PushPull> for [
+            PD14<12, Speed::VeryHigh>,
+        ],
+
+        <Da1, PushPull> for [
+            PD15<12, Speed::VeryHigh>,
+        ],
+
+        <Da10, PushPull> for [
+            PE13<12, Speed::VeryHigh>,
+        ],
+
+        <Da11, PushPull> for [
+            PE14<12, Speed::VeryHigh>,
+        ],
+
+        <Da12, PushPull> for [
+            PE15<12, Speed::VeryHigh>,
+        ],
+
+        <Da13, PushPull> for [
+            PD8<12, Speed::VeryHigh>,
+        ],
+
+        <Da14, PushPull> for [
+            PD9<12, Speed::VeryHigh>,
+        ],
+
+        <Da15, PushPull> for [
+            PD10<12, Speed::VeryHigh>,
+        ],
+
+        <Da2, PushPull> for [
+            PD0<12, Speed::VeryHigh>,
+        ],
+
+        <Da3, PushPull> for [
+            PD1<12, Speed::VeryHigh>,
+        ],
+
+        <Da4, PushPull> for [
+            PE7<12, Speed::VeryHigh>,
+        ],
+
+        <Da5, PushPull> for [
+            PE8<12, Speed::VeryHigh>,
+        ],
+
+        <Da6, PushPull> for [
+            PE9<12, Speed::VeryHigh>,
+        ],
+
+        <Da7, PushPull> for [
+            PE10<12, Speed::VeryHigh>,
+        ],
+
+        <Da8, PushPull> for [
+            PE11<12, Speed::VeryHigh>,
+        ],
+
+        <Da9, PushPull> for [
+            PE12<12, Speed::VeryHigh>,
+        ],
+
+        <Int, PushPull> for [
+            PG7<12, Speed::VeryHigh>,
+        ],
+
+        <Nbl0, PushPull> for [
+            PE0<12, Speed::VeryHigh>,
+        ],
+
+        <Nbl1, PushPull> for [
+            PE1<12, Speed::VeryHigh>,
+        ],
+
+        <Nce, PushPull> for [
+            PD7<12, Speed::VeryHigh>,
+
+            PG9<12, Speed::VeryHigh>,
+        ],
+
+        <Ne1, PushPull> for [
+            PD7<12, Speed::VeryHigh>,
+        ],
+
+        <Ne2, PushPull> for [
+            PG9<12, Speed::VeryHigh>,
+        ],
+
+        <Ne3, PushPull> for [
+            PG10<12, Speed::VeryHigh>,
+        ],
+
+        <Ne4, PushPull> for [
+            PG12<12, Speed::VeryHigh>,
+        ],
+
+        <Nl, PushPull> for [
+            PB7<12, Speed::VeryHigh>,
+        ],
+
+        <Noe, PushPull> for [
+            PD4<12, Speed::VeryHigh>,
+        ],
+
+        <Nwait, PushPull> for [
+            PD6<12, Speed::VeryHigh>,
+        ],
+
+        <Nwe, PushPull> for [
+            PD5<12, Speed::VeryHigh>,
+        ],
+    }
+}
+
+pub mod i2c1 {
+    use super::*;
+
+    pin! {
+        <Scl, OpenDrain> for [
+            PB6<4>,
+
+            PB8<4>,
+
+            PG14<4>,
+        ],
+
+        <Sda, OpenDrain> for [
+            PB7<4>,
+
+            PB9<4>,
+
+            PG13<4>,
+        ],
+
+        <Smba, OpenDrain> for [
+            PA1<4>,
+
+            PA14<4>,
+
+            PB5<4>,
+
+            PG15<4>,
+        ],
+    }
+    use crate::pac::I2C1 as I2C;
+    impl I2cCommon for I2C {
+        type Scl = Scl;
+        type Sda = Sda;
+        type Smba = Smba;
+    }
+}
+
+pub mod i2c2 {
+    use super::*;
+
+    pin! {
+        <Scl, OpenDrain> for [
+            PB10<4>,
+
+            PB13<4>,
+
+            PF1<4>,
+
+            PH4<4>,
+        ],
+
+        <Sda, OpenDrain> for [
+            PB11<4>,
+
+            PB14<4>,
+
+            PF0<4>,
+
+            PH5<4>,
+        ],
+
+        <Smba, OpenDrain> for [
+            PB12<4>,
+
+            PF2<4>,
+
+            PH6<4>,
+        ],
+    }
+    use crate::pac::I2C2 as I2C;
+    impl I2cCommon for I2C {
+        type Scl = Scl;
+        type Sda = Sda;
+        type Smba = Smba;
+    }
+}
+
+pub mod i2c3 {
+    use super::*;
+
+    pin! {
+        <Scl, OpenDrain> for [
+            PA7<4>,
+
+            PC0<4>,
+
+            PG7<4>,
+
+            PH7<4>,
+        ],
+
+        <Sda, OpenDrain> for [
+            PB4<4>,
+
+            PC1<4>,
+
+            PC9<6>,
+
+            PG8<4>,
+
+            PH8<4>,
+        ],
+
+        <Smba, OpenDrain> for [
+            PB2<4>,
+
+            PG6<4>,
+
+            PH9<4>,
+        ],
+    }
+    use crate::pac::I2C3 as I2C;
+    impl I2cCommon for I2C {
+        type Scl = Scl;
+        type Sda = Sda;
+        type Smba = Smba;
+    }
+}
+
+pub mod i2c4 {
+    use super::*;
+
+    pin! {
+        <Scl, OpenDrain> for [
+            PB6<5>,
+
+            PB10<3>,
+
+            PD12<4>,
+
+            PF14<4>,
+        ],
+
+        <Sda, OpenDrain> for [
+            PB7<5>,
+
+            PB11<3>,
+
+            PD13<4>,
+
+            PF15<4>,
+        ],
+
+        <Smba, OpenDrain> for [
+            PA14<5>,
+
+            PD11<4>,
+
+            PF13<4>,
+        ],
+    }
+    use crate::pac::I2C4 as I2C;
+    impl I2cCommon for I2C {
+        type Scl = Scl;
+        type Sda = Sda;
+        type Smba = Smba;
+    }
+}
+
+pub mod ir {
+    use super::*;
+
+    pin! {
+        <Out> default: PushPull for [
+            PA13<1>,
+
+            PB9<1>,
+        ],
+    }
+}
+
+pub mod lptim1 {
+    use super::*;
+
+    pin! {
+        <Etr, PushPull> for [
+            PB6<1>,
+
+            PC3<1>,
+
+            PG12<1>,
+        ],
+
+        <In1, PushPull> for [
+            PB5<1>,
+
+            PC0<1>,
+
+            PG10<1>,
+        ],
+
+        <In2, PushPull> for [
+            PB7<1>,
+
+            PC2<1>,
+
+            PG11<1>,
+        ],
+    }
+
+    pin! {
+        <Out> default:PushPull for [
+            PA14<1>,
+
+            PB2<1>,
+
+            PC1<1>,
+
+            PG15<1>,
+        ],
+    }
+}
+
+pub mod lptim2 {
+    use super::*;
+
+    pin! {
+        <Etr, PushPull> for [
+            PA5<14>,
+
+            PC3<14>,
+
+            PD11<14>,
+        ],
+
+        <In1, PushPull> for [
+            PB1<14>,
+
+            PC0<14>,
+
+            PD12<14>,
+        ],
+    }
+
+    pin! {
+        <Out> default:PushPull for [
+            PA4<14>,
+
+            PA8<14>,
+
+            PD13<14>,
+        ],
+    }
+}
+
+pub mod lpuart1 {
+    use super::*;
+
+    pin! {
+        <Cts, PushPull> for [
+            PA6<8>,
+
+            PB13<8>,
+
+            PG5<8>,
+        ],
+
+        <De, PushPull> for [
+            PB1<8>,
+
+            PB12<8>,
+
+            PG6<8>,
+        ],
+
+        <Rts, PushPull> for [
+            PB1<8>,
+
+            PB12<8>,
+
+            PG6<8>,
+        ],
+
+        <Rx, PushPull> for [
+            PA3<8>,
+
+            PB10<8>,
+
+            PC0<8>,
+
+            PG8<8>,
+        ],
+    }
+
+    pin! {
+        <Tx> default:PushPull for [
+            PA2<8>,
+
+            PB11<8>,
+
+            PC1<8>,
+
+            PG7<8>,
+        ],
+    }
+}
+
+pub mod ltdc {
+    use super::*;
+
+    pin! {
+        <B0, PushPull> for [
+            #[cfg(feature = "gpio-l4rx")]
+            PE4<11>,
+
+            PF12<11>,
+        ],
+
+        <B1, PushPull> for [
+            #[cfg(feature = "gpio-l4rx")]
+            PB2<11>,
+
+            #[cfg(feature = "gpio-l4rx")]
+            PB8<11>,
+
+            PF13<11>,
+        ],
+
+        <B2, PushPull> for [
+            PD14<11>,
+        ],
+
+        <B3, PushPull> for [
+            PD15<11>,
+        ],
+
+        <B4, PushPull> for [
+            PD0<11>,
+        ],
+
+        <B5, PushPull> for [
+            PD1<11>,
+        ],
+
+        <B6, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PB0<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PC7<11>,
+
+            PE7<11>,
+        ],
+
+        <B7, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PA8<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PE4<11>,
+
+            PE8<11>,
+        ],
+
+        <Clk, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PA4<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PC5<11>,
+
+            PD3<11>,
+        ],
+
+        <De, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PA11<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PB8<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PC0<11>,
+
+            PD6<11>,
+
+            PF11<9>,
+        ],
+
+        <G0, PushPull> for [
+            #[cfg(feature = "gpio-l4rx")]
+            PE5<11>,
+
+            PF14<11>,
+        ],
+
+        <G1, PushPull> for [
+            #[cfg(feature = "gpio-l4rx")]
+            PE6<11>,
+
+            PF15<11>,
+        ],
+
+        <G2, PushPull> for [
+            PE9<11>,
+        ],
+
+        <G3, PushPull> for [
+            PE10<11>,
+        ],
+
+        <G4, PushPull> for [
+            PE11<11>,
+        ],
+
+        <G5, PushPull> for [
+            PE12<11>,
+        ],
+
+        <G6, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PA10<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PB1<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PE6<11>,
+
+            PE13<11>,
+        ],
+
+        <G7, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PA9<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PC6<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PE5<11>,
+
+            PE14<11>,
+        ],
+
+        <Hsync, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PA15<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PC2<11>,
+
+            PE0<11>,
+        ],
+
+        <R0, PushPull> for [
+            #[cfg(feature = "gpio-l4rx")]
+            PC6<11>,
+
+            #[cfg(feature = "gpio-l4rx")]
+            PE2<11>,
+
+            PG13<11>,
+        ],
+
+        <R1, PushPull> for [
+            #[cfg(feature = "gpio-l4rx")]
+            PC7<11>,
+
+            #[cfg(feature = "gpio-l4rx")]
+            PE3<11>,
+
+            PG6<9>,
+
+            PG14<11>,
+        ],
+
+        <R2, PushPull> for [
+            PE15<11>,
+        ],
+
+        <R3, PushPull> for [
+            PD8<11>,
+        ],
+
+        <R4, PushPull> for [
+            PD9<11>,
+        ],
+
+        <R5, PushPull> for [
+            PD10<11>,
+        ],
+
+        <R6, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PB6<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PC12<11>,
+
+            PD11<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PE3<11>,
+        ],
+
+        <R7, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PA5<11>,
+
+            PD12<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PE2<11>,
+        ],
+
+        <Vsync, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PA12<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PB7<11>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PB11<11>,
+
+            PE1<11>,
+        ],
+    }
+}
+
+pub mod octospim {
+    use super::*;
+
+    pin! {
+        <P1Clk, PushPull> for [ // High speed
+            PA3<10>,
+
+            PB10<10>,
+
+            PE10<10>,
+
+            PF10<3>,
+        ],
+
+        <P1Dqs, PushPull> for [
+            PA1<10>,
+
+            PB2<10>,
+
+            PE3<3>,
+
+            PG6<3>,
+        ],
+
+        <P1Io0, PushPull> for [
+            PB1<10>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PB5<3>,
+
+            PE12<10>,
+
+            PF8<10>,
+        ],
+
+        <P1Io1, PushPull> for [
+            PB0<10>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PB13<10>,
+
+            PE13<10>,
+
+            PF9<10>,
+        ],
+
+        <P1Io2, PushPull> for [
+            PA7<10>,
+
+            PE14<10>,
+
+            PF7<10>,
+        ],
+
+        <P1Io3, PushPull> for [
+            PA6<10>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PB10<6>,
+
+            PE15<10>,
+
+            PF6<10>,
+        ],
+
+        <P1Io4, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PB3<3>,
+
+            PC1<10>,
+
+            PD4<10>,
+
+            PH2<3>,
+        ],
+
+        <P1Io5, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PB4<3>,
+
+            PC2<10>,
+
+            PD5<10>,
+
+            PG11<3>,
+
+            PI0<3>,
+        ],
+
+        <P1Io6, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PB14<10>,
+
+            PC3<10>,
+
+            PD6<10>,
+        ],
+
+        <P1Io7, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PB15<10>,
+
+            PC4<10>,
+
+            PD7<10>,
+        ],
+
+        <P1Nclk, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PB12<10>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PE9<10>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PF11<3>,
+        ],
+
+        <P1Ncs, PushPull> for [
+            PA2<10>,
+
+            PA4<3>,
+
+            PB11<10>,
+
+            PC11<5>,
+
+            PE11<10>,
+        ],
+
+        <P2Clk, PushPull> for [
+            PF4<5>,
+
+            PH6<5>,
+
+            PI6<5>,
+        ],
+
+        <P2Dqs, PushPull> for [
+            PF12<5>,
+
+            PG7<5>,
+
+            PG15<5>,
+
+            PH4<5>,
+        ],
+
+        <P2Io0, PushPull> for [
+            PF0<5>,
+
+            PI11<5>,
+        ],
+
+        <P2Io1, PushPull> for [
+            PF1<5>,
+
+            PI10<5>,
+        ],
+
+        <P2Io2, PushPull> for [
+            PF2<5>,
+
+            PI9<5>,
+        ],
+
+        <P2Io3, PushPull> for [
+            PF3<5>,
+
+            PH8<5>,
+        ],
+
+        <P2Io4, PushPull> for [
+            PG0<5>,
+
+            PH9<5>,
+        ],
+
+        <P2Io5, PushPull> for [
+            PG1<5>,
+
+            PH10<5>,
+        ],
+
+        <P2Io6, PushPull> for [
+            PG9<5>,
+
+            PH11<5>,
+
+            PH15<5>,
+        ],
+
+        <P2Io7, PushPull> for [
+            PG10<5>,
+
+            PH12<5>,
+        ],
+
+        <P2Nclk, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PF5<5>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PH7<5>,
+
+            #[cfg(feature = "gpio-l4p")]
+            PI7<5>,
+        ],
+
+        <P2Ncs, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PC4<5>,
+
+            PD3<10>,
+
+            PG12<5>,
+
+            PI5<5>,
+
+            PI8<5>,
+        ],
+    }
+}
+
+#[cfg(feature = "gpio-l4p")]
+pub mod pssi {
+    use super::*;
+
+    pin! {
+        <D0, PushPull> for [
+            PA9<5>,
+
+            PC6<10>,
+
+            PH9<10>,
+        ],
+
+        <D1, PushPull> for [
+            PA10<5>,
+
+            PC7<10>,
+
+            PH10<10>,
+        ],
+
+        <D10, PushPull> for [
+            PB5<10>,
+
+            PD6<4>,
+
+            PI3<10>,
+        ],
+
+        <D11, PushPull> for [
+            PD2<10>,
+
+            PF10<10>,
+
+            PH15<10>,
+        ],
+
+        <D12, PushPull> for [
+            PB4<10>,
+
+            PF11<10>,
+
+            PI8<10>,
+        ],
+
+        <D13, PushPull> for [
+            PG15<10>,
+
+            PI0<10>,
+        ],
+
+        <D14, PushPull> for [
+            PA5<4>,
+
+            PH4<10>,
+
+            PI10<10>,
+        ],
+
+        <D15, PushPull> for [
+            PC5<4>,
+
+            PF10<4>,
+
+            PI11<10>,
+        ],
+
+        <D2, PushPull> for [
+            PC8<10>,
+
+            PC11<4>,
+
+            PE0<10>,
+
+            PH11<10>,
+        ],
+
+        <D3, PushPull> for [
+            PC9<4>,
+
+            PE1<10>,
+
+            PH12<10>,
+        ],
+
+        <D4, PushPull> for [
+            PC11<10>,
+
+            PE4<10>,
+
+            PH14<10>,
+        ],
+
+        <D5, PushPull> for [
+            PB6<10>,
+
+            PD3<4>,
+
+            PI4<10>,
+        ],
+
+        <D6, PushPull> for [
+            PB8<10>,
+
+            PE5<10>,
+
+            PI6<10>,
+        ],
+
+        <D7, PushPull> for [
+            PB9<10>,
+
+            PE6<10>,
+
+            PI7<10>,
+        ],
+
+        <D8, PushPull> for [
+            PC10<10>,
+
+            PH6<10>,
+
+            PI1<10>,
+        ],
+
+        <D9, PushPull> for [
+            PC12<10>,
+
+            PH7<10>,
+
+            PI2<10>,
+        ],
+
+        <De, PushPull> for [
+            PA4<10>,
+
+            PD8<10>,
+
+            PH8<10>,
+        ],
+
+        <Pdck, PushPull> for [
+            PA6<4>,
+
+            PD9<10>,
+
+            PH5<10>,
+        ],
+
+        <Rdy, PushPull> for [
+            PB7<10>,
+
+            PC10<4>,
+
+            PI5<10>,
+        ],
+    }
+}
+
+pub mod rcc {
+    use super::*;
+
+    pin! {
+        <Mco, PushPull> for [
+            PA8<0>,
+        ],
+    }
+}
+
+pub mod rtc {
+    use super::*;
+
+    pin! {
+        <OutAlarm, PushPull> for [
+            #[cfg(feature = "gpio-l4rx")]
+            PB2<0>,
+        ],
+
+        <OutCalib, PushPull> for [
+            #[cfg(feature = "gpio-l4rx")]
+            PB2<0>,
+        ],
+
+        <Refin, PushPull> for [
+            PB15<0>,
+        ],
+    }
+}
+
+pub mod sai1 {
+    use super::*;
+
+    pin! {
+        <Ck1, PushPull> for [
+            PA3<3>,
+
+            PB8<3>,
+
+            PE2<3>,
+
+            PG7<3>,
+        ],
+
+        <Ck2, PushPull> for [
+            PA8<3>,
+
+            PE5<3>,
+        ],
+
+        <D1, PushPull> for [
+            PA10<3>,
+
+            PC3<3>,
+
+            PD6<3>,
+
+            PE6<3>,
+        ],
+
+        <D2, PushPull> for [
+            PB9<3>,
+
+            PE4<3>,
+        ],
+
+        <D3, PushPull> for [
+            PC5<3>,
+
+            PF10<13>,
+        ],
+
+        <Extclk, PushPull> for [
+            PA0<13>,
+
+            PB0<13>,
+        ],
+
+        <FsA, PushPull> for [
+            PA9<13>,
+
+            PB9<13>,
+
+            PE4<13>,
+        ],
+
+        <FsB, PushPull> for [
+            PA4<13>,
+
+            PA14<13>,
+
+            PB6<13>,
+
+            PE9<13>,
+
+            PF9<13>,
+        ],
+
+        <MclkA, PushPull> for no:NoPin, [
+            PA3<13>,
+
+            PB8<13>,
+
+            PE2<13>,
+
+            PG7<13>,
+        ],
+
+        <MclkB, PushPull> for no:NoPin, [
+            PB4<13>,
+
+            PE10<13>,
+
+            PF7<13>,
+        ],
+
+        <SckA, PushPull> for [
+            PA8<13>,
+
+            PB10<13>,
+
+            PE5<13>,
+        ],
+
+        <SckB, PushPull> for [
+            PB3<13>,
+
+            PE8<13>,
+
+            PF8<13>,
+        ],
+
+        <SdA, PushPull> for [
+            PA10<13>,
+
+            PC1<13>,
+
+            PC3<13>,
+
+            PD6<13>,
+
+            PE6<13>,
+        ],
+
+        <SdB, PushPull> for [
+            PA13<13>,
+
+            PB5<13>,
+
+            PE3<13>,
+
+            PE7<13>,
+
+            PF6<13>,
+        ],
+    }
+    use crate::pac::SAI1 as SAI;
+    use crate::sai::SAICH;
+    impl SaiChannels for SAI {
+        type A = SAICH<SAI, false>;
+        type B = SAICH<SAI, true>;
+    }
+    impl SaiChannel for SAICH<SAI, false> {
+        type Fs = FsA;
+        type Mclk = MclkA;
+        type Sck = SckA;
+        type Sd = SdA;
+    }
+    impl SaiChannel for SAICH<SAI, true> {
+        type Fs = FsB;
+        type Mclk = MclkB;
+        type Sck = SckB;
+        type Sd = SdB;
+    }
+}
+
+pub mod sai2 {
+    use super::*;
+
+    pin! {
+        <Extclk, PushPull> for [
+            PA2<13>,
+
+            PC9<13>,
+        ],
+
+        <FsA, PushPull> for [
+            PB12<13>,
+
+            PC0<13>,
+
+            PD12<13>,
+
+            PG10<13>,
+        ],
+
+        <FsB, PushPull> for [
+            PA15<13>,
+
+            PG3<13>,
+        ],
+
+        <MclkA, PushPull> for no:NoPin, [
+            PB14<13>,
+
+            PC6<13>,
+
+            PD9<13>,
+
+            PG11<13>,
+        ],
+
+        <MclkB, PushPull> for no:NoPin, [
+            PC7<13>,
+
+            PC11<13>,
+
+            PG4<13>,
+        ],
+
+        <SckA, PushPull> for [
+            PB13<13>,
+
+            PD10<13>,
+
+            PG9<13>,
+        ],
+
+        <SckB, PushPull> for [
+            PC10<13>,
+
+            PG2<13>,
+        ],
+
+        <SdA, PushPull> for [
+            PB15<13>,
+
+            PD11<13>,
+
+            PG12<13>,
+        ],
+
+        <SdB, PushPull> for [
+            PC12<13>,
+
+            PG5<13>,
+        ],
+    }
+    use crate::pac::SAI2 as SAI;
+    use crate::sai::SAICH;
+    impl SaiChannels for SAI {
+        type A = SAICH<SAI, false>;
+        type B = SAICH<SAI, true>;
+    }
+    impl SaiChannel for SAICH<SAI, false> {
+        type Fs = FsA;
+        type Mclk = MclkA;
+        type Sck = SckA;
+        type Sd = SdA;
+    }
+    impl SaiChannel for SAICH<SAI, true> {
+        type Fs = FsB;
+        type Mclk = MclkB;
+        type Sck = SckB;
+        type Sd = SdB;
+    }
+}
+
+pub mod sdmmc1 {
+    use super::*;
+
+    pin! {
+        <Cdir, PushPull> for [
+            PB9<8>,
+        ],
+
+        <Ck, PushPull> for [
+            PC12<12>,
+        ],
+
+        <Ckin, PushPull> for [
+            PB8<8>,
+        ],
+
+        <Cmd, PushPull> for [
+            #[cfg(feature = "gpio-l4p")]
+            PC0<12>,
+
+            PD2<12>,
+        ],
+
+        <D0, PushPull> for [
+            PC8<12>,
+        ],
+
+        <D0Dir, PushPull> for [
+            PC6<8>,
+        ],
+
+        <D1, PushPull> for [
+            PC9<12>,
+        ],
+
+        <D123Dir, PushPull> for [
+            PC7<8>,
+        ],
+
+        <D2, PushPull> for [
+            PC10<12>,
+        ],
+
+        <D3, PushPull> for [
+            PC11<12>,
+        ],
+
+        <D4, PushPull> for [
+            PB8<12>,
+        ],
+
+        <D5, PushPull> for [
+            PB9<12>,
+        ],
+
+        <D6, PushPull> for [
+            PC6<12>,
+        ],
+
+        <D7, PushPull> for [
+            PC7<12>,
+        ],
+    }
+}
+
+#[cfg(feature = "gpio-l4p")]
+pub mod sdmmc2 {
+    use super::*;
+
+    pin! {
+        <Ck, PushPull> for [
+            PB12<12>,
+
+            PD6<8>,
+        ],
+
+        <Ckin, PushPull> for [
+            PC0<7>,
+
+            PD4<8>,
+        ],
+
+        <Cmd, PushPull> for [
+            PA1<12>,
+
+            PD7<8>,
+        ],
+
+        <D0, PushPull> for [
+            PB14<11>,
+
+            PG9<11>,
+        ],
+
+        <D1, PushPull> for [
+            PB15<11>,
+
+            PG10<11>,
+        ],
+
+        <D2, PushPull> for [
+            PB3<12>,
+
+            PG11<11>,
+        ],
+
+        <D3, PushPull> for [
+            PB4<12>,
+
+            PG12<11>,
+        ],
+
+        <D4, PushPull> for [
+            PB8<7>,
+
+            PG2<11>,
+        ],
+
+        <D5, PushPull> for [
+            PB9<7>,
+
+            PG3<11>,
+        ],
+
+        <D6, PushPull> for [
+            PC6<7>,
+
+            PG4<11>,
+        ],
+
+        <D7, PushPull> for [
+            PC7<7>,
+
+            PG5<11>,
+        ],
+    }
+}
+
+pub mod spi1 {
+    use super::*;
+
+    pin! {
+        <Miso, PushPull> for no:NoPin, [
+            PA6<5>,
+
+            PA11<5>,
+
+            PB4<5>,
+
+            PE14<5>,
+
+            PG3<5>,
+        ],
+
+        <Mosi, PushPull> for no:NoPin, [
+            PA7<5>,
+
+            PA12<5>,
+
+            PB5<5>,
+
+            PE15<5>,
+
+            PG4<5>,
+        ],
+
+        <Nss, PushPull> for [
+            PA4<5>,
+
+            PA15<5>,
+
+            PB0<5>,
+
+            PE12<5>,
+
+            PG5<5>,
+        ],
+
+        <Sck, PushPull> for no:NoPin, [
+            PA1<5>,
+
+            PA5<5>,
+
+            PB3<5>,
+
+            PE13<5>,
+
+            PG2<5>,
+        ],
+    }
+    impl SpiCommon for crate::pac::SPI1 {
+        type Miso = Miso;
+        type Mosi = Mosi;
+        type Nss = Nss;
+        type Sck = Sck;
+    }
+}
+
+pub mod spi2 {
+    use super::*;
+
+    pin! {
+        <Miso, PushPull> for no:NoPin, [
+            PB14<5>,
+
+            PC2<5>,
+
+            PD3<5>,
+
+            PI2<5>,
+        ],
+
+        <Mosi, PushPull> for no:NoPin, [
+            PB15<5>,
+
+            PC1<3>,
+
+            PC3<5>,
+
+            PD4<5>,
+
+            PI3<5>,
+        ],
+
+        <Nss, PushPull> for [
+            PB9<5>,
+
+            PB12<5>,
+
+            PD0<5>,
+
+            PI0<5>,
+        ],
+
+        <Sck, PushPull> for no:NoPin, [
+            PA9<3>,
+
+            PB10<5>,
+
+            PB13<5>,
+
+            PD1<5>,
+
+            PD3<3>,
+
+            PI1<5>,
+        ],
+    }
+    impl SpiCommon for crate::pac::SPI2 {
+        type Miso = Miso;
+        type Mosi = Mosi;
+        type Nss = Nss;
+        type Sck = Sck;
+    }
+}
+
+pub mod spi3 {
+    use super::*;
+
+    pin! {
+        <Miso, PushPull> for no:NoPin, [
+            PB4<6>,
+
+            PC11<6>,
+
+            PG10<6>,
+        ],
+
+        <Mosi, PushPull> for no:NoPin, [
+            PB5<6>,
+
+            PC12<6>,
+
+            PD6<5>,
+
+            PG11<6>,
+        ],
+
+        <Nss, PushPull> for [
+            PA4<6>,
+
+            PA15<6>,
+
+            PG12<6>,
+        ],
+
+        <Sck, PushPull> for no:NoPin, [
+            PB3<6>,
+
+            PC10<6>,
+
+            PG9<6>,
+        ],
+    }
+    impl SpiCommon for crate::pac::SPI3 {
+        type Miso = Miso;
+        type Mosi = Mosi;
+        type Nss = Nss;
+        type Sck = Sck;
+    }
+}
+
+pub mod sys {
+    use super::*;
+
+    pin! {
+        <JtckSwclk, PushPull> for [
+            PA14<0>,
+        ],
+
+        <Jtdi, PushPull> for [
+            PA15<0>,
+        ],
+
+        <JtdoSwo, PushPull> for [
+            PB3<0>,
+        ],
+
+        <JtmsSwdio, PushPull> for [
+            PA13<0>,
+        ],
+
+        <Jtrst, PushPull> for [
+            PB4<0>,
+        ],
+
+        <Traceclk, PushPull> for [
+            PE2<0>,
+        ],
+
+        <Traced0, PushPull> for [
+            PC1<0>,
+
+            PC9<0>,
+
+            PE3<0>,
+        ],
+
+        <Traced1, PushPull> for [
+            PC10<0>,
+
+            PE4<0>,
+        ],
+
+        <Traced2, PushPull> for [
+            PD2<0>,
+
+            PE5<0>,
+        ],
+
+        <Traced3, PushPull> for [
+            PC12<0>,
+
+            PE6<0>,
+        ],
+    }
+}
+
+pub mod tim1 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PA8<1>,
+
+            PE9<1>,
+        ],
+
+        <Ch1N> default:PushPull for [
+            PA7<1>,
+
+            PB13<1>,
+
+            PE8<1>,
+        ],
+
+        <Ch2> default:PushPull for [
+            PA9<1>,
+
+            PE11<1>,
+        ],
+
+        <Ch2N> default:PushPull for [
+            PB0<1>,
+
+            PB14<1>,
+
+            PE10<1>,
+        ],
+
+        <Ch3> default:PushPull for [
+            PA10<1>,
+
+            PE13<1>,
+        ],
+
+        <Ch3N> default:PushPull for [
+            PB1<1>,
+
+            PB15<1>,
+
+            PE12<1>,
+        ],
+
+        <Ch4> default:PushPull for [
+            PA11<1>,
+
+            PE14<1>,
+        ],
+    }
+
+    pin! {
+        <Bkin, PushPull> for [
+            PA6<12>,
+
+            PB12<3>,
+
+            PE15<3>,
+        ],
+
+        <Bkin2, PushPull> for [
+            PA11<12>,
+
+            PE14<3>,
+        ],
+
+        <Etr, PushPull> for [
+            PA12<1>,
+
+            PE7<1>,
+        ],
+    }
+
+    use crate::pac::TIM1 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimNCPin<0> for TIM {
+        type ChN<Otype> = Ch1N<Otype>;
+    }
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    impl TimNCPin<1> for TIM {
+        type ChN<Otype> = Ch2N<Otype>;
+    }
+    impl TimCPin<2> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
+    }
+    impl TimNCPin<2> for TIM {
+        type ChN<Otype> = Ch3N<Otype>;
+    }
+    impl TimCPin<3> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
+    }
+    impl TimBkin for TIM {
+        type Bkin = Bkin;
+    }
+    impl TimEtr for TIM {
+        type Etr = Etr;
+    }
+}
+
+pub mod tim2 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PA0<1>,
+
+            PA5<1>,
+
+            PA15<1>,
+        ],
+
+        <Ch2> default:PushPull for [
+            PA1<1>,
+
+            PB3<1>,
+        ],
+
+        <Ch3> default:PushPull for [
+            PA2<1>,
+
+            PB10<1>,
+        ],
+
+        <Ch4> default:PushPull for [
+            PA3<1>,
+
+            PB11<1>,
+        ],
+    }
+
+    pin! {
+        <Etr, PushPull> for [
+            PA0<14>,
+
+            PA5<2>,
+
+            PA15<2>,
+        ],
+    }
+
+    use crate::pac::TIM2 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    impl TimCPin<2> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
+    }
+    impl TimCPin<3> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
+    }
+    impl TimEtr for TIM {
+        type Etr = Etr;
+    }
+}
+
+pub mod tim3 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PA6<2>,
+
+            PB4<2>,
+
+            PC6<2>,
+
+            PE3<2>,
+        ],
+
+        <Ch2> default:PushPull for [
+            PA7<2>,
+
+            PB5<2>,
+
+            PC7<2>,
+
+            PE4<2>,
+        ],
+
+        <Ch3> default:PushPull for [
+            PB0<2>,
+
+            PC8<2>,
+
+            PE5<2>,
+        ],
+
+        <Ch4> default:PushPull for [
+            PB1<2>,
+
+            PC9<2>,
+
+            PE6<2>,
+        ],
+    }
+
+    pin! {
+        <Etr, PushPull> for [
+            PD2<2>,
+
+            PE2<2>,
+        ],
+    }
+
+    use crate::pac::TIM3 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    impl TimCPin<2> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
+    }
+    impl TimCPin<3> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
+    }
+    impl TimEtr for TIM {
+        type Etr = Etr;
+    }
+}
+
+pub mod tim4 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PB6<2>,
+
+            PD12<2>,
+        ],
+
+        <Ch2> default:PushPull for [
+            PB7<2>,
+
+            PD13<2>,
+        ],
+
+        <Ch3> default:PushPull for [
+            PB8<2>,
+
+            PD14<2>,
+        ],
+
+        <Ch4> default:PushPull for [
+            PB9<2>,
+
+            PD15<2>,
+        ],
+    }
+
+    pin! {
+        <Etr, PushPull> for [
+            PE0<2>,
+        ],
+    }
+
+    use crate::pac::TIM4 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    impl TimCPin<2> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
+    }
+    impl TimCPin<3> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
+    }
+    impl TimEtr for TIM {
+        type Etr = Etr;
+    }
+}
+
+pub mod tim5 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PA0<2>,
+
+            PF6<2>,
+
+            PH10<2>,
+        ],
+
+        <Ch2> default:PushPull for [
+            PA1<2>,
+
+            PF7<2>,
+
+            PH11<2>,
+        ],
+
+        <Ch3> default:PushPull for [
+            PA2<2>,
+
+            PF8<2>,
+
+            PH12<2>,
+        ],
+
+        <Ch4> default:PushPull for [
+            PA3<2>,
+
+            PF9<2>,
+
+            PI0<2>,
+        ],
+    }
+
+    pin! {
+        <Etr, PushPull> for [
+            PF6<1>,
+        ],
+    }
+
+    use crate::pac::TIM5 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    impl TimCPin<2> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
+    }
+    impl TimCPin<3> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
+    }
+    impl TimEtr for TIM {
+        type Etr = Etr;
+    }
+}
+
+pub mod tim8 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PC6<3>,
+
+            PI5<3>,
+        ],
+
+        <Ch1N> default:PushPull for [
+            PA5<3>,
+
+            PA7<3>,
+
+            PH13<3>,
+        ],
+
+        <Ch2> default:PushPull for [
+            PC7<3>,
+
+            PI6<3>,
+        ],
+
+        <Ch2N> default:PushPull for [
+            PB0<3>,
+
+            PB14<3>,
+
+            PH14<3>,
+        ],
+
+        <Ch3> default:PushPull for [
+            PC8<3>,
+
+            PI7<3>,
+        ],
+
+        <Ch3N> default:PushPull for [
+            PB1<3>,
+
+            PB15<3>,
+
+            PH15<3>,
+        ],
+
+        <Ch4> default:PushPull for [
+            PC9<3>,
+
+            PI2<3>,
+        ],
+    }
+
+    pin! {
+        <Bkin, PushPull> for [
+            PA6<13>,
+
+            PB7<13>,
+
+            PI4<3>,
+        ],
+
+        <Bkin2, PushPull> for [
+            PB6<12>,
+
+            PC9<14>,
+        ],
+
+        <Etr, PushPull> for [
+            PA0<3>,
+
+            PI3<3>,
+        ],
+    }
+
+    use crate::pac::TIM8 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimNCPin<0> for TIM {
+        type ChN<Otype> = Ch1N<Otype>;
+    }
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    impl TimNCPin<1> for TIM {
+        type ChN<Otype> = Ch2N<Otype>;
+    }
+    impl TimCPin<2> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
+    }
+    impl TimNCPin<2> for TIM {
+        type ChN<Otype> = Ch3N<Otype>;
+    }
+    impl TimCPin<3> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
+    }
+    impl TimBkin for TIM {
+        type Bkin = Bkin;
+    }
+    impl TimEtr for TIM {
+        type Etr = Etr;
+    }
+}
+
+pub mod tim15 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PA2<14>,
+
+            PB14<14>,
+
+            PF9<14>,
+
+            PG10<14>,
+        ],
+
+        <Ch1N> default:PushPull for [
+            PA1<14>,
+
+            PB13<14>,
+
+            PG9<14>,
+        ],
+
+        <Ch2> default:PushPull for [
+            PA3<14>,
+
+            PB15<14>,
+
+            PF10<14>,
+
+            PG11<14>,
+        ],
+    }
+
+    pin! {
+        <Bkin, PushPull> for [
+            PA9<14>,
+
+            PB12<14>,
+        ],
+
+    }
+
+    use crate::pac::TIM15 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimNCPin<0> for TIM {
+        type ChN<Otype> = Ch1N<Otype>;
+    }
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    impl TimBkin for TIM {
+        type Bkin = Bkin;
+    }
+}
+
+pub mod tim16 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PA6<14>,
+
+            PB8<14>,
+
+            PE0<14>,
+        ],
+
+        <Ch1N> default:PushPull for [
+            PB6<14>,
+        ],
+    }
+
+    pin! {
+        <Bkin, PushPull> for [
+            PB5<14>,
+        ],
+
+    }
+
+    use crate::pac::TIM16 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimNCPin<0> for TIM {
+        type ChN<Otype> = Ch1N<Otype>;
+    }
+    impl TimBkin for TIM {
+        type Bkin = Bkin;
+    }
+}
+
+pub mod tim17 {
+    use super::*;
+
+    pin! {
+        <Ch1> default:PushPull for [
+            PA7<14>,
+
+            PB9<14>,
+
+            PE1<14>,
+        ],
+
+        <Ch1N> default:PushPull for [
+            PB7<14>,
+        ],
+    }
+
+    pin! {
+        <Bkin, PushPull> for [
+            PA10<14>,
+
+            PB4<14>,
+        ],
+
+    }
+
+    use crate::pac::TIM17 as TIM;
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+    impl TimNCPin<0> for TIM {
+        type ChN<Otype> = Ch1N<Otype>;
+    }
+    impl TimBkin for TIM {
+        type Bkin = Bkin;
+    }
+}
+
+pub mod tsc {
+    use super::*;
+
+    pin! {
+        <Sync, PushPull> for [
+            PB10<9>,
+
+            PD2<9>,
+        ],
+    }
+
+    pin! {
+        <G1Io1> default:PushPull for [
+            PB12<9>,
+        ],
+
+        <G1Io2> default:PushPull for [
+            PB13<9>,
+        ],
+
+        <G1Io3> default:PushPull for [
+            PB14<9>,
+        ],
+
+        <G1Io4> default:PushPull for [
+            PB15<9>,
+        ],
+
+        <G2Io1> default:PushPull for [
+            PB4<9>,
+        ],
+
+        <G2Io2> default:PushPull for [
+            PB5<9>,
+        ],
+
+        <G2Io3> default:PushPull for [
+            PB6<9>,
+        ],
+
+        <G2Io4> default:PushPull for [
+            PB7<9>,
+        ],
+
+        <G3Io1> default:PushPull for [
+            PA15<9>,
+        ],
+
+        <G3Io2> default:PushPull for [
+            PC10<9>,
+        ],
+
+        <G3Io3> default:PushPull for [
+            PC11<9>,
+        ],
+
+        <G3Io4> default:PushPull for [
+            PC12<9>,
+        ],
+
+        <G4Io1> default:PushPull for [
+            PC6<9>,
+        ],
+
+        <G4Io2> default:PushPull for [
+            PC7<9>,
+        ],
+
+        <G4Io3> default:PushPull for [
+            PC8<9>,
+        ],
+
+        <G4Io4> default:PushPull for [
+            PC9<9>,
+        ],
+
+        <G5Io1> default:PushPull for [
+            PE10<9>,
+        ],
+
+        <G5Io2> default:PushPull for [
+            PE11<9>,
+        ],
+
+        <G5Io3> default:PushPull for [
+            PE12<9>,
+        ],
+
+        <G5Io4> default:PushPull for [
+            PE13<9>,
+        ],
+
+        <G6Io1> default:PushPull for [
+            PD10<9>,
+        ],
+
+        <G6Io2> default:PushPull for [
+            PD11<9>,
+        ],
+
+        <G6Io3> default:PushPull for [
+            PD12<9>,
+        ],
+
+        <G6Io4> default:PushPull for [
+            PD13<9>,
+        ],
+
+        <G7Io1> default:PushPull for [
+            PE2<9>,
+        ],
+
+        <G7Io2> default:PushPull for [
+            PE3<9>,
+        ],
+
+        <G7Io3> default:PushPull for [
+            PE4<9>,
+        ],
+
+        <G7Io4> default:PushPull for [
+            PE5<9>,
+        ],
+
+        <G8Io1> default:PushPull for [
+            PF14<9>,
+        ],
+
+        <G8Io2> default:PushPull for [
+            PF15<9>,
+        ],
+
+        <G8Io3> default:PushPull for [
+            PG0<9>,
+        ],
+
+        <G8Io4> default:PushPull for [
+            PG1<9>,
+        ],
+    }
+}
+
+pub mod usart1 {
+    use super::*;
+
+    pin! {
+        <Ck, PushPull> for [
+            PA8<7>,
+
+            PB5<7>,
+
+            PG13<7>,
+        ],
+
+        <Cts, PushPull> for [
+            PA11<7>,
+
+            PB4<7>,
+
+            PG11<7>,
+        ],
+
+        <De, PushPull> for [
+            PA12<7>,
+
+            PB3<7>,
+
+            PG12<7>,
+        ],
+
+        <Nss, PushPull> for [
+            PA11<7>,
+
+            PB4<7>,
+
+            PG11<7>,
+        ],
+
+        <Rts, PushPull> for [
+            PA12<7>,
+
+            PB3<7>,
+
+            PG12<7>,
+        ],
+    }
+
+    pin! {
+        <Rx> default:PushPull for no:NoPin, [
+            PA10<7>,
+
+            PB7<7>,
+
+            PG10<7>,
+        ],
+
+        <Tx> default:PushPull for no:NoPin, [
+            PA9<7>,
+
+            PB6<7>,
+
+            PG9<7>,
+        ],
+    }
+    use crate::pac::USART1 as USART;
+    impl SerialAsync for USART {
+        type Rx<Otype> = Rx<Otype>;
+        type Tx<Otype> = Tx<Otype>;
+    }
+    impl SerialSync for USART {
+        type Ck = Ck;
+    }
+    impl SerialFlowControl for USART {
+        type Cts = Cts;
+        type Rts = Rts;
+    }
+}
+
+pub mod usart2 {
+    use super::*;
+
+    pin! {
+        <Ck, PushPull> for [
+            PA4<7>,
+
+            PD7<7>,
+        ],
+
+        <Cts, PushPull> for [
+            PA0<7>,
+
+            PD3<7>,
+        ],
+
+        <De, PushPull> for [
+            PA1<7>,
+
+            PD4<7>,
+        ],
+
+        <Nss, PushPull> for [
+            PA0<7>,
+
+            PD3<7>,
+        ],
+
+        <Rts, PushPull> for [
+            PA1<7>,
+
+            PD4<7>,
+        ],
+    }
+
+    pin! {
+        <Rx> default:PushPull for no:NoPin, [
+            PA3<7>,
+
+            PA15<3>,
+
+            PD6<7>,
+        ],
+
+        <Tx> default:PushPull for no:NoPin, [
+            PA2<7>,
+
+            PD5<7>,
+        ],
+    }
+    use crate::pac::USART2 as USART;
+    impl SerialAsync for USART {
+        type Rx<Otype> = Rx<Otype>;
+        type Tx<Otype> = Tx<Otype>;
+    }
+    impl SerialSync for USART {
+        type Ck = Ck;
+    }
+    impl SerialFlowControl for USART {
+        type Cts = Cts;
+        type Rts = Rts;
+    }
+}
+
+pub mod usart3 {
+    use super::*;
+
+    pin! {
+        <Ck, PushPull> for [
+            PB0<7>,
+
+            PB12<7>,
+
+            PC12<7>,
+
+            PD10<7>,
+        ],
+
+        <Cts, PushPull> for [
+            PA6<7>,
+
+            PB13<7>,
+
+            PD11<7>,
+        ],
+
+        <De, PushPull> for [
+            PA15<7>,
+
+            PB1<7>,
+
+            PB14<7>,
+
+            PD2<7>,
+
+            PD12<7>,
+        ],
+
+        <Nss, PushPull> for [
+            PA6<7>,
+
+            PB13<7>,
+
+            PD11<7>,
+        ],
+
+        <Rts, PushPull> for [
+            PA15<7>,
+
+            PB1<7>,
+
+            PB14<7>,
+
+            PD2<7>,
+
+            PD12<7>,
+        ],
+    }
+
+    pin! {
+        <Rx> default:PushPull for no:NoPin, [
+            PB11<7>,
+
+            PC5<7>,
+
+            PC11<7>,
+
+            PD9<7>,
+        ],
+
+        <Tx> default:PushPull for no:NoPin, [
+            PB10<7>,
+
+            PC4<7>,
+
+            PC10<7>,
+
+            PD8<7>,
+        ],
+    }
+    use crate::pac::USART3 as USART;
+    impl SerialAsync for USART {
+        type Rx<Otype> = Rx<Otype>;
+        type Tx<Otype> = Tx<Otype>;
+    }
+    impl SerialSync for USART {
+        type Ck = Ck;
+    }
+    impl SerialFlowControl for USART {
+        type Cts = Cts;
+        type Rts = Rts;
+    }
+}
+
+pub mod uart4 {
+    use super::*;
+
+    pin! {
+        <Cts, PushPull> for [
+            PB7<8>,
+        ],
+
+        <De, PushPull> for [
+            PA15<8>,
+        ],
+
+        <Rts, PushPull> for [
+            PA15<8>,
+        ],
+    }
+
+    pin! {
+        <Rx> default:PushPull for no:NoPin, [
+            PA1<8>,
+
+            PC11<8>,
+        ],
+
+        <Tx> default:PushPull for no:NoPin, [
+            PA0<8>,
+
+            PC10<8>,
+        ],
+    }
+    use crate::pac::UART4 as UART;
+    impl SerialAsync for UART {
+        type Rx<Otype> = Rx<Otype>;
+        type Tx<Otype> = Tx<Otype>;
+    }
+    impl SerialFlowControl for UART {
+        type Cts = Cts;
+        type Rts = Rts;
+    }
+}
+
+pub mod uart5 {
+    use super::*;
+
+    pin! {
+        <Cts, PushPull> for [
+            PB5<8>,
+        ],
+
+        <De, PushPull> for [
+            PB4<8>,
+        ],
+
+        <Rts, PushPull> for [
+            PB4<8>,
+        ],
+    }
+
+    pin! {
+        <Rx> default:PushPull for no:NoPin, [
+            PD2<8>,
+        ],
+
+        <Tx> default:PushPull for no:NoPin, [
+            PC12<8>,
+        ],
+    }
+    use crate::pac::UART5 as UART;
+    impl SerialAsync for UART {
+        type Rx<Otype> = Rx<Otype>;
+        type Tx<Otype> = Tx<Otype>;
+    }
+    impl SerialFlowControl for UART {
+        type Cts = Cts;
+        type Rts = Rts;
+    }
+}
+
+pub mod otg_fs {
+    use super::*;
+
+    pin! {
+        <Dm, PushPull> for [
+            PA11<10>,
+        ],
+
+        <Dp, PushPull> for [
+            PA12<10>,
+        ],
+
+        <Id, PushPull> for [
+            PA10<10>,
+        ],
+
+        <Noe, PushPull> for [
+            PA13<10>,
+
+            PC9<10>,
+        ],
+
+        <Sof, PushPull> for [
+            PA8<10>,
+
+            PA14<10>,
+        ],
+    }
+}

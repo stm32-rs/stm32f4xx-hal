@@ -30,6 +30,7 @@ use crate::pac;
 use crate::gpio::NoPin;
 use crate::rcc::Clocks;
 
+#[cfg(feature = "dma")]
 pub mod dma;
 
 /// Serial error kind
@@ -299,6 +300,7 @@ halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
 #[cfg(feature = "usart2")]
 halUsart! { pac::USART2, Serial2, Rx2, Tx2 }
 #[cfg(feature = "usart3")]
+#[cfg(not(feature = "l4"))]
 halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
 #[cfg(feature = "usart4")]
 halUsart! { pac::USART4, Serial4, Rx4, Tx4 }

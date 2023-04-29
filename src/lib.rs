@@ -13,11 +13,35 @@ pub use embedded_hal_02 as hal_02;
 pub use nb;
 pub use nb::block;
 
+#[cfg(feature = "svd-f0x0")]
+pub use stm32f0::stm32f0x0 as pac;
+
+#[cfg(feature = "svd-f0x1")]
+pub use stm32f0::stm32f0x1 as pac;
+
+#[cfg(feature = "svd-f0x2")]
+pub use stm32f0::stm32f0x2 as pac;
+
 #[cfg(feature = "svd-f215")]
 pub use stm32f2::stm32f215 as pac;
 
 #[cfg(feature = "svd-f217")]
 pub use stm32f2::stm32f217 as pac;
+
+#[cfg(feature = "svd-f301")]
+pub use stm32f3::stm32f301 as pac;
+
+#[cfg(feature = "svd-f302")]
+pub use stm32f3::stm32f302 as pac;
+
+#[cfg(feature = "svd-f303")]
+pub use stm32f3::stm32f303 as pac;
+
+#[cfg(feature = "svd-f373")]
+pub use stm32f3::stm32f373 as pac;
+
+#[cfg(feature = "svd-f3x4")]
+pub use stm32f3::stm32f3x4 as pac;
 
 #[cfg(feature = "svd-f401")]
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f401 peripherals.
@@ -87,13 +111,69 @@ pub use stm32f7::stm32f7x7 as pac;
 #[cfg(feature = "svd-f7x9")]
 pub use stm32f7::stm32f7x9 as pac;
 
+#[cfg(feature = "svd-g431")]
+pub use stm32g4::stm32g431 as pac;
+
+#[cfg(feature = "svd-g441")]
+pub use stm32g4::stm32g441 as pac;
+
+#[cfg(feature = "svd-g471")]
+pub use stm32g4::stm32g471 as pac;
+
+#[cfg(feature = "svd-g473")]
+pub use stm32g4::stm32g473 as pac;
+
+#[cfg(feature = "svd-g474")]
+pub use stm32g4::stm32g474 as pac;
+
+#[cfg(feature = "svd-g483")]
+pub use stm32g4::stm32g483 as pac;
+
+#[cfg(feature = "svd-g484")]
+pub use stm32g4::stm32g484 as pac;
+
+#[cfg(feature = "svd-g491")]
+pub use stm32g4::stm32g491 as pac;
+
+#[cfg(feature = "svd-g4a1")]
+pub use stm32g4::stm32g4a1 as pac;
+
+#[cfg(feature = "svd-l4x1")]
+pub use stm32l4::stm32l4x1 as pac;
+
+#[cfg(feature = "svd-l412")]
+pub use stm32l4::stm32l412 as pac;
+
+#[cfg(feature = "svd-l4x2")]
+pub use stm32l4::stm32l4x2 as pac;
+
+#[cfg(feature = "svd-l4x3")]
+pub use stm32l4::stm32l4x3 as pac;
+
+#[cfg(feature = "svd-l4x5")]
+pub use stm32l4::stm32l4x5 as pac;
+
+#[cfg(feature = "svd-l4x6")]
+pub use stm32l4::stm32l4x6 as pac;
+
+#[cfg(feature = "svd-l4r9")]
+pub use stm32l4::stm32l4r9 as pac;
+
 // Enable use of interrupt macro
 pub use crate::pac::interrupt;
 
+#[cfg(any(feature = "f4", feature = "f7"))]
 pub mod adc;
+#[cfg(feature = "l4")]
+#[path = "adc/l4.rs"]
+pub mod adc;
+#[cfg(feature = "bb")]
 pub mod bb;
 #[cfg(all(feature = "can", any(feature = "can1", feature = "can2")))]
 pub mod can;
+#[cfg(feature = "l4")]
+#[path = "crc_l4.rs"]
+pub mod crc;
 #[cfg(feature = "f4")]
 pub mod crc32;
 #[cfg(feature = "dac")]
@@ -117,6 +197,7 @@ pub mod otg_hs;
 #[cfg(feature = "rng")]
 pub mod rng;
 
+#[cfg(feature = "dma")]
 pub mod dma;
 pub mod dwt;
 #[cfg(feature = "f4")]
@@ -125,14 +206,22 @@ pub mod flash;
 #[cfg(feature = "f7")]
 #[path = "flash/f7.rs"]
 pub mod flash;
+#[cfg(feature = "l4")]
+#[path = "flash/l4.rs"]
+pub mod flash;
 #[cfg(any(feature = "fmc", feature = "fsmc"))]
 #[cfg(feature = "f7")]
 pub mod fmc;
 #[cfg(all(feature = "fsmc_lcd", any(feature = "fmc", feature = "fsmc")))]
 pub mod fsmc_lcd;
+#[cfg(feature = "l4")]
+pub mod lptimer;
 #[cfg(all(feature = "dma2d", feature = "ltdc"))]
 pub mod ltdc;
 pub mod prelude;
+#[cfg(feature = "l4")]
+#[path = "pwr/l4.rs"]
+pub mod pwr;
 pub mod qei;
 #[cfg(feature = "quadspi")]
 pub mod qspi;
@@ -144,13 +233,21 @@ pub mod sai;
 #[cfg(all(feature = "sdio-host", feature = "sdio"))]
 pub mod sdio;
 pub mod serial;
+#[cfg(not(feature = "f3"))]
 pub mod signature;
+#[cfg(feature = "f3")]
+pub mod signature_f3;
 pub mod spi;
 pub mod syscfg;
 pub mod time;
 pub mod timer;
+#[cfg(feature = "l4")]
+pub mod tsc;
 #[cfg(feature = "uart4")]
 pub mod uart;
+#[cfg(feature = "usb")]
+#[cfg(any(feature = "svd-l412", feature = "svd-l4x2", feature = "svd-l4x3",))]
+pub mod usb;
 pub mod watchdog;
 
 mod sealed {
@@ -244,3 +341,8 @@ pub trait Steal {
     /// no stolen instances are passed to such software.
     unsafe fn steal() -> Self;
 }
+
+#[allow(unused)]
+use assert;
+#[allow(unused)]
+use unreachable;

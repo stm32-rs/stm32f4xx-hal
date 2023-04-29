@@ -13,6 +13,7 @@ use enumflags2::BitFlags;
 use crate::bb;
 use crate::pac;
 
+#[cfg(feature = "dma")]
 use crate::dma::traits::PeriAddress;
 use crate::rcc::{self, Clocks};
 use fugit::HertzU32 as Hertz;
@@ -624,6 +625,7 @@ macro_rules! hal {
             )?
 
             with_pwm!($TIM: $cnum $(, $aoe)?);
+            #[cfg(feature = "dma")]
             unsafe impl<const C: u8> PeriAddress for CCR<$TIM, C> {
                 #[inline(always)]
                 fn address(&self) -> u32 {
@@ -646,6 +648,7 @@ use hal;
 
 macro_rules! with_dmar {
     ($TIM:ty, $memsize:ty) => {
+        #[cfg(feature = "dma")]
         unsafe impl PeriAddress for DMAR<$TIM> {
             #[inline(always)]
             fn address(&self) -> u32 {
