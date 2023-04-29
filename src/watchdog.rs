@@ -39,7 +39,11 @@ impl IndependentWatchdog {
 
     /// Debug independent watchdog stopped when core is halted
     pub fn stop_on_debug(&self, dbgmcu: &DBGMCU, stop: bool) {
+        #[cfg(any(feature = "f4", feature = "f7"))]
         dbgmcu.apb1_fz().modify(|_, w| w.dbg_iwdg_stop().bit(stop));
+
+        #[cfg(feature = "l4")]
+        dbgmcu.apb1fzr1().modify(|_, w| w.dbg_iwdg_stop().bit(stop));
     }
 
     /// Sets the watchdog timer timout period. Max: 32768 ms

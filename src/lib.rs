@@ -63,6 +63,27 @@ pub use stm32f4::stm32f446 as pac;
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f469/f479 peripherals.
 pub use stm32f4::stm32f469 as pac;
 
+#[cfg(feature = "svd-l4x1")]
+pub use stm32l4::stm32l4x1 as pac;
+
+#[cfg(feature = "svd-l412")]
+pub use stm32l4::stm32l412 as pac;
+
+#[cfg(feature = "svd-l4x2")]
+pub use stm32l4::stm32l4x2 as pac;
+
+#[cfg(feature = "svd-l4x3")]
+pub use stm32l4::stm32l4x3 as pac;
+
+#[cfg(feature = "svd-l4x5")]
+pub use stm32l4::stm32l4x5 as pac;
+
+#[cfg(feature = "svd-l4x6")]
+pub use stm32l4::stm32l4x6 as pac;
+
+#[cfg(feature = "svd-l4r9")]
+pub use stm32l4::stm32l4r9 as pac;
+
 #[cfg(feature = "svd-f7x2")]
 pub use stm32f7::stm32f7x2 as pac;
 
@@ -90,10 +111,18 @@ pub use stm32f7::stm32f7x9 as pac;
 // Enable use of interrupt macro
 pub use crate::pac::interrupt;
 
+#[cfg(any(feature = "f4", feature = "f7"))]
 pub mod adc;
+#[cfg(feature = "l4")]
+#[path = "adc/l4.rs"]
+pub mod adc;
+#[cfg(feature = "bb")]
 pub mod bb;
 #[cfg(all(feature = "can", any(feature = "can1", feature = "can2")))]
 pub mod can;
+#[cfg(feature = "l4")]
+#[path = "crc_l4.rs"]
+pub mod crc;
 #[cfg(feature = "f4")]
 pub mod crc32;
 #[cfg(feature = "dac")]
@@ -117,6 +146,7 @@ pub mod otg_hs;
 #[cfg(feature = "rng")]
 pub mod rng;
 
+#[cfg(feature = "dma")]
 pub mod dma;
 pub mod dwt;
 #[cfg(feature = "f4")]
@@ -125,14 +155,22 @@ pub mod flash;
 #[cfg(feature = "f7")]
 #[path = "flash/f7.rs"]
 pub mod flash;
+#[cfg(feature = "l4")]
+#[path = "flash/l4.rs"]
+pub mod flash;
 #[cfg(any(feature = "fmc", feature = "fsmc"))]
 #[cfg(feature = "f7")]
 pub mod fmc;
 #[cfg(all(feature = "fsmc_lcd", any(feature = "fmc", feature = "fsmc")))]
 pub mod fsmc_lcd;
+#[cfg(feature = "l4")]
+pub mod lptimer;
 #[cfg(all(feature = "dma2d", feature = "ltdc"))]
 pub mod ltdc;
 pub mod prelude;
+#[cfg(feature = "l4")]
+#[path = "pwr/l4.rs"]
+pub mod pwr;
 pub mod qei;
 #[cfg(feature = "quadspi")]
 pub mod qspi;
@@ -149,8 +187,13 @@ pub mod spi;
 pub mod syscfg;
 pub mod time;
 pub mod timer;
+#[cfg(feature = "l4")]
+pub mod tsc;
 #[cfg(feature = "uart4")]
 pub mod uart;
+#[cfg(feature = "usb")]
+#[cfg(any(feature = "svd-l412", feature = "svd-l4x2", feature = "svd-l4x3",))]
+pub mod usb;
 pub mod watchdog;
 
 mod sealed {

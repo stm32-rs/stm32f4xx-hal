@@ -141,9 +141,6 @@ use core::fmt;
 
 pub mod config;
 
-#[cfg(feature = "f2")]
-mod f2;
-
 #[cfg(feature = "f4")]
 mod f4;
 

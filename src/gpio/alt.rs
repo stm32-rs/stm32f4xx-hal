@@ -1,7 +1,22 @@
+#[cfg(feature = "c0")]
+mod c0;
+#[cfg(feature = "c0")]
+pub use c0::*;
+
+#[cfg(feature = "f0")]
+mod f0;
+#[cfg(feature = "f0")]
+pub use f0::*;
+
 #[cfg(feature = "f2")]
 mod f2;
 #[cfg(feature = "f2")]
 pub use f2::*;
+
+#[cfg(feature = "f3")]
+mod f3;
+#[cfg(feature = "f3")]
+pub use f3::*;
 
 #[cfg(feature = "f4")]
 mod f4;
@@ -12,6 +27,61 @@ pub use f4::*;
 mod f7;
 #[cfg(feature = "f7")]
 pub use f7::*;
+
+#[cfg(feature = "g0")]
+mod g0;
+#[cfg(feature = "g0")]
+pub use g0::*;
+
+#[cfg(feature = "g4")]
+mod g4;
+#[cfg(feature = "g4")]
+pub use g4::*;
+
+#[cfg(feature = "h7")]
+mod h7;
+#[cfg(feature = "h7")]
+pub use h7::*;
+
+#[cfg(feature = "l0")]
+mod l0;
+#[cfg(feature = "l0")]
+pub use l0::*;
+
+#[cfg(feature = "l1")]
+mod l1;
+#[cfg(feature = "l1")]
+pub use l1::*;
+
+#[cfg(feature = "l4x")]
+mod l4;
+#[cfg(feature = "l4x")]
+pub use l4::*;
+
+#[cfg(feature = "l4p")]
+mod l4p;
+#[cfg(feature = "l4p")]
+pub use l4p::*;
+
+#[cfg(feature = "l5")]
+mod l5;
+#[cfg(feature = "l5")]
+pub use l5::*;
+
+#[cfg(feature = "u5")]
+mod u5;
+#[cfg(feature = "u5")]
+pub use u5::*;
+
+#[cfg(feature = "wl")]
+mod wl;
+#[cfg(feature = "wl")]
+pub use wl::*;
+
+#[cfg(feature = "wb")]
+mod wb;
+#[cfg(feature = "wb")]
+pub use wb::*;
 
 macro_rules! extipin {
     ($( $(#[$attr:meta])* $PX:ident,)*) => {
@@ -75,6 +145,67 @@ macro_rules! extipin {
     };
 }
 use extipin;
+
+#[allow(unused)]
+macro_rules! analog {
+    ( $($(#[$docs:meta])* <$name:ident> for $(no: $NoPin:ident,)? [$(
+        $(#[$attr:meta])* $PX:ident<$A:literal>,
+    )*],)*) => {
+        $(
+            #[derive(Debug)]
+            $(#[$docs])*
+            pub enum $name {
+                $(
+                    None($NoPin<$Otype>),
+                )?
+
+                $(
+                    $(#[$attr])*
+                    $PX(gpio::$PX<Analog>),
+                )*
+            }
+
+            impl crate::Sealed for $name { }
+
+            $(
+                impl From<$NoPin<$Otype>> for $name {
+                    fn from(p: $NoPin<$Otype>) -> Self {
+                        Self::None(p)
+                    }
+                }
+            )?
+
+            $(
+                $(#[$attr])*
+                impl<MODE: PinMode> From<gpio::$PX<MODE>> for $name
+                {
+                    fn from(p: gpio::$PX<MODE>) -> Self {
+                        Self::$PX(p.into_mode())
+                    }
+                }
+
+                $(#[$attr])*
+                #[allow(irrefutable_let_patterns)]
+                impl<MODE> TryFrom<$name> for gpio::$PX<MODE>
+                where
+                    MODE: PinMode,
+                {
+                    type Error = ();
+
+                    fn try_from(a: $name) -> Result<Self, Self::Error> {
+                        if let $name::$PX(p) = a {
+                            Ok(p.into_mode())
+                        } else {
+                            Err(())
+                        }
+                    }
+                }
+            )*
+        )*
+    };
+}
+#[allow(unused)]
+use analog;
 
 macro_rules! pin {
     ( $($(#[$docs:meta])* <$name:ident, $Otype:ident> for $(no: $NoPin:ident,)? [$(

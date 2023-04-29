@@ -120,7 +120,10 @@ unsafe impl bxcan::Instance for Can<pac::CAN2> {
 }
 
 unsafe impl bxcan::FilterOwner for Can<pac::CAN1> {
+    #[cfg(any(feature = "f4", feature = "f7"))]
     const NUM_FILTER_BANKS: u8 = 28;
+    #[cfg(feature = "l4")]
+    const NUM_FILTER_BANKS: u8 = 14;
 }
 
 unsafe impl bxcan::MasterInstance for Can<pac::CAN1> {}

@@ -6,6 +6,7 @@ use nb::block;
 use super::{
     config, CFlag, Error, Event, Flag, Rx, RxISR, RxListen, Serial, SerialExt, Tx, TxISR, TxListen,
 };
+#[cfg(feature = "dma")]
 use crate::dma::{
     traits::{DMASet, PeriAddress},
     MemoryToPeripheral, PeripheralToMemory,
@@ -721,6 +722,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
     }
 }
 
+#[cfg(feature = "dma")]
 unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -730,6 +732,7 @@ unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     type MemSize = u8;
 }
 
+#[cfg(feature = "dma")]
 unsafe impl<UART: CommonPins, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory>
     for Rx<UART>
 where
@@ -737,6 +740,7 @@ where
 {
 }
 
+#[cfg(feature = "dma")]
 unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -746,6 +750,7 @@ unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     type MemSize = u8;
 }
 
+#[cfg(feature = "dma")]
 unsafe impl<UART: CommonPins, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral>
     for Tx<UART>
 where
