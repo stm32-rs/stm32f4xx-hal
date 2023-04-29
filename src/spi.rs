@@ -152,29 +152,24 @@ impl<SPI: Instance, const BIDI: bool, W> DerefMut for SpiSlave<SPI, BIDI, W> {
 
 // Implemented by all SPI instances
 pub trait Instance:
-    crate::Sealed + Deref<Target = spi1::RegisterBlock> + rcc::Enable + rcc::Reset + rcc::BusClock
+    crate::Sealed
+    + Deref<Target = spi1::RegisterBlock>
+    + rcc::Enable
+    + rcc::Reset
+    + rcc::BusClock
+    + gpio::alt::SpiCommon
 {
-    type Sck;
-    type Miso;
-    type Mosi;
-    type Nss;
-
     #[doc(hidden)]
     fn ptr() -> *const spi1::RegisterBlock;
 }
 
 // Implemented by all SPI instances
 macro_rules! spi {
-    ($SPI:ty: $Spi:ident, $SpiSlave:ident, $spi:ident) => {
+    ($SPI:ty: $Spi:ident, $SpiSlave:ident) => {
         pub type $Spi<const BIDI: bool = false, W = u8> = Spi<$SPI, BIDI, W>;
         pub type $SpiSlave<const BIDI: bool = false, W = u8> = Spi<$SPI, BIDI, W>;
 
         impl Instance for $SPI {
-            type Sck = gpio::alt::$spi::Sck;
-            type Miso = gpio::alt::$spi::Miso;
-            type Mosi = gpio::alt::$spi::Mosi;
-            type Nss = gpio::alt::$spi::Nss;
-
             fn ptr() -> *const spi1::RegisterBlock {
                 <$SPI>::ptr() as *const _
             }
@@ -182,20 +177,20 @@ macro_rules! spi {
     };
 }
 
-spi! { pac::SPI1: Spi1, SpiSlave1, spi1 }
-spi! { pac::SPI2: Spi2, SpiSlave2, spi2 }
+spi! { pac::SPI1: Spi1, SpiSlave1 }
+spi! { pac::SPI2: Spi2, SpiSlave2 }
 
 #[cfg(feature = "spi3")]
-spi! { pac::SPI3: Spi3, SpiSlave3, spi3 }
+spi! { pac::SPI3: Spi3, SpiSlave3 }
 
 #[cfg(feature = "spi4")]
-spi! { pac::SPI4: Spi4, SpiSlave4, spi4 }
+spi! { pac::SPI4: Spi4, SpiSlave4 }
 
 #[cfg(feature = "spi5")]
-spi! { pac::SPI5: Spi5, SpiSlave5, spi5 }
+spi! { pac::SPI5: Spi5, SpiSlave5 }
 
 #[cfg(feature = "spi6")]
-spi! { pac::SPI6: Spi6, SpiSlave6, spi6 }
+spi! { pac::SPI6: Spi6, SpiSlave6 }
 
 pub trait SpiExt: Sized + Instance {
     fn spi(

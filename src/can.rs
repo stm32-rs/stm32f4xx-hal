@@ -5,27 +5,21 @@ use crate::gpio::{self, NoPin};
 use crate::pac::{CAN1, CAN2};
 use crate::rcc;
 
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset {
-    type Tx;
-    type Rx;
-}
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + gpio::alt::CanCommon {}
 
 macro_rules! can {
-    ($CAN:ty: $Can:ident, $can:ident) => {
+    ($CAN:ty: $Can:ident) => {
         pub type $Can = Can<$CAN>;
 
-        impl Instance for $CAN {
-            type Tx = gpio::alt::$can::Tx;
-            type Rx = gpio::alt::$can::Rx;
-        }
+        impl Instance for $CAN {}
     };
 }
 
 // Implemented by all SPI instances
-can! { CAN1: Can1, can1 }
-can! { CAN2: Can2, can2 }
+can! { CAN1: Can1 }
+can! { CAN2: Can2 }
 #[cfg(feature = "can3")]
-can! { crate::pac::CAN3: Can3, can3 }
+can! { crate::pac::CAN3: Can3 }
 
 /// Pins and definitions for models with a third CAN peripheral
 #[cfg(feature = "can3")]

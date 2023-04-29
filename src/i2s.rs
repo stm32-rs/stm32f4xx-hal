@@ -21,11 +21,9 @@ pub extern crate stm32_i2s_v12x;
 pub type NoMasterClock = NoPin;
 
 /// Trait for SPI peripheral with i2s capability.
-pub trait Instance: I2sFreq + rcc::Enable + rcc::Reset {
-    type Ws;
-    type Ck;
-    type Mck;
-    type Sd;
+pub trait Instance:
+    I2sFreq + rcc::Enable + rcc::Reset + gpio::alt::I2sCommon + gpio::alt::I2sMaster
+{
 }
 
 /// Trait to get I2s frequency at SPI peripheral input.
@@ -144,15 +142,10 @@ impl<I: Instance> I2s<I> {
 /// $clock: The name of the Clocks function that returns the frequency of the I2S clock input
 /// to this SPI peripheral (i2s_cl, i2s_apb1_clk, or i2s2_apb_clk)
 macro_rules! i2s {
-    ($SPI:ty, $I2s:ident, $i2s:ident, $clock:ident) => {
+    ($SPI:ty, $I2s:ident, $clock:ident) => {
         pub type $I2s = I2s<$SPI>;
 
-        impl Instance for $SPI {
-            type Ws = gpio::alt::$i2s::Ws;
-            type Ck = gpio::alt::$i2s::Ck;
-            type Mck = gpio::alt::$i2s::Mck;
-            type Sd = gpio::alt::$i2s::Sd;
-        }
+        impl Instance for $SPI {}
 
         impl I2sFreq for $SPI {
             fn i2s_freq(clocks: &Clocks) -> Hertz {
@@ -183,15 +176,15 @@ macro_rules! i2s {
 // have two different I2S clocks while other models have only one.
 
 #[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
-i2s!(pac::SPI1, I2s1, i2s1, i2s_clk);
+i2s!(pac::SPI1, I2s1, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
-i2s!(pac::SPI1, I2s1, i2s1, i2s_apb2_clk);
+i2s!(pac::SPI1, I2s1, i2s_apb2_clk);
 
 // All STM32F4 models support SPI2/I2S2
 #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",)))]
-i2s!(pac::SPI2, I2s2, i2s2, i2s_clk);
+i2s!(pac::SPI2, I2s2, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
-i2s!(pac::SPI2, I2s2, i2s2, i2s_apb1_clk);
+i2s!(pac::SPI2, I2s2, i2s_apb1_clk);
 
 // All STM32F4 models except STM32F410 support SPI3/I2S3
 #[cfg(any(
@@ -201,19 +194,19 @@ i2s!(pac::SPI2, I2s2, i2s2, i2s_apb1_clk);
     feature = "gpio-f427",
     feature = "gpio-f469",
 ))]
-i2s!(pac::SPI3, I2s3, i2s3, i2s_clk);
+i2s!(pac::SPI3, I2s3, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
-i2s!(pac::SPI3, I2s3, i2s3, i2s_apb1_clk);
+i2s!(pac::SPI3, I2s3, i2s_apb1_clk);
 
 #[cfg(feature = "gpio-f411")]
-i2s!(pac::SPI4, I2s4, i2s4, i2s_clk);
+i2s!(pac::SPI4, I2s4, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
-i2s!(pac::SPI4, I2s4, i2s4, i2s_apb2_clk);
+i2s!(pac::SPI4, I2s4, i2s_apb2_clk);
 
 #[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
-i2s!(pac::SPI5, I2s5, i2s5, i2s_clk);
+i2s!(pac::SPI5, I2s5, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
-i2s!(pac::SPI5, I2s5, i2s5, i2s_apb2_clk);
+i2s!(pac::SPI5, I2s5, i2s_apb2_clk);
 
 // DMA support: reuse existing mappings for SPI
 #[cfg(feature = "stm32_i2s_v12x")]

@@ -105,23 +105,19 @@ impl Error {
     }
 }
 
-pub trait Instance: crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset {
-    type Scl;
-    type Sda;
-
+pub trait Instance:
+    crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset + gpio::alt::I2cCommon
+{
     #[doc(hidden)]
     fn ptr() -> *const i2c1::RegisterBlock;
 }
 
 // Implemented by all I2C instances
 macro_rules! i2c {
-    ($I2C:ty: $I2c:ident, $i2c:ident) => {
+    ($I2C:ty: $I2c:ident) => {
         pub type $I2c = I2c<$I2C>;
 
         impl Instance for $I2C {
-            type Scl = gpio::alt::$i2c::Scl;
-            type Sda = gpio::alt::$i2c::Sda;
-
             fn ptr() -> *const i2c1::RegisterBlock {
                 <$I2C>::ptr() as *const _
             }
@@ -129,11 +125,11 @@ macro_rules! i2c {
     };
 }
 
-i2c! { pac::I2C1: I2c1, i2c1 }
-i2c! { pac::I2C2: I2c2, i2c2 }
+i2c! { pac::I2C1: I2c1 }
+i2c! { pac::I2C2: I2c2 }
 
 #[cfg(feature = "i2c3")]
-i2c! { pac::I2C3: I2c3, i2c3 }
+i2c! { pac::I2C3: I2c3 }
 
 pub trait I2cExt: Sized + Instance {
     fn i2c(

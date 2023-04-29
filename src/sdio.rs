@@ -22,7 +22,7 @@ pub trait Pins {
 
 impl<CLK, CMD, D0, D1, D2, D3, D4, D5, D6, D7> Pins for (CLK, CMD, D0, D1, D2, D3, D4, D5, D6, D7)
 where
-    CLK: Into<alt::Clk>,
+    CLK: Into<alt::Ck>,
     CMD: Into<alt::Cmd>,
     D0: Into<alt::D0>,
     D1: Into<alt::D1>,
@@ -36,7 +36,7 @@ where
     const BUSWIDTH: Buswidth = Buswidth::Buswidth8;
 
     type SdPins = (
-        alt::Clk,
+        alt::Ck,
         alt::Cmd,
         alt::D0,
         alt::D1,
@@ -65,7 +65,7 @@ where
 
 impl<CLK, CMD, D0, D1, D2, D3> Pins for (CLK, CMD, D0, D1, D2, D3)
 where
-    CLK: Into<alt::Clk>,
+    CLK: Into<alt::Ck>,
     CMD: Into<alt::Cmd>,
     D0: Into<alt::D0>,
     D1: Into<alt::D1>,
@@ -74,7 +74,7 @@ where
 {
     const BUSWIDTH: Buswidth = Buswidth::Buswidth4;
 
-    type SdPins = (alt::Clk, alt::Cmd, alt::D0, alt::D1, alt::D2, alt::D3);
+    type SdPins = (alt::Ck, alt::Cmd, alt::D0, alt::D1, alt::D2, alt::D3);
     fn convert(self) -> Self::SdPins {
         (
             self.0.into(),
@@ -89,13 +89,13 @@ where
 
 impl<CLK, CMD, D0> Pins for (CLK, CMD, D0)
 where
-    CLK: Into<alt::Clk>,
+    CLK: Into<alt::Ck>,
     CMD: Into<alt::Cmd>,
     D0: Into<alt::D0>,
 {
     const BUSWIDTH: Buswidth = Buswidth::Buswidth1;
 
-    type SdPins = (alt::Clk, alt::Cmd, alt::D0);
+    type SdPins = (alt::Ck, alt::Cmd, alt::D0);
     fn convert(self) -> Self::SdPins {
         (self.0.into(), self.1.into(), self.2.into())
     }

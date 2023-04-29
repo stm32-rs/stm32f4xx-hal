@@ -24,7 +24,7 @@ mod hal_02;
 mod hal_1;
 mod uart_impls;
 
-use crate::gpio;
+use crate::gpio::{self, PushPull};
 
 use crate::pac::{self, RCC};
 
@@ -55,10 +55,7 @@ pub use gpio::NoPin as NoTx;
 /// A filler type for when the Rx pin is unnecessary
 pub use gpio::NoPin as NoRx;
 
-pub trait CommonPins {
-    type TxPin;
-    type RxPin;
-}
+pub use gpio::alt::SerialAsync as CommonPins;
 
 /// Trait for [`Rx`] interrupt handling.
 pub trait RxISR {
@@ -87,47 +84,50 @@ pub struct Serial<USART: CommonPins, WORD = u8> {
 /// Serial receiver containing RX pin
 pub struct Rx<USART: CommonPins, WORD = u8> {
     _word: PhantomData<(USART, WORD)>,
-    pin: USART::RxPin,
+    pin: USART::Rx<PushPull>,
 }
 
 /// Serial transmitter containing TX pin
 pub struct Tx<USART: CommonPins, WORD = u8> {
     _word: PhantomData<WORD>,
     usart: USART,
-    pin: USART::TxPin,
+    pin: USART::Tx<PushPull>,
 }
 
 pub trait SerialExt: Sized + Instance {
     fn serial<WORD>(
         self,
-        pins: (impl Into<Self::TxPin>, impl Into<Self::RxPin>),
+        pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig>;
 
     fn tx<WORD>(
         self,
-        tx_pin: impl Into<Self::TxPin>,
+        tx_pin: impl Into<Self::Tx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
     where
-        NoPin: Into<Self::RxPin>;
+        NoPin: Into<Self::Rx<PushPull>>;
 
     fn rx<WORD>(
         self,
-        rx_pin: impl Into<Self::RxPin>,
+        rx_pin: impl Into<Self::Rx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
     where
-        NoPin: Into<Self::TxPin>;
+        NoPin: Into<Self::Tx<PushPull>>;
 }
 
 impl<USART: Instance, WORD> Serial<USART, WORD> {
     pub fn new(
         usart: USART,
-        pins: (impl Into<USART::TxPin>, impl Into<USART::RxPin>),
+        pins: (
+            impl Into<USART::Tx<PushPull>>,
+            impl Into<USART::Rx<PushPull>>,
+        ),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig> {
@@ -233,7 +233,8 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         .config_stop(config))
     }
 
-    pub fn release(self) -> (USART, (USART::TxPin, USART::RxPin)) {
+    #[allow(clippy::type_complexity)]
+    pub fn release(self) -> (USART, (USART::Tx<PushPull>, USART::Rx<PushPull>)) {
         (self.tx.usart, (self.tx.pin, self.rx.pin))
     }
 }

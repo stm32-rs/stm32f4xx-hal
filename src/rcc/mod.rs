@@ -294,9 +294,9 @@ impl RccExt for RCC {
                 i2s_apb1_clk: None,
                 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
                 i2s_apb2_clk: None,
-                #[cfg(feature = "sai")]
+                #[cfg(feature = "sai1")]
                 sai1_clk: None,
-                #[cfg(feature = "sai")]
+                #[cfg(feature = "sai1")]
                 sai2_clk: None,
             },
         }
@@ -395,9 +395,9 @@ pub struct CFGR {
     i2s_apb1_clk: Option<u32>,
     #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
     i2s_apb2_clk: Option<u32>,
-    #[cfg(feature = "sai")]
+    #[cfg(feature = "sai1")]
     sai1_clk: Option<u32>,
-    #[cfg(feature = "sai")]
+    #[cfg(feature = "sai1")]
     sai2_clk: Option<u32>,
 }
 
@@ -652,7 +652,7 @@ impl CFGR {
         }
     }
 
-    #[cfg(feature = "sai")]
+    #[cfg(feature = "sai1")]
     fn sai_clocks(&self) -> SaiClocks {
         let sai1_ext = self.sai1_clk.is_some() && self.sai1_clk == self.i2s_ckin;
         #[cfg(not(feature = "gpio-f446"))]
@@ -881,7 +881,7 @@ impl CFGR {
 
         // Select I2S and SAI clocks
         plls.i2s.config_clocksel();
-        #[cfg(feature = "sai")]
+        #[cfg(feature = "sai1")]
         plls.sai.config_clocksel();
 
         // Set scaling factors
@@ -929,9 +929,9 @@ impl CFGR {
             saia_clk: plls.sai.sai1_clk.map(Hertz::from_raw),
             #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469",))]
             saib_clk: plls.sai.sai2_clk.map(Hertz::from_raw),
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(feature = "sai2")]
             sai1_clk: plls.sai.sai1_clk.map(Hertz::from_raw),
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(feature = "sai2")]
             sai2_clk: plls.sai.sai2_clk.map(Hertz::from_raw),
         };
 
@@ -957,7 +957,7 @@ struct PllSetup {
 
     i2s: RealI2sClocks,
 
-    #[cfg(feature = "sai")]
+    #[cfg(feature = "sai1")]
     sai: RealSaiClocks,
 }
 
@@ -1065,7 +1065,7 @@ impl RealI2sClocks {
     }
 }
 
-#[cfg(feature = "sai")]
+#[cfg(feature = "sai1")]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct SaiClocks {
@@ -1078,7 +1078,7 @@ struct SaiClocks {
     pll_sai_clk: Option<u32>,
 }
 
-#[cfg(feature = "sai")]
+#[cfg(feature = "sai1")]
 impl SaiClocks {
     fn real(&self, pll_sai_clk: Option<u32>, i2s_ckin: Option<u32>) -> RealSaiClocks {
         RealSaiClocks {
@@ -1094,7 +1094,7 @@ impl SaiClocks {
     }
 }
 
-#[cfg(feature = "sai")]
+#[cfg(feature = "sai1")]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealSaiClocks {
@@ -1105,7 +1105,7 @@ struct RealSaiClocks {
     sai2_clk: Option<u32>,
 }
 
-#[cfg(feature = "sai")]
+#[cfg(feature = "sai1")]
 impl RealSaiClocks {
     fn config_clocksel(&self) {
         let rcc = unsafe { &*RCC::ptr() };

@@ -54,12 +54,9 @@ pub enum Channel {
     C3 = 2,
     C4 = 3,
 }
-pub trait CPin<const C: u8>: crate::Sealed {
-    type Ch<Otype>;
-}
-pub trait NCPin<const C: u8>: crate::Sealed {
-    type ChN<Otype>;
-}
+
+pub use crate::gpio::alt::TimCPin as CPin;
+pub use crate::gpio::alt::TimNCPin as NCPin;
 
 /// Channel wrapper
 pub struct Ch<const C: u8, const COMP: bool>;
