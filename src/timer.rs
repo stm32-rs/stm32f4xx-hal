@@ -9,7 +9,7 @@ use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 
 use crate::bb;
-use crate::pac::{self, RCC};
+use crate::pac;
 
 use crate::dma::traits::PeriAddress;
 use crate::rcc::{self, Clocks};
@@ -589,11 +589,9 @@ impl<TIM: Instance> Timer<TIM> {
     /// Initialize timer
     pub fn new(tim: TIM, clocks: &Clocks) -> Self {
         unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &(*RCC::ptr());
             // Enable and reset the timer peripheral
-            TIM::enable(rcc);
-            TIM::reset(rcc);
+            TIM::enable_unchecked();
+            TIM::reset_unchecked();
         }
 
         Self {
@@ -661,11 +659,9 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     /// Initialize timer
     pub fn new(tim: TIM, clocks: &Clocks) -> Self {
         unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &(*RCC::ptr());
             // Enable and reset the timer peripheral
-            TIM::enable(rcc);
-            TIM::reset(rcc);
+            TIM::enable_unchecked();
+            TIM::reset_unchecked();
         }
 
         let mut t = Self { tim };

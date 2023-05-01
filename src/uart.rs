@@ -103,12 +103,9 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
 
         let config = config.into();
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-
             // Enable clock.
-            UART::enable(rcc);
-            UART::reset(rcc);
+            UART::enable_unchecked();
+            UART::reset_unchecked();
         }
 
         let pclk_freq = UART::clock(clocks).raw();

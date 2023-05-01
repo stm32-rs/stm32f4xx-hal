@@ -82,12 +82,10 @@ pub trait RngExt {
 
 impl RngExt for RNG {
     fn constrain(self, clocks: &Clocks) -> Rng {
-        let rcc = unsafe { &*pac::RCC::ptr() };
-
         cortex_m::interrupt::free(|_| {
             // enable RNG_CLK (peripheral clock)
-            RNG::enable(rcc);
-            RNG::reset(rcc);
+            RNG::enable_unchecked();
+            RNG::reset_unchecked();
 
             // verify the clock configuration is valid
             let hclk = clocks.hclk();

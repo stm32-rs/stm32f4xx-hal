@@ -41,7 +41,7 @@
 //! frequencies may substantially deviate from the requested frequencies.
 
 use crate::pac::rcc::cfgr::{HPRE_A, SW_A};
-use crate::pac::{rcc, RCC};
+use crate::pac::{self, rcc, RCC};
 
 use fugit::HertzU32 as Hertz;
 use fugit::RateExtU32;
@@ -64,20 +64,43 @@ pub trait RccBus: crate::Sealed {
 }
 
 /// Enable/disable peripheral
+#[allow(clippy::missing_safety_doc)]
 pub trait Enable: RccBus {
     fn enable(rcc: &RccRB);
     fn disable(rcc: &RccRB);
+    unsafe fn enable_unchecked() {
+        let rcc = &*pac::RCC::ptr();
+        Self::enable(rcc);
+    }
+    unsafe fn disable_unchecked() {
+        let rcc = pac::RCC::ptr();
+        Self::disable(&*rcc);
+    }
 }
 
 /// Low power enable/disable peripheral
+#[allow(clippy::missing_safety_doc)]
 pub trait LPEnable: RccBus {
     fn low_power_enable(rcc: &RccRB);
     fn low_power_disable(rcc: &RccRB);
+    unsafe fn low_power_enable_unchecked() {
+        let rcc = pac::RCC::ptr();
+        Self::low_power_enable(&*rcc);
+    }
+    unsafe fn low_power_disable_unchecked() {
+        let rcc = pac::RCC::ptr();
+        Self::low_power_disable(&*rcc);
+    }
 }
 
 /// Reset peripheral
+#[allow(clippy::missing_safety_doc)]
 pub trait Reset: RccBus {
     fn reset(rcc: &RccRB);
+    unsafe fn reset_unchecked() {
+        let rcc = pac::RCC::ptr();
+        Self::reset(&*rcc);
+    }
 }
 
 /// Extension trait that constrains the `RCC` peripheral

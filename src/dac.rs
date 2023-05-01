@@ -54,12 +54,9 @@ where
     PINS: Pins<DAC>,
 {
     unsafe {
-        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-        let rcc = &(*RCC::ptr());
-
         // Enable and reset clock.
-        DAC::enable(rcc);
-        DAC::reset(rcc);
+        DAC::enable_unchecked();
+        DAC::reset_unchecked();
 
         PINS::init()
     }

@@ -26,7 +26,7 @@ mod uart_impls;
 
 use crate::gpio::{self, PushPull};
 
-use crate::pac::{self, RCC};
+use crate::pac;
 
 use crate::gpio::NoPin;
 use crate::rcc::Clocks;
@@ -135,12 +135,9 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
 
         let config = config.into();
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-
             // Enable clock.
-            USART::enable(rcc);
-            USART::reset(rcc);
+            USART::enable_unchecked();
+            USART::reset_unchecked();
         }
 
         let pclk_freq = USART::clock(clocks).raw();

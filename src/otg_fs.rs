@@ -62,12 +62,10 @@ unsafe impl UsbPeripheral for USB {
     const ENDPOINT_COUNT: usize = 6;
 
     fn enable() {
-        let rcc = unsafe { &*pac::RCC::ptr() };
-
         cortex_m::interrupt::free(|_| {
             // Enable USB peripheral
-            pac::OTG_FS_GLOBAL::enable(rcc);
-            pac::OTG_FS_GLOBAL::reset(rcc);
+            pac::OTG_FS_GLOBAL::enable_unchecked();
+            pac::OTG_FS_GLOBAL::reset_unchecked();
         });
     }
 

@@ -3,7 +3,7 @@
 //! This module is only available if the `i2s` feature is enabled.
 
 use crate::gpio::{self, NoPin};
-use crate::pac::{self, RCC};
+use crate::pac;
 use crate::rcc;
 use crate::rcc::Clocks;
 use fugit::HertzU32 as Hertz;
@@ -94,11 +94,9 @@ impl<SPI: Instance> I2s<SPI> {
     ) -> Self {
         let input_clock = SPI::i2s_freq(clocks);
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
             // Enable clock, enable reset, clear, reset
-            SPI::enable(rcc);
-            SPI::reset(rcc);
+            SPI::enable_unchecked();
+            SPI::reset_unchecked();
         }
 
         let pins = (pins.0.into(), pins.1.into(), pins.2.into(), pins.3.into());

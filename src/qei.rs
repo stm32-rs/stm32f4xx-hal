@@ -1,8 +1,7 @@
 //! # Quadrature Encoder Interface
 use crate::{
     gpio::PushPull,
-    pac::{self, RCC},
-    rcc,
+    pac, rcc,
     timer::{CPin, General},
 };
 
@@ -46,11 +45,11 @@ impl<TIM: Instance> Qei<TIM> {
             impl Into<<TIM as CPin<1>>::Ch<PushPull>>,
         ),
     ) -> Self {
-        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-        let rcc = unsafe { &(*RCC::ptr()) };
         // Enable and reset clock.
-        TIM::enable(rcc);
-        TIM::reset(rcc);
+        unsafe {
+            TIM::enable_unchecked();
+            TIM::reset_unchecked();
+        }
 
         let pins = (pins.0.into(), pins.1.into());
         tim.setup_qei();

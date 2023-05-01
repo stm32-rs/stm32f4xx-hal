@@ -164,11 +164,9 @@ impl<P: SdioPeripheral> Sdio<P> {
     /// Create and enable the Sdio device
     pub fn new<PINS: Pins>(sdio: SDIO, pins: PINS, clocks: &Clocks) -> Self {
         unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &*RCC::ptr();
             // Enable and reset the sdio peripheral, it's the same bit position for both registers
-            SDIO::enable(rcc);
-            SDIO::reset(rcc);
+            SDIO::enable_unchecked();
+            SDIO::reset_unchecked();
         }
 
         // Configure clock
