@@ -4,7 +4,6 @@ use crate::pac::{self, i2c1};
 use crate::rcc::{Enable, Reset};
 
 use crate::gpio;
-use crate::pac::RCC;
 
 use crate::rcc::Clocks;
 use embedded_hal_one::i2c::blocking::Operation;
@@ -162,12 +161,9 @@ where
         clocks: &Clocks,
     ) -> Self {
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-
             // Enable and reset clock.
-            I2C::enable(rcc);
-            I2C::reset(rcc);
+            I2C::enable_unchecked();
+            I2C::reset_unchecked();
         }
 
         let pins = (pins.0.into(), pins.1.into());

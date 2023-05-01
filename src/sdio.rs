@@ -1,7 +1,7 @@
 //! Sdio host
 
 use crate::gpio::alt::sdio as alt;
-use crate::pac::{self, RCC, SDIO};
+use crate::pac::{self, SDIO};
 use crate::rcc::{Clocks, Enable, Reset};
 #[allow(unused_imports)]
 use fugit::HertzU32 as Hertz;
@@ -164,11 +164,9 @@ impl<P: SdioPeripheral> Sdio<P> {
     /// Create and enable the Sdio device
     pub fn new<PINS: Pins>(sdio: SDIO, pins: PINS, clocks: &Clocks) -> Self {
         unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &*RCC::ptr();
             // Enable and reset the sdio peripheral, it's the same bit position for both registers
-            SDIO::enable(rcc);
-            SDIO::reset(rcc);
+            SDIO::enable_unchecked();
+            SDIO::reset_unchecked();
         }
 
         // Configure clock

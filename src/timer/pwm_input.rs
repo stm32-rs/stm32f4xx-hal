@@ -65,8 +65,7 @@ where
 
 #[cfg(not(feature = "gpio-f410"))]
 macro_rules! hal {
-    ($($TIM:ty,)+) => {
-    $(
+    ($TIM:ty) => {
         impl Timer<$TIM> {
             /// Configures this timer for PWM input. Accepts the `best_guess` frequency of the signal
             /// Note: this should be as close as possible to the frequency of the PWM waveform for best
@@ -77,7 +76,11 @@ macro_rules! hal {
             /// 2. When the period is captured. the duty cycle will be an observable value.
             /// See the pwm input example for an suitable interrupt handler.
             #[allow(unused_unsafe)] //for some chips the operations are considered safe.
-            pub fn pwm_input(mut self, best_guess: Hertz, pins: impl Into<<$TIM as CPin<0>>::Ch<PushPull>>) -> PwmInput<$TIM> {
+            pub fn pwm_input(
+                mut self,
+                best_guess: Hertz,
+                pins: impl Into<<$TIM as CPin<0>>::Ch<PushPull>>,
+            ) -> PwmInput<$TIM> {
                 let pins = pins.into();
 
                 /*
@@ -149,7 +152,10 @@ macro_rules! hal {
                 // enable the counter.
                 self.tim.enable_counter();
 
-                PwmInput { timer: self, _pins: pins }
+                PwmInput {
+                    timer: self,
+                    _pins: pins,
+                }
             }
         }
 
@@ -177,54 +183,22 @@ macro_rules! hal {
                 self.get_duty_cycle_clocks() != self.get_period_clocks()
             }
         }
-    )+
-}}
-
-#[cfg(feature = "gpio-f411")]
-/* red group */
-hal! {
-    pac::TIM4,
-    pac::TIM3,
-    pac::TIM2,
+    };
 }
 
-/* orange group */
-#[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f446",
-    feature = "gpio-f469",
-))]
-hal! {
-    pac::TIM2,
-    pac::TIM3,
-    pac::TIM4,
-}
-/* green group */
-#[cfg(any(
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f446",
-    feature = "gpio-f469",
-))]
-hal! {
-    pac::TIM8,
-    pac::TIM12,
-}
-
-/* every chip across the series have these timers with support for this feature.
-.. except for the 410 which, while the timers support this feature, has a different configuration
-   than the rest of the series.
-*/
-/* yellow group */
-#[cfg(not(feature = "gpio-f410"))]
-hal! {
-    pac::TIM1,
-    pac::TIM5,
-    pac::TIM9,
-}
+#[cfg(feature = "tim1")]
+hal! { pac::TIM1 }
+#[cfg(feature = "tim2")]
+hal! { pac::TIM2 }
+#[cfg(feature = "tim3")]
+hal! { pac::TIM3 }
+#[cfg(feature = "tim4")]
+hal! { pac::TIM4 }
+#[cfg(feature = "tim5")]
+hal! { pac::TIM5 }
+#[cfg(feature = "tim8")]
+hal! { pac::TIM8 }
+#[cfg(feature = "tim9")]
+hal! { pac::TIM9 }
+#[cfg(feature = "tim12")]
+hal! { pac::TIM12 }

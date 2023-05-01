@@ -30,7 +30,7 @@ mod hal_1;
 #[path = "./serial/uart_impls.rs"]
 mod uart_impls;
 
-use crate::pac::{self, RCC};
+use crate::pac;
 
 use crate::gpio::{NoPin, PushPull};
 use crate::rcc::Clocks;
@@ -103,12 +103,9 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
 
         let config = config.into();
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-
             // Enable clock.
-            UART::enable(rcc);
-            UART::reset(rcc);
+            UART::enable_unchecked();
+            UART::reset_unchecked();
         }
 
         let pclk_freq = UART::clock(clocks).raw();

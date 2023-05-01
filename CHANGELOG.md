@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Add autoimplementations of `DMASet` [#614]
  - Simplify `gpio::Outport` [#611]
+ - rcc `enable_unchecked`, timer features
  - Split SPI master and slave implementations [#609]
  - Split USART and UART implementations [#608]
  - Add `lapce` editor settings [#601]

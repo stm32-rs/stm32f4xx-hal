@@ -17,7 +17,6 @@ use core::{
 };
 use embedded_dma::{ReadBuffer, WriteBuffer};
 
-use crate::pac::RCC;
 use crate::{pac, rcc};
 
 pub mod traits;
@@ -267,10 +266,8 @@ impl<DMA: rcc::Enable + rcc::Reset> StreamsTuple<DMA> {
     /// Splits the DMA peripheral into streams.
     pub fn new(_regs: DMA) -> Self {
         unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &(*RCC::ptr());
-            DMA::enable(rcc);
-            DMA::reset(rcc);
+            DMA::enable_unchecked();
+            DMA::reset_unchecked();
         }
         Self(
             StreamX::new(),

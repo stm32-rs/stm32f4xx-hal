@@ -1,4 +1,4 @@
-use crate::pac::{RCC, SYSCFG};
+use crate::pac::SYSCFG;
 use crate::rcc::Enable;
 use core::fmt;
 use core::ops::Deref;
@@ -11,12 +11,9 @@ pub trait SysCfgExt {
 
 impl SysCfgExt for SYSCFG {
     fn constrain(self) -> SysCfg {
+        // Enable clock.
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-
-            // Enable clock.
-            SYSCFG::enable(rcc);
+            SYSCFG::enable_unchecked();
         }
 
         SysCfg(self)

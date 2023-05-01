@@ -490,7 +490,7 @@ macro_rules! gpio {
     ]) => {
         /// GPIO
         pub mod $gpiox {
-            use crate::pac::{$GPIOX, RCC};
+            use crate::pac::$GPIOX;
             use crate::rcc::{Enable, Reset};
 
             /// GPIO parts
@@ -506,12 +506,9 @@ macro_rules! gpio {
 
                 fn split(self) -> Parts {
                     unsafe {
-                        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-                        let rcc = &(*RCC::ptr());
-
                         // Enable clock.
-                        $GPIOX::enable(rcc);
-                        $GPIOX::reset(rcc);
+                        $GPIOX::enable_unchecked();
+                        $GPIOX::reset_unchecked();
                     }
                     Parts {
                         $(

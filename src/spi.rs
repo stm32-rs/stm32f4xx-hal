@@ -37,7 +37,7 @@ pub struct Mode {
 mod hal_02;
 mod hal_1;
 
-use crate::pac::{spi1, RCC};
+use crate::pac::spi1;
 use crate::rcc;
 
 use crate::rcc::Clocks;
@@ -431,10 +431,8 @@ impl<SPI: Instance> Spi<SPI, false, u8> {
         clocks: &Clocks,
     ) -> Self {
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI::enable(rcc);
-            SPI::reset(rcc);
+            SPI::enable_unchecked();
+            SPI::reset_unchecked();
         }
 
         let pins = (pins.0.into(), pins.1.into(), pins.2.into());
@@ -463,10 +461,8 @@ impl<SPI: Instance> Spi<SPI, true, u8> {
         clocks: &Clocks,
     ) -> Self {
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI::enable(rcc);
-            SPI::reset(rcc);
+            SPI::enable_unchecked();
+            SPI::reset_unchecked();
         }
 
         let pins = (pins.0.into(), pins.1.into(), pins.2.into());
@@ -494,10 +490,8 @@ impl<SPI: Instance> SpiSlave<SPI, false, u8> {
         mode: impl Into<Mode>,
     ) -> Self {
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI::enable(rcc);
-            SPI::reset(rcc);
+            SPI::enable_unchecked();
+            SPI::reset_unchecked();
         }
 
         let pins = (pins.0.into(), pins.1.into(), pins.2.into(), pins.3);
@@ -523,10 +517,8 @@ impl<SPI: Instance> SpiSlave<SPI, true, u8> {
         mode: impl Into<Mode>,
     ) -> Self {
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-            SPI::enable(rcc);
-            SPI::reset(rcc);
+            SPI::enable_unchecked();
+            SPI::reset_unchecked();
         }
 
         let pins = (pins.0.into(), pins.1.into(), pins.2.into(), pins.3);

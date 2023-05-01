@@ -68,7 +68,6 @@ use core::marker::PhantomData;
 pub use self::pins::{AddressPins, ChipSelectPins, DataPins, LcdPins, Pins};
 pub use self::timing::{AccessMode, Timing};
 
-use crate::pac::RCC;
 use crate::rcc::{Enable, Reset};
 
 // Use the FMC or FSMC, whichever is available, and treat it like an FSMC
@@ -204,11 +203,9 @@ where
     ) -> (Self, PINS::Lcds) {
         use self::sealed::Conjure;
         unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &(*RCC::ptr());
             // Enable the FSMC/FMC peripheral
-            FSMC::enable(rcc);
-            FSMC::reset(rcc);
+            FSMC::enable_unchecked();
+            FSMC::reset_unchecked();
         }
 
         // Configure memory type and basic interface settings
@@ -238,13 +235,10 @@ where
     /// This function also resets and disables the FSMC.
     pub fn release(self, _lcds: PINS::Lcds) -> (FSMC, PINS) {
         unsafe {
-            //NOTE(unsafe) this reference will only be used for atomic writes with no side effects
-            let rcc = &(*RCC::ptr());
-            // All STM32F4 models with an FSMC or FMC use bit 0 in AHB3ENR and AHB3RSTR.
             // Reset FSMC/FMC
-            FSMC::reset(rcc);
+            FSMC::reset_unchecked();
             // Disable the FSMC/FMC peripheral
-            FSMC::disable(rcc);
+            FSMC::disable_unchecked();
         }
 
         (self.fsmc, self.pins)

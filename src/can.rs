@@ -78,10 +78,8 @@ impl<CAN: Instance> Can<CAN> {
     /// Creates a CAN interface.
     pub fn new(can: CAN, pins: (impl Into<CAN::Tx>, impl Into<CAN::Rx>)) -> Self {
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*crate::pac::RCC::ptr());
-            CAN::enable(rcc);
-            CAN::reset(rcc);
+            CAN::enable_unchecked();
+            CAN::reset_unchecked();
         }
 
         let pins = (pins.0.into(), pins.1.into());
