@@ -6,7 +6,7 @@
 
 use crate::{
     gpio::{Analog, PA4, PA5},
-    pac::{DAC, RCC},
+    pac::DAC,
     rcc::{Enable, Reset},
 };
 

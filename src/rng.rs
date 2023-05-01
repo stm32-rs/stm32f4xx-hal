@@ -23,7 +23,6 @@
 use core::cmp;
 use core::mem;
 
-use crate::pac;
 use crate::pac::RNG;
 use crate::rcc::{Clocks, Enable, Reset};
 use core::num::NonZeroU32;
@@ -84,8 +83,10 @@ impl RngExt for RNG {
     fn constrain(self, clocks: &Clocks) -> Rng {
         cortex_m::interrupt::free(|_| {
             // enable RNG_CLK (peripheral clock)
-            RNG::enable_unchecked();
-            RNG::reset_unchecked();
+            unsafe {
+                RNG::enable_unchecked();
+                RNG::reset_unchecked();
+            }
 
             // verify the clock configuration is valid
             let hclk = clocks.hclk();

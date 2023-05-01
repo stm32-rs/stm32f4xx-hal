@@ -121,22 +121,22 @@ gpio-f401 = [
     "otg-fs",
     "sdio",
     "spi3", "spi4",
-    "tim2",
+    "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11",
 ]
 gpio-f410 = [
     "dac",
     "fmpi2c1",
     "lptim1",
     "spi5",
+    "tim1", "tim5", "tim6", "tim9", "tim11",
 ]
 gpio-f411 = [
     "gpiod", "gpioe", # "gpioi",
     "i2c3",
     "otg-fs",
     "sdio",
-    "tim2",
+    "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11",
     "spi3", "spi4", "spi5",
-
 ]
 gpio-f412 = [
     "gpiod", "gpioe", "gpiof", "gpiog",
@@ -150,7 +150,7 @@ gpio-f412 = [
     "rng",
     "sdio",
     "spi3", "spi4", "spi5",
-    "tim2", "tim8",
+    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
     "usart3",
 ]
 gpio-f413 = [
@@ -169,7 +169,7 @@ gpio-f413 = [
     "sai1",
     "sdio",
     "spi3", "spi4", "spi5",
-    "tim2", "tim8",
+    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
     "usart3", "uart4", "uart5", "uart7", "uart8", "uart9", "uart10",
 ]
 gpio-f417 = [
@@ -186,7 +186,7 @@ gpio-f417 = [
     "rng",
     "sdio",
     "spi3",
-    "tim2", "tim8",
+    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
     "usart3", "uart4", "uart5",
 ]
 gpio-f427 = [
@@ -204,7 +204,7 @@ gpio-f427 = [
     "sai1",
     "sdio",
     "spi3", "spi4", "spi5", "spi6",
-    "tim2", "tim8",
+    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
     "usart3", "uart4", "uart5", "uart7", "uart8",
 ]
 gpio-f446 = [
@@ -224,7 +224,7 @@ gpio-f446 = [
     #"sdio",
     "spi3", "spi4",
     "spdifrx",
-    "tim2", "tim8",
+    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
     "usart3", "uart4", "uart5",
 ]
 gpio-f469 = [
@@ -245,7 +245,7 @@ gpio-f469 = [
     "sai1",
     "sdio",
     "spi3", "spi4", "spi5", "spi6",
-    "tim2", "tim8",
+    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
     "usart3", "uart4", "uart5", "uart7", "uart8",
 ]
 
@@ -296,8 +296,20 @@ spi4 = []
 spi5 = []
 spi6 = []
 spdifrx = []
+tim1 = []
 tim2 = []
+tim3 = []
+tim4 = []
+tim5 = []
+tim6 = []
+tim7 = []
 tim8 = []
+tim9 = []
+tim10 = []
+tim11 = []
+tim12 = []
+tim13 = []
+tim14 = []
 usart3 = []
 uart4 = []
 uart5 = []

@@ -30,7 +30,7 @@ mod hal_1;
 #[path = "./serial/uart_impls.rs"]
 mod uart_impls;
 
-use crate::pac::{self, RCC};
+use crate::pac;
 
 use crate::gpio::{NoPin, PushPull};
 use crate::rcc::Clocks;
