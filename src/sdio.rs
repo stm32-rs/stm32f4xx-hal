@@ -1,7 +1,7 @@
 //! Sdio host
 
 use crate::gpio::alt::sdio as alt;
-use crate::pac::{self, RCC, SDIO};
+use crate::pac::{self, SDIO};
 use crate::rcc::{Clocks, Enable, Reset};
 #[allow(unused_imports)]
 use fugit::HertzU32 as Hertz;

@@ -64,8 +64,10 @@ unsafe impl UsbPeripheral for USB {
     fn enable() {
         cortex_m::interrupt::free(|_| {
             // Enable USB peripheral
-            pac::OTG_FS_GLOBAL::enable_unchecked();
-            pac::OTG_FS_GLOBAL::reset_unchecked();
+            unsafe {
+                pac::OTG_FS_GLOBAL::enable_unchecked();
+                pac::OTG_FS_GLOBAL::reset_unchecked();
+            }
         });
     }
 

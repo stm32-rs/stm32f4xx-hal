@@ -68,7 +68,6 @@ use core::marker::PhantomData;
 pub use self::pins::{AddressPins, ChipSelectPins, DataPins, LcdPins, Pins};
 pub use self::timing::{AccessMode, Timing};
 
-use crate::pac::RCC;
 use crate::rcc::{Enable, Reset};
 
 // Use the FMC or FSMC, whichever is available, and treat it like an FSMC
