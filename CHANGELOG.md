@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Add autoimplementations of `DMASet` [#614]
  - Simplify `gpio::Outport` [#611]
- - rcc `enable_unchecked`, timer features
+ - rcc `enable_unchecked`, timer features [#618]
  - Split SPI master and slave implementations [#609]
  - Split USART and UART implementations [#608]
  - Add `lapce` editor settings [#601]
@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#611]: https://github.com/stm32-rs/stm32f4xx-hal/pull/611
 [#614]: https://github.com/stm32-rs/stm32f4xx-hal/pull/614
 [#617]: https://github.com/stm32-rs/stm32f4xx-hal/pull/617
+[#618]: https://github.com/stm32-rs/stm32f4xx-hal/pull/618
 
 ## [v0.15.0] - 2023-03-13
 

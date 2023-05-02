@@ -16,6 +16,7 @@
 
 use core::fmt;
 use core::marker::PhantomData;
+use core::ops::Deref;
 
 use crate::rcc;
 use nb::block;
@@ -192,34 +193,29 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
             return Err(config::InvalidConfig);
         };
 
-        unsafe { (*USART::ptr()).brr.write(|w| w.bits(div)) };
+        usart.brr.write(|w| unsafe { w.bits(div) });
 
         // Reset other registers to disable advanced USART features
-        unsafe { (*USART::ptr()).cr2.reset() };
-        unsafe { (*USART::ptr()).cr3.reset() };
+        usart.cr2.reset();
+        usart.cr3.reset();
 
         // Enable transmission and receiving
         // and configure frame
-        unsafe {
-            (*USART::ptr()).cr1.write(|w| {
-                w.ue().set_bit();
-                w.over8().bit(over8);
-                w.te().set_bit();
-                w.re().set_bit();
-                w.m().bit(config.wordlength == WordLength::DataBits9);
-                w.pce().bit(config.parity != Parity::ParityNone);
-                w.ps().bit(config.parity == Parity::ParityOdd)
-            })
-        };
+
+        usart.cr1.write(|w| {
+            w.ue().set_bit();
+            w.over8().bit(over8);
+            w.te().set_bit();
+            w.re().set_bit();
+            w.m().bit(config.wordlength == WordLength::DataBits9);
+            w.pce().bit(config.parity != Parity::ParityNone);
+            w.ps().bit(config.parity == Parity::ParityOdd)
+        });
 
         match config.dma {
-            DmaConfig::Tx => unsafe { (*USART::ptr()).cr3.write(|w| w.dmat().enabled()) },
-            DmaConfig::Rx => unsafe { (*USART::ptr()).cr3.write(|w| w.dmar().enabled()) },
-            DmaConfig::TxRx => unsafe {
-                (*USART::ptr())
-                    .cr3
-                    .write(|w| w.dmar().enabled().dmat().enabled())
-            },
+            DmaConfig::Tx => usart.cr3.write(|w| w.dmat().enabled()),
+            DmaConfig::Rx => usart.cr3.write(|w| w.dmar().enabled()),
+            DmaConfig::TxRx => usart.cr3.write(|w| w.dmar().enabled().dmat().enabled()),
             DmaConfig::None => {}
         }
 
@@ -246,7 +242,14 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
 use crate::pac::usart1 as uart_base;
 
 // Implemented by all USART instances
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + CommonPins {
+pub trait Instance:
+    crate::Sealed
+    + Deref<Target = uart_base::RegisterBlock>
+    + rcc::Enable
+    + rcc::Reset
+    + rcc::BusClock
+    + CommonPins
+{
     #[doc(hidden)]
     fn ptr() -> *const uart_base::RegisterBlock;
     #[doc(hidden)]
