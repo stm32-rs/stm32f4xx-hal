@@ -160,9 +160,11 @@ macro_rules! i2s {
                 self.input_clock.raw()
             }
             fn ws_is_high(&self) -> bool {
+                use crate::gpio::ReadPin;
                 self.ws_pin().is_high()
             }
             fn ws_is_low(&self) -> bool {
+                use crate::gpio::ReadPin;
                 self.ws_pin().is_low()
             }
         }
