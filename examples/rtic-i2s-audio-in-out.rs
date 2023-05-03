@@ -350,9 +350,7 @@ mod app {
         if status.fre() {
             log::spawn("i2s3 Frame error").ok();
             i2s3_driver.disable();
-            i2s3_driver
-                .ws_pin_mut()
-                .enable_interrupt(exti);
+            i2s3_driver.ws_pin_mut().enable_interrupt(exti);
         }
         if status.udr() {
             log::spawn("i2s3 udr").ok();
