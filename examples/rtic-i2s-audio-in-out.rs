@@ -87,6 +87,7 @@ mod app {
     use hal::pac::Interrupt;
     use hal::pac::{EXTI, SPI2, SPI3};
     use hal::prelude::*;
+    use stm32f4xx_hal::gpio::ReadPin;
 
     use heapless::spsc::*;
 

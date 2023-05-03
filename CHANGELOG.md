@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Add `ReadPin`, `PinSpeed` & `PinPull` traits [#623]
  - Add autoimplementations of `DMASet` [#614]
  - Simplify `gpio::Outport` [#611]
  - rcc `enable_unchecked`, timer features [#618]
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#614]: https://github.com/stm32-rs/stm32f4xx-hal/pull/614
 [#617]: https://github.com/stm32-rs/stm32f4xx-hal/pull/617
 [#618]: https://github.com/stm32-rs/stm32f4xx-hal/pull/618
+[#623]: https://github.com/stm32-rs/stm32f4xx-hal/pull/623
 
 ## [v0.15.0] - 2023-03-13
 

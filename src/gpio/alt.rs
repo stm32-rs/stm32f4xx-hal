@@ -3,7 +3,7 @@ pub use f4::*;
 
 macro_rules! extipin {
     ($( $(#[$attr:meta])* $PX:ident,)*) => {
-        fn make_interrupt_source(&mut self, _syscfg: &mut SysCfg) {
+        fn make_interrupt_source(&mut self, _syscfg: &mut $crate::syscfg::SysCfg) {
             match self {
                 $(
                     $(#[$attr])*
@@ -14,7 +14,7 @@ macro_rules! extipin {
 
         }
 
-        fn trigger_on_edge(&mut self, _exti: &mut EXTI, _level: Edge) {
+        fn trigger_on_edge(&mut self, _exti: &mut $crate::pac::EXTI, _level: $crate::gpio::Edge) {
             match self {
                 $(
                     $(#[$attr])*
@@ -24,7 +24,7 @@ macro_rules! extipin {
             }
         }
 
-        fn enable_interrupt(&mut self, _exti: &mut EXTI) {
+        fn enable_interrupt(&mut self, _exti: &mut $crate::pac::EXTI) {
             match self {
                 $(
                     $(#[$attr])*
@@ -33,7 +33,7 @@ macro_rules! extipin {
                 _ => {},
             }
         }
-        fn disable_interrupt(&mut self, _exti: &mut EXTI) {
+        fn disable_interrupt(&mut self, _exti: &mut $crate::pac::EXTI) {
             match self {
                 $(
                     $(#[$attr])*
@@ -78,18 +78,15 @@ macro_rules! pin {
 
                 $(
                     $(#[$attr])*
-                    $PX(gpio::$PX<Alternate<$A, $Otype>>),
+                    $PX(gpio::$PX<$crate::gpio::Alternate<$A, $Otype>>),
                 )*
             }
 
             impl crate::Sealed for $name { }
 
             #[allow(unreachable_patterns)]
-            impl $name {
-                pub fn is_high(&self) -> bool {
-                    !self.is_low()
-                }
-                pub fn is_low(&self) -> bool {
+            impl $crate::gpio::ReadPin for $name {
+                fn is_low(&self) -> bool {
                     match self {
                         $(
                             $(#[$attr])*
@@ -99,8 +96,35 @@ macro_rules! pin {
                     }
                 }
             }
+
             #[allow(unreachable_patterns)]
-            impl ExtiPin for $name {
+            impl $crate::gpio::PinSpeed for $name {
+                fn set_speed(&mut self, _speed: $crate::gpio::Speed) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.set_speed(_speed),
+                        )*
+                        _ => {}
+                    }
+                }
+            }
+
+            #[allow(unreachable_patterns)]
+            impl $crate::gpio::PinPull for $name {
+                fn set_internal_resistor(&mut self, _pull: $crate::gpio::Pull) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.set_internal_resistor(_pull),
+                        )*
+                        _ => {}
+                    }
+                }
+            }
+
+            #[allow(unreachable_patterns)]
+            impl $crate::gpio::ExtiPin for $name {
                 extipin! { $( $(#[$attr])* $PX, )* }
             }
 
@@ -116,7 +140,7 @@ macro_rules! pin {
                 $(#[$attr])*
                 impl<MODE> From<gpio::$PX<MODE>> for $name
                 where
-                    MODE: marker::NotAlt + PinMode
+                    MODE: $crate::gpio::marker::NotAlt + $crate::gpio::PinMode
                 {
                     fn from(p: gpio::$PX<MODE>) -> Self {
                         Self::$PX(p.into_mode())
@@ -124,8 +148,8 @@ macro_rules! pin {
                 }
 
                 $(#[$attr])*
-                impl From<gpio::$PX<Alternate<$A, $Otype>>> for $name {
-                    fn from(p: gpio::$PX<Alternate<$A, $Otype>>) -> Self {
+                impl From<gpio::$PX<$crate::gpio::Alternate<$A, $Otype>>> for $name {
+                    fn from(p: gpio::$PX<$crate::gpio::Alternate<$A, $Otype>>) -> Self {
                         Self::$PX(p)
                     }
                 }
@@ -134,8 +158,8 @@ macro_rules! pin {
                 #[allow(irrefutable_let_patterns)]
                 impl<MODE> TryFrom<$name> for gpio::$PX<MODE>
                 where
-                    MODE: PinMode,
-                    Alternate<$A, $Otype>: PinMode,
+                    MODE: $crate::gpio::PinMode,
+                    $crate::gpio::Alternate<$A, $Otype>: $crate::gpio::PinMode,
                 {
                     type Error = ();
 
@@ -164,18 +188,15 @@ macro_rules! pin {
 
                 $(
                     $(#[$attr])*
-                    $PX(gpio::$PX<Alternate<$A, Otype>>),
+                    $PX(gpio::$PX<$crate::gpio::Alternate<$A, Otype>>),
                 )*
             }
 
             impl<Otype> crate::Sealed for $name<Otype> { }
 
             #[allow(unreachable_patterns)]
-            impl<Otype> $name<Otype> {
-                pub fn is_high(&self) -> bool {
-                    !self.is_low()
-                }
-                pub fn is_low(&self) -> bool {
+            impl<Otype> $crate::gpio::ReadPin for $name<Otype> {
+                fn is_low(&self) -> bool {
                     match self {
                         $(
                             $(#[$attr])*
@@ -185,8 +206,35 @@ macro_rules! pin {
                     }
                 }
             }
+
             #[allow(unreachable_patterns)]
-            impl<Otype> ExtiPin for $name<Otype> {
+            impl<Otype> $crate::gpio::PinSpeed for $name<Otype> {
+                fn set_speed(&mut self, _speed: $crate::gpio::Speed) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.set_speed(_speed),
+                        )*
+                        _ => {}
+                    }
+                }
+            }
+
+            #[allow(unreachable_patterns)]
+            impl<Otype> $crate::gpio::PinPull for $name<Otype> {
+                fn set_internal_resistor(&mut self, _pull: $crate::gpio::Pull) {
+                    match self {
+                        $(
+                            $(#[$attr])*
+                            Self::$PX(p) => p.set_internal_resistor(_pull),
+                        )*
+                        _ => {}
+                    }
+                }
+            }
+
+            #[allow(unreachable_patterns)]
+            impl<Otype> $crate::gpio::ExtiPin for $name<Otype> {
                 extipin! { $( $(#[$attr])* $PX, )* }
             }
 
@@ -202,8 +250,8 @@ macro_rules! pin {
                 $(#[$attr])*
                 impl<MODE, Otype> From<gpio::$PX<MODE>> for $name<Otype>
                 where
-                    MODE: marker::NotAlt + PinMode,
-                    Alternate<$A, Otype>: PinMode,
+                    MODE: $crate::gpio::marker::NotAlt + $crate::gpio::PinMode,
+                    $crate::gpio::Alternate<$A, Otype>: $crate::gpio::PinMode,
                 {
                     fn from(p: gpio::$PX<MODE>) -> Self {
                         Self::$PX(p.into_mode())
@@ -211,8 +259,8 @@ macro_rules! pin {
                 }
 
                 $(#[$attr])*
-                impl<Otype> From<gpio::$PX<Alternate<$A, Otype>>> for $name<Otype> {
-                    fn from(p: gpio::$PX<Alternate<$A, Otype>>) -> Self {
+                impl<Otype> From<gpio::$PX<$crate::gpio::Alternate<$A, Otype>>> for $name<Otype> {
+                    fn from(p: gpio::$PX<$crate::gpio::Alternate<$A, Otype>>) -> Self {
                         Self::$PX(p)
                     }
                 }
@@ -221,8 +269,8 @@ macro_rules! pin {
                 #[allow(irrefutable_let_patterns)]
                 impl<MODE, Otype> TryFrom<$name<Otype>> for gpio::$PX<MODE>
                 where
-                    MODE: PinMode,
-                    Alternate<$A, Otype>: PinMode,
+                    MODE: $crate::gpio::PinMode,
+                    $crate::gpio::Alternate<$A, Otype>: $crate::gpio::PinMode,
                 {
                     type Error = ();
 
@@ -302,7 +350,7 @@ pub trait I2cCommon {
 pub trait I2sCommon {
     type Ck;
     type Sd;
-    type Ws;
+    type Ws: crate::gpio::ReadPin + crate::gpio::ExtiPin;
 }
 pub trait I2sMaster {
     type Mck;

@@ -1,8 +1,5 @@
 use super::*;
-use crate::gpio::{self, Edge, ExtiPin};
-use crate::gpio::{marker, Alternate, NoPin, OpenDrain, PinMode, PushPull};
-use crate::pac::EXTI;
-use crate::syscfg::SysCfg;
+use crate::gpio::{self, NoPin, OpenDrain, PushPull};
 
 #[cfg(feature = "can1")]
 pub mod can1 {
