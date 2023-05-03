@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Integrate new version of stm32_i2s (v0.4)
  - Fix mstr bit for SPI Master/Slave [#625]
  - Add `ReadPin`, `PinSpeed` & `PinPull` traits [#623]
  - Add autoimplementations of `DMASet` [#614]
