@@ -319,8 +319,6 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
             // bidimode: 2-line or 1-line unidirectional
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
-            // master/slave mode
-            w.mstr().clear_bit();
             // data frame size
             w.dff().bit(W::DFF);
             // spe: enable the SPI bus
@@ -337,8 +335,6 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
             // bidimode: 2-line or 1-line unidirectional
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
-            // master/slave mode
-            w.mstr().set_bit();
             // data frame size
             w.dff().bit(W::DFF);
             // spe: enable the SPI bus
