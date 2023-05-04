@@ -6,6 +6,7 @@ use crate::gpio::{self, NoPin};
 use crate::pac;
 use crate::rcc;
 use crate::rcc::Clocks;
+use crate::rcc::Reset;
 use fugit::HertzU32 as Hertz;
 
 #[cfg(feature = "stm32_i2s_v12x")]
@@ -131,16 +132,16 @@ impl<I: Instance> I2s<I> {
     }
 }
 
-/// Implements stm32_i2s_v12x::I2sPeripheral for I2s<$SPIX, _> and creates an I2s::$spix function
+/// Implements stm32_i2s_v12x::I2sPeripheral for I2s<$SPI> and creates an I2s::$spix function
 /// to create and enable the peripheral
 ///
-/// $SPIX: The fully-capitalized name of the SPI peripheral (example: SPI1)
-/// $i2sx: The lowercase I2S name of the peripheral (example: i2s1). This is the name of the
-/// function that creates an I2s and enables the peripheral clock.
+/// $SPI: The fully-capitalized name of the SPI peripheral from pac module (example: SPI1)
+/// $I2s: The CamelCase I2S alias name for hal I2s wrapper (example: I2s1).
+/// $i2s: module containing the Ws pin definition. (example: i2s1).
 /// $clock: The name of the Clocks function that returns the frequency of the I2S clock input
 /// to this SPI peripheral (i2s_cl, i2s_apb1_clk, or i2s2_apb_clk)
 macro_rules! i2s {
-    ($SPI:ty, $I2s:ident, $clock:ident) => {
+    ($SPI:ty, $I2s:ident, $i2s:ident, $clock:ident) => {
         pub type $I2s = I2s<$SPI>;
 
         impl Instance for $SPI {}
@@ -154,18 +155,37 @@ macro_rules! i2s {
         }
 
         #[cfg(feature = "stm32_i2s_v12x")]
-        unsafe impl stm32_i2s_v12x::I2sPeripheral for I2s<$SPI> {
+        impl stm32_i2s_v12x::WsPin for gpio::alt::$i2s::Ws {
+            fn is_high(&self) -> bool {
+                use crate::gpio::ReadPin;
+                <Self as ReadPin>::is_high(self)
+            }
+            fn is_low(&self) -> bool {
+                use crate::gpio::ReadPin;
+                <Self as ReadPin>::is_low(self)
+            }
+        }
+
+        #[cfg(feature = "stm32_i2s_v12x")]
+        unsafe impl stm32_i2s_v12x::I2sPeripheral for I2s<$SPI>
+        where
+            $SPI: rcc::Reset,
+        {
+            type WsPin = gpio::alt::$i2s::Ws;
             const REGISTERS: *const () = <$SPI>::ptr() as *const _;
             fn i2s_freq(&self) -> u32 {
                 self.input_clock.raw()
             }
-            fn ws_is_high(&self) -> bool {
-                use crate::gpio::ReadPin;
-                self.ws_pin().is_high()
+            fn ws_pin(&self) -> &Self::WsPin {
+                self.ws_pin()
             }
-            fn ws_is_low(&self) -> bool {
-                use crate::gpio::ReadPin;
-                self.ws_pin().is_low()
+            fn ws_pin_mut(&mut self) -> &mut Self::WsPin {
+                self.ws_pin_mut()
+            }
+            fn rcc_reset(&mut self) {
+                unsafe {
+                    <$SPI>::reset_unchecked();
+                }
             }
         }
     };
@@ -176,15 +196,15 @@ macro_rules! i2s {
 // have two different I2S clocks while other models have only one.
 
 #[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
-i2s!(pac::SPI1, I2s1, i2s_clk);
+i2s!(pac::SPI1, I2s1, i2s1, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
-i2s!(pac::SPI1, I2s1, i2s_apb2_clk);
+i2s!(pac::SPI1, I2s1, i2s1, i2s_apb2_clk);
 
 // All STM32F4 models support SPI2/I2S2
 #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",)))]
-i2s!(pac::SPI2, I2s2, i2s_clk);
+i2s!(pac::SPI2, I2s2, i2s2, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
-i2s!(pac::SPI2, I2s2, i2s_apb1_clk);
+i2s!(pac::SPI2, I2s2, i2s2, i2s_apb1_clk);
 
 // All STM32F4 models except STM32F410 support SPI3/I2S3
 #[cfg(any(
@@ -194,19 +214,19 @@ i2s!(pac::SPI2, I2s2, i2s_apb1_clk);
     feature = "gpio-f427",
     feature = "gpio-f469",
 ))]
-i2s!(pac::SPI3, I2s3, i2s_clk);
+i2s!(pac::SPI3, I2s3, i2s3, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
-i2s!(pac::SPI3, I2s3, i2s_apb1_clk);
+i2s!(pac::SPI3, I2s3, i2s3, i2s_apb1_clk);
 
 #[cfg(feature = "gpio-f411")]
-i2s!(pac::SPI4, I2s4, i2s_clk);
+i2s!(pac::SPI4, I2s4, i2s4, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
-i2s!(pac::SPI4, I2s4, i2s_apb2_clk);
+i2s!(pac::SPI4, I2s4, i2s4, i2s_apb2_clk);
 
 #[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
-i2s!(pac::SPI5, I2s5, i2s_clk);
+i2s!(pac::SPI5, I2s5, i2s5, i2s_clk);
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
-i2s!(pac::SPI5, I2s5, i2s_apb2_clk);
+i2s!(pac::SPI5, I2s5, i2s5, i2s_apb2_clk);
 
 // DMA support: reuse existing mappings for SPI
 #[cfg(feature = "stm32_i2s_v12x")]
@@ -227,8 +247,7 @@ mod dma {
         type MemSize = u16;
 
         fn address(&self) -> u32 {
-            let registers = &*self.i2s_peripheral().spi;
-            &registers.dr as *const _ as u32
+            self.data_register_address()
         }
     }
 

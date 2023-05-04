@@ -197,7 +197,7 @@ mod app {
         i2s3_driver.set_error_interrupt(true);
 
         // set up an interrupt on WS pin
-        let ws_pin = i2s3_driver.i2s_peripheral_mut().ws_pin_mut();
+        let ws_pin = i2s3_driver.ws_pin_mut();
         ws_pin.make_interrupt_source(&mut syscfg);
         ws_pin.trigger_on_edge(&mut exti, Edge::Rising);
         // we will enable i2s3 in interrupt
@@ -350,10 +350,7 @@ mod app {
         if status.fre() {
             log::spawn("i2s3 Frame error").ok();
             i2s3_driver.disable();
-            i2s3_driver
-                .i2s_peripheral_mut()
-                .ws_pin_mut()
-                .enable_interrupt(exti);
+            i2s3_driver.ws_pin_mut().enable_interrupt(exti);
         }
         if status.udr() {
             log::spawn("i2s3 udr").ok();
@@ -367,7 +364,7 @@ mod app {
     fn exti4(cx: exti4::Context) {
         let i2s3_driver = cx.shared.i2s3_driver;
         let exti = cx.shared.exti;
-        let ws_pin = i2s3_driver.i2s_peripheral_mut().ws_pin_mut();
+        let ws_pin = i2s3_driver.ws_pin_mut();
         ws_pin.clear_interrupt_pending_bit();
         // yes, in this case we already know that pin is high, but some other exti can be triggered
         // by several pins
