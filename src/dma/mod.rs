@@ -1365,6 +1365,12 @@ where
         &mut self.stream
     }
 
+    /// Wait for the transfer to complete.
+    #[inline(always)]
+    pub fn wait(&self) {
+        while !STREAM::get_transfer_complete_flag() {}
+    }
+
     /// Applies all fields in DmaConfig.
     fn apply_config(stream: &mut STREAM, config: config::DmaConfig) {
         let msize = mem::size_of::<<PERIPHERAL as PeriAddress>::MemSize>() / 2;

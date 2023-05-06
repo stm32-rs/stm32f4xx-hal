@@ -154,6 +154,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - example of using USB CDC with interrupts.
 - Added non-blocking I2C based on DMA [#534]
 - Added Transactional I2C API [#542]
+- Added wait method for DMA Transfer.
 
 [#481]: https://github.com/stm32-rs/stm32f4xx-hal/pull/481
 [#489]: https://github.com/stm32-rs/stm32f4xx-hal/pull/489
