@@ -4,9 +4,8 @@
 
 use crate::gpio::{self, NoPin};
 use crate::pac;
-use crate::rcc;
-use crate::rcc::Clocks;
-use crate::rcc::Reset;
+#[allow(unused)]
+use crate::rcc::{self, Clocks, Reset};
 use fugit::HertzU32 as Hertz;
 
 #[cfg(feature = "stm32_i2s_v12x")]

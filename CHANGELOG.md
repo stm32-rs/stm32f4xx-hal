@@ -7,24 +7,36 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
- - Integrate new version of stm32_i2s (v0.4)
- - Fix mstr bit for SPI Master/Slave [#625]
+## [v0.15.0] - 2023-05-07
+
+
+### Changed
+
+ - Use `enum`s for alternate peripheral pins (generic over otype) [#594] [#596] [#600] [#610] [#617]
  - Add `ReadPin`, `PinSpeed` & `PinPull` traits [#623]
- - Add autoimplementations of `DMASet` [#614]
- - Simplify `gpio::Outport` [#611]
- - rcc `enable_unchecked`, timer features [#618]
- - Split SPI master and slave implementations [#609]
  - Split USART and UART implementations [#608]
- - Add `lapce` editor settings [#601]
- - Use `enum`s for alternate peripheral pins (generic over otype) [#594] [#596] [#600] [#610]
- - Add missing alternate enums [#617]
- - Added missing U(S)ART DMA traits for HAL serial types [#593]
+ - Split SPI master and slave implementations [#609]
+ - Simplify `gpio::Outport` [#611]
+ - Add autoimplementations of `DMASet` [#614]
+ - `ws2812::prerendered` in example [#615]
+ - Integrate new version of stm32_i2s (v0.4) [#626]
+
+### Added
+
  - Improve SPI::new* docs [#587]
  - Add advanced timer dead time insertion example [#585]
+ - Added missing U(S)ART DMA traits for HAL serial types [#593]
+ - I2c dma can now use single DMA channel for TX or RX only [#598]
+ - Improve SPI::new* docs [#587]
+ - Implement `serial::RxISR` for `dma::Transfer<..., PERIPHERAL, ...>` where `PERIPHERAL: serial::RxISR`, add `rtic-serial-dma-rx-idle` example [#588]
+ - Add `lapce` editor settings [#601]
+ - rcc `enable_unchecked`, timer features [#618]
+
+### Fixed
+
  - Cleanups [#595]
  - Fix comlementary for independent channels [#599] [#603]
- - I2c dma can now use single DMA channel for TX or RX only [#598]
- - `ws2812::prerendered` in example
+ - Fix mstr bit for SPI Master/Slave [#625]
 
 [#585]: https://github.com/stm32-rs/stm32f4xx-hal/pull/585
 [#593]: https://github.com/stm32-rs/stm32f4xx-hal/pull/593
@@ -39,17 +51,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#609]: https://github.com/stm32-rs/stm32f4xx-hal/pull/609
 [#611]: https://github.com/stm32-rs/stm32f4xx-hal/pull/611
 [#614]: https://github.com/stm32-rs/stm32f4xx-hal/pull/614
+[#615]: https://github.com/stm32-rs/stm32f4xx-hal/pull/615
 [#617]: https://github.com/stm32-rs/stm32f4xx-hal/pull/617
 [#618]: https://github.com/stm32-rs/stm32f4xx-hal/pull/618
 [#623]: https://github.com/stm32-rs/stm32f4xx-hal/pull/623
-### Changed
-
-### Added
-
- - Improve SPI::new* docs [#587]
- - Implement `serial::RxISR` for `dma::Transfer<..., PERIPHERAL, ...>` where `PERIPHERAL: serial::RxISR`, add `rtic-serial-dma-rx-idle` example [#588]
-
-### Fixed
+[#626]: https://github.com/stm32-rs/stm32f4xx-hal/pull/626
 
 ## [v0.15.0] - 2023-03-13
 
@@ -843,7 +849,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.0...HEAD
+[v0.16.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.15.0...v0.16.0
 [v0.15.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.14.0...v0.15.0
 [v0.14.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.2...v0.14.0
 [v0.13.2]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.1...v0.13.2

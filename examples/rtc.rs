@@ -6,7 +6,7 @@
 #![no_std]
 
 use cortex_m_rt::entry;
-use panic_rtt_target as _;
+use panic_halt as _;
 use rtt_target::{rprintln, rtt_init_print};
 
 use stm32f4xx_hal::{pac, prelude::*, rtc::Rtc};
