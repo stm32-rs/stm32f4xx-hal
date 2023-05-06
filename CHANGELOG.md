@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Add advanced timer dead time insertion example [#585]
  - Cleanups [#595]
  - Fix comlementary for independent channels [#599] [#603]
+ - Capability to release and reuse SPI peripheral after using it with DMA.
  - I2c dma can now use single DMA channel for TX or RX only [#598]
  - `ws2812::prerendered` in example
 

@@ -16,7 +16,7 @@ mod app {
         pac::{DMA1, SPI3},
         prelude::*,
         rcc::RccExt,
-        spi::{Rx, SpiSlave, Tx},
+        spi::{RxCoupledSlave, SpiSlave, TxCoupledSlave},
     };
     use panic_semihosting as _;
     use systick_monotonic::*;
@@ -25,11 +25,21 @@ mod app {
 
     const ARRAY_SIZE: usize = 3;
 
-    type TxTransfer =
-        Transfer<Stream5<DMA1>, 0, Tx<SPI3>, MemoryToPeripheral, &'static mut [u8; ARRAY_SIZE]>;
+    type TxTransfer = Transfer<
+        Stream5<DMA1>,
+        0,
+        TxCoupledSlave<SPI3, false>,
+        MemoryToPeripheral,
+        &'static mut [u8; ARRAY_SIZE],
+    >;
 
-    type RxTransfer =
-        Transfer<Stream0<DMA1>, 0, Rx<SPI3>, PeripheralToMemory, &'static mut [u8; ARRAY_SIZE]>;
+    type RxTransfer = Transfer<
+        Stream0<DMA1>,
+        0,
+        RxCoupledSlave<SPI3, false>,
+        PeripheralToMemory,
+        &'static mut [u8; ARRAY_SIZE],
+    >;
 
     #[shared]
     struct Shared {

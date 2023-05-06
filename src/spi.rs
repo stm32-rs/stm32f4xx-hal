@@ -783,82 +783,156 @@ impl<SPI: Instance> Inner<SPI> {
 }
 
 // Spi DMA
-
-impl<SPI: Instance, const BIDI: bool> Spi<SPI, BIDI, u8> {
-    pub fn use_dma(self) -> DmaBuilder<SPI> {
-        DmaBuilder {
-            spi: self.inner.spi,
+macro_rules! dma {
+    ($Spi:ident, $DmaBuilder:ident, $Tx:ident, $Rx:ident, $TxCoupled:ident, $RxCoupled:ident) => {
+        impl<SPI: Instance, const BIDI: bool> $Spi<SPI, BIDI, u8> {
+            pub fn use_dma(self) -> $DmaBuilder<SPI, BIDI> {
+                $DmaBuilder { spi: self }
+            }
         }
-    }
-}
 
-impl<SPI: Instance, const BIDI: bool> SpiSlave<SPI, BIDI, u8> {
-    pub fn use_dma(self) -> DmaBuilder<SPI> {
-        DmaBuilder {
-            spi: self.inner.spi,
+        pub struct $DmaBuilder<SPI: Instance, const BIDI: bool> {
+            spi: $Spi<SPI, BIDI>,
         }
-    }
+
+        pub struct $Tx<SPI: Instance, const BIDI: bool> {
+            spi: $Spi<SPI, BIDI>,
+        }
+
+        pub struct $Rx<SPI: Instance, const BIDI: bool> {
+            spi: $Spi<SPI, BIDI>,
+        }
+
+        pub struct $TxCoupled<SPI: Instance, const BIDI: bool> {
+            spi: $Spi<SPI, BIDI>,
+        }
+
+        pub struct $RxCoupled<SPI: Instance, const BIDI: bool> {
+            spi: PhantomData<SPI>,
+        }
+
+        impl<SPI: Instance, const BIDI: bool> $DmaBuilder<SPI, BIDI> {
+            pub fn tx(self) -> $Tx<SPI, BIDI> {
+                self.spi.spi.cr2.modify(|_, w| w.txdmaen().enabled());
+                $Tx { spi: self.spi }
+            }
+
+            pub fn rx(self) -> $Rx<SPI, BIDI> {
+                self.spi.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
+                $Rx { spi: self.spi }
+            }
+
+            pub fn txrx(self) -> ($TxCoupled<SPI, BIDI>, $RxCoupled<SPI, BIDI>) {
+                self.spi.spi.cr2.modify(|_, w| {
+                    w.txdmaen().enabled();
+                    w.rxdmaen().enabled()
+                });
+                (
+                    $TxCoupled { spi: self.spi },
+                    $RxCoupled { spi: PhantomData },
+                )
+            }
+        }
+
+        impl<SPI: Instance, const BIDI: bool> $Tx<SPI, BIDI> {
+            pub fn release(self) -> $Spi<SPI, BIDI, u8> {
+                self.spi.spi.cr2.modify(|_, w| w.txdmaen().disabled());
+                self.spi
+            }
+        }
+
+        impl<SPI: Instance, const BIDI: bool> $Rx<SPI, BIDI> {
+            pub fn release(self) -> $Spi<SPI, BIDI, u8> {
+                self.spi.spi.cr2.modify(|_, w| w.rxdmaen().disabled());
+                self.spi
+            }
+        }
+
+        impl<SPI: Instance, const BIDI: bool> $TxCoupled<SPI, BIDI> {
+            pub fn release(self, _couple: RxCoupled<SPI, BIDI>) -> $Spi<SPI, BIDI, u8> {
+                self.spi.spi.cr2.modify(|_, w| {
+                    w.rxdmaen().disabled();
+                    w.txdmaen().disabled()
+                });
+                self.spi
+            }
+        }
+
+        unsafe impl<SPI: Instance, const BIDI: bool> PeriAddress for $Rx<SPI, BIDI> {
+            #[inline(always)]
+            fn address(&self) -> u32 {
+                unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
+            }
+
+            type MemSize = u8;
+        }
+
+        unsafe impl<SPI: Instance, const BIDI: bool, STREAM, const CHANNEL: u8>
+            DMASet<STREAM, CHANNEL, PeripheralToMemory> for $Rx<SPI, BIDI>
+        where
+            SPI: DMASet<STREAM, CHANNEL, PeripheralToMemory>,
+        {
+        }
+
+        unsafe impl<SPI: Instance, const BIDI: bool> PeriAddress for $Tx<SPI, BIDI> {
+            #[inline(always)]
+            fn address(&self) -> u32 {
+                unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
+            }
+
+            type MemSize = u8;
+        }
+
+        unsafe impl<SPI: Instance, const BIDI: bool, STREAM, const CHANNEL: u8>
+            DMASet<STREAM, CHANNEL, MemoryToPeripheral> for $Tx<SPI, BIDI>
+        where
+            SPI: DMASet<STREAM, CHANNEL, MemoryToPeripheral>,
+        {
+        }
+
+        unsafe impl<SPI: Instance, const BIDI: bool> PeriAddress for $RxCoupled<SPI, BIDI> {
+            #[inline(always)]
+            fn address(&self) -> u32 {
+                unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
+            }
+
+            type MemSize = u8;
+        }
+
+        unsafe impl<SPI: Instance, const BIDI: bool, STREAM, const CHANNEL: u8>
+            DMASet<STREAM, CHANNEL, PeripheralToMemory> for $RxCoupled<SPI, BIDI>
+        where
+            SPI: DMASet<STREAM, CHANNEL, PeripheralToMemory>,
+        {
+        }
+
+        unsafe impl<SPI: Instance, const BIDI: bool> PeriAddress for $TxCoupled<SPI, BIDI> {
+            #[inline(always)]
+            fn address(&self) -> u32 {
+                unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
+            }
+
+            type MemSize = u8;
+        }
+
+        unsafe impl<SPI: Instance, const BIDI: bool, STREAM, const CHANNEL: u8>
+            DMASet<STREAM, CHANNEL, MemoryToPeripheral> for $TxCoupled<SPI, BIDI>
+        where
+            SPI: DMASet<STREAM, CHANNEL, MemoryToPeripheral>,
+        {
+        }
+    };
 }
 
-pub struct DmaBuilder<SPI> {
-    spi: SPI,
-}
-
-pub struct Tx<SPI> {
-    spi: PhantomData<SPI>,
-}
-
-pub struct Rx<SPI> {
-    spi: PhantomData<SPI>,
-}
-
-impl<SPI: Instance> DmaBuilder<SPI> {
-    pub fn tx(self) -> Tx<SPI> {
-        self.spi.cr2.modify(|_, w| w.txdmaen().enabled());
-        Tx { spi: PhantomData }
-    }
-
-    pub fn rx(self) -> Rx<SPI> {
-        self.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
-        Rx { spi: PhantomData }
-    }
-
-    pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
-        self.spi.cr2.modify(|_, w| {
-            w.txdmaen().enabled();
-            w.rxdmaen().enabled()
-        });
-        (Tx { spi: PhantomData }, Rx { spi: PhantomData })
-    }
-}
-
-unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
-    #[inline(always)]
-    fn address(&self) -> u32 {
-        unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
-    }
-
-    type MemSize = u8;
-}
-
-unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory> for Rx<SPI> where
-    SPI: DMASet<STREAM, CHANNEL, PeripheralToMemory>
-{
-}
-
-unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
-    #[inline(always)]
-    fn address(&self) -> u32 {
-        unsafe { &(*SPI::ptr()).dr as *const _ as u32 }
-    }
-
-    type MemSize = u8;
-}
-
-unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral> for Tx<SPI> where
-    SPI: DMASet<STREAM, CHANNEL, MemoryToPeripheral>
-{
-}
+dma!(Spi, DmaBuilder, Tx, Rx, TxCoupled, RxCoupled);
+dma!(
+    SpiSlave,
+    DmaBuilderSlave,
+    TxSlave,
+    RxSlave,
+    TxCoupledSlave,
+    RxCoupledSlave
+);
 
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     pub fn read_nonblocking(&mut self) -> nb::Result<W, Error> {
