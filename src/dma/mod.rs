@@ -1002,16 +1002,24 @@ where
     }
 }
 
-impl<STREAM, const CHANNEL: u8, PERIPHERAL, BUF>
-    Transfer<STREAM, CHANNEL, PERIPHERAL, PeripheralToMemory, BUF>
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, BUF> RxISR
+    for Transfer<STREAM, CHANNEL, PERIPHERAL, PeripheralToMemory, BUF>
 where
     STREAM: Stream,
-    ChannelX<CHANNEL>: Channel,
     PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, PeripheralToMemory> + RxISR,
-    BUF: ReadBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
+    /// Return true if the line idle status is set
+    fn is_idle(&self) -> bool {
+        self.peripheral.is_idle()
+    }
+
+    /// Return true if the rx register is not empty (and can be read)
+    fn is_rx_not_empty(&self) -> bool {
+        self.peripheral.is_rx_not_empty()
+    }
+
     /// Clear idle line interrupt flag
-    pub fn clear_idle_interrupt(&self) {
+    fn clear_idle_interrupt(&self) {
         self.peripheral.clear_idle_interrupt();
     }
 }
