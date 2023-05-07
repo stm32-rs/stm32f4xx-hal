@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+### Added
+
+- `Listen` trait [#631]
+
+[#631]: https://github.com/stm32-rs/stm32f4xx-hal/pull/631
+
+### Fixed
+
+## [v0.15.0] - 2023-05-07
+
  - Join `Serial`, `Rx`, `Tx` for `USART` and `UART` again. Make inner traits with different implementation for USART and UART. [#636]
 
 ### Fixed

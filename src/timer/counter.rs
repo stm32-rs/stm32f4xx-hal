@@ -1,5 +1,5 @@
 use super::{compute_arr_presc, Error, Event, FTimer, Instance, SysEvent, Timer};
-use crate::pac::SYST;
+use crate::{pac::SYST, Listen};
 use core::ops::{Deref, DerefMut};
 use fugit::{HertzU32 as Hertz, TimerDurationU32, TimerInstantU32};
 
@@ -295,6 +295,16 @@ impl<const FREQ: u32> SysCounter<FREQ> {
 
         self.tim.disable_counter();
         Ok(())
+    }
+}
+
+impl<const FREQ: u32> Listen for SysCounter<FREQ> {
+    type Event = SysEvent;
+    fn listen(&mut self, event: Self::Event) {
+        self.listen(event)
+    }
+    fn unlisten(&mut self, event: Self::Event) {
+        self.unlisten(event)
     }
 }
 

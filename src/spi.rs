@@ -5,7 +5,7 @@ use core::ptr;
 use crate::dma::traits::{DMASet, PeriAddress};
 use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
 use crate::gpio::{self, NoPin};
-use crate::pac;
+use crate::{pac, Listen};
 
 /// Clock polarity
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -779,6 +779,26 @@ impl<SPI: Instance> Inner<SPI> {
         } else {
             nb::Error::WouldBlock
         })
+    }
+}
+
+impl<SPI: Instance, const BIDI: bool, W> Listen for Spi<SPI, BIDI, W> {
+    type Event = Event;
+    fn listen(&mut self, event: Self::Event) {
+        self.deref_mut().listen(event)
+    }
+    fn unlisten(&mut self, event: Self::Event) {
+        self.deref_mut().unlisten(event)
+    }
+}
+
+impl<SPI: Instance, const BIDI: bool, W> Listen for SpiSlave<SPI, BIDI, W> {
+    type Event = Event;
+    fn listen(&mut self, event: Self::Event) {
+        self.deref_mut().listen(event)
+    }
+    fn unlisten(&mut self, event: Self::Event) {
+        self.deref_mut().unlisten(event)
     }
 }
 

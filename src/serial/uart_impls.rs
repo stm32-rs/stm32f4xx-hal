@@ -2,15 +2,14 @@ use core::{fmt, ops::Deref};
 
 use nb::block;
 
-use super::{
-    config, Error, Event, Listen, Rx, RxISR, RxListen, Serial, SerialExt, Tx, TxISR, TxListen,
-};
+use super::{config, Error, Event, Rx, RxISR, RxListen, Serial, SerialExt, Tx, TxISR, TxListen};
 use crate::dma::{
     traits::{DMASet, PeriAddress},
     MemoryToPeripheral, PeripheralToMemory,
 };
 use crate::gpio::{alt::SerialAsync as CommonPins, NoPin, PushPull};
 use crate::rcc::{self, Clocks};
+use crate::Listen;
 
 #[cfg(feature = "uart4")]
 pub(crate) use crate::pac::uart4::RegisterBlock as RegisterBlockUart;
@@ -422,6 +421,7 @@ where
     <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
+    type Event = Event;
     fn listen(&mut self, event: Event) {
         self.tx.usart.listen(event)
     }

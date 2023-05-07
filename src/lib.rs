@@ -189,3 +189,18 @@ fn stripped_type_name<T>() -> &'static str {
     let p = s.split("::");
     p.last().unwrap()
 }
+
+/// Trait for listening interrupt events.
+pub trait Listen {
+    /// Possible events
+    type Event;
+
+    /// Starts listening for an interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    fn listen(&mut self, event: Self::Event);
+
+    /// Stop listening for an interrupt event
+    fn unlisten(&mut self, event: Self::Event);
+}

@@ -20,6 +20,7 @@ mod hal_02;
 mod hal_1;
 
 pub(crate) mod uart_impls;
+pub use crate::Listen;
 pub use uart_impls::Instance;
 use uart_impls::RegisterBlockImpl;
 
@@ -103,18 +104,6 @@ pub trait TxListen {
 
     /// Stop listening for the tx empty interrupt event
     fn unlisten(&mut self);
-}
-
-/// Trait for listening [`Serial`] interrupt events.
-pub trait Listen {
-    /// Starts listening for an interrupt event
-    ///
-    /// Note, you will also have to enable the corresponding interrupt
-    /// in the NVIC to start receiving events.
-    fn listen(&mut self, event: Event);
-
-    /// Stop listening for an interrupt event
-    fn unlisten(&mut self, event: Event);
 }
 
 /// Serial abstraction

@@ -10,6 +10,7 @@ use cortex_m::peripheral::SYST;
 
 use crate::bb;
 use crate::pac;
+use crate::Listen;
 
 use crate::dma::traits::PeriAddress;
 use crate::rcc::{self, Clocks};
@@ -226,6 +227,16 @@ impl Timer<SYST> {
         match event {
             SysEvent::Update => self.tim.disable_interrupt(),
         }
+    }
+}
+
+impl Listen for Timer<SYST> {
+    type Event = SysEvent;
+    fn listen(&mut self, event: Self::Event) {
+        self.listen(event)
+    }
+    fn unlisten(&mut self, event: Self::Event) {
+        self.unlisten(event)
     }
 }
 
@@ -633,6 +644,16 @@ impl<TIM: Instance> Timer<TIM> {
     }
 }
 
+impl<TIM: Instance> Listen for Timer<TIM> {
+    type Event = Event;
+    fn listen(&mut self, event: Self::Event) {
+        self.listen(event)
+    }
+    fn unlisten(&mut self, event: Self::Event) {
+        self.unlisten(event)
+    }
+}
+
 impl<TIM: Instance + MasterTimer> Timer<TIM> {
     pub fn set_master_mode(&mut self, mode: TIM::Mms) {
         self.tim.master_mode(mode)
@@ -714,6 +735,16 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     /// Stops listening for an `event`
     pub fn unlisten(&mut self, event: Event) {
         self.tim.listen_interrupt(event, false);
+    }
+}
+
+impl<TIM: Instance, const FREQ: u32> Listen for FTimer<TIM, FREQ> {
+    type Event = Event;
+    fn listen(&mut self, event: Self::Event) {
+        self.listen(event)
+    }
+    fn unlisten(&mut self, event: Self::Event) {
+        self.unlisten(event)
     }
 }
 
