@@ -353,14 +353,16 @@ pub mod dfsdm1 {
     use crate::pac::DFSDM;
     #[cfg(feature = "gpio-f413")]
     use crate::pac::DFSDM1 as DFSDM;
-    impl DfsdmCommon for DFSDM {
+    impl DfsdmBasic for DFSDM {
         type Ckin0 = Ckin0;
         type Ckin1 = Ckin1;
-        type Ckin2 = Ckin2;
-        type Ckin3 = Ckin3;
         type Ckout = Ckout;
         type Datin0 = Datin0;
         type Datin1 = Datin1;
+    }
+    impl DfsdmGeneral for DFSDM {
+        type Ckin2 = Ckin2;
+        type Ckin3 = Ckin3;
         type Datin2 = Datin2;
         type Datin3 = Datin3;
     }
@@ -485,14 +487,16 @@ pub mod dfsdm2 {
     }
 
     use crate::pac::DFSDM2 as DFSDM;
-    impl DfsdmCommon for DFSDM {
+    impl DfsdmBasic for DFSDM {
         type Ckin0 = Ckin0;
         type Ckin1 = Ckin1;
-        type Ckin2 = Ckin2;
-        type Ckin3 = Ckin3;
         type Ckout = Ckout;
         type Datin0 = Datin0;
         type Datin1 = Datin1;
+    }
+    impl DfsdmGeneral for DFSDM {
+        type Ckin2 = Ckin2;
+        type Ckin3 = Ckin3;
         type Datin2 = Datin2;
         type Datin3 = Datin3;
     }
@@ -631,7 +635,7 @@ pub mod eth {
 
 /// Pins available on all STM32F4 models that have an FSMC/FMC
 #[cfg(any(feature = "fmc", feature = "fsmc"))]
-pub mod fsmc {
+pub mod fmc {
     use super::*;
 
     pub use Ne1 as ChipSelect1;
@@ -3427,27 +3431,26 @@ pub mod tim1 {
     }
 
     use crate::pac::TIM1 as TIM;
-    use crate::timer::{C1, C2, C3, C4};
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
-    impl TimCPin<C2> for TIM {
+    impl TimCPin<1> for TIM {
         type Ch<Otype> = Ch2<Otype>;
     }
-    impl TimCPin<C3> for TIM {
+    impl TimCPin<3> for TIM {
         type Ch<Otype> = Ch3<Otype>;
     }
-    impl TimCPin<C4> for TIM {
+    impl TimCPin<4> for TIM {
         type Ch<Otype> = Ch4<Otype>;
     }
-    impl TimNCPin<C1> for TIM {
+    impl TimNCPin<0> for TIM {
         type ChN<Otype> = Ch1N<Otype>;
     }
-    impl TimNCPin<C2> for TIM {
+    impl TimNCPin<1> for TIM {
         type ChN<Otype> = Ch2N<Otype>;
     }
-    impl TimNCPin<C3> for TIM {
+    impl TimNCPin<3> for TIM {
         type ChN<Otype> = Ch3N<Otype>;
     }
     impl TimBkin for TIM {
@@ -3513,18 +3516,17 @@ pub mod tim2 {
     }
 
     use crate::pac::TIM2 as TIM;
-    use crate::timer::{C1, C2, C3, C4};
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
-    impl TimCPin<C2> for TIM {
+    impl TimCPin<1> for TIM {
         type Ch<Otype> = Ch2<Otype>;
     }
-    impl TimCPin<C3> for TIM {
+    impl TimCPin<3> for TIM {
         type Ch<Otype> = Ch3<Otype>;
     }
-    impl TimCPin<C4> for TIM {
+    impl TimCPin<4> for TIM {
         type Ch<Otype> = Ch4<Otype>;
     }
     impl TimEtr for TIM {
@@ -3573,18 +3575,17 @@ pub mod tim3 {
     }
 
     use crate::pac::TIM3 as TIM;
-    use crate::timer::{C1, C2, C3, C4};
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
-    impl TimCPin<C2> for TIM {
+    impl TimCPin<1> for TIM {
         type Ch<Otype> = Ch2<Otype>;
     }
-    impl TimCPin<C3> for TIM {
+    impl TimCPin<3> for TIM {
         type Ch<Otype> = Ch3<Otype>;
     }
-    impl TimCPin<C4> for TIM {
+    impl TimCPin<4> for TIM {
         type Ch<Otype> = Ch4<Otype>;
     }
     impl TimEtr for TIM {
@@ -3629,18 +3630,17 @@ pub mod tim4 {
     }
 
     use crate::pac::TIM4 as TIM;
-    use crate::timer::{C1, C2, C3, C4};
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
-    impl TimCPin<C2> for TIM {
+    impl TimCPin<1> for TIM {
         type Ch<Otype> = Ch2<Otype>;
     }
-    impl TimCPin<C3> for TIM {
+    impl TimCPin<3> for TIM {
         type Ch<Otype> = Ch3<Otype>;
     }
-    impl TimCPin<C4> for TIM {
+    impl TimCPin<4> for TIM {
         type Ch<Otype> = Ch4<Otype>;
     }
     impl TimEtr for TIM {
@@ -3706,18 +3706,17 @@ pub mod tim5 {
     }
 
     use crate::pac::TIM5 as TIM;
-    use crate::timer::{C1, C2, C3, C4};
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
-    impl TimCPin<C2> for TIM {
+    impl TimCPin<1> for TIM {
         type Ch<Otype> = Ch2<Otype>;
     }
-    impl TimCPin<C3> for TIM {
+    impl TimCPin<3> for TIM {
         type Ch<Otype> = Ch3<Otype>;
     }
-    impl TimCPin<C4> for TIM {
+    impl TimCPin<4> for TIM {
         type Ch<Otype> = Ch4<Otype>;
     }
 }
@@ -3806,27 +3805,26 @@ pub mod tim8 {
     }
 
     use crate::pac::TIM8 as TIM;
-    use crate::timer::{C1, C2, C3, C4};
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
-    impl TimCPin<C2> for TIM {
+    impl TimCPin<1> for TIM {
         type Ch<Otype> = Ch2<Otype>;
     }
-    impl TimCPin<C3> for TIM {
+    impl TimCPin<3> for TIM {
         type Ch<Otype> = Ch3<Otype>;
     }
-    impl TimCPin<C4> for TIM {
+    impl TimCPin<4> for TIM {
         type Ch<Otype> = Ch4<Otype>;
     }
-    impl TimNCPin<C1> for TIM {
+    impl TimNCPin<0> for TIM {
         type ChN<Otype> = Ch1N<Otype>;
     }
-    impl TimNCPin<C2> for TIM {
+    impl TimNCPin<1> for TIM {
         type ChN<Otype> = Ch2N<Otype>;
     }
-    impl TimNCPin<C3> for TIM {
+    impl TimNCPin<3> for TIM {
         type ChN<Otype> = Ch3N<Otype>;
     }
     impl TimBkin for TIM {
@@ -3863,12 +3861,11 @@ pub mod tim9 {
     }
 
     use crate::pac::TIM9 as TIM;
-    use crate::timer::{C1, C2};
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
-    impl TimCPin<C2> for TIM {
+    impl TimCPin<1> for TIM {
         type Ch<Otype> = Ch2<Otype>;
     }
 }
@@ -3894,9 +3891,8 @@ pub mod tim10 {
     }
 
     use crate::pac::TIM10 as TIM;
-    use crate::timer::C1;
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
 }
@@ -3924,9 +3920,8 @@ pub mod tim11 {
     }
 
     use crate::pac::TIM11 as TIM;
-    use crate::timer::C1;
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
 }
@@ -3952,12 +3947,11 @@ pub mod tim12 {
     }
 
     use crate::pac::TIM12 as TIM;
-    use crate::timer::{C1, C2};
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
-    impl TimCPin<C2> for TIM {
+    impl TimCPin<1> for TIM {
         type Ch<Otype> = Ch2<Otype>;
     }
 }
@@ -3975,9 +3969,8 @@ pub mod tim13 {
     }
 
     use crate::pac::TIM13 as TIM;
-    use crate::timer::C1;
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
 }
@@ -3995,9 +3988,8 @@ pub mod tim14 {
     }
 
     use crate::pac::TIM14 as TIM;
-    use crate::timer::C1;
 
-    impl TimCPin<C1> for TIM {
+    impl TimCPin<0> for TIM {
         type Ch<Otype> = Ch1<Otype>;
     }
 }

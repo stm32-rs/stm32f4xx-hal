@@ -58,6 +58,7 @@ unsafe impl UsbPeripheral for USB {
         feature = "gpio-f413",
         feature = "gpio-f446",
         feature = "gpio-f469",
+        feature = "l4",
     ))]
     const ENDPOINT_COUNT: usize = 6;
 

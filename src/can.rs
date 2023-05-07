@@ -2,7 +2,7 @@
 //!
 
 use crate::gpio::{self, NoPin};
-use crate::pac::{CAN1, CAN2};
+use crate::pac;
 use crate::rcc;
 
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + gpio::alt::CanCommon {}
@@ -16,22 +16,22 @@ macro_rules! can {
 }
 
 // Implemented by all SPI instances
-can! { CAN1: Can1 }
-can! { CAN2: Can2 }
+can! { pac::CAN1: Can1 }
+#[cfg(feature = "can2")]
+can! { pac::CAN2: Can2 }
 #[cfg(feature = "can3")]
-can! { crate::pac::CAN3: Can3 }
+can! { pac::CAN3: Can3 }
 
 /// Pins and definitions for models with a third CAN peripheral
 #[cfg(feature = "can3")]
 mod can3 {
     use super::*;
-    use crate::pac::CAN3;
 
-    unsafe impl bxcan::Instance for Can<CAN3> {
-        const REGISTERS: *mut bxcan::RegisterBlock = CAN3::ptr() as *mut _;
+    unsafe impl bxcan::Instance for Can<pac::CAN3> {
+        const REGISTERS: *mut bxcan::RegisterBlock = pac::CAN3::ptr() as *mut _;
     }
 
-    unsafe impl bxcan::FilterOwner for Can<CAN3> {
+    unsafe impl bxcan::FilterOwner for Can<pac::CAN3> {
         const NUM_FILTER_BANKS: u8 = 14;
     }
 }
@@ -110,16 +110,20 @@ impl<CAN: Instance> Can<CAN> {
     }
 }
 
-unsafe impl bxcan::Instance for Can<CAN1> {
-    const REGISTERS: *mut bxcan::RegisterBlock = CAN1::ptr() as *mut _;
+unsafe impl bxcan::Instance for Can<pac::CAN1> {
+    const REGISTERS: *mut bxcan::RegisterBlock = pac::CAN1::ptr() as *mut _;
 }
 
-unsafe impl bxcan::Instance for Can<CAN2> {
-    const REGISTERS: *mut bxcan::RegisterBlock = CAN2::ptr() as *mut _;
+#[cfg(feature = "can2")]
+unsafe impl bxcan::Instance for Can<pac::CAN2> {
+    const REGISTERS: *mut bxcan::RegisterBlock = pac::CAN2::ptr() as *mut _;
 }
 
-unsafe impl bxcan::FilterOwner for Can<CAN1> {
+unsafe impl bxcan::FilterOwner for Can<pac::CAN1> {
+    #[cfg(any(feature = "f4", feature = "f7"))]
     const NUM_FILTER_BANKS: u8 = 28;
+    #[cfg(feature = "l4")]
+    const NUM_FILTER_BANKS: u8 = 14;
 }
 
-unsafe impl bxcan::MasterInstance for Can<CAN1> {}
+unsafe impl bxcan::MasterInstance for Can<pac::CAN1> {}

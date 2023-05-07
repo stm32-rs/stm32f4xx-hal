@@ -15,7 +15,7 @@
 //! * Read enable instead of output enable
 //! * Write enable
 
-use crate::gpio::alt::fsmc as alt;
+use crate::gpio::alt::fmc as alt;
 use core::marker::PhantomData;
 
 use super::sealed;

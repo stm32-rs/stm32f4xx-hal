@@ -1,3 +1,4 @@
+#[cfg(features = "dma")]
 use crate::dma::{traits::DMASet, MemoryToPeripheral, PeripheralToMemory};
 
 use super::*;
@@ -108,20 +109,39 @@ impl<UART: Instance, WORD> Rx<UART, WORD> {
 impl<UART: Instance, WORD> RxISR for Rx<UART, WORD> {
     /// Return true if the line idle status is set
     fn is_idle(&self) -> bool {
-        unsafe { (*UART::ptr()).sr.read().idle().bit_is_set() }
+        #[cfg(feature = "uart_v1")]
+        unsafe {
+            (*UART::ptr()).sr.read().idle().bit_is_set()
+        }
+        #[cfg(feature = "uart_v2")]
+        unsafe {
+            (*UART::ptr()).isr.read().idle().bit_is_set()
+        }
     }
 
     /// Return true if the rx register is not empty (and can be read)
     fn is_rx_not_empty(&self) -> bool {
-        unsafe { (*UART::ptr()).sr.read().rxne().bit_is_set() }
+        #[cfg(feature = "uart_v1")]
+        unsafe {
+            (*UART::ptr()).sr.read().rxne().bit_is_set()
+        }
+        #[cfg(feature = "uart_v2")]
+        unsafe {
+            (*UART::ptr()).isr.read().rxne().bit_is_set()
+        }
     }
 
     /// Clear idle line interrupt flag
     fn clear_idle_interrupt(&self) {
+        #[cfg(feature = "uart_v1")]
         unsafe {
             let _ = (*UART::ptr()).sr.read();
             let _ = (*UART::ptr()).dr.read();
         }
+        #[cfg(feature = "uart_v2")]
+        unsafe {
+            (*UART::ptr()).icr.write(|w| w.idlecf().set_bit())
+        };
     }
 }
 
@@ -147,7 +167,14 @@ impl<UART: Instance, WORD> Tx<UART, WORD> {
 impl<UART: Instance, WORD> TxISR for Tx<UART, WORD> {
     /// Return true if the tx register is empty (and can accept data)
     fn is_tx_empty(&self) -> bool {
-        unsafe { (*UART::ptr()).sr.read().txe().bit_is_set() }
+        #[cfg(feature = "uart_v1")]
+        unsafe {
+            (*UART::ptr()).sr.read().txe().bit_is_set()
+        }
+        #[cfg(feature = "uart_v2")]
+        unsafe {
+            (*UART::ptr()).isr.read().txe().bit_is_set()
+        }
     }
 }
 
@@ -230,9 +257,13 @@ impl<UART: Instance> Rx<UART, u8> {
 impl<UART: Instance> Rx<UART, u16> {
     pub(super) fn read(&mut self) -> nb::Result<u16, Error> {
         // NOTE(unsafe) atomic read with no side effects
+        #[cfg(feature = "uart_v1")]
         let sr = unsafe { (*UART::ptr()).sr.read() };
+        #[cfg(feature = "uart_v2")]
+        let sr = unsafe { (*UART::ptr()).isr.read() };
 
         // Any error requires the dr to be read to clear
+        #[cfg(feature = "uart_v1")]
         if sr.pe().bit_is_set()
             || sr.fe().bit_is_set()
             || sr.nf().bit_is_set()
@@ -240,18 +271,30 @@ impl<UART: Instance> Rx<UART, u16> {
         {
             unsafe { (*UART::ptr()).dr.read() };
         }
-
+        #[cfg(feature = "uart_v2")]
+        let icr = unsafe { &(*UART::ptr()).icr };
         Err(if sr.pe().bit_is_set() {
+            #[cfg(feature = "uart_v2")]
+            icr.write(|w| w.pecf().clear());
             Error::Parity.into()
         } else if sr.fe().bit_is_set() {
+            #[cfg(feature = "uart_v2")]
+            icr.write(|w| w.fecf().clear());
             Error::FrameFormat.into()
         } else if sr.nf().bit_is_set() {
+            #[cfg(feature = "uart_v2")]
+            icr.write(|w| w.ncf().clear());
             Error::Noise.into()
         } else if sr.ore().bit_is_set() {
+            #[cfg(feature = "uart_v2")]
+            icr.write(|w| w.orecf().clear());
             Error::Overrun.into()
         } else if sr.rxne().bit_is_set() {
             // NOTE(unsafe) atomic read from stateless register
+            #[cfg(feature = "uart_v1")]
             return Ok(unsafe { &*UART::ptr() }.dr.read().dr().bits());
+            #[cfg(feature = "uart_v2")]
+            return Ok(unsafe { &*UART::ptr() }.rdr.read().rdr().bits());
         } else {
             nb::Error::WouldBlock
         })
@@ -284,11 +327,17 @@ impl<UART: Instance> Tx<UART, u8> {
 impl<UART: Instance> Tx<UART, u16> {
     pub(super) fn write(&mut self, word: u16) -> nb::Result<(), Error> {
         // NOTE(unsafe) atomic read with no side effects
+        #[cfg(feature = "uart_v1")]
         let sr = unsafe { (*UART::ptr()).sr.read() };
+        #[cfg(feature = "uart_v2")]
+        let sr = unsafe { (*UART::ptr()).isr.read() };
 
         if sr.txe().bit_is_set() {
             // NOTE(unsafe) atomic write to stateless register
+            #[cfg(feature = "uart_v1")]
             unsafe { &*UART::ptr() }.dr.write(|w| w.dr().bits(word));
+            #[cfg(feature = "uart_v2")]
+            unsafe { &*UART::ptr() }.tdr.write(|w| w.tdr().bits(word));
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -297,7 +346,10 @@ impl<UART: Instance> Tx<UART, u16> {
 
     pub(super) fn flush(&mut self) -> nb::Result<(), Error> {
         // NOTE(unsafe) atomic read with no side effects
+        #[cfg(feature = "uart_v1")]
         let sr = unsafe { (*UART::ptr()).sr.read() };
+        #[cfg(feature = "uart_v2")]
+        let sr = unsafe { (*UART::ptr()).isr.read() };
 
         if sr.tc().bit_is_set() {
             Ok(())
@@ -403,6 +455,7 @@ impl<UART: Instance> Serial<UART, u16> {
     }
 }
 
+#[cfg(features = "dma")]
 unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -412,6 +465,7 @@ unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     type MemSize = u8;
 }
 
+#[cfg(features = "dma")]
 unsafe impl<UART: CommonPins, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory>
     for Rx<UART>
 where
@@ -419,6 +473,7 @@ where
 {
 }
 
+#[cfg(features = "dma")]
 unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -428,6 +483,7 @@ unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     type MemSize = u8;
 }
 
+#[cfg(features = "dma")]
 unsafe impl<UART: CommonPins, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral>
     for Tx<UART>
 where

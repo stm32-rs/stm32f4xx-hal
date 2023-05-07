@@ -2,8 +2,11 @@ use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use core::ptr;
 
-use crate::dma::traits::{DMASet, PeriAddress};
-use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
+#[cfg(feature = "dma")]
+use crate::dma::{
+    traits::{DMASet, PeriAddress},
+    MemoryToPeripheral, PeripheralToMemory,
+};
 use crate::gpio::{self, NoPin};
 use crate::pac;
 
@@ -177,19 +180,20 @@ macro_rules! spi {
     };
 }
 
+#[cfg(feature = "spi1")]
 spi! { pac::SPI1: Spi1, SpiSlave1 }
+#[cfg(feature = "spi2")]
+#[cfg(not(any(feature = "svd-f750", feature = "svd-f7x6")))]
 spi! { pac::SPI2: Spi2, SpiSlave2 }
-
 #[cfg(feature = "spi3")]
+#[cfg(not(any(feature = "svd-f745", feature = "svd-f765")))]
 spi! { pac::SPI3: Spi3, SpiSlave3 }
-
 #[cfg(feature = "spi4")]
 spi! { pac::SPI4: Spi4, SpiSlave4 }
-
 #[cfg(feature = "spi5")]
 spi! { pac::SPI5: Spi5, SpiSlave5 }
-
 #[cfg(feature = "spi6")]
+#[cfg(not(any(feature = "svd-f745", feature = "svd-f765")))]
 spi! { pac::SPI6: Spi6, SpiSlave6 }
 
 pub trait SpiExt: Sized + Instance {
@@ -320,7 +324,10 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
             // data frame size
+            #[cfg(any(feature = "f4", feature = "l4p"))]
             w.dff().bit(W::DFF);
+            #[cfg(any(feature = "f7", feature = "l4x"))]
+            w.crcl().bit(W::DFF);
             // spe: enable the SPI bus
             w.spe().set_bit()
         });
@@ -336,7 +343,10 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
             // data frame size
+            #[cfg(any(feature = "f4", feature = "l4p"))]
             w.dff().bit(W::DFF);
+            #[cfg(any(feature = "f7", feature = "l4x"))]
+            w.crcl().bit(W::DFF);
             // spe: enable the SPI bus
             w.spe().set_bit()
         });
@@ -594,7 +604,10 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
             w.cpol().bit(mode.polarity == Polarity::IdleHigh);
             // mstr: master configuration
             w.mstr().set_bit();
-            w.br().bits(br);
+            #[allow(unused_unsafe)]
+            unsafe {
+                w.br().bits(br);
+            }
             // lsbfirst: MSB first
             w.lsbfirst().clear_bit();
             // ssm: enable software slave management (NSS pin free for other uses)
@@ -603,7 +616,11 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
             w.ssi().set_bit();
             w.rxonly().clear_bit();
             // dff: 8 bit frames
-            w.dff().clear_bit()
+            #[cfg(any(feature = "f4", feature = "l4p"))]
+            w.dff().clear_bit();
+            #[cfg(any(feature = "f7", feature = "l4x"))]
+            w.crcl().clear_bit();
+            w
         });
 
         self
@@ -618,7 +635,10 @@ impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
             w.cpol().bit(mode.polarity == Polarity::IdleHigh);
             // mstr: slave configuration
             w.mstr().clear_bit();
-            w.br().bits(0);
+            #[allow(unused_unsafe)]
+            unsafe {
+                w.br().bits(0);
+            }
             // lsbfirst: MSB first
             w.lsbfirst().clear_bit();
             // ssm: enable software slave management (NSS pin free for other uses)
@@ -627,7 +647,11 @@ impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
             w.ssi().set_bit();
             w.rxonly().clear_bit();
             // dff: 8 bit frames
-            w.dff().clear_bit()
+            #[cfg(any(feature = "f4", feature = "l4p"))]
+            w.dff().clear_bit();
+            #[cfg(any(feature = "f7", feature = "l4x"))]
+            w.crcl().clear_bit();
+            w
         });
 
         self
@@ -814,24 +838,25 @@ pub struct Rx<SPI> {
 
 impl<SPI: Instance> DmaBuilder<SPI> {
     pub fn tx(self) -> Tx<SPI> {
-        self.spi.cr2.modify(|_, w| w.txdmaen().enabled());
+        self.spi.cr2.modify(|_, w| w.txdmaen().set_bit());
         Tx { spi: PhantomData }
     }
 
     pub fn rx(self) -> Rx<SPI> {
-        self.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
+        self.spi.cr2.modify(|_, w| w.rxdmaen().set_bit());
         Rx { spi: PhantomData }
     }
 
     pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
         self.spi.cr2.modify(|_, w| {
-            w.txdmaen().enabled();
-            w.rxdmaen().enabled()
+            w.txdmaen().set_bit();
+            w.rxdmaen().set_bit()
         });
         (Tx { spi: PhantomData }, Rx { spi: PhantomData })
     }
 }
 
+#[cfg(feature = "dma")]
 unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -841,11 +866,13 @@ unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
     type MemSize = u8;
 }
 
+#[cfg(feature = "dma")]
 unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory> for Rx<SPI> where
     SPI: DMASet<STREAM, CHANNEL, PeripheralToMemory>
 {
 }
 
+#[cfg(feature = "dma")]
 unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
@@ -855,6 +882,7 @@ unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     type MemSize = u8;
 }
 
+#[cfg(feature = "dma")]
 unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral> for Tx<SPI> where
     SPI: DMASet<STREAM, CHANNEL, MemoryToPeripheral>
 {

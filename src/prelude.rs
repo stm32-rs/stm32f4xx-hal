@@ -59,18 +59,26 @@ pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;
 pub use crate::gpio::outport::OutPort as _;
 pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
+#[cfg(feature = "f4")]
 pub use crate::i2c::dma::I2CMasterHandleIT as _stm32f4xx_hal_i2c_dma_I2CMasterHandleIT;
+#[cfg(feature = "f4")]
 pub use crate::i2c::dma::I2CMasterReadDMA as _stm32f4xx_hal_i2c_dma_I2CMasterReadDMA;
+#[cfg(feature = "f4")]
 pub use crate::i2c::dma::I2CMasterWriteDMA as _stm32f4xx_hal_i2c_dma_I2CMasterWriteDMA;
+#[cfg(feature = "f4")]
 pub use crate::i2c::dma::I2CMasterWriteReadDMA as _stm32f4xx_hal_i2c_dma_I2CMasterWriteReadDMA;
+#[cfg(feature = "f4")]
 pub use crate::i2c::I2cExt as _stm32f4xx_hal_i2c_I2cExt;
+#[cfg(feature = "f4")]
 pub use crate::i2s::I2sExt as _stm32f4xx_hal_i2s_I2sExt;
 pub use crate::qei::QeiExt as _stm32f4xx_hal_QeiExt;
 pub use crate::rcc::RccExt as _stm32f4xx_hal_rcc_RccExt;
 #[cfg(all(feature = "device-selected", feature = "rng"))]
 pub use crate::rng::RngExt as _stm32f4xx_hal_rng_RngExt;
+#[cfg(feature = "f4")]
 pub use crate::serial::RxISR as _stm32f4xx_hal_serial_RxISR;
 pub use crate::serial::SerialExt as _stm32f4xx_hal_serial_SerialExt;
+#[cfg(feature = "f4")]
 pub use crate::serial::TxISR as _stm32f4xx_hal_serial_TxISR;
 pub use crate::spi::SpiExt as _stm32f4xx_hal_spi_SpiExt;
 pub use crate::syscfg::SysCfgExt as _stm32f4xx_hal_syscfg_SysCfgExt;
@@ -79,7 +87,9 @@ pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;
 pub use crate::timer::MonoTimerExt as _stm32f4xx_hal_timer_MonoTimerExt;
 pub use crate::timer::PwmExt as _stm32f4xx_hal_timer_PwmExt;
 #[cfg(feature = "rtic")]
+#[cfg(feature = "f4")]
 pub use crate::timer::SysMonoTimerExt as _stm32f4xx_hal_timer_SysMonoTimerExt;
+#[cfg(feature = "f4")]
 pub use crate::timer::SysTimerExt as _stm32f4xx_hal_timer_SysCounterExt;
 pub use crate::timer::TimerExt as _stm32f4xx_hal_timer_TimerExt;
 #[cfg(feature = "uart4")]

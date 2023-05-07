@@ -1,0 +1,31 @@
+[target.thumbv6m-none-eabi]
+rustflags = [
+  "-C", "link-arg=-Tlink.x",
+]
+
+[target.thumbv7m-none-eabi]
+rustflags = [
+  "-C", "link-arg=-Tlink.x",
+]
+
+[target.thumbv7em-none-eabi]
+rustflags = [
+  "-C", "link-arg=-Tlink.x",
+]
+
+[target.thumbv7em-none-eabihf]
+runner = 'probe-run --chip STM32F411CEUx'
+rustflags = [
+  "-C", "link-arg=-Tlink.x",
+]
+
+[target.thumbv8m.main-none-eabihf]
+rustflags = [
+  "-C", "link-arg=-Tlink.x",
+]
+
+[build]
+target = "thumbv7em-none-eabihf"
+
+[env]
+DEFMT_LOG = "info"

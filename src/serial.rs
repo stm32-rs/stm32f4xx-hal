@@ -1,4 +1,3 @@
-//!
 //! Asynchronous serial communication using USART peripherals
 //!
 //! # Word length
@@ -32,6 +31,7 @@ use crate::pac;
 use crate::gpio::NoPin;
 use crate::rcc::Clocks;
 
+#[cfg(features = "dma")]
 use crate::dma::traits::PeriAddress;
 
 /// Serial error
@@ -207,7 +207,10 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
             w.over8().bit(over8);
             w.te().set_bit();
             w.re().set_bit();
+            #[cfg(feature = "uart_v1")]
             w.m().bit(config.wordlength == WordLength::DataBits9);
+            #[cfg(feature = "uart_v2")]
+            w.m1().bit(config.wordlength == WordLength::DataBits9);
             w.pce().bit(config.parity != Parity::ParityNone);
             w.ps().bit(config.parity == Parity::ParityOdd)
         });
@@ -285,9 +288,22 @@ macro_rules! halUsart {
 }
 pub(crate) use halUsart;
 
+#[cfg(feature = "usart1")]
 halUsart! { pac::USART1, usart1, Serial1, Rx1, Tx1 }
+#[cfg(feature = "usart2")]
 halUsart! { pac::USART2, usart2, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART6, usart6, Serial6, Rx6, Tx6 }
-
 #[cfg(feature = "usart3")]
+#[cfg(not(feature = "l4"))]
 halUsart! { pac::USART3, usart3, Serial3, Rx3, Tx3 }
+#[cfg(feature = "usart4")]
+halUsart! { pac::USART4, usart4, Serial4, Rx4, Tx4 }
+#[cfg(feature = "usart5")]
+halUsart! { pac::USART5, usart5, Serial5, Rx5, Tx5 }
+#[cfg(feature = "usart6")]
+halUsart! { pac::USART6, usart6, Serial6, Rx6, Tx6 }
+#[cfg(feature = "usart7")]
+halUsart! { pac::USART7, usart7, Serial7, Rx7, Tx7 }
+#[cfg(feature = "usart8")]
+halUsart! { pac::USART8, usart8, Serial8, Rx8, Tx8 }
+#[cfg(feature = "usart10")]
+halUsart! { pac::USART10, usart10, Serial10, Rx10, Tx10 }

@@ -35,6 +35,8 @@ use crate::pac;
 use crate::gpio::{NoPin, PushPull};
 use crate::rcc::Clocks;
 
+#[allow(unused)]
+#[cfg(feature = "dma")]
 use crate::dma::traits::PeriAddress;
 
 pub use crate::serial::{config, CommonPins, Event, NoRx, NoTx, RxISR, TxISR};
@@ -174,7 +176,10 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
                 w.over8().bit(over8);
                 w.te().set_bit();
                 w.re().set_bit();
+                #[cfg(feature = "f4")]
                 w.m().bit(config.wordlength == WordLength::DataBits9);
+                #[cfg(feature = "l4")]
+                w.m1().bit(config.wordlength == WordLength::DataBits9);
                 w.pce().bit(config.parity != Parity::ParityNone);
                 w.ps().bit(config.parity == Parity::ParityOdd)
             })
