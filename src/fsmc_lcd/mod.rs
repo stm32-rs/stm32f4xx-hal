@@ -65,7 +65,7 @@ mod timing;
 
 use core::marker::PhantomData;
 
-pub use self::pins::{AddressPins, ChipSelectPins, DataPins, LcdPins, Pins};
+pub use self::pins::{AddressPins, ChipSelectPins, DataPins, DataPins16, LcdPins, Pins};
 pub use self::timing::{AccessMode, Timing};
 
 use crate::rcc::{Enable, Reset};
@@ -389,6 +389,13 @@ pub struct Lcd<S> {
     ///
     /// S determines the chip select signal to use, and the addresses used with that signal.
     _sub_bank: PhantomData<S>,
+}
+impl<S> Lcd<S> {
+    fn new() -> Self {
+        Self {
+            _sub_bank: PhantomData,
+        }
+    }
 }
 
 impl<S> Lcd<S>
