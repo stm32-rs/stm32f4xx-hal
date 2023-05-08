@@ -67,7 +67,7 @@ mod usart_shell {
         // led
         let led = gpioc.pc13.into_push_pull_output();
         // serial
-        let pins = (gpioa.pa9.into_alternate(), gpioa.pa10.into_alternate());
+        let pins = (gpioa.pa9, gpioa.pa10);
         let mut serial = Serial::new(
             ctx.device.USART1,
             pins,

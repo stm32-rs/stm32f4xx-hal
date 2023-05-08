@@ -97,11 +97,11 @@ mod usart_shell {
         // led
         let led = gpioc.pc13.into_push_pull_output();
         // i2c
-        let scl = gpiob.pb8.into_alternate().set_open_drain();
-        let sda = gpiob.pb9.into_alternate().set_open_drain();
+        let scl = gpiob.pb8;
+        let sda = gpiob.pb9;
         let i2c = I2c::new(ctx.device.I2C1, (scl, sda), 400.kHz(), &clocks);
         // serial
-        let pins = (gpioa.pa9.into_alternate(), gpioa.pa10.into_alternate());
+        let pins = (gpioa.pa9, gpioa.pa10);
         let mut serial = Serial::new(
             ctx.device.USART1,
             pins,

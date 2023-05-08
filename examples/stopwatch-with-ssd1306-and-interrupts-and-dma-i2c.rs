@@ -163,15 +163,7 @@ fn main() -> ! {
         let rcc = dp.RCC.constrain();
         let clocks = setup_clocks(rcc);
         let gpiob = dp.GPIOB.split();
-        let i2c = I2c::new(
-            dp.I2C1,
-            (
-                gpiob.pb8.into_alternate().set_open_drain(),
-                gpiob.pb9.into_alternate().set_open_drain(),
-            ),
-            400.kHz(),
-            &clocks,
-        );
+        let i2c = I2c::new(dp.I2C1, (gpiob.pb8, gpiob.pb9), 400.kHz(), &clocks);
 
         // Then convert it to DMA
         let streams = StreamsTuple::new(dp.DMA1);

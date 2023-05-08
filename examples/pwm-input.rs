@@ -31,7 +31,7 @@ fn main() -> ! {
         ch1.enable();
 
         // Configure a pin into TIM8_CH1 mode, which will be used to observe an input PWM signal.
-        let pwm_reader_ch1 = gpioc.pc6.into_alternate();
+        let pwm_reader_ch1 = gpioc.pc6;
 
         // configure tim8 as a PWM input, using the best-guess frequency of the input signal.
         let monitor = Timer::new(dp.TIM8, &clocks).pwm_input(500.Hz(), pwm_reader_ch1);

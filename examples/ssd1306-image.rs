@@ -36,16 +36,8 @@ fn main() -> ! {
         // Set up I2C - SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F446xC/E datasheet page 60. Pin assignment as per the Nucleo-F446 board.
         let gpiob = dp.GPIOB.split();
-        let scl = gpiob
-            .pb8
-            .into_alternate()
-            .internal_pull_up(true)
-            .set_open_drain();
-        let sda = gpiob
-            .pb9
-            .into_alternate()
-            .internal_pull_up(true)
-            .set_open_drain();
+        let scl = gpiob.pb8.internal_pull_up(true);
+        let sda = gpiob.pb9.internal_pull_up(true);
         // let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &clocks);
         // or
         let i2c = dp.I2C1.i2c((scl, sda), 400.kHz(), &clocks);

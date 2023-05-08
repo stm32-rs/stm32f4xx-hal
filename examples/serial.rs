@@ -23,7 +23,7 @@ fn main() -> ! {
     let mut delay = dp.TIM1.delay_ms(&clocks);
 
     // define RX/TX pins
-    let tx_pin = gpioa.pa9.into_alternate();
+    let tx_pin = gpioa.pa9;
 
     // configure serial
     // let mut tx = Serial::tx(dp.USART1, tx_pin, 9600.bps(), &clocks).unwrap();

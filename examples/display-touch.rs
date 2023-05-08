@@ -161,31 +161,12 @@ fn main() -> ! {
     // STM32F412 uses I2c1 type for i2c bus.
     // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f412zg-mcu-stmicroelectronics
     #[cfg(feature = "stm32f412")]
-    let mut i2c = {
-        I2c::new(
-            p.I2C1,
-            (
-                gpiob.pb6.into_alternate_open_drain(), //scl pin
-                gpiob.pb7.into_alternate_open_drain(), //sda pin
-            ),
-            400.kHz(),
-            &clocks,
-        )
-    };
+    let mut i2c = { I2c::new(p.I2C1, (gpiob.pb6, gpiob.pb7), 400.kHz(), &clocks) };
 
     // STM32F413 uses FMPI2C1 type.
     // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f413zh-mcu-stmicroelectronics
     #[cfg(feature = "stm32f413")]
-    let mut i2c = {
-        FMPI2c::new(
-            p.FMPI2C1,
-            (
-                gpioc.pc6.into_alternate_open_drain(), // scl pin
-                gpioc.pc7.into_alternate_open_drain(), // sda pin
-            ),
-            400.kHz(),
-        )
-    };
+    let mut i2c = { FMPI2c::new(p.FMPI2C1, (gpioc.pc6, gpioc.pc7), 400.kHz()) };
 
     #[cfg(feature = "stm32f412")]
     let ts_int = gpiog.pg5.into_pull_down_input();
