@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#635]: https://github.com/stm32-rs/stm32f4xx-hal/pull/635
 [#636]: https://github.com/stm32-rs/stm32f4xx-hal/pull/636
 [#640]: https://github.com/stm32-rs/stm32f4xx-hal/pull/640
+### Added
+
+ - Channels for `Counter`, extended 64-bit monotonic timer
 
 ## [v0.16.0] - 2023-05-07
 

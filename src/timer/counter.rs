@@ -1,4 +1,6 @@
-use super::{compute_arr_presc, Error, Event, FTimer, Instance, SysEvent, Timer};
+use super::{
+    compute_arr_presc, Channel, Error, Event, FTimer, Instance, SysEvent, Timer, WithPwmCommon,
+};
 use crate::pac::SYST;
 use core::ops::{Deref, DerefMut};
 use fugit::{HertzU32 as Hertz, TimerDurationU32, TimerInstantU32};
@@ -138,6 +140,21 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
         // disable counter
         self.tim.disable_counter();
         Ok(())
+    }
+}
+
+impl<TIM, const FREQ: u32> Counter<TIM, FREQ>
+where
+    TIM: Instance + WithPwmCommon,
+{
+    pub fn enable_channel(&mut self, c: Channel) {
+        TIM::enable_channel(c as u8, true);
+    }
+    pub fn disable_channel(&mut self, c: Channel) {
+        TIM::enable_channel(c as u8, false);
+    }
+    pub fn set_compare_time(&mut self, c: Channel, duration: TimerDurationU32<FREQ>) {
+        TIM::set_cc_value(c as u8, duration.ticks());
     }
 }
 

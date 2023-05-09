@@ -96,7 +96,7 @@ device-selected = []
 rt = [] # deprecated
 # Note: stm32f4 has only one feature for some very similar device families,
 # so it's intended for e.g. stm32f405/415 to both enable stm32f4/stm32f405.
-stm32f401 = ["stm32f4/stm32f401", "device-selected", "gpio-f401",]
+stm32f401 = ["stm32f4/stm32f401", "device-selected", "gpio-f401"]
 stm32f405 = ["stm32f4/stm32f405", "device-selected", "gpio-f417"]
 stm32f407 = ["stm32f4/stm32f407", "device-selected", "gpio-f417"]
 stm32f415 = ["stm32f4/stm32f405", "device-selected", "gpio-f417"]
@@ -114,139 +114,15 @@ stm32f446 = ["stm32f4/stm32f446", "device-selected", "gpio-f446"]
 stm32f469 = ["stm32f4/stm32f469", "device-selected", "gpio-f469"]
 stm32f479 = ["stm32f4/stm32f469", "device-selected", "gpio-f469"]
 
-gpio-f401 = [
-    "gpiod", "gpioe",
-    "i2c3",
-    "otg-fs",
-    "sdio",
-    "spi3", "spi4",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11",
-]
-gpio-f410 = [
-    "dac",
-    "fmpi2c1",
-    "lptim1",
-    "spi5",
-    "tim1", "tim5", "tim6", "tim9", "tim11",
-]
-gpio-f411 = [
-    "gpiod", "gpioe", # "gpioi",
-    "i2c3",
-    "otg-fs",
-    "sdio",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11",
-    "spi3", "spi4", "spi5",
-]
-gpio-f412 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "can1", "can2",
-    "dfsdm1",
-    "fmpi2c1",
-    "fsmc",
-    "i2c3",
-    "quadspi",
-    "otg-fs",
-    "rng",
-    "sdio",
-    "spi3", "spi4", "spi5",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3",
-]
-gpio-f413 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "can1", "can2", "can3",
-    "dac",
-    "dfsdm1",
-    "dfsdm2",
-    "fsmc",
-    "fmpi2c1",
-    "i2c3",
-    "lptim1",
-    "quadspi",
-    "otg-fs",
-    "rng",
-    "sai1",
-    "sdio",
-    "spi3", "spi4", "spi5",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8", "uart9", "uart10",
-]
-gpio-f417 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi",
-    "adc2", "adc3",
-    "can1", "can2",
-    "dac",
-    "dcmi",
-    "eth",
-    "fsmc",
-    "i2c3",
-    "otg-fs",
-    "otg-hs",
-    "rng",
-    "sdio",
-    "spi3",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5",
-]
-gpio-f427 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "gpioj", "gpiok",
-    "adc2", "adc3",
-    "can1", "can2",
-    "dac",
-    "dcmi",
-    "eth",
-    "i2c3",
-    "ltdc",
-    "otg-fs",
-    "otg-hs",
-    "rng",
-    "sai1",
-    "sdio",
-    "spi3", "spi4", "spi5", "spi6",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8",
-]
-gpio-f446 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "adc2", "adc3",
-    "can1", "can2",
-    "dac",
-    "dcmi",
-    "fmpi2c1",
-    "fmc",
-    "i2c3",
-    "quadspi",
-    "otg-fs",
-    "otg-hs",
-    "sai1",
-    "sai2",
-    #"sdio",
-    "spi3", "spi4",
-    "spdifrx",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5",
-]
-gpio-f469 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "gpioj", "gpiok",
-    "adc2", "adc3",
-    "can1", "can2",
-    "dac",
-    "dcmi",
-    "dsihost",
-    "eth",
-    "fmc",
-    "i2c3",
-    "ltdc",
-    "quadspi",
-    "otg-fs",
-    "otg-hs",
-    "rng",
-    "sai1",
-    "sdio",
-    "spi3", "spi4", "spi5", "spi6",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8",
-]
+gpio-f401 = ["gpiod", "gpioe", "i2c3", "otg-fs", "sdio", "spi3", "spi4", "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11"]
+gpio-f410 = ["dac", "fmpi2c1", "lptim1", "spi5", "tim1", "tim5", "tim6", "tim9", "tim11"]
+gpio-f411 = ["gpiod", "gpioe", "i2c3", "otg-fs", "sdio", "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11", "spi3", "spi4", "spi5"]
+gpio-f412 = ["gpiod", "gpioe", "gpiof", "gpiog", "can1", "can2", "dfsdm1", "fmpi2c1", "fsmc", "i2c3", "quadspi", "otg-fs", "rng", "sdio", "spi3", "spi4", "spi5", "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14", "usart3"]
+gpio-f413 = ["gpiod", "gpioe", "gpiof", "gpiog", "can1", "can2", "can3", "dac", "dfsdm1", "dfsdm2", "fsmc", "fmpi2c1", "i2c3", "lptim1", "quadspi", "otg-fs", "rng", "sai1", "sdio", "spi3", "spi4", "spi5", "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14", "usart3", "uart4", "uart5", "uart7", "uart8", "uart9", "uart10"]
+gpio-f417 = ["gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "adc2", "adc3", "can1", "can2", "dac", "dcmi", "eth", "fsmc", "i2c3", "otg-fs", "otg-hs", "rng", "sdio", "spi3", "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14", "usart3", "uart4", "uart5"]
+gpio-f427 = ["gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "gpioj", "gpiok", "adc2", "adc3", "can1", "can2", "dac", "dcmi", "eth", "i2c3", "ltdc", "otg-fs", "otg-hs", "rng", "sai1", "sdio", "spi3", "spi4", "spi5", "spi6", "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14", "usart3", "uart4", "uart5", "uart7", "uart8"]
+gpio-f446 = ["gpiod", "gpioe", "gpiof", "gpiog", "adc2", "adc3", "can1", "can2", "dac", "dcmi", "fmpi2c1", "fmc", "i2c3", "quadspi", "otg-fs", "otg-hs", "sai1", "sai2", "spi3", "spi4", "spdifrx", "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14", "usart3", "uart4", "uart5"]
+gpio-f469 = ["gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "gpioj", "gpiok", "adc2", "adc3", "can1", "can2", "dac", "dcmi", "dsihost", "eth", "fmc", "i2c3", "ltdc", "quadspi", "otg-fs", "otg-hs", "rng", "sai1", "sdio", "spi3", "spi4", "spi5", "spi6", "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14", "usart3", "uart4", "uart5", "uart7", "uart8"]
 
 usb_fs = ["synopsys-usb-otg", "synopsys-usb-otg/fs"]
 usb_hs = ["synopsys-usb-otg", "synopsys-usb-otg/hs"]
