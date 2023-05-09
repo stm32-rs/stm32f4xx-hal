@@ -7,6 +7,7 @@ use panic_halt as _;
 
 use core::f32::consts::FRAC_PI_2;
 use cortex_m_rt::entry;
+use fugit::ExtU32;
 use micromath::F32Ext;
 use stm32f4xx_hal::{
     pac,

@@ -6,6 +6,7 @@ use panic_halt as _;
 use stm32f4xx_hal as hal;
 
 use cortex_m_rt::entry;
+use fugit::ExtU32;
 use hal::{gpio::NoPin, pac, prelude::*};
 use smart_leds::{brightness, hsv::RGB8, SmartLedsWrite};
 use ws2812_spi as ws2812;

@@ -8,6 +8,7 @@ use nb::block;
 
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
+use fugit::ExtU32;
 use stm32f4xx_hal::{gpio::PinState, pac, prelude::*, timer::Timer};
 
 #[entry]
