@@ -1,10 +1,11 @@
 mod nb {
-    use super::super::{Error, Instance, Rx, Serial, Tx};
+    use core::ops::Deref;
+
+    use super::super::{Error, Instance, RegisterBlockImpl, Rx, Serial, Tx};
     use embedded_hal::serial::{Read, Write};
 
-    impl<USART, WORD> Read<WORD> for Serial<USART, WORD>
+    impl<USART: Instance, WORD> Read<WORD> for Serial<USART, WORD>
     where
-        USART: Instance,
         Rx<USART, WORD>: Read<WORD, Error = Error>,
     {
         type Error = Error;
@@ -14,11 +15,14 @@ mod nb {
         }
     }
 
-    impl<USART: Instance> Read<u8> for Rx<USART, u8> {
+    impl<USART: Instance> Read<u8> for Rx<USART, u8>
+    where
+        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
+    {
         type Error = Error;
 
         fn read(&mut self) -> nb::Result<u8, Self::Error> {
-            self.read()
+            unsafe { (*USART::ptr()).read_u8() }
         }
     }
 
@@ -27,17 +31,19 @@ mod nb {
     /// If the UART/USART was configured with `WordLength::DataBits9`, the returned value will contain
     /// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
     /// 8 received data bits and all other bits set to zero.
-    impl<USART: Instance> Read<u16> for Rx<USART, u16> {
+    impl<USART: Instance> Read<u16> for Rx<USART, u16>
+    where
+        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
+    {
         type Error = Error;
 
         fn read(&mut self) -> nb::Result<u16, Self::Error> {
-            self.read()
+            unsafe { (*USART::ptr()).read_u16() }
         }
     }
 
-    impl<USART, WORD> Write<WORD> for Serial<USART, WORD>
+    impl<USART: Instance, WORD> Write<WORD> for Serial<USART, WORD>
     where
-        USART: Instance,
         Tx<USART, WORD>: Write<WORD, Error = Error>,
     {
         type Error = Error;
@@ -51,14 +57,18 @@ mod nb {
         }
     }
 
-    impl<USART: Instance> Write<u8> for Tx<USART, u8> {
+    impl<USART: Instance> Write<u8> for Tx<USART, u8>
+    where
+        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
+        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
+    {
         type Error = Error;
 
         fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
-            self.write(word)
+            self.usart.write_u8(word)
         }
         fn flush(&mut self) -> nb::Result<(), Self::Error> {
-            self.flush()
+            self.usart.flush()
         }
     }
 
@@ -67,36 +77,49 @@ mod nb {
     /// If the UART/USART was configured with `WordLength::DataBits9`, the 9 least significant bits will
     /// be transmitted and the other 7 bits will be ignored. Otherwise, the 8 least significant bits
     /// will be transmitted and the other 8 bits will be ignored.
-    impl<USART: Instance> Write<u16> for Tx<USART, u16> {
+    impl<USART: Instance> Write<u16> for Tx<USART, u16>
+    where
+        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
+        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
+    {
         type Error = Error;
 
         fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
-            self.write(word)
+            self.usart.write_u16(word)
         }
 
         fn flush(&mut self) -> nb::Result<(), Self::Error> {
-            self.flush()
+            self.usart.flush()
         }
     }
 }
 
 mod blocking {
-    use super::super::{Error, Instance, Serial, Tx};
+    use core::ops::Deref;
+
+    use super::super::{Error, Instance, RegisterBlockImpl, Serial, Tx};
     use embedded_hal::blocking::serial::Write;
 
-    impl<USART: Instance> Write<u8> for Tx<USART, u8> {
+    impl<USART: Instance> Write<u8> for Tx<USART, u8>
+    where
+        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
+        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
+    {
         type Error = Error;
 
         fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
-            self.bwrite_all(bytes)
+            self.usart.bwrite_all_u8(bytes)
         }
 
         fn bflush(&mut self) -> Result<(), Self::Error> {
-            self.bflush()
+            self.usart.bflush()
         }
     }
 
-    impl<USART: Instance> Write<u8> for Serial<USART, u8> {
+    impl<USART: Instance> Write<u8> for Serial<USART, u8>
+    where
+        Tx<USART, u8>: Write<u8, Error = Error>,
+    {
         type Error = Error;
 
         fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
@@ -108,23 +131,30 @@ mod blocking {
         }
     }
 
-    impl<USART: Instance> Write<u16> for Tx<USART, u16> {
+    impl<USART: Instance> Write<u16> for Tx<USART, u16>
+    where
+        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
+        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
+    {
         type Error = Error;
 
         fn bwrite_all(&mut self, slice: &[u16]) -> Result<(), Self::Error> {
-            self.bwrite_all(slice)
+            self.usart.bwrite_all_u16(slice)
         }
 
         fn bflush(&mut self) -> Result<(), Self::Error> {
-            self.bflush()
+            self.usart.bflush()
         }
     }
 
-    impl<USART: Instance> Write<u16> for Serial<USART, u16> {
+    impl<USART: Instance> Write<u16> for Serial<USART, u16>
+    where
+        Tx<USART, u16>: Write<u16, Error = Error>,
+    {
         type Error = Error;
 
-        fn bwrite_all(&mut self, slice: &[u16]) -> Result<(), Self::Error> {
-            self.tx.bwrite_all(slice)
+        fn bwrite_all(&mut self, bytes: &[u16]) -> Result<(), Self::Error> {
+            self.tx.bwrite_all(bytes)
         }
 
         fn bflush(&mut self) -> Result<(), Self::Error> {

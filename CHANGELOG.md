@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+ - Join `Serial`, `Rx`, `Tx` for `USART` and `UART` again. Make inner traits with different implementation for USART and UART. [#636]
+
 ### Fixed
 
 - map `$SpiSlave` into `SpiSlave` struct in `spi!` macro [#635]
