@@ -1,7 +1,7 @@
-//! # I2S example with rtic
+//! # Full duplex I2s example with rtic
 //!
-//! This application show how to use I2sDriver with interruption. Be careful to you ear, wrong
-//! operation can trigger loud noise on the DAC output.
+//! This application show how to use DualI2sDriver with interruption to achieve a full duplex
+//! communication. Be careful to you ear, wrong operation can trigger loud noise on the DAC output.
 //!
 //! # Hardware required
 //!
@@ -16,13 +16,13 @@
 //!
 //! ## Stm32
 //!
-//! | stm32       | PCM1808 | PCM5102 |
-//! |-------------|---------|---------|
-//! | pb12 + pa4  | LRC     | LCK     |
-//! | pb13 + pc10 | BCK     | BCK     |
-//! | pc6         | SCK     | SCK     |
-//! | pc12        |         | DIN     |
-//! | pb15        | OUT     |         |
+//! | stm32 | PCM1808 | PCM5102 |
+//! |-------|---------|---------|
+//! | pb12  | LRC     | LCK     |
+//! | pb13  | BCK     | BCK     |
+//! | pc6   | SCK     | SCK     |
+//! | pb14  |         | DIN     |
+//! | pb15  | OUT     |         |
 //!
 //! ## PCM1808 ADC module
 //!
@@ -37,9 +37,9 @@
 //! | Gnd | Gnd            |
 //! | 3.3 | +3V3           |
 //! | +5V | +5v            |
-//! | BCK | pb13 + pc10    |
+//! | BCK | pb13           |
 //! | OUT | pb15           |
-//! | LRC | pb12 + pa4     |
+//! | LRC | pb12           |
 //! | SCK | pc6            |
 //!
 //! ## PCM5102 module
@@ -47,9 +47,9 @@
 //! | Pin   | Connected to    |
 //! |-------|-----------------|
 //! | SCK   | pc6             |
-//! | BCK   | pb13 + pc10     |
-//! | DIN   | pc12            |
-//! | LCK   | pb12 + pa4      |
+//! | BCK   | pb13            |
+//! | DIN   | pb14            |
+//! | LCK   | pb12            |
 //! | GND   | Gnd             |
 //! | VIN   | +3V3            |
 //! | FLT   | Gnd or +3V3     |
@@ -80,19 +80,18 @@ mod app {
 
     use super::hal;
 
-    use hal::gpio::{Edge, NoPin, Speed};
+    use hal::gpio::{Edge, Speed};
     use hal::i2s::stm32_i2s_v12x::driver::*;
-    use hal::i2s::I2s;
+    use hal::i2s::DualI2s;
     use hal::pac::Interrupt;
-    use hal::pac::{EXTI, SPI2, SPI3};
+    use hal::pac::{EXTI, SPI2};
     use hal::prelude::*;
 
     use heapless::spsc::*;
 
     use rtt_target::{rprintln, rtt_init, set_print_channel};
 
-    type I2s2Driver = I2sDriver<I2s<SPI2>, Master, Receive, Philips>;
-    type I2s3Driver = I2sDriver<I2s<SPI3>, Slave, Transmit, Philips>;
+    type DualI2s2Driver = DualI2sDriver<DualI2s<SPI2>, Master, Receive, Transmit, Philips>;
 
     // Part of the frame we currently transmit or receive
     #[derive(Copy, Clone)]
@@ -113,9 +112,7 @@ mod app {
     #[shared]
     struct Shared {
         #[lock_free]
-        i2s2_driver: I2s2Driver,
-        #[lock_free]
-        i2s3_driver: I2s3Driver,
+        i2s2_driver: DualI2s2Driver,
         #[lock_free]
         exti: EXTI,
     }
@@ -153,7 +150,6 @@ mod app {
         let device = cx.device;
         let mut syscfg = device.SYSCFG.constrain();
         let mut exti = device.EXTI;
-        let gpioa = device.GPIOA.split();
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
         let rcc = device.RCC.constrain();
@@ -167,9 +163,9 @@ mod app {
             .i2s_clk(61440.kHz())
             .freeze();
 
-        // Workaround for the corrupted last bit of data issue, see stm32f411 errata
+        // Workaround for corrupted last bit of data issue, see stm32f411 errata
         let mut pb13 = gpiob.pb13.into_alternate::<5>();
-        pb13.set_speed(Speed::VeryHigh); //CK
+        pb13.set_speed(Speed::VeryHigh);
 
         // I2S pins: (WS, CK, MCLK, SD) for I2S2
         let i2s2_pins = (
@@ -177,42 +173,33 @@ mod app {
             pb13,       //CK
             gpioc.pc6,  //MCK
             gpiob.pb15, //SD
+            gpiob.pb14, //ExtSD
         );
-        let i2s2 = I2s::new(device.SPI2, i2s2_pins, &clocks);
-        let i2s2_config = I2sDriverConfig::new_master()
-            .receive()
+        let i2s2 = DualI2s::new(device.SPI2, device.I2S2EXT, i2s2_pins, &clocks);
+        let i2s2_config = DualI2sDriverConfig::new_master()
+            .direction(Receive, Transmit)
             .standard(Philips)
             .data_format(DataFormat::Data24Channel32)
             .master_clock(true)
             .request_frequency(48_000);
-        let mut i2s2_driver = I2sDriver::new(i2s2, i2s2_config);
+        let mut i2s2_driver = DualI2sDriver::new(i2s2, i2s2_config);
         rprintln!("actual sample rate is {}", i2s2_driver.sample_rate());
-        i2s2_driver.set_rx_interrupt(true);
-        i2s2_driver.set_error_interrupt(true);
-
-        // I2S3 pins: (WS, CK, NoPin, SD) for I2S3
-        let i2s3_pins = (gpioa.pa4, gpioc.pc10, NoPin::new(), gpioc.pc12);
-        let i2s3 = I2s::new(device.SPI3, i2s3_pins, &clocks);
-        let i2s3_config = i2s2_config.to_slave().transmit();
-        let mut i2s3_driver = I2sDriver::new(i2s3, i2s3_config);
-        i2s3_driver.set_tx_interrupt(true);
-        i2s3_driver.set_error_interrupt(true);
+        i2s2_driver.main().set_rx_interrupt(true);
+        i2s2_driver.main().set_error_interrupt(true);
+        i2s2_driver.ext().set_tx_interrupt(true);
+        i2s2_driver.ext().set_error_interrupt(true);
 
         // set up an interrupt on WS pin
-        let ws_pin = i2s3_driver.ws_pin_mut();
+        let ws_pin = i2s2_driver.ws_pin_mut();
         ws_pin.make_interrupt_source(&mut syscfg);
         ws_pin.trigger_on_edge(&mut exti, Edge::Rising);
-        // we will enable i2s3 in interrupt
+        // we will enable the ext part in interrupt
         ws_pin.enable_interrupt(&mut exti);
 
-        i2s2_driver.enable();
+        i2s2_driver.main().enable();
 
         (
-            Shared {
-                i2s2_driver,
-                i2s3_driver,
-                exti,
-            },
+            Shared { i2s2_driver, exti },
             Local {
                 logs_chan,
                 adc_p,
@@ -261,119 +248,120 @@ mod app {
     #[task(
         priority = 4,
         binds = SPI2,
-        local = [frame_state: FrameState = LeftMsb, frame: (u32,u32) = (0,0),adc_p],
-        shared = [i2s2_driver]
+        local = [
+            main_frame_state: FrameState = LeftMsb,
+            main_frame: (u32,u32) = (0,0),
+            ext_frame_state: FrameState = LeftMsb,
+            ext_frame: (u32,u32) = (0,0),
+            adc_p,
+            dac_c
+        ],
+        shared = [i2s2_driver, exti]
     )]
     fn i2s2(cx: i2s2::Context) {
-        let frame_state = cx.local.frame_state;
-        let frame = cx.local.frame;
-        let adc_p = cx.local.adc_p;
         let i2s2_driver = cx.shared.i2s2_driver;
-        let status = i2s2_driver.status();
+
+        // handling "main" part
+        let main_frame_state = cx.local.main_frame_state;
+        let main_frame = cx.local.main_frame;
+        let adc_p = cx.local.adc_p;
+        let status = i2s2_driver.main().status();
         // It's better to read first to avoid triggering ovr flag
         if status.rxne() {
-            let data = i2s2_driver.read_data_register();
-            match (*frame_state, status.chside()) {
+            let data = i2s2_driver.main().read_data_register();
+            match (*main_frame_state, status.chside()) {
                 (LeftMsb, Channel::Left) => {
-                    frame.0 = (data as u32) << 16;
-                    *frame_state = LeftLsb;
+                    main_frame.0 = (data as u32) << 16;
+                    *main_frame_state = LeftLsb;
                 }
                 (LeftLsb, Channel::Left) => {
-                    frame.0 |= data as u32;
-                    *frame_state = RightMsb;
+                    main_frame.0 |= data as u32;
+                    *main_frame_state = RightMsb;
                 }
                 (RightMsb, Channel::Right) => {
-                    frame.1 = (data as u32) << 16;
-                    *frame_state = RightLsb;
+                    main_frame.1 = (data as u32) << 16;
+                    *main_frame_state = RightLsb;
                 }
                 (RightLsb, Channel::Right) => {
-                    frame.1 |= data as u32;
+                    main_frame.1 |= data as u32;
                     // defer sample processing to another task
-                    let (l, r) = *frame;
+                    let (l, r) = *main_frame;
                     adc_p.enqueue((l as i32, r as i32)).ok();
                     rtic::pend(Interrupt::SPI5);
-                    *frame_state = LeftMsb;
+                    *main_frame_state = LeftMsb;
                 }
-                // in case of ovr this resynchronize at start of new frame
-                _ => *frame_state = LeftMsb,
+                // in case of ovr this resynchronize at start of new main_frame
+                _ => *main_frame_state = LeftMsb,
             }
         }
         if status.ovr() {
             log::spawn("i2s2 Overrun").ok();
             // sequence to delete ovr flag
-            i2s2_driver.read_data_register();
-            i2s2_driver.status();
+            i2s2_driver.main().read_data_register();
+            i2s2_driver.main().status();
         }
-    }
 
-    #[task(
-        priority = 4,
-        binds = SPI3,
-        local = [frame_state: FrameState = LeftMsb,frame: (u32,u32) = (0,0),dac_c],
-        shared = [i2s3_driver,exti]
-    )]
-    fn i2s3(cx: i2s3::Context) {
-        let frame_state = cx.local.frame_state;
-        let frame = cx.local.frame;
+        // handling "ext" part
+        let ext_frame_state = cx.local.ext_frame_state;
+        let ext_frame = cx.local.ext_frame;
         let dac_c = cx.local.dac_c;
-        let i2s3_driver = cx.shared.i2s3_driver;
         let exti = cx.shared.exti;
-        let status = i2s3_driver.status();
+        let status = i2s2_driver.ext().status();
         // it's better to write data first to avoid to trigger udr flag
         if status.txe() {
             let data;
-            match (*frame_state, status.chside()) {
+            match (*ext_frame_state, status.chside()) {
                 (LeftMsb, Channel::Left) => {
                     let (l, r) = dac_c.dequeue().unwrap_or_default();
-                    *frame = (l as u32, r as u32);
-                    data = (frame.0 >> 16) as u16;
-                    *frame_state = LeftLsb;
+                    *ext_frame = (l as u32, r as u32);
+                    data = (ext_frame.0 >> 16) as u16;
+                    *ext_frame_state = LeftLsb;
                 }
                 (LeftLsb, Channel::Left) => {
-                    data = (frame.0 & 0xFFFF) as u16;
-                    *frame_state = RightMsb;
+                    data = (ext_frame.0 & 0xFFFF) as u16;
+                    *ext_frame_state = RightMsb;
                 }
                 (RightMsb, Channel::Right) => {
-                    data = (frame.1 >> 16) as u16;
-                    *frame_state = RightLsb;
+                    data = (ext_frame.1 >> 16) as u16;
+                    *ext_frame_state = RightLsb;
                 }
                 (RightLsb, Channel::Right) => {
-                    data = (frame.1 & 0xFFFF) as u16;
-                    *frame_state = LeftMsb;
+                    data = (ext_frame.1 & 0xFFFF) as u16;
+                    *ext_frame_state = LeftMsb;
                 }
                 // in case of udr this resynchronize tracked and actual channel
                 _ => {
-                    *frame_state = LeftMsb;
+                    *ext_frame_state = LeftMsb;
                     data = 0; //garbage data to avoid additional underrun
                 }
             }
-            i2s3_driver.write_data_register(data);
+            i2s2_driver.ext().write_data_register(data);
         }
         if status.fre() {
-            log::spawn("i2s3 Frame error").ok();
-            i2s3_driver.disable();
-            i2s3_driver.ws_pin_mut().enable_interrupt(exti);
+            log::spawn("i2s2 Frame error").ok();
+            i2s2_driver.ext().disable();
+            i2s2_driver.ws_pin_mut().enable_interrupt(exti);
         }
         if status.udr() {
-            log::spawn("i2s3 udr").ok();
-            i2s3_driver.status();
-            i2s3_driver.write_data_register(0);
+            log::spawn("i2s2 udr").ok();
+            i2s2_driver.ext().status();
+            i2s2_driver.ext().write_data_register(0);
         }
     }
 
-    // Look i2s3 WS line for (re) synchronisation
-    #[task(priority = 4, binds = EXTI4, shared = [i2s3_driver,exti])]
-    fn exti4(cx: exti4::Context) {
-        let i2s3_driver = cx.shared.i2s3_driver;
+    // Look WS line for the "ext" part (re) synchronisation
+    #[task(priority = 4, binds = EXTI15_10, shared = [i2s2_driver,exti])]
+    fn exti15_10(cx: exti15_10::Context) {
+        let i2s2_driver = cx.shared.i2s2_driver;
         let exti = cx.shared.exti;
-        let ws_pin = i2s3_driver.ws_pin_mut();
-        // check if that pin triggered the interrupt.
+        let ws_pin = i2s2_driver.ws_pin_mut();
+        // check if that pin triggered the interrupt
         if ws_pin.check_interrupt() {
             // Here we know ws pin is high because the interrupt was triggerd by it's rising edge
             ws_pin.clear_interrupt_pending_bit();
             ws_pin.disable_interrupt(exti);
-            i2s3_driver.write_data_register(0);
-            i2s3_driver.enable();
+            i2s2_driver.ext().write_data_register(0);
+            i2s2_driver.ext().enable();
         }
     }
 }
