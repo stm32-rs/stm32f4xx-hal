@@ -167,7 +167,7 @@ pub trait Instance:
 macro_rules! spi {
     ($SPI:ty: $Spi:ident, $SpiSlave:ident) => {
         pub type $Spi<const BIDI: bool = false, W = u8> = Spi<$SPI, BIDI, W>;
-        pub type $SpiSlave<const BIDI: bool = false, W = u8> = Spi<$SPI, BIDI, W>;
+        pub type $SpiSlave<const BIDI: bool = false, W = u8> = SpiSlave<$SPI, BIDI, W>;
 
         impl Instance for $SPI {
             fn ptr() -> *const spi1::RegisterBlock {
