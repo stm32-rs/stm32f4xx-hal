@@ -7,8 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [v0.15.0] - 2023-05-07
-
+## [v0.16.0] - 2023-05-07
 
 ### Changed
 
@@ -39,6 +38,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Fix mstr bit for SPI Master/Slave [#625]
 
 [#585]: https://github.com/stm32-rs/stm32f4xx-hal/pull/585
+[#587]: https://github.com/stm32-rs/stm32f4xx-hal/pull/587
+[#588]: https://github.com/stm32-rs/stm32f4xx-hal/pull/588
 [#593]: https://github.com/stm32-rs/stm32f4xx-hal/pull/593
 [#594]: https://github.com/stm32-rs/stm32f4xx-hal/pull/594
 [#595]: https://github.com/stm32-rs/stm32f4xx-hal/pull/595
@@ -55,6 +56,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#617]: https://github.com/stm32-rs/stm32f4xx-hal/pull/617
 [#618]: https://github.com/stm32-rs/stm32f4xx-hal/pull/618
 [#623]: https://github.com/stm32-rs/stm32f4xx-hal/pull/623
+[#625]: https://github.com/stm32-rs/stm32f4xx-hal/pull/625
 [#626]: https://github.com/stm32-rs/stm32f4xx-hal/pull/626
 
 ## [v0.15.0] - 2023-03-13
