@@ -14,16 +14,14 @@
 //! the embedded-hal read and write traits with `u16` as the word type. You can use these
 //! implementations for 9-bit words.
 
-use core::fmt;
 use core::marker::PhantomData;
-use core::ops::Deref;
-
-use crate::rcc;
-use nb::block;
 
 mod hal_02;
 mod hal_1;
-mod uart_impls;
+
+pub(crate) mod uart_impls;
+pub use uart_impls::Instance;
+use uart_impls::RegisterBlockImpl;
 
 use crate::gpio::{self, PushPull};
 
@@ -31,8 +29,6 @@ use crate::pac;
 
 use crate::gpio::NoPin;
 use crate::rcc::Clocks;
-
-use crate::dma::traits::PeriAddress;
 
 /// Serial error
 pub use embedded_hal_one::serial::ErrorKind as Error;
@@ -74,6 +70,51 @@ pub trait RxISR {
 pub trait TxISR {
     /// Return true if the tx register is empty (and can accept data)
     fn is_tx_empty(&self) -> bool;
+}
+
+/// Trait for listening [`Rx`] interrupt events.
+pub trait RxListen {
+    /// Start listening for an rx not empty interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    fn listen(&mut self);
+
+    /// Stop listening for the rx not empty interrupt event
+    fn unlisten(&mut self);
+
+    /// Start listening for a line idle interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    fn listen_idle(&mut self);
+
+    /// Stop listening for the line idle interrupt event
+    fn unlisten_idle(&mut self);
+}
+
+/// Trait for listening [`Tx`] interrupt event.
+pub trait TxListen {
+    /// Start listening for a tx empty interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    fn listen(&mut self);
+
+    /// Stop listening for the tx empty interrupt event
+    fn unlisten(&mut self);
+}
+
+/// Trait for listening [`Serial`] interrupt events.
+pub trait Listen {
+    /// Starts listening for an interrupt event
+    ///
+    /// Note, you will also have to enable the corresponding interrupt
+    /// in the NVIC to start receiving events.
+    fn listen(&mut self, event: Event);
+
+    /// Stop listening for an interrupt event
+    fn unlisten(&mut self, event: Event);
 }
 
 /// Serial abstraction
@@ -131,139 +172,35 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         ),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Self, config::InvalidConfig> {
-        use self::config::*;
+    ) -> Result<Self, config::InvalidConfig>
+    where
+        <USART as Instance>::RegisterBlock: uart_impls::RegisterBlockImpl,
+    {
+        <USART as Instance>::RegisterBlock::new(usart, pins, config, clocks)
+    }
+}
 
-        let config = config.into();
-        unsafe {
-            // Enable clock.
-            USART::enable_unchecked();
-            USART::reset_unchecked();
-        }
-
-        let pclk_freq = USART::clock(clocks).raw();
-        let baud = config.baudrate.0;
-
-        // The frequency to calculate USARTDIV is this:
-        //
-        // (Taken from STM32F411xC/E Reference Manual,
-        // Section 19.3.4, Equation 1)
-        //
-        // 16 bit oversample: OVER8 = 0
-        // 8 bit oversample:  OVER8 = 1
-        //
-        // USARTDIV =          (pclk)
-        //            ------------------------
-        //            8 x (2 - OVER8) x (baud)
-        //
-        // BUT, the USARTDIV has 4 "fractional" bits, which effectively
-        // means that we need to "correct" the equation as follows:
-        //
-        // USARTDIV =      (pclk) * 16
-        //            ------------------------
-        //            8 x (2 - OVER8) x (baud)
-        //
-        // When OVER8 is enabled, we can only use the lowest three
-        // fractional bits, so we'll need to shift those last four bits
-        // right one bit
-
-        // Calculate correct baudrate divisor on the fly
-        let (over8, div) = if (pclk_freq / 16) >= baud {
-            // We have the ability to oversample to 16 bits, take
-            // advantage of it.
-            //
-            // We also add `baud / 2` to the `pclk_freq` to ensure
-            // rounding of values to the closest scale, rather than the
-            // floored behavior of normal integer division.
-            let div = (pclk_freq + (baud / 2)) / baud;
-            (false, div)
-        } else if (pclk_freq / 8) >= baud {
-            // We are close enough to pclk where we can only
-            // oversample 8.
-            //
-            // See note above regarding `baud` and rounding.
-            let div = ((pclk_freq * 2) + (baud / 2)) / baud;
-
-            // Ensure the the fractional bits (only 3) are
-            // right-aligned.
-            let frac = div & 0xF;
-            let div = (div & !0xF) | (frac >> 1);
-            (true, div)
-        } else {
-            return Err(config::InvalidConfig);
-        };
-
-        usart.brr.write(|w| unsafe { w.bits(div) });
-
-        // Reset other registers to disable advanced USART features
-        usart.cr2.reset();
-        usart.cr3.reset();
-
-        // Enable transmission and receiving
-        // and configure frame
-
-        usart.cr1.write(|w| {
-            w.ue().set_bit();
-            w.over8().bit(over8);
-            w.te().set_bit();
-            w.re().set_bit();
-            w.m().bit(config.wordlength == WordLength::DataBits9);
-            w.pce().bit(config.parity != Parity::ParityNone);
-            w.ps().bit(config.parity == Parity::ParityOdd)
-        });
-
-        match config.dma {
-            DmaConfig::Tx => usart.cr3.write(|w| w.dmat().enabled()),
-            DmaConfig::Rx => usart.cr3.write(|w| w.dmar().enabled()),
-            DmaConfig::TxRx => usart.cr3.write(|w| w.dmar().enabled().dmat().enabled()),
-            DmaConfig::None => {}
-        }
-
-        Ok(Serial {
-            tx: Tx::new(usart, pins.0.into()),
-            rx: Rx::new(pins.1.into()),
-        }
-        .config_stop(config))
+impl<UART: CommonPins, WORD> Serial<UART, WORD> {
+    pub fn split(self) -> (Tx<UART, WORD>, Rx<UART, WORD>) {
+        (self.tx, self.rx)
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn release(self) -> (USART, (USART::Tx<PushPull>, USART::Rx<PushPull>)) {
+    pub fn release(self) -> (UART, (UART::Tx<PushPull>, UART::Rx<PushPull>)) {
         (self.tx.usart, (self.tx.pin, self.rx.pin))
     }
 }
 
-impl<USART: Instance, WORD> Serial<USART, WORD> {
-    fn config_stop(self, config: config::Config) -> Self {
-        self.tx.usart.set_stopbits(config.stopbits);
-        self
-    }
-}
-
-use crate::pac::usart1 as uart_base;
-
-// Implemented by all USART instances
-pub trait Instance:
-    crate::Sealed
-    + Deref<Target = uart_base::RegisterBlock>
-    + rcc::Enable
-    + rcc::Reset
-    + rcc::BusClock
-    + CommonPins
-{
-    #[doc(hidden)]
-    fn ptr() -> *const uart_base::RegisterBlock;
-    #[doc(hidden)]
-    fn set_stopbits(&self, bits: config::StopBits);
-}
-
 macro_rules! halUsart {
-    ($USART:ty, $usart:ident, $Serial:ident, $Tx:ident, $Rx:ident) => {
+    ($USART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
         pub type $Serial<WORD = u8> = Serial<$USART, WORD>;
         pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
         pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
 
         impl Instance for $USART {
-            fn ptr() -> *const uart_base::RegisterBlock {
+            type RegisterBlock = crate::serial::uart_impls::RegisterBlockUsart;
+
+            fn ptr() -> *const crate::serial::uart_impls::RegisterBlockUsart {
                 <$USART>::ptr() as *const _
             }
 
@@ -285,9 +222,112 @@ macro_rules! halUsart {
 }
 pub(crate) use halUsart;
 
-halUsart! { pac::USART1, usart1, Serial1, Rx1, Tx1 }
-halUsart! { pac::USART2, usart2, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART6, usart6, Serial6, Rx6, Tx6 }
+halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
+halUsart! { pac::USART2, Serial2, Rx2, Tx2 }
+halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
 
 #[cfg(feature = "usart3")]
-halUsart! { pac::USART3, usart3, Serial3, Rx3, Tx3 }
+halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
+
+impl<UART: CommonPins> Rx<UART, u8> {
+    pub(crate) fn with_u16_data(self) -> Rx<UART, u16> {
+        Rx::new(self.pin)
+    }
+}
+
+impl<UART: CommonPins> Rx<UART, u16> {
+    pub(crate) fn with_u8_data(self) -> Rx<UART, u8> {
+        Rx::new(self.pin)
+    }
+}
+
+impl<UART: CommonPins> Tx<UART, u8> {
+    pub(crate) fn with_u16_data(self) -> Tx<UART, u16> {
+        Tx::new(self.usart, self.pin)
+    }
+}
+
+impl<UART: CommonPins> Tx<UART, u16> {
+    pub(crate) fn with_u8_data(self) -> Tx<UART, u8> {
+        Tx::new(self.usart, self.pin)
+    }
+}
+
+impl<UART: CommonPins, WORD> Rx<UART, WORD> {
+    pub(crate) fn new(pin: UART::Rx<PushPull>) -> Self {
+        Self {
+            _word: PhantomData,
+            pin,
+        }
+    }
+
+    pub fn join(self, tx: Tx<UART, WORD>) -> Serial<UART, WORD> {
+        Serial { tx, rx: self }
+    }
+}
+
+impl<UART: CommonPins, WORD> Tx<UART, WORD> {
+    pub(crate) fn new(usart: UART, pin: UART::Tx<PushPull>) -> Self {
+        Self {
+            _word: PhantomData,
+            usart,
+            pin,
+        }
+    }
+
+    pub fn join(self, rx: Rx<UART, WORD>) -> Serial<UART, WORD> {
+        Serial { tx: self, rx }
+    }
+}
+
+impl<UART: Instance, WORD> AsRef<Tx<UART, WORD>> for Serial<UART, WORD> {
+    #[inline(always)]
+    fn as_ref(&self) -> &Tx<UART, WORD> {
+        &self.tx
+    }
+}
+
+impl<UART: Instance, WORD> AsRef<Rx<UART, WORD>> for Serial<UART, WORD> {
+    #[inline(always)]
+    fn as_ref(&self) -> &Rx<UART, WORD> {
+        &self.rx
+    }
+}
+
+impl<UART: Instance, WORD> AsMut<Tx<UART, WORD>> for Serial<UART, WORD> {
+    #[inline(always)]
+    fn as_mut(&mut self) -> &mut Tx<UART, WORD> {
+        &mut self.tx
+    }
+}
+
+impl<UART: Instance, WORD> AsMut<Rx<UART, WORD>> for Serial<UART, WORD> {
+    #[inline(always)]
+    fn as_mut(&mut self) -> &mut Rx<UART, WORD> {
+        &mut self.rx
+    }
+}
+
+impl<UART: Instance> Serial<UART, u8> {
+    /// Converts this Serial into a version that can read and write `u16` values instead of `u8`s
+    ///
+    /// This can be used with a word length of 9 bits.
+    pub fn with_u16_data(self) -> Serial<UART, u16> {
+        Serial {
+            tx: self.tx.with_u16_data(),
+            rx: self.rx.with_u16_data(),
+        }
+    }
+}
+
+impl<UART: Instance> Serial<UART, u16> {
+    /// Converts this Serial into a version that can read and write `u8` values instead of `u16`s
+    ///
+    /// This can be used with a word length of 8 bits.
+    pub fn with_u8_data(self) -> Serial<UART, u8> {
+        Serial {
+            tx: self.tx.with_u8_data(),
+            rx: self.rx.with_u8_data(),
+        }
+    }
+}

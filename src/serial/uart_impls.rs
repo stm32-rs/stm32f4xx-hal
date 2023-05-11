@@ -1,324 +1,461 @@
-use crate::dma::{traits::DMASet, MemoryToPeripheral, PeripheralToMemory};
+use core::{fmt, ops::Deref};
 
-use super::*;
+use nb::block;
 
-impl<UART: CommonPins> Rx<UART, u8> {
-    pub(super) fn with_u16_data(self) -> Rx<UART, u16> {
-        Rx::new(self.pin)
-    }
+use super::{
+    config, Error, Event, Listen, Rx, RxISR, RxListen, Serial, SerialExt, Tx, TxISR, TxListen,
+};
+use crate::dma::{
+    traits::{DMASet, PeriAddress},
+    MemoryToPeripheral, PeripheralToMemory,
+};
+use crate::gpio::{alt::SerialAsync as CommonPins, NoPin, PushPull};
+use crate::rcc::{self, Clocks};
+
+#[cfg(feature = "uart4")]
+pub(crate) use crate::pac::uart4::RegisterBlock as RegisterBlockUart;
+pub(crate) use crate::pac::usart1::RegisterBlock as RegisterBlockUsart;
+
+#[cfg(feature = "uart4")]
+impl crate::Sealed for RegisterBlockUart {}
+impl crate::Sealed for RegisterBlockUsart {}
+
+// Implemented by all USART/UART instances
+pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + CommonPins {
+    type RegisterBlock;
+
+    #[doc(hidden)]
+    fn ptr() -> *const Self::RegisterBlock;
+    #[doc(hidden)]
+    fn set_stopbits(&self, bits: config::StopBits);
 }
 
-impl<UART: CommonPins> Rx<UART, u16> {
-    pub(super) fn with_u8_data(self) -> Rx<UART, u8> {
-        Rx::new(self.pin)
-    }
-}
+pub trait RegisterBlockImpl: crate::Sealed {
+    fn new<UART: Instance<RegisterBlock = Self>, WORD>(
+        uart: UART,
+        pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Serial<UART, WORD>, config::InvalidConfig>;
 
-impl<UART: CommonPins> Tx<UART, u8> {
-    pub(super) fn with_u16_data(self) -> Tx<UART, u16> {
-        Tx::new(self.usart, self.pin)
-    }
-}
+    fn read_u16(&self) -> nb::Result<u16, Error>;
+    fn write_u16(&self, word: u16) -> nb::Result<(), Error>;
 
-impl<UART: CommonPins> Tx<UART, u16> {
-    pub(super) fn with_u8_data(self) -> Tx<UART, u8> {
-        Tx::new(self.usart, self.pin)
+    fn read_u8(&self) -> nb::Result<u8, Error> {
+        // Delegate to u16 version, then truncate to 8 bits
+        self.read_u16().map(|word16| word16 as u8)
     }
-}
 
-impl<UART: CommonPins, WORD> Rx<UART, WORD> {
-    pub(super) fn new(pin: UART::Rx<PushPull>) -> Self {
-        Self {
-            _word: PhantomData,
-            pin,
+    fn write_u8(&self, word: u8) -> nb::Result<(), Error> {
+        // Delegate to u16 version
+        self.write_u16(u16::from(word))
+    }
+
+    fn flush(&self) -> nb::Result<(), Error>;
+
+    fn bwrite_all_u8(&self, buffer: &[u8]) -> Result<(), Error> {
+        for &b in buffer {
+            nb::block!(self.write_u8(b))?;
         }
+        Ok(())
     }
-}
 
-impl<UART: CommonPins, WORD> Tx<UART, WORD> {
-    pub(super) fn new(usart: UART, pin: UART::Tx<PushPull>) -> Self {
-        Self {
-            _word: PhantomData,
-            usart,
-            pin,
+    fn bwrite_all_u16(&self, buffer: &[u16]) -> Result<(), Error> {
+        for &b in buffer {
+            nb::block!(self.write_u16(b))?;
         }
+        Ok(())
     }
+
+    fn bflush(&self) -> Result<(), Error> {
+        nb::block!(self.flush())
+    }
+
+    // RxISR
+    fn is_idle(&self) -> bool;
+    fn is_rx_not_empty(&self) -> bool;
+    fn clear_idle_interrupt(&self);
+
+    // TxISR
+    fn is_tx_empty(&self) -> bool;
+
+    // RxListen
+    fn listen_rxne(&self);
+    fn unlisten_rxne(&self);
+    fn listen_idle(&self);
+    fn unlisten_idle(&self);
+
+    // TxListen
+    fn listen_txe(&self);
+    fn unlisten_txe(&self);
+
+    // Listen
+    fn listen(&self, event: Event);
+    fn unlisten(&self, event: Event);
+
+    // PeriAddress
+    fn peri_address(&self) -> u32;
 }
 
-impl<UART: Instance, WORD> AsRef<Tx<UART, WORD>> for Serial<UART, WORD> {
-    #[inline(always)]
-    fn as_ref(&self) -> &Tx<UART, WORD> {
-        &self.tx
-    }
-}
+macro_rules! uartCommon {
+    ($RegisterBlock:ty) => {
+        impl RegisterBlockImpl for $RegisterBlock {
+            fn new<UART: Instance<RegisterBlock = Self>, WORD>(
+                uart: UART,
+                pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
+                config: impl Into<config::Config>,
+                clocks: &Clocks,
+            ) -> Result<Serial<UART, WORD>, config::InvalidConfig>
+        where {
+                use self::config::*;
 
-impl<UART: Instance, WORD> AsRef<Rx<UART, WORD>> for Serial<UART, WORD> {
-    #[inline(always)]
-    fn as_ref(&self) -> &Rx<UART, WORD> {
-        &self.rx
-    }
-}
+                let config = config.into();
+                unsafe {
+                    // Enable clock.
+                    UART::enable_unchecked();
+                    UART::reset_unchecked();
+                }
 
-impl<UART: Instance, WORD> AsMut<Tx<UART, WORD>> for Serial<UART, WORD> {
-    #[inline(always)]
-    fn as_mut(&mut self) -> &mut Tx<UART, WORD> {
-        &mut self.tx
-    }
-}
+                let pclk_freq = UART::clock(clocks).raw();
+                let baud = config.baudrate.0;
 
-impl<UART: Instance, WORD> AsMut<Rx<UART, WORD>> for Serial<UART, WORD> {
-    #[inline(always)]
-    fn as_mut(&mut self) -> &mut Rx<UART, WORD> {
-        &mut self.rx
-    }
-}
+                // The frequency to calculate USARTDIV is this:
+                //
+                // (Taken from STM32F411xC/E Reference Manual,
+                // Section 19.3.4, Equation 1)
+                //
+                // 16 bit oversample: OVER8 = 0
+                // 8 bit oversample:  OVER8 = 1
+                //
+                // USARTDIV =          (pclk)
+                //            ------------------------
+                //            8 x (2 - OVER8) x (baud)
+                //
+                // BUT, the USARTDIV has 4 "fractional" bits, which effectively
+                // means that we need to "correct" the equation as follows:
+                //
+                // USARTDIV =      (pclk) * 16
+                //            ------------------------
+                //            8 x (2 - OVER8) x (baud)
+                //
+                // When OVER8 is enabled, we can only use the lowest three
+                // fractional bits, so we'll need to shift those last four bits
+                // right one bit
 
-impl<UART: Instance, WORD> Rx<UART, WORD> {
-    pub fn join<TX>(self, tx: Tx<UART, WORD>) -> Serial<UART, WORD> {
-        Serial { tx, rx: self }
-    }
+                // Calculate correct baudrate divisor on the fly
+                let (over8, div) = if (pclk_freq / 16) >= baud {
+                    // We have the ability to oversample to 16 bits, take
+                    // advantage of it.
+                    //
+                    // We also add `baud / 2` to the `pclk_freq` to ensure
+                    // rounding of values to the closest scale, rather than the
+                    // floored behavior of normal integer division.
+                    let div = (pclk_freq + (baud / 2)) / baud;
+                    (false, div)
+                } else if (pclk_freq / 8) >= baud {
+                    // We are close enough to pclk where we can only
+                    // oversample 8.
+                    //
+                    // See note above regarding `baud` and rounding.
+                    let div = ((pclk_freq * 2) + (baud / 2)) / baud;
 
-    /// Start listening for an rx not empty interrupt event
-    ///
-    /// Note, you will also have to enable the corresponding interrupt
-    /// in the NVIC to start receiving events.
-    pub fn listen(&mut self) {
-        unsafe { (*UART::ptr()).cr1.modify(|_, w| w.rxneie().set_bit()) }
-    }
+                    // Ensure the the fractional bits (only 3) are
+                    // right-aligned.
+                    let frac = div & 0xF;
+                    let div = (div & !0xF) | (frac >> 1);
+                    (true, div)
+                } else {
+                    return Err(config::InvalidConfig);
+                };
 
-    /// Stop listening for the rx not empty interrupt event
-    pub fn unlisten(&mut self) {
-        unsafe { (*UART::ptr()).cr1.modify(|_, w| w.rxneie().clear_bit()) }
-    }
+                let register_block = unsafe { &*UART::ptr() };
+                register_block.brr.write(|w| unsafe { w.bits(div) });
 
-    /// Start listening for a line idle interrupt event
-    ///
-    /// Note, you will also have to enable the corresponding interrupt
-    /// in the NVIC to start receiving events.
-    pub fn listen_idle(&mut self) {
-        unsafe { (*UART::ptr()).cr1.modify(|_, w| w.idleie().set_bit()) }
-    }
+                // Reset other registers to disable advanced USART features
+                register_block.cr2.reset();
+                register_block.cr3.reset();
 
-    /// Stop listening for the line idle interrupt event
-    pub fn unlisten_idle(&mut self) {
-        unsafe { (*UART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) }
-    }
-}
+                // Enable transmission and receiving
+                // and configure frame
 
-impl<UART: Instance, WORD> RxISR for Rx<UART, WORD> {
-    /// Return true if the line idle status is set
-    fn is_idle(&self) -> bool {
-        unsafe { (*UART::ptr()).sr.read().idle().bit_is_set() }
-    }
+                register_block.cr1.write(|w| {
+                    w.ue().set_bit();
+                    w.over8().bit(over8);
+                    w.te().set_bit();
+                    w.re().set_bit();
+                    w.m().bit(config.wordlength == WordLength::DataBits9);
+                    w.pce().bit(config.parity != Parity::ParityNone);
+                    w.ps().bit(config.parity == Parity::ParityOdd)
+                });
 
-    /// Return true if the rx register is not empty (and can be read)
-    fn is_rx_not_empty(&self) -> bool {
-        unsafe { (*UART::ptr()).sr.read().rxne().bit_is_set() }
-    }
+                match config.dma {
+                    DmaConfig::Tx => register_block.cr3.write(|w| w.dmat().enabled()),
+                    DmaConfig::Rx => register_block.cr3.write(|w| w.dmar().enabled()),
+                    DmaConfig::TxRx => register_block
+                        .cr3
+                        .write(|w| w.dmar().enabled().dmat().enabled()),
+                    DmaConfig::None => {}
+                }
 
-    /// Clear idle line interrupt flag
-    fn clear_idle_interrupt(&self) {
-        unsafe {
-            let _ = (*UART::ptr()).sr.read();
-            let _ = (*UART::ptr()).dr.read();
+                let serial = Serial {
+                    tx: Tx::new(uart, pins.0.into()),
+                    rx: Rx::new(pins.1.into()),
+                };
+                serial.tx.usart.set_stopbits(config.stopbits);
+                Ok(serial)
+            }
+
+            fn read_u16(&self) -> nb::Result<u16, Error> {
+                // NOTE(unsafe) atomic read with no side effects
+                let sr = self.sr.read();
+
+                // Any error requires the dr to be read to clear
+                if sr.pe().bit_is_set()
+                    || sr.fe().bit_is_set()
+                    || sr.nf().bit_is_set()
+                    || sr.ore().bit_is_set()
+                {
+                    self.dr.read();
+                }
+
+                Err(if sr.pe().bit_is_set() {
+                    Error::Parity.into()
+                } else if sr.fe().bit_is_set() {
+                    Error::FrameFormat.into()
+                } else if sr.nf().bit_is_set() {
+                    Error::Noise.into()
+                } else if sr.ore().bit_is_set() {
+                    Error::Overrun.into()
+                } else if sr.rxne().bit_is_set() {
+                    // NOTE(unsafe) atomic read from stateless register
+                    return Ok(self.dr.read().dr().bits());
+                } else {
+                    nb::Error::WouldBlock
+                })
+            }
+
+            fn write_u16(&self, word: u16) -> nb::Result<(), Error> {
+                // NOTE(unsafe) atomic read with no side effects
+                let sr = self.sr.read();
+
+                if sr.txe().bit_is_set() {
+                    // NOTE(unsafe) atomic write to stateless register
+                    self.dr.write(|w| w.dr().bits(word));
+                    Ok(())
+                } else {
+                    Err(nb::Error::WouldBlock)
+                }
+            }
+
+            fn flush(&self) -> nb::Result<(), Error> {
+                // NOTE(unsafe) atomic read with no side effects
+                let sr = self.sr.read();
+
+                if sr.tc().bit_is_set() {
+                    Ok(())
+                } else {
+                    Err(nb::Error::WouldBlock)
+                }
+            }
+
+            fn is_idle(&self) -> bool {
+                self.sr.read().idle().bit_is_set()
+            }
+
+            fn is_rx_not_empty(&self) -> bool {
+                self.sr.read().rxne().bit_is_set()
+            }
+
+            fn clear_idle_interrupt(&self) {
+                let _ = self.sr.read();
+                let _ = self.dr.read();
+            }
+
+            fn is_tx_empty(&self) -> bool {
+                self.sr.read().txe().bit_is_set()
+            }
+
+            fn listen_rxne(&self) {
+                self.cr1.modify(|_, w| w.rxneie().set_bit())
+            }
+
+            fn unlisten_rxne(&self) {
+                self.cr1.modify(|_, w| w.rxneie().clear_bit())
+            }
+
+            fn listen_idle(&self) {
+                self.cr1.modify(|_, w| w.idleie().set_bit())
+            }
+
+            fn unlisten_idle(&self) {
+                self.cr1.modify(|_, w| w.idleie().clear_bit())
+            }
+
+            fn listen_txe(&self) {
+                self.cr1.modify(|_, w| w.txeie().set_bit())
+            }
+
+            fn unlisten_txe(&self) {
+                self.cr1.modify(|_, w| w.txeie().clear_bit())
+            }
+
+            fn listen(&self, event: Event) {
+                match event {
+                    Event::Rxne => self.cr1.modify(|_, w| w.rxneie().set_bit()),
+                    Event::Txe => self.cr1.modify(|_, w| w.txeie().set_bit()),
+                    Event::Idle => self.cr1.modify(|_, w| w.idleie().set_bit()),
+                }
+            }
+
+            fn unlisten(&self, event: Event) {
+                match event {
+                    Event::Rxne => self.cr1.modify(|_, w| w.rxneie().clear_bit()),
+                    Event::Txe => self.cr1.modify(|_, w| w.txeie().clear_bit()),
+                    Event::Idle => self.cr1.modify(|_, w| w.idleie().clear_bit()),
+                }
+            }
+
+            fn peri_address(&self) -> u32 {
+                &self.dr as *const _ as u32
+            }
         }
-    }
+    };
 }
 
-impl<UART: Instance, WORD> Tx<UART, WORD> {
-    pub fn join(self, rx: Rx<UART, WORD>) -> Serial<UART, WORD> {
-        Serial { tx: self, rx }
-    }
+uartCommon! { RegisterBlockUsart }
 
-    /// Start listening for a tx empty interrupt event
-    ///
-    /// Note, you will also have to enable the corresponding interrupt
-    /// in the NVIC to start receiving events.
-    pub fn listen(&mut self) {
-        unsafe { (*UART::ptr()).cr1.modify(|_, w| w.txeie().set_bit()) }
-    }
+#[cfg(feature = "uart4")]
+uartCommon! { RegisterBlockUart }
 
-    /// Stop listening for the tx empty interrupt event
-    pub fn unlisten(&mut self) {
-        unsafe { (*UART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) }
-    }
-}
-
-impl<UART: Instance, WORD> TxISR for Tx<UART, WORD> {
-    /// Return true if the tx register is empty (and can accept data)
-    fn is_tx_empty(&self) -> bool {
-        unsafe { (*UART::ptr()).sr.read().txe().bit_is_set() }
-    }
-}
-
-impl<UART: Instance, WORD> Serial<UART, WORD> {
-    /// Starts listening for an interrupt event
-    ///
-    /// Note, you will also have to enable the corresponding interrupt
-    /// in the NVIC to start receiving events.
-    pub fn listen(&mut self, event: Event) {
-        match event {
-            Event::Rxne => unsafe { (*UART::ptr()).cr1.modify(|_, w| w.rxneie().set_bit()) },
-            Event::Txe => unsafe { (*UART::ptr()).cr1.modify(|_, w| w.txeie().set_bit()) },
-            Event::Idle => unsafe { (*UART::ptr()).cr1.modify(|_, w| w.idleie().set_bit()) },
-        }
-    }
-
-    /// Stop listening for an interrupt event
-    pub fn unlisten(&mut self, event: Event) {
-        match event {
-            Event::Rxne => unsafe { (*UART::ptr()).cr1.modify(|_, w| w.rxneie().clear_bit()) },
-            Event::Txe => unsafe { (*UART::ptr()).cr1.modify(|_, w| w.txeie().clear_bit()) },
-            Event::Idle => unsafe { (*UART::ptr()).cr1.modify(|_, w| w.idleie().clear_bit()) },
-        }
-    }
-
-    pub fn split(self) -> (Tx<UART, WORD>, Rx<UART, WORD>) {
-        (self.tx, self.rx)
-    }
-}
-
-impl<UART: Instance, WORD> RxISR for Serial<UART, WORD> {
-    /// Return true if the line idle status is set
+impl<UART: Instance, WORD> RxISR for Serial<UART, WORD>
+where
+    Rx<UART, WORD>: RxISR,
+{
     fn is_idle(&self) -> bool {
         self.rx.is_idle()
     }
 
-    /// Return true if the rx register is not empty (and can be read)
     fn is_rx_not_empty(&self) -> bool {
         self.rx.is_rx_not_empty()
     }
 
-    /// Clear idle line interrupt flag
     fn clear_idle_interrupt(&self) {
         self.rx.clear_idle_interrupt();
     }
 }
 
-impl<UART: Instance, WORD> TxISR for Serial<UART, WORD> {
-    /// Return true if the tx register is empty (and can accept data)
+impl<UART: Instance, WORD> RxISR for Rx<UART, WORD>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+{
+    fn is_idle(&self) -> bool {
+        unsafe { (*UART::ptr()).is_idle() }
+    }
+
+    fn is_rx_not_empty(&self) -> bool {
+        unsafe { (*UART::ptr()).is_rx_not_empty() }
+    }
+
+    fn clear_idle_interrupt(&self) {
+        unsafe {
+            (*UART::ptr()).clear_idle_interrupt();
+        }
+    }
+}
+
+impl<UART: Instance, WORD> TxISR for Serial<UART, WORD>
+where
+    Tx<UART, WORD>: TxISR,
+{
     fn is_tx_empty(&self) -> bool {
         self.tx.is_tx_empty()
     }
 }
 
-impl<UART: Instance> fmt::Write for Serial<UART> {
+impl<UART: Instance, WORD> TxISR for Tx<UART, WORD>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
+{
+    fn is_tx_empty(&self) -> bool {
+        self.usart.is_tx_empty()
+    }
+}
+
+impl<UART: Instance, WORD> RxListen for Rx<UART, WORD>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+{
+    fn listen(&mut self) {
+        unsafe { (*UART::ptr()).listen_rxne() }
+    }
+
+    fn unlisten(&mut self) {
+        unsafe { (*UART::ptr()).unlisten_rxne() }
+    }
+
+    fn listen_idle(&mut self) {
+        unsafe { (*UART::ptr()).listen_idle() }
+    }
+
+    fn unlisten_idle(&mut self) {
+        unsafe { (*UART::ptr()).unlisten_idle() }
+    }
+}
+
+impl<UART: Instance, WORD> TxListen for Tx<UART, WORD>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
+{
+    fn listen(&mut self) {
+        self.usart.listen_txe()
+    }
+
+    fn unlisten(&mut self) {
+        self.usart.unlisten_txe()
+    }
+}
+
+impl<UART: Instance, WORD> Listen for Serial<UART, WORD>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
+{
+    fn listen(&mut self, event: Event) {
+        self.tx.usart.listen(event)
+    }
+
+    fn unlisten(&mut self, event: Event) {
+        self.tx.usart.unlisten(event)
+    }
+}
+
+impl<UART: Instance> fmt::Write for Serial<UART>
+where
+    Tx<UART>: fmt::Write,
+{
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.tx.write_str(s)
     }
 }
 
-impl<UART: Instance> fmt::Write for Tx<UART> {
+impl<UART: Instance> fmt::Write for Tx<UART>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
+{
     fn write_str(&mut self, s: &str) -> fmt::Result {
         s.bytes()
-            .try_for_each(|c| block!(self.write(c)))
+            .try_for_each(|c| block!(self.usart.write_u8(c)))
             .map_err(|_| fmt::Error)
     }
 }
 
-impl<UART: Instance> Rx<UART, u8> {
-    pub(super) fn read(&mut self) -> nb::Result<u8, Error> {
-        // Delegate to the Read<u16> implementation, then truncate to 8 bits
-        unsafe {
-            (*(self as *mut Self as *mut Rx<UART, u16>))
-                .read()
-                .map(|word16| word16 as u8)
-        }
-    }
-}
-
-impl<UART: Instance> Rx<UART, u16> {
-    pub(super) fn read(&mut self) -> nb::Result<u16, Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*UART::ptr()).sr.read() };
-
-        // Any error requires the dr to be read to clear
-        if sr.pe().bit_is_set()
-            || sr.fe().bit_is_set()
-            || sr.nf().bit_is_set()
-            || sr.ore().bit_is_set()
-        {
-            unsafe { (*UART::ptr()).dr.read() };
-        }
-
-        Err(if sr.pe().bit_is_set() {
-            Error::Parity.into()
-        } else if sr.fe().bit_is_set() {
-            Error::FrameFormat.into()
-        } else if sr.nf().bit_is_set() {
-            Error::Noise.into()
-        } else if sr.ore().bit_is_set() {
-            Error::Overrun.into()
-        } else if sr.rxne().bit_is_set() {
-            // NOTE(unsafe) atomic read from stateless register
-            return Ok(unsafe { &*UART::ptr() }.dr.read().dr().bits());
-        } else {
-            nb::Error::WouldBlock
-        })
-    }
-}
-
-impl<UART: Instance> Tx<UART, u8> {
-    pub(super) fn write(&mut self, word: u8) -> nb::Result<(), Error> {
-        // Delegate to u16 version
-        unsafe { (*(self as *mut Self as *mut Tx<UART, u16>)).write(u16::from(word)) }
-    }
-
-    pub(super) fn flush(&mut self) -> nb::Result<(), Error> {
-        // Delegate to u16 version
-        unsafe { (*(self as *mut Self as *mut Tx<UART, u16>)).flush() }
-    }
-
-    pub(super) fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Error> {
-        for &b in bytes {
-            nb::block!(self.write(b))?;
-        }
-        Ok(())
-    }
-
-    pub(super) fn bflush(&mut self) -> Result<(), Error> {
-        nb::block!(self.flush())
-    }
-}
-
-impl<UART: Instance> Tx<UART, u16> {
-    pub(super) fn write(&mut self, word: u16) -> nb::Result<(), Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*UART::ptr()).sr.read() };
-
-        if sr.txe().bit_is_set() {
-            // NOTE(unsafe) atomic write to stateless register
-            unsafe { &*UART::ptr() }.dr.write(|w| w.dr().bits(word));
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
-
-    pub(super) fn flush(&mut self) -> nb::Result<(), Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = unsafe { (*UART::ptr()).sr.read() };
-
-        if sr.tc().bit_is_set() {
-            Ok(())
-        } else {
-            Err(nb::Error::WouldBlock)
-        }
-    }
-
-    pub(super) fn bwrite_all(&mut self, buffer: &[u16]) -> Result<(), Error> {
-        for &b in buffer {
-            nb::block!(self.write(b))?;
-        }
-        Ok(())
-    }
-
-    pub(super) fn bflush(&mut self) -> Result<(), Error> {
-        nb::block!(self.flush())
-    }
-}
-
-impl<UART: Instance> SerialExt for UART {
+impl<UART: Instance> SerialExt for UART
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+{
     fn serial<WORD>(
         self,
         pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
@@ -351,7 +488,10 @@ impl<UART: Instance> SerialExt for UART {
     }
 }
 
-impl<UART: Instance, WORD> Serial<UART, WORD> {
+impl<UART: Instance, WORD> Serial<UART, WORD>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+{
     pub fn tx(
         usart: UART,
         tx_pin: impl Into<UART::Tx<PushPull>>,
@@ -365,7 +505,10 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
     }
 }
 
-impl<UART: Instance, WORD> Serial<UART, WORD> {
+impl<UART: Instance, WORD> Serial<UART, WORD>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+{
     pub fn rx(
         usart: UART,
         rx_pin: impl Into<UART::Rx<PushPull>>,
@@ -379,34 +522,13 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
     }
 }
 
-impl<UART: Instance> Serial<UART, u8> {
-    /// Converts this Serial into a version that can read and write `u16` values instead of `u8`s
-    ///
-    /// This can be used with a word length of 9 bits.
-    pub fn with_u16_data(self) -> Serial<UART, u16> {
-        Serial {
-            tx: self.tx.with_u16_data(),
-            rx: self.rx.with_u16_data(),
-        }
-    }
-}
-
-impl<UART: Instance> Serial<UART, u16> {
-    /// Converts this Serial into a version that can read and write `u8` values instead of `u16`s
-    ///
-    /// This can be used with a word length of 8 bits.
-    pub fn with_u8_data(self) -> Serial<UART, u8> {
-        Serial {
-            tx: self.tx.with_u8_data(),
-            rx: self.rx.with_u8_data(),
-        }
-    }
-}
-
-unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
+unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+{
     #[inline(always)]
     fn address(&self) -> u32 {
-        &(unsafe { &(*UART::ptr()) }.dr) as *const _ as u32
+        unsafe { (*UART::ptr()).peri_address() }
     }
 
     type MemSize = u8;
@@ -419,10 +541,14 @@ where
 {
 }
 
-unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
+unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
+{
     #[inline(always)]
     fn address(&self) -> u32 {
-        &(unsafe { &(*UART::ptr()) }.dr) as *const _ as u32
+        self.usart.peri_address()
     }
 
     type MemSize = u8;
