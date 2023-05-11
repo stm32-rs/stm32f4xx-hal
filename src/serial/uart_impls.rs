@@ -100,7 +100,7 @@ pub trait RegisterBlockImpl: crate::Sealed {
 macro_rules! uartCommon {
     ($RegisterBlock:ty) => {
         impl RegisterBlockImpl for $RegisterBlock {
-            fn new<UART: Instance<RegisterBlock = $RegisterBlock>, WORD>(
+            fn new<UART: Instance<RegisterBlock = Self>, WORD>(
                 uart: UART,
                 pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
                 config: impl Into<config::Config>,
