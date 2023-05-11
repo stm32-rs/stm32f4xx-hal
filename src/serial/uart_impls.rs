@@ -16,6 +16,10 @@ use crate::rcc::{self, Clocks};
 pub(crate) use crate::pac::uart4::RegisterBlock as RegisterBlockUart;
 pub(crate) use crate::pac::usart1::RegisterBlock as RegisterBlockUsart;
 
+#[cfg(feature = "uart4")]
+impl crate::Sealed for RegisterBlockUart {}
+impl crate::Sealed for RegisterBlockUsart {}
+
 // Implemented by all USART/UART instances
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + CommonPins {
     type RegisterBlock;
@@ -26,7 +30,7 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + C
     fn set_stopbits(&self, bits: config::StopBits);
 }
 
-pub trait RegisterBlockImpl {
+pub trait RegisterBlockImpl: crate::Sealed {
     fn new<UART: Instance<RegisterBlock = Self>, WORD>(
         uart: UART,
         pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
