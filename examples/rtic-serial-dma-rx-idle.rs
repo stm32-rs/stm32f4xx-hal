@@ -67,7 +67,7 @@ mod app {
         let gpioa = dp.GPIOA.split();
 
         // Initialize UART with DMA events
-        let rx_pin = gpioa.pa10.into_alternate();
+        let rx_pin = gpioa.pa10;
         let mut rx = dp
             .USART1
             .rx(

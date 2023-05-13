@@ -30,7 +30,7 @@ fn main() -> ! {
 
     let sck = gpiob.pb3.into_alternate();
     let miso = NoMiso::new();
-    let mosi = gpiob.pb5.into_alternate();
+    let mosi = gpiob.pb5;
 
     let dc = gpiob.pb4.into_push_pull_output();
     let mut res = gpiob.pb10.into_push_pull_output();

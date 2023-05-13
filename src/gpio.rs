@@ -280,14 +280,26 @@ impl<const P: char, const N: u8, MODE> PinExt for Pin<P, N, MODE> {
     }
 }
 
-pub trait PinSpeed {
+pub trait PinSpeed: Sized {
     /// Set pin speed
     fn set_speed(&mut self, speed: Speed);
+
+    #[inline(always)]
+    fn speed(mut self, speed: Speed) -> Self {
+        self.set_speed(speed);
+        self
+    }
 }
 
-pub trait PinPull {
+pub trait PinPull: Sized {
     /// Set the internal pull-up and pull-down resistor
     fn set_internal_resistor(&mut self, resistor: Pull);
+
+    #[inline(always)]
+    fn internal_resistor(mut self, resistor: Pull) -> Self {
+        self.set_internal_resistor(resistor);
+        self
+    }
 }
 
 impl<const P: char, const N: u8, MODE> PinSpeed for Pin<P, N, MODE>

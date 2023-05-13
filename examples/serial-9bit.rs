@@ -58,8 +58,8 @@ fn main() -> ! {
     let mut delay = cp.SYST.delay(&clocks);
 
     // define RX/TX pins
-    let tx_pin = gpioa.pa2.into_alternate();
-    let rx_pin = gpioa.pa3.into_alternate();
+    let tx_pin = gpioa.pa2;
+    let rx_pin = gpioa.pa3;
 
     // configure serial
     let serial = dp

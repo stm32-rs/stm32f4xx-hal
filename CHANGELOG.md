@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+ - Set `Speed::VeryHigh` default for FMC, SDIO & OTG_HS_ULPI pins, clean into_alternate in examples [#632]
  - Join `Serial`, `Rx`, `Tx` for `USART` and `UART` again. Make inner traits with different implementation for USART and UART. [#636]
 
 ### Fixed
 
-- map `$SpiSlave` into `SpiSlave` struct in `spi!` macro [#635]
+ - map `$SpiSlave` into `SpiSlave` struct in `spi!` macro [#635]
 
+[#632]: https://github.com/stm32-rs/stm32f4xx-hal/pull/632
 [#635]: https://github.com/stm32-rs/stm32f4xx-hal/pull/635
+[#636]: https://github.com/stm32-rs/stm32f4xx-hal/pull/636
 
 ## [v0.16.0] - 2023-05-07
 

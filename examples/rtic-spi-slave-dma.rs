@@ -70,7 +70,7 @@ mod app {
 
         let sck = gpiob.pb3.into_alternate();
         let miso = gpiob.pb4.into_alternate();
-        let mosi = gpiob.pb5.into_alternate();
+        let mosi = gpiob.pb5;
 
         let mode = Mode {
             polarity: Polarity::IdleLow,

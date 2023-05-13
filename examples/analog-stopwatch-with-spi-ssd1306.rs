@@ -90,9 +90,9 @@ fn main() -> ! {
     //cs - pe4
     //dc - pe3
 
-    let sck = gpioe.pe2.into_alternate();
-    let miso = gpioe.pe5.into_alternate();
-    let mosi = gpioe.pe6.into_alternate();
+    let sck = gpioe.pe2;
+    let miso = gpioe.pe5;
+    let mosi = gpioe.pe6;
 
     let spi = Spi::new(
         dp.SPI4,
