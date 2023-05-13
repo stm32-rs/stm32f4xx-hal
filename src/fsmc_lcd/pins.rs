@@ -16,50 +16,21 @@
 //! * Write enable
 
 use crate::gpio::alt::fsmc as alt;
-use crate::gpio::{PinSpeed, Speed};
 
 use super::sealed;
 use super::{Lcd, SubBank1};
 use crate::fsmc_lcd::{SubBank2, SubBank3, SubBank4};
 
 /// One, two, three, or four address pins
-pub trait AddressPins: sealed::Sealed {
-    fn set_high_speed(&mut self);
-}
+pub trait AddressPins: sealed::Sealed {}
 
 // Implement AddressPins for one address pin and tuples of two, three, and four
-impl AddressPins for alt::Address {
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.set_speed(Speed::VeryHigh);
-    }
-}
-impl AddressPins for (alt::Address, alt::Address) {
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.0.set_speed(Speed::VeryHigh);
-        self.1.set_speed(Speed::VeryHigh);
-    }
-}
+impl AddressPins for alt::Address {}
+impl AddressPins for (alt::Address, alt::Address) {}
 impl sealed::Sealed for (alt::Address, alt::Address) {}
-impl AddressPins for (alt::Address, alt::Address, alt::Address) {
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.0.set_speed(Speed::VeryHigh);
-        self.1.set_speed(Speed::VeryHigh);
-        self.2.set_speed(Speed::VeryHigh);
-    }
-}
+impl AddressPins for (alt::Address, alt::Address, alt::Address) {}
 impl sealed::Sealed for (alt::Address, alt::Address, alt::Address) {}
-impl AddressPins for (alt::Address, alt::Address, alt::Address, alt::Address) {
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.0.set_speed(Speed::VeryHigh);
-        self.1.set_speed(Speed::VeryHigh);
-        self.2.set_speed(Speed::VeryHigh);
-        self.3.set_speed(Speed::VeryHigh);
-    }
-}
+impl AddressPins for (alt::Address, alt::Address, alt::Address, alt::Address) {}
 impl sealed::Sealed for (alt::Address, alt::Address, alt::Address, alt::Address) {}
 
 macro_rules! conjure {
@@ -118,7 +89,6 @@ pub trait ChipSelectPins: sealed::Sealed {
     /// One, two, three, or four `Lcd<_>` objects associated with the sub-bank(s) that these pin(s)
     /// control
     type Lcds: sealed::Conjure;
-    fn set_high_speed(&mut self);
 }
 
 // The set of 4 chip selects has 15 subsets (excluding the empty set):
@@ -143,13 +113,6 @@ macro_rules! chipselect {
         $(
             impl ChipSelectPins for ($(alt::$Ne),+) {
                 type Lcds = ($(Lcd<$sb>),+);
-
-                #[inline(always)]
-                fn set_high_speed(&mut self) {
-                    $(
-                        self.$i.set_speed(Speed::VeryHigh);
-                    )+
-                }
             }
             impl sealed::Sealed for ($(alt::$Ne),+) {}
         )+
@@ -158,35 +121,15 @@ macro_rules! chipselect {
 
 impl ChipSelectPins for alt::Ne1 {
     type Lcds = Lcd<SubBank1>;
-
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.set_speed(Speed::VeryHigh);
-    }
 }
 impl ChipSelectPins for alt::Ne2 {
     type Lcds = Lcd<SubBank2>;
-
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.set_speed(Speed::VeryHigh);
-    }
 }
 impl ChipSelectPins for alt::Ne3 {
     type Lcds = Lcd<SubBank3>;
-
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.set_speed(Speed::VeryHigh);
-    }
 }
 impl ChipSelectPins for alt::Ne4 {
     type Lcds = Lcd<SubBank4>;
-
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.set_speed(Speed::VeryHigh);
-    }
 }
 chipselect! {
     [SubBank1, Ne1, 0], [SubBank2, Ne2, 1];
@@ -206,9 +149,7 @@ chipselect! {
 ///
 /// Currently this trait is only implemented for tuples of 16 data pins. In the future,
 /// this driver may support 8-bit mode using 8 data pins.
-pub trait DataPins: sealed::Sealed {
-    fn set_high_speed(&mut self);
-}
+pub trait DataPins: sealed::Sealed {}
 
 #[allow(unused)]
 pub struct DataPins16 {
@@ -230,26 +171,7 @@ pub struct DataPins16 {
     d15: alt::D15,
 }
 
-impl DataPins for DataPins16 {
-    #[inline(always)]
-    fn set_high_speed(&mut self) {
-        self.d0.set_speed(Speed::VeryHigh);
-        self.d1.set_speed(Speed::VeryHigh);
-        self.d2.set_speed(Speed::VeryHigh);
-        self.d4.set_speed(Speed::VeryHigh);
-        self.d5.set_speed(Speed::VeryHigh);
-        self.d6.set_speed(Speed::VeryHigh);
-        self.d7.set_speed(Speed::VeryHigh);
-        self.d8.set_speed(Speed::VeryHigh);
-        self.d9.set_speed(Speed::VeryHigh);
-        self.d10.set_speed(Speed::VeryHigh);
-        self.d11.set_speed(Speed::VeryHigh);
-        self.d12.set_speed(Speed::VeryHigh);
-        self.d13.set_speed(Speed::VeryHigh);
-        self.d14.set_speed(Speed::VeryHigh);
-        self.d15.set_speed(Speed::VeryHigh);
-    }
-}
+impl DataPins for DataPins16 {}
 
 impl DataPins16 {
     #[inline(always)]
@@ -317,24 +239,17 @@ where
     NE: ChipSelectPins,
 {
     pub fn new(
-        mut data: D,
-        mut address: AD,
+        data: D,
+        address: AD,
         read_enable: impl Into<alt::Noe>,
         write_enable: impl Into<alt::Nwe>,
-        mut chip_select: NE,
+        chip_select: NE,
     ) -> Self {
-        data.set_high_speed();
-        address.set_high_speed();
-        let mut read_enable = read_enable.into();
-        read_enable.set_speed(Speed::VeryHigh);
-        let mut write_enable = write_enable.into();
-        write_enable.set_speed(Speed::VeryHigh);
-        chip_select.set_high_speed();
         Self {
             data,
             address,
-            read_enable,
-            write_enable,
+            read_enable: read_enable.into(),
+            write_enable: write_enable.into(),
             chip_select,
         }
     }
