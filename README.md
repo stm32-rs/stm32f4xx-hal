@@ -100,7 +100,7 @@ features = ["stm32f407"] # replace the model of your microcontroller here
 ```
 
 We also need to tell Rust how to link our executable and how to lay out the
-result in memory. To accomplish all this, copy [.cargo/config](.cargo/config)
+result in memory. To accomplish all this, copy [.cargo/config](.cargo/config.toml)
 and [memory.x](memory.x) from the `stm32f4xx-hal` repository to your project and make sure the sizes match up with the datasheet. Also note that there might be different kinds of memory which are not equal; to be on the safe side only specify the size of the first block at the specified address.
 
 License
