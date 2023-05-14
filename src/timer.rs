@@ -274,7 +274,7 @@ mod sealed {
         fn get_interrupt_flag(&self) -> Event;
         fn read_count(&self) -> Self::Width;
         fn start_one_pulse(&mut self);
-        fn start_no_update(&mut self);
+        fn start_free(&mut self, update: bool);
         fn cr1_reset(&mut self);
         fn cnt_reset(&mut self);
     }
@@ -409,8 +409,8 @@ macro_rules! hal {
                 self.cr1.modify(|_, w| unsafe { w.bits(1 << 3) }.cen().set_bit());
             }
             #[inline(always)]
-            fn start_no_update(&mut self) {
-                self.cr1.modify(|_, w| w.cen().set_bit().udis().set_bit());
+            fn start_free(&mut self, update: bool) {
+                self.cr1.modify(|_, w| w.cen().set_bit().udis().bit(!update));
             }
             #[inline(always)]
             fn cr1_reset(&mut self) {
@@ -707,7 +707,7 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
         self.tim.clear_interrupt_flag(event);
     }
 
-    pub fn get_interrupt(&mut self) -> Event {
+    pub fn get_interrupt(&self) -> Event {
         self.tim.get_interrupt_flag()
     }
 

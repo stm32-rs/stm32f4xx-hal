@@ -45,7 +45,6 @@ pub use embedded_hal::serial::Write as _embedded_hal_serial_Write;
 pub use embedded_hal::Capture as _embedded_hal_Capture;
 pub use embedded_hal::Pwm as _embedded_hal_Pwm;
 pub use embedded_hal::Qei as _embedded_hal_Qei;
-pub use fugit::ExtU32 as _fugit_DurationExtU32;
 pub use fugit::RateExtU32 as _fugit_RateExtU32;
 
 #[cfg(all(
@@ -79,7 +78,9 @@ pub use crate::spi::SpiExt as _stm32f4xx_hal_spi_SpiExt;
 pub use crate::syscfg::SysCfgExt as _stm32f4xx_hal_syscfg_SysCfgExt;
 pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;
 #[cfg(feature = "rtic")]
-pub use crate::timer::MonoTimerExt as _stm32f4xx_hal_timer_MonoTimerExt;
+pub use crate::timer::MonoTimer64Ext as _;
+#[cfg(feature = "rtic")]
+pub use crate::timer::MonoTimerExt as _;
 pub use crate::timer::PwmExt as _stm32f4xx_hal_timer_PwmExt;
 #[cfg(feature = "rtic")]
 pub use crate::timer::SysMonoTimerExt as _stm32f4xx_hal_timer_SysMonoTimerExt;

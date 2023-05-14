@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+ - Extended 64-bit monotonic timer
+
 ### Fixed
 
  - map `$SpiSlave` into `SpiSlave` struct in `spi!` macro [#635]

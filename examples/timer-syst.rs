@@ -14,6 +14,7 @@ use panic_halt as _;
 
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
+use fugit::ExtU32;
 
 use hal::timer::Error;
 use stm32f4xx_hal as hal;

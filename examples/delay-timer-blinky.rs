@@ -9,6 +9,7 @@
 use panic_halt as _; // panic handler
 
 use cortex_m_rt::entry;
+use fugit::ExtU32;
 use stm32f4xx_hal as hal;
 
 use crate::hal::{pac, prelude::*};
