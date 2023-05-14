@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Set `Speed::VeryHigh` default for FMC, SDIO & OTG_HS_ULPI pins, clean into_alternate in examples [#632]
  - Join `Serial`, `Rx`, `Tx` for `USART` and `UART` again. Make inner traits with different implementation for USART and UART. [#636]
 
+### Added
+
 ### Fixed
 
  - map `$SpiSlave` into `SpiSlave` struct in `spi!` macro [#635]
