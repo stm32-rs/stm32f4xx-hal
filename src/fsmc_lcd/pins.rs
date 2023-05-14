@@ -153,22 +153,22 @@ pub trait DataPins: sealed::Sealed {}
 
 #[allow(unused)]
 pub struct DataPins16 {
-    d0: alt::D0,
-    d1: alt::D1,
-    d2: alt::D2,
-    d3: alt::D3,
-    d4: alt::D4,
-    d5: alt::D5,
-    d6: alt::D6,
-    d7: alt::D7,
-    d8: alt::D8,
-    d9: alt::D9,
-    d10: alt::D10,
-    d11: alt::D11,
-    d12: alt::D12,
-    d13: alt::D13,
-    d14: alt::D14,
-    d15: alt::D15,
+    pub d0: alt::D0,
+    pub d1: alt::D1,
+    pub d2: alt::D2,
+    pub d3: alt::D3,
+    pub d4: alt::D4,
+    pub d5: alt::D5,
+    pub d6: alt::D6,
+    pub d7: alt::D7,
+    pub d8: alt::D8,
+    pub d9: alt::D9,
+    pub d10: alt::D10,
+    pub d11: alt::D11,
+    pub d12: alt::D12,
+    pub d13: alt::D13,
+    pub d14: alt::D14,
+    pub d15: alt::D15,
 }
 
 impl DataPins for DataPins16 {}
@@ -221,15 +221,15 @@ impl sealed::Sealed for DataPins16 {}
 #[allow(unused)]
 pub struct LcdPins<D, AD, NE> {
     /// The 16-bit data bus
-    data: D,
+    pub data: D,
     /// Address pin(s) (data/command)
-    address: AD,
+    pub address: AD,
     /// Output enable (read enable)
-    read_enable: alt::Noe,
+    pub read_enable: alt::Noe,
     /// Write enable
-    write_enable: alt::Nwe,
+    pub write_enable: alt::Nwe,
     /// Chip select / bank enable pin(s)
-    chip_select: NE,
+    pub chip_select: NE,
 }
 
 impl<D, AD, NE> LcdPins<D, AD, NE>
