@@ -118,7 +118,7 @@ where
 
     unsafe fn reset(&mut self) {
         self.tim.listen_interrupt(Event::C1, true);
-        TIM::set_cc_value(Channel::C1 as u8, 0);
+        self.tim.reset_counter();
     }
 
     #[inline(always)]
@@ -216,7 +216,7 @@ where
             Some(_x) => self.tim.read_count().wrapping_add(TIM::Width::FOR_WRAP), // Will overflow
         };
 
-        TIM::set_cc_value(0, u32::from(val));
+        TIM::set_cc_value(Channel::C1 as u8, u32::from(val));
     }
 
     fn clear_compare_flag(&mut self) {
