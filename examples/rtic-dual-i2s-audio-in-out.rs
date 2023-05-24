@@ -80,7 +80,7 @@ mod app {
 
     use super::hal;
 
-    use hal::gpio::{Edge, Speed};
+    use hal::gpio::Edge;
     use hal::i2s::stm32_i2s_v12x::driver::*;
     use hal::i2s::DualI2s;
     use hal::pac::Interrupt;
@@ -163,14 +163,10 @@ mod app {
             .i2s_clk(61440.kHz())
             .freeze();
 
-        // Workaround for corrupted last bit of data issue, see stm32f411 errata
-        let mut pb13 = gpiob.pb13.into_alternate::<5>();
-        pb13.set_speed(Speed::VeryHigh);
-
         // I2S pins: (WS, CK, MCLK, SD) for I2S2
         let i2s2_pins = (
             gpiob.pb12, //WS
-            pb13,       //CK
+            gpiob.pb13, //CK
             gpioc.pc6,  //MCK
             gpiob.pb15, //SD
             gpiob.pb14, //ExtSD

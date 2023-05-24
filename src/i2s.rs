@@ -6,7 +6,7 @@
 //! these chips because their `I2S2EXT` and `I2S3EXT` peripherals are missing from their package
 //! access crate.
 
-use crate::gpio::{self, NoPin};
+use crate::gpio::{self, NoPin, PinSpeed, Speed};
 use crate::pac;
 #[allow(unused)]
 use crate::rcc::{self, Clocks, Reset};
@@ -142,7 +142,13 @@ impl<SPI: Instance> I2s<SPI> {
             SPI::reset_unchecked();
         }
 
-        let pins = (pins.0.into(), pins.1.into(), pins.2.into(), pins.3.into());
+        let pins = (
+            pins.0.into(),
+            // Workaround for corrupted last bit of data issue, see stm32f411 errata
+            pins.1.into().speed(Speed::VeryHigh),
+            pins.2.into(),
+            pins.3.into(),
+        );
 
         I2s {
             spi,
@@ -314,7 +320,8 @@ impl<SPI: DualInstance> DualI2s<SPI> {
 
         let pins = (
             pins.0.into(),
-            pins.1.into(),
+            // Workaround for corrupted last bit of data issue, see stm32f411 errata
+            pins.1.into().speed(Speed::VeryHigh),
             pins.2.into(),
             pins.3.into(),
             pins.4.into(),
