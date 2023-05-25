@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+ - Integrate new version of stm32_i2s (v0.5) to enable full-duplex operation
+ - Add a rtic example to show how to do full-duplex i2s
 
 ### Changed
 

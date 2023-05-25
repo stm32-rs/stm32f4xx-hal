@@ -57,7 +57,7 @@ version = "=1.0.0-alpha.8"
 package = "embedded-hal"
 
 [dependencies.stm32_i2s_v12x]
-version = "0.4.0"
+version = "0.5.0"
 optional = true
 
 [dev-dependencies]
@@ -412,6 +412,10 @@ required-features = ["stm32f411", "rtic"] # stm32f411
 
 [[example]]
 name = "rtic-i2s-audio-in-out"
+required-features = ["stm32f411", "i2s", "rtic"]
+
+[[example]]
+name = "rtic-dual-i2s-audio-in-out"
 required-features = ["stm32f411", "i2s", "rtic"]
 
 [[example]]

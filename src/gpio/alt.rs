@@ -348,7 +348,7 @@ pub trait I2cCommon {
 
 // I2S pins
 pub trait I2sCommon {
-    type Ck;
+    type Ck: crate::gpio::PinSpeed;
     type Sd;
     type Ws: crate::gpio::ReadPin + crate::gpio::ExtiPin;
 }
