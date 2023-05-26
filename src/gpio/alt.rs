@@ -368,11 +368,11 @@ pub trait QuadSpiBanks {
 }
 #[cfg(feature = "quadspi")]
 pub trait QuadSpiBank {
-    type Io0;
-    type Io1;
-    type Io2;
-    type Io3;
-    type Ncs;
+    type Io0: crate::gpio::PinSpeed;
+    type Io1: crate::gpio::PinSpeed;
+    type Io2: crate::gpio::PinSpeed;
+    type Io3: crate::gpio::PinSpeed;
+    type Ncs: crate::gpio::PinSpeed;
 }
 
 // SAI pins
