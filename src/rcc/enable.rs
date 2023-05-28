@@ -69,6 +69,18 @@ macro_rules! bus {
     }
 }
 
+#[cfg(feature = "quadspi")]
+impl crate::Sealed for crate::pac::QUADSPI {}
+#[cfg(feature = "quadspi")]
+impl RccBus for crate::pac::QUADSPI {
+    type Bus = AHB3;
+}
+
+#[cfg(feature = "quadspi")]
+bus_enable! { QUADSPI => 1 }
+#[cfg(feature = "quadspi")]
+bus_reset! { QUADSPI => 1 }
+
 bus! {
     CRC => (AHB1, 12),
     DMA1 => (AHB1, 21),

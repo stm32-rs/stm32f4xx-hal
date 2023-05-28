@@ -153,6 +153,8 @@ pub mod fsmc_lcd;
 pub mod prelude;
 #[cfg(feature = "device-selected")]
 pub mod qei;
+#[cfg(feature = "quadspi")]
+pub mod qspi;
 #[cfg(feature = "device-selected")]
 pub mod rcc;
 #[cfg(feature = "device-selected")]

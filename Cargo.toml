@@ -395,6 +395,10 @@ name = "qei"
 required-features = ["tim2"] # stm32f411
 
 [[example]]
+name = "qspi-w25q"
+required-features = ["stm32f412"]
+
+[[example]]
 name = "rng-display"
 required-features = ["rng"] # stm32f407
 
