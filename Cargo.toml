@@ -407,6 +407,10 @@ name = "rtc"
 required-features = ["device-selected"]
 
 [[example]]
+name = "rtc_alarm"
+required-features = ["stm32f411"]
+
+[[example]]
 name = "rtic-adc-dma"
 required-features = ["device-selected", "rtic"] # stm32f401
 
