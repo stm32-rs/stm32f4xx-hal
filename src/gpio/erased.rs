@@ -49,6 +49,15 @@ impl<MODE> PinExt for ErasedPin<MODE> {
 }
 
 impl<MODE> ErasedPin<MODE> {
+    pub(crate) fn from_pin_port(pin_port: u8) -> Self {
+        Self {
+            pin_port,
+            _mode: PhantomData,
+        }
+    }
+    pub(crate) fn into_pin_port(self) -> u8 {
+        self.pin_port
+    }
     pub(crate) fn new(port: u8, pin: u8) -> Self {
         Self {
             pin_port: port << 4 | pin,
@@ -64,7 +73,7 @@ impl<MODE> ErasedPin<MODE> {
     }
 
     #[inline]
-    fn block(&self) -> &crate::pac::gpioa::RegisterBlock {
+    pub(crate) fn block(&self) -> &crate::pac::gpioa::RegisterBlock {
         // This function uses pointer arithmetic instead of branching to be more efficient
 
         // The logic relies on the following assumptions:
