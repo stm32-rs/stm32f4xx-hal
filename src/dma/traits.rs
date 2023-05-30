@@ -131,7 +131,7 @@ pub trait Stream: StreamISR + Sealed {
     fn set_peripheral_increment(&mut self, increment: bool);
 
     /// Set the direction (dir) of the DMA stream.
-    fn set_direction<D: Direction>(&mut self, direction: D);
+    fn set_direction(&mut self, direction: DmaDirection);
 
     /// Convenience method to configure the 4 common interrupts for the DMA stream.
     fn set_interrupts_enable(

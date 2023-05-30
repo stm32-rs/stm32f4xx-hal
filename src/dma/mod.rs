@@ -54,11 +54,17 @@ impl<T> Debug for DMAError<T> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DmaDirection {
     /// Memory to Memory transfer.
-    MemoryToMemory,
+    MemoryToMemory = 2,
     /// Peripheral to Memory transfer.
-    PeripheralToMemory,
+    PeripheralToMemory = 0,
     /// Memory to Peripheral transfer.
-    MemoryToPeripheral,
+    MemoryToPeripheral = 1,
+}
+
+impl Bits<u8> for DmaDirection {
+    fn bits(self) -> u8 {
+        self as u8
+    }
 }
 
 /// DMA from a peripheral to a memory location.
@@ -394,7 +400,7 @@ where
     }
 
     #[inline(always)]
-    fn set_direction<D: Direction>(&mut self, direction: D) {
+    fn set_direction(&mut self, direction: DmaDirection) {
         unsafe { Self::st() }
             .cr
             .modify(|_, w| unsafe { w.dir().bits(direction.bits()) });
@@ -1410,7 +1416,7 @@ where
         stream.set_channel::<CHANNEL>();
 
         // Set peripheral to memory mode
-        stream.set_direction(DIR::new());
+        stream.set_direction(DIR::direction());
         let (buf_ptr, buf_len) = buf;
 
         // Set the memory address
