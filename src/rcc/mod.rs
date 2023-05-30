@@ -23,7 +23,7 @@
 //!
 //! Unlike the clock configuration tool provided by ST, the code does not extensively search all
 //! possible configurations. Instead, it often relies on an iterative approach to reduce
-//! compitational complexity. On most MCUs the code will first generate a configuration for the 48
+//! computational complexity. On most MCUs the code will first generate a configuration for the 48
 //! MHz clock and the system clock without taking other requested clocks into account, even if the
 //! accuracy of these clocks is affected. **If you specific accuracy requirements, you should
 //! always check the resulting frequencies!**
