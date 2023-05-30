@@ -20,7 +20,6 @@ use crate::hal::{
 use core::cell::RefCell;
 use cortex_m::interrupt::Mutex;
 use cortex_m_rt::entry;
-use fugit::ExtU32;
 
 // NOTE You can uncomment 'hprintln' here and in the code below for a bit more
 // verbosity at runtime, at the cost of throwing off the timing of the blink

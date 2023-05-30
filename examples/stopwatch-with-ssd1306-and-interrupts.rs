@@ -43,7 +43,6 @@ use embedded_graphics::{
     prelude::*,
     text::Text,
 };
-use fugit::ExtU32;
 use heapless::String;
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 

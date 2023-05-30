@@ -7,7 +7,6 @@ use panic_probe as _;
 #[rtic::app(device = stm32f4xx_hal::pac, dispatchers = [EXTI0])]
 mod app {
     use dwt_systick_monotonic::DwtSystick;
-    use fugit::ExtU32;
 
     use stm32f4xx_hal::{
         adc::{

@@ -11,7 +11,6 @@ use rtt_target::{rprintln, rtt_init_print};
 use crate::hal::prelude::*;
 use crate::hal::rtc::{Alarm, AlarmDay, Event, Rtc};
 use cortex_m::interrupt::{free, Mutex};
-use fugit::ExtU32;
 use time::{
     macros::{date, time},
     PrimitiveDateTime,
