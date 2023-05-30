@@ -97,9 +97,7 @@ pub trait Stream: StreamISR + Sealed {
     fn disable(&mut self);
 
     /// Set the channel for the (chsel) the DMA stream.
-    fn set_channel<const C: u8>(&mut self)
-    where
-        ChannelX<C>: Channel;
+    fn set_channel(&mut self, channel: DmaChannel);
 
     /// Set the priority (pl) the DMA stream.
     fn set_priority(&mut self, priority: config::Priority);
@@ -254,8 +252,10 @@ impl Instance for DMA2 {
     }
 }
 
-/// A channel that can be configured on a DMA stream.
-pub trait Channel {}
+/// A trait for marker tha represent Channel of a DMA stream.
+pub trait Channel {
+    const VALUE: DmaChannel;
+}
 
 /// Trait to mark a set of Stream, Channel and Direction for a Peripheral as correct together.
 ///

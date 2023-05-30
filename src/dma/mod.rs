@@ -50,6 +50,25 @@ impl<T> Debug for DMAError<T> {
     }
 }
 
+/// Possible Channel of a DMA Stream.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DmaChannel {
+    Channel0 = 0,
+    Channel1 = 1,
+    Channel2 = 2,
+    Channel3 = 3,
+    Channel4 = 4,
+    Channel5 = 5,
+    Channel6 = 6,
+    Channel7 = 7,
+}
+
+impl Bits<u8> for DmaChannel {
+    fn bits(self) -> u8 {
+        self as u8
+    }
+}
+
 /// Possible DMA's directions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DmaDirection {
@@ -361,11 +380,10 @@ where
     }
 
     #[inline(always)]
-    fn set_channel<const C: u8>(&mut self)
-    where
-        ChannelX<C>: Channel,
-    {
-        unsafe { Self::st() }.cr.modify(|_, w| w.chsel().bits(C));
+    fn set_channel(&mut self, channel: DmaChannel) {
+        unsafe { Self::st() }
+            .cr
+            .modify(|_, w| w.chsel().bits(channel.bits()));
     }
 
     #[inline(always)]
@@ -641,10 +659,12 @@ dma_stream!(
 pub struct ChannelX<const C: u8>;
 
 macro_rules! dma_channel {
-    ($(($name:ident, $value:literal)),+ $(,)*) => {
+    ($(($name:ident, $num:literal)),+ $(,)*) => {
         $(
-            impl Channel for ChannelX<$value> {}
-            pub type $name = ChannelX<$value>;
+            impl Channel for ChannelX<$num> {
+                const VALUE: DmaChannel = DmaChannel::$name ;
+            }
+            pub type $name = ChannelX<$num>;
         )+
     };
 }
@@ -1413,7 +1433,7 @@ where
         stream.disable();
 
         // Set the channel
-        stream.set_channel::<CHANNEL>();
+        stream.set_channel(ChannelX::<CHANNEL>::VALUE);
 
         // Set peripheral to memory mode
         stream.set_direction(DIR::direction());
