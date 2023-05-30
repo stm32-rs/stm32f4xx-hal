@@ -5,7 +5,6 @@ use panic_halt as _;
 
 #[rtic::app(device = stm32f4xx_hal::pac, peripherals = true, dispatchers = [USART1])]
 mod app {
-    use fugit::ExtU32;
     use stm32f4xx_hal::{
         gpio::{Output, PC13},
         otg_fs::{UsbBus, UsbBusType, USB},

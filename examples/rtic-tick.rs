@@ -45,7 +45,7 @@ mod app {
 
     #[task(local = [led])]
     fn tick(ctx: tick::Context) {
-        tick::spawn_after(1.secs()).ok();
+        tick::spawn_after(1_u64.secs()).ok();
         ctx.local.led.toggle();
         defmt::info!("Tick");
     }

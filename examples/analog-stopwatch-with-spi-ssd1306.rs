@@ -23,7 +23,6 @@ use core::cell::{Cell, RefCell};
 use core::fmt::Write;
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, CriticalSection, Mutex};
-use fugit::ExtU32;
 use heapless::String;
 
 use hal::spi::{Mode, Phase, Polarity};
