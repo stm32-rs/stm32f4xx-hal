@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
  - Integrate new version of stm32_i2s (v0.5) to enable full-duplex operation
  - Add a rtic example to show how to do full-duplex i2s
 
@@ -16,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+ - `into_mode` for `ErasedPin` and `PartiallyErasedPin`
  - Extended 64-bit monotonic timer [#640]
  - Basic blocking QSPI interface [#645]
  - Rtc: add subsecond reading, add interrupts [#446]
