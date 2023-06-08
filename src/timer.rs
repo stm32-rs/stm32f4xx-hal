@@ -269,10 +269,21 @@ mod sealed {
         fn set_prescaler(&mut self, psc: u16);
         fn read_prescaler(&self) -> u16;
         fn trigger_update(&mut self);
-        fn clear_interrupt_flag(&mut self, event: Event);
+        fn clear_irq(event: Event);
+        #[inline(always)]
+        fn clear_interrupt_flag(&mut self, event: Event) {
+            Self::clear_irq(event)
+        }
         fn listen_interrupt(&mut self, event: Event, b: bool);
-        fn get_interrupt_flag(&self) -> Event;
-        fn read_count(&self) -> Self::Width;
+        fn get_irq() -> Event;
+        #[inline(always)]
+        fn get_interrupt_flag(&self) -> Event {
+            Self::get_irq()
+        }
+        fn read_cnt() -> Self::Width;
+        fn read_count(&self) -> Self::Width {
+            Self::read_cnt()
+        }
         fn start_one_pulse(&mut self);
         fn start_free(&mut self, update: bool);
         fn cr1_reset(&mut self);
@@ -385,8 +396,8 @@ macro_rules! hal {
                 self.cr1.modify(|_, w| w.urs().clear_bit());
             }
             #[inline(always)]
-            fn clear_interrupt_flag(&mut self, event: Event) {
-                self.sr.write(|w| unsafe { w.bits(0xffff & !event.bits()) });
+            fn clear_irq(event: Event) {
+                unsafe { (*Self::ptr()).sr.write(|w| w.bits(0xffff & !event.bits())); }
             }
             #[inline(always)]
             fn listen_interrupt(&mut self, event: Event, b: bool) {
@@ -397,12 +408,12 @@ macro_rules! hal {
                 }
             }
             #[inline(always)]
-            fn get_interrupt_flag(&self) -> Event {
-                Event::from_bits_truncate(self.sr.read().bits())
+            fn get_irq() -> Event {
+                Event::from_bits_truncate(unsafe { (*Self::ptr()).sr.read().bits() })
             }
             #[inline(always)]
-            fn read_count(&self) -> Self::Width {
-                self.cnt.read().bits() as Self::Width
+            fn read_cnt() -> Self::Width {
+                unsafe { (*Self::ptr()).cnt.read().bits() as Self::Width }
             }
             #[inline(always)]
             fn start_one_pulse(&mut self) {
