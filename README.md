@@ -6,7 +6,6 @@ stm32f4xx-hal
 [![Released API docs](https://docs.rs/stm32f4xx-hal/badge.svg)](https://docs.rs/stm32f4xx-hal)
 ![Minimum Supported Rust Version](https://img.shields.io/badge/rustc-1.51+-blue.svg)
 [![Continuous integration](https://github.com/stm32-rs/stm32f4xx-hal/workflows/Continuous%20integration/badge.svg)](https://github.com/stm32-rs/stm32f4xx-hal)
-[![Bors enabled](https://bors.tech/images/badge_small.svg)](https://app.bors.tech/repositories/24794)
 
 _stm32f4xx-hal_ contains a multi device hardware abstraction on top of the
 peripheral access API for the STMicro STM32F4 series microcontrollers. The
