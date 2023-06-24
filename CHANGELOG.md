@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.16.1] - 2023-06-24
+
  - bors bot replaced with GH merge queue
  - Integrate new version of stm32_i2s (v0.5) to enable full-duplex operation
  - Add a rtic example to show how to do full-duplex i2s
@@ -880,7 +882,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.1...HEAD
+[v0.16.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.0...v0.16.1
 [v0.16.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.15.0...v0.16.0
 [v0.15.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.14.0...v0.15.0
 [v0.14.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.13.2...v0.14.0
