@@ -64,7 +64,8 @@ impl<TIM, Otype, const C: u8> ChannelBuilder<TIM, C, false, Otype>
 where
     TIM: CPin<C>,
 {
-    pub fn new(_pin: impl Into<TIM::Ch<Otype>>) -> Self {
+    pub fn new(pin: impl Into<TIM::Ch<Otype>>) -> Self {
+        let _pin = pin.into();
         Self { _tim: PhantomData }
     }
 }
@@ -72,7 +73,8 @@ impl<TIM, Otype, const C: u8, const COMP: bool> ChannelBuilder<TIM, C, COMP, Oty
 where
     TIM: CPin<C>,
 {
-    pub fn with(self, _pin: impl Into<TIM::Ch<Otype>>) -> Self {
+    pub fn with(self, pin: impl Into<TIM::Ch<Otype>>) -> Self {
+        let _pin = pin.into();
         self
     }
 }
@@ -82,8 +84,9 @@ where
 {
     pub fn with_complementary(
         self,
-        _pin: impl Into<TIM::ChN<Otype>>,
+        pin: impl Into<TIM::ChN<Otype>>,
     ) -> ChannelBuilder<TIM, C, true, Otype> {
+        let _pin = pin.into();
         ChannelBuilder { _tim: PhantomData }
     }
 }
@@ -530,7 +533,7 @@ where
 
     /// Get raw dead time (DTG) bits
     #[inline]
-    pub fn get_dead_time_bit(&self) -> u8 {
+    pub fn get_dead_time_bits(&self) -> u8 {
         TIM::read_dtg_value()
     }
 

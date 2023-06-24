@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+ - Fix #604 pwm output [#655]
  - map `$SpiSlave` into `SpiSlave` struct in `spi!` macro [#635]
 
 [#446]: https://github.com/stm32-rs/stm32f4xx-hal/pull/446
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#636]: https://github.com/stm32-rs/stm32f4xx-hal/pull/636
 [#640]: https://github.com/stm32-rs/stm32f4xx-hal/pull/640
 [#645]: https://github.com/stm32-rs/stm32f4xx-hal/pull/645
+[#655]: https://github.com/stm32-rs/stm32f4xx-hal/pull/655
 
 ## [v0.16.0] - 2023-05-07
 
