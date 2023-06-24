@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+ - move gpio impls in subdir, remove unused `From` impls
+
 ## [v0.16.2] - 2023-06-27
 
 ### Changed
