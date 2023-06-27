@@ -9,12 +9,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-  - enable `defmt` feature for VSCode
-  - `set_alarm` takes `Into<AlarmDay>`
+ - enable `defmt` feature for VSCode, `set_alarm` takes `Into<AlarmDay>` [#660]
+ - Optimize watchdog setup calculation [#657]
 
 ### Fixed
 
-  - Compilation with `defmt` feature enabled
+ - Compilation with `defmt` feature enabled
+
+[#657]: https://github.com/stm32-rs/stm32f4xx-hal/pull/657
+[#660]: https://github.com/stm32-rs/stm32f4xx-hal/pull/660
 
 ## [v0.16.1] - 2023-06-24
 
