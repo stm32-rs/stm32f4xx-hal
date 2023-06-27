@@ -2,6 +2,7 @@
   "rust-analyzer.check.allTargets": false,
   "rust-analyzer.check.targets": "thumbv7em-none-eabihf",
   "rust-analyzer.cargo.features": [
+    "defmt",
     "rtic",
     "stm32f411"
   ],
