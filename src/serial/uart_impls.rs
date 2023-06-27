@@ -31,6 +31,7 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + C
 }
 
 pub trait RegisterBlockImpl: crate::Sealed {
+    #[allow(clippy::new_ret_no_self)]
     fn new<UART: Instance<RegisterBlock = Self>, WORD>(
         uart: UART,
         pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
