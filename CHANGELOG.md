@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+  - enable `defmt` feature for VSCode
+  - `set_alarm` takes `Into<AlarmDay>`
+
+### Fixed
+
+  - Compilation with `defmt` feature enabled
+
 ## [v0.16.1] - 2023-06-24
 
  - bors bot replaced with GH merge queue

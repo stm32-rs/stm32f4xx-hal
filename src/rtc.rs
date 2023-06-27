@@ -43,12 +43,23 @@ impl From<Alarm> for Event {
     }
 }
 
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum AlarmDay {
     Date(Date),
     Weekday(Weekday),
     EveryDay,
+}
+
+impl From<Date> for AlarmDay {
+    fn from(date: Date) -> Self {
+        Self::Date(date)
+    }
+}
+
+impl From<Weekday> for AlarmDay {
+    fn from(day: Weekday) -> Self {
+        Self::Weekday(day)
+    }
 }
 
 /// RTC clock source LSE oscillator clock (type state)
@@ -599,7 +610,13 @@ impl<CS> Rtc<CS> {
 
     /// Sets the time at which an alarm will be triggered
     /// This also clears the alarm flag if it is set
-    pub fn set_alarm(&mut self, alarm: Alarm, date: AlarmDay, time: Time) -> Result<(), Error> {
+    pub fn set_alarm(
+        &mut self,
+        alarm: Alarm,
+        date: impl Into<AlarmDay>,
+        time: Time,
+    ) -> Result<(), Error> {
+        let date = date.into();
         let (daymask, wdsel, (dt, du)) = match date {
             AlarmDay::Date(date) => (false, false, bcd2_encode(date.day().into())?),
             AlarmDay::Weekday(weekday) => (false, true, (0, weekday.number_days_from_monday())),
