@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.16.2] - 2023-06-27
+
 ### Changed
 
  - enable `defmt` feature for VSCode, `set_alarm` takes `Into<AlarmDay>` [#660]
@@ -21,9 +23,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [v0.16.1] - 2023-06-24
 
- - bors bot replaced with GH merge queue
- - Integrate new version of stm32_i2s (v0.5) to enable full-duplex operation
- - Add a rtic example to show how to do full-duplex i2s
+ - bors bot replaced with GH merge queue [#652]
+ - Integrate new version of stm32_i2s (v0.5) to enable full-duplex operation [#637]
+ - Add a rtic example to show how to do full-duplex i2s [#637]
 
 ### Changed
 
@@ -32,7 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
- - `into_mode` for `ErasedPin` and `PartiallyErasedPin`
+ - `into_mode` for `ErasedPin` and `PartiallyErasedPin` [#647]
  - Extended 64-bit monotonic timer [#640]
  - Basic blocking QSPI interface [#645]
  - Rtc: add subsecond reading, add interrupts [#446]
@@ -46,8 +48,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#632]: https://github.com/stm32-rs/stm32f4xx-hal/pull/632
 [#635]: https://github.com/stm32-rs/stm32f4xx-hal/pull/635
 [#636]: https://github.com/stm32-rs/stm32f4xx-hal/pull/636
+[#637]: https://github.com/stm32-rs/stm32f4xx-hal/pull/637
 [#640]: https://github.com/stm32-rs/stm32f4xx-hal/pull/640
 [#645]: https://github.com/stm32-rs/stm32f4xx-hal/pull/645
+[#647]: https://github.com/stm32-rs/stm32f4xx-hal/pull/647
+[#652]: https://github.com/stm32-rs/stm32f4xx-hal/pull/652
 [#655]: https://github.com/stm32-rs/stm32f4xx-hal/pull/655
 
 ## [v0.16.0] - 2023-05-07
@@ -894,7 +899,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.1...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.2...HEAD
+[v0.16.2]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.1...v0.16.2
 [v0.16.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.0...v0.16.1
 [v0.16.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.15.0...v0.16.0
 [v0.15.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.14.0...v0.15.0
