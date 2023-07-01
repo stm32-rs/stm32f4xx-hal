@@ -9,7 +9,7 @@ use panic_halt as _;
 use rtt_target::{rprintln, rtt_init_print};
 
 use crate::hal::prelude::*;
-use crate::hal::rtc::{Alarm, AlarmDay, Event, Rtc};
+use crate::hal::rtc::{Alarm, Event, Rtc};
 use cortex_m::interrupt::{free, Mutex};
 use time::{
     macros::{date, time},
@@ -40,7 +40,7 @@ fn main() -> ! {
         .unwrap();
 
     // Set alarm A for 1 minute
-    rtc.set_alarm(Alarm::AlarmA, AlarmDay::Date(today), time!(21:58:32))
+    rtc.set_alarm(Alarm::AlarmA, today, time!(21:58:32))
         .unwrap();
     rtc.enable_wakeup(8.secs());
     rtc.listen(&mut p.EXTI, Event::AlarmA);

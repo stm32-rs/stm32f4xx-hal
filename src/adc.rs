@@ -44,61 +44,45 @@ pub mod config {
     /// The place in the sequence a given channel should be captured
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
+    #[repr(u8)]
     pub enum Sequence {
         /// 1
-        One,
+        One = 0,
         /// 2
-        Two,
+        Two = 1,
         /// 3
-        Three,
+        Three = 2,
         /// 4
-        Four,
+        Four = 3,
         /// 5
-        Five,
+        Five = 4,
         /// 6
-        Six,
+        Six = 5,
         /// 7
-        Seven,
+        Seven = 6,
         /// 8
-        Eight,
+        Eight = 7,
         /// 9
-        Nine,
+        Nine = 8,
         /// 10
-        Ten,
+        Ten = 9,
         /// 11
-        Eleven,
+        Eleven = 10,
         /// 12
-        Twelve,
+        Twelve = 11,
         /// 13
-        Thirteen,
+        Thirteen = 12,
         /// 14
-        Fourteen,
+        Fourteen = 13,
         /// 15
-        Fifteen,
+        Fifteen = 14,
         /// 16
-        Sixteen,
+        Sixteen = 15,
     }
 
     impl From<Sequence> for u8 {
         fn from(s: Sequence) -> u8 {
-            match s {
-                Sequence::One => 0,
-                Sequence::Two => 1,
-                Sequence::Three => 2,
-                Sequence::Four => 3,
-                Sequence::Five => 4,
-                Sequence::Six => 5,
-                Sequence::Seven => 6,
-                Sequence::Eight => 7,
-                Sequence::Nine => 8,
-                Sequence::Ten => 9,
-                Sequence::Eleven => 10,
-                Sequence::Twelve => 11,
-                Sequence::Thirteen => 12,
-                Sequence::Fourteen => 13,
-                Sequence::Fifteen => 14,
-                Sequence::Sixteen => 15,
-            }
+            s as _
         }
     }
 
@@ -129,23 +113,24 @@ pub mod config {
     /// The number of cycles to sample a given channel for
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+    #[repr(u8)]
     pub enum SampleTime {
         /// 3 cycles
-        Cycles_3,
+        Cycles_3 = 0,
         /// 15 cycles
-        Cycles_15,
+        Cycles_15 = 1,
         /// 28 cycles
-        Cycles_28,
+        Cycles_28 = 2,
         /// 56 cycles
-        Cycles_56,
+        Cycles_56 = 3,
         /// 84 cycles
-        Cycles_84,
+        Cycles_84 = 4,
         /// 112 cycles
-        Cycles_112,
+        Cycles_112 = 5,
         /// 144 cycles
-        Cycles_144,
+        Cycles_144 = 6,
         /// 480 cycles
-        Cycles_480,
+        Cycles_480 = 7,
     }
 
     impl From<u8> for SampleTime {
@@ -166,16 +151,7 @@ pub mod config {
 
     impl From<SampleTime> for u8 {
         fn from(l: SampleTime) -> u8 {
-            match l {
-                SampleTime::Cycles_3 => 0,
-                SampleTime::Cycles_15 => 1,
-                SampleTime::Cycles_28 => 2,
-                SampleTime::Cycles_56 => 3,
-                SampleTime::Cycles_84 => 4,
-                SampleTime::Cycles_112 => 5,
-                SampleTime::Cycles_144 => 6,
-                SampleTime::Cycles_480 => 7,
-            }
+            l as _
         }
     }
 
@@ -183,127 +159,101 @@ pub mod config {
     /// Check the datasheet for the maximum speed the ADC supports
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+    #[repr(u8)]
     pub enum Clock {
         /// PCLK2 (APB2) divided by 2
-        Pclk2_div_2,
+        Pclk2_div_2 = 0,
         /// PCLK2 (APB2) divided by 4
-        Pclk2_div_4,
+        Pclk2_div_4 = 1,
         /// PCLK2 (APB2) divided by 6
-        Pclk2_div_6,
+        Pclk2_div_6 = 2,
         /// PCLK2 (APB2) divided by 8
-        Pclk2_div_8,
+        Pclk2_div_8 = 3,
     }
 
     impl From<Clock> for u8 {
         fn from(c: Clock) -> u8 {
-            match c {
-                Clock::Pclk2_div_2 => 0,
-                Clock::Pclk2_div_4 => 1,
-                Clock::Pclk2_div_6 => 2,
-                Clock::Pclk2_div_8 => 3,
-            }
+            c as _
         }
     }
 
     /// Resolution to sample at
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+    #[repr(u8)]
     pub enum Resolution {
         /// 12-bit
-        Twelve,
+        Twelve = 0,
         /// 10-bit
-        Ten,
+        Ten = 1,
         /// 8-bit
-        Eight,
+        Eight = 2,
         /// 6-bit
-        Six,
+        Six = 3,
     }
     impl From<Resolution> for u8 {
         fn from(r: Resolution) -> u8 {
-            match r {
-                Resolution::Twelve => 0,
-                Resolution::Ten => 1,
-                Resolution::Eight => 2,
-                Resolution::Six => 3,
-            }
+            r as _
         }
     }
 
     /// Possible external triggers the ADC can listen to
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+    #[repr(u8)]
     pub enum ExternalTrigger {
         /// TIM1 compare channel 1
-        Tim_1_cc_1,
+        Tim_1_cc_1 = 0b0000,
         /// TIM1 compare channel 2
-        Tim_1_cc_2,
+        Tim_1_cc_2 = 0b0001,
         /// TIM1 compare channel 3
-        Tim_1_cc_3,
+        Tim_1_cc_3 = 0b0010,
         /// TIM2 compare channel 2
-        Tim_2_cc_2,
+        Tim_2_cc_2 = 0b0011,
         /// TIM2 compare channel 3
-        Tim_2_cc_3,
+        Tim_2_cc_3 = 0b0100,
         /// TIM2 compare channel 4
-        Tim_2_cc_4,
+        Tim_2_cc_4 = 0b0101,
         /// TIM2 trigger out
-        Tim_2_trgo,
+        Tim_2_trgo = 0b0110,
         /// TIM3 compare channel 1
-        Tim_3_cc_1,
+        Tim_3_cc_1 = 0b0111,
         /// TIM3 trigger out
-        Tim_3_trgo,
+        Tim_3_trgo = 0b1000,
         /// TIM4 compare channel 4
-        Tim_4_cc_4,
+        Tim_4_cc_4 = 0b1001,
         /// TIM5 compare channel 1
-        Tim_5_cc_1,
+        Tim_5_cc_1 = 0b1010,
         /// TIM5 compare channel 2
-        Tim_5_cc_2,
+        Tim_5_cc_2 = 0b1011,
         /// TIM5 compare channel 3
-        Tim_5_cc_3,
+        Tim_5_cc_3 = 0b1100,
         /// External interrupt line 11
-        Exti_11,
+        Exti_11 = 0b1111,
     }
     impl From<ExternalTrigger> for u8 {
         fn from(et: ExternalTrigger) -> u8 {
-            match et {
-                ExternalTrigger::Tim_1_cc_1 => 0b0000,
-                ExternalTrigger::Tim_1_cc_2 => 0b0001,
-                ExternalTrigger::Tim_1_cc_3 => 0b0010,
-                ExternalTrigger::Tim_2_cc_2 => 0b0011,
-                ExternalTrigger::Tim_2_cc_3 => 0b0100,
-                ExternalTrigger::Tim_2_cc_4 => 0b0101,
-                ExternalTrigger::Tim_2_trgo => 0b0110,
-                ExternalTrigger::Tim_3_cc_1 => 0b0111,
-                ExternalTrigger::Tim_3_trgo => 0b1000,
-                ExternalTrigger::Tim_4_cc_4 => 0b1001,
-                ExternalTrigger::Tim_5_cc_1 => 0b1010,
-                ExternalTrigger::Tim_5_cc_2 => 0b1011,
-                ExternalTrigger::Tim_5_cc_3 => 0b1100,
-                ExternalTrigger::Exti_11 => 0b1111,
-            }
+            et as _
         }
     }
 
     /// Possible trigger modes
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+    #[repr(u8)]
     pub enum TriggerMode {
         /// Don't listen to external trigger
-        Disabled,
+        Disabled = 0,
         /// Listen for rising edges of external trigger
-        RisingEdge,
+        RisingEdge = 1,
         /// Listen for falling edges of external trigger
-        FallingEdge,
+        FallingEdge = 2,
         /// Listen for both rising and falling edges of external trigger
-        BothEdges,
+        BothEdges = 3,
     }
     impl From<TriggerMode> for u8 {
         fn from(tm: TriggerMode) -> u8 {
-            match tm {
-                TriggerMode::Disabled => 0,
-                TriggerMode::RisingEdge => 1,
-                TriggerMode::FallingEdge => 2,
-                TriggerMode::BothEdges => 3,
-            }
+            tm as _
         }
     }
 
@@ -806,7 +756,7 @@ macro_rules! adc {
                     self.config.clock = clock;
                     unsafe {
                         let common = &(*pac::$common_type::ptr());
-                        common.ccr.modify(|_, w| w.adcpre().bits(clock.into()));
+                        common.ccr.modify(|_, w| w.adcpre().bits(clock as _));
                     }
                 }
 
@@ -819,7 +769,7 @@ macro_rules! adc {
                         config::Resolution::Six => (1 << 6),
                     };
                     self.config.resolution = resolution;
-                    self.adc_reg.cr1.modify(|_, w| w.res().bits(resolution.into()));
+                    self.adc_reg.cr1.modify(|_, w| w.res().bits(resolution as _));
                 }
 
                 /// Sets the DR register alignment to left or right
@@ -843,8 +793,8 @@ macro_rules! adc {
                         feature = "stm32f411",
                     ))] // TODO: fix pac
                     self.adc_reg.cr2.modify(|_, w| unsafe { w
-                        .extsel().bits(extsel.into())
-                        .exten().bits(edge.into())
+                        .extsel().bits(extsel as _)
+                        .exten().bits(edge as _)
                     });
                     #[cfg(not(any(
                         feature = "stm32f401",
@@ -852,8 +802,8 @@ macro_rules! adc {
                         feature = "stm32f411",
                     )))]
                     self.adc_reg.cr2.modify(|_, w| w
-                        .extsel().bits(extsel.into())
-                        .exten().bits(edge.into())
+                        .extsel().bits(extsel as _)
+                        .exten().bits(edge as _)
                     );
                 }
 
@@ -972,9 +922,8 @@ macro_rules! adc {
                     }
 
                     //Set the sample time for the channel
-                    let st = u8::from(sample_time);
-                    let st = u32::from(st);
-                    let ch = u32::from(channel);
+                    let st = sample_time as u32;
+                    let ch = channel as u32;
                     match channel {
                         0..=9   => self.adc_reg.smpr2.modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch, 3, st)) }),
                         10..=18 => self.adc_reg.smpr1.modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch-10, 3, st)) }),
@@ -996,7 +945,7 @@ macro_rules! adc {
 
                 /// Make a converter for samples to millivolts
                 pub fn make_sample_to_millivolts(&self) -> impl Fn(u16)->u16 {
-                    let calibrated_vdda= self.calibrated_vdda;
+                    let calibrated_vdda = self.calibrated_vdda;
                     let max_sample=self.max_sample;
                     move |sample| {
                      ((u32::from(sample) * calibrated_vdda) / max_sample) as u16
