@@ -45,7 +45,7 @@ impl<SPI: Instance, const BIDI: bool, W> ErrorType for super::Spi<SPI, BIDI, W> 
 
 mod nb {
     use super::super::{Error, FrameSize, Instance, Spi};
-    use embedded_hal_one::spi::nb::FullDuplex;
+    use embedded_hal_nb::spi::FullDuplex;
 
     impl<SPI, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, BIDI, W>
     where
@@ -63,10 +63,7 @@ mod nb {
 
 mod blocking {
     use super::super::{FrameSize, Instance, Spi};
-    use embedded_hal_one::spi::{
-        blocking::{SpiBus, SpiBusFlush, SpiBusRead, SpiBusWrite},
-        nb::FullDuplex,
-    };
+    use embedded_hal_one::spi::{SpiBus, SpiBusFlush, SpiBusRead, SpiBusWrite};
 
     impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, BIDI, W>
     where
@@ -112,8 +109,8 @@ mod blocking {
     {
         fn read(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
             for word in words {
-                nb::block!(<Self as FullDuplex<W>>::write(self, W::default()))?;
-                *word = nb::block!(<Self as FullDuplex<W>>::read(self))?;
+                nb::block!(self.write_nonblocking(W::default()))?;
+                *word = nb::block!(self.read_nonblocking())?;
             }
 
             Ok(())

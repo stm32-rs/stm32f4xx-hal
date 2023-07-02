@@ -114,23 +114,19 @@ impl<T: Into<u64>> embedded_hal::blocking::delay::DelayMs<T> for Delay {
     }
 }
 
-impl embedded_hal_one::delay::blocking::DelayUs for Delay {
-    type Error = core::convert::Infallible;
-
-    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
+impl embedded_hal_one::delay::DelayUs for Delay {
+    fn delay_us(&mut self, us: u32) {
         // Convert us to ticks
         let start = DWT::cycle_count();
         let ticks = (us as u64 * self.clock.raw() as u64) / 1_000_000;
         Delay::delay_ticks(start, ticks);
-        Ok(())
     }
 
-    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+    fn delay_ms(&mut self, ms: u32) {
         // Convert ms to ticks
         let start = DWT::cycle_count();
         let ticks = (ms as u64 * self.clock.raw() as u64) / 1_000;
         Delay::delay_ticks(start, ticks);
-        Ok(())
     }
 }
 

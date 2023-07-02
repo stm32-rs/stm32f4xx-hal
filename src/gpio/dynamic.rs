@@ -1,4 +1,5 @@
 use super::*;
+use embedded_hal_one::digital::ErrorKind;
 
 /// Pin type with dynamic mode
 ///
@@ -28,6 +29,12 @@ pub enum Dynamic {
 pub enum PinModeError {
     /// For operations unsupported in current mode
     IncorrectMode,
+}
+
+impl embedded_hal_one::digital::Error for PinModeError {
+    fn kind(&self) -> ErrorKind {
+        ErrorKind::Other
+    }
 }
 
 impl Dynamic {
