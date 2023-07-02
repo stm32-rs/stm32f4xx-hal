@@ -6,7 +6,7 @@ use crate::rcc::{Enable, Reset};
 use crate::gpio;
 
 use crate::rcc::Clocks;
-use embedded_hal_one::i2c::blocking::Operation;
+use embedded_hal_one::i2c::Operation;
 use fugit::{HertzU32 as Hertz, RateExtU32};
 
 mod hal_02;

@@ -4,35 +4,43 @@
 //! a 16-bit prescaler.
 
 use core::convert::Infallible;
-use embedded_hal_one::delay::blocking::DelayUs;
+use embedded_hal_one::delay::DelayUs;
 
-use super::{Delay, Error, Instance, SysDelay};
+use super::{Delay, Instance, PwmChannel, SysDelay, WithPwm};
 use fugit::ExtU32;
 
 impl DelayUs for SysDelay {
-    type Error = Infallible;
-
-    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
+    fn delay_us(&mut self, us: u32) {
         self.delay(us.micros());
-
-        Ok(())
     }
 
-    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
-        self.delay_us(ms * 1_000)
+    fn delay_ms(&mut self, ms: u32) {
+        self.delay_us(ms * 1_000);
     }
 }
 
 impl<TIM: Instance, const FREQ: u32> DelayUs for Delay<TIM, FREQ> {
-    type Error = Error;
-
-    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
+    fn delay_us(&mut self, us: u32) {
         self.delay(us.micros());
-        Ok(())
     }
 
-    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+    fn delay_ms(&mut self, ms: u32) {
         self.delay(ms.millis());
+    }
+}
+
+impl<TIM: Instance + WithPwm, const C: u8> embedded_hal_one::pwm::ErrorType for PwmChannel<TIM, C> {
+    type Error = Infallible;
+}
+
+impl<TIM: Instance + WithPwm, const C: u8> embedded_hal_one::pwm::SetDutyCycle
+    for PwmChannel<TIM, C>
+{
+    fn get_max_duty_cycle(&self) -> u16 {
+        self.get_max_duty()
+    }
+    fn set_duty_cycle(&mut self, duty: u16) -> Result<(), Self::Error> {
+        self.set_duty(duty);
         Ok(())
     }
 }

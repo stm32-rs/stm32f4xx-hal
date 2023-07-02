@@ -18,10 +18,7 @@ mod nb {
     use core::ops::Deref;
 
     use super::super::{Error, Instance, RegisterBlockImpl, Rx, Serial, Tx};
-    use embedded_hal_one::serial::{
-        nb::{Read, Write},
-        ErrorType,
-    };
+    use embedded_hal_nb::serial::{ErrorType, Read, Write};
 
     impl<USART: Instance, WORD: Copy> Read<WORD> for Serial<USART, WORD>
     where
@@ -107,7 +104,7 @@ mod blocking {
 
     use super::super::{Instance, RegisterBlockImpl, Serial, Tx};
     use super::ErrorType;
-    use embedded_hal_one::serial::blocking::Write;
+    use embedded_hal_one::serial::Write;
 
     impl<USART: Instance, WORD: Copy> Write<WORD> for Serial<USART, WORD>
     where

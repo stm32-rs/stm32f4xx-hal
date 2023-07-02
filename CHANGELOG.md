@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
  - move gpio impls in subdir, remove unused `From` impls
+ - Bump `embedded-hal` to `1.0.0-alpha.10`. See [their changelog][embedded-hal-1.0.0-alpha.10] for further details. Note that this included breaking changes to the previous alpha APIs. [#663]
+
+[#663]: https://github.com/stm32-rs/stm32f4xx-hal/pull/663
+[embedded-hal-1.0.0-alpha.10]: https://github.com/rust-embedded/embedded-hal/blob/v1.0.0-alpha.10/embedded-hal/CHANGELOG.md
 
 ## [v0.16.2] - 2023-06-27
 
