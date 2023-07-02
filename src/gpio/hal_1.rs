@@ -1,22 +1,13 @@
 use core::convert::Infallible;
 
 use super::{
-    dynamic::PinModeError, marker, DynamicPin, ErasedPin, Input, OpenDrain, Output,
-    PartiallyErasedPin, Pin, PinMode,
+    dynamic::PinModeError, marker, DynamicPin, ErasedPin, Output, PartiallyErasedPin, Pin,
 };
 
 pub use embedded_hal_one::digital::PinState;
 use embedded_hal_one::digital::{
-    blocking::{InputPin, IoPin, OutputPin, StatefulOutputPin, ToggleableOutputPin},
-    ErrorType,
+    ErrorType, InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin,
 };
-
-fn into_state(state: PinState) -> super::PinState {
-    match state {
-        PinState::Low => super::PinState::Low,
-        PinState::High => super::PinState::High,
-    }
-}
 
 // Implementations for `Pin`
 impl<const P: char, const N: u8, MODE> ErrorType for Pin<P, N, MODE> {
@@ -69,45 +60,6 @@ where
     #[inline(always)]
     fn is_low(&self) -> Result<bool, Self::Error> {
         Ok(self.is_low())
-    }
-}
-
-impl<const P: char, const N: u8> IoPin<Self, Self> for Pin<P, N, Output<OpenDrain>> {
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Self, Self::Error> {
-        Ok(self)
-    }
-    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
-        self.set_state(into_state(state));
-        Ok(self)
-    }
-}
-
-impl<const P: char, const N: u8, Otype> IoPin<Pin<P, N, Input>, Self> for Pin<P, N, Output<Otype>>
-where
-    Output<Otype>: PinMode,
-{
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Pin<P, N, Input>, Self::Error> {
-        Ok(self.into_input())
-    }
-    fn into_output_pin(mut self, state: PinState) -> Result<Self, Self::Error> {
-        self.set_state(into_state(state));
-        Ok(self)
-    }
-}
-
-impl<const P: char, const N: u8, Otype> IoPin<Self, Pin<P, N, Output<Otype>>> for Pin<P, N, Input>
-where
-    Output<Otype>: PinMode,
-{
-    type Error = Infallible;
-    fn into_input_pin(self) -> Result<Self, Self::Error> {
-        Ok(self)
-    }
-    fn into_output_pin(mut self, state: PinState) -> Result<Pin<P, N, Output<Otype>>, Self::Error> {
-        self._set_state(into_state(state));
-        Ok(self.into_mode())
     }
 }
 

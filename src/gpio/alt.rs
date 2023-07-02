@@ -296,20 +296,23 @@ pub trait CanCommon {
 }
 
 // DFSDM pins
-#[cfg(feature = "dfsdm1")]
-pub trait DfsdmCommon {
+#[cfg(feature = "dfsdm")]
+pub trait DfsdmBasic {
     type Ckin0;
     type Ckin1;
-    type Ckin2;
-    type Ckin3;
     type Ckout;
     type Datin0;
     type Datin1;
+}
+#[cfg(feature = "dfsdm")]
+pub trait DfsdmGeneral: DfsdmBasic {
+    type Ckin2;
+    type Ckin3;
     type Datin2;
     type Datin3;
 }
-#[cfg(feature = "dfsdm2")]
-pub trait DfsdmAdvanced {
+#[cfg(feature = "dfsdm")]
+pub trait DfsdmAdvanced: DfsdmGeneral {
     type Ckin4;
     type Ckin5;
     type Ckin6;
