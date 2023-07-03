@@ -421,9 +421,14 @@ where
 
     fn send_start(&mut self, read: bool) -> Result<(), super::Error> {
         let i2c = &self.hal_i2c.i2c;
-        i2c.cr1.modify(|_, w| w.start().set_bit());
+
+        // Make sure the ack and start bit is set together in a single
+        // read-modify-write operation to avoid race condition.
+        // See PR: https://github.com/stm32-rs/stm32f4xx-hal/pull/662
         if read {
-            i2c.cr1.modify(|_, w| w.ack().set_bit());
+            i2c.cr1.modify(|_, w| w.ack().set_bit().start().set_bit());
+        } else {
+            i2c.cr1.modify(|_, w| w.start().set_bit());
         }
 
         // Wait until START condition was generated
