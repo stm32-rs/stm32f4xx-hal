@@ -23,7 +23,7 @@ adc_pins!(
     gpio::PA7<Analog> => (ADC1, 7),
     gpio::PB0<Analog> => (ADC1, 8),
     gpio::PB1<Analog> => (ADC1, 9),
-    Temperature => (ADC1, 16),
+    Temperature => (ADC1, 18),
     Vbat => (ADC1, 18),
     Vref => (ADC1, 17),
 );
@@ -216,7 +216,7 @@ adc_pins!(
     gpio::PA7<Analog> => (ADC1, 7),
     gpio::PB0<Analog> => (ADC1, 8),
     gpio::PB1<Analog> => (ADC1, 9),
-    Temperature => (ADC1, 16),
+    Temperature => (ADC1, 18),
     Vbat => (ADC1, 18),
     Vref => (ADC1, 17),
 );

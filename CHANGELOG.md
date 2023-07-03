@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [v0.16.1] - 2023-06-24
 
+ - revert #529 for f401/f411
  - bors bot replaced with GH merge queue [#652]
  - Integrate new version of stm32_i2s (v0.5) to enable full-duplex operation [#637]
  - Add a rtic example to show how to do full-duplex i2s [#637]
