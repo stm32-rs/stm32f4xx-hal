@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+ - `rcc::Enable`, `rcc::LPEnable` traits 
  - move gpio, dma impls, adc pins in subdir, remove unused `From` impls [#658] [#664]
  - Bump `embedded-hal` to `1.0.0-alpha.10`. See [their changelog][embedded-hal-1.0.0-alpha.10] for further details. Note that this included breaking changes to the previous alpha APIs. [#663]
  - Fix race condition in sending start condition in I2C. [#662]

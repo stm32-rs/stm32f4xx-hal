@@ -18,6 +18,11 @@ macro_rules! bus_enable {
                     bb::clear(Self::Bus::enr(rcc), $bit);
                 }
             }
+            #[inline(always)]
+            fn is_enabled() -> bool {
+                let rcc = pac::RCC::ptr();
+                (Self::Bus::enr(unsafe { &*rcc }).read().bits() >> $bit) & 0x1 != 0
+            }
         }
     };
 }
@@ -25,7 +30,7 @@ macro_rules! bus_lpenable {
     ($PER:ident => $bit:literal) => {
         impl LPEnable for crate::pac::$PER {
             #[inline(always)]
-            fn low_power_enable(rcc: &RccRB) {
+            fn enable_in_low_power(rcc: &RccRB) {
                 unsafe {
                     bb::set(Self::Bus::lpenr(rcc), $bit);
                 }
@@ -33,10 +38,15 @@ macro_rules! bus_lpenable {
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
-            fn low_power_disable(rcc: &RccRB) {
+            fn disable_in_low_power(rcc: &RccRB) {
                 unsafe {
                     bb::clear(Self::Bus::lpenr(rcc), $bit);
                 }
+            }
+            #[inline(always)]
+            fn is_enabled_in_low_power() -> bool {
+                let rcc = pac::RCC::ptr();
+                (Self::Bus::lpenr(unsafe { &*rcc }).read().bits() >> $bit) & 0x1 != 0
             }
         }
     };

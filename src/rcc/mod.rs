@@ -66,12 +66,32 @@ pub trait RccBus: crate::Sealed {
 /// Enable/disable peripheral
 #[allow(clippy::missing_safety_doc)]
 pub trait Enable: RccBus {
+    /// Enables peripheral
     fn enable(rcc: &RccRB);
+
+    /// Disables peripheral
     fn disable(rcc: &RccRB);
+
+    /// Check if peripheral enabled
+    fn is_enabled() -> bool;
+
+    /// Check if peripheral disabled
+    #[inline]
+    fn is_disabled() -> bool {
+        !Self::is_enabled()
+    }
+
+    /// # Safety
+    ///
+    /// Enables peripheral. Takes access to RCC internally
     unsafe fn enable_unchecked() {
         let rcc = &*pac::RCC::ptr();
         Self::enable(rcc);
     }
+
+    /// # Safety
+    ///
+    /// Disables peripheral. Takes access to RCC internally
     unsafe fn disable_unchecked() {
         let rcc = pac::RCC::ptr();
         Self::disable(&*rcc);
@@ -81,22 +101,47 @@ pub trait Enable: RccBus {
 /// Low power enable/disable peripheral
 #[allow(clippy::missing_safety_doc)]
 pub trait LPEnable: RccBus {
-    fn low_power_enable(rcc: &RccRB);
-    fn low_power_disable(rcc: &RccRB);
-    unsafe fn low_power_enable_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::low_power_enable(&*rcc);
+    /// Enables peripheral in low power mode
+    fn enable_in_low_power(rcc: &RccRB);
+
+    /// Disables peripheral in low power mode
+    fn disable_in_low_power(rcc: &RccRB);
+
+    /// Check if peripheral enabled in low power mode
+    fn is_enabled_in_low_power() -> bool;
+
+    /// Check if peripheral disabled in low power mode
+    #[inline]
+    fn is_disabled_in_low_power() -> bool {
+        !Self::is_enabled_in_low_power()
     }
-    unsafe fn low_power_disable_unchecked() {
+
+    /// # Safety
+    ///
+    /// Enables peripheral in low power mode. Takes access to RCC internally
+    unsafe fn enable_in_low_power_unchecked() {
         let rcc = pac::RCC::ptr();
-        Self::low_power_disable(&*rcc);
+        Self::enable_in_low_power(&*rcc);
+    }
+
+    /// # Safety
+    ///
+    /// Disables peripheral in low power mode. Takes access to RCC internally
+    unsafe fn disable_in_low_power_unchecked() {
+        let rcc = pac::RCC::ptr();
+        Self::disable_in_low_power(&*rcc);
     }
 }
 
 /// Reset peripheral
 #[allow(clippy::missing_safety_doc)]
 pub trait Reset: RccBus {
+    /// Resets peripheral
     fn reset(rcc: &RccRB);
+
+    /// # Safety
+    ///
+    /// Resets peripheral. Takes access to RCC internally
     unsafe fn reset_unchecked() {
         let rcc = pac::RCC::ptr();
         Self::reset(&*rcc);
@@ -141,46 +186,41 @@ where
     }
 }
 
-/// AMBA High-performance Bus 1 (AHB1) registers
-pub struct AHB1 {
-    _0: (),
+macro_rules! bus_struct {
+    ($( $(#[$attr:meta])* $busX:ident => ($EN:ident, $en:ident, $LPEN:ident, $lpen:ident, $RST:ident, $rst:ident, $doc:literal),)+) => {
+        $(
+            $(#[$attr])*
+            #[doc = $doc]
+            pub struct $busX {
+                _0: (),
+            }
+
+            $(#[$attr])*
+            impl $busX {
+                pub(crate) fn enr(rcc: &RccRB) -> &rcc::$EN {
+                    &rcc.$en
+                }
+
+                pub(crate) fn lpenr(rcc: &RccRB) -> &rcc::$LPEN {
+                    &rcc.$lpen
+                }
+
+                pub(crate) fn rstr(rcc: &RccRB) -> &rcc::$RST {
+                    &rcc.$rst
+                }
+            }
+        )+
+    };
 }
 
-impl AHB1 {
-    #[inline(always)]
-    fn enr(rcc: &RccRB) -> &rcc::AHB1ENR {
-        &rcc.ahb1enr
-    }
-    #[inline(always)]
-    fn lpenr(rcc: &RccRB) -> &rcc::AHB1LPENR {
-        &rcc.ahb1lpenr
-    }
-    #[inline(always)]
-    fn rstr(rcc: &RccRB) -> &rcc::AHB1RSTR {
-        &rcc.ahb1rstr
-    }
-}
-
-/// AMBA High-performance Bus 2 (AHB2) registers
-#[cfg(not(feature = "gpio-f410"))]
-pub struct AHB2 {
-    _0: (),
-}
-
-#[cfg(not(feature = "gpio-f410"))]
-impl AHB2 {
-    #[inline(always)]
-    fn enr(rcc: &RccRB) -> &rcc::AHB2ENR {
-        &rcc.ahb2enr
-    }
-    #[inline(always)]
-    fn lpenr(rcc: &RccRB) -> &rcc::AHB2LPENR {
-        &rcc.ahb2lpenr
-    }
-    #[inline(always)]
-    fn rstr(rcc: &RccRB) -> &rcc::AHB2RSTR {
-        &rcc.ahb2rstr
-    }
+bus_struct! {
+    APB1 => (APB1ENR, apb1enr, APB1LPENR, apb1lpenr, APB1RSTR, apb1rstr, "Advanced Peripheral Bus 1 (APB1) registers"),
+    APB2 => (APB2ENR, apb2enr, APB2LPENR, apb2lpenr, APB2RSTR, apb2rstr, "Advanced Peripheral Bus 2 (APB2) registers"),
+    AHB1 => (AHB1ENR, ahb1enr, AHB1LPENR, ahb1lpenr, AHB1RSTR, ahb1rstr, "Advanced High-performance Bus 1 (AHB1) registers"),
+    #[cfg(not(feature = "gpio-f410"))]
+    AHB2 => (AHB2ENR, ahb2enr, AHB2LPENR, ahb2lpenr, AHB2RSTR, ahb2rstr, "Advanced High-performance Bus 2 (AHB2) registers"),
+    //#[cfg(any(feature = "fsmc", feature = "fmc"))]
+    //AHB3 => (AHB3ENR, ahb3enr, AHB3LPENR, ahb3lpenr, AHB3RSTR, ahb3rstr, "Advanced High-performance Bus 3 (AHB3) registers"),
 }
 
 /// AMBA High-performance Bus 3 (AHB3) registers
@@ -203,46 +243,6 @@ impl AHB3 {
     #[inline(always)]
     fn rstr(rcc: &RccRB) -> &rcc::AHB3RSTR {
         &rcc.ahb3rstr
-    }
-}
-
-/// Advanced Peripheral Bus 1 (APB1) registers
-pub struct APB1 {
-    _0: (),
-}
-
-impl APB1 {
-    #[inline(always)]
-    fn enr(rcc: &RccRB) -> &rcc::APB1ENR {
-        &rcc.apb1enr
-    }
-    #[inline(always)]
-    fn lpenr(rcc: &RccRB) -> &rcc::APB1LPENR {
-        &rcc.apb1lpenr
-    }
-    #[inline(always)]
-    fn rstr(rcc: &RccRB) -> &rcc::APB1RSTR {
-        &rcc.apb1rstr
-    }
-}
-
-/// Advanced Peripheral Bus 2 (APB2) registers
-pub struct APB2 {
-    _0: (),
-}
-
-impl APB2 {
-    #[inline(always)]
-    fn enr(rcc: &RccRB) -> &rcc::APB2ENR {
-        &rcc.apb2enr
-    }
-    #[inline(always)]
-    fn lpenr(rcc: &RccRB) -> &rcc::APB2LPENR {
-        &rcc.apb2lpenr
-    }
-    #[inline(always)]
-    fn rstr(rcc: &RccRB) -> &rcc::APB2RSTR {
-        &rcc.apb2rstr
     }
 }
 
