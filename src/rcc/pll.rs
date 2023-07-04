@@ -144,13 +144,9 @@ impl MainPll {
                         };
 
                         // The 48 MHz clock must be accurate within 0.25% for USB.
-                        let q = if pll48clk {
-                            Some(Self::best_divider(
-                                vco_out, 47_880_000, 48_000_000, 48_120_000, 2, 15,
-                            )?)
-                        } else {
-                            None
-                        };
+                        let q = pll48clk.then_some(Self::best_divider(
+                            vco_out, 47_880_000, 48_000_000, 48_120_000, 2, 15,
+                        )?);
 
                         // We do not set any accuracy requirements for I2S, as on F410 this frequency is
                         // provided on a best-effort basis.
@@ -242,9 +238,7 @@ impl I2sPll {
     }
 
     pub fn setup(pllsrcclk: u32, plli2sclk: Option<u32>) -> I2sPll {
-        let target = if let Some(clk) = plli2sclk {
-            clk
-        } else {
+        let Some(target) = plli2sclk else {
             return Self::unused();
         };
         // Input divisor from PLL source clock, must result to frequency in
@@ -267,14 +261,10 @@ impl I2sPll {
     ))]
     pub fn setup_shared_m(pllsrcclk: u32, m: Option<u32>, plli2sclk: Option<u32>) -> I2sPll {
         // "m" is None if the main PLL is not in use.
-        let m = if let Some(m) = m {
-            m
-        } else {
+        let Some(m) = m else {
             return Self::setup(pllsrcclk, plli2sclk);
         };
-        let target = if let Some(clk) = plli2sclk {
-            clk
-        } else {
+        let Some(target) = plli2sclk else {
             return Self::unused();
         };
         let (pll, config, _) = Self::optimize_fixed_m(pllsrcclk, m, target);
@@ -320,12 +310,9 @@ impl I2sPll {
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
         rcc.plli2scfgr.modify(|_, w| unsafe {
-            w.plli2sm()
-                .bits(config.m)
-                .plli2sn()
-                .bits(config.n)
-                .plli2sr()
-                .bits(config.outdiv)
+            w.plli2sm().bits(config.m);
+            w.plli2sn().bits(config.n);
+            w.plli2sr().bits(config.outdiv)
         });
     }
 }
@@ -347,9 +334,7 @@ impl SaiPll {
     }
 
     pub fn setup(pllsrcclk: u32, sai_clk: Option<u32>) -> SaiPll {
-        let target = if let Some(clk) = sai_clk {
-            clk
-        } else {
+        let Some(target) = sai_clk else {
             return Self::unused();
         };
         // Input divisor from PLL source clock, must result to frequency in
@@ -367,14 +352,10 @@ impl SaiPll {
     #[cfg(any(feature = "gpio-f427", feature = "gpio-f469",))]
     pub fn setup_shared_m(pllsrcclk: u32, m: Option<u32>, sai_clk: Option<u32>) -> SaiPll {
         // "m" is None if both other PLLs are not in use.
-        let m = if let Some(m) = m {
-            m
-        } else {
+        let Some(m) = m else {
             return Self::setup(pllsrcclk, sai_clk);
         };
-        let target = if let Some(clk) = sai_clk {
-            clk
-        } else {
+        let Some(target) = sai_clk else {
             return Self::unused();
         };
         let (pll, config, saidiv, _) = Self::optimize_fixed_m(pllsrcclk, m, target);
@@ -426,12 +407,9 @@ impl SaiPll {
         rcc.dckcfgr
             .modify(|_, w| w.pllsaidivq().bits(saidiv as u8 - 1));
         rcc.pllsaicfgr.modify(|_, w| unsafe {
-            w.pllsaim()
-                .bits(config.m)
-                .pllsain()
-                .bits(config.n)
-                .pllsaiq()
-                .bits(config.outdiv)
+            w.pllsaim().bits(config.m);
+            w.pllsain().bits(config.n);
+            w.pllsaiq().bits(config.outdiv)
         });
     }
 }
