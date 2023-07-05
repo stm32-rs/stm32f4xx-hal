@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - `rcc::Enable`, `rcc::LPEnable` traits, timclk in `Clocks` instead of prescalers [#665]
  - move gpio, dma impls, adc pins in subdir, remove unused `From` impls [#658] [#664]
- - Bump `embedded-hal` to `1.0.0-alpha.10`. See [their changelog][embedded-hal-1.0.0-alpha.10] for further details. Note that this included breaking changes to the previous alpha APIs. [#663]
+ - Bump `embedded-hal` to `1.0.0-alpha.11`. See [their changelog][embedded-hal-1.0.0-alpha.11] for further details. Note that this included breaking changes to the previous alpha APIs. [#663],[#668]
  - Fix race condition in sending start condition in I2C. [#662]
 
 [#658]: https://github.com/stm32-rs/stm32f4xx-hal/pull/658
@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#663]: https://github.com/stm32-rs/stm32f4xx-hal/pull/663
 [#664]: https://github.com/stm32-rs/stm32f4xx-hal/pull/664
 [#665]: https://github.com/stm32-rs/stm32f4xx-hal/pull/665
-[embedded-hal-1.0.0-alpha.10]: https://github.com/rust-embedded/embedded-hal/blob/v1.0.0-alpha.10/embedded-hal/CHANGELOG.md
+[#668]: https://github.com/stm32-rs/stm32f4xx-hal/pull/668
+[embedded-hal-1.0.0-alpha.11]: https://github.com/rust-embedded/embedded-hal/blob/v1.0.0-alpha.11/embedded-hal/CHANGELOG.md
 
 ## [v0.16.2] - 2023-06-27
 

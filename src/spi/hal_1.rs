@@ -63,7 +63,7 @@ mod nb {
 
 mod blocking {
     use super::super::{FrameSize, Instance, Spi};
-    use embedded_hal_one::spi::{SpiBus, SpiBusFlush, SpiBusRead, SpiBusWrite};
+    use embedded_hal_one::spi::SpiBus;
 
     impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, BIDI, W>
     where
@@ -76,21 +76,16 @@ mod blocking {
         fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Self::Error> {
             self.transfer(buff, data)
         }
-    }
 
-    impl<SPI, const BIDI: bool, W> SpiBusFlush for Spi<SPI, BIDI, W>
-    where
-        SPI: Instance,
-    {
-        fn flush(&mut self) -> Result<(), Self::Error> {
+        fn read(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
+            for word in words {
+                nb::block!(self.write_nonblocking(W::default()))?;
+                *word = nb::block!(self.read_nonblocking())?;
+            }
+
             Ok(())
         }
-    }
 
-    impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBusWrite<W> for Spi<SPI, BIDI, W>
-    where
-        SPI: Instance,
-    {
         fn write(&mut self, words: &[W]) -> Result<(), Self::Error> {
             for word in words {
                 nb::block!(self.write_nonblocking(*word))?;
@@ -101,18 +96,8 @@ mod blocking {
 
             Ok(())
         }
-    }
 
-    impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBusRead<W> for Spi<SPI, BIDI, W>
-    where
-        SPI: Instance,
-    {
-        fn read(&mut self, words: &mut [W]) -> Result<(), Self::Error> {
-            for word in words {
-                nb::block!(self.write_nonblocking(W::default()))?;
-                *word = nb::block!(self.read_nonblocking())?;
-            }
-
+        fn flush(&mut self) -> Result<(), Self::Error> {
             Ok(())
         }
     }
