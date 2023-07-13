@@ -6,7 +6,6 @@ use crate::rcc::{Enable, Reset};
 use crate::gpio;
 
 use crate::rcc::Clocks;
-use embedded_hal_one::i2c::Operation;
 use fugit::{HertzU32 as Hertz, RateExtU32};
 
 mod hal_02;
@@ -508,25 +507,27 @@ impl<I2C: Instance> I2c<I2C> {
     pub fn transaction<'a>(
         &mut self,
         addr: u8,
-        mut ops: impl Iterator<Item = Operation<'a>>,
+        mut ops: impl Iterator<Item = Hal1Operation<'a>>,
     ) -> Result<(), Error> {
         if let Some(mut prev_op) = ops.next() {
             // 1. Generate Start for operation
             match &prev_op {
-                Operation::Read(_) => self.prepare_read(addr)?,
-                Operation::Write(_) => self.prepare_write(addr)?,
+                Hal1Operation::Read(_) => self.prepare_read(addr)?,
+                Hal1Operation::Write(_) => self.prepare_write(addr)?,
             };
 
             for op in ops {
                 // 2. Execute previous operations.
                 match &mut prev_op {
-                    Operation::Read(rb) => self.read_bytes(rb)?,
-                    Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
+                    Hal1Operation::Read(rb) => self.read_bytes(rb)?,
+                    Hal1Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
                 };
                 // 3. If operation changes type we must generate new start
                 match (&prev_op, &op) {
-                    (Operation::Read(_), Operation::Write(_)) => self.prepare_write(addr)?,
-                    (Operation::Write(_), Operation::Read(_)) => self.prepare_read(addr)?,
+                    (Hal1Operation::Read(_), Hal1Operation::Write(_)) => {
+                        self.prepare_write(addr)?
+                    }
+                    (Hal1Operation::Write(_), Hal1Operation::Read(_)) => self.prepare_read(addr)?,
                     _ => {} // No changes if operation have not changed
                 }
 
@@ -535,8 +536,8 @@ impl<I2C: Instance> I2c<I2C> {
 
             // 4. Now, prev_op is last command use methods variations that will generate stop
             match prev_op {
-                Operation::Read(rb) => self.read_wo_prepare(rb)?,
-                Operation::Write(wb) => self.write_wo_prepare(wb)?,
+                Hal1Operation::Read(rb) => self.read_wo_prepare(rb)?,
+                Hal1Operation::Write(wb) => self.write_wo_prepare(wb)?,
             };
         }
 
@@ -547,27 +548,47 @@ impl<I2C: Instance> I2c<I2C> {
     pub fn transaction_slice(
         &mut self,
         addr: u8,
-        ops_slice: &mut [Operation<'_>],
+        ops_slice: &mut [Hal1Operation<'_>],
     ) -> Result<(), Error> {
-        let mut ops = ops_slice.iter_mut();
+        transaction_impl!(self, addr, ops_slice, Hal1Operation);
+        // Fallthrough is success
+        Ok(())
+    }
+
+    fn transaction_slice_hal_02(
+        &mut self,
+        addr: u8,
+        ops_slice: &mut [Hal02Operation<'_>],
+    ) -> Result<(), Error> {
+        transaction_impl!(self, addr, ops_slice, Hal02Operation);
+        // Fallthrough is success
+        Ok(())
+    }
+}
+
+macro_rules! transaction_impl {
+    ($self:ident, $addr:ident, $ops_slice:ident, $Operation:ident) => {
+        let i2c = $self;
+        let addr = $addr;
+        let mut ops = $ops_slice.iter_mut();
 
         if let Some(mut prev_op) = ops.next() {
             // 1. Generate Start for operation
             match &prev_op {
-                Operation::Read(_) => self.prepare_read(addr)?,
-                Operation::Write(_) => self.prepare_write(addr)?,
+                $Operation::Read(_) => i2c.prepare_read(addr)?,
+                $Operation::Write(_) => i2c.prepare_write(addr)?,
             };
 
             for op in ops {
                 // 2. Execute previous operations.
                 match &mut prev_op {
-                    Operation::Read(rb) => self.read_bytes(rb)?,
-                    Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
+                    $Operation::Read(rb) => i2c.read_bytes(rb)?,
+                    $Operation::Write(wb) => i2c.write_bytes(wb.iter().cloned())?,
                 };
                 // 3. If operation changes type we must generate new start
                 match (&prev_op, &op) {
-                    (Operation::Read(_), Operation::Write(_)) => self.prepare_write(addr)?,
-                    (Operation::Write(_), Operation::Read(_)) => self.prepare_read(addr)?,
+                    ($Operation::Read(_), $Operation::Write(_)) => i2c.prepare_write(addr)?,
+                    ($Operation::Write(_), $Operation::Read(_)) => i2c.prepare_read(addr)?,
                     _ => {} // No changes if operation have not changed
                 }
 
@@ -576,12 +597,13 @@ impl<I2C: Instance> I2c<I2C> {
 
             // 4. Now, prev_op is last command use methods variations that will generate stop
             match prev_op {
-                Operation::Read(rb) => self.read_wo_prepare(rb)?,
-                Operation::Write(wb) => self.write_wo_prepare(wb)?,
+                $Operation::Read(rb) => i2c.read_wo_prepare(rb)?,
+                $Operation::Write(wb) => i2c.write_wo_prepare(wb)?,
             };
         }
-
-        // Fallthrough is success
-        Ok(())
-    }
+    };
 }
+use transaction_impl;
+
+type Hal1Operation<'a> = embedded_hal_one::i2c::Operation<'a>;
+type Hal02Operation<'a> = embedded_hal::blocking::i2c::Operation<'a>;
