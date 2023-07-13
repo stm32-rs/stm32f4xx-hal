@@ -1,6 +1,8 @@
 mod blocking {
     use super::super::{Error, I2c, Instance};
-    use embedded_hal::blocking::i2c::{Read, Write, WriteIter, WriteIterRead, WriteRead};
+    use embedded_hal::blocking::i2c::{
+        Operation, Read, Transactional, Write, WriteIter, WriteIterRead, WriteRead,
+    };
 
     impl<I2C> WriteRead for I2c<I2C>
     where
@@ -70,6 +72,21 @@ mod blocking {
 
         fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
             self.read(addr, buffer)
+        }
+    }
+
+    impl<I2C> Transactional for I2c<I2C>
+    where
+        I2C: Instance,
+    {
+        type Error = Error;
+
+        fn exec<'a>(
+            &mut self,
+            address: u8,
+            operations: &mut [Operation<'a>],
+        ) -> Result<(), Self::Error> {
+            self.transaction_slice_hal_02(address, operations)
         }
     }
 }

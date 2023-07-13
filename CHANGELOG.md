@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- implement `embedded_hal::blocking::i2c::Transactional` for `I2c` [#671]
+
+[#671]: https://github.com/stm32-rs/stm32f4xx-hal/pull/671
+
 ## [v0.17.0] - 2023-07-11
 
 ### Changed
