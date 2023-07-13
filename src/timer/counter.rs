@@ -34,6 +34,7 @@ impl<TIM: Instance> CounterHz<TIM> {
         self.tim.disable_counter();
         // reset counter
         self.tim.reset_counter();
+        self.tim.clear_interrupt_flag(Event::Update);
 
         let (psc, arr) = compute_arr_presc(timeout.raw(), self.clk.raw());
         self.tim.set_prescaler(psc);
@@ -109,6 +110,7 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
         self.tim.disable_counter();
         // reset counter
         self.tim.reset_counter();
+        self.tim.clear_interrupt_flag(Event::Update);
 
         self.tim.set_auto_reload(timeout.ticks() - 1)?;
 
