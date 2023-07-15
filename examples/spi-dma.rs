@@ -3,6 +3,7 @@
 
 // Halt on panic
 use panic_halt as _;
+use stm32f4xx_hal::dma::DmaFlag;
 
 use core::cell::RefCell;
 use cortex_m::interrupt::Mutex;
@@ -100,12 +101,10 @@ fn DMA2_STREAM4() {
         cortex_m::interrupt::free(|cs| G_TRANSFER.borrow(cs).replace(None).unwrap())
     });
 
+    let flags = transfer.flags();
     // Its important to clear fifo errors as the transfer is paused until it is cleared
-    if transfer.is_fifo_error() {
-        transfer.clear_fifo_error();
-    }
-    if transfer.is_transfer_complete() {
-        transfer.clear_transfer_complete();
+    transfer.clear_flags(DmaFlag::FifoError | DmaFlag::TransferComplete);
+    if flags.is_transfer_complete() {
         unsafe {
             static mut BUFFER: [u8; ARRAY_SIZE] = [0; ARRAY_SIZE];
             for (i, b) in BUFFER.iter_mut().enumerate() {

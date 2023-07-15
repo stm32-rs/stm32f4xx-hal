@@ -3,9 +3,10 @@ use core::{marker::PhantomData, mem::transmute};
 use super::{I2c, Instance};
 use crate::dma::{
     config::DmaConfig,
-    traits::{Channel, DMASet, PeriAddress, Stream},
+    traits::{Channel, DMASet, DmaFlagExt, PeriAddress, Stream, StreamISR},
     ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer,
 };
+use crate::ReadFlags;
 
 use nb;
 
@@ -597,19 +598,17 @@ where
 {
     fn handle_dma_interrupt(&mut self) {
         if let Some(tx_t) = &mut self.tx.tx_transfer {
-            let flags = tx_t.all_flags();
-            tx_t.clear_fifo_error();
-            tx_t.clear_transfer_error();
-            tx_t.clear_transfer_complete();
-            if flags.fifo_error {
-                return;
-            }
-            if flags.transfer_error {
-                self.finish_transfer_with_result(Err(Error::TransferError));
-                return;
-            }
+            let flags = tx_t.flags();
 
-            if flags.transfer_complete {
+            if flags.is_fifo_error() {
+                tx_t.clear_fifo_error();
+            } else if flags.is_transfer_error() {
+                tx_t.clear_transfer_error();
+
+                self.finish_transfer_with_result(Err(Error::TransferError));
+            } else if flags.is_transfer_complete() {
+                tx_t.clear_transfer_complete();
+
                 self.finish_transfer_with_result(Ok(()));
 
                 // Wait for BTF
@@ -640,21 +639,15 @@ where
 {
     fn handle_dma_interrupt(&mut self) {
         if let Some(rx_t) = &mut self.rx.rx_transfer {
-            if rx_t.is_fifo_error() {
+            let flags = rx_t.flags();
+
+            if flags.is_fifo_error() {
                 rx_t.clear_fifo_error();
-
-                return;
-            }
-
-            if rx_t.is_transfer_error() {
+            } else if flags.is_transfer_error() {
                 rx_t.clear_transfer_error();
 
                 self.finish_transfer_with_result(Err(Error::TransferError));
-
-                return;
-            }
-
-            if rx_t.is_transfer_complete() {
+            } else if flags.is_transfer_complete() {
                 rx_t.clear_transfer_complete();
 
                 self.finish_transfer_with_result(Ok(()));
@@ -691,21 +684,15 @@ where
     fn handle_dma_interrupt(&mut self) {
         // Handle Transmit
         if let Some(tx_t) = &mut self.tx.tx_transfer {
-            if tx_t.is_fifo_error() {
+            let flags = tx_t.flags();
+
+            if flags.is_fifo_error() {
                 tx_t.clear_fifo_error();
-
-                return;
-            }
-
-            if tx_t.is_transfer_error() {
+            } else if flags.is_transfer_error() {
                 tx_t.clear_transfer_error();
 
                 self.finish_transfer_with_result(Err(Error::TransferError));
-
-                return;
-            }
-
-            if tx_t.is_transfer_complete() {
+            } else if flags.is_transfer_complete() {
                 tx_t.clear_transfer_complete();
 
                 // If we have prepared Rx Transfer, there are write_read command, generate restart signal and do not disable DMA requests
@@ -732,8 +719,6 @@ where
                     // Generate stop and wait for it
                     self.send_stop();
                 }
-
-                return;
             }
 
             // If Transmit handled then receive should not be handled even if exists.
@@ -742,21 +727,15 @@ where
         }
 
         if let Some(rx_t) = &mut self.rx.rx_transfer {
-            if rx_t.is_fifo_error() {
+            let flags = rx_t.flags();
+
+            if flags.is_fifo_error() {
                 rx_t.clear_fifo_error();
-
-                return;
-            }
-
-            if rx_t.is_transfer_error() {
+            } else if flags.is_transfer_error() {
                 rx_t.clear_transfer_error();
 
                 self.finish_transfer_with_result(Err(Error::TransferError));
-
-                return;
-            }
-
-            if rx_t.is_transfer_complete() {
+            } else if flags.is_transfer_complete() {
                 rx_t.clear_transfer_complete();
 
                 self.finish_transfer_with_result(Ok(()));

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
  - complete and rework Dma Stream API [#666]
+ - Use `enumflags2::BitFlags` for interrupt flags and events [#673]
  - SPI bidi takes 2 pins [#526]
  - `Fast Read Quad I/O (EBh)` in `qspi-w25q` example now matches W25QXX datasheet. [#682]
  - `embedded-storage` version bumped to 0.3
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 [#526]: https://github.com/stm32-rs/stm32f4xx-hal/pull/526
 [#666]: https://github.com/stm32-rs/stm32f4xx-hal/pull/666
+[#673]: https://github.com/stm32-rs/stm32f4xx-hal/pull/673
 [#677]: https://github.com/stm32-rs/stm32f4xx-hal/pull/677
 [#678]: https://github.com/stm32-rs/stm32f4xx-hal/pull/678
 [#682]: https://github.com/stm32-rs/stm32f4xx-hal/pull/682

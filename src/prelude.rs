@@ -56,6 +56,10 @@ pub use fugit::RateExtU32 as _fugit_RateExtU32;
 pub use crate::can::CanExt as _stm32f4xx_hal_can_CanExt;
 #[cfg(all(feature = "device-selected", feature = "dac"))]
 pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;
+pub use crate::dma::traits::DmaEventExt as _;
+pub use crate::dma::traits::DmaFlagExt as _;
+pub use crate::dma::traits::Stream as _;
+pub use crate::dma::traits::StreamISR as _;
 pub use crate::gpio::outport::OutPort as _;
 pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
@@ -69,7 +73,6 @@ pub use crate::qei::QeiExt as _stm32f4xx_hal_QeiExt;
 pub use crate::rcc::RccExt as _stm32f4xx_hal_rcc_RccExt;
 #[cfg(all(feature = "device-selected", feature = "rng"))]
 pub use crate::rng::RngExt as _stm32f4xx_hal_rng_RngExt;
-pub use crate::serial::Listen as _stm32f4xx_hal_serial_Listen;
 pub use crate::serial::RxISR as _stm32f4xx_hal_serial_RxISR;
 pub use crate::serial::RxListen as _stm32f4xx_hal_serial_RxListen;
 pub use crate::serial::SerialExt as _stm32f4xx_hal_serial_SerialExt;
@@ -87,3 +90,7 @@ pub use crate::timer::PwmExt as _stm32f4xx_hal_timer_PwmExt;
 pub use crate::timer::SysMonoTimerExt as _stm32f4xx_hal_timer_SysMonoTimerExt;
 pub use crate::timer::SysTimerExt as _stm32f4xx_hal_timer_SysCounterExt;
 pub use crate::timer::TimerExt as _stm32f4xx_hal_timer_TimerExt;
+
+pub use crate::ClearFlags as _;
+pub use crate::Listen as _;
+pub use crate::ReadFlags as _;
