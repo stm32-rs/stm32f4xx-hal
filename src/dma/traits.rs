@@ -19,64 +19,76 @@ pub trait SafePeripheralRead {}
 
 /// Trait for DMA stream interrupt handling.
 pub trait StreamISR: crate::Sealed {
-    /// Clear all interrupts for the DMA stream.
-    fn clear_interrupts(&mut self);
+    /// Clear all interrupts flags for the DMA stream.
+    fn clear_all_flags(&mut self);
 
     /// Clear transfer complete interrupt (tcif) for the DMA stream.
-    fn clear_transfer_complete_interrupt(&mut self);
+    fn clear_transfer_complete_flag(&mut self);
 
-    /// Clear half transfer interrupt (htif) for the DMA stream.
-    fn clear_half_transfer_interrupt(&mut self);
+    /// Clear half transfer interrupt flag (htif) for the DMA stream.
+    fn clear_half_transfer_flag(&mut self);
 
-    /// Clear transfer error interrupt (teif) for the DMA stream.
-    fn clear_transfer_error_interrupt(&mut self);
+    /// Clear transfer error interrupt flag (teif) for the DMA stream.
+    fn clear_transfer_error_flag(&mut self);
 
-    /// Clear direct mode error interrupt (dmeif) for the DMA stream.
-    fn clear_direct_mode_error_interrupt(&mut self);
+    /// Clear direct mode error interrupt flag (dmeif) for the DMA stream.
+    fn clear_direct_mode_error_flag(&mut self);
 
-    /// Clear fifo error interrupt (feif) for the DMA stream.
-    fn clear_fifo_error_interrupt(&mut self);
+    /// Clear fifo error interrupt flag (feif) for the DMA stream.
+    fn clear_fifo_error_flag(&mut self);
+
+    /// Get all interrupts flags a once.
+    ///
+    /// The tuple contain in order:
+    ///  - transfer complete flag
+    ///  - half transfer flag
+    ///  - transfer error flag
+    ///  - direct mode error flag
+    ///  - fifo_error flag
+    fn all_flags(&self) -> DmaFlags;
 
     /// Get transfer complete flag.
-    fn get_transfer_complete_flag() -> bool;
+    fn transfer_complete_flag(&self) -> bool;
 
     /// Get half transfer flag.
-    fn get_half_transfer_flag() -> bool;
+    fn half_transfer_flag(&self) -> bool;
 
     /// Get transfer error flag
-    fn get_transfer_error_flag() -> bool;
-
-    /// Get fifo error flag
-    fn get_fifo_error_flag() -> bool;
+    fn transfer_error_flag(&self) -> bool;
 
     /// Get direct mode error flag
-    fn get_direct_mode_error_flag() -> bool;
+    fn direct_mode_error_flag(&self) -> bool;
+
+    /// Get fifo error flag
+    fn fifo_error_flag(&self) -> bool;
 }
 
 /// Trait for DMA streams types.
 pub trait Stream: StreamISR + crate::Sealed {
     /// Number of the register stream.
     const NUMBER: usize;
-    /// Set the peripheral address (par) for the DMA stream.
+    /// Set the peripheral address (par) of the DMA stream.
     fn set_peripheral_address(&mut self, value: u32);
 
-    /// Set the memory address (m0ar) for the DMA stream.
+    /// Set the memory address (m0ar) of the DMA stream.
     fn set_memory_address(&mut self, value: u32);
 
-    /// Get the memory address (m0ar) for the DMA stream.
-    fn get_memory_address(&self) -> u32;
+    /// Get the memory address (m0ar) of the DMA stream.
+    fn memory_address(&self) -> u32;
 
-    /// Set the double buffer address (m1ar) for the DMA stream.
-    fn set_memory_double_buffer_address(&mut self, value: u32);
+    /// Set the second memory address (m1ar) of the DMA stream. Only relevant with double buffer
+    /// mode.
+    fn set_alternate_memory_address(&mut self, value: u32);
 
-    /// Get the double buffer address (m1ar) for the DMA stream.
-    fn get_memory_double_buffer_address(&self) -> u32;
+    /// Get the second memory address (m1ar) of the DMA stream. Only relevant with double buffer
+    /// mode.
+    fn alternate_memory_address(&self) -> u32;
 
     /// Set the number of transfers (ndt) for the DMA stream.
     fn set_number_of_transfers(&mut self, value: u16);
 
     /// Get the number of transfers (ndt) for the DMA stream.
-    fn get_number_of_transfers() -> u16;
+    fn number_of_transfers(&self) -> u16;
 
     /// Enable the DMA stream.
     ///
@@ -86,42 +98,41 @@ pub trait Stream: StreamISR + crate::Sealed {
     unsafe fn enable(&mut self);
 
     /// Returns the state of the DMA stream.
-    fn is_enabled() -> bool;
+    fn is_enabled(&self) -> bool;
 
     /// Disable the DMA stream.
     ///
-    /// Disabling the stream during an on-going transfer needs to be performed in a certain way to
-    /// prevent problems if the stream is to be re-enabled shortly after, because of that, this
-    /// method will also clear all the stream's interrupt flags if the stream is active.
-    fn disable(&mut self);
+    /// Disabling may not immediate, you must check with [`is_enabled()`](Stream::is_enabled) to
+    /// ensure the stream is correctly disabled. Note that the transfer complete interrupt flag is
+    /// set when the stream is disabled. You need to delete transfer complete interrupt flag before
+    /// re-enabling the stream. It's also advisable to clear all interrupt flag before re-enabling
+    /// the stream.
+    ///
+    /// # Safety
+    ///
+    /// Disabling the stream before end of transfers may produce invalid data.
+    unsafe fn disable(&mut self);
 
     /// Set the channel for the (chsel) the DMA stream.
-    fn set_channel<const C: u8>(&mut self)
-    where
-        ChannelX<C>: Channel;
+    fn set_channel(&mut self, channel: DmaChannel);
 
     /// Set the priority (pl) the DMA stream.
     fn set_priority(&mut self, priority: config::Priority);
+
+    /// Set the peripheral increment offset (pincos)
+    fn set_peripheral_increment_offset(&mut self, value: PeripheralIncrementOffset);
 
     /// Set the memory size (msize) for the DMA stream.
     ///
     /// # Safety
     /// This must have the same alignment of the buffer used in the transfer.
-    /// Valid values:
-    ///     * 0 -> byte
-    ///     * 1 -> half word
-    ///     * 2 -> word
-    unsafe fn set_memory_size(&mut self, size: u8);
+    unsafe fn set_memory_size(&mut self, size: DmaDataSize);
 
     /// Set the peripheral memory size (psize) for the DMA stream.
     ///
     /// # Safety
     /// This must have the same alignment of the peripheral data used in the transfer.
-    /// Valid values:
-    ///     * 0 -> byte
-    ///     * 1 -> half word
-    ///     * 2 -> word
-    unsafe fn set_peripheral_size(&mut self, size: u8);
+    unsafe fn set_peripheral_size(&mut self, size: DmaDataSize);
 
     /// Enable/disable memory increment (minc) for the DMA stream.
     fn set_memory_increment(&mut self, increment: bool);
@@ -129,37 +140,40 @@ pub trait Stream: StreamISR + crate::Sealed {
     /// Enable/disable peripheral increment (pinc) for the DMA stream.
     fn set_peripheral_increment(&mut self, increment: bool);
 
+    /// Enable/disable circular mode (circ) for the DMA stream.
+    fn set_circular_mode(&mut self, value: bool);
+
     /// Set the direction (dir) of the DMA stream.
-    fn set_direction<D: Direction>(&mut self, direction: D);
+    fn set_direction(&mut self, direction: DmaDirection);
 
-    /// Convenience method to configure the 4 common interrupts for the DMA stream.
-    fn set_interrupts_enable(
-        &mut self,
-        transfer_complete: bool,
-        half_transfer: bool,
-        transfer_error: bool,
-        direct_mode_error: bool,
-    );
+    /// Set the flow controller (pfctrl).
+    fn set_flow_controller(&mut self, value: DmaFlowController);
 
-    /// Convenience method to get the value of the 4 common interrupts for the DMA stream.
-    /// The order of the returns are: `transfer_complete`, `half_transfer`, `transfer_error` and
-    /// `direct_mode_error`.
-    fn get_interrupts_enable() -> (bool, bool, bool, bool);
+    /// Convenience method to configure several interrupts of the DMA stream.
+    ///
+    /// Note: fifo_error interrupt is not concerend because it's in a different register
+    fn set_common_interrupts(&mut self, interrupts: DmaCommonInterrupts);
+
+    /// Convenience method to get the value of several interrupts of the DMA stream.  The order of the
+    /// returns are: `transfer_complete`, `half_transfer`, `transfer_error` and `direct_mode_error`
+    ///
+    /// Note: fifo_error interrupt is not returned because it's in a different register
+    fn common_interrupts(&self) -> DmaCommonInterrupts;
 
     /// Enable/disable the transfer complete interrupt (tcie) of the DMA stream.
-    fn set_transfer_complete_interrupt_enable(&mut self, transfer_complete_interrupt: bool);
+    fn set_transfer_complete_interrupt(&mut self, transfer_complete_interrupt: bool);
 
     /// Enable/disable the half transfer interrupt (htie) of the DMA stream.
-    fn set_half_transfer_interrupt_enable(&mut self, half_transfer_interrupt: bool);
+    fn set_half_transfer_interrupt(&mut self, half_transfer_interrupt: bool);
 
     /// Enable/disable the transfer error interrupt (teie) of the DMA stream.
-    fn set_transfer_error_interrupt_enable(&mut self, transfer_error_interrupt: bool);
+    fn set_transfer_error_interrupt(&mut self, transfer_error_interrupt: bool);
 
     /// Enable/disable the direct mode error interrupt (dmeie) of the DMA stream.
-    fn set_direct_mode_error_interrupt_enable(&mut self, direct_mode_error_interrupt: bool);
+    fn set_direct_mode_error_interrupt(&mut self, direct_mode_error_interrupt: bool);
 
     /// Enable/disable the fifo error interrupt (feie) of the DMA stream.
-    fn set_fifo_error_interrupt_enable(&mut self, fifo_error_interrupt: bool);
+    fn set_fifo_error_interrupt(&mut self, fifo_error_interrupt: bool);
 
     /// Enable/disable the double buffer (dbm) of the DMA stream.
     fn set_double_buffer(&mut self, double_buffer: bool);
@@ -177,10 +191,10 @@ pub trait Stream: StreamISR + crate::Sealed {
     fn set_peripheral_burst(&mut self, peripheral_burst: config::BurstMode);
 
     /// Get the current fifo level (fs) of the DMA stream.
-    fn fifo_level() -> FifoLevel;
+    fn fifo_level(&self) -> FifoLevel;
 
     /// Get which buffer is currently in use by the DMA.
-    fn current_buffer() -> CurrentBuffer;
+    fn current_buffer(&self) -> CurrentBuffer;
 }
 
 /// DMA direction.
@@ -246,8 +260,10 @@ impl Instance for DMA2 {
     }
 }
 
-/// A channel that can be configured on a DMA stream.
-pub trait Channel {}
+/// A trait for marker tha represent Channel of a DMA stream.
+pub trait Channel {
+    const VALUE: DmaChannel;
+}
 
 /// Trait to mark a set of Stream, Channel and Direction for a Peripheral as correct together.
 ///

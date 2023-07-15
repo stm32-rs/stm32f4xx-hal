@@ -597,22 +597,22 @@ where
 {
     fn handle_dma_interrupt(&mut self) {
         if let Some(tx_t) = &mut self.tx.tx_transfer {
-            if TX_STREAM::get_fifo_error_flag() {
-                tx_t.clear_fifo_error_interrupt();
+            if tx_t.fifo_error_flag() {
+                tx_t.clear_fifo_error_flag();
 
                 return;
             }
 
-            if TX_STREAM::get_transfer_error_flag() {
-                tx_t.clear_transfer_error_interrupt();
+            if tx_t.transfer_error_flag() {
+                tx_t.clear_transfer_error_flag();
 
                 self.finish_transfer_with_result(Err(Error::TransferError));
 
                 return;
             }
 
-            if TX_STREAM::get_transfer_complete_flag() {
-                tx_t.clear_transfer_complete_interrupt();
+            if tx_t.transfer_complete_flag() {
+                tx_t.clear_transfer_complete_flag();
 
                 self.finish_transfer_with_result(Ok(()));
 
@@ -644,22 +644,22 @@ where
 {
     fn handle_dma_interrupt(&mut self) {
         if let Some(rx_t) = &mut self.rx.rx_transfer {
-            if RX_STREAM::get_fifo_error_flag() {
-                rx_t.clear_fifo_error_interrupt();
+            if rx_t.fifo_error_flag() {
+                rx_t.clear_fifo_error_flag();
 
                 return;
             }
 
-            if RX_STREAM::get_transfer_error_flag() {
-                rx_t.clear_transfer_error_interrupt();
+            if rx_t.transfer_error_flag() {
+                rx_t.clear_transfer_error_flag();
 
                 self.finish_transfer_with_result(Err(Error::TransferError));
 
                 return;
             }
 
-            if RX_STREAM::get_transfer_complete_flag() {
-                rx_t.clear_transfer_complete_interrupt();
+            if rx_t.transfer_complete_flag() {
+                rx_t.clear_transfer_complete_flag();
 
                 self.finish_transfer_with_result(Ok(()));
 
@@ -695,22 +695,22 @@ where
     fn handle_dma_interrupt(&mut self) {
         // Handle Transmit
         if let Some(tx_t) = &mut self.tx.tx_transfer {
-            if TX_STREAM::get_fifo_error_flag() {
-                tx_t.clear_fifo_error_interrupt();
+            if tx_t.fifo_error_flag() {
+                tx_t.clear_fifo_error_flag();
 
                 return;
             }
 
-            if TX_STREAM::get_transfer_error_flag() {
-                tx_t.clear_transfer_error_interrupt();
+            if tx_t.transfer_error_flag() {
+                tx_t.clear_transfer_error_flag();
 
                 self.finish_transfer_with_result(Err(Error::TransferError));
 
                 return;
             }
 
-            if TX_STREAM::get_transfer_complete_flag() {
-                tx_t.clear_transfer_complete_interrupt();
+            if tx_t.transfer_complete_flag() {
+                tx_t.clear_transfer_complete_flag();
 
                 // If we have prepared Rx Transfer, there are write_read command, generate restart signal and do not disable DMA requests
                 // Indicate that we have read after this transmit
@@ -746,22 +746,22 @@ where
         }
 
         if let Some(rx_t) = &mut self.rx.rx_transfer {
-            if RX_STREAM::get_fifo_error_flag() {
-                rx_t.clear_fifo_error_interrupt();
+            if rx_t.fifo_error_flag() {
+                rx_t.clear_fifo_error_flag();
 
                 return;
             }
 
-            if RX_STREAM::get_transfer_error_flag() {
-                rx_t.clear_transfer_error_interrupt();
+            if rx_t.transfer_error_flag() {
+                rx_t.clear_transfer_error_flag();
 
                 self.finish_transfer_with_result(Err(Error::TransferError));
 
                 return;
             }
 
-            if RX_STREAM::get_transfer_complete_flag() {
-                rx_t.clear_transfer_complete_interrupt();
+            if rx_t.transfer_complete_flag() {
+                rx_t.clear_transfer_complete_flag();
 
                 self.finish_transfer_with_result(Ok(()));
 

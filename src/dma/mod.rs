@@ -50,15 +50,113 @@ impl<T> Debug for DMAError<T> {
     }
 }
 
+// most of STM32F4 have 8 DmaChannel
+#[cfg(not(feature = "gpio-f413"))]
+/// Possible Channel of a DMA Stream.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DmaChannel {
+    Channel0 = 0,
+    Channel1 = 1,
+    Channel2 = 2,
+    Channel3 = 3,
+    Channel4 = 4,
+    Channel5 = 5,
+    Channel6 = 6,
+    Channel7 = 7,
+}
+
+//  STM32F413 and STM32F423 have 16 DmaChannel
+#[cfg(feature = "gpio-f413")]
+/// Possible Channel of a DMA Stream.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DmaChannel {
+    Channel0 = 0,
+    Channel1 = 1,
+    Channel2 = 2,
+    Channel3 = 3,
+    Channel4 = 4,
+    Channel5 = 5,
+    Channel6 = 6,
+    Channel7 = 7,
+    Channel8 = 8,
+    Channel9 = 9,
+    Channel10 = 10,
+    Channel11 = 11,
+    Channel12 = 12,
+    Channel13 = 13,
+    Channel14 = 14,
+    Channel15 = 15,
+}
+
+impl Bits<u8> for DmaChannel {
+    fn bits(self) -> u8 {
+        self as u8
+    }
+}
+
+/// Peripheral increment offset size (pincos)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PeripheralIncrementOffset {
+    /// The offset size is linked to the peripheral data size (psize)
+    PeripheralDataSize = 0,
+    /// The offset size is fixed to 4 (32 bits alignement)
+    FixedSize = 1,
+}
+
+impl Bits<bool> for PeripheralIncrementOffset {
+    fn bits(self) -> bool {
+        match self {
+            PeripheralIncrementOffset::PeripheralDataSize => false,
+            PeripheralIncrementOffset::FixedSize => true,
+        }
+    }
+}
+
+/// Size of data transfered during a dma stream request
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DmaDataSize {
+    Byte = 0,
+    HalfWord = 1,
+    Word = 2,
+}
+
+impl Bits<u8> for DmaDataSize {
+    fn bits(self) -> u8 {
+        self as u8
+    }
+}
+
 /// Possible DMA's directions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DmaDirection {
     /// Memory to Memory transfer.
-    MemoryToMemory,
+    MemoryToMemory = 2,
     /// Peripheral to Memory transfer.
-    PeripheralToMemory,
+    PeripheralToMemory = 0,
     /// Memory to Peripheral transfer.
-    MemoryToPeripheral,
+    MemoryToPeripheral = 1,
+}
+
+impl Bits<u8> for DmaDirection {
+    fn bits(self) -> u8 {
+        self as u8
+    }
+}
+
+/// Dma flow controller selection
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DmaFlowController {
+    Dma = 0,
+    Peripheral = 1,
+}
+
+impl Bits<bool> for DmaFlowController {
+    fn bits(self) -> bool {
+        match self {
+            DmaFlowController::Dma => false,
+            DmaFlowController::Peripheral => true,
+        }
+    }
 }
 
 /// DMA from a peripheral to a memory location.
@@ -185,7 +283,7 @@ pub enum CurrentBuffer {
     /// The first buffer (m0ar) is in use.
     FirstBuffer,
     /// The second buffer (m1ar) is in use.
-    DoubleBuffer,
+    SecondBuffer,
 }
 
 impl Not for CurrentBuffer {
@@ -193,11 +291,28 @@ impl Not for CurrentBuffer {
 
     fn not(self) -> Self::Output {
         if self == CurrentBuffer::FirstBuffer {
-            CurrentBuffer::DoubleBuffer
+            CurrentBuffer::SecondBuffer
         } else {
             CurrentBuffer::FirstBuffer
         }
     }
+}
+
+/// Structure to get or set common interrupts setup
+pub struct DmaCommonInterrupts {
+    pub transfer_complete: bool,
+    pub half_transfer: bool,
+    pub transfer_error: bool,
+    pub direct_mode_error: bool,
+}
+
+/// Structure returned by Stream or Transfer all_flags() method.
+pub struct DmaFlags {
+    pub transfer_complete: bool,
+    pub half_transfer: bool,
+    pub transfer_error: bool,
+    pub direct_mode_error: bool,
+    pub fifo_error: bool,
 }
 
 /// Stream on the DMA controller.
@@ -303,19 +418,19 @@ where
     }
 
     #[inline(always)]
-    fn get_memory_address(&self) -> u32 {
+    fn memory_address(&self) -> u32 {
         unsafe { Self::st() }.m0ar.read().m0a().bits()
     }
 
     #[inline(always)]
-    fn set_memory_double_buffer_address(&mut self, value: u32) {
+    fn set_alternate_memory_address(&mut self, value: u32) {
         unsafe { Self::st() }
             .m1ar
             .write(|w| unsafe { w.m1a().bits(value) });
     }
 
     #[inline(always)]
-    fn get_memory_double_buffer_address(&self) -> u32 {
+    fn alternate_memory_address(&self) -> u32 {
         unsafe { Self::st() }.m1ar.read().m1a().bits()
     }
 
@@ -325,7 +440,7 @@ where
     }
 
     #[inline(always)]
-    fn get_number_of_transfers() -> u16 {
+    fn number_of_transfers(&self) -> u16 {
         unsafe { Self::st() }.ndtr.read().ndt().bits()
     }
 
@@ -335,31 +450,20 @@ where
     }
 
     #[inline(always)]
-    fn is_enabled() -> bool {
+    fn is_enabled(&self) -> bool {
         unsafe { Self::st() }.cr.read().en().bit_is_set()
     }
 
-    fn disable(&mut self) {
-        if Self::is_enabled() {
-            // Aborting an on-going transfer might cause interrupts to fire, disable
-            // them
-            let (tc, ht, te, dm) = Self::get_interrupts_enable();
-            self.set_interrupts_enable(false, false, false, false);
-
-            unsafe { Self::st() }.cr.modify(|_, w| w.en().clear_bit());
-            while Self::is_enabled() {}
-
-            self.clear_interrupts();
-            self.set_interrupts_enable(tc, ht, te, dm);
-        }
+    #[inline(always)]
+    unsafe fn disable(&mut self) {
+        unsafe { Self::st() }.cr.modify(|_, w| w.en().clear_bit());
     }
 
     #[inline(always)]
-    fn set_channel<const C: u8>(&mut self)
-    where
-        ChannelX<C>: Channel,
-    {
-        unsafe { Self::st() }.cr.modify(|_, w| w.chsel().bits(C));
+    fn set_channel(&mut self, channel: DmaChannel) {
+        unsafe { Self::st() }
+            .cr
+            .modify(|_, w| w.chsel().bits(channel.bits()));
     }
 
     #[inline(always)]
@@ -370,13 +474,20 @@ where
     }
 
     #[inline(always)]
-    unsafe fn set_memory_size(&mut self, size: u8) {
-        Self::st().cr.modify(|_, w| w.msize().bits(size));
+    fn set_peripheral_increment_offset(&mut self, value: PeripheralIncrementOffset) {
+        unsafe { Self::st() }
+            .cr
+            .modify(|_, w| w.pincos().bit(value.bits()));
     }
 
     #[inline(always)]
-    unsafe fn set_peripheral_size(&mut self, size: u8) {
-        Self::st().cr.modify(|_, w| w.psize().bits(size));
+    unsafe fn set_memory_size(&mut self, size: DmaDataSize) {
+        Self::st().cr.modify(|_, w| w.msize().bits(size.bits()));
+    }
+
+    #[inline(always)]
+    unsafe fn set_peripheral_size(&mut self, size: DmaDataSize) {
+        Self::st().cr.modify(|_, w| w.psize().bits(size.bits()));
     }
 
     #[inline(always)]
@@ -394,73 +505,79 @@ where
     }
 
     #[inline(always)]
-    fn set_direction<D: Direction>(&mut self, direction: D) {
+    fn set_circular_mode(&mut self, value: bool) {
+        unsafe { Self::st() }.cr.modify(|_, w| w.circ().bit(value));
+    }
+
+    #[inline(always)]
+    fn set_direction(&mut self, direction: DmaDirection) {
         unsafe { Self::st() }
             .cr
             .modify(|_, w| unsafe { w.dir().bits(direction.bits()) });
     }
 
     #[inline(always)]
-    fn set_interrupts_enable(
-        &mut self,
-        transfer_complete: bool,
-        half_transfer: bool,
-        transfer_error: bool,
-        direct_mode_error: bool,
-    ) {
+    fn set_flow_controller(&mut self, value: DmaFlowController) {
+        unsafe { Self::st() }
+            .cr
+            .modify(|_, w| w.pfctrl().bit(value.bits()));
+    }
+
+    #[inline(always)]
+    fn set_common_interrupts(&mut self, interrupts: DmaCommonInterrupts) {
         unsafe { Self::st() }.cr.modify(|_, w| {
             w.tcie()
-                .bit(transfer_complete)
+                .bit(interrupts.transfer_complete)
                 .htie()
-                .bit(half_transfer)
+                .bit(interrupts.half_transfer)
                 .teie()
-                .bit(transfer_error)
+                .bit(interrupts.transfer_error)
                 .dmeie()
-                .bit(direct_mode_error)
+                .bit(interrupts.direct_mode_error)
         });
     }
 
     #[inline(always)]
-    fn get_interrupts_enable() -> (bool, bool, bool, bool) {
+    fn common_interrupts(&self) -> DmaCommonInterrupts {
         let cr = unsafe { Self::st() }.cr.read();
-        (
-            cr.tcie().bit_is_set(),
-            cr.htie().bit_is_set(),
-            cr.teie().bit_is_set(),
-            cr.dmeie().bit_is_set(),
-        )
+        DmaCommonInterrupts {
+            transfer_complete: cr.tcie().bit_is_set(),
+            half_transfer: cr.htie().bit_is_set(),
+            transfer_error: cr.teie().bit_is_set(),
+            direct_mode_error: cr.dmeie().bit_is_set(),
+        }
     }
 
     #[inline(always)]
-    fn set_transfer_complete_interrupt_enable(&mut self, transfer_complete_interrupt: bool) {
+    fn set_transfer_complete_interrupt(&mut self, transfer_complete_interrupt: bool) {
         unsafe { Self::st() }
             .cr
             .modify(|_, w| w.tcie().bit(transfer_complete_interrupt));
     }
 
     #[inline(always)]
-    fn set_half_transfer_interrupt_enable(&mut self, half_transfer_interrupt: bool) {
+    fn set_half_transfer_interrupt(&mut self, half_transfer_interrupt: bool) {
         unsafe { Self::st() }
             .cr
             .modify(|_, w| w.htie().bit(half_transfer_interrupt));
     }
 
     #[inline(always)]
-    fn set_transfer_error_interrupt_enable(&mut self, transfer_error_interrupt: bool) {
+    fn set_transfer_error_interrupt(&mut self, transfer_error_interrupt: bool) {
         unsafe { Self::st() }
             .cr
             .modify(|_, w| w.teie().bit(transfer_error_interrupt));
     }
 
     #[inline(always)]
-    fn set_direct_mode_error_interrupt_enable(&mut self, direct_mode_error_interrupt: bool) {
+    fn set_direct_mode_error_interrupt(&mut self, direct_mode_error_interrupt: bool) {
         unsafe { Self::st() }
             .cr
             .modify(|_, w| w.dmeie().bit(direct_mode_error_interrupt));
     }
 
     #[inline(always)]
-    fn set_fifo_error_interrupt_enable(&mut self, fifo_error_interrupt: bool) {
+    fn set_fifo_error_interrupt(&mut self, fifo_error_interrupt: bool) {
         unsafe { Self::st() }
             .fcr
             .modify(|_, w| w.feie().bit(fifo_error_interrupt));
@@ -503,13 +620,13 @@ where
     }
 
     #[inline(always)]
-    fn fifo_level() -> FifoLevel {
+    fn fifo_level(&self) -> FifoLevel {
         unsafe { Self::st() }.fcr.read().fs().bits().into()
     }
 
-    fn current_buffer() -> CurrentBuffer {
+    fn current_buffer(&self) -> CurrentBuffer {
         if unsafe { Self::st() }.cr.read().ct().bit_is_set() {
-            CurrentBuffer::DoubleBuffer
+            CurrentBuffer::SecondBuffer
         } else {
             CurrentBuffer::FirstBuffer
         }
@@ -526,7 +643,7 @@ macro_rules! dma_stream {
             impl<I: Instance> StreamISR for StreamX<I, $number> where Self: crate::Sealed {
 
                 #[inline(always)]
-                fn clear_interrupts(&mut self) {
+                fn clear_all_flags(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
@@ -540,7 +657,7 @@ macro_rules! dma_stream {
                 }
 
                 #[inline(always)]
-                fn clear_transfer_complete_interrupt(&mut self) {
+                fn clear_transfer_complete_flag(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
@@ -548,7 +665,7 @@ macro_rules! dma_stream {
                 }
 
                 #[inline(always)]
-                fn clear_half_transfer_interrupt(&mut self) {
+                fn clear_half_transfer_flag(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
@@ -556,7 +673,7 @@ macro_rules! dma_stream {
                 }
 
                 #[inline(always)]
-                fn clear_transfer_error_interrupt(&mut self) {
+                fn clear_transfer_error_flag(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
@@ -564,7 +681,7 @@ macro_rules! dma_stream {
                 }
 
                 #[inline(always)]
-                fn clear_direct_mode_error_interrupt(&mut self) {
+                fn clear_direct_mode_error_flag(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
@@ -572,7 +689,7 @@ macro_rules! dma_stream {
                 }
 
                 #[inline(always)]
-                fn clear_fifo_error_interrupt(&mut self) {
+                fn clear_fifo_error_flag(&mut self) {
                     //NOTE(unsafe) Atomic write with no side-effects and we only access the bits
                     // that belongs to the StreamX
                     let dma = unsafe { &*I::ptr() };
@@ -580,39 +697,55 @@ macro_rules! dma_stream {
                 }
 
                 #[inline(always)]
-                fn get_transfer_complete_flag() -> bool {
+                fn all_flags(&self) -> DmaFlags
+                {
+                    //NOTE(unsafe) Atomic read with no side effects
+                    let dma = unsafe { &*I::ptr() };
+                    DmaFlags{
+                        transfer_complete: dma.$isr.read().$tcisr().bit_is_set(),
+                        half_transfer: dma.$isr.read().$htisr().bit_is_set(),
+                        transfer_error: dma.$isr.read().$teisr().bit_is_set(),
+                        direct_mode_error: dma.$isr.read().$dmeisr().bit_is_set(),
+                        fifo_error: dma.$isr.read().$feisr().bit_is_set(),
+                    }
+
+                }
+
+                #[inline(always)]
+                fn transfer_complete_flag(&self) -> bool {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.$isr.read().$tcisr().bit_is_set()
                 }
 
                 #[inline(always)]
-                fn get_half_transfer_flag() -> bool {
+                fn half_transfer_flag(&self) -> bool {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.$isr.read().$htisr().bit_is_set()
                 }
 
                 #[inline(always)]
-                fn get_transfer_error_flag() -> bool {
+                fn transfer_error_flag(&self) -> bool {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.$isr.read().$teisr().bit_is_set()
                 }
 
                 #[inline(always)]
-                fn get_fifo_error_flag() -> bool {
+                fn direct_mode_error_flag(&self) -> bool {
+                    //NOTE(unsafe) Atomic read with no side effects
+                    let dma = unsafe { &*I::ptr() };
+                    dma.$isr.read().$dmeisr().bit_is_set()
+                }
+
+                #[inline(always)]
+                fn fifo_error_flag(&self) -> bool {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     dma.$isr.read().$feisr().bit_is_set()
                 }
 
-                #[inline(always)]
-                fn get_direct_mode_error_flag() -> bool {
-                    //NOTE(unsafe) Atomic read with no side effects
-                    let dma = unsafe { &*I::ptr() };
-                    dma.$isr.read().$dmeisr().bit_is_set()
-                }
             }
 
         )+
@@ -635,10 +768,12 @@ dma_stream!(
 pub struct ChannelX<const C: u8>;
 
 macro_rules! dma_channel {
-    ($(($name:ident, $value:literal)),+ $(,)*) => {
+    ($(($name:ident, $num:literal)),+ $(,)*) => {
         $(
-            impl Channel for ChannelX<$value> {}
-            pub type $name = ChannelX<$value>;
+            impl Channel for ChannelX<$num> {
+                const VALUE: DmaChannel = DmaChannel::$name ;
+            }
+            pub type $name = ChannelX<$num>;
         )+
     };
 }
@@ -871,6 +1006,26 @@ where
     transfer_length: u16,
 }
 
+// utility function to disable gracefully the stream. It disable stream, wait until stream is
+// disabled and prevent during process
+fn stream_disable<T: Stream>(stream: &mut T) {
+    if stream.is_enabled() {
+        // Aborting an on-going transfer might cause interrupts to fire, disable
+        let interrupts = stream.common_interrupts();
+        stream.set_common_interrupts(DmaCommonInterrupts {
+            transfer_complete: false,
+            half_transfer: false,
+            transfer_error: false,
+            direct_mode_error: false,
+        });
+        unsafe { stream.disable() };
+        while stream.is_enabled() {}
+
+        stream.clear_all_flags();
+        stream.set_common_interrupts(interrupts);
+    }
+}
+
 impl<STREAM, const CHANNEL: u8, PERIPHERAL, BUF>
     Transfer<STREAM, CHANNEL, PERIPHERAL, MemoryToPeripheral, BUF>
 where
@@ -961,14 +1116,14 @@ where
         F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
     {
         if self.double_buf.is_some() {
-            if !STREAM::get_transfer_complete_flag() {
+            if !self.stream.transfer_complete_flag() {
                 return Err(DMAError::NotReady(()));
             }
-            self.stream.clear_transfer_complete_interrupt();
+            self.stream.clear_transfer_complete_flag();
 
-            let current_buffer = STREAM::current_buffer();
+            let current_buffer = self.stream.current_buffer();
             // double buffering, unwrap can never fail
-            let db = if current_buffer == CurrentBuffer::DoubleBuffer {
+            let db = if current_buffer == CurrentBuffer::SecondBuffer {
                 self.buf.take().unwrap()
             } else {
                 self.double_buf.take().unwrap()
@@ -982,8 +1137,8 @@ where
             self.next_transfer_with_common(new_buf, ptr_and_len, true, current_buffer);
             return Ok(r.1);
         }
-        self.stream.disable();
-        self.stream.clear_transfer_complete_interrupt();
+        stream_disable(&mut self.stream);
+        self.stream.clear_transfer_complete_flag();
 
         // "No re-ordering of reads and writes across this point is allowed"
         compiler_fence(Ordering::SeqCst);
@@ -1131,14 +1286,14 @@ where
         F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
     {
         if self.double_buf.is_some() {
-            if !STREAM::get_transfer_complete_flag() {
+            if !self.stream.transfer_complete_flag() {
                 return Err(DMAError::NotReady(()));
             }
-            self.stream.clear_transfer_complete_interrupt();
+            self.stream.clear_transfer_complete_flag();
 
-            let current_buffer = STREAM::current_buffer();
+            let current_buffer = self.stream.current_buffer();
             // double buffering, unwrap can never fail
-            let db = if current_buffer == CurrentBuffer::DoubleBuffer {
+            let db = if current_buffer == CurrentBuffer::SecondBuffer {
                 self.buf.take().unwrap()
             } else {
                 self.double_buf.take().unwrap()
@@ -1152,8 +1307,8 @@ where
             self.next_transfer_with_common(new_buf, ptr_and_len, true, current_buffer);
             return Ok(r.1);
         }
-        self.stream.disable();
-        self.stream.clear_transfer_complete_interrupt();
+        stream_disable(&mut self.stream);
+        self.stream.clear_transfer_complete_flag();
 
         // "No re-ordering of reads and writes across this point is allowed"
         compiler_fence(Ordering::SeqCst);
@@ -1248,8 +1403,8 @@ where
     where
         F: FnOnce(BUF, CurrentBuffer) -> (BUF, T),
     {
-        self.stream.disable();
-        self.stream.clear_transfer_complete_interrupt();
+        stream_disable(&mut self.stream);
+        self.stream.clear_transfer_complete_flag();
 
         // "No re-ordering of reads and writes across this point is allowed"
         compiler_fence(Ordering::SeqCst);
@@ -1299,14 +1454,14 @@ where
         F: FnOnce(&mut PERIPHERAL),
     {
         f(&mut self.peripheral);
-        self.stream.disable()
+        stream_disable(&mut self.stream)
     }
 
     /// Stops the stream and returns the underlying resources.
     pub fn release(mut self) -> (STREAM, PERIPHERAL, BUF, Option<BUF>) {
-        self.stream.disable();
+        stream_disable(&mut self.stream);
         compiler_fence(Ordering::SeqCst);
-        self.stream.clear_interrupts();
+        self.stream.clear_all_flags();
 
         unsafe {
             let stream = ptr::read(&self.stream);
@@ -1318,40 +1473,82 @@ where
         }
     }
 
-    /// Clear all interrupts for the DMA stream.
+    /// Get the number of remaining transfers (ndt) of the underlying DMA stream.
+    pub fn number_of_transfers(&self) -> u16 {
+        self.stream.number_of_transfers()
+    }
+
+    /// Clear all interrupts flags for the DMA stream.
     #[inline(always)]
-    pub fn clear_interrupts(&mut self) {
-        self.stream.clear_interrupts();
+    pub fn clear_all_flags(&mut self) {
+        self.stream.clear_all_flags();
     }
 
     /// Clear transfer complete interrupt (tcif) for the DMA stream.
     #[inline(always)]
-    pub fn clear_transfer_complete_interrupt(&mut self) {
-        self.stream.clear_transfer_complete_interrupt();
+    pub fn clear_transfer_complete_flag(&mut self) {
+        self.stream.clear_transfer_complete_flag();
     }
 
     /// Clear half transfer interrupt (htif) for the DMA stream.
     #[inline(always)]
-    pub fn clear_half_transfer_interrupt(&mut self) {
-        self.stream.clear_half_transfer_interrupt();
+    pub fn clear_half_transfer_flag(&mut self) {
+        self.stream.clear_half_transfer_flag();
     }
 
     /// Clear transfer error interrupt (teif) for the DMA stream.
     #[inline(always)]
-    pub fn clear_transfer_error_interrupt(&mut self) {
-        self.stream.clear_transfer_error_interrupt();
+    pub fn clear_transfer_error_flag(&mut self) {
+        self.stream.clear_transfer_error_flag();
     }
 
     /// Clear direct mode error interrupt (dmeif) for the DMA stream.
     #[inline(always)]
-    pub fn clear_direct_mode_error_interrupt(&mut self) {
-        self.stream.clear_direct_mode_error_interrupt();
+    pub fn clear_direct_mode_error_flag(&mut self) {
+        self.stream.clear_direct_mode_error_flag();
     }
 
     /// Clear fifo error interrupt (feif) for the DMA stream.
     #[inline(always)]
-    pub fn clear_fifo_error_interrupt(&mut self) {
-        self.stream.clear_fifo_error_interrupt();
+    pub fn clear_fifo_error_flag(&mut self) {
+        self.stream.clear_fifo_error_flag();
+    }
+
+    /// Get all interrupts flags a once.
+    ///
+    /// The tuple contain in order:
+    ///  - transfer complete flag
+    ///  - half transfer flag
+    ///  - transfer error flag
+    ///  - direct mode error flag
+    ///  - fifo_error flag
+    pub fn all_flags(&self) -> DmaFlags {
+        self.stream.all_flags()
+    }
+
+    /// Get transfer complete flag.
+    pub fn transfer_complete_flag(&self) -> bool {
+        self.stream.transfer_complete_flag()
+    }
+
+    /// Get half transfer flag.
+    pub fn half_transfer_flag(&self) -> bool {
+        self.stream.half_transfer_flag()
+    }
+
+    /// Get transfer error flag
+    pub fn transfer_error_flag(&self) -> bool {
+        self.stream.transfer_error_flag()
+    }
+
+    /// Get direct mode error flag
+    pub fn direct_mode_error_flag(&self) -> bool {
+        self.stream.direct_mode_error_flag()
+    }
+
+    /// Get fifo error flag
+    pub fn fifo_error_flag(&self) -> bool {
+        self.stream.fifo_error_flag()
     }
 
     /// Get the underlying stream of the transfer.
@@ -1361,34 +1558,40 @@ where
     /// This implementation relies on several configurations points in order to be sound, this
     /// method can void that. The use of this method is completely discouraged, only use it if you
     /// know the internals of this API in its entirety.
-    pub unsafe fn get_stream(&mut self) -> &mut STREAM {
+    pub unsafe fn stream(&mut self) -> &mut STREAM {
         &mut self.stream
     }
 
     /// Wait for the transfer to complete.
     #[inline(always)]
     pub fn wait(&self) {
-        while !STREAM::get_transfer_complete_flag() {}
+        while !self.stream.transfer_complete_flag() {}
     }
 
     /// Applies all fields in DmaConfig.
     fn apply_config(stream: &mut STREAM, config: config::DmaConfig) {
-        let msize = mem::size_of::<<PERIPHERAL as PeriAddress>::MemSize>() / 2;
+        let msize = match mem::size_of::<<PERIPHERAL as PeriAddress>::MemSize>() {
+            1 => DmaDataSize::Byte,
+            2 => DmaDataSize::HalfWord,
+            4 => DmaDataSize::Word,
+            //this case can only happen on wrong implemention of PeriAddress::MemSize
+            _ => DmaDataSize::Word,
+        };
 
-        stream.clear_interrupts();
+        stream.clear_all_flags();
         stream.set_priority(config.priority);
         // NOTE(unsafe) These values are correct because of the invariants of PeriAddress
         unsafe {
-            stream.set_memory_size(msize as u8);
-            stream.set_peripheral_size(msize as u8);
+            stream.set_memory_size(msize);
+            stream.set_peripheral_size(msize);
         }
         stream.set_memory_increment(config.memory_increment);
         stream.set_peripheral_increment(config.peripheral_increment);
-        stream.set_transfer_complete_interrupt_enable(config.transfer_complete_interrupt);
-        stream.set_half_transfer_interrupt_enable(config.half_transfer_interrupt);
-        stream.set_transfer_error_interrupt_enable(config.transfer_error_interrupt);
-        stream.set_direct_mode_error_interrupt_enable(config.direct_mode_error_interrupt);
-        stream.set_fifo_error_interrupt_enable(config.fifo_error_interrupt);
+        stream.set_transfer_complete_interrupt(config.transfer_complete_interrupt);
+        stream.set_half_transfer_interrupt(config.half_transfer_interrupt);
+        stream.set_transfer_error_interrupt(config.transfer_error_interrupt);
+        stream.set_direct_mode_error_interrupt(config.direct_mode_error_interrupt);
+        stream.set_fifo_error_interrupt(config.fifo_error_interrupt);
         stream.set_double_buffer(config.double_buffer);
         stream.set_fifo_threshold(config.fifo_threshold);
         stream.set_fifo_enable(config.fifo_enable);
@@ -1404,13 +1607,13 @@ where
         buf: (u32, u16),
         db: Option<(u32, u16)>,
     ) -> u16 {
-        stream.disable();
+        stream_disable(stream);
 
         // Set the channel
-        stream.set_channel::<CHANNEL>();
+        stream.set_channel(ChannelX::<CHANNEL>::VALUE);
 
         // Set peripheral to memory mode
-        stream.set_direction(DIR::new());
+        stream.set_direction(DIR::direction());
         let (buf_ptr, buf_len) = buf;
 
         // Set the memory address
@@ -1434,7 +1637,7 @@ where
                 // Double buffer is the source in mem2mem mode
                 stream.set_peripheral_address(db_ptr);
             } else {
-                stream.set_memory_double_buffer_address(db_ptr);
+                stream.set_alternate_memory_address(db_ptr);
             }
             Some(db_len)
         } else {
@@ -1464,10 +1667,10 @@ where
         double_buffering: bool,
     ) -> Result<(BUF, CurrentBuffer), DMAError<BUF>> {
         if double_buffering {
-            if !STREAM::get_transfer_complete_flag() {
+            if !self.stream.transfer_complete_flag() {
                 return Err(DMAError::NotReady(new_buf));
             }
-            self.stream.clear_transfer_complete_interrupt();
+            self.stream.clear_transfer_complete_flag();
             let (new_buf_ptr, new_buf_len) = ptr_and_len;
 
             // We can't change the transfer length while double buffering
@@ -1475,14 +1678,14 @@ where
                 return Err(DMAError::SmallBuffer(new_buf));
             }
 
-            if STREAM::current_buffer() == CurrentBuffer::DoubleBuffer {
+            if self.stream.current_buffer() == CurrentBuffer::SecondBuffer {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
                 self.stream.set_memory_address(new_buf_ptr);
 
                 // Check if an overrun occurred, the buffer address won't be updated in that case
-                if self.stream.get_memory_address() != new_buf_ptr {
-                    self.stream.clear_transfer_complete_interrupt();
+                if self.stream.memory_address() != new_buf_ptr {
+                    self.stream.clear_transfer_complete_flag();
                     return Err(DMAError::Overrun(new_buf));
                 }
 
@@ -1496,11 +1699,11 @@ where
             } else {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
-                self.stream.set_memory_double_buffer_address(new_buf_ptr);
+                self.stream.set_alternate_memory_address(new_buf_ptr);
 
                 // Check if an overrun occurred, the buffer address won't be updated in that case
-                if self.stream.get_memory_double_buffer_address() != new_buf_ptr {
-                    self.stream.clear_transfer_complete_interrupt();
+                if self.stream.alternate_memory_address() != new_buf_ptr {
+                    self.stream.clear_transfer_complete_flag();
                     return Err(DMAError::Overrun(new_buf));
                 }
 
@@ -1510,11 +1713,11 @@ where
                 let old_buf = self.double_buf.replace(new_buf);
 
                 // double buffering, unwrap can never fail
-                return Ok((old_buf.unwrap(), CurrentBuffer::DoubleBuffer));
+                return Ok((old_buf.unwrap(), CurrentBuffer::SecondBuffer));
             }
         }
-        self.stream.disable();
-        self.stream.clear_transfer_complete_interrupt();
+        stream_disable(&mut self.stream);
+        self.stream.clear_transfer_complete_flag();
 
         // "No re-ordering of reads and writes across this point is allowed"
         compiler_fence(Ordering::SeqCst);
@@ -1555,7 +1758,7 @@ where
             // We don't know how long the closure took to complete, we might have changed the
             // current buffer twice (or any even number of times) and got back to the same buffer
             // we had in the beginning of the method, check for that
-            if STREAM::get_transfer_complete_flag() {
+            if self.stream.transfer_complete_flag() {
                 // If this is true, then RAM corruption might have occurred, there's nothing we
                 // can do apart from panicking.
                 // TODO: Is this the best solution ? The closure based approach seems necessary
@@ -1563,14 +1766,14 @@ where
                 panic!("Overrun");
             }
 
-            if current_buffer == CurrentBuffer::DoubleBuffer {
+            if current_buffer == CurrentBuffer::SecondBuffer {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
                 self.stream.set_memory_address(new_buf_ptr);
 
                 // Check again if an overrun occurred, the buffer address won't be updated in that
                 // case
-                if self.stream.get_memory_address() != new_buf_ptr {
+                if self.stream.memory_address() != new_buf_ptr {
                     panic!("Overrun");
                 }
 
@@ -1581,9 +1784,9 @@ where
             } else {
                 // "Preceding reads and writes cannot be moved past subsequent writes"
                 compiler_fence(Ordering::Release);
-                self.stream.set_memory_double_buffer_address(new_buf_ptr);
+                self.stream.set_alternate_memory_address(new_buf_ptr);
 
-                if self.stream.get_memory_double_buffer_address() != new_buf_ptr {
+                if self.stream.alternate_memory_address() != new_buf_ptr {
                     panic!("Overrun");
                 }
 
@@ -1610,7 +1813,7 @@ where
     PERIPHERAL: PeriAddress,
 {
     fn drop(&mut self) {
-        self.stream.disable();
+        stream_disable(&mut self.stream);
         compiler_fence(Ordering::SeqCst);
     }
 }
