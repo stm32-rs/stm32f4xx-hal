@@ -9,8 +9,8 @@ mod app {
     use embedded_hal::spi::{Mode, Phase, Polarity};
     use hal::{
         dma::{
-            config::DmaConfig, traits::StreamISR, MemoryToPeripheral, PeripheralToMemory, Stream0,
-            Stream5, StreamsTuple, Transfer,
+            config::DmaConfig, MemoryToPeripheral, PeripheralToMemory, Stream0, Stream5,
+            StreamsTuple, Transfer,
         },
         gpio::{gpioc::PC13, GpioExt, Output, PushPull},
         pac::{DMA1, SPI3},
@@ -138,50 +138,40 @@ mod app {
     // The led lights up if the first byte we receive is a 1, it turns off otherwise
     #[task(binds = DMA1_STREAM0, shared = [rx_transfer, led], local = [rx_buffer])]
     fn on_receiving(cx: on_receiving::Context) {
-        let on_receiving::Context { mut shared, local } = cx;
-        if Stream0::<DMA1>::get_fifo_error_flag() {
-            shared
-                .rx_transfer
-                .lock(|spi_dma| spi_dma.clear_fifo_error_interrupt());
-        }
-        if Stream0::<DMA1>::get_transfer_complete_flag() {
-            shared
-                .rx_transfer
-                .lock(|spi_dma| spi_dma.clear_transfer_complete_interrupt());
-            let filled_buffer = shared.rx_transfer.lock(|spi_dma| {
-                let (result, _) = spi_dma
-                    .next_transfer(local.rx_buffer.take().unwrap())
-                    .unwrap();
-                result
-            });
-            match filled_buffer[0] {
-                1 => shared.led.lock(|led| led.set_low()),
-                _ => shared.led.lock(|led| led.set_high()),
+        let mut rx_transfer = cx.shared.rx_transfer;
+        let mut led = cx.shared.led;
+        let rx_buffer = cx.local.rx_buffer;
+        rx_transfer.lock(|transfer| {
+            if transfer.is_fifo_error() {
+                transfer.clear_fifo_error();
             }
-            *local.rx_buffer = Some(filled_buffer);
-        }
+            if transfer.is_transfer_complete() {
+                transfer.clear_transfer_complete();
+
+                let (filled_buffer, _) = transfer.next_transfer(rx_buffer.take().unwrap()).unwrap();
+                match filled_buffer[0] {
+                    1 => led.lock(|led| led.set_low()),
+                    _ => led.lock(|led| led.set_high()),
+                }
+                *rx_buffer = Some(filled_buffer);
+            }
+        });
     }
 
     // We either send [1,2,3] or [4,5,6] depending on which buffer was loaded
-    #[task(binds = DMA1_STREAM5, shared = [tx_transfer, led], local = [tx_buffer])]
+    #[task(binds = DMA1_STREAM5, shared = [tx_transfer], local = [tx_buffer])]
     fn on_sending(cx: on_sending::Context) {
-        let on_sending::Context { mut shared, local } = cx;
-        if Stream5::<DMA1>::get_fifo_error_flag() {
-            shared
-                .tx_transfer
-                .lock(|spi_dma| spi_dma.clear_fifo_error_interrupt());
-        }
-        if Stream5::<DMA1>::get_transfer_complete_flag() {
-            shared
-                .tx_transfer
-                .lock(|spi_dma| spi_dma.clear_transfer_complete_interrupt());
-            let filled_buffer = shared.tx_transfer.lock(|spi_dma| {
-                let (result, _) = spi_dma
-                    .next_transfer(local.tx_buffer.take().unwrap())
-                    .unwrap();
-                result
-            });
-            *local.tx_buffer = Some(filled_buffer);
-        }
+        let mut tx_transfer = cx.shared.tx_transfer;
+        let tx_buffer = cx.local.tx_buffer;
+        tx_transfer.lock(|transfer| {
+            if transfer.is_fifo_error() {
+                transfer.clear_fifo_error();
+            }
+            if transfer.is_transfer_complete() {
+                transfer.clear_transfer_complete();
+                let (filled_buffer, _) = transfer.next_transfer(tx_buffer.take().unwrap()).unwrap();
+                *tx_buffer = Some(filled_buffer);
+            }
+        });
     }
 }

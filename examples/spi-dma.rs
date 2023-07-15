@@ -10,7 +10,7 @@ use cortex_m_rt::entry;
 use embedded_hal::spi::{Mode, Phase, Polarity};
 use stm32f4xx_hal::pac::interrupt;
 use stm32f4xx_hal::{
-    dma::{config, traits::StreamISR, MemoryToPeripheral, Stream4, StreamsTuple, Transfer},
+    dma::{config, MemoryToPeripheral, Stream4, StreamsTuple, Transfer},
     gpio::Speed,
     pac,
     prelude::*,
@@ -101,11 +101,11 @@ fn DMA2_STREAM4() {
     });
 
     // Its important to clear fifo errors as the transfer is paused until it is cleared
-    if Stream4::<pac::DMA1>::get_fifo_error_flag() {
-        transfer.clear_fifo_error_interrupt();
+    if transfer.is_fifo_error() {
+        transfer.clear_fifo_error();
     }
-    if Stream4::<pac::DMA1>::get_transfer_complete_flag() {
-        transfer.clear_transfer_complete_interrupt();
+    if transfer.is_transfer_complete() {
+        transfer.clear_transfer_complete();
         unsafe {
             static mut BUFFER: [u8; ARRAY_SIZE] = [0; ARRAY_SIZE];
             for (i, b) in BUFFER.iter_mut().enumerate() {

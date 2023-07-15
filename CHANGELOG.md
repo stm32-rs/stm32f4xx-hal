@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- complete and rework Dma Stream API [#666]
+
+[#666]: https://github.com/stm32-rs/stm32f4xx-hal/pull/666
+
 ## [v0.17.1] - 2023-07-24
 
 ### Changed
