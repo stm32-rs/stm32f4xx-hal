@@ -11,14 +11,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- DMA rework [#666] [#673]
 - implement `embedded_hal::blocking::i2c::Transactional` for `I2c` [#671]
 
 ### Fixed
 
 - reset timer interrupt in `Counter::start` [#670]
 
+[#666]: https://github.com/stm32-rs/stm32f4xx-hal/pull/666
 [#670]: https://github.com/stm32-rs/stm32f4xx-hal/pull/670
 [#671]: https://github.com/stm32-rs/stm32f4xx-hal/pull/671
+[#673]: https://github.com/stm32-rs/stm32f4xx-hal/pull/673
 
 ## [v0.17.0] - 2023-07-11
 
