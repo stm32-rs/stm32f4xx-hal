@@ -5,6 +5,7 @@ stm32f4xx-hal
 [![Crates.io](https://img.shields.io/crates/v/stm32f4xx-hal.svg)](https://crates.io/crates/stm32f4xx-hal)
 [![Released API docs](https://docs.rs/stm32f4xx-hal/badge.svg)](https://docs.rs/stm32f4xx-hal)
 ![Minimum Supported Rust Version](https://img.shields.io/badge/rustc-1.60+-blue.svg)
+[![dependency status](https://deps.rs/repo/github/stm32-rs/stm32f4xx-hal/status.svg)](https://deps.rs/repo/github/stm32-rs/stm32f4xx-hal)
 [![Continuous integration](https://github.com/stm32-rs/stm32f4xx-hal/workflows/Continuous%20integration/badge.svg)](https://github.com/stm32-rs/stm32f4xx-hal)
 
 _stm32f4xx-hal_ contains a multi device hardware abstraction on top of the
