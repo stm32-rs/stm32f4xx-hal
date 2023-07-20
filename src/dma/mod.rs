@@ -312,6 +312,10 @@ bitflags::bitflags! {
 impl DmaCommonInterrupts {
     const MASK: u32 = 0b11110;
 
+    fn valued_bits(&self) -> u32 {
+        (self.bits() as u32) & Self::MASK
+    }
+
     #[inline(always)]
     pub fn is_listen_transfer_complete(&self) -> bool {
         self.contains(Self::TransferComplete)
@@ -344,6 +348,10 @@ bitflags::bitflags! {
 
 impl DmaFlags {
     const MASK: u32 = 0b111101;
+
+    fn valued_bits(&self) -> u32 {
+        (self.bits() as u32) & Self::MASK
+    }
 
     /// Get transfer complete flag.
     #[inline(always)]
@@ -589,7 +597,7 @@ where
         unsafe {
             Self::st()
                 .cr
-                .modify(|r, w| w.bits(r.bits() | interrupts.bits() as u32));
+                .modify(|r, w| w.bits(r.bits() | interrupts.valued_bits()));
         }
     }
 
@@ -597,7 +605,7 @@ where
     fn listen_only(&mut self, interrupts: DmaCommonInterrupts) {
         unsafe {
             Self::st().cr.modify(|r, w| {
-                w.bits(r.bits() & !DmaCommonInterrupts::MASK | interrupts.bits() as u32)
+                w.bits(r.bits() & !DmaCommonInterrupts::MASK | interrupts.valued_bits())
             });
         }
     }
@@ -607,7 +615,7 @@ where
         unsafe {
             Self::st()
                 .cr
-                .modify(|r, w| w.bits(r.bits() & !(interrupts.bits() as u32)));
+                .modify(|r, w| w.bits(r.bits() & !interrupts.valued_bits()));
         }
     }
 
@@ -690,7 +698,7 @@ macro_rules! dma_stream {
                 #[inline(always)]
                 fn clear_flags(&mut self, flags: DmaFlags) {
                     let dma = unsafe { &*I::ptr() };
-                    dma.$ifcr.write(|w| unsafe { w.bits(flags.bits() as u32) });
+                    dma.$ifcr.write(|w| unsafe { w.bits((flags.valued_bits() as u32) << $isr_shift) });
                 }
 
                 #[inline(always)]
