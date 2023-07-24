@@ -7,16 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.17.1] - 2023-07-24
+
 ### Changed
 
 - implement `embedded_hal::blocking::i2c::Transactional` for `I2c` [#671]
 
-[#671]: https://github.com/stm32-rs/stm32f4xx-hal/pull/671
-
 ### Fixed
+
 - reset timer interrupt in `Counter::start` [#670]
 
 [#670]: https://github.com/stm32-rs/stm32f4xx-hal/pull/670
+[#671]: https://github.com/stm32-rs/stm32f4xx-hal/pull/671
 
 ## [v0.17.0] - 2023-07-11
 
@@ -927,7 +929,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.17.1...HEAD
+[v0.17.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.17.0...v0.17.1
 [v0.17.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.2...v0.17.0
 [v0.16.2]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.1...v0.16.2
 [v0.16.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.16.0...v0.16.1
