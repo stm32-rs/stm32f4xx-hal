@@ -3,7 +3,7 @@ use core::{marker::PhantomData, mem::transmute};
 use super::{I2c, Instance};
 use crate::dma::{
     config::DmaConfig,
-    traits::{Channel, DMASet, PeriAddress, Stream, StreamISR},
+    traits::{Channel, DMASet, DmaFlagExt, PeriAddress, Stream, StreamISR},
     ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer,
 };
 

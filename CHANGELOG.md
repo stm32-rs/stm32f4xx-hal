@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- DMA rework [#666] [#673]
+
 ## [v0.17.1] - 2023-07-24
 
 ### Changed
 
-- DMA rework [#666] [#673]
 - implement `embedded_hal::blocking::i2c::Transactional` for `I2c` [#671]
 
 ### Fixed
