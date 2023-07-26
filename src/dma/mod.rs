@@ -310,10 +310,6 @@ pub enum DmaCommonInterrupts {
     TransferComplete = 1 << 4,
 }
 
-impl DmaCommonInterrupts {
-    const MASK: u32 = BitFlags::<Self>::ALL.bits_c() as u32;
-}
-
 impl DmaCommonInterruptsExt for BitFlags<DmaCommonInterrupts> {
     #[inline(always)]
     fn is_listen_transfer_complete(&self) -> bool {
@@ -343,10 +339,6 @@ pub enum DmaFlags {
     TransferError = 1 << 3,
     HalfTransfer = 1 << 4,
     TransferComplete = 1 << 5,
-}
-
-impl DmaFlags {
-    const MASK: u32 = BitFlags::<Self>::ALL.bits_c() as u32;
 }
 
 impl DmaFlagExt for BitFlags<DmaFlags> {
@@ -597,7 +589,10 @@ where
     fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>) {
         unsafe {
             Self::st().cr.modify(|r, w| {
-                w.bits(r.bits() & !DmaCommonInterrupts::MASK | (interrupts.into().bits() as u32))
+                w.bits(
+                    r.bits() & !(BitFlags::<DmaCommonInterrupts>::ALL.bits() as u32)
+                        | (interrupts.into().bits() as u32),
+                )
             });
         }
     }
@@ -613,7 +608,7 @@ where
 
     #[inline(always)]
     fn common_interrupts(&self) -> BitFlags<DmaCommonInterrupts> {
-        unsafe { BitFlags::from_bits_unchecked(Self::st().cr.read().bits() as u8 & 0b0001_1110) }
+        BitFlags::from_bits_truncate(unsafe { Self::st() }.cr.read().bits() as u8)
     }
 
     #[inline(always)]
@@ -696,10 +691,9 @@ macro_rules! dma_stream {
                 {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
-                    unsafe { BitFlags::from_bits_unchecked(
-                            ((dma.$isr.read().bits() >> $isr_shift) & DmaFlags::MASK) as u8
-                        )
-                    }
+                    BitFlags::from_bits_truncate(
+                        ((dma.$isr.read().bits() >> $isr_shift)) as u8
+                    )
                 }
             }
 

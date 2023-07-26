@@ -99,10 +99,6 @@ pub enum Event {
     C4 = 1 << 4,
 }
 
-impl Event {
-    const MASK: u32 = BitFlags::<Self>::ALL.bits_c() as u32;
-}
-
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
@@ -404,7 +400,7 @@ macro_rules! hal {
             }
             #[inline(always)]
             fn get_interrupt_flag(&self) -> BitFlags<Event> {
-                unsafe { BitFlags::from_bits_unchecked(self.sr.read().bits() & Event::MASK) }
+                BitFlags::from_bits_truncate(self.sr.read().bits())
             }
             #[inline(always)]
             fn read_count(&self) -> Self::Width {
