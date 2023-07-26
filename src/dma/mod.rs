@@ -16,7 +16,7 @@ use core::{
     sync::atomic::{compiler_fence, Ordering},
 };
 use embedded_dma::{ReadBuffer, WriteBuffer};
-use flagset::FlagSet;
+use enumflags2::BitFlags;
 
 use crate::{pac, rcc};
 
@@ -299,23 +299,22 @@ impl Not for CurrentBuffer {
     }
 }
 
-flagset::flags! {
-    /// Structure to get or set common interrupts setup
-    #[derive(Hash)]
-    #[repr(u8)]
-    pub enum DmaCommonInterrupts: u8 {
-        DirectModeError  = 1 << 1,
-        TransferError    = 1 << 2,
-        HalfTransfer     = 1 << 3,
-        TransferComplete = 1 << 4,
-    }
+/// Structure to get or set common interrupts setup
+#[enumflags2::bitflags]
+#[repr(u8)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+pub enum DmaCommonInterrupts {
+    DirectModeError = 1 << 1,
+    TransferError = 1 << 2,
+    HalfTransfer = 1 << 3,
+    TransferComplete = 1 << 4,
 }
 
 impl DmaCommonInterrupts {
-    const MASK: u32 = 0b11110;
+    const MASK: u32 = BitFlags::<Self>::ALL.bits_c() as u32;
 }
 
-impl DmaCommonInterruptsExt for FlagSet<DmaCommonInterrupts> {
+impl DmaCommonInterruptsExt for BitFlags<DmaCommonInterrupts> {
     #[inline(always)]
     fn is_listen_transfer_complete(&self) -> bool {
         self.contains(DmaCommonInterrupts::TransferComplete)
@@ -334,24 +333,23 @@ impl DmaCommonInterruptsExt for FlagSet<DmaCommonInterrupts> {
     }
 }
 
-flagset::flags! {
-    /// Structure returned by Stream or Transfer all_flags() method.
-    #[derive(Hash)]
-    #[repr(u8)]
-    pub enum DmaFlags: u8 {
-        FifoError = 1 << 0,
-        DirectModeError = 1 << 2,
-        TransferError = 1 << 3,
-        HalfTransfer = 1 << 4,
-        TransferComplete = 1 << 5,
-    }
+/// Structure returned by Stream or Transfer all_flags() method.
+#[enumflags2::bitflags]
+#[repr(u8)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+pub enum DmaFlags {
+    FifoError = 1 << 0,
+    DirectModeError = 1 << 2,
+    TransferError = 1 << 3,
+    HalfTransfer = 1 << 4,
+    TransferComplete = 1 << 5,
 }
 
 impl DmaFlags {
-    const MASK: u32 = 0b111101;
+    const MASK: u32 = BitFlags::<Self>::ALL.bits_c() as u32;
 }
 
-impl DmaFlagExt for FlagSet<DmaFlags> {
+impl DmaFlagExt for BitFlags<DmaFlags> {
     #[inline(always)]
     fn is_transfer_complete(&self) -> bool {
         self.contains(DmaFlags::TransferComplete)
@@ -587,7 +585,7 @@ where
     }
 
     #[inline(always)]
-    fn listen(&mut self, interrupts: impl Into<FlagSet<DmaCommonInterrupts>>) {
+    fn listen(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>) {
         unsafe {
             Self::st()
                 .cr
@@ -596,7 +594,7 @@ where
     }
 
     #[inline(always)]
-    fn listen_only(&mut self, interrupts: impl Into<FlagSet<DmaCommonInterrupts>>) {
+    fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>) {
         unsafe {
             Self::st().cr.modify(|r, w| {
                 w.bits(r.bits() & !DmaCommonInterrupts::MASK | (interrupts.into().bits() as u32))
@@ -605,7 +603,7 @@ where
     }
 
     #[inline(always)]
-    fn unlisten(&mut self, interrupts: impl Into<FlagSet<DmaCommonInterrupts>>) {
+    fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>) {
         unsafe {
             Self::st()
                 .cr
@@ -614,8 +612,8 @@ where
     }
 
     #[inline(always)]
-    fn common_interrupts(&self) -> FlagSet<DmaCommonInterrupts> {
-        unsafe { FlagSet::new_unchecked(Self::st().cr.read().bits() as u8 & 0b0001_1110) }
+    fn common_interrupts(&self) -> BitFlags<DmaCommonInterrupts> {
+        unsafe { BitFlags::from_bits_unchecked(Self::st().cr.read().bits() as u8 & 0b0001_1110) }
     }
 
     #[inline(always)]
@@ -688,17 +686,17 @@ macro_rules! dma_stream {
         $(
             impl<I: Instance> StreamISR for StreamX<I, $number> where Self: crate::Sealed {
                 #[inline(always)]
-                fn clear_flags(&mut self, flags: impl Into<FlagSet<DmaFlags>>) {
+                fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlags>>) {
                     let dma = unsafe { &*I::ptr() };
                     dma.$ifcr.write(|w| unsafe { w.bits((flags.into().bits() as u32) << $isr_shift) });
                 }
 
                 #[inline(always)]
-                fn all_flags(&self) -> FlagSet<DmaFlags>
+                fn all_flags(&self) -> BitFlags<DmaFlags>
                 {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
-                    unsafe { FlagSet::new_unchecked(
+                    unsafe { BitFlags::from_bits_unchecked(
                             ((dma.$isr.read().bits() >> $isr_shift) & DmaFlags::MASK) as u8
                         )
                     }
@@ -969,7 +967,7 @@ fn stream_disable<T: Stream>(stream: &mut T) {
     if stream.is_enabled() {
         // Aborting an on-going transfer might cause interrupts to fire, disable
         let interrupts = stream.common_interrupts();
-        stream.unlisten(FlagSet::full());
+        stream.unlisten(BitFlags::ALL);
         unsafe { stream.disable() };
         while stream.is_enabled() {}
 
@@ -1466,7 +1464,7 @@ where
         }
         stream.set_memory_increment(config.memory_increment);
         stream.set_peripheral_increment(config.peripheral_increment);
-        let mut interrupts = FlagSet::default();
+        let mut interrupts = BitFlags::default();
         if config.transfer_complete_interrupt {
             interrupts |= DmaCommonInterrupts::TransferComplete;
         }
@@ -1716,12 +1714,12 @@ where
     PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
 {
     #[inline(always)]
-    fn clear_flags(&mut self, flags: impl Into<FlagSet<DmaFlags>>) {
+    fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlags>>) {
         self.stream.clear_flags(flags)
     }
 
     #[inline(always)]
-    fn all_flags(&self) -> FlagSet<DmaFlags> {
+    fn all_flags(&self) -> BitFlags<DmaFlags> {
         self.stream.all_flags()
     }
 }

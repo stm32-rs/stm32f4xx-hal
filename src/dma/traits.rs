@@ -4,7 +4,7 @@ use crate::{
     timer,
 };
 use core::ops::Deref;
-use flagset::FlagSet;
+use enumflags2::BitFlags;
 
 pub(crate) mod sealed {
     /// Converts value to bits for setting a register value.
@@ -21,11 +21,11 @@ pub trait SafePeripheralRead {}
 /// Trait for DMA stream interrupt handling.
 pub trait StreamISR: crate::Sealed {
     /// Clear interrupts flags for the DMA stream.
-    fn clear_flags(&mut self, flags: impl Into<FlagSet<DmaFlags>>);
+    fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlags>>);
 
     /// Clear all interrupts flags for the DMA stream.
     fn clear_all_flags(&mut self) {
-        self.clear_flags(FlagSet::full())
+        self.clear_flags(BitFlags::ALL)
     }
 
     /// Clear transfer complete interrupt (tcif) for the DMA stream.
@@ -61,7 +61,7 @@ pub trait StreamISR: crate::Sealed {
     ///  - transfer error flag
     ///  - direct mode error flag
     ///  - fifo_error flag
-    fn all_flags(&self) -> FlagSet<DmaFlags>;
+    fn all_flags(&self) -> BitFlags<DmaFlags>;
 
     /// Get transfer complete flag.
     #[inline(always)]
@@ -203,23 +203,23 @@ pub trait Stream: StreamISR + crate::Sealed {
     /// Convenience method to configure several interrupts of the DMA stream.
     ///
     /// Note: fifo_error interrupt is not concerend because it's in a different register
-    fn listen(&mut self, interrupts: impl Into<FlagSet<DmaCommonInterrupts>>);
+    fn listen(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>);
 
     /// Convenience method to configure several interrupts of the DMA stream and unconfigure other.
     ///
     /// Note: fifo_error interrupt is not concerend because it's in a different register
-    fn listen_only(&mut self, interrupts: impl Into<FlagSet<DmaCommonInterrupts>>);
+    fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>);
 
     /// Convenience method to unconfigure several interrupts of the DMA stream.
     ///
     /// Note: fifo_error interrupt is not concerend because it's in a different register
-    fn unlisten(&mut self, interrupts: impl Into<FlagSet<DmaCommonInterrupts>>);
+    fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>);
 
     /// Convenience method to get the value of several interrupts of the DMA stream.  The order of the
     /// returns are: `transfer_complete`, `half_transfer`, `transfer_error` and `direct_mode_error`
     ///
     /// Note: fifo_error interrupt is not returned because it's in a different register
-    fn common_interrupts(&self) -> FlagSet<DmaCommonInterrupts>;
+    fn common_interrupts(&self) -> BitFlags<DmaCommonInterrupts>;
 
     /// Enable the transfer complete interrupt (tcie) of the DMA stream.
     fn listen_transfer_complete(&mut self) {

@@ -7,7 +7,7 @@
 use core::convert::TryFrom;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
-use flagset::FlagSet;
+use enumflags2::BitFlags;
 
 use crate::bb;
 use crate::pac;
@@ -88,18 +88,19 @@ pub enum SysEvent {
     Update,
 }
 
-flagset::flags! {
-    pub enum Event: u32 {
-        Update  = 1 << 0,
-        C1 = 1 << 1,
-        C2 = 1 << 2,
-        C3 = 1 << 3,
-        C4 = 1 << 4,
-    }
+#[enumflags2::bitflags]
+#[repr(u32)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+pub enum Event {
+    Update = 1 << 0,
+    C1 = 1 << 1,
+    C2 = 1 << 2,
+    C3 = 1 << 3,
+    C4 = 1 << 4,
 }
 
 impl Event {
-    const MASK: u32 = 0b0001_1111;
+    const MASK: u32 = BitFlags::<Self>::ALL.bits_c() as u32;
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -259,7 +260,7 @@ pub type CCR4<T> = CCR<T, 3>;
 pub struct DMAR<T>(T);
 
 mod sealed {
-    use super::{Channel, Event, FlagSet, IdleState, Ocm, Polarity};
+    use super::{BitFlags, Channel, Event, IdleState, Ocm, Polarity};
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
@@ -274,9 +275,9 @@ mod sealed {
         fn set_prescaler(&mut self, psc: u16);
         fn read_prescaler(&self) -> u16;
         fn trigger_update(&mut self);
-        fn clear_interrupt_flag(&mut self, event: impl Into<FlagSet<Event>>);
-        fn listen_interrupt(&mut self, event: impl Into<FlagSet<Event>>, b: bool);
-        fn get_interrupt_flag(&self) -> FlagSet<Event>;
+        fn clear_interrupt_flag(&mut self, event: impl Into<BitFlags<Event>>);
+        fn listen_interrupt(&mut self, event: impl Into<BitFlags<Event>>, b: bool);
+        fn get_interrupt_flag(&self) -> BitFlags<Event>;
         fn read_count(&self) -> Self::Width;
         fn start_one_pulse(&mut self);
         fn start_free(&mut self, update: bool);
@@ -390,11 +391,11 @@ macro_rules! hal {
                 self.cr1.modify(|_, w| w.urs().clear_bit());
             }
             #[inline(always)]
-            fn clear_interrupt_flag(&mut self, event: impl Into<FlagSet<Event>>) {
+            fn clear_interrupt_flag(&mut self, event: impl Into<BitFlags<Event>>) {
                 self.sr.write(|w| unsafe { w.bits(0xffff & !event.into().bits()) });
             }
             #[inline(always)]
-            fn listen_interrupt(&mut self, event: impl Into<FlagSet<Event>>, b: bool) {
+            fn listen_interrupt(&mut self, event: impl Into<BitFlags<Event>>, b: bool) {
                 if b {
                     self.dier.modify(|r, w| unsafe { w.bits(r.bits() | event.into().bits()) });
                 } else {
@@ -402,8 +403,8 @@ macro_rules! hal {
                 }
             }
             #[inline(always)]
-            fn get_interrupt_flag(&self) -> FlagSet<Event> {
-                unsafe { FlagSet::new_unchecked(self.sr.read().bits() & Event::MASK) }
+            fn get_interrupt_flag(&self) -> BitFlags<Event> {
+                unsafe { BitFlags::from_bits_unchecked(self.sr.read().bits() & Event::MASK) }
             }
             #[inline(always)]
             fn read_count(&self) -> Self::Width {
@@ -620,7 +621,7 @@ impl<TIM: Instance> Timer<TIM> {
     ///
     /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
     /// receiving events.
-    pub fn listen(&mut self, event: impl Into<FlagSet<Event>>) {
+    pub fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim.listen_interrupt(event, true);
     }
 
@@ -628,12 +629,12 @@ impl<TIM: Instance> Timer<TIM> {
     ///
     /// If the interrupt is not cleared, it will immediately retrigger after
     /// the ISR has finished.
-    pub fn clear_interrupt(&mut self, event: impl Into<FlagSet<Event>>) {
+    pub fn clear_interrupt(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim.clear_interrupt_flag(event);
     }
 
     /// Stops listening for an `event`
-    pub fn unlisten(&mut self, event: impl Into<FlagSet<Event>>) {
+    pub fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim.listen_interrupt(event, false);
     }
 }
@@ -700,7 +701,7 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     ///
     /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
     /// receiving events.
-    pub fn listen(&mut self, event: impl Into<FlagSet<Event>>) {
+    pub fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim.listen_interrupt(event, true);
     }
 
@@ -708,16 +709,16 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     ///
     /// If the interrupt is not cleared, it will immediately retrigger after
     /// the ISR has finished.
-    pub fn clear_interrupt(&mut self, event: impl Into<FlagSet<Event>>) {
+    pub fn clear_interrupt(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim.clear_interrupt_flag(event);
     }
 
-    pub fn get_interrupt(&self) -> FlagSet<Event> {
+    pub fn get_interrupt(&self) -> BitFlags<Event> {
         self.tim.get_interrupt_flag()
     }
 
     /// Stops listening for an `event`
-    pub fn unlisten(&mut self, event: impl Into<FlagSet<Event>>) {
+    pub fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim.listen_interrupt(event, false);
     }
 }
