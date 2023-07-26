@@ -30,7 +30,7 @@ use crate::hal::{
     pac::{DMA1, I2C1},
     prelude::*,
     rcc::{Clocks, Rcc},
-    timer::{CounterUs, Event, Timer},
+    timer::{CounterUs, Event, Flag, Timer},
 };
 use core::cell::{Cell, RefCell};
 use core::fmt::Write;
@@ -265,7 +265,7 @@ fn main() -> ! {
 fn TIM2() {
     free(|cs| {
         if let Some(ref mut tim2) = TIMER_TIM2.borrow(cs).borrow_mut().deref_mut() {
-            tim2.clear_interrupt(Event::Update);
+            tim2.clear_flags(Flag::Update);
         }
 
         let cell = ELAPSED_MS.borrow(cs);

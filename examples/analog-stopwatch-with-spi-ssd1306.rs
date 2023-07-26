@@ -15,8 +15,8 @@ use crate::hal::{
     interrupt, pac,
     prelude::*,
     rcc::{Clocks, Rcc},
-    spi::Spi,
-    timer::{CounterUs, Event, FTimer, Timer},
+    spi::{Mode, Phase, Polarity, Spi},
+    timer::{CounterUs, Event, FTimer, Flag, Timer},
 };
 
 use core::cell::{Cell, RefCell};
@@ -24,8 +24,6 @@ use core::fmt::Write;
 use core::ops::DerefMut;
 use cortex_m::interrupt::{free, CriticalSection, Mutex};
 use heapless::String;
-
-use hal::spi::{Mode, Phase, Polarity};
 
 use core::f32::consts::{FRAC_PI_2, PI};
 use cortex_m_rt::{entry, exception, ExceptionFrame};
@@ -263,7 +261,7 @@ fn EXTI0() {
 fn TIM2() {
     free(|cs| {
         if let Some(ref mut tim2) = TIMER_TIM2.borrow(cs).borrow_mut().deref_mut() {
-            tim2.clear_interrupt(Event::Update);
+            tim2.clear_flags(Flag::Update);
         }
 
         let cell = ELAPSED_MS.borrow(cs);

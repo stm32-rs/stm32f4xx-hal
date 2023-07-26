@@ -1,5 +1,5 @@
 // RTIC Monotonic impl for the 32-bit timers
-use super::{Channel, Event, FTimer, General, Instance, WithPwm};
+use super::{Channel, Event, FTimer, Flag, General, Instance, WithPwm};
 use crate::rcc::Clocks;
 use core::ops::{Deref, DerefMut};
 pub use fugit::{self, ExtU32};
@@ -117,7 +117,7 @@ where
     type Duration = fugit::TimerDurationU32<FREQ>;
 
     unsafe fn reset(&mut self) {
-        self.tim.listen_interrupt(Event::C1, true);
+        self.tim.listen_interrupt(None, Some(Event::C1.into()));
         self.tim.reset_counter();
     }
 
@@ -131,7 +131,7 @@ where
     }
 
     fn clear_compare_flag(&mut self) {
-        self.tim.clear_interrupt_flag(Event::C1);
+        self.tim.clear_interrupt_flag(Flag::C1.into());
     }
 
     #[inline(always)]
@@ -161,7 +161,7 @@ impl<TIM, const FREQ: u32> DerefMut for MonoTimer64<TIM, FREQ> {
 
 impl<TIM: Instance, const FREQ: u32> MonoTimer64<TIM, FREQ> {
     fn is_overflow(&self) -> bool {
-        self.get_interrupt().contains(Event::Update)
+        self.all_flags().contains(Flag::Update)
     }
 }
 
@@ -199,7 +199,7 @@ where
 
     unsafe fn reset(&mut self) {
         // Since reset is only called once, we use it to enable the interrupt generation bit.
-        self.tim.listen_interrupt(Event::C1, true);
+        self.tim.listen_interrupt(None, Some(Event::C1.into()));
         self.tim.reset_counter();
     }
 
@@ -220,13 +220,13 @@ where
     }
 
     fn clear_compare_flag(&mut self) {
-        self.tim.clear_interrupt_flag(Event::C1);
+        self.tim.clear_interrupt_flag(Flag::C1.into());
     }
 
     fn on_interrupt(&mut self) {
         // If there was an overflow, increment the overflow counter.
         if self.is_overflow() {
-            self.tim.clear_interrupt_flag(Event::Update);
+            self.tim.clear_interrupt_flag(Flag::Update.into());
 
             self.ovf += TIM::Width::OVF_VALUE;
         }
