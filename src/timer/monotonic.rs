@@ -118,7 +118,7 @@ where
     type Duration = fugit::TimerDurationU32<FREQ>;
 
     unsafe fn reset(&mut self) {
-        self.tim.listen_interrupt(None, Some(Event::C1.into()));
+        self.tim.listen_event(None, Some(Event::C1.into()));
         self.tim.reset_counter();
     }
 
@@ -200,7 +200,7 @@ where
 
     unsafe fn reset(&mut self) {
         // Since reset is only called once, we use it to enable the interrupt generation bit.
-        self.tim.listen_interrupt(None, Some(Event::C1.into()));
+        self.tim.listen_event(None, Some(Event::C1.into()));
         self.tim.reset_counter();
     }
 

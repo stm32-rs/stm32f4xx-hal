@@ -309,14 +309,13 @@ mod sealed {
         fn set_auto_reload(&mut self, arr: u32) -> Result<(), super::Error>;
         fn read_auto_reload() -> u32;
         fn enable_preload(&mut self, b: bool);
-        fn enable_counter(&mut self);
-        fn disable_counter(&mut self);
+        fn enable_counter(&mut self, b: bool);
         fn is_counter_enabled(&self) -> bool;
         fn reset_counter(&mut self);
         fn set_prescaler(&mut self, psc: u16);
         fn read_prescaler(&self) -> u16;
         fn trigger_update(&mut self);
-        fn listen_interrupt(
+        fn listen_event(
             &mut self,
             disable: Option<BitFlags<Event>>,
             enable: Option<BitFlags<Event>>,
@@ -406,12 +405,8 @@ macro_rules! hal {
                 self.cr1.modify(|_, w| w.arpe().bit(b));
             }
             #[inline(always)]
-            fn enable_counter(&mut self) {
-                self.cr1.modify(|_, w| w.cen().set_bit());
-            }
-            #[inline(always)]
-            fn disable_counter(&mut self) {
-                self.cr1.modify(|_, w| w.cen().clear_bit());
+            fn enable_counter(&mut self, b: bool) {
+                self.cr1.modify(|_, w| w.cen().bit(b));
             }
             #[inline(always)]
             fn is_counter_enabled(&self) -> bool {
@@ -436,7 +431,7 @@ macro_rules! hal {
                 self.cr1.modify(|_, w| w.urs().clear_bit());
             }
             #[inline(always)]
-            fn listen_interrupt(&mut self, disable: Option<BitFlags<Event>>, enable: Option<BitFlags<Event>>) {
+            fn listen_event(&mut self, disable: Option<BitFlags<Event>>, enable: Option<BitFlags<Event>>) {
                 self.dier.modify(|r, w| unsafe { w.bits({
                     let mut bits = r.bits();
                     if let Some(d) = disable {
@@ -744,28 +739,28 @@ pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
 impl<TIM: Instance> crate::Listen for Timer<TIM> {
     type Event = Event;
     fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_interrupt(None, Some(event.into()));
+        self.tim.listen_event(None, Some(event.into()));
     }
     fn listen_only(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim
-            .listen_interrupt(Some(BitFlags::ALL), Some(event.into()));
+            .listen_event(Some(BitFlags::ALL), Some(event.into()));
     }
     fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_interrupt(Some(event.into()), None);
+        self.tim.listen_event(Some(event.into()), None);
     }
 }
 
 impl<TIM: Instance, const FREQ: u32> crate::Listen for FTimer<TIM, FREQ> {
     type Event = Event;
     fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_interrupt(None, Some(event.into()));
+        self.tim.listen_event(None, Some(event.into()));
     }
     fn listen_only(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim
-            .listen_interrupt(Some(BitFlags::ALL), Some(event.into()));
+            .listen_event(Some(BitFlags::ALL), Some(event.into()));
     }
     fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_interrupt(Some(event.into()), None);
+        self.tim.listen_event(Some(event.into()), None);
     }
 }
 

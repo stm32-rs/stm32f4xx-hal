@@ -31,7 +31,7 @@ impl<TIM: Instance> CounterHz<TIM> {
 impl<TIM: Instance> CounterHz<TIM> {
     pub fn start(&mut self, timeout: Hertz) -> Result<(), Error> {
         // pause
-        self.tim.disable_counter();
+        self.tim.enable_counter(false);
         // reset counter
         self.tim.reset_counter();
         self.tim.clear_interrupt_flag(Flag::Update.into());
@@ -44,7 +44,7 @@ impl<TIM: Instance> CounterHz<TIM> {
         self.tim.trigger_update();
 
         // start counter
-        self.tim.enable_counter();
+        self.tim.enable_counter(true);
 
         Ok(())
     }
@@ -64,7 +64,7 @@ impl<TIM: Instance> CounterHz<TIM> {
         }
 
         // disable counter
-        self.tim.disable_counter();
+        self.tim.enable_counter(false);
         Ok(())
     }
 }
@@ -107,7 +107,7 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
 
     pub fn start(&mut self, timeout: TimerDurationU32<FREQ>) -> Result<(), Error> {
         // pause
-        self.tim.disable_counter();
+        self.tim.enable_counter(false);
         // reset counter
         self.tim.reset_counter();
         self.tim.clear_interrupt_flag(Flag::Update.into());
@@ -118,7 +118,7 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
         self.tim.trigger_update();
 
         // start counter
-        self.tim.enable_counter();
+        self.tim.enable_counter(true);
 
         Ok(())
     }
@@ -138,7 +138,7 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
         }
 
         // disable counter
-        self.tim.disable_counter();
+        self.tim.enable_counter(false);
         Ok(())
     }
 }
