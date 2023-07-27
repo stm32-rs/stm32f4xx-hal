@@ -33,14 +33,64 @@ use crate::rcc::Clocks;
 /// Serial error
 pub use embedded_hal_one::serial::ErrorKind as Error;
 
-/// Interrupt event
+/// UART interrupt events
+#[enumflags2::bitflags]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[repr(u16)]
 pub enum Event {
-    /// New data has been received
-    Rxne,
-    /// New data can be sent
-    Txe,
-    /// Idle line state detected
-    Idle,
+    /// IDLE interrupt enable
+    Idle = 1 << 4,
+    /// RXNE interrupt enable
+    RxNotEmpty = 1 << 5,
+    /// Transmission complete interrupt enable
+    TransmissionComplete = 1 << 6,
+    /// TXE interrupt enable
+    TxEmpty = 1 << 7,
+    /// PE interrupt enable
+    ParityError = 1 << 8,
+}
+
+/// UART/USART status flags
+#[enumflags2::bitflags]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[repr(u16)]
+pub enum Flag {
+    /// Parity error
+    ParityError = 1 << 0,
+    /// Framing error
+    FramingError = 1 << 1,
+    /// Noise detected flag
+    Noise = 1 << 2,
+    /// Overrun error
+    Overrun = 1 << 3,
+    /// IDLE line detected
+    Idle = 1 << 4,
+    /// Read data register not empty
+    RxNotEmpty = 1 << 5,
+    /// Transmission complete
+    TransmissionComplete = 1 << 6,
+    /// Transmit data register empty
+    TxEmpty = 1 << 7,
+    /// LIN break detection flag
+    LinBreak = 1 << 8,
+    /// CTS flag
+    Cts = 1 << 9,
+}
+
+/// UART clearable flags
+#[enumflags2::bitflags]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[repr(u16)]
+pub enum CFlag {
+    /// Read data register not empty
+    RxNotEmpty = 1 << 5,
+    /// Transmission complete
+    TransmissionComplete = 1 << 6,
+    /// LIN break detection flag
+    LinBreak = 1 << 8,
 }
 
 pub mod config;
@@ -103,18 +153,6 @@ pub trait TxListen {
 
     /// Stop listening for the tx empty interrupt event
     fn unlisten(&mut self);
-}
-
-/// Trait for listening [`Serial`] interrupt events.
-pub trait Listen {
-    /// Starts listening for an interrupt event
-    ///
-    /// Note, you will also have to enable the corresponding interrupt
-    /// in the NVIC to start receiving events.
-    fn listen(&mut self, event: Event);
-
-    /// Stop listening for an interrupt event
-    fn unlisten(&mut self, event: Event);
 }
 
 /// Serial abstraction

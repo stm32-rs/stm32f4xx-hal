@@ -1,9 +1,10 @@
 use core::{fmt, ops::Deref};
 
+use enumflags2::BitFlags;
 use nb::block;
 
 use super::{
-    config, Error, Event, Listen, Rx, RxISR, RxListen, Serial, SerialExt, Tx, TxISR, TxListen,
+    config, CFlag, Error, Event, Flag, Rx, RxISR, RxListen, Serial, SerialExt, Tx, TxISR, TxListen,
 };
 use crate::dma::{
     traits::{DMASet, PeriAddress},
@@ -72,27 +73,48 @@ pub trait RegisterBlockImpl: crate::Sealed {
         nb::block!(self.flush())
     }
 
-    // RxISR
-    fn is_idle(&self) -> bool;
-    fn is_rx_not_empty(&self) -> bool;
+    // ISR
+    fn flags(&self) -> BitFlags<Flag>;
+
+    fn is_idle(&self) -> bool {
+        self.flags().contains(Flag::Idle)
+    }
+    fn is_rx_not_empty(&self) -> bool {
+        self.flags().contains(Flag::RxNotEmpty)
+    }
+    fn is_tx_empty(&self) -> bool {
+        self.flags().contains(Flag::TxEmpty)
+    }
+    fn clear_flags(&self, flags: BitFlags<CFlag>);
     fn clear_idle_interrupt(&self);
 
-    // TxISR
-    fn is_tx_empty(&self) -> bool;
-
-    // RxListen
-    fn listen_rxne(&self);
-    fn unlisten_rxne(&self);
-    fn listen_idle(&self);
-    fn unlisten_idle(&self);
-
-    // TxListen
-    fn listen_txe(&self);
-    fn unlisten_txe(&self);
-
     // Listen
-    fn listen(&self, event: Event);
-    fn unlisten(&self, event: Event);
+    fn listen_event(&self, disable: Option<BitFlags<Event>>, enable: Option<BitFlags<Event>>);
+
+    #[inline(always)]
+    fn listen_rxne(&self) {
+        self.listen_event(None, Some(Event::RxNotEmpty.into()))
+    }
+    #[inline(always)]
+    fn unlisten_rxne(&self) {
+        self.listen_event(Some(Event::RxNotEmpty.into()), None)
+    }
+    #[inline(always)]
+    fn listen_idle(&self) {
+        self.listen_event(None, Some(Event::Idle.into()))
+    }
+    #[inline(always)]
+    fn unlisten_idle(&self) {
+        self.listen_event(Some(Event::Idle.into()), None)
+    }
+    #[inline(always)]
+    fn listen_txe(&self) {
+        self.listen_event(None, Some(Event::TxEmpty.into()))
+    }
+    #[inline(always)]
+    fn unlisten_txe(&self) {
+        self.listen_event(Some(Event::TxEmpty.into()), None)
+    }
 
     // PeriAddress
     fn peri_address(&self) -> u32;
@@ -259,12 +281,13 @@ macro_rules! uartCommon {
                 }
             }
 
-            fn is_idle(&self) -> bool {
-                self.sr.read().idle().bit_is_set()
+            fn flags(&self) -> BitFlags<Flag> {
+                BitFlags::from_bits_truncate(self.sr.read().bits() as u16)
             }
 
-            fn is_rx_not_empty(&self) -> bool {
-                self.sr.read().rxne().bit_is_set()
+            fn clear_flags(&self, flags: BitFlags<CFlag>) {
+                self.sr
+                    .write(|w| unsafe { w.bits(0xffff & !(flags.bits() as u32)) });
             }
 
             fn clear_idle_interrupt(&self) {
@@ -272,48 +295,23 @@ macro_rules! uartCommon {
                 let _ = self.dr.read();
             }
 
-            fn is_tx_empty(&self) -> bool {
-                self.sr.read().txe().bit_is_set()
-            }
-
-            fn listen_rxne(&self) {
-                self.cr1.modify(|_, w| w.rxneie().set_bit())
-            }
-
-            fn unlisten_rxne(&self) {
-                self.cr1.modify(|_, w| w.rxneie().clear_bit())
-            }
-
-            fn listen_idle(&self) {
-                self.cr1.modify(|_, w| w.idleie().set_bit())
-            }
-
-            fn unlisten_idle(&self) {
-                self.cr1.modify(|_, w| w.idleie().clear_bit())
-            }
-
-            fn listen_txe(&self) {
-                self.cr1.modify(|_, w| w.txeie().set_bit())
-            }
-
-            fn unlisten_txe(&self) {
-                self.cr1.modify(|_, w| w.txeie().clear_bit())
-            }
-
-            fn listen(&self, event: Event) {
-                match event {
-                    Event::Rxne => self.cr1.modify(|_, w| w.rxneie().set_bit()),
-                    Event::Txe => self.cr1.modify(|_, w| w.txeie().set_bit()),
-                    Event::Idle => self.cr1.modify(|_, w| w.idleie().set_bit()),
-                }
-            }
-
-            fn unlisten(&self, event: Event) {
-                match event {
-                    Event::Rxne => self.cr1.modify(|_, w| w.rxneie().clear_bit()),
-                    Event::Txe => self.cr1.modify(|_, w| w.txeie().clear_bit()),
-                    Event::Idle => self.cr1.modify(|_, w| w.idleie().clear_bit()),
-                }
+            fn listen_event(
+                &self,
+                disable: Option<BitFlags<Event>>,
+                enable: Option<BitFlags<Event>>,
+            ) {
+                self.cr1.modify(|r, w| unsafe {
+                    w.bits({
+                        let mut bits = r.bits();
+                        if let Some(d) = disable {
+                            bits &= !(d.bits() as u32);
+                        }
+                        if let Some(e) = enable {
+                            bits |= e.bits() as u32;
+                        }
+                        bits
+                    })
+                });
             }
 
             fn peri_address(&self) -> u32 {
@@ -340,6 +338,7 @@ where
         self.rx.is_rx_not_empty()
     }
 
+    /// This clears `Idle`, `Overrun`, `Noise`, `FrameError` and `ParityError` flags
     fn clear_idle_interrupt(&self) {
         self.rx.clear_idle_interrupt();
     }
@@ -357,6 +356,7 @@ where
         unsafe { (*UART::ptr()).is_rx_not_empty() }
     }
 
+    /// This clears `Idle`, `Overrun`, `Noise`, `FrameError` and `ParityError` flags
     fn clear_idle_interrupt(&self) {
         unsafe {
             (*UART::ptr()).clear_idle_interrupt();
@@ -418,17 +418,47 @@ where
     }
 }
 
-impl<UART: Instance, WORD> Listen for Serial<UART, WORD>
+impl<UART: Instance, WORD> crate::IrqFlags for Serial<UART, WORD>
 where
     <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
-    fn listen(&mut self, event: Event) {
-        self.tx.usart.listen(event)
+    type CFlag = CFlag;
+    type Flag = Flag;
+
+    #[inline(always)]
+    fn flags(&self) -> BitFlags<Self::Flag> {
+        self.tx.usart.flags()
     }
 
-    fn unlisten(&mut self, event: Event) {
-        self.tx.usart.unlisten(event)
+    #[inline(always)]
+    fn clear_flags(&mut self, flags: impl Into<BitFlags<Self::CFlag>>) {
+        self.tx.usart.clear_flags(flags.into())
+    }
+}
+
+impl<UART: Instance, WORD> crate::Listen for Serial<UART, WORD>
+where
+    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
+    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
+{
+    type Event = Event;
+
+    #[inline(always)]
+    fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.tx.usart.listen_event(None, Some(event.into()));
+    }
+
+    #[inline(always)]
+    fn listen_only(&mut self, event: impl Into<BitFlags<Self::Event>>) {
+        self.tx
+            .usart
+            .listen_event(Some(BitFlags::ALL), Some(event.into()));
+    }
+
+    #[inline(always)]
+    fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.tx.usart.listen_event(Some(event.into()), None);
     }
 }
 
