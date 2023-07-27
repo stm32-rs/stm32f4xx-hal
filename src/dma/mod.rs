@@ -329,11 +329,11 @@ impl DmaEventExt for BitFlags<DmaEvent> {
     }
 }
 
-/// Structure returned by Stream or Transfer all_flags() method.
+/// Structure returned by Stream or Transfer flags() method.
 #[enumflags2::bitflags]
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
-pub enum DmaFlags {
+pub enum DmaFlag {
     FifoError = 1 << 0,
     DirectModeError = 1 << 2,
     TransferError = 1 << 3,
@@ -341,30 +341,30 @@ pub enum DmaFlags {
     TransferComplete = 1 << 5,
 }
 
-impl DmaFlagExt for BitFlags<DmaFlags> {
+impl DmaFlagExt for BitFlags<DmaFlag> {
     #[inline(always)]
     fn is_transfer_complete(&self) -> bool {
-        self.contains(DmaFlags::TransferComplete)
+        self.contains(DmaFlag::TransferComplete)
     }
 
     #[inline(always)]
     fn is_half_transfer(&self) -> bool {
-        self.contains(DmaFlags::HalfTransfer)
+        self.contains(DmaFlag::HalfTransfer)
     }
 
     #[inline(always)]
     fn is_transfer_error(&self) -> bool {
-        self.contains(DmaFlags::TransferError)
+        self.contains(DmaFlag::TransferError)
     }
 
     #[inline(always)]
     fn is_direct_mode_error(&self) -> bool {
-        self.contains(DmaFlags::DirectModeError)
+        self.contains(DmaFlag::DirectModeError)
     }
 
     #[inline(always)]
     fn is_fifo_error(&self) -> bool {
-        self.contains(DmaFlags::FifoError)
+        self.contains(DmaFlag::FifoError)
     }
 }
 
@@ -607,7 +607,7 @@ where
     }
 
     #[inline(always)]
-    fn common_interrupts(&self) -> BitFlags<DmaEvent> {
+    fn events(&self) -> BitFlags<DmaEvent> {
         BitFlags::from_bits_truncate(unsafe { Self::st() }.cr.read().bits() as u8)
     }
 
@@ -681,13 +681,13 @@ macro_rules! dma_stream {
         $(
             impl<I: Instance> StreamISR for StreamX<I, $number> where Self: crate::Sealed {
                 #[inline(always)]
-                fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlags>>) {
+                fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>) {
                     let dma = unsafe { &*I::ptr() };
                     dma.$ifcr.write(|w| unsafe { w.bits((flags.into().bits() as u32) << $isr_shift) });
                 }
 
                 #[inline(always)]
-                fn all_flags(&self) -> BitFlags<DmaFlags>
+                fn flags(&self) -> BitFlags<DmaFlag>
                 {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
@@ -960,7 +960,7 @@ where
 fn stream_disable<T: Stream>(stream: &mut T) {
     if stream.is_enabled() {
         // Aborting an on-going transfer might cause interrupts to fire, disable
-        let interrupts = stream.common_interrupts();
+        let interrupts = stream.events();
         stream.unlisten(BitFlags::ALL);
         unsafe { stream.disable() };
         while stream.is_enabled() {}
@@ -1708,13 +1708,13 @@ where
     PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
 {
     #[inline(always)]
-    fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlags>>) {
+    fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>) {
         self.stream.clear_flags(flags)
     }
 
     #[inline(always)]
-    fn all_flags(&self) -> BitFlags<DmaFlags> {
-        self.stream.all_flags()
+    fn flags(&self) -> BitFlags<DmaFlag> {
+        self.stream.flags()
     }
 }
 

@@ -161,7 +161,7 @@ impl<TIM, const FREQ: u32> DerefMut for MonoTimer64<TIM, FREQ> {
 
 impl<TIM: Instance, const FREQ: u32> MonoTimer64<TIM, FREQ> {
     fn is_overflow(&self) -> bool {
-        self.all_flags().contains(Flag::Update)
+        self.flags().contains(Flag::Update)
     }
 }
 

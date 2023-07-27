@@ -21,7 +21,7 @@ pub trait SafePeripheralRead {}
 /// Trait for DMA stream interrupt handling.
 pub trait StreamISR: crate::Sealed {
     /// Clear interrupts flags for the DMA stream.
-    fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlags>>);
+    fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>);
 
     /// Clear all interrupts flags for the DMA stream.
     fn clear_all_flags(&mut self) {
@@ -30,27 +30,27 @@ pub trait StreamISR: crate::Sealed {
 
     /// Clear transfer complete interrupt (tcif) for the DMA stream.
     fn clear_transfer_complete(&mut self) {
-        self.clear_flags(DmaFlags::TransferComplete)
+        self.clear_flags(DmaFlag::TransferComplete)
     }
 
     /// Clear half transfer interrupt flag (htif) for the DMA stream.
     fn clear_half_transfer(&mut self) {
-        self.clear_flags(DmaFlags::HalfTransfer)
+        self.clear_flags(DmaFlag::HalfTransfer)
     }
 
     /// Clear transfer error interrupt flag (teif) for the DMA stream.
     fn clear_transfer_error(&mut self) {
-        self.clear_flags(DmaFlags::TransferError)
+        self.clear_flags(DmaFlag::TransferError)
     }
 
     /// Clear direct mode error interrupt flag (dmeif) for the DMA stream.
     fn clear_direct_mode_error(&mut self) {
-        self.clear_flags(DmaFlags::DirectModeError)
+        self.clear_flags(DmaFlag::DirectModeError)
     }
 
     /// Clear fifo error interrupt flag (feif) for the DMA stream.
     fn clear_fifo_error(&mut self) {
-        self.clear_flags(DmaFlags::FifoError)
+        self.clear_flags(DmaFlag::FifoError)
     }
 
     /// Get all interrupts flags a once.
@@ -61,36 +61,36 @@ pub trait StreamISR: crate::Sealed {
     ///  - transfer error flag
     ///  - direct mode error flag
     ///  - fifo_error flag
-    fn all_flags(&self) -> BitFlags<DmaFlags>;
+    fn flags(&self) -> BitFlags<DmaFlag>;
 
     /// Get transfer complete flag.
     #[inline(always)]
     fn is_transfer_complete(&self) -> bool {
-        self.all_flags().is_transfer_complete()
+        self.flags().is_transfer_complete()
     }
 
     /// Get half transfer flag.
     #[inline(always)]
     fn is_half_transfer(&self) -> bool {
-        self.all_flags().is_half_transfer()
+        self.flags().is_half_transfer()
     }
 
     /// Get transfer error flag
     #[inline(always)]
     fn is_transfer_error(&self) -> bool {
-        self.all_flags().is_transfer_error()
+        self.flags().is_transfer_error()
     }
 
     /// Get direct mode error flag
     #[inline(always)]
     fn is_direct_mode_error(&self) -> bool {
-        self.all_flags().is_direct_mode_error()
+        self.flags().is_direct_mode_error()
     }
 
     /// Get fifo error flag
     #[inline(always)]
     fn is_fifo_error(&self) -> bool {
-        self.all_flags().is_fifo_error()
+        self.flags().is_fifo_error()
     }
 }
 
@@ -219,7 +219,7 @@ pub trait Stream: StreamISR + crate::Sealed {
     /// returns are: `transfer_complete`, `half_transfer`, `transfer_error` and `direct_mode_error`
     ///
     /// Note: fifo_error interrupt is not returned because it's in a different register
-    fn common_interrupts(&self) -> BitFlags<DmaEvent>;
+    fn events(&self) -> BitFlags<DmaEvent>;
 
     /// Enable the transfer complete interrupt (tcie) of the DMA stream.
     fn listen_transfer_complete(&mut self) {

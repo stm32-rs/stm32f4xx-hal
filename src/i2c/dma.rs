@@ -597,7 +597,7 @@ where
 {
     fn handle_dma_interrupt(&mut self) {
         if let Some(tx_t) = &mut self.tx.tx_transfer {
-            let flags = tx_t.all_flags();
+            let flags = tx_t.flags();
 
             if flags.is_fifo_error() {
                 tx_t.clear_fifo_error();
@@ -638,7 +638,7 @@ where
 {
     fn handle_dma_interrupt(&mut self) {
         if let Some(rx_t) = &mut self.rx.rx_transfer {
-            let flags = rx_t.all_flags();
+            let flags = rx_t.flags();
 
             if flags.is_fifo_error() {
                 rx_t.clear_fifo_error();
@@ -683,7 +683,7 @@ where
     fn handle_dma_interrupt(&mut self) {
         // Handle Transmit
         if let Some(tx_t) = &mut self.tx.tx_transfer {
-            let flags = tx_t.all_flags();
+            let flags = tx_t.flags();
 
             if flags.is_fifo_error() {
                 tx_t.clear_fifo_error();
@@ -726,7 +726,7 @@ where
         }
 
         if let Some(rx_t) = &mut self.rx.rx_transfer {
-            let flags = rx_t.all_flags();
+            let flags = rx_t.flags();
 
             if flags.is_fifo_error() {
                 rx_t.clear_fifo_error();

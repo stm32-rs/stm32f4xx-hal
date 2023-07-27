@@ -9,7 +9,7 @@ mod app {
     use embedded_hal::spi::{Mode, Phase, Polarity};
     use hal::{
         dma::{
-            config::DmaConfig, DmaFlags, MemoryToPeripheral, PeripheralToMemory, Stream0, Stream5,
+            config::DmaConfig, DmaFlag, MemoryToPeripheral, PeripheralToMemory, Stream0, Stream5,
             StreamsTuple, Transfer,
         },
         gpio::{gpioc::PC13, GpioExt, Output, PushPull},
@@ -142,8 +142,8 @@ mod app {
         let mut led = cx.shared.led;
         let rx_buffer = cx.local.rx_buffer;
         rx_transfer.lock(|transfer| {
-            let flags = transfer.all_flags();
-            transfer.clear_flags(DmaFlags::FifoError | DmaFlags::TransferComplete);
+            let flags = transfer.flags();
+            transfer.clear_flags(DmaFlag::FifoError | DmaFlag::TransferComplete);
             if flags.is_transfer_complete() {
                 let (filled_buffer, _) = transfer.next_transfer(rx_buffer.take().unwrap()).unwrap();
                 match filled_buffer[0] {
@@ -161,8 +161,8 @@ mod app {
         let mut tx_transfer = cx.shared.tx_transfer;
         let tx_buffer = cx.local.tx_buffer;
         tx_transfer.lock(|transfer| {
-            let flags = transfer.all_flags();
-            transfer.clear_flags(DmaFlags::FifoError | DmaFlags::TransferComplete);
+            let flags = transfer.flags();
+            transfer.clear_flags(DmaFlag::FifoError | DmaFlag::TransferComplete);
             if flags.is_transfer_complete() {
                 let (filled_buffer, _) = transfer.next_transfer(tx_buffer.take().unwrap()).unwrap();
                 *tx_buffer = Some(filled_buffer);

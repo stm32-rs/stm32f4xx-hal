@@ -698,7 +698,7 @@ impl<TIM: Instance> Timer<TIM> {
     }
 
     /// Return interrupt flags
-    pub fn all_flags(&self) -> BitFlags<Flag> {
+    pub fn flags(&self) -> BitFlags<Flag> {
         self.tim.get_interrupt_flag()
     }
 }
@@ -792,7 +792,7 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     }
 
     /// Return interrupt flags
-    pub fn all_flags(&self) -> BitFlags<Flag> {
+    pub fn flags(&self) -> BitFlags<Flag> {
         self.tim.get_interrupt_flag()
     }
 }
