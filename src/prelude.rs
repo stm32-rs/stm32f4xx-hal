@@ -56,7 +56,7 @@ pub use fugit::RateExtU32 as _fugit_RateExtU32;
 pub use crate::can::CanExt as _stm32f4xx_hal_can_CanExt;
 #[cfg(all(feature = "device-selected", feature = "dac"))]
 pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;
-pub use crate::dma::traits::DmaCommonInterruptsExt as _;
+pub use crate::dma::traits::DmaEventExt as _;
 pub use crate::dma::traits::DmaFlagExt as _;
 pub use crate::dma::traits::Stream as _;
 pub use crate::dma::traits::StreamISR as _;

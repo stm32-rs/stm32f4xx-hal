@@ -23,8 +23,8 @@ use crate::{pac, rcc};
 pub mod traits;
 use crate::serial::RxISR;
 use traits::{
-    sealed::Bits, Channel, DMASet, Direction, DmaCommonInterruptsExt, DmaFlagExt, Instance,
-    PeriAddress, SafePeripheralRead, Stream, StreamISR,
+    sealed::Bits, Channel, DMASet, Direction, DmaEventExt, DmaFlagExt, Instance, PeriAddress,
+    SafePeripheralRead, Stream, StreamISR,
 };
 
 /// Errors.
@@ -303,29 +303,29 @@ impl Not for CurrentBuffer {
 #[enumflags2::bitflags]
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
-pub enum DmaCommonInterrupts {
+pub enum DmaEvent {
     DirectModeError = 1 << 1,
     TransferError = 1 << 2,
     HalfTransfer = 1 << 3,
     TransferComplete = 1 << 4,
 }
 
-impl DmaCommonInterruptsExt for BitFlags<DmaCommonInterrupts> {
+impl DmaEventExt for BitFlags<DmaEvent> {
     #[inline(always)]
     fn is_listen_transfer_complete(&self) -> bool {
-        self.contains(DmaCommonInterrupts::TransferComplete)
+        self.contains(DmaEvent::TransferComplete)
     }
     #[inline(always)]
     fn is_listen_half_transfer(&self) -> bool {
-        self.contains(DmaCommonInterrupts::HalfTransfer)
+        self.contains(DmaEvent::HalfTransfer)
     }
     #[inline(always)]
     fn is_listen_transfer_error(&self) -> bool {
-        self.contains(DmaCommonInterrupts::TransferError)
+        self.contains(DmaEvent::TransferError)
     }
     #[inline(always)]
     fn is_listen_direct_mode_error(&self) -> bool {
-        self.contains(DmaCommonInterrupts::DirectModeError)
+        self.contains(DmaEvent::DirectModeError)
     }
 }
 
@@ -577,7 +577,7 @@ where
     }
 
     #[inline(always)]
-    fn listen(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>) {
+    fn listen(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
         unsafe {
             Self::st()
                 .cr
@@ -586,11 +586,11 @@ where
     }
 
     #[inline(always)]
-    fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>) {
+    fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
         unsafe {
             Self::st().cr.modify(|r, w| {
                 w.bits(
-                    r.bits() & !(BitFlags::<DmaCommonInterrupts>::ALL.bits() as u32)
+                    r.bits() & !(BitFlags::<DmaEvent>::ALL.bits() as u32)
                         | (interrupts.into().bits() as u32),
                 )
             });
@@ -598,7 +598,7 @@ where
     }
 
     #[inline(always)]
-    fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaCommonInterrupts>>) {
+    fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
         unsafe {
             Self::st()
                 .cr
@@ -607,7 +607,7 @@ where
     }
 
     #[inline(always)]
-    fn common_interrupts(&self) -> BitFlags<DmaCommonInterrupts> {
+    fn common_interrupts(&self) -> BitFlags<DmaEvent> {
         BitFlags::from_bits_truncate(unsafe { Self::st() }.cr.read().bits() as u8)
     }
 
@@ -1460,16 +1460,16 @@ where
         stream.set_peripheral_increment(config.peripheral_increment);
         let mut interrupts = BitFlags::default();
         if config.transfer_complete_interrupt {
-            interrupts |= DmaCommonInterrupts::TransferComplete;
+            interrupts |= DmaEvent::TransferComplete;
         }
         if config.half_transfer_interrupt {
-            interrupts |= DmaCommonInterrupts::HalfTransfer;
+            interrupts |= DmaEvent::HalfTransfer;
         }
         if config.transfer_error_interrupt {
-            interrupts |= DmaCommonInterrupts::TransferError;
+            interrupts |= DmaEvent::TransferError;
         }
         if config.direct_mode_error_interrupt {
-            interrupts |= DmaCommonInterrupts::DirectModeError;
+            interrupts |= DmaEvent::DirectModeError;
         }
         stream.listen_only(interrupts);
         if config.fifo_error_interrupt {
