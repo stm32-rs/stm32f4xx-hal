@@ -5,7 +5,7 @@ use core::ptr;
 use crate::dma::traits::{DMASet, PeriAddress};
 use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
 use crate::gpio::{self, NoPin};
-use crate::pac;
+use crate::{pac, IrqFlags};
 
 /// Clock polarity
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -41,6 +41,7 @@ use crate::pac::spi1;
 use crate::rcc;
 
 use crate::rcc::Clocks;
+use enumflags2::BitFlags;
 use fugit::HertzU32 as Hertz;
 
 /// SPI error
@@ -63,16 +64,59 @@ pub type NoMiso = NoPin;
 /// A filler type for when the Mosi pin is unnecessary
 pub type NoMosi = NoPin;
 
-/// Interrupt events
+/// SPI interrupt events
+#[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[repr(u8)]
 pub enum Event {
+    /// An error occurred.
+    ///
+    /// This bit controls the generation of an interrupt
+    /// when an error condition occurs
+    /// (OVR, CRCERR, MODF, FRE in SPI mode,
+    /// and UDR, OVR, FRE in I2S mode)
+    Error = 1 << 5,
     /// New data has been received
-    Rxne,
+    ///
+    /// RX buffer not empty interrupt enable
+    RxNotEmpty = 1 << 6,
     /// Data can be sent
-    Txe,
-    /// An error occurred
-    Error,
+    ///
+    /// Tx buffer empty interrupt enable
+    TxEmpty = 1 << 7,
+}
+
+/// SPI status flags
+#[enumflags2::bitflags]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[repr(u16)]
+pub enum Flag {
+    /// Receive buffer not empty
+    RxNotEmpty = 1 << 0,
+    /// Transmit buffer empty
+    TxEmpty = 1 << 1,
+    /// CRC error flag
+    CrcError = 1 << 4,
+    /// Mode fault
+    ModeFault = 1 << 5,
+    /// Overrun flag
+    Overrun = 1 << 6,
+    /// Busy flag
+    Busy = 1 << 7,
+    /// Frame Error
+    FrameError = 1 << 8,
+}
+
+/// SPI clearable flags
+#[enumflags2::bitflags]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[repr(u16)]
+pub enum CFlag {
+    /// CRC error flag
+    CrcError = 1 << 4,
 }
 
 /// Normal mode - RX and TX pins are independent
@@ -660,73 +704,38 @@ impl<SPI: Instance> Inner<SPI> {
             .modify(|_, w| w.lsbfirst().bit(format == BitFormat::LsbFirst));
     }
 
-    /// Enable interrupts for the given `event`:
-    ///  - Received data ready to be read (RXNE)
-    ///  - Transmit data register empty (TXE)
-    ///  - Transfer error
-    pub fn listen(&mut self, event: Event) {
-        self.spi.cr2.modify(|_, w| match event {
-            Event::Rxne => w.rxneie().set_bit(),
-            Event::Txe => w.txeie().set_bit(),
-            Event::Error => w.errie().set_bit(),
-        })
-    }
-
-    /// Disable interrupts for the given `event`:
-    ///  - Received data ready to be read (RXNE)
-    ///  - Transmit data register empty (TXE)
-    ///  - Transfer error
-    pub fn unlisten(&mut self, event: Event) {
-        self.spi.cr2.modify(|_, w| match event {
-            Event::Rxne => w.rxneie().clear_bit(),
-            Event::Txe => w.txeie().clear_bit(),
-            Event::Error => w.errie().clear_bit(),
-        })
-    }
-
     /// Return `true` if the TXE flag is set, i.e. new data to transmit
     /// can be written to the SPI.
     #[inline]
     pub fn is_tx_empty(&self) -> bool {
-        self.spi.sr.read().txe().bit_is_set()
-    }
-    #[inline]
-    #[deprecated(since = "0.14.0", note = "please use `is_tx_empty` instead")]
-    pub fn is_txe(&self) -> bool {
-        self.is_tx_empty()
+        self.flags().contains(Flag::TxEmpty)
     }
 
     /// Return `true` if the RXNE flag is set, i.e. new data has been received
     /// and can be read from the SPI.
     #[inline]
     pub fn is_rx_not_empty(&self) -> bool {
-        self.spi.sr.read().rxne().bit_is_set()
-    }
-
-    #[inline]
-    #[deprecated(since = "0.14.0", note = "please use `is_rx_not_empty` instead")]
-    pub fn is_rxne(&self) -> bool {
-        self.is_rx_not_empty()
+        self.flags().contains(Flag::RxNotEmpty)
     }
 
     /// Return `true` if the MODF flag is set, i.e. the SPI has experienced a
     /// Master Mode Fault. (see chapter 28.3.10 of the STM32F4 Reference Manual)
     #[inline]
     pub fn is_modf(&self) -> bool {
-        self.spi.sr.read().modf().bit_is_set()
+        self.flags().contains(Flag::ModeFault)
     }
 
     /// Returns true if the transfer is in progress
     #[inline]
     pub fn is_busy(&self) -> bool {
-        self.spi.sr.read().bsy().bit_is_set()
+        self.flags().contains(Flag::Busy)
     }
 
     /// Return `true` if the OVR flag is set, i.e. new data has been received
     /// while the receive data register was already filled.
     #[inline]
     pub fn is_overrun(&self) -> bool {
-        self.spi.sr.read().ovr().bit_is_set()
+        self.flags().contains(Flag::Overrun)
     }
 
     fn read_data_reg<W: FrameSize>(&mut self) -> W {
@@ -742,15 +751,15 @@ impl<SPI: Instance> Inner<SPI> {
 
     #[inline(always)]
     fn check_read<W: FrameSize>(&mut self) -> nb::Result<W, Error> {
-        let sr = self.spi.sr.read();
+        let flags = self.flags();
 
-        Err(if sr.ovr().bit_is_set() {
+        Err(if flags.contains(Flag::Overrun) {
             Error::Overrun.into()
-        } else if sr.modf().bit_is_set() {
+        } else if flags.contains(Flag::ModeFault) {
             Error::ModeFault.into()
-        } else if sr.crcerr().bit_is_set() {
+        } else if flags.contains(Flag::CrcError) {
             Error::Crc.into()
-        } else if sr.rxne().bit_is_set() {
+        } else if flags.contains(Flag::RxNotEmpty) {
             return Ok(self.read_data_reg());
         } else {
             nb::Error::WouldBlock
@@ -759,26 +768,70 @@ impl<SPI: Instance> Inner<SPI> {
 
     #[inline(always)]
     fn check_send<W: FrameSize>(&mut self, byte: W) -> nb::Result<(), Error> {
-        let sr = self.spi.sr.read();
+        let flags = self.flags();
 
-        Err(if sr.ovr().bit_is_set() {
+        Err(if flags.contains(Flag::Overrun) {
             // Read from the DR to clear the OVR bit
             let _ = self.spi.dr.read();
             Error::Overrun.into()
-        } else if sr.modf().bit_is_set() {
+        } else if flags.contains(Flag::ModeFault) {
             // Write to CR1 to clear MODF
             self.spi.cr1.modify(|_r, w| w);
             Error::ModeFault.into()
-        } else if sr.crcerr().bit_is_set() {
+        } else if flags.contains(Flag::CrcError) {
             // Clear the CRCERR bit
-            self.spi.sr.modify(|_r, w| w.crcerr().clear_bit());
+            self.clear_flags(CFlag::CrcError);
             Error::Crc.into()
-        } else if sr.txe().bit_is_set() {
+        } else if flags.contains(Flag::TxEmpty) {
             self.write_data_reg(byte);
             return Ok(());
         } else {
             nb::Error::WouldBlock
         })
+    }
+    fn listen_event(&mut self, disable: Option<BitFlags<Event>>, enable: Option<BitFlags<Event>>) {
+        self.spi.cr2.modify(|r, w| unsafe {
+            w.bits({
+                let mut bits = r.bits();
+                if let Some(d) = disable {
+                    bits &= !(d.bits() as u32)
+                }
+                if let Some(e) = enable {
+                    bits |= e.bits() as u32;
+                }
+                bits
+            })
+        });
+    }
+}
+
+impl<SPI: Instance> crate::Listen for Inner<SPI> {
+    type Event = Event;
+
+    fn listen(&mut self, event: impl Into<BitFlags<Self::Event>>) {
+        self.listen_event(None, Some(event.into()));
+    }
+
+    fn listen_only(&mut self, event: impl Into<BitFlags<Self::Event>>) {
+        self.listen_event(Some(BitFlags::ALL), Some(event.into()));
+    }
+
+    fn unlisten(&mut self, event: impl Into<BitFlags<Self::Event>>) {
+        self.listen_event(Some(event.into()), None);
+    }
+}
+
+impl<SPI: Instance> crate::IrqFlags for Inner<SPI> {
+    type CFlag = CFlag;
+    type Flag = Flag;
+    fn flags(&self) -> BitFlags<Self::Flag> {
+        BitFlags::from_bits_truncate(self.spi.sr.read().bits() as u16)
+    }
+    fn clear_flags(&mut self, event: impl Into<BitFlags<Self::CFlag>>) {
+        // TODO: check
+        self.spi
+            .sr
+            .write(|w| unsafe { w.bits(0xffff & !(event.into().bits() as u32)) });
     }
 }
 

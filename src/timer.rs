@@ -666,28 +666,6 @@ impl<TIM: Instance> Timer<TIM> {
     pub fn release(self) -> TIM {
         self.tim
     }
-
-    /// Starts listening for `Event`s
-    ///
-    /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
-    /// receiving events.
-    pub fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_interrupt(None, Some(event.into()));
-    }
-
-    /// Starts listening for `Event`s, stops all other
-    ///
-    /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
-    /// receiving events.
-    pub fn listen_only(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim
-            .listen_interrupt(Some(BitFlags::ALL), Some(event.into()));
-    }
-
-    /// Stops listening for `Event`s
-    pub fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_interrupt(Some(event.into()), None);
-    }
 }
 
 impl<TIM: Instance + MasterTimer> Timer<TIM> {
@@ -747,48 +725,6 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     pub fn release(self) -> TIM {
         self.tim
     }
-
-    /// Starts listening for `Event`s
-    ///
-    /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
-    /// receiving events.
-    pub fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_interrupt(None, Some(event.into()));
-    }
-
-    /// Starts listening for `Event`s, stops all other
-    ///
-    /// Note, you will also have to enable the TIM2 interrupt in the NVIC to start
-    /// receiving events.
-    pub fn listen_only(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim
-            .listen_interrupt(Some(BitFlags::ALL), Some(event.into()));
-    }
-
-    /// Stops listening for `Event`s
-    pub fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_interrupt(Some(event.into()), None);
-    }
-}
-
-impl<TIM: Instance> crate::IrqFlags for Timer<TIM> {
-    type Flag = Flag;
-    fn clear_flags(&mut self, event: impl Into<BitFlags<Flag>>) {
-        self.tim.clear_interrupt_flag(event.into());
-    }
-    fn flags(&self) -> BitFlags<Flag> {
-        self.tim.get_interrupt_flag()
-    }
-}
-
-impl<TIM: Instance, const FREQ: u32> crate::IrqFlags for FTimer<TIM, FREQ> {
-    type Flag = Flag;
-    fn clear_flags(&mut self, event: impl Into<BitFlags<Flag>>) {
-        self.tim.clear_interrupt_flag(event.into());
-    }
-    fn flags(&self) -> BitFlags<Flag> {
-        self.tim.get_interrupt_flag()
-    }
 }
 
 impl<TIM: Instance + MasterTimer, const FREQ: u32> FTimer<TIM, FREQ> {
@@ -803,6 +739,56 @@ pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
     let psc = (ticks - 1) / (1 << 16);
     let arr = ticks / (psc + 1) - 1;
     (psc as u16, arr)
+}
+
+impl<TIM: Instance> crate::Listen for Timer<TIM> {
+    type Event = Event;
+    fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.tim.listen_interrupt(None, Some(event.into()));
+    }
+    fn listen_only(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.tim
+            .listen_interrupt(Some(BitFlags::ALL), Some(event.into()));
+    }
+    fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.tim.listen_interrupt(Some(event.into()), None);
+    }
+}
+
+impl<TIM: Instance, const FREQ: u32> crate::Listen for FTimer<TIM, FREQ> {
+    type Event = Event;
+    fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.tim.listen_interrupt(None, Some(event.into()));
+    }
+    fn listen_only(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.tim
+            .listen_interrupt(Some(BitFlags::ALL), Some(event.into()));
+    }
+    fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.tim.listen_interrupt(Some(event.into()), None);
+    }
+}
+
+impl<TIM: Instance> crate::IrqFlags for Timer<TIM> {
+    type Flag = Flag;
+    type CFlag = Flag;
+    fn clear_flags(&mut self, event: impl Into<BitFlags<Flag>>) {
+        self.tim.clear_interrupt_flag(event.into());
+    }
+    fn flags(&self) -> BitFlags<Flag> {
+        self.tim.get_interrupt_flag()
+    }
+}
+
+impl<TIM: Instance, const FREQ: u32> crate::IrqFlags for FTimer<TIM, FREQ> {
+    type Flag = Flag;
+    type CFlag = Flag;
+    fn clear_flags(&mut self, event: impl Into<BitFlags<Flag>>) {
+        self.tim.clear_interrupt_flag(event.into());
+    }
+    fn flags(&self) -> BitFlags<Flag> {
+        self.tim.get_interrupt_flag()
+    }
 }
 
 #[cfg(not(feature = "gpio-f410"))]

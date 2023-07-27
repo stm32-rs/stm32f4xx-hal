@@ -93,3 +93,4 @@ pub use crate::timer::SysTimerExt as _stm32f4xx_hal_timer_SysCounterExt;
 pub use crate::timer::TimerExt as _stm32f4xx_hal_timer_TimerExt;
 
 pub use crate::IrqFlags as _;
+pub use crate::Listen as _;

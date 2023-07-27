@@ -450,6 +450,28 @@ impl<DMA: rcc::Enable + rcc::Reset> StreamsTuple<DMA> {
     }
 }
 
+impl<I: Instance, const S: u8> crate::Listen for StreamX<I, S>
+where
+    Self: crate::Sealed + StreamISR,
+{
+    type Event = DmaEvent;
+
+    #[inline(always)]
+    fn listen(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
+        self.listen_event(None, Some(interrupts.into()));
+    }
+
+    #[inline(always)]
+    fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
+        self.listen_event(Some(BitFlags::ALL), Some(interrupts.into()));
+    }
+
+    #[inline(always)]
+    fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
+        self.listen_event(Some(interrupts.into()), None);
+    }
+}
+
 impl<I: Instance, const S: u8> Stream for StreamX<I, S>
 where
     Self: crate::Sealed + StreamISR,
@@ -577,21 +599,6 @@ where
     }
 
     #[inline(always)]
-    fn listen(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        self.listen_event(None, Some(interrupts.into()));
-    }
-
-    #[inline(always)]
-    fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        self.listen_event(Some(BitFlags::ALL), Some(interrupts.into()));
-    }
-
-    #[inline(always)]
-    fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        self.listen_event(Some(interrupts.into()), None);
-    }
-
-    #[inline(always)]
     fn events(&self) -> BitFlags<DmaEvent> {
         BitFlags::from_bits_truncate(unsafe { Self::st() }.cr.read().bits() as u8)
     }
@@ -662,7 +669,6 @@ impl<I: Instance, const S: u8> StreamX<I, S>
 where
     Self: crate::Sealed + StreamISR,
 {
-    #[inline(always)]
     fn listen_event(
         &mut self,
         disable: Option<BitFlags<DmaEvent>>,
@@ -693,6 +699,8 @@ macro_rules! dma_stream {
         $(
             impl<I: Instance> crate::IrqFlags for StreamX<I, $number> {
                 type Flag = DmaFlag;
+                type CFlag = DmaFlag;
+
 
                 #[inline(always)]
                 fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>) {
@@ -1723,6 +1731,7 @@ where
     PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
 {
     type Flag = DmaFlag;
+    type CFlag = DmaFlag;
 
     #[inline(always)]
     fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>) {

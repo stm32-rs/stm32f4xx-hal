@@ -19,7 +19,7 @@ use sealed::Bits;
 pub trait SafePeripheralRead {}
 
 /// Trait for DMA stream interrupt handling.
-pub trait StreamISR: crate::IrqFlags<Flag = DmaFlag> + crate::Sealed {
+pub trait StreamISR: crate::IrqFlags<Flag = DmaFlag, CFlag = DmaFlag> + crate::Sealed {
     /// Clear transfer complete interrupt (tcif) for the DMA stream.
     fn clear_transfer_complete(&mut self) {
         self.clear_flags(DmaFlag::TransferComplete)
@@ -97,7 +97,7 @@ pub trait DmaFlagExt {
 }
 
 /// Trait for DMA streams types.
-pub trait Stream: StreamISR + crate::Sealed {
+pub trait Stream: StreamISR + crate::Listen<Event = DmaEvent> + crate::Sealed {
     /// Number of the register stream.
     const NUMBER: usize;
     /// Set the peripheral address (par) of the DMA stream.
@@ -181,21 +181,6 @@ pub trait Stream: StreamISR + crate::Sealed {
 
     /// Set the flow controller (pfctrl).
     fn set_flow_controller(&mut self, value: DmaFlowController);
-
-    /// Convenience method to configure several interrupts of the DMA stream.
-    ///
-    /// Note: fifo_error interrupt is not concerend because it's in a different register
-    fn listen(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>);
-
-    /// Convenience method to configure several interrupts of the DMA stream and unconfigure other.
-    ///
-    /// Note: fifo_error interrupt is not concerend because it's in a different register
-    fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>);
-
-    /// Convenience method to unconfigure several interrupts of the DMA stream.
-    ///
-    /// Note: fifo_error interrupt is not concerend because it's in a different register
-    fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>);
 
     /// Convenience method to get the value of several interrupts of the DMA stream.  The order of the
     /// returns are: `transfer_complete`, `half_transfer`, `transfer_error` and `direct_mode_error`
