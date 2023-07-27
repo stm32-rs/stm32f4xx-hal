@@ -6,6 +6,7 @@ use crate::dma::{
     traits::{Channel, DMASet, DmaFlagExt, PeriAddress, Stream, StreamISR},
     ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer,
 };
+use crate::IrqFlags;
 
 use nb;
 

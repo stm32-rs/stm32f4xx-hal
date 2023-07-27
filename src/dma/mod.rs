@@ -578,32 +578,17 @@ where
 
     #[inline(always)]
     fn listen(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        unsafe {
-            Self::st()
-                .cr
-                .modify(|r, w| w.bits(r.bits() | (interrupts.into().bits() as u32)));
-        }
+        self.listen_event(None, Some(interrupts.into()));
     }
 
     #[inline(always)]
     fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        unsafe {
-            Self::st().cr.modify(|r, w| {
-                w.bits(
-                    r.bits() & !(BitFlags::<DmaEvent>::ALL.bits() as u32)
-                        | (interrupts.into().bits() as u32),
-                )
-            });
-        }
+        self.listen_event(Some(BitFlags::ALL), Some(interrupts.into()));
     }
 
     #[inline(always)]
     fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        unsafe {
-            Self::st()
-                .cr
-                .modify(|r, w| w.bits(r.bits() & !(interrupts.into().bits() as u32)));
-        }
+        self.listen_event(Some(interrupts.into()), None);
     }
 
     #[inline(always)]
@@ -673,13 +658,42 @@ where
     }
 }
 
+impl<I: Instance, const S: u8> StreamX<I, S>
+where
+    Self: crate::Sealed + StreamISR,
+{
+    #[inline(always)]
+    fn listen_event(
+        &mut self,
+        disable: Option<BitFlags<DmaEvent>>,
+        enable: Option<BitFlags<DmaEvent>>,
+    ) {
+        unsafe {
+            Self::st().cr.modify(|r, w| {
+                w.bits({
+                    let mut bits = r.bits();
+                    if let Some(d) = disable {
+                        bits &= !(d.bits() as u32)
+                    }
+                    if let Some(e) = enable {
+                        bits |= e.bits() as u32;
+                    }
+                    bits
+                })
+            });
+        }
+    }
+}
+
 // Macro that creates a struct representing a stream on either DMA controller
 // The implementation does the heavy lifting of mapping to the right fields on the stream
 macro_rules! dma_stream {
     ($(($number:literal, $isr_shift:literal, $ifcr:ident, $isr:ident)),+
         $(,)*) => {
         $(
-            impl<I: Instance> StreamISR for StreamX<I, $number> where Self: crate::Sealed {
+            impl<I: Instance> crate::IrqFlags for StreamX<I, $number> {
+                type Flag = DmaFlag;
+
                 #[inline(always)]
                 fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>) {
                     let dma = unsafe { &*I::ptr() };
@@ -697,6 +711,7 @@ macro_rules! dma_stream {
                 }
             }
 
+            impl<I: Instance> StreamISR for StreamX<I, $number> { }
         )+
     };
 }
@@ -1699,7 +1714,7 @@ where
 {
 }
 
-impl<STREAM, const CHANNEL: u8, PERIPHERAL, DIR, BUF> StreamISR
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, DIR, BUF> crate::IrqFlags
     for Transfer<STREAM, CHANNEL, PERIPHERAL, DIR, BUF>
 where
     STREAM: Stream,
@@ -1707,6 +1722,8 @@ where
     DIR: Direction,
     PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
 {
+    type Flag = DmaFlag;
+
     #[inline(always)]
     fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>) {
         self.stream.clear_flags(flags)
@@ -1716,6 +1733,16 @@ where
     fn flags(&self) -> BitFlags<DmaFlag> {
         self.stream.flags()
     }
+}
+
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, DIR, BUF> StreamISR
+    for Transfer<STREAM, CHANNEL, PERIPHERAL, DIR, BUF>
+where
+    STREAM: Stream,
+    ChannelX<CHANNEL>: Channel,
+    DIR: Direction,
+    PERIPHERAL: PeriAddress + DMASet<STREAM, CHANNEL, DIR>,
+{
 }
 
 impl<STREAM, const CHANNEL: u8, PERIPHERAL, DIR, BUF> Drop

@@ -688,19 +688,6 @@ impl<TIM: Instance> Timer<TIM> {
     pub fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim.listen_interrupt(Some(event.into()), None);
     }
-
-    /// Clears interrupts associated with `Event`s.
-    ///
-    /// If the interrupt is not cleared, it will immediately retrigger after
-    /// the ISR has finished.
-    pub fn clear_flags(&mut self, event: impl Into<BitFlags<Flag>>) {
-        self.tim.clear_interrupt_flag(event.into());
-    }
-
-    /// Return interrupt flags
-    pub fn flags(&self) -> BitFlags<Flag> {
-        self.tim.get_interrupt_flag()
-    }
 }
 
 impl<TIM: Instance + MasterTimer> Timer<TIM> {
@@ -782,17 +769,24 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     pub fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
         self.tim.listen_interrupt(Some(event.into()), None);
     }
+}
 
-    /// Clears interrupt associated with `event`.
-    ///
-    /// If the interrupt is not cleared, it will immediately retrigger after
-    /// the ISR has finished.
-    pub fn clear_flags(&mut self, event: impl Into<BitFlags<Flag>>) {
+impl<TIM: Instance> crate::IrqFlags for Timer<TIM> {
+    type Flag = Flag;
+    fn clear_flags(&mut self, event: impl Into<BitFlags<Flag>>) {
         self.tim.clear_interrupt_flag(event.into());
     }
+    fn flags(&self) -> BitFlags<Flag> {
+        self.tim.get_interrupt_flag()
+    }
+}
 
-    /// Return interrupt flags
-    pub fn flags(&self) -> BitFlags<Flag> {
+impl<TIM: Instance, const FREQ: u32> crate::IrqFlags for FTimer<TIM, FREQ> {
+    type Flag = Flag;
+    fn clear_flags(&mut self, event: impl Into<BitFlags<Flag>>) {
+        self.tim.clear_interrupt_flag(event.into());
+    }
+    fn flags(&self) -> BitFlags<Flag> {
         self.tim.get_interrupt_flag()
     }
 }
