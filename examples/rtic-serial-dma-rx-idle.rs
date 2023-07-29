@@ -14,10 +14,7 @@
 mod app {
 
     use hal::{
-        dma::{
-            config::DmaConfig, traits::Stream, traits::StreamISR, PeripheralToMemory, Stream2,
-            StreamsTuple, Transfer,
-        },
+        dma::{config::DmaConfig, PeripheralToMemory, Stream2, StreamsTuple, Transfer},
         pac::{DMA2, USART1},
         prelude::*,
         rcc::RccExt,
@@ -120,7 +117,7 @@ mod app {
 
         if transfer.is_idle() {
             // Calc received bytes count
-            let bytes_count = BUFFER_SIZE - Stream2::<DMA2>::get_number_of_transfers() as usize;
+            let bytes_count = BUFFER_SIZE - transfer.number_of_transfers() as usize;
 
             // Allocate new buffer
             let new_buffer = cx.local.rx_buffer.take().unwrap();
@@ -143,11 +140,11 @@ mod app {
     fn dma2_stream2(mut cx: dma2_stream2::Context) {
         let transfer = &mut cx.shared.rx_transfer;
 
-        if Stream2::<DMA2>::get_fifo_error_flag() {
-            transfer.clear_fifo_error_interrupt();
+        if transfer.is_fifo_error() {
+            transfer.clear_fifo_error();
         }
-        if Stream2::<DMA2>::get_transfer_complete_flag() {
-            transfer.clear_transfer_complete_interrupt();
+        if transfer.is_transfer_complete() {
+            transfer.clear_transfer_complete();
 
             // Buffer is full, but no IDLE received!
             // You can process this data or discard data (ignore transfer complete interrupt and wait IDLE).
