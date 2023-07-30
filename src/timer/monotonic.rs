@@ -189,8 +189,7 @@ where
         } else {
             0
         };
-        let i = Self::Instant::from_ticks(u64::from(cnt) + ovf + self.ovf);
-        i
+        Self::Instant::from_ticks(u64::from(cnt) + ovf + self.ovf)
     }
 
     fn zero() -> Self::Instant {
@@ -210,7 +209,7 @@ where
         // how many ticks are left.
         let val: TIM::Width = match instant.checked_duration_since(now) {
             None => TIM::Width::ONE, // In the past, RTIC will handle this
-            Some(x) if x.ticks() <= TIM::Width::OVF_VALUE - 1 => {
+            Some(x) if x.ticks() < TIM::Width::OVF_VALUE => {
                 TIM::Width::cast_u64(instant.duration_since_epoch().ticks())
             } // Will not overflow
             Some(_x) => self.tim.read_count().wrapping_add(TIM::Width::FOR_WRAP), // Will overflow

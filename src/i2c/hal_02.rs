@@ -81,10 +81,10 @@ mod blocking {
     {
         type Error = Error;
 
-        fn exec<'a>(
+        fn exec(
             &mut self,
             address: u8,
-            operations: &mut [Operation<'a>],
+            operations: &mut [Operation<'_>],
         ) -> Result<(), Self::Error> {
             self.transaction_slice_hal_02(address, operations)
         }

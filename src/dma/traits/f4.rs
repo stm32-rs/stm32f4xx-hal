@@ -530,7 +530,7 @@ dma_map!(
     (Stream7<DMA1>:4, pac::FMPI2C1, [MemoryToPeripheral]), //FMPI2C1_TX:DMA_CHANNEL_4
 );
 
-#[cfg(any(feature = "gpio-f446",))]
+#[cfg(feature = "gpio-f446")]
 dma_map!(
     (Stream2<DMA1>:2, pac::FMPI2C1, [PeripheralToMemory]), //FMPI2C1_RX
     (Stream5<DMA1>:2, pac::FMPI2C1, [MemoryToPeripheral]), //FMPI2C1_TX
