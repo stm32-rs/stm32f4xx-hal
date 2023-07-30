@@ -428,7 +428,7 @@ macro_rules! dual_i2s {
 dual_i2s!(pac::SPI2, pac::I2S2EXT, DualI2s2, i2s2, i2s_clk);
 
 // add "gpio-f413" feature here when missing I2SEXT in pac wil be fixed.
-#[cfg(any(feature = "gpio-f412",))]
+#[cfg(feature = "gpio-f412")]
 dual_i2s!(pac::SPI2, pac::I2S2EXT, DualI2s2, i2s2, i2s_apb1_clk);
 
 #[cfg(any(
@@ -441,7 +441,7 @@ dual_i2s!(pac::SPI2, pac::I2S2EXT, DualI2s2, i2s2, i2s_apb1_clk);
 dual_i2s!(pac::SPI3, pac::I2S3EXT, DualI2s3, i2s3, i2s_clk);
 
 // add "gpio-f413" feature here when missing I2SEXT in pac wil be fixed.
-#[cfg(any(feature = "gpio-f412",))]
+#[cfg(feature = "gpio-f412")]
 dual_i2s!(pac::SPI3, pac::I2S3EXT, DualI2s3, i2s3, i2s_apb1_clk);
 
 // DMA support: reuse existing mappings for SPI
