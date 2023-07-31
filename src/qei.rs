@@ -6,6 +6,8 @@ use crate::{
 };
 
 pub trait QeiExt: Sized + Instance {
+    type Count;
+
     fn qei(
         self,
         pins: (
@@ -16,6 +18,8 @@ pub trait QeiExt: Sized + Instance {
 }
 
 impl<TIM: Instance> QeiExt for TIM {
+    type Count = TIM::Width;
+
     fn qei(
         self,
         pins: (
@@ -69,6 +73,12 @@ impl<TIM: Instance> Qei<TIM> {
         ),
     ) {
         (self.tim, self.pins)
+    }
+
+    /// Set current count number
+    pub fn set_count(&mut self, value: TIM::Width) -> &mut Self {
+        self.tim.write_count(value);
+        self
     }
 }
 
