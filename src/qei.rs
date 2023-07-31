@@ -6,8 +6,6 @@ use crate::{
 };
 
 pub trait QeiExt: Sized + Instance {
-    type Count;
-
     fn qei(
         self,
         pins: (
@@ -18,8 +16,6 @@ pub trait QeiExt: Sized + Instance {
 }
 
 impl<TIM: Instance> QeiExt for TIM {
-    type Count = TIM::Width;
-
     fn qei(
         self,
         pins: (
