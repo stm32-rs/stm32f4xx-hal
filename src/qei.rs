@@ -70,6 +70,12 @@ impl<TIM: Instance> Qei<TIM> {
     ) {
         (self.tim, self.pins)
     }
+
+    /// Set current count number
+    pub fn set_count(&mut self, value: TIM::Width) -> &mut Self {
+        self.tim.write_count(value);
+        self
+    }
 }
 
 impl<TIM: Instance> embedded_hal::Qei for Qei<TIM> {

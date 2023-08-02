@@ -273,6 +273,7 @@ mod sealed {
         fn listen_interrupt(&mut self, event: Event, b: bool);
         fn get_interrupt_flag(&self) -> Event;
         fn read_count(&self) -> Self::Width;
+        fn write_count(&mut self, value: Self::Width);
         fn start_one_pulse(&mut self);
         fn start_free(&mut self, update: bool);
         fn cr1_reset(&mut self);
@@ -403,6 +404,12 @@ macro_rules! hal {
             #[inline(always)]
             fn read_count(&self) -> Self::Width {
                 self.cnt.read().bits() as Self::Width
+            }
+            #[inline(always)]
+            fn write_count(&mut self, value:Self::Width) {
+                //TODO: remove "unsafe" when possible
+                #[allow(unused_unsafe)]
+                self.cnt.write(|w|unsafe{w.cnt().bits(value)});
             }
             #[inline(always)]
             fn start_one_pulse(&mut self) {
