@@ -69,13 +69,14 @@ crate originally started by Jorge Aparicio.
 [stm32f1xx-hal]: https://github.com/stm32-rs/stm32f1xx-hal
 [embedded-hal]: https://github.com/rust-embedded/embedded-hal
 
-Setting up your project
--------
+## Setting up your project
 
 Check if the BSP for your board exists in the
 [stm32-rs](https://github.com/stm32-rs) page.
 If it exists, the `stm32f4xx-hal` crate should be already included, so you can
 use the bsp as BSP for your project.
+
+### Manually
 
 Otherwise, create a new Rust project as you usually do with `cargo init`. The
 "hello world" of embedded development is usually to blink a LED. The code to do
@@ -102,6 +103,14 @@ features = ["stm32f407"] # replace the model of your microcontroller here
 We also need to tell Rust how to link our executable and how to lay out the
 result in memory. To accomplish all this, copy [.cargo/config](.cargo/config.toml)
 and [memory.x](memory.x) from the `stm32f4xx-hal` repository to your project and make sure the sizes match up with the datasheet. Also note that there might be different kinds of memory which are not equal; to be on the safe side only specify the size of the first block at the specified address.
+
+### Fast start
+
+To create empty project faster you could use `cargo generate` command. See [stm32-template](https://github.com/burrbull/stm32-template/).
+```
+$ cargo generate --git https://github.com/burrbull/stm32-template/
+```
+Note that you need to know your chip full name.
 
 License
 -------
