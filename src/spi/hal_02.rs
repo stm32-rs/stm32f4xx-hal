@@ -51,7 +51,7 @@ mod blocking {
     use super::super::{Error, Instance, Spi};
     use embedded_hal::blocking::spi::{Operation, Transactional, Transfer, Write, WriteIter};
 
-    impl<SPI, const BIDI: bool> Transfer<u8> for Spi<SPI, BIDI, u8>
+    impl<SPI> Transfer<u8> for Spi<SPI, false, u8>
     where
         SPI: Instance,
     {
@@ -64,7 +64,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, const BIDI: bool> Transfer<u16> for Spi<SPI, BIDI, u16>
+    impl<SPI> Transfer<u16> for Spi<SPI, false, u16>
     where
         SPI: Instance,
     {
@@ -97,14 +97,7 @@ mod blocking {
         where
             WI: IntoIterator<Item = u8>,
         {
-            for word in words.into_iter() {
-                nb::block!(self.write_nonblocking(word))?;
-                if !BIDI {
-                    nb::block!(self.read_nonblocking())?;
-                }
-            }
-
-            Ok(())
+            self.write_iter(words)
         }
     }
 
@@ -129,14 +122,7 @@ mod blocking {
         where
             WI: IntoIterator<Item = u16>,
         {
-            for word in words.into_iter() {
-                nb::block!(self.write_nonblocking(word))?;
-                if !BIDI {
-                    nb::block!(self.read_nonblocking())?;
-                }
-            }
-
-            Ok(())
+            self.write_iter(words)
         }
     }
 

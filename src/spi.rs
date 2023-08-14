@@ -207,15 +207,13 @@ pub trait SpiExt: Sized + Instance {
 
     fn spi_bidi(
         self,
-        pins: (
-            impl Into<Self::Sck>,
-            impl Into<Self::Miso>,
-            impl Into<Self::Mosi>,
-        ),
+        pins: (impl Into<Self::Sck>, impl Into<Self::Mosi>),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, true, u8>;
+    ) -> Spi<Self, true, u8>
+    where
+        NoPin: Into<Self::Miso>;
 
     fn spi_slave(
         self,
@@ -233,11 +231,12 @@ pub trait SpiExt: Sized + Instance {
         pins: (
             impl Into<Self::Sck>,
             impl Into<Self::Miso>,
-            impl Into<Self::Mosi>,
             Option<Self::Nss>,
         ),
         mode: impl Into<Mode>,
-    ) -> SpiSlave<Self, true, u8>;
+    ) -> SpiSlave<Self, true, u8>
+    where
+        NoPin: Into<Self::Mosi>;
 }
 
 impl<SPI: Instance> SpiExt for SPI {
@@ -266,15 +265,14 @@ impl<SPI: Instance> SpiExt for SPI {
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     fn spi_bidi(
         self,
-        pins: (
-            impl Into<Self::Sck>,
-            impl Into<Self::Miso>,
-            impl Into<Self::Mosi>,
-        ),
+        pins: (impl Into<Self::Sck>, impl Into<Self::Mosi>),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, true, u8> {
+    ) -> Spi<Self, true, u8>
+    where
+        NoPin: Into<Self::Miso>,
+    {
         Spi::new_bidi(self, pins, mode, freq, clocks)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
@@ -304,11 +302,13 @@ impl<SPI: Instance> SpiExt for SPI {
         pins: (
             impl Into<Self::Sck>,
             impl Into<Self::Miso>,
-            impl Into<Self::Mosi>,
             Option<Self::Nss>,
         ),
         mode: impl Into<Mode>,
-    ) -> SpiSlave<Self, true, u8> {
+    ) -> SpiSlave<Self, true, u8>
+    where
+        NoPin: Into<Self::Mosi>,
+    {
         SpiSlave::new_bidi(self, pins, mode)
     }
 }
@@ -447,21 +447,20 @@ impl<SPI: Instance> Spi<SPI, true, u8> {
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_bidi(
         spi: SPI,
-        pins: (
-            impl Into<SPI::Sck>,
-            impl Into<SPI::Miso>,
-            impl Into<SPI::Mosi>,
-        ),
+        pins: (impl Into<SPI::Sck>, impl Into<SPI::Mosi>),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Self {
+    ) -> Self
+    where
+        NoPin: Into<SPI::Miso>,
+    {
         unsafe {
             SPI::enable_unchecked();
             SPI::reset_unchecked();
         }
 
-        let pins = (pins.0.into(), pins.1.into(), pins.2.into());
+        let pins = (pins.0.into(), NoPin::new().into(), pins.1.into());
 
         Self::_new(spi, pins)
             .pre_init(mode.into(), freq, SPI::clock(clocks))
@@ -504,20 +503,18 @@ impl<SPI: Instance> SpiSlave<SPI, true, u8> {
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_bidi(
         spi: SPI,
-        pins: (
-            impl Into<SPI::Sck>,
-            impl Into<SPI::Miso>,
-            impl Into<SPI::Mosi>,
-            Option<SPI::Nss>,
-        ),
+        pins: (impl Into<SPI::Sck>, impl Into<SPI::Miso>, Option<SPI::Nss>),
         mode: impl Into<Mode>,
-    ) -> Self {
+    ) -> Self
+    where
+        NoPin: Into<SPI::Mosi>,
+    {
         unsafe {
             SPI::enable_unchecked();
             SPI::reset_unchecked();
         }
 
-        let pins = (pins.0.into(), pins.1.into(), pins.2.into(), pins.3);
+        let pins = (pins.0.into(), pins.1.into(), NoPin::new().into(), pins.2);
 
         Self::_new(spi, pins).pre_init(mode.into()).init()
     }
@@ -729,6 +726,16 @@ impl<SPI: Instance> Inner<SPI> {
         self.spi.sr.read().ovr().bit_is_set()
     }
 
+    #[inline]
+    fn bidi_output(&mut self) {
+        self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+    }
+
+    #[inline]
+    fn bidi_input(&mut self) {
+        self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+    }
+
     fn read_data_reg<W: FrameSize>(&mut self) -> W {
         // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
         // reading a half-word)
@@ -863,14 +870,14 @@ unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeri
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     pub fn read_nonblocking(&mut self) -> nb::Result<W, Error> {
         if BIDI {
-            self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
+            self.bidi_input();
         }
         self.check_read()
     }
 
     pub fn write_nonblocking(&mut self, byte: W) -> nb::Result<(), Error> {
         if BIDI {
-            self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+            self.bidi_output();
         }
         self.check_send(byte)
     }
@@ -900,10 +907,31 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 
     pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
-        for word in words {
-            nb::block!(self.write_nonblocking(*word))?;
-            if !BIDI {
-                nb::block!(self.read_nonblocking())?;
+        if BIDI {
+            self.bidi_output();
+            for word in words {
+                nb::block!(self.check_send(*word))?;
+            }
+        } else {
+            for word in words {
+                nb::block!(self.check_send(*word))?;
+                nb::block!(self.check_read::<W>())?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn write_iter(&mut self, words: impl IntoIterator<Item = W>) -> Result<(), Error> {
+        if BIDI {
+            self.bidi_output();
+            for word in words.into_iter() {
+                nb::block!(self.check_send(word))?;
+            }
+        } else {
+            for word in words.into_iter() {
+                nb::block!(self.check_send(word))?;
+                nb::block!(self.check_read::<W>())?;
             }
         }
 
@@ -911,9 +939,16 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 
     pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
-        for word in words {
-            nb::block!(self.write_nonblocking(W::default()))?;
-            *word = nb::block!(self.read_nonblocking())?;
+        if BIDI {
+            self.bidi_input();
+            for word in words {
+                *word = nb::block!(self.check_read())?;
+            }
+        } else {
+            for word in words {
+                nb::block!(self.check_send(W::default()))?;
+                *word = nb::block!(self.check_read())?;
+            }
         }
 
         Ok(())
@@ -923,14 +958,14 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     pub fn read_nonblocking(&mut self) -> nb::Result<W, Error> {
         if BIDI {
-            self.spi.cr1.modify(|_, w| w.bidioe().clear_bit());
+            self.bidi_input();
         }
         self.check_read()
     }
 
     pub fn write_nonblocking(&mut self, byte: W) -> nb::Result<(), Error> {
         if BIDI {
-            self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+            self.bidi_output();
         }
         self.check_send(byte)
     }
@@ -960,10 +995,15 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     }
 
     pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
-        for word in words {
-            nb::block!(self.write_nonblocking(*word))?;
-            if !BIDI {
-                nb::block!(self.read_nonblocking())?;
+        if BIDI {
+            self.bidi_output();
+            for word in words {
+                nb::block!(self.check_send(*word))?;
+            }
+        } else {
+            for word in words {
+                nb::block!(self.check_send(*word))?;
+                nb::block!(self.check_read::<W>())?;
             }
         }
 
@@ -971,9 +1011,16 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     }
 
     pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
-        for word in words {
-            nb::block!(self.write_nonblocking(W::default()))?;
-            *word = nb::block!(self.read_nonblocking())?;
+        if BIDI {
+            self.bidi_input();
+            for word in words {
+                *word = nb::block!(self.check_read())?;
+            }
+        } else {
+            for word in words {
+                nb::block!(self.check_send(W::default()))?;
+                *word = nb::block!(self.check_read())?;
+            }
         }
 
         Ok(())

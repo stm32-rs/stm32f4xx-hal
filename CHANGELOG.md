@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - complete and rework Dma Stream API [#666]
 - add `.set_count()` for QEI, add `.write_count()` for TIM [#677]
 - add "Fast start" section in README [#678]
+ - SPI bidi takes 2 pins [#526]
 
+[#526]: https://github.com/stm32-rs/stm32f4xx-hal/pull/526
 [#666]: https://github.com/stm32-rs/stm32f4xx-hal/pull/666
 [#677]: https://github.com/stm32-rs/stm32f4xx-hal/pull/677
 [#678]: https://github.com/stm32-rs/stm32f4xx-hal/pull/678
