@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+ - bump embedded-hal to `1.0-rc1` (remove `serial` part)
  - complete and rework Dma Stream API [#666]
  - Use `enumflags2::BitFlags` for interrupt flags and events [#673]
  - SPI bidi takes 2 pins [#526]

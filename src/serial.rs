@@ -17,7 +17,6 @@
 use core::marker::PhantomData;
 
 mod hal_02;
-mod hal_1;
 
 pub(crate) mod uart_impls;
 pub use uart_impls::Instance;
@@ -30,8 +29,26 @@ use crate::pac;
 use crate::gpio::NoPin;
 use crate::rcc::Clocks;
 
-/// Serial error
-pub use embedded_hal_one::serial::ErrorKind as Error;
+/// Serial error kind
+///
+/// This represents a common set of serial operation errors. HAL implementations are
+/// free to define more specific or additional error types. However, by providing
+/// a mapping to these common serial errors, generic code can still react to them.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[non_exhaustive]
+pub enum Error {
+    /// The peripheral receive buffer was overrun.
+    Overrun,
+    /// Received data does not conform to the peripheral configuration.
+    /// Can be caused by a misconfigured device on either end of the serial line.
+    FrameFormat,
+    /// Parity check failed.
+    Parity,
+    /// Serial line is too noisy to read valid data.
+    Noise,
+    /// A different error occurred. The original error may contain more information.
+    Other,
+}
 
 /// UART interrupt events
 #[enumflags2::bitflags]
