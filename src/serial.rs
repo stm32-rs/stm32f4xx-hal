@@ -192,7 +192,7 @@ impl<UART: CommonPins, WORD> Serial<UART, WORD> {
 }
 
 macro_rules! halUsart {
-    ($USART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
+    ($USART:ty, $Serial:ident, $Rx:ident, $Tx:ident) => {
         pub type $Serial<WORD = u8> = Serial<$USART, WORD>;
         pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
         pub type $Rx<WORD = u8> = Rx<$USART, WORD>;

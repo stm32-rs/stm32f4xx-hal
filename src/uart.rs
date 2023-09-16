@@ -25,7 +25,7 @@ pub use embedded_hal_one::serial::ErrorKind as Error;
 
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
-    ($UART:ty, $Serial:ident, $Tx:ident, $Rx:ident) => {
+    ($UART:ty, $Serial:ident, $Rx:ident, $Tx:ident) => {
         pub type $Serial<WORD = u8> = Serial<$UART, WORD>;
         pub type $Tx<WORD = u8> = Tx<$UART, WORD>;
         pub type $Rx<WORD = u8> = Rx<$UART, WORD>;
