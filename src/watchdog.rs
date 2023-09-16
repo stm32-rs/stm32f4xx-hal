@@ -46,7 +46,7 @@ impl IndependentWatchdog {
     fn setup(&self, timeout_ms: MilliSeconds) {
         assert!(timeout_ms.ticks() < (1 << 15), "Watchdog timeout to high");
         let pr = match timeout_ms.ticks() {
-            t if t == 0 => 0b000, // <= (MAX_PR + 1) * 4 / LSI_KHZ => 0b000,
+            0 => 0b000, // <= (MAX_PR + 1) * 4 / LSI_KHZ => 0b000,
             t if t <= (MAX_PR + 1) * 8 / LSI_KHZ => 0b001,
             t if t <= (MAX_PR + 1) * 16 / LSI_KHZ => 0b010,
             t if t <= (MAX_PR + 1) * 32 / LSI_KHZ => 0b011,

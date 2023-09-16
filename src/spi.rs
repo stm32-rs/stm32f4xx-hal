@@ -1,6 +1,5 @@
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
-use core::ptr;
 
 use crate::dma::traits::{DMASet, PeriAddress};
 use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
@@ -739,12 +738,14 @@ impl<SPI: Instance> Inner<SPI> {
     fn read_data_reg<W: FrameSize>(&mut self) -> W {
         // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
         // reading a half-word)
-        unsafe { ptr::read_volatile(&self.spi.dr as *const _ as *const W) }
+        unsafe { (*(&self.spi.dr as *const pac::spi1::DR).cast::<vcell::VolatileCell<W>>()).get() }
     }
 
     fn write_data_reg<W: FrameSize>(&mut self, data: W) {
         // NOTE(write_volatile) see note above
-        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut W, data) }
+        unsafe {
+            (*(&self.spi.dr as *const pac::spi1::DR).cast::<vcell::VolatileCell<W>>()).set(data)
+        }
     }
 
     #[inline(always)]
