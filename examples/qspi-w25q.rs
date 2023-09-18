@@ -123,7 +123,9 @@ where
             QspiReadCommand::new(data, QspiMode::QuadChannel)
                 .instruction(0xEB, QspiMode::SingleChannel)
                 .address(address, QspiMode::QuadChannel)
-                .dummy_cycles(6),
+                // the M0-M7 bits will be send by alternate_bytes, and the value should be 0xFX
+                .alternate_bytes(&[0xFF], QspiMode::QuadChannel)
+                .dummy_cycles(4),
         )?;
 
         Ok(())
@@ -135,7 +137,9 @@ where
                 .instruction(0xEB, QspiMode::SingleChannel)
                 .address_mode(QspiMode::QuadChannel)
                 .data_mode(QspiMode::QuadChannel)
-                .dummy_cycles(6),
+                // the M0-M7 bits will be send by alternate_bytes, and the value should be 0xFX
+                .alternate_bytes(&[0xFF], QspiMode::QuadChannel)
+                .dummy_cycles(4),
         )
     }
 }
