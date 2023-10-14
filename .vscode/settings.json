@@ -4,6 +4,6 @@
   "rust-analyzer.cargo.features": [
     "defmt",
     "rtic",
-    "stm32f411"
+    "stm32f429"
   ],
 }

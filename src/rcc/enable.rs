@@ -276,6 +276,25 @@ bus_lpenable!(ADC3 => 10);
 #[cfg(feature = "adc3")]
 bus_reset!(ADC3 => 8);
 
+#[cfg(all(
+    feature = "sai",
+    not(any(feature = "stm32f427", feature = "stm32f437", feature = "stm32f446"))
+))]
+bus! {
+    SAI => (APB2, 22),
+}
+
+#[cfg(all(feature = "sai", any(feature = "stm32f427", feature = "stm32f437")))]
+bus! {
+    SAI1 => (APB2, 22),
+}
+
+#[cfg(all(feature = "sai", feature = "stm32f446"))]
+bus! {
+    SAI1 => (APB2, 22),
+    SAI2 => (APB2, 23),
+}
+
 #[cfg(feature = "sdio")]
 bus! {
     SDIO => (APB2, 11),
