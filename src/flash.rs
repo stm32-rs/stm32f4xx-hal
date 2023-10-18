@@ -18,7 +18,7 @@ pub enum Error {
 
 impl Error {
     fn read(flash: &FLASH) -> Option<Self> {
-        let sr = flash.sr.read();
+        let sr = flash.sr().read();
         if sr.pgserr().bit() {
             Some(Error::ProgrammingSequence)
         } else if sr.pgperr().bit() {
@@ -84,7 +84,7 @@ impl FlashExt for FLASH {
                 )) {
                     // DB1M bit is not present in all SVDs
                     // self.optcr.read().db1m().bit_is_set()
-                    self.optcr.read().bits() & (1 << 30) != 0
+                    self.optcr().read().bits() & (1 << 30) != 0
                 } else {
                     false
                 }
@@ -197,17 +197,16 @@ impl UnlockedFlash<'_> {
         let snb = if sector < 12 { sector } else { sector + 4 };
 
         #[rustfmt::skip]
-        self.flash.cr.modify(|_, w| unsafe {
-            w
-                // start
-                .strt().set_bit()
-                .psize().bits(PSIZE_X8)
-                // sector number
-                .snb().bits(snb)
-                // sectore erase
-                .ser().set_bit()
-                // no programming
-                .pg().clear_bit()
+        self.flash.cr().modify(|_, w| unsafe {
+            // start
+            w.strt().set_bit();
+            w.psize().bits(PSIZE_X8);
+            // sector number
+            w.snb().bits(snb);
+            // sectore erase
+            w.ser().set_bit();
+            // no programming
+            w.pg().clear_bit()
         });
         self.wait_ready();
         self.ok()
@@ -227,13 +226,12 @@ impl UnlockedFlash<'_> {
 
             #[rustfmt::skip]
             #[allow(unused_unsafe)]
-            self.flash.cr.modify(|_, w| unsafe {
-                w
-                    .psize().bits(PSIZE_X8)
-                    // no sector erase
-                    .ser().clear_bit()
-                    // programming
-                    .pg().set_bit()
+            self.flash.cr().modify(|_, w| unsafe {
+                w.psize().bits(PSIZE_X8);
+                // no sector erase
+                w.ser().clear_bit();
+                // programming
+                w.pg().set_bit()
             });
             for _ in 0..amount {
                 match bytes.next() {
@@ -250,7 +248,7 @@ impl UnlockedFlash<'_> {
             self.wait_ready();
             self.ok()?;
         }
-        self.flash.cr.modify(|_, w| w.pg().clear_bit());
+        self.flash.cr().modify(|_, w| w.pg().clear_bit());
 
         Ok(())
     }
@@ -260,7 +258,7 @@ impl UnlockedFlash<'_> {
     }
 
     fn wait_ready(&self) {
-        while self.flash.sr.read().bsy().bit() {}
+        while self.flash.sr().read().bsy().bit() {}
     }
 }
 
@@ -269,13 +267,13 @@ const UNLOCK_KEY2: u32 = 0xCDEF89AB;
 
 #[allow(unused_unsafe)]
 fn unlock(flash: &FLASH) {
-    flash.keyr.write(|w| unsafe { w.key().bits(UNLOCK_KEY1) });
-    flash.keyr.write(|w| unsafe { w.key().bits(UNLOCK_KEY2) });
-    assert!(!flash.cr.read().lock().bit())
+    flash.keyr().write(|w| unsafe { w.key().bits(UNLOCK_KEY1) });
+    flash.keyr().write(|w| unsafe { w.key().bits(UNLOCK_KEY2) });
+    assert!(!flash.cr().read().lock().bit())
 }
 
 fn lock(flash: &FLASH) {
-    flash.cr.modify(|_, w| w.lock().set_bit());
+    flash.cr().modify(|_, w| w.lock().set_bit());
 }
 
 /// Flash memory sector

@@ -35,7 +35,7 @@ impl Crc32 {
     /// Reset the internal CRC32 state to the default value (0xFFFF_FFFF)
     #[inline(always)]
     pub fn init(&mut self) {
-        self.periph.cr.write(|w| w.reset().reset());
+        self.periph.cr().write(|w| w.reset().reset());
     }
 
     /// Feed words into the CRC engine.
@@ -45,10 +45,10 @@ impl Crc32 {
     pub fn update(&mut self, data: &[u32]) -> u32 {
         // Feed each word into the engine
         for word in data {
-            self.periph.dr.write(|w| w.bits(*word));
+            self.periph.dr().write(|w| w.bits(*word));
         }
         // Retrieve the resulting CRC
-        self.periph.dr.read().bits()
+        self.periph.dr().read().bits()
     }
 
     /// Feed bytes into the CRC engine.
@@ -95,7 +95,7 @@ impl Crc32 {
             // Mark the scratch bytes as initialized, and then convert it to a
             // native-endian u32. Feed this into the CRC peripheral
             self.periph
-                .dr
+                .dr()
                 .write(|w| w.bits(u32::from_ne_bytes(scratch.assume_init())));
         });
 
@@ -109,11 +109,11 @@ impl Crc32 {
             // MOST significant bytes as zeroes
             scratch[..remainder.len()].copy_from_slice(remainder);
             self.periph
-                .dr
+                .dr()
                 .write(|w| w.bits(u32::from_ne_bytes(scratch)));
         }
 
-        self.periph.dr.read().bits()
+        self.periph.dr().read().bits()
     }
 
     /// Consume the HAL peripheral, returning the PAC peripheral

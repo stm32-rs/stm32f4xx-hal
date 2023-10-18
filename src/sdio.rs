@@ -170,26 +170,19 @@ impl<P: SdioPeripheral> Sdio<P> {
         }
 
         // Configure clock
-        sdio.clkcr.write(|w| {
-            w.widbus()
-                .bus_width1()
-                .clken()
-                .enabled()
-                .clkdiv()
-                .bits(ClockFreq::F400Khz as u8)
-                .pwrsav()
-                .disabled()
-                .bypass()
-                .disabled()
-                .negedge()
-                .rising()
-                // Do not use hardware flow control.
-                // Using it causes clock glitches and CRC errors.
-                // See chip errata SDIO section:
-                // - F42x/F43x: https://www.st.com/resource/en/errata_sheet/es0206-stm32f427437-and-stm32f429439-line-limitations-stmicroelectronics.pdf
-                // - F40x/F41x: https://www.st.com/resource/en/errata_sheet/es0182-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
-                .hwfc_en()
-                .disabled()
+        sdio.clkcr().write(|w| {
+            w.widbus().bus_width1();
+            w.clken().enabled();
+            w.clkdiv().bits(ClockFreq::F400Khz as u8);
+            w.pwrsav().disabled();
+            w.bypass().disabled();
+            w.negedge().rising();
+            // Do not use hardware flow control.
+            // Using it causes clock glitches and CRC errors.
+            // See chip errata SDIO section:
+            // - F42x/F43x: https://www.st.com/resource/en/errata_sheet/es0206-stm32f427437-and-stm32f429439-line-limitations-stmicroelectronics.pdf
+            // - F40x/F41x: https://www.st.com/resource/en/errata_sheet/es0182-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
+            w.hwfc_en().disabled()
         });
 
         let _pins = pins.convert();
@@ -209,7 +202,7 @@ impl<P: SdioPeripheral> Sdio<P> {
     fn power_card(&mut self, on: bool) {
         use crate::pac::sdio::power::PWRCTRL_A;
 
-        self.sdio.power.modify(|_, w| {
+        self.sdio.power().modify(|_, w| {
             w.pwrctrl().variant(if on {
                 PWRCTRL_A::PowerOn
             } else {
@@ -243,7 +236,7 @@ impl<P: SdioPeripheral> Sdio<P> {
         let mut i = 0;
 
         let status = loop {
-            let sta = self.sdio.sta.read();
+            let sta = self.sdio.sta().read();
 
             if sta.rxact().bit_is_clear() {
                 break sta;
@@ -251,7 +244,7 @@ impl<P: SdioPeripheral> Sdio<P> {
 
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
-                    let bytes = self.sdio.fifo.read().bits().to_le_bytes();
+                    let bytes = self.sdio.fifo().read().bits().to_le_bytes();
                     block[i..i + 4].copy_from_slice(&bytes);
                     i += 4;
                 }
@@ -287,7 +280,7 @@ impl<P: SdioPeripheral> Sdio<P> {
         let mut i = 0;
 
         let status = loop {
-            let sta = self.sdio.sta.read();
+            let sta = self.sdio.sta().read();
 
             if sta.txact().bit_is_clear() {
                 break sta;
@@ -298,7 +291,7 @@ impl<P: SdioPeripheral> Sdio<P> {
                     let mut wb = [0u8; 4];
                     wb.copy_from_slice(&block[i..i + 4]);
                     let word = u32::from_le_bytes(wb);
-                    self.sdio.fifo.write(|w| w.bits(word));
+                    self.sdio.fifo().write(|w| w.bits(word));
                     i += 4;
                 }
             }
@@ -312,7 +305,7 @@ impl<P: SdioPeripheral> Sdio<P> {
 
         // Wait for SDIO module to finish transmitting data
         loop {
-            let sta = self.sdio.sta.read();
+            let sta = self.sdio.sta().read();
             if !sta.txact().bit_is_set() {
                 break;
             }
@@ -332,7 +325,7 @@ impl<P: SdioPeripheral> Sdio<P> {
 
         // Command AND Data state machines must be idle
         loop {
-            let status = self.sdio.sta.read();
+            let status = self.sdio.sta().read();
 
             if status.cmdact().bit_is_clear()
                 && status.rxact().bit_is_clear()
@@ -349,11 +342,13 @@ impl<P: SdioPeripheral> Sdio<P> {
         };
 
         // Data timeout, in bus cycles
-        self.sdio.dtimer.write(|w| w.datatime().bits(0xFFFF_FFFF));
+        self.sdio.dtimer().write(|w| w.datatime().bits(0xFFFF_FFFF));
         // Data length, in bytes
-        self.sdio.dlen.write(|w| w.datalength().bits(length_bytes));
+        self.sdio
+            .dlen()
+            .write(|w| w.datalength().bits(length_bytes));
         // Transfer
-        self.sdio.dctrl.write(|w| {
+        self.sdio.dctrl().write(|w| {
             w.dblocksize()
                 .bits(block_size) // 2^n bytes block size
                 .dtdir()
@@ -369,7 +364,7 @@ impl<P: SdioPeripheral> Sdio<P> {
 
         self.cmd(common_cmd::card_status(card.get_address(), false))?;
 
-        let r1 = self.sdio.resp1.read().bits();
+        let r1 = self.sdio.resp1().read().bits();
         Ok(CardStatus::from(r1))
     }
 
@@ -398,13 +393,13 @@ impl<P: SdioPeripheral> Sdio<P> {
         use crate::pac::sdio::cmd::WAITRESP_A;
 
         // Command state machines must be idle
-        while self.sdio.sta.read().cmdact().bit_is_set() {}
+        while self.sdio.sta().read().cmdact().bit_is_set() {}
 
         // Clear the interrupts before we start
-        clear_all_interrupts(&self.sdio.icr);
+        clear_all_interrupts(self.sdio.icr());
 
         // Command arg
-        self.sdio.arg.write(|w| w.cmdarg().bits(cmd.arg));
+        self.sdio.arg().write(|w| w.cmdarg().bits(cmd.arg));
 
         // Determine what kind of response the CPSM should wait for
         let waitresp = match cmd.response_len() {
@@ -414,7 +409,7 @@ impl<P: SdioPeripheral> Sdio<P> {
         };
 
         // Send the command
-        self.sdio.cmd.write(|w| {
+        self.sdio.cmd().write(|w| {
             w.waitresp()
                 .variant(waitresp)
                 .cmdindex()
@@ -430,7 +425,7 @@ impl<P: SdioPeripheral> Sdio<P> {
         let status = if cmd.response_len() == ResponseLen::Zero {
             // Wait for command sent or a timeout
             loop {
-                let sta = self.sdio.sta.read();
+                let sta = self.sdio.sta().read();
 
                 if sta.cmdact().bit_is_clear()
                     && (sta.ctimeout().bit_is_set() || sta.cmdsent().bit_is_set())
@@ -446,7 +441,7 @@ impl<P: SdioPeripheral> Sdio<P> {
             }
         } else {
             loop {
-                let sta = self.sdio.sta.read();
+                let sta = self.sdio.sta().read();
 
                 if sta.cmdact().bit_is_clear()
                     && (sta.ctimeout().bit()
@@ -475,13 +470,13 @@ impl Sdio<SdCard> {
         self.power_card(true);
 
         // Enable clock
-        self.sdio.clkcr.modify(|_, w| w.clken().enabled());
+        self.sdio.clkcr().modify(|_, w| w.clken().enabled());
         // Send card to idle state
         self.cmd(common_cmd::idle())?;
 
         // Check if cards supports CMD 8 (with pattern)
         self.cmd(sd_cmd::send_if_cond(1, 0xAA))?;
-        let cic = CIC::from(self.sdio.resp1.read().bits());
+        let cic = CIC::from(self.sdio.resp1().read().bits());
 
         // If card did't echo back the pattern, we do not have a v2 card
         if cic.pattern() != 0xAA {
@@ -502,7 +497,7 @@ impl Sdio<SdCard> {
                 Err(Error::Crc) => (),
                 Err(err) => return Err(err),
             }
-            let ocr = OCR::from(self.sdio.resp1.read().bits());
+            let ocr = OCR::from(self.sdio.resp1().read().bits());
             if ocr.is_busy() {
                 // Still powering up
                 continue;
@@ -520,25 +515,25 @@ impl Sdio<SdCard> {
         // Get CID
         self.cmd(common_cmd::all_send_cid())?;
         let mut cid = [0; 4];
-        cid[3] = self.sdio.resp1.read().bits();
-        cid[2] = self.sdio.resp2.read().bits();
-        cid[1] = self.sdio.resp3.read().bits();
-        cid[0] = self.sdio.resp4.read().bits();
+        cid[3] = self.sdio.resp1().read().bits();
+        cid[2] = self.sdio.resp2().read().bits();
+        cid[1] = self.sdio.resp3().read().bits();
+        cid[0] = self.sdio.resp4().read().bits();
         let cid = CID::from(cid);
 
         // Get RCA
         self.cmd(sd_cmd::send_relative_address())?;
-        let rca = RCA::from(self.sdio.resp1.read().bits());
+        let rca = RCA::from(self.sdio.resp1().read().bits());
         let card_addr = rca.address();
 
         // Get CSD
         self.cmd(common_cmd::send_csd(card_addr))?;
 
         let mut csd = [0; 4];
-        csd[3] = self.sdio.resp1.read().bits();
-        csd[2] = self.sdio.resp2.read().bits();
-        csd[1] = self.sdio.resp3.read().bits();
-        csd[0] = self.sdio.resp4.read().bits();
+        csd[3] = self.sdio.resp1().read().bits();
+        csd[2] = self.sdio.resp2().read().bits();
+        csd[1] = self.sdio.resp3().read().bits();
+        csd[0] = self.sdio.resp4().read().bits();
         let csd = CSD::from(csd);
 
         self.select_card(card_addr)?;
@@ -573,7 +568,7 @@ impl Sdio<SdCard> {
         let mut idx = 0;
 
         let s = loop {
-            let sta = self.sdio.sta.read();
+            let sta = self.sdio.sta().read();
 
             if sta.rxact().bit_is_clear() {
                 break sta;
@@ -581,7 +576,7 @@ impl Sdio<SdCard> {
 
             if sta.rxfifohf().bit() {
                 for _ in 0..8 {
-                    status[15 - idx] = self.sdio.fifo.read().bits().swap_bytes();
+                    status[15 - idx] = self.sdio.fifo().read().bits().swap_bytes();
                     idx += 1;
                 }
             }
@@ -606,14 +601,14 @@ impl Sdio<SdCard> {
         let mut i = 0;
 
         let status = loop {
-            let sta = self.sdio.sta.read();
+            let sta = self.sdio.sta().read();
 
             if sta.rxact().bit_is_clear() {
                 break sta;
             }
 
             if sta.rxdavl().bit() {
-                buf[1 - i] = self.sdio.fifo.read().bits().swap_bytes();
+                buf[1 - i] = self.sdio.fifo().read().bits().swap_bytes();
                 i += 1;
             }
 
@@ -640,7 +635,7 @@ impl Sdio<SdCard> {
 
         self.app_cmd(sd_cmd::set_bus_width(width == WIDBUS_A::BusWidth4))?;
 
-        self.sdio.clkcr.modify(|_, w| {
+        self.sdio.clkcr().modify(|_, w| {
             w.clkdiv()
                 .bits(freq as u8)
                 .widbus()
@@ -661,7 +656,7 @@ impl Sdio<Emmc> {
         self.power_card(true);
 
         // Enable clock
-        self.sdio.clkcr.modify(|_, w| w.clken().enabled());
+        self.sdio.clkcr().modify(|_, w| w.clken().enabled());
         // Send card to idle state
         self.cmd(common_cmd::idle())?;
 
@@ -675,7 +670,7 @@ impl Sdio<Emmc> {
                 Err(Error::Crc) => (),
                 Err(err) => return Err(err),
             };
-            let ocr = OCR::from(self.sdio.resp1.read().bits());
+            let ocr = OCR::from(self.sdio.resp1().read().bits());
             if !ocr.is_busy() {
                 break ocr;
             }
@@ -691,10 +686,10 @@ impl Sdio<Emmc> {
         // Get CID
         self.cmd(common_cmd::all_send_cid())?;
         let mut cid = [0; 4];
-        cid[3] = self.sdio.resp1.read().bits();
-        cid[2] = self.sdio.resp2.read().bits();
-        cid[1] = self.sdio.resp3.read().bits();
-        cid[0] = self.sdio.resp4.read().bits();
+        cid[3] = self.sdio.resp1().read().bits();
+        cid[2] = self.sdio.resp2().read().bits();
+        cid[1] = self.sdio.resp3().read().bits();
+        cid[0] = self.sdio.resp4().read().bits();
         let cid = CID::from(cid);
 
         self.cmd(emmc_cmd::assign_relative_address(card_addr.address()))?;
@@ -702,10 +697,10 @@ impl Sdio<Emmc> {
         self.cmd(common_cmd::send_csd(card_addr.address()))?;
 
         let mut csd = [0; 4];
-        csd[3] = self.sdio.resp1.read().bits();
-        csd[2] = self.sdio.resp2.read().bits();
-        csd[1] = self.sdio.resp3.read().bits();
-        csd[0] = self.sdio.resp4.read().bits();
+        csd[3] = self.sdio.resp1().read().bits();
+        csd[2] = self.sdio.resp2().read().bits();
+        csd[1] = self.sdio.resp3().read().bits();
+        csd[0] = self.sdio.resp4().read().bits();
         let csd = CSD::from(csd);
 
         self.select_card(card_addr.address())?;
@@ -745,7 +740,7 @@ impl Sdio<Emmc> {
 
         // CMD6 is R1b, so wait for the card to be ready again before proceeding.
         while !self.card_ready()? {}
-        self.sdio.clkcr.modify(|_, w| {
+        self.sdio.clkcr().modify(|_, w| {
             w.clkdiv()
                 .bits(freq as u8)
                 .widbus()
@@ -776,32 +771,19 @@ fn status_to_error(sta: pac::sdio::sta::R) -> Result<(), Error> {
 
 fn clear_all_interrupts(icr: &pac::sdio::ICR) {
     icr.modify(|_, w| {
-        w.ccrcfailc()
-            .set_bit()
-            .ctimeoutc()
-            .set_bit()
-            .ceataendc()
-            .set_bit()
-            .cmdrendc()
-            .set_bit()
-            .cmdsentc()
-            .set_bit()
-            .dataendc()
-            .set_bit()
-            .dbckendc()
-            .set_bit()
-            .dcrcfailc()
-            .set_bit()
-            .dtimeoutc()
-            .set_bit()
-            .sdioitc()
-            .set_bit()
-            .stbiterrc()
-            .set_bit()
-            .rxoverrc()
-            .set_bit()
-            .txunderrc()
-            .set_bit()
+        w.ccrcfailc().set_bit();
+        w.ctimeoutc().set_bit();
+        w.ceataendc().set_bit();
+        w.cmdrendc().set_bit();
+        w.cmdsentc().set_bit();
+        w.dataendc().set_bit();
+        w.dbckendc().set_bit();
+        w.dcrcfailc().set_bit();
+        w.dtimeoutc().set_bit();
+        w.sdioitc().set_bit();
+        w.stbiterrc().set_bit();
+        w.rxoverrc().set_bit();
+        w.txunderrc().set_bit()
     });
 }
 

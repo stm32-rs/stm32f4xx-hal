@@ -286,10 +286,10 @@ where
         );
 
         // Disable QUADSPI before configuring it.
-        qspi.cr.modify(|_, w| w.en().clear_bit());
+        qspi.cr().modify(|_, w| w.en().clear_bit());
 
         // Clear all pending flags.
-        qspi.fcr.write(|w| {
+        qspi.fcr().write(|w| {
             w.ctof().set_bit();
             w.csmf().set_bit();
             w.ctcf().set_bit();
@@ -341,10 +341,10 @@ impl Qspi<DualFlash> {
         );
 
         // Disable QUADSPI before configuring it.
-        qspi.cr.modify(|_, w| w.en().clear_bit());
+        qspi.cr().modify(|_, w| w.en().clear_bit());
 
         // Clear all pending flags.
-        qspi.fcr.write(|w| {
+        qspi.fcr().write(|w| {
             w.ctof().set_bit();
             w.csmf().set_bit();
             w.ctcf().set_bit();
@@ -359,28 +359,28 @@ impl Qspi<DualFlash> {
 
 impl<BANK: QspiPins> Qspi<BANK> {
     pub fn is_busy(&self) -> bool {
-        self.qspi.sr.read().busy().bit_is_set()
+        self.qspi.sr().read().busy().bit_is_set()
     }
 
     /// Aborts any ongoing transaction
     /// Note can cause problems if aborting writes to flash satus register
     pub fn abort_transmission(&mut self) {
-        self.qspi.cr.modify(|_, w| w.abort().set_bit());
-        while self.qspi.sr.read().busy().bit_is_set() {}
+        self.qspi.cr().modify(|_, w| w.abort().set_bit());
+        while self.qspi.sr().read().busy().bit_is_set() {}
     }
 
     pub fn apply_config(&mut self, config: QspiConfig) {
-        if self.qspi.sr.read().busy().bit_is_set() {
+        if self.qspi.sr().read().busy().bit_is_set() {
             self.abort_transmission();
         }
 
         self.qspi
-            .cr
+            .cr()
             .modify(|_, w| unsafe { w.fthres().bits(config.fifo_threshold) });
 
-        while self.qspi.sr.read().busy().bit_is_set() {}
+        while self.qspi.sr().read().busy().bit_is_set() {}
 
-        self.qspi.cr.modify(|_, w| unsafe {
+        self.qspi.cr().modify(|_, w| unsafe {
             w.prescaler()
                 .bits(config.clock_prescaler)
                 .sshift()
@@ -393,7 +393,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
         while self.is_busy() {}
 
         // Modify DCR with flash size, CSHT and clock mode
-        self.qspi.dcr.modify(|_, w| unsafe {
+        self.qspi.dcr().modify(|_, w| unsafe {
             w.fsize().bits(config.flash_size.inner);
             w.csht().bits(config.chip_select_high_time);
             w.ckmode().bit(config.clock_mode == ClockMode::Mode3)
@@ -401,7 +401,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
         while self.is_busy() {}
 
         // Enable QSPI
-        self.qspi.cr.modify(|_, w| w.en().set_bit());
+        self.qspi.cr().modify(|_, w| w.en().set_bit());
         while self.is_busy() {}
 
         self.config = config;
@@ -421,12 +421,12 @@ impl<BANK: QspiPins> Qspi<BANK> {
 
         // If double data rate change shift
         if command.double_data_rate {
-            self.qspi.cr.modify(|_, w| w.sshift().bit(false));
+            self.qspi.cr().modify(|_, w| w.sshift().bit(false));
         }
         while self.is_busy() {}
 
         // Clear the transfer complete flag.
-        self.qspi.fcr.modify(|_, w| w.ctcf().set_bit());
+        self.qspi.fcr().modify(|_, w| w.ctcf().set_bit());
 
         let dmode: u8 = command.data.1 as u8;
         let mut instruction: u8 = 0;
@@ -438,7 +438,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
 
         // Write the length and format of data
         self.qspi
-            .dlr
+            .dlr()
             .write(|w| unsafe { w.dl().bits(buffer.len() as u32 - 1) });
 
         // Write instruction mode
@@ -458,7 +458,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
             abmode = mode as u8;
             absize = a_bytes.len() as u8 - 1;
 
-            self.qspi.abr.write(|w| {
+            self.qspi.abr().write(|w| {
                 let mut reg_byte: u32 = 0;
                 for (i, element) in a_bytes.iter().rev().enumerate() {
                     reg_byte |= (*element as u32) << (i * 8);
@@ -468,7 +468,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
         }
 
         // Write CCR register with instruction etc.
-        self.qspi.ccr.modify(|_, w| unsafe {
+        self.qspi.ccr().modify(|_, w| unsafe {
             w.fmode().bits(0b01 /* Indirect read */);
             w.admode().bits(admode);
             w.adsize().bits(adsize);
@@ -483,26 +483,26 @@ impl<BANK: QspiPins> Qspi<BANK> {
 
         // Write address, triggers send
         if let Some((addr, _)) = command.address {
-            self.qspi.ar.write(|w| unsafe { w.address().bits(addr) });
+            self.qspi.ar().write(|w| unsafe { w.address().bits(addr) });
 
             // Transfer error
-            if self.qspi.sr.read().tef().bit_is_set() {
+            if self.qspi.sr().read().tef().bit_is_set() {
                 return Err(QspiError::Address);
             }
         }
 
         // Transfer error
-        if self.qspi.sr.read().tef().bit_is_set() {
+        if self.qspi.sr().read().tef().bit_is_set() {
             return Err(QspiError::Unknown);
         }
 
         // Read data from the buffer
         let mut b = buffer.iter_mut();
-        while self.qspi.sr.read().tcf().bit_is_clear() {
-            if self.qspi.sr.read().ftf().bit_is_set() {
+        while self.qspi.sr().read().tcf().bit_is_clear() {
+            if self.qspi.sr().read().ftf().bit_is_set() {
                 if let Some(v) = b.next() {
                     unsafe {
-                        *v = core::ptr::read_volatile(self.qspi.dr.as_ptr() as *const u8);
+                        *v = core::ptr::read_volatile(self.qspi.dr().as_ptr() as *const u8);
                     }
                 } else {
                     // OVERFLOW
@@ -512,10 +512,10 @@ impl<BANK: QspiPins> Qspi<BANK> {
             }
         }
         // When transfer complete, empty fifo buffer
-        while self.qspi.sr.read().flevel().bits() > 0 {
+        while self.qspi.sr().read().flevel().bits() > 0 {
             if let Some(v) = b.next() {
                 unsafe {
-                    *v = core::ptr::read_volatile(self.qspi.dr.as_ptr() as *const u8);
+                    *v = core::ptr::read_volatile(self.qspi.dr().as_ptr() as *const u8);
                 }
             } else {
                 // OVERFLOW
@@ -528,13 +528,13 @@ impl<BANK: QspiPins> Qspi<BANK> {
             if self.is_busy() {
                 self.abort_transmission();
             }
-            self.qspi.cr.modify(|_, w| {
+            self.qspi.cr().modify(|_, w| {
                 w.sshift()
                     .bit(self.config.sample_shift == SampleShift::HalfACycle)
             });
         }
         while self.is_busy() {}
-        self.qspi.fcr.write(|w| w.ctcf().set_bit());
+        self.qspi.fcr().write(|w| w.ctcf().set_bit());
         Ok(())
     }
 
@@ -544,7 +544,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
             return Err(QspiError::Busy);
         }
         // Clear the transfer complete flag.
-        self.qspi.fcr.modify(|_, w| w.ctcf().set_bit());
+        self.qspi.fcr().modify(|_, w| w.ctcf().set_bit());
 
         let mut dmode: u8 = 0;
         let mut instruction: u8 = 0;
@@ -557,7 +557,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
         // Write the length and format of data
         if let Some((data, mode)) = command.data {
             self.qspi
-                .dlr
+                .dlr()
                 .write(|w| unsafe { w.dl().bits(data.len() as u32 - 1) });
             dmode = mode as u8;
         }
@@ -580,7 +580,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
 
             absize = a_bytes.len() as u8 - 1;
 
-            self.qspi.abr.write(|w| {
+            self.qspi.abr().write(|w| {
                 let mut reg_byte: u32 = 0;
                 for (i, element) in a_bytes.iter().rev().enumerate() {
                     reg_byte |= (*element as u32) << (i * 8);
@@ -590,11 +590,11 @@ impl<BANK: QspiPins> Qspi<BANK> {
         }
 
         if command.double_data_rate {
-            self.qspi.cr.modify(|_, w| w.sshift().bit(false));
+            self.qspi.cr().modify(|_, w| w.sshift().bit(false));
         }
 
         // Write CCR register with instruction etc.
-        self.qspi.ccr.modify(|_, w| unsafe {
+        self.qspi.ccr().modify(|_, w| unsafe {
             w.fmode().bits(0b00 /* Indirect write mode */);
             w.admode().bits(admode);
             w.adsize().bits(adsize);
@@ -609,30 +609,30 @@ impl<BANK: QspiPins> Qspi<BANK> {
 
         // Write address, triggers send
         if let Some((addr, _)) = command.address {
-            self.qspi.ar.write(|w| unsafe { w.address().bits(addr) });
+            self.qspi.ar().write(|w| unsafe { w.address().bits(addr) });
         }
 
         // Transfer error
-        if self.qspi.sr.read().tef().bit_is_set() {
+        if self.qspi.sr().read().tef().bit_is_set() {
             return Err(QspiError::Unknown);
         }
 
         // Write data to the FIFO
         if let Some((data, _)) = command.data {
             for byte in data {
-                while self.qspi.sr.read().ftf().bit_is_clear() {}
+                while self.qspi.sr().read().ftf().bit_is_clear() {}
                 unsafe {
-                    core::ptr::write_volatile(self.qspi.dr.as_ptr() as *mut u8, *byte);
+                    core::ptr::write_volatile(self.qspi.dr().as_ptr() as *mut u8, *byte);
                 }
             }
         }
 
-        while self.qspi.sr.read().tcf().bit_is_clear() {}
+        while self.qspi.sr().read().tcf().bit_is_clear() {}
 
-        self.qspi.fcr.write(|w| w.ctcf().set_bit());
+        self.qspi.fcr().write(|w| w.ctcf().set_bit());
 
         if command.double_data_rate {
-            self.qspi.cr.modify(|_, w| {
+            self.qspi.cr().modify(|_, w| {
                 w.sshift()
                     .bit(self.config.sample_shift == SampleShift::HalfACycle)
             });
@@ -653,12 +653,12 @@ impl<BANK: QspiPins> Qspi<BANK> {
 
         // If double data rate change shift
         if command.double_data_rate {
-            self.qspi.cr.modify(|_, w| w.sshift().bit(false));
+            self.qspi.cr().modify(|_, w| w.sshift().bit(false));
         }
         while self.is_busy() {}
 
         // Clear the transfer complete flag.
-        self.qspi.fcr.modify(|_, w| w.ctcf().set_bit());
+        self.qspi.fcr().modify(|_, w| w.ctcf().set_bit());
 
         let mut abmode: u8 = 0;
         let mut absize: u8 = 0;
@@ -675,7 +675,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
             abmode = mode as u8;
             absize = a_bytes.len() as u8 - 1;
 
-            self.qspi.abr.write(|w| {
+            self.qspi.abr().write(|w| {
                 let mut reg_byte: u32 = 0;
                 for (i, element) in a_bytes.iter().rev().enumerate() {
                     reg_byte |= (*element as u32) << (i * 8);
@@ -684,7 +684,7 @@ impl<BANK: QspiPins> Qspi<BANK> {
             });
         }
 
-        self.qspi.ccr.modify(|_, w| unsafe {
+        self.qspi.ccr().modify(|_, w| unsafe {
             w.fmode().bits(0b11 /* Memory mapped mode */);
             w.admode().bits(command.address_mode as u8);
             w.adsize().bits(self.config.address_size as u8);

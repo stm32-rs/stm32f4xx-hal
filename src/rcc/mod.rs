@@ -198,15 +198,15 @@ macro_rules! bus_struct {
             $(#[$attr])*
             impl $busX {
                 pub(crate) fn enr(rcc: &RccRB) -> &rcc::$EN {
-                    &rcc.$en
+                    rcc.$en()
                 }
 
                 pub(crate) fn lpenr(rcc: &RccRB) -> &rcc::$LPEN {
-                    &rcc.$lpen
+                    rcc.$lpen()
                 }
 
                 pub(crate) fn rstr(rcc: &RccRB) -> &rcc::$RST {
-                    &rcc.$rst
+                    rcc.$rst()
                 }
             }
         )+
@@ -233,16 +233,16 @@ pub struct AHB3 {
 impl AHB3 {
     #[inline(always)]
     fn enr(rcc: &RccRB) -> &rcc::AHB3ENR {
-        &rcc.ahb3enr
+        rcc.ahb3enr()
     }
     #[cfg(feature = "fmc")]
     #[inline(always)]
     fn lpenr(rcc: &RccRB) -> &rcc::AHB3LPENR {
-        &rcc.ahb3lpenr
+        rcc.ahb3lpenr()
     }
     #[inline(always)]
     fn rstr(rcc: &RccRB) -> &rcc::AHB3RSTR {
-        &rcc.ahb3rstr
+        rcc.ahb3rstr()
     }
 }
 
@@ -582,7 +582,7 @@ impl CFGR {
                     u32::max((i2s_pll.plli2sclk.unwrap() + (sai_clk >> 1)) / sai_clk, 1),
                     31,
                 );
-                rcc.dckcfgr.modify(|_, w| w.plli2sdivr().bits(div as u8));
+                rcc.dckcfgr().modify(|_, w| w.plli2sdivr().bits(div as u8));
                 let real_sai_clk = sai_clk / div;
                 (i2s_pll, Some(real_sai_clk))
             } else {
@@ -599,7 +599,7 @@ impl CFGR {
                 })
                 .min_by_key(|(_, real_clk, _)| (*real_clk as i32 - pll_sai_clk as i32).abs())
                 .unwrap();
-            rcc.dckcfgr.modify(|_, w| w.plli2sdivr().bits(div as u8));
+            rcc.dckcfgr().modify(|_, w| w.plli2sdivr().bits(div as u8));
             (i2s_pll, Some(real_sai_clk))
         } else {
             (I2sPll::unused(), None)
@@ -751,7 +751,7 @@ impl CFGR {
         unsafe {
             let flash = &(*FLASH::ptr());
             // Adjust flash wait states
-            flash.acr.modify(|_, w| {
+            flash.acr().modify(|_, w| {
                 w.latency().bits(((sysclk - 1) / flash_latency_step) as u8);
                 w.prften().set_bit();
                 w.icen().set_bit();
@@ -849,55 +849,55 @@ impl CFGR {
 
         if self.hse.is_some() {
             // enable HSE and wait for it to be ready
-            rcc.cr.modify(|_, w| {
+            rcc.cr().modify(|_, w| {
                 if self.hse_bypass {
                     w.hsebyp().bypassed();
                 }
                 w.hseon().set_bit()
             });
-            while rcc.cr.read().hserdy().bit_is_clear() {}
+            while rcc.cr().read().hserdy().bit_is_clear() {}
         }
 
         if plls.use_pll {
             // Enable PLL
-            rcc.cr.modify(|_, w| w.pllon().set_bit());
+            rcc.cr().modify(|_, w| w.pllon().set_bit());
 
             // Enable voltage regulator overdrive if HCLK is above the limit
             #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
             if hclk > 168_000_000 {
                 // Enable clock for PWR peripheral
-                rcc.apb1enr.modify(|_, w| w.pwren().set_bit());
+                rcc.apb1enr().modify(|_, w| w.pwren().set_bit());
 
                 // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
                 cortex_m::asm::dsb();
 
                 let pwr = unsafe { &*crate::pac::PWR::ptr() };
-                pwr.cr.modify(|_, w| w.oden().set_bit());
-                while pwr.csr.read().odrdy().bit_is_clear() {}
-                pwr.cr.modify(|_, w| w.odswen().set_bit());
-                while pwr.csr.read().odswrdy().bit_is_clear() {}
+                pwr.cr().modify(|_, w| w.oden().set_bit());
+                while pwr.csr().read().odrdy().bit_is_clear() {}
+                pwr.cr().modify(|_, w| w.odswen().set_bit());
+                while pwr.csr().read().odswrdy().bit_is_clear() {}
             }
 
             // Wait for PLL to stabilise
-            while rcc.cr.read().pllrdy().bit_is_clear() {}
+            while rcc.cr().read().pllrdy().bit_is_clear() {}
         }
 
         #[cfg(not(feature = "gpio-f410"))]
         if plls.use_i2spll {
             // Enable PLL.
-            rcc.cr.modify(|_, w| w.plli2son().set_bit());
+            rcc.cr().modify(|_, w| w.plli2son().set_bit());
 
             // Wait for PLL to stabilise
-            while rcc.cr.read().plli2srdy().bit_is_clear() {}
+            while rcc.cr().read().plli2srdy().bit_is_clear() {}
         }
 
         #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
         if plls.use_saipll {
             // Enable PLL.
-            rcc.cr.modify(|_, w| w.pllsaion().set_bit());
+            rcc.cr().modify(|_, w| w.pllsaion().set_bit());
 
             // Wait for PLL to stabilise
-            while rcc.cr.read().pllsairdy().bit_is_clear() {}
+            while rcc.cr().read().pllsairdy().bit_is_clear() {}
         }
 
         // Select I2S and SAI clocks
@@ -906,7 +906,7 @@ impl CFGR {
         plls.sai.config_clocksel();
 
         // Set scaling factors
-        rcc.cfgr.modify(|_, w| unsafe {
+        rcc.cfgr().modify(|_, w| unsafe {
             w.ppre2().bits(ppre2_bits);
             w.ppre1().bits(ppre1_bits);
             w.hpre().variant(hpre_bits)
@@ -917,7 +917,7 @@ impl CFGR {
         cortex_m::asm::delay(16);
 
         // Select system clock source
-        rcc.cfgr.modify(|_, w| {
+        rcc.cfgr().modify(|_, w| {
             w.sw().variant(if sysclk_on_pll {
                 SW_A::Pll
             } else if self.hse.is_some() {
@@ -1063,7 +1063,7 @@ impl RealI2sClocks {
             feature = "gpio-f413",
             feature = "gpio-f446",
         )))]
-        rcc.cfgr.modify(|_, w| {
+        rcc.cfgr().modify(|_, w| {
             if self.i2s_ext {
                 w.i2ssrc().ckin()
             } else {
@@ -1071,7 +1071,7 @@ impl RealI2sClocks {
             }
         });
         #[cfg(feature = "gpio-f410")]
-        rcc.dckcfgr.modify(|_, w| {
+        rcc.dckcfgr().modify(|_, w| {
             if self.i2s_ext {
                 w.i2ssrc().i2s_ckin()
             } else {
@@ -1079,7 +1079,7 @@ impl RealI2sClocks {
             }
         });
         #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
-        rcc.dckcfgr.modify(|_, w| {
+        rcc.dckcfgr().modify(|_, w| {
             if self.i2s_apb1_ext {
                 w.i2s1src().i2s_ckin()
             } else {
@@ -1141,7 +1141,7 @@ impl RealSaiClocks {
 
         // Configure SAI clocks.
         #[cfg(not(feature = "gpio-f446"))]
-        rcc.dckcfgr.modify(|_, w| {
+        rcc.dckcfgr().modify(|_, w| {
             if self.sai1_ext {
                 w.sai1asrc().i2s_ckin()
             } else {
@@ -1155,7 +1155,7 @@ impl RealSaiClocks {
         });
 
         #[cfg(feature = "gpio-f446")]
-        rcc.dckcfgr.modify(|_, w| {
+        rcc.dckcfgr().modify(|_, w| {
             if self.sai1_ext {
                 w.sai1src().i2s_ckin()
             } else {

@@ -213,18 +213,18 @@ where
         // and sub-banks of bank 1. This driver uses addresses in the different sub-banks of
         // bank 1. The configuration registers for "bank x" (like FMC_BCRx) actually refer to
         // sub-banks, not banks. We need to configure and enable all four of them.
-        configure_bcr1(&fsmc.bcr1);
-        configure_bcr(&fsmc.bcr2);
-        configure_bcr(&fsmc.bcr3);
-        configure_bcr(&fsmc.bcr4);
-        configure_btr(&fsmc.btr1, read_timing);
-        configure_btr(&fsmc.btr2, read_timing);
-        configure_btr(&fsmc.btr3, read_timing);
-        configure_btr(&fsmc.btr4, read_timing);
-        configure_bwtr(&fsmc.bwtr1, write_timing);
-        configure_bwtr(&fsmc.bwtr2, write_timing);
-        configure_bwtr(&fsmc.bwtr3, write_timing);
-        configure_bwtr(&fsmc.bwtr4, write_timing);
+        configure_bcr1(fsmc.bcr1());
+        configure_bcr(fsmc.bcr2());
+        configure_bcr(fsmc.bcr3());
+        configure_bcr(fsmc.bcr4());
+        configure_btr(fsmc.btr1(), read_timing);
+        configure_btr(fsmc.btr2(), read_timing);
+        configure_btr(fsmc.btr3(), read_timing);
+        configure_btr(fsmc.btr4(), read_timing);
+        configure_bwtr(fsmc.bwtr1(), write_timing);
+        configure_bwtr(fsmc.bwtr2(), write_timing);
+        configure_bwtr(fsmc.bwtr3(), write_timing);
+        configure_bwtr(fsmc.bwtr4(), write_timing);
 
         (FsmcLcd { pins, fsmc }, PINS::Lcds::conjure())
     }
