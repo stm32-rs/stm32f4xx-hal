@@ -181,7 +181,7 @@ impl<I2C: Instance> I2c<I2C> {
     fn i2c_init(&self, mode: impl Into<Mode>, pclk: Hertz) {
         let mode = mode.into();
         // Make sure the I2C unit is disabled so we can configure it
-        self.i2c.cr1.modify(|_, w| w.pe().clear_bit());
+        self.i2c.cr1().modify(|_, w| w.pe().clear_bit());
 
         // Calculate settings for I2C speed modes
         let clock = pclk.raw();
@@ -190,7 +190,7 @@ impl<I2C: Instance> I2c<I2C> {
 
         // Configure bus frequency into I2C peripheral
         self.i2c
-            .cr2
+            .cr2()
             .write(|w| unsafe { w.freq().bits(clc_mhz as u8) });
 
         let trise = match mode {
@@ -199,7 +199,7 @@ impl<I2C: Instance> I2c<I2C> {
         };
 
         // Configure correct rise times
-        self.i2c.trise.write(|w| w.trise().bits(trise as u8));
+        self.i2c.trise().write(|w| w.trise().set(trise as u8));
 
         match mode {
             // I2C clock control calculation
@@ -207,13 +207,10 @@ impl<I2C: Instance> I2c<I2C> {
                 let ccr = (clock / (frequency.raw() * 2)).max(4);
 
                 // Set clock to standard mode with appropriate parameters for selected speed
-                self.i2c.ccr.write(|w| unsafe {
-                    w.f_s()
-                        .clear_bit()
-                        .duty()
-                        .clear_bit()
-                        .ccr()
-                        .bits(ccr as u16)
+                self.i2c.ccr().write(|w| unsafe {
+                    w.f_s().clear_bit();
+                    w.duty().clear_bit();
+                    w.ccr().bits(ccr as u16)
                 });
             }
             Mode::Fast {
@@ -224,7 +221,7 @@ impl<I2C: Instance> I2c<I2C> {
                     let ccr = (clock / (frequency.raw() * 3)).max(1);
 
                     // Set clock to fast mode with appropriate parameters for selected speed (2:1 duty cycle)
-                    self.i2c.ccr.write(|w| unsafe {
+                    self.i2c.ccr().write(|w| unsafe {
                         w.f_s().set_bit().duty().clear_bit().ccr().bits(ccr as u16)
                     });
                 }
@@ -232,7 +229,7 @@ impl<I2C: Instance> I2c<I2C> {
                     let ccr = (clock / (frequency.raw() * 25)).max(1);
 
                     // Set clock to fast mode with appropriate parameters for selected speed (16:9 duty cycle)
-                    self.i2c.ccr.write(|w| unsafe {
+                    self.i2c.ccr().write(|w| unsafe {
                         w.f_s().set_bit().duty().set_bit().ccr().bits(ccr as u16)
                     });
                 }
@@ -240,43 +237,43 @@ impl<I2C: Instance> I2c<I2C> {
         }
 
         // Enable the I2C processing
-        self.i2c.cr1.modify(|_, w| w.pe().set_bit());
+        self.i2c.cr1().modify(|_, w| w.pe().set_bit());
     }
 
     fn check_and_clear_error_flags(&self) -> Result<i2c1::sr1::R, Error> {
         // Note that flags should only be cleared once they have been registered. If flags are
         // cleared otherwise, there may be an inherent race condition and flags may be missed.
-        let sr1 = self.i2c.sr1.read();
+        let sr1 = self.i2c.sr1().read();
 
         if sr1.timeout().bit_is_set() {
-            self.i2c.sr1.modify(|_, w| w.timeout().clear_bit());
+            self.i2c.sr1().modify(|_, w| w.timeout().clear_bit());
             return Err(Error::Timeout);
         }
 
         if sr1.pecerr().bit_is_set() {
-            self.i2c.sr1.modify(|_, w| w.pecerr().clear_bit());
+            self.i2c.sr1().modify(|_, w| w.pecerr().clear_bit());
             return Err(Error::Crc);
         }
 
         if sr1.ovr().bit_is_set() {
-            self.i2c.sr1.modify(|_, w| w.ovr().clear_bit());
+            self.i2c.sr1().modify(|_, w| w.ovr().clear_bit());
             return Err(Error::Overrun);
         }
 
         if sr1.af().bit_is_set() {
-            self.i2c.sr1.modify(|_, w| w.af().clear_bit());
+            self.i2c.sr1().modify(|_, w| w.af().clear_bit());
             return Err(Error::NoAcknowledge(NoAcknowledgeSource::Unknown));
         }
 
         if sr1.arlo().bit_is_set() {
-            self.i2c.sr1.modify(|_, w| w.arlo().clear_bit());
+            self.i2c.sr1().modify(|_, w| w.arlo().clear_bit());
             return Err(Error::ArbitrationLoss);
         }
 
         // The errata indicates that BERR may be incorrectly detected. It recommends ignoring and
         // clearing the BERR bit instead.
         if sr1.berr().bit_is_set() {
-            self.i2c.sr1.modify(|_, w| w.berr().clear_bit());
+            self.i2c.sr1().modify(|_, w| w.berr().clear_bit());
         }
 
         Ok(sr1)
@@ -291,10 +288,10 @@ impl<I2C: Instance> I2c<I2C> {
         // It is possible that the STOP condition is still being generated
         // when we reach here, so we wait until it finishes before proceeding
         // to start a new transaction.
-        while self.i2c.cr1.read().stop().bit_is_set() {}
+        while self.i2c.cr1().read().stop().bit_is_set() {}
 
         // Send a START condition
-        self.i2c.cr1.modify(|_, w| w.start().set_bit());
+        self.i2c.cr1().modify(|_, w| w.start().set_bit());
 
         // Wait until START condition was generated
         while self.check_and_clear_error_flags()?.sb().bit_is_clear() {}
@@ -303,7 +300,7 @@ impl<I2C: Instance> I2c<I2C> {
         loop {
             self.check_and_clear_error_flags()?;
 
-            let sr2 = self.i2c.sr2.read();
+            let sr2 = self.i2c.sr2().read();
             if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
                 break;
             }
@@ -311,7 +308,7 @@ impl<I2C: Instance> I2c<I2C> {
 
         // Set up current address, we're trying to talk to
         self.i2c
-            .dr
+            .dr()
             .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
 
         // Wait until address was sent
@@ -328,7 +325,7 @@ impl<I2C: Instance> I2c<I2C> {
         }
 
         // Clear condition by reading SR2
-        self.i2c.sr2.read();
+        self.i2c.sr2().read();
 
         Ok(())
     }
@@ -341,38 +338,38 @@ impl<I2C: Instance> I2c<I2C> {
         // It is possible that the STOP condition is still being generated
         // when we reach here, so we wait until it finishes before proceeding
         // to start a new transaction.
-        while self.i2c.cr1.read().stop().bit_is_set() {}
+        while self.i2c.cr1().read().stop().bit_is_set() {}
 
         // Send a START condition and set ACK bit
         self.i2c
-            .cr1
+            .cr1()
             .modify(|_, w| w.start().set_bit().ack().set_bit());
 
         // Wait until START condition was generated
-        while self.i2c.sr1.read().sb().bit_is_clear() {}
+        while self.i2c.sr1().read().sb().bit_is_clear() {}
 
         // Also wait until signalled we're master and everything is waiting for us
         while {
-            let sr2 = self.i2c.sr2.read();
+            let sr2 = self.i2c.sr2().read();
             sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
         } {}
 
         // Set up current address, we're trying to talk to
         self.i2c
-            .dr
+            .dr()
             .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
 
         // Wait until address was sent
         loop {
             self.check_and_clear_error_flags()
                 .map_err(Error::nack_addr)?;
-            if self.i2c.sr1.read().addr().bit_is_set() {
+            if self.i2c.sr1().read().addr().bit_is_set() {
                 break;
             }
         }
 
         // Clear condition by reading SR2
-        self.i2c.sr2.read();
+        self.i2c.sr2().read();
 
         Ok(())
     }
@@ -398,7 +395,7 @@ impl<I2C: Instance> I2c<I2C> {
         {}
 
         // Push out a byte of data
-        self.i2c.dr.write(|w| unsafe { w.bits(u32::from(byte)) });
+        self.i2c.dr().write(|w| unsafe { w.bits(u32::from(byte)) });
 
         // Wait until byte is transferred
         // Check for any potential error conditions.
@@ -418,12 +415,12 @@ impl<I2C: Instance> I2c<I2C> {
             self.check_and_clear_error_flags()
                 .map_err(Error::nack_data)?;
 
-            if self.i2c.sr1.read().rx_ne().bit_is_set() {
+            if self.i2c.sr1().read().rx_ne().bit_is_set() {
                 break;
             }
         }
 
-        let value = self.i2c.dr.read().bits() as u8;
+        let value = self.i2c.dr().read().bits() as u8;
         Ok(value)
     }
 
@@ -453,7 +450,7 @@ impl<I2C: Instance> I2c<I2C> {
 
             // Prepare to send NACK then STOP after next byte
             self.i2c
-                .cr1
+                .cr1()
                 .modify(|_, w| w.ack().clear_bit().stop().set_bit());
 
             // Receive last byte
@@ -464,7 +461,7 @@ impl<I2C: Instance> I2c<I2C> {
             // operations through the DMA handle might thus encounter `WouldBlock`
             // error. Instead, we should make sure that the interface becomes idle
             // before returning.
-            while self.i2c.cr1.read().stop().bit_is_set() {}
+            while self.i2c.cr1().read().stop().bit_is_set() {}
 
             // Fallthrough is success
             Ok(())
@@ -483,14 +480,14 @@ impl<I2C: Instance> I2c<I2C> {
         self.write_bytes(bytes.iter().cloned())?;
 
         // Send a STOP condition
-        self.i2c.cr1.modify(|_, w| w.stop().set_bit());
+        self.i2c.cr1().modify(|_, w| w.stop().set_bit());
 
         // Wait for the STOP to be sent. Otherwise, the interface will still be
         // busy for a while after this function returns. Immediate following
         // operations through the DMA handle might thus encounter `WouldBlock`
         // error. Instead, we should make sure that the interface becomes idle
         // before returning.
-        while self.i2c.cr1.read().stop().bit_is_set() {}
+        while self.i2c.cr1().read().stop().bit_is_set() {}
 
         // Fallthrough is success
         Ok(())
@@ -504,14 +501,14 @@ impl<I2C: Instance> I2c<I2C> {
         self.write_bytes(bytes.into_iter())?;
 
         // Send a STOP condition
-        self.i2c.cr1.modify(|_, w| w.stop().set_bit());
+        self.i2c.cr1().modify(|_, w| w.stop().set_bit());
 
         // Wait for the STOP to be sent. Otherwise, the interface will still be
         // busy for a while after this function returns. Immediate following
         // operations through the DMA handle might thus encounter `WouldBlock`
         // error. Instead, we should make sure that the interface becomes idle
         // before returning.
-        while self.i2c.cr1.read().stop().bit_is_set() {}
+        while self.i2c.cr1().read().stop().bit_is_set() {}
 
         // Fallthrough is success
         Ok(())

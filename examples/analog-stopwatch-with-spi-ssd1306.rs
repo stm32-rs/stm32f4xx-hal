@@ -65,7 +65,7 @@ enum StopwatchState {
 fn main() -> ! {
     let mut dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
-    dp.RCC.apb2enr.write(|w| w.syscfgen().enabled());
+    dp.RCC.apb2enr().write(|w| w.syscfgen().enabled());
 
     let rcc = dp.RCC.constrain();
 

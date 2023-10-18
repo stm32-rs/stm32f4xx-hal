@@ -93,7 +93,7 @@ macro_rules! hal {
                 self.tim.set_prescaler(psc);
 
                 // Seemingly this needs to be written to
-                // self.tim.arr.write(|w| w.arr().bits(u16::MAX));
+                // self.tim.arr().write(|w| w.arr().bits(u16::MAX));
 
                 /*
                 For example, one can measure the period (in TIMx_CCR1 register) and the duty cycle (in
@@ -113,7 +113,7 @@ macro_rules! hal {
                 // clear): write the CC1P and CC1NP bits to ‘0’ (active on rising edge).
 
                 self.tim
-                    .ccer
+                    .ccer()
                     .modify(|_, w| w.cc1p().clear_bit().cc2p().clear_bit());
 
                 // disable filters and disable the input capture prescalers.
@@ -131,24 +131,26 @@ macro_rules! hal {
                 // Select the active polarity for TI1FP2 (used for capture in TIMx_CCR2): write the CC2P
                 // and CC2NP bits to ‘1’ (active on falling edge).
                 self.tim
-                    .ccer
+                    .ccer()
                     .modify(|_, w| w.cc2p().set_bit().cc2np().set_bit());
 
                 // Select the valid trigger input: write the TS bits to 101 in the TIMx_SMCR register
                 // (TI1FP1 selected).
-                self.tim.smcr.modify(|_, w| unsafe { w.ts().bits(0b101) });
+                self.tim.smcr().modify(|_, w| unsafe { w.ts().bits(0b101) });
 
                 // Configure the slave mode controller in reset mode: write the SMS bits to 100 in the
                 // TIMx_SMCR register.
-                self.tim.smcr.modify(|_, w| unsafe { w.sms().bits(0b100) });
+                self.tim
+                    .smcr()
+                    .modify(|_, w| unsafe { w.sms().bits(0b100) });
 
                 // Enable the captures: write the CC1E and CC2E bits to ‘1’ in the TIMx_CCER register.
                 self.tim
-                    .ccer
+                    .ccer()
                     .modify(|_, w| w.cc1e().set_bit().cc2e().set_bit());
 
                 // enable interrupts.
-                self.tim.dier.modify(|_, w| w.cc2ie().set_bit());
+                self.tim.dier().modify(|_, w| w.cc2ie().set_bit());
                 // enable the counter.
                 self.tim.enable_counter(true);
 

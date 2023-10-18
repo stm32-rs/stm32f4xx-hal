@@ -523,7 +523,7 @@ mod dma {
 
                 fn address(&self) -> u32 {
                     let reg = unsafe { &*(DualI2s::$reg as *const RegisterBlock) };
-                    (&reg.dr) as *const _ as u32
+                    reg.dr().as_ptr() as u32
                 }
             }
         };

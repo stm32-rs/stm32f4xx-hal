@@ -1,6 +1,6 @@
 use super::{compute_arr_presc, Error, FTimer, Flag, Instance, SysEvent, Timer};
-use crate::pac::SYST;
 use core::ops::{Deref, DerefMut};
+use cortex_m::peripheral::SYST;
 use fugit::{HertzU32 as Hertz, TimerDurationU32, TimerInstantU32};
 
 /// Hardware timers

@@ -73,7 +73,7 @@ pub trait SysMonoTimerExt: Sized {
     }
 }
 
-impl SysMonoTimerExt for crate::pac::SYST {
+impl SysMonoTimerExt for cortex_m::peripheral::SYST {
     fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> Systick<FREQ> {
         Systick::new(self, clocks.hclk().raw())
     }

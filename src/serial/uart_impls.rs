@@ -211,16 +211,16 @@ macro_rules! uartCommon {
                 };
 
                 let register_block = unsafe { &*UART::ptr() };
-                register_block.brr.write(|w| unsafe { w.bits(div) });
+                register_block.brr().write(|w| unsafe { w.bits(div) });
 
                 // Reset other registers to disable advanced USART features
-                register_block.cr2.reset();
-                register_block.cr3.reset();
+                register_block.cr2().reset();
+                register_block.cr3().reset();
 
                 // Enable transmission and receiving
                 // and configure frame
 
-                register_block.cr1.write(|w| {
+                register_block.cr1().write(|w| {
                     w.ue().set_bit();
                     w.over8().bit(over8);
                     w.te().set_bit();
@@ -231,10 +231,10 @@ macro_rules! uartCommon {
                 });
 
                 match config.dma {
-                    DmaConfig::Tx => register_block.cr3.write(|w| w.dmat().enabled()),
-                    DmaConfig::Rx => register_block.cr3.write(|w| w.dmar().enabled()),
+                    DmaConfig::Tx => register_block.cr3().write(|w| w.dmat().enabled()),
+                    DmaConfig::Rx => register_block.cr3().write(|w| w.dmar().enabled()),
                     DmaConfig::TxRx => register_block
-                        .cr3
+                        .cr3()
                         .write(|w| w.dmar().enabled().dmat().enabled()),
                     DmaConfig::None => {}
                 }
@@ -249,7 +249,7 @@ macro_rules! uartCommon {
 
             fn read_u16(&self) -> nb::Result<u16, Error> {
                 // NOTE(unsafe) atomic read with no side effects
-                let sr = self.sr.read();
+                let sr = self.sr().read();
 
                 // Any error requires the dr to be read to clear
                 if sr.pe().bit_is_set()
@@ -257,7 +257,7 @@ macro_rules! uartCommon {
                     || sr.nf().bit_is_set()
                     || sr.ore().bit_is_set()
                 {
-                    self.dr.read();
+                    self.dr().read();
                 }
 
                 Err(if sr.pe().bit_is_set() {
@@ -270,7 +270,7 @@ macro_rules! uartCommon {
                     Error::Overrun.into()
                 } else if sr.rxne().bit_is_set() {
                     // NOTE(unsafe) atomic read from stateless register
-                    return Ok(self.dr.read().dr().bits());
+                    return Ok(self.dr().read().dr().bits());
                 } else {
                     nb::Error::WouldBlock
                 })
@@ -278,11 +278,11 @@ macro_rules! uartCommon {
 
             fn write_u16(&self, word: u16) -> nb::Result<(), Error> {
                 // NOTE(unsafe) atomic read with no side effects
-                let sr = self.sr.read();
+                let sr = self.sr().read();
 
                 if sr.txe().bit_is_set() {
                     // NOTE(unsafe) atomic write to stateless register
-                    self.dr.write(|w| w.dr().bits(word));
+                    self.dr().write(|w| w.dr().set(word));
                     Ok(())
                 } else {
                     Err(nb::Error::WouldBlock)
@@ -291,7 +291,7 @@ macro_rules! uartCommon {
 
             fn flush(&self) -> nb::Result<(), Error> {
                 // NOTE(unsafe) atomic read with no side effects
-                let sr = self.sr.read();
+                let sr = self.sr().read();
 
                 if sr.tc().bit_is_set() {
                     Ok(())
@@ -301,21 +301,22 @@ macro_rules! uartCommon {
             }
 
             fn flags(&self) -> BitFlags<Flag> {
-                BitFlags::from_bits_truncate(self.sr.read().bits())
+                BitFlags::from_bits_truncate(self.sr().read().bits())
             }
 
             fn clear_flags(&self, flags: BitFlags<CFlag>) {
-                self.sr.write(|w| unsafe { w.bits(0xffff & !flags.bits()) });
+                self.sr()
+                    .write(|w| unsafe { w.bits(0xffff & !flags.bits()) });
             }
 
             fn clear_idle_interrupt(&self) {
-                let _ = self.sr.read();
-                let _ = self.dr.read();
+                let _ = self.sr().read();
+                let _ = self.dr().read();
             }
 
             fn check_and_clear_error_flags(&self) -> Result<(), Error> {
-                let sr = self.sr.read();
-                let _ = self.dr.read();
+                let sr = self.sr().read();
+                let _ = self.dr().read();
 
                 if sr.ore().bit_is_set() {
                     Err(Error::Overrun)
@@ -331,11 +332,11 @@ macro_rules! uartCommon {
             }
 
             fn enable_error_interrupt_generation(&self) {
-                self.cr3.modify(|_, w| w.eie().enabled());
+                self.cr3().modify(|_, w| w.eie().enabled());
             }
 
             fn disable_error_interrupt_generation(&self) {
-                self.cr3.modify(|_, w| w.eie().disabled());
+                self.cr3().modify(|_, w| w.eie().disabled());
             }
 
             fn listen_event(
@@ -343,7 +344,7 @@ macro_rules! uartCommon {
                 disable: Option<BitFlags<Event>>,
                 enable: Option<BitFlags<Event>>,
             ) {
-                self.cr1.modify(|r, w| unsafe {
+                self.cr1().modify(|r, w| unsafe {
                     w.bits({
                         let mut bits = r.bits();
                         if let Some(d) = disable {
@@ -358,7 +359,7 @@ macro_rules! uartCommon {
             }
 
             fn peri_address(&self) -> u32 {
-                self.dr.as_ptr() as u32
+                self.dr().as_ptr() as u32
             }
         }
     };

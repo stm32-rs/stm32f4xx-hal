@@ -22,7 +22,7 @@ impl Instance for FMPI2C1 {
         FMPI2C1::ptr() as *const _
     }
     fn clock_hsi(rcc: &crate::pac::rcc::RegisterBlock) {
-        rcc.dckcfgr2.modify(|_, w| w.fmpi2c1sel().hsi());
+        rcc.dckcfgr2().modify(|_, w| w.fmpi2c1sel().hsi());
     }
 }
 
@@ -112,7 +112,7 @@ impl<I2C: Instance> FMPI2c<I2C> {
         use core::cmp;
 
         // Make sure the I2C unit is disabled so we can configure it
-        self.i2c.cr1.modify(|_, w| w.pe().clear_bit());
+        self.i2c.cr1().modify(|_, w| w.pe().clear_bit());
 
         // Calculate settings for I2C speed modes
         let presc;
@@ -151,28 +151,23 @@ impl<I2C: Instance> FMPI2c<I2C> {
         }
 
         // Enable I2C signal generator, and configure I2C for configured speed
-        self.i2c.timingr.write(|w| {
-            w.presc()
-                .bits(presc)
-                .scldel()
-                .bits(scldel)
-                .sdadel()
-                .bits(sdadel)
-                .sclh()
-                .bits(sclh)
-                .scll()
-                .bits(scll)
+        self.i2c.timingr().write(|w| {
+            w.presc().set(presc);
+            w.scldel().set(scldel);
+            w.sdadel().set(sdadel);
+            w.sclh().set(sclh);
+            w.scll().set(scll)
         });
 
         // Enable the I2C processing
-        self.i2c.cr1.modify(|_, w| w.pe().set_bit());
+        self.i2c.cr1().modify(|_, w| w.pe().set_bit());
     }
 
     fn check_and_clear_error_flags(&self, isr: &fmpi2c1::isr::R) -> Result<(), Error> {
         // If we received a NACK, then this is an error
         if isr.nackf().bit_is_set() {
             self.i2c
-                .icr
+                .icr()
                 .write(|w| w.stopcf().set_bit().nackcf().set_bit());
             return Err(Error::NoAcknowledge(NoAcknowledgeSource::Unknown));
         }
@@ -182,7 +177,7 @@ impl<I2C: Instance> FMPI2c<I2C> {
 
     fn end_transaction(&self) -> Result<(), Error> {
         // Check and clear flags if they somehow ended up set
-        self.check_and_clear_error_flags(&self.i2c.isr.read())
+        self.check_and_clear_error_flags(&self.i2c.isr().read())
             .map_err(Error::nack_data)?;
         Ok(())
     }
@@ -190,46 +185,45 @@ impl<I2C: Instance> FMPI2c<I2C> {
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
         while {
-            let isr = self.i2c.isr.read();
+            let isr = self.i2c.isr().read();
             self.check_and_clear_error_flags(&isr)
                 .map_err(Error::nack_addr)?;
             isr.txis().bit_is_clear()
         } {}
 
         // Push out a byte of data
-        self.i2c.txdr.write(|w| unsafe { w.bits(u32::from(byte)) });
+        self.i2c
+            .txdr()
+            .write(|w| unsafe { w.bits(u32::from(byte)) });
 
         self.end_transaction()
     }
 
     fn recv_byte(&self) -> Result<u8, Error> {
         while {
-            let isr = self.i2c.isr.read();
+            let isr = self.i2c.isr().read();
             self.check_and_clear_error_flags(&isr)
                 .map_err(Error::nack_data)?;
             isr.rxne().bit_is_clear()
         } {}
 
-        let value = self.i2c.rxdr.read().bits() as u8;
+        let value = self.i2c.rxdr().read().bits() as u8;
         Ok(value)
     }
 
     pub fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Error> {
         // Set up current address for reading
-        self.i2c.cr2.modify(|_, w| {
-            w.sadd()
-                .bits(u16::from(addr) << 1)
-                .nbytes()
-                .bits(buffer.len() as u8)
-                .rd_wrn()
-                .set_bit()
+        self.i2c.cr2().modify(|_, w| {
+            w.sadd().set(u16::from(addr) << 1);
+            w.nbytes().set(buffer.len() as u8);
+            w.rd_wrn().set_bit()
         });
 
         // Send a START condition
-        self.i2c.cr2.modify(|_, w| w.start().set_bit());
+        self.i2c.cr2().modify(|_, w| w.start().set_bit());
 
         // Send the autoend after setting the start to get a restart
-        self.i2c.cr2.modify(|_, w| w.autoend().set_bit());
+        self.i2c.cr2().modify(|_, w| w.autoend().set_bit());
 
         // Now read in all bytes
         for c in buffer.iter_mut() {
@@ -241,19 +235,15 @@ impl<I2C: Instance> FMPI2c<I2C> {
 
     pub fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
         // Set up current slave address for writing and enable autoending
-        self.i2c.cr2.modify(|_, w| {
-            w.sadd()
-                .bits(u16::from(addr) << 1)
-                .nbytes()
-                .bits(bytes.len() as u8)
-                .rd_wrn()
-                .clear_bit()
-                .autoend()
-                .set_bit()
+        self.i2c.cr2().modify(|_, w| {
+            w.sadd().set(u16::from(addr) << 1);
+            w.nbytes().set(bytes.len() as u8);
+            w.rd_wrn().clear_bit();
+            w.autoend().set_bit()
         });
 
         // Send a START condition
-        self.i2c.cr2.modify(|_, w| w.start().set_bit());
+        self.i2c.cr2().modify(|_, w| w.start().set_bit());
 
         // Send out all individual bytes
         for c in bytes {
@@ -265,23 +255,19 @@ impl<I2C: Instance> FMPI2c<I2C> {
 
     pub fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
         // Set up current slave address for writing and disable autoending
-        self.i2c.cr2.modify(|_, w| {
-            w.sadd()
-                .bits(u16::from(addr) << 1)
-                .nbytes()
-                .bits(bytes.len() as u8)
-                .rd_wrn()
-                .clear_bit()
-                .autoend()
-                .clear_bit()
+        self.i2c.cr2().modify(|_, w| {
+            w.sadd().set(u16::from(addr) << 1);
+            w.nbytes().set(bytes.len() as u8);
+            w.rd_wrn().clear_bit();
+            w.autoend().clear_bit()
         });
 
         // Send a START condition
-        self.i2c.cr2.modify(|_, w| w.start().set_bit());
+        self.i2c.cr2().modify(|_, w| w.start().set_bit());
 
         // Wait until the transmit buffer is empty and there hasn't been any error condition
         while {
-            let isr = self.i2c.isr.read();
+            let isr = self.i2c.isr().read();
             self.check_and_clear_error_flags(&isr)
                 .map_err(Error::nack_addr)?;
             isr.txis().bit_is_clear() && isr.tc().bit_is_clear()
@@ -294,27 +280,24 @@ impl<I2C: Instance> FMPI2c<I2C> {
 
         // Wait until data was sent
         while {
-            let isr = self.i2c.isr.read();
+            let isr = self.i2c.isr().read();
             self.check_and_clear_error_flags(&isr)
                 .map_err(Error::nack_data)?;
             isr.tc().bit_is_clear()
         } {}
 
         // Set up current address for reading
-        self.i2c.cr2.modify(|_, w| {
-            w.sadd()
-                .bits(u16::from(addr) << 1)
-                .nbytes()
-                .bits(buffer.len() as u8)
-                .rd_wrn()
-                .set_bit()
+        self.i2c.cr2().modify(|_, w| {
+            w.sadd().set(u16::from(addr) << 1);
+            w.nbytes().set(buffer.len() as u8);
+            w.rd_wrn().set_bit()
         });
 
         // Send another START condition
-        self.i2c.cr2.modify(|_, w| w.start().set_bit());
+        self.i2c.cr2().modify(|_, w| w.start().set_bit());
 
         // Send the autoend after setting the start to get a restart
-        self.i2c.cr2.modify(|_, w| w.autoend().set_bit());
+        self.i2c.cr2().modify(|_, w| w.autoend().set_bit());
 
         // Now read in all bytes
         for c in buffer.iter_mut() {
