@@ -467,39 +467,21 @@ macro_rules! adc {
                     let channel = CHANNEL::channel();
 
                     //Set the channel in the right sequence field
-                    match sequence {
-                        config::Sequence::One      => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq1().bits(channel) }),
-                        config::Sequence::Two      => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq2().bits(channel) }),
-                        config::Sequence::Three    => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq3().bits(channel) }),
-                        config::Sequence::Four     => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq4().bits(channel) }),
-                        config::Sequence::Five     => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq5().bits(channel) }),
-                        config::Sequence::Six      => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq6().bits(channel) }),
-                        config::Sequence::Seven    => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq7().bits(channel) }),
-                        config::Sequence::Eight    => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq8().bits(channel) }),
-                        config::Sequence::Nine     => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq9().bits(channel) }),
-                        config::Sequence::Ten      => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq10().bits(channel) }),
-                        config::Sequence::Eleven   => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq11().bits(channel) }),
-                        config::Sequence::Twelve   => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq12().bits(channel) }),
-                        config::Sequence::Thirteen => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq13().bits(channel) }),
-                        config::Sequence::Fourteen => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq14().bits(channel) }),
-                        config::Sequence::Fifteen  => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq15().bits(channel) }),
-                        config::Sequence::Sixteen  => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq16().bits(channel) }),
-                    }
-
-                    fn replace_bits(mut v: u32, offset: u32, width: u32, value: u32) -> u32 {
-                        let mask = !(((1 << width) -1) << (offset * width));
-                        v &= mask;
-                        v |= value << (offset * width);
-                        v
+                    let seq = u8::from(sequence);
+                    match seq {
+                        0..=5 => self.adc_reg.sqr3().modify(|_, w| unsafe { w.sq(seq).bits(channel) }),
+                        6..=11 => self.adc_reg.sqr2().modify(|_, w| unsafe { w.sq(seq - 6).bits(channel) }),
+                        12..=15 => self.adc_reg.sqr1().modify(|_, w| unsafe { w.sq(seq - 12).bits(channel) }),
+                        _ => unreachable!(),
                     }
 
                     //Set the sample time for the channel
-                    let st = sample_time as u32;
-                    let ch = channel as u32;
+                    let st = sample_time as u8;
+                    let ch = channel as u8;
                     match channel {
-                        0..=9   => self.adc_reg.smpr2().modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch, 3, st)) }),
-                        10..=18 => self.adc_reg.smpr1().modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch-10, 3, st)) }),
-                        _ => unimplemented!(),
+                        0..=9   => self.adc_reg.smpr2().modify(|_, w| w.smp(ch).bits(st)),
+                        10..=18 => self.adc_reg.smpr1().modify(|_, w| w.smp(ch - 10).bits(st)),
+                        _ => unreachable!(),
                     }
                 }
 

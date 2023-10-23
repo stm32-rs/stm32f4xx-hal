@@ -52,28 +52,27 @@ where
     #[inline(always)]
     fn make_interrupt_source(&mut self, syscfg: &mut SysCfg) {
         let i = self.pin_id();
-        let port = self.port_id() as u32;
-        let offset = 4 * (i % 4);
+        let port = self.port_id();
         match i {
             0..=3 => {
-                syscfg.exticr1().modify(|r, w| unsafe {
-                    w.bits((r.bits() & !(0xf << offset)) | (port << offset))
-                });
+                syscfg
+                    .exticr1()
+                    .modify(|_, w| unsafe { w.exti(i).bits(port) });
             }
             4..=7 => {
-                syscfg.exticr2().modify(|r, w| unsafe {
-                    w.bits((r.bits() & !(0xf << offset)) | (port << offset))
-                });
+                syscfg
+                    .exticr2()
+                    .modify(|_, w| unsafe { w.exti(i - 4).bits(port) });
             }
             8..=11 => {
-                syscfg.exticr3().modify(|r, w| unsafe {
-                    w.bits((r.bits() & !(0xf << offset)) | (port << offset))
-                });
+                syscfg
+                    .exticr3()
+                    .modify(|_, w| unsafe { w.exti(i - 8).bits(port) });
             }
             12..=15 => {
-                syscfg.exticr4().modify(|r, w| unsafe {
-                    w.bits((r.bits() & !(0xf << offset)) | (port << offset))
-                });
+                syscfg
+                    .exticr4()
+                    .modify(|_, w| unsafe { w.exti(i - 12).bits(port) });
             }
             _ => unreachable!(),
         }
@@ -84,45 +83,41 @@ where
         let i = self.pin_id();
         match edge {
             Edge::Rising => {
-                exti.rtsr()
-                    .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
-                exti.ftsr()
-                    .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << i)) });
+                exti.rtsr().modify(|_, w| w.tr(i).set_bit());
+                exti.ftsr().modify(|_, w| w.tr(i).clear_bit());
             }
             Edge::Falling => {
-                exti.ftsr()
-                    .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
-                exti.rtsr()
-                    .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << i)) });
+                exti.ftsr().modify(|_, w| w.tr(i).set_bit());
+                exti.rtsr().modify(|_, w| w.tr(i).clear_bit());
             }
             Edge::RisingFalling => {
-                exti.rtsr()
-                    .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
-                exti.ftsr()
-                    .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
+                exti.rtsr().modify(|_, w| w.tr(i).set_bit());
+                exti.ftsr().modify(|_, w| w.tr(i).set_bit());
             }
         }
     }
 
     #[inline(always)]
     fn enable_interrupt(&mut self, exti: &mut EXTI) {
-        exti.imr()
-            .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.pin_id())) });
+        exti.imr().modify(|_, w| w.mr(self.pin_id()).set_bit());
     }
 
     #[inline(always)]
     fn disable_interrupt(&mut self, exti: &mut EXTI) {
-        exti.imr()
-            .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.pin_id())) });
+        exti.imr().modify(|_, w| w.mr(self.pin_id()).clear_bit());
     }
 
     #[inline(always)]
     fn clear_interrupt_pending_bit(&mut self) {
-        unsafe { (*EXTI::ptr()).pr().write(|w| w.bits(1 << self.pin_id())) };
+        unsafe {
+            (*EXTI::ptr())
+                .pr()
+                .write(|w| w.pr(self.pin_id()).clear_bit_by_one())
+        };
     }
 
     #[inline(always)]
     fn check_interrupt(&self) -> bool {
-        unsafe { ((*EXTI::ptr()).pr().read().bits() & (1 << self.pin_id())) != 0 }
+        unsafe { (*EXTI::ptr()).pr().read().pr(self.pin_id()).bit_is_set() }
     }
 }
