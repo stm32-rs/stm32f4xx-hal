@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - complete and rework Dma Stream API [#666]
  - SPI bidi takes 2 pins [#526]
  - `Fast Read Quad I/O (EBh)` in `qspi-w25q` example now matches W25QXX datasheet. [#682]
+ - `embedded-storage` version bumped to 0.3
 
 ### Fixed
 
