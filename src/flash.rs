@@ -1,4 +1,6 @@
-use embedded_storage::nor_flash::{MultiwriteNorFlash, NorFlash, ReadNorFlash};
+use embedded_storage::nor_flash::{
+    ErrorType, MultiwriteNorFlash, NorFlash, NorFlashError, NorFlashErrorKind, ReadNorFlash,
+};
 
 use crate::pac::FLASH;
 use crate::signature::FlashSize;
@@ -357,9 +359,24 @@ pub fn flash_sectors(flash_size: usize, dual_bank: bool) -> impl Iterator<Item =
     }
 }
 
-impl ReadNorFlash for LockedFlash {
-    type Error = Error;
+impl NorFlashError for Error {
+    fn kind(&self) -> NorFlashErrorKind {
+        match self {
+            Error::ProgrammingAlignment => NorFlashErrorKind::NotAligned,
+            _ => NorFlashErrorKind::Other,
+        }
+    }
+}
 
+impl ErrorType for LockedFlash {
+    type Error = Error;
+}
+
+impl ErrorType for UnlockedFlash<'_> {
+    type Error = Error;
+}
+
+impl ReadNorFlash for LockedFlash {
     const READ_SIZE: usize = 1;
 
     fn read(&mut self, offset: u32, bytes: &mut [u8]) -> Result<(), Self::Error> {
@@ -374,8 +391,6 @@ impl ReadNorFlash for LockedFlash {
 }
 
 impl<'a> ReadNorFlash for UnlockedFlash<'a> {
-    type Error = Error;
-
     const READ_SIZE: usize = 1;
 
     fn read(&mut self, offset: u32, bytes: &mut [u8]) -> Result<(), Self::Error> {
