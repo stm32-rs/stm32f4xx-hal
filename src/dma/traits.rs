@@ -345,7 +345,6 @@ macro_rules! dma_map {
 use dma_map;
 
 mod f4;
-pub use f4::*;
 
 #[cfg(feature = "dfsdm")]
 pub struct FLT<T, const F: u8> {
