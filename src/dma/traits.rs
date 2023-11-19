@@ -4,6 +4,7 @@ use crate::{
     timer,
 };
 use core::ops::Deref;
+use enumflags2::BitFlags;
 
 pub(crate) mod sealed {
     /// Converts value to bits for setting a register value.
@@ -18,53 +19,87 @@ use sealed::Bits;
 pub trait SafePeripheralRead {}
 
 /// Trait for DMA stream interrupt handling.
-pub trait StreamISR: crate::Sealed {
-    /// Clear all interrupts flags for the DMA stream.
-    fn clear_flags(&mut self, flags: DmaFlags);
-
+pub trait StreamISR:
+    crate::ClearFlags<Flag = DmaFlag> + crate::ReadFlags<Flag = DmaFlag> + crate::Sealed
+{
     /// Clear transfer complete interrupt (tcif) for the DMA stream.
-    fn clear_transfer_complete(&mut self);
+    fn clear_transfer_complete(&mut self) {
+        self.clear_flags(DmaFlag::TransferComplete)
+    }
 
     /// Clear half transfer interrupt flag (htif) for the DMA stream.
-    fn clear_half_transfer(&mut self);
+    fn clear_half_transfer(&mut self) {
+        self.clear_flags(DmaFlag::HalfTransfer)
+    }
 
     /// Clear transfer error interrupt flag (teif) for the DMA stream.
-    fn clear_transfer_error(&mut self);
+    fn clear_transfer_error(&mut self) {
+        self.clear_flags(DmaFlag::TransferError)
+    }
 
     /// Clear direct mode error interrupt flag (dmeif) for the DMA stream.
-    fn clear_direct_mode_error(&mut self);
+    fn clear_direct_mode_error(&mut self) {
+        self.clear_flags(DmaFlag::DirectModeError)
+    }
 
     /// Clear fifo error interrupt flag (feif) for the DMA stream.
-    fn clear_fifo_error(&mut self);
-
-    /// Get all interrupts flags a once.
-    ///
-    /// The tuple contain in order:
-    ///  - transfer complete flag
-    ///  - half transfer flag
-    ///  - transfer error flag
-    ///  - direct mode error flag
-    ///  - fifo_error flag
-    fn all_flags(&self) -> DmaFlags;
+    fn clear_fifo_error(&mut self) {
+        self.clear_flags(DmaFlag::FifoError)
+    }
 
     /// Get transfer complete flag.
-    fn is_transfer_complete(&self) -> bool;
+    #[inline(always)]
+    fn is_transfer_complete(&self) -> bool {
+        self.flags().is_transfer_complete()
+    }
 
     /// Get half transfer flag.
-    fn is_half_transfer(&self) -> bool;
+    #[inline(always)]
+    fn is_half_transfer(&self) -> bool {
+        self.flags().is_half_transfer()
+    }
 
     /// Get transfer error flag
-    fn is_transfer_error(&self) -> bool;
+    #[inline(always)]
+    fn is_transfer_error(&self) -> bool {
+        self.flags().is_transfer_error()
+    }
 
     /// Get direct mode error flag
-    fn is_direct_mode_error(&self) -> bool;
+    #[inline(always)]
+    fn is_direct_mode_error(&self) -> bool {
+        self.flags().is_direct_mode_error()
+    }
 
+    /// Get fifo error flag
+    #[inline(always)]
+    fn is_fifo_error(&self) -> bool {
+        self.flags().is_fifo_error()
+    }
+}
+
+pub trait DmaEventExt {
+    fn is_listen_transfer_complete(&self) -> bool;
+    fn is_listen_half_transfer(&self) -> bool;
+    fn is_listen_transfer_error(&self) -> bool;
+    fn is_listen_direct_mode_error(&self) -> bool;
+}
+
+pub trait DmaFlagExt {
+    /// Get transfer complete flag.
+    fn is_transfer_complete(&self) -> bool;
+    /// Get half transfer flag.
+    fn is_half_transfer(&self) -> bool;
+    /// Get transfer error flag
+    fn is_transfer_error(&self) -> bool;
+    /// Get direct mode error flag
+    fn is_direct_mode_error(&self) -> bool;
     /// Get fifo error flag
     fn is_fifo_error(&self) -> bool;
 }
 
 /// Trait for DMA streams types.
-pub trait Stream: StreamISR + crate::Sealed {
+pub trait Stream: StreamISR + crate::Listen<Event = DmaEvent> + crate::Sealed {
     /// Number of the register stream.
     const NUMBER: usize;
     /// Set the peripheral address (par) of the DMA stream.
@@ -149,41 +184,51 @@ pub trait Stream: StreamISR + crate::Sealed {
     /// Set the flow controller (pfctrl).
     fn set_flow_controller(&mut self, value: DmaFlowController);
 
-    /// Enable several interrupts. Modify only interrupts set to `true` in the DmaCommonInterrupts
-    fn listen(&mut self, interrupts: DmaCommonInterrupts);
-
-    /// Disable several interrupts. Modify only interrupts set to `true` in the DmaCommonInterrupts
-    fn unlisten(&mut self, interrupts: DmaCommonInterrupts);
-
     /// Convenience method to get the value of several interrupts of the DMA stream.  The order of the
     /// returns are: `transfer_complete`, `half_transfer`, `transfer_error` and `direct_mode_error`
     ///
     /// Note: fifo_error interrupt is not returned because it's in a different register
-    fn common_interrupts(&self) -> DmaCommonInterrupts;
+    fn events(&self) -> BitFlags<DmaEvent>;
 
-    /// Enable transfer complete interrupt (tcie) of the DMA stream.
-    fn listen_transfer_complete(&mut self);
+    /// Enable the transfer complete interrupt (tcie) of the DMA stream.
+    fn listen_transfer_complete(&mut self) {
+        self.listen(DmaEvent::TransferComplete)
+    }
 
     /// Disable the transfer complete interrupt (tcie) of the DMA stream.
-    fn unlisten_transfer_complete(&mut self);
+    fn unlisten_transfer_complete(&mut self) {
+        self.unlisten(DmaEvent::TransferComplete)
+    }
 
     /// Enable the half transfer interrupt (htie) of the DMA stream.
-    fn listen_half_transfer(&mut self);
+    fn listen_half_transfer(&mut self) {
+        self.listen(DmaEvent::HalfTransfer)
+    }
 
     /// Disable the half transfer interrupt (htie) of the DMA stream.
-    fn unlisten_half_transfer(&mut self);
+    fn unlisten_half_transfer(&mut self) {
+        self.unlisten(DmaEvent::HalfTransfer)
+    }
 
     /// Enable the transfer error interrupt (teie) of the DMA stream.
-    fn listen_transfer_error(&mut self);
+    fn listen_transfer_error(&mut self) {
+        self.listen(DmaEvent::TransferError)
+    }
 
     /// Disable the transfer error interrupt (teie) of the DMA stream.
-    fn unlisten_transfer_error(&mut self);
+    fn unlisten_transfer_error(&mut self) {
+        self.unlisten(DmaEvent::TransferError)
+    }
 
     /// Enable the direct mode error interrupt (dmeie) of the DMA stream.
-    fn listen_direct_mode_error(&mut self);
+    fn listen_direct_mode_error(&mut self) {
+        self.listen(DmaEvent::DirectModeError)
+    }
 
     /// Disable the direct mode error interrupt (dmeie) of the DMA stream.
-    fn unlisten_direct_mode_error(&mut self);
+    fn unlisten_direct_mode_error(&mut self) {
+        self.unlisten(DmaEvent::DirectModeError)
+    }
 
     /// Enable the fifo error interrupt (feie) of the DMA stream.
     fn listen_fifo_error(&mut self);
@@ -300,7 +345,6 @@ macro_rules! dma_map {
 use dma_map;
 
 mod f4;
-pub use f4::*;
 
 #[cfg(feature = "dfsdm")]
 pub struct FLT<T, const F: u8> {

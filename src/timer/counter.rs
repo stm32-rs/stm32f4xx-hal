@@ -1,4 +1,4 @@
-use super::{compute_arr_presc, Error, Event, FTimer, Instance, SysEvent, Timer};
+use super::{compute_arr_presc, Error, FTimer, Flag, Instance, SysEvent, Timer};
 use crate::pac::SYST;
 use core::ops::{Deref, DerefMut};
 use fugit::{HertzU32 as Hertz, TimerDurationU32, TimerInstantU32};
@@ -31,10 +31,10 @@ impl<TIM: Instance> CounterHz<TIM> {
 impl<TIM: Instance> CounterHz<TIM> {
     pub fn start(&mut self, timeout: Hertz) -> Result<(), Error> {
         // pause
-        self.tim.disable_counter();
+        self.tim.enable_counter(false);
         // reset counter
         self.tim.reset_counter();
-        self.tim.clear_interrupt_flag(Event::Update);
+        self.tim.clear_interrupt_flag(Flag::Update.into());
 
         let (psc, arr) = compute_arr_presc(timeout.raw(), self.clk.raw());
         self.tim.set_prescaler(psc);
@@ -44,14 +44,14 @@ impl<TIM: Instance> CounterHz<TIM> {
         self.tim.trigger_update();
 
         // start counter
-        self.tim.enable_counter();
+        self.tim.enable_counter(true);
 
         Ok(())
     }
 
     pub fn wait(&mut self) -> nb::Result<(), Error> {
-        if self.tim.get_interrupt_flag().contains(Event::Update) {
-            self.tim.clear_interrupt_flag(Event::Update);
+        if self.tim.get_interrupt_flag().contains(Flag::Update) {
+            self.tim.clear_interrupt_flag(Flag::Update.into());
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -64,7 +64,7 @@ impl<TIM: Instance> CounterHz<TIM> {
         }
 
         // disable counter
-        self.tim.disable_counter();
+        self.tim.enable_counter(false);
         Ok(())
     }
 }
@@ -107,10 +107,10 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
 
     pub fn start(&mut self, timeout: TimerDurationU32<FREQ>) -> Result<(), Error> {
         // pause
-        self.tim.disable_counter();
+        self.tim.enable_counter(false);
         // reset counter
         self.tim.reset_counter();
-        self.tim.clear_interrupt_flag(Event::Update);
+        self.tim.clear_interrupt_flag(Flag::Update.into());
 
         self.tim.set_auto_reload(timeout.ticks() - 1)?;
 
@@ -118,14 +118,14 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
         self.tim.trigger_update();
 
         // start counter
-        self.tim.enable_counter();
+        self.tim.enable_counter(true);
 
         Ok(())
     }
 
     pub fn wait(&mut self) -> nb::Result<(), Error> {
-        if self.tim.get_interrupt_flag().contains(Event::Update) {
-            self.tim.clear_interrupt_flag(Event::Update);
+        if self.tim.get_interrupt_flag().contains(Flag::Update) {
+            self.tim.clear_interrupt_flag(Flag::Update.into());
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -138,7 +138,7 @@ impl<TIM: Instance, const FREQ: u32> Counter<TIM, FREQ> {
         }
 
         // disable counter
-        self.tim.disable_counter();
+        self.tim.enable_counter(false);
         Ok(())
     }
 }

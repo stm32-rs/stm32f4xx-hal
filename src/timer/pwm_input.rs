@@ -150,7 +150,7 @@ macro_rules! hal {
                 // enable interrupts.
                 self.tim.dier.modify(|_, w| w.cc2ie().set_bit());
                 // enable the counter.
-                self.tim.enable_counter();
+                self.tim.enable_counter(true);
 
                 PwmInput {
                     timer: self,

@@ -14,7 +14,7 @@
 mod app {
 
     use hal::{
-        dma::{config::DmaConfig, PeripheralToMemory, Stream2, StreamsTuple, Transfer},
+        dma::{config::DmaConfig, DmaFlag, PeripheralToMemory, Stream2, StreamsTuple, Transfer},
         pac::{DMA2, USART1},
         prelude::*,
         rcc::RccExt,
@@ -140,12 +140,9 @@ mod app {
     fn dma2_stream2(mut cx: dma2_stream2::Context) {
         let transfer = &mut cx.shared.rx_transfer;
 
-        if transfer.is_fifo_error() {
-            transfer.clear_fifo_error();
-        }
-        if transfer.is_transfer_complete() {
-            transfer.clear_transfer_complete();
-
+        let flags = transfer.flags();
+        transfer.clear_flags(DmaFlag::FifoError | DmaFlag::TransferComplete);
+        if flags.is_transfer_complete() {
             // Buffer is full, but no IDLE received!
             // You can process this data or discard data (ignore transfer complete interrupt and wait IDLE).
 

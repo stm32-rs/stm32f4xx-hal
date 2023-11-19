@@ -26,7 +26,7 @@ mod usart_shell {
         pac::I2C1,
         pac::USART1,
         prelude::*,
-        serial::{config::Config, Event::Rxne, Serial},
+        serial::{self, config::Config, Serial},
         timer::Event,
     };
 
@@ -110,7 +110,7 @@ mod usart_shell {
         )
         .unwrap()
         .with_u8_data();
-        serial.listen(Rxne);
+        serial.listen(serial::Event::RxNotEmpty);
         // ushell
         let autocomplete = StaticAutocomplete(["clear", "help", "off", "on", "status"]);
         let history = LRUHistory::default();
