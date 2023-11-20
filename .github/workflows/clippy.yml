@@ -8,7 +8,7 @@ jobs:
   clippy_check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use the latest stable rustc
         run: rustup update stable && rustup default stable
       - name: Add Cortex-M4F target
@@ -17,7 +17,7 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: v0.17.0
+          key: v0.18.0
 
       - uses: actions-rs/clippy-check@v1
         with:

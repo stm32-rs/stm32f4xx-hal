@@ -46,7 +46,7 @@ jobs:
             experimental: true
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use the latest ${{ matrix.rust }} rustc
         run: rustup update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
       - name: Add Cortex-M4F target
@@ -55,7 +55,7 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: v0.17.0-${{ matrix.mcu }}
+          key: v0.18.0-${{ matrix.mcu }}
 
       - uses: actions-rs/cargo@v1
         with:
