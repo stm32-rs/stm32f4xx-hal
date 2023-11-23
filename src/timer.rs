@@ -306,6 +306,9 @@ pub enum Ocm {
     PwmMode2 = 7,
 }
 
+// Center-aligned mode selection
+pub use pac::tim1::cr1::CMS as CenterAlignedMode;
+
 /// Wrapper type that indicates which register of the contained timer to use for DMA.
 pub struct CCR<T, const C: u8>(T);
 pub type CCR1<T> = CCR<T, 0>;
@@ -317,7 +320,7 @@ pub type CCR4<T> = CCR<T, 3>;
 pub struct DMAR<T>(T);
 
 mod sealed {
-    use super::{BitFlags, Event, Flag, IdleState, Ocm, Polarity};
+    use super::{BitFlags, CenterAlignedMode, Event, Flag, IdleState, Ocm, Polarity};
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
@@ -361,6 +364,7 @@ mod sealed {
         fn set_dtg_value(value: u8);
         fn read_dtg_value() -> u8;
         fn idle_state(channel: u8, comp: bool, s: IdleState);
+        fn set_cms(mode: CenterAlignedMode);
     }
 
     pub trait WithPwm: WithPwmCommon {
@@ -604,6 +608,11 @@ macro_rules! hal {
                                 unsafe { bb::write(tim.cr2(), c*2 + 9, s == IdleState::Set); }
                             }
                         }
+                    }
+                    #[inline(always)]
+                    fn set_cms(cms: CenterAlignedMode) {
+                        let tim = unsafe { &*<$TIM>::ptr() };
+                        tim.cr1().write(|w| w.cms().variant(cms));
                     }
                 }
             )?
