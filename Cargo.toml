@@ -473,6 +473,10 @@ name = "spi-dma"
 required-features = ["stm32f411"]
 
 [[example]]
+name = "uart-dma"
+required-features = ["stm32f405"]
+
+[[example]]
 name = "ssd1306-image"
 required-features = ["device-selected"] # stm32f411
 
