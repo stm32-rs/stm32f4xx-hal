@@ -234,12 +234,7 @@ fn DMA1_STREAM1() {
     cortex_m::interrupt::free(|cs| {
         if let Some(transfer) = G_TRANSFER.borrow(cs).borrow_mut().as_mut() {
             // Its important to clear fifo errors as the transfer is paused until it is cleared
-            if transfer.flags() == DmaFlag::FifoError {
-                transfer.clear_fifo_error();
-            }
-            if transfer.flags() == DmaFlag::TransferComplete {
-                transfer.clear_transfer_complete();
-            }
+            transfer.clear_flags(DmaFlag::FifoError | DmaFlag::TransferComplete);
         }
     });
 }
