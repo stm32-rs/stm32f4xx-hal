@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Added an example to show how to do DMA with UART (Rx only) [#698]
+
 ## [v0.18.0] - 2023-11-19
 
 ### Changed
