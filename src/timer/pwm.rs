@@ -38,7 +38,7 @@
 
 use super::{
     compute_arr_presc, Advanced, CPin, Channel, FTimer, IdleState, Instance, NCPin, Ocm, Polarity,
-    Timer, WithPwm,
+    Timer, WithPwm, CMS,
 };
 pub use super::{Ch, C1, C2, C3, C4};
 use crate::gpio::{OpenDrain, PushPull};
@@ -547,6 +547,13 @@ where
     #[inline]
     pub fn set_complementary_idle_state(&mut self, channel: Channel, s: IdleState) {
         TIM::idle_state(PINS::check_complementary_used(channel) as u8, true, s);
+    }
+
+    /// Sets the alignment mode
+    #[inline]
+    pub fn set_center_aligned_mode_selection(&mut self, mode: CMS) {
+        TIM::set_center_aligned_mode_selection(mode);
+        self.tim.start_pwm();
     }
 }
 
