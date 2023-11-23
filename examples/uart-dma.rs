@@ -187,6 +187,9 @@ fn main() -> ! {
         }
     }
 
+    // to test this, connect the RX and TX pins together for a loopback
+    // - so you can listen to what you just sent.
+
     uart3_write(b"hello world\r").expect("Failed to write to UART3");
     let _response = uart3_read_until(b'\r').expect("Failed to read from UART3");
     // ... do something with response
