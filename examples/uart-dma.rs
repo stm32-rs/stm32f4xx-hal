@@ -8,16 +8,20 @@ use stm32f4xx_hal::dma::{DmaFlag, PeripheralToMemory, Stream1};
 use core::cell::RefCell;
 use cortex_m::interrupt::Mutex;
 use cortex_m_rt::entry;
-use stm32f4xx_hal::pac::{interrupt, DMA1};
-use stm32f4xx_hal::pac::Interrupt;
-use stm32f4xx_hal::{dma::{StreamsTuple, Transfer}, pac, prelude::*, serial};
 use stm32f4xx_hal::dma::config::DmaConfig;
-use stm32f4xx_hal::uart::{Config, Rx, Serial};
+use stm32f4xx_hal::pac::Interrupt;
+use stm32f4xx_hal::pac::{interrupt, DMA1};
 use stm32f4xx_hal::uart::config::StopBits;
+use stm32f4xx_hal::uart::{Config, Rx, Serial};
+use stm32f4xx_hal::{
+    dma::{StreamsTuple, Transfer},
+    pac,
+    prelude::*,
+    serial,
+};
 
 // uart buffer size
 const UART_BUFFER_SIZE: usize = 128;
-
 
 // Simple ring buffer
 pub struct Buffer {
@@ -144,7 +148,7 @@ fn main() -> ! {
                 .dma(serial::config::DmaConfig::Rx),
             &clocks,
         )
-            .unwrap();
+        .unwrap();
 
         // Note! It is better to use memory pools, such as heapless::pool::Pool. But it not work with embedded_dma yet.
         // See CHANGELOG of unreleased main branch and issue https://github.com/japaric/heapless/pull/362 for details.
@@ -178,7 +182,6 @@ fn main() -> ! {
         rx_transfer.start(|_rx| {});
 
         cortex_m::interrupt::free(|cs| *G_TRANSFER.borrow(cs).borrow_mut() = Some(rx_transfer));
-
 
         // Enable interrupt
         unsafe {
