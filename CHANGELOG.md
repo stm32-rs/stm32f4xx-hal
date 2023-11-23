@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- add `.set_center_aligned_mode_selection()` and `CMS` enum for PWM. [#697]
+
+[#697]: https://github.com/stm32-rs/stm32f4xx-hal/pull/697
+
+
 ## [v0.18.0] - 2023-11-19
 
 ### Changed
@@ -24,7 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
- -  add `.set_count()` for QEI, add `.write_count()` for TIM [#677]
+ - add `.set_count()` for QEI, add `.write_count()` for TIM [#677]
  - add "Fast start" section in README [#678]
 
 [#526]: https://github.com/stm32-rs/stm32f4xx-hal/pull/526
