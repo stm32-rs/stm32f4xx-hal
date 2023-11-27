@@ -770,8 +770,8 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
 
 #[cfg(feature = "gpio-f427")]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
-    PB0: (pb0, 0, [1, 2, 3, 9, 10, 11, 14]),
-    PB1: (pb1, 1, [1, 2, 3, 9, 10, 11, 14]),
+    PB0: (pb0, 0, [1, 2, 3, 9, 10, 11]),
+    PB1: (pb1, 1, [1, 2, 3, 9, 10, 11]),
     PB2: (pb2, 2, []),
     PB3: (pb3, 3, [0, 1, 5, 6], super::Debugger),
     PB4: (pb4, 4, [0, 2, 5, 6, 7], super::Debugger),
