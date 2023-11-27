@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Added an example to show how to do DMA with UART (Rx only) [#698]
 
+### Fixed
+- Missing alternate function definition for LTDC pins PB0 PB1
+
 ## [v0.18.0] - 2023-11-19
 
 ### Changed
