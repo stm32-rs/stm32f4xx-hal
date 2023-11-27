@@ -589,9 +589,9 @@ impl<CS> Rtc<CS> {
 
         // TODO: remove unsafe after PAC update
         let tr = &self.regs.tstr;
-        let tr = unsafe { (*(tr as *const _ as *const TR)).read() };
+        let tr = unsafe { (*(tr.as_ptr() as *const TR)).read() };
         let dr = &self.regs.tsdr;
-        let dr = unsafe { (*(dr as *const _ as *const DR)).read() };
+        let dr = unsafe { (*(dr.as_ptr() as *const DR)).read() };
         let dry = self.regs.dr.read();
         let seconds = decode_seconds(&tr);
         let minutes = decode_minutes(&tr);

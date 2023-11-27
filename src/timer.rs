@@ -567,7 +567,7 @@ macro_rules! hal {
             unsafe impl<const C: u8> PeriAddress for CCR<$TIM, C> {
                 #[inline(always)]
                 fn address(&self) -> u32 {
-                    &self.0.ccr[C as usize] as *const _ as u32
+                    self.0.ccr[C as usize].as_ptr() as u32
                 }
 
                 type MemSize = $bits;
@@ -589,7 +589,7 @@ macro_rules! with_dmar {
         unsafe impl PeriAddress for DMAR<$TIM> {
             #[inline(always)]
             fn address(&self) -> u32 {
-                &self.0.dmar as *const _ as u32
+                self.0.dmar.as_ptr() as u32
             }
 
             type MemSize = $memsize;

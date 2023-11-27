@@ -848,7 +848,7 @@ macro_rules! adc {
 
                 /// Returns the address of the ADC data register. Primarily useful for configuring DMA.
                 pub fn data_register_address(&mut self) -> u32 {
-                    &self.adc_reg.dr as *const _ as u32
+                    self.adc_reg.dr.as_ptr() as u32
                 }
 
                 /// Configure a channel for sampling.
@@ -1017,7 +1017,7 @@ macro_rules! adc {
             unsafe impl PeriAddress for Adc<pac::$adc_type> {
                 #[inline(always)]
                 fn address(&self) -> u32 {
-                    &self.adc_reg.dr as *const _ as u32
+                    self.adc_reg.dr.as_ptr() as u32
                 }
 
                 type MemSize = u16;

@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-- Added an example to show how to do DMA with UART (Rx only) [#698]
-- Updated `synopsys-usb-otg` to `0.4.0`
 ### Added
 
  - Added an example to show how to do DMA with UART (Rx only) [#698]
@@ -16,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
  - bump embedded-hal to `1.0-rc2`
+ - Use `as_ptr` for register address casting
+ - Updated `synopsys-usb-otg` to `0.4.0`
 
 ### Fixed
 

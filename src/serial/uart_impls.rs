@@ -315,7 +315,7 @@ macro_rules! uartCommon {
             }
 
             fn peri_address(&self) -> u32 {
-                &self.dr as *const _ as u32
+                self.dr.as_ptr() as u32
             }
         }
     };
