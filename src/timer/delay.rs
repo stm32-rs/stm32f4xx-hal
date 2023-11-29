@@ -110,7 +110,10 @@ pub type DelayMs<TIM> = Delay<TIM, 1_000>;
 impl<TIM: Instance, const FREQ: u32> Delay<TIM, FREQ> {
     /// Sleep for given time
     pub fn delay(&mut self, time: TimerDurationU32<FREQ>) {
-        let mut ticks = time.ticks().max(1) - 1;
+        let mut ticks = time.ticks();
+        if ticks > 1 {
+            ticks -= 1;
+        }
         while ticks != 0 {
             let reload = ticks.min(TIM::max_auto_reload());
 
