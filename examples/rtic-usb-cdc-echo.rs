@@ -73,10 +73,12 @@ mod app {
             unsafe { USB_BUS.as_ref().unwrap() },
             UsbVidPid(0x16c0, 0x27dd),
         )
-        .manufacturer("rust embedded")
-        .product("usb echo server")
-        .serial_number("4242")
         .device_class(usbd_serial::USB_CLASS_CDC)
+        .strings(&[StringDescriptors::default()
+            .manufacturer("Fake Company")
+            .product("Product")
+            .serial_number("TEST")])
+        .unwrap()
         .build();
 
         (
