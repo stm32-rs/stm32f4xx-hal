@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 - Added an example to show how to do DMA with UART (Rx only) [#698]
+- Updated `synopsys-usb-otg` to `0.4.0`
 
 ### Fixed
 

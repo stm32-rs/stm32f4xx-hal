@@ -50,10 +50,12 @@ fn main() -> ! {
 
         *G_USB_DEVICE.borrow(cs).borrow_mut() = Some(
             UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x27dd))
-                .manufacturer("Fake company")
-                .product("Serial port")
-                .serial_number("TEST")
                 .device_class(usbd_serial::USB_CLASS_CDC)
+                .strings(&[StringDescriptors::default()
+                    .manufacturer("Fake Company")
+                    .product("Product")
+                    .serial_number("TEST")])
+                .unwrap()
                 .build(),
         );
     });
