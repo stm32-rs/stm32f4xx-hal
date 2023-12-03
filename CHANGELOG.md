@@ -9,12 +9,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Added an example to show how to do DMA with UART (Rx only) [#698]
 - Updated `synopsys-usb-otg` to `0.4.0`
+### Added
+
+ - Added an example to show how to do DMA with UART (Rx only) [#698]
+
+### Changed
+
+ - bump embedded-hal to `1.0-rc2`
 
 ### Fixed
 
-## [v0.18.0] - 2023-11-19
+ - Wait at least given time in `embedded-hal` `delay`
 
-### Changed
+## [v0.18.0] - 2023-11-19
 
  - bump embedded-hal to `1.0-rc1` (remove `serial` part)
  - complete and rework Dma Stream API [#666]

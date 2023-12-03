@@ -114,7 +114,14 @@ impl<T: Into<u64>> embedded_hal::blocking::delay::DelayMs<T> for Delay {
     }
 }
 
-impl embedded_hal_one::delay::DelayUs for Delay {
+impl embedded_hal_one::delay::DelayNs for Delay {
+    fn delay_ns(&mut self, ns: u32) {
+        // Convert us to ticks
+        let start = DWT::cycle_count();
+        let ticks = (ns as u64 * self.clock.raw() as u64) / 1_000_000_000;
+        Delay::delay_ticks(start, ticks);
+    }
+
     fn delay_us(&mut self, us: u32) {
         // Convert us to ticks
         let start = DWT::cycle_count();
