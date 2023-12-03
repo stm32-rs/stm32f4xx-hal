@@ -890,7 +890,7 @@ pub struct Rx<I2C> {
 unsafe impl<I2C: Instance> PeriAddress for Rx<I2C> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { &(*I2C::ptr()).dr as *const _ as u32 }
+        unsafe { (*I2C::ptr()).dr.as_ptr() as u32 }
     }
 
     type MemSize = u8;
@@ -899,7 +899,7 @@ unsafe impl<I2C: Instance> PeriAddress for Rx<I2C> {
 unsafe impl<I2C: Instance> PeriAddress for Tx<I2C> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { &(*I2C::ptr()).dr as *const _ as u32 }
+        unsafe { (*I2C::ptr()).dr.as_ptr() as u32 }
     }
 
     type MemSize = u8;
