@@ -704,34 +704,34 @@ impl<SPI: Instance> Inner<SPI> {
     /// can be written to the SPI.
     #[inline]
     pub fn is_tx_empty(&self) -> bool {
-        self.flags().contains(Flag::TxEmpty)
+        self.spi.sr.read().txe().bit_is_set()
     }
 
     /// Return `true` if the RXNE flag is set, i.e. new data has been received
     /// and can be read from the SPI.
     #[inline]
     pub fn is_rx_not_empty(&self) -> bool {
-        self.flags().contains(Flag::RxNotEmpty)
+        self.spi.sr.read().rxne().bit_is_set()
     }
 
     /// Return `true` if the MODF flag is set, i.e. the SPI has experienced a
     /// Master Mode Fault. (see chapter 28.3.10 of the STM32F4 Reference Manual)
     #[inline]
     pub fn is_modf(&self) -> bool {
-        self.flags().contains(Flag::ModeFault)
+        self.spi.sr.read().modf().bit_is_set()
     }
 
     /// Returns true if the transfer is in progress
     #[inline]
     pub fn is_busy(&self) -> bool {
-        self.flags().contains(Flag::Busy)
+        self.spi.sr.read().bsy().bit_is_set()
     }
 
     /// Return `true` if the OVR flag is set, i.e. new data has been received
     /// while the receive data register was already filled.
     #[inline]
     pub fn is_overrun(&self) -> bool {
-        self.flags().contains(Flag::Overrun)
+        self.spi.sr.read().ovr().bit_is_set()
     }
 
     #[inline]
@@ -759,15 +759,15 @@ impl<SPI: Instance> Inner<SPI> {
 
     #[inline(always)]
     fn check_read<W: FrameSize>(&mut self) -> nb::Result<W, Error> {
-        let flags = self.flags();
+        let sr = self.spi.sr.read();
 
-        Err(if flags.contains(Flag::Overrun) {
+        Err(if sr.ovr().bit_is_set() {
             Error::Overrun.into()
-        } else if flags.contains(Flag::ModeFault) {
+        } else if sr.modf().bit_is_set() {
             Error::ModeFault.into()
-        } else if flags.contains(Flag::CrcError) {
+        } else if sr.crcerr().bit_is_set() {
             Error::Crc.into()
-        } else if flags.contains(Flag::RxNotEmpty) {
+        } else if sr.rxne().bit_is_set() {
             return Ok(self.read_data_reg());
         } else {
             nb::Error::WouldBlock
@@ -776,21 +776,21 @@ impl<SPI: Instance> Inner<SPI> {
 
     #[inline(always)]
     fn check_send<W: FrameSize>(&mut self, byte: W) -> nb::Result<(), Error> {
-        let flags = self.flags();
+        let sr = self.spi.sr.read();
 
-        Err(if flags.contains(Flag::Overrun) {
+        Err(if sr.ovr().bit_is_set() {
             // Read from the DR to clear the OVR bit
             let _ = self.spi.dr.read();
             Error::Overrun.into()
-        } else if flags.contains(Flag::ModeFault) {
+        } else if sr.modf().bit_is_set() {
             // Write to CR1 to clear MODF
             self.spi.cr1.modify(|_r, w| w);
             Error::ModeFault.into()
-        } else if flags.contains(Flag::CrcError) {
+        } else if sr.crcerr().bit_is_set() {
             // Clear the CRCERR bit
             self.spi.sr.modify(|_r, w| w.crcerr().clear_bit());
             Error::Crc.into()
-        } else if flags.contains(Flag::TxEmpty) {
+        } else if sr.txe().bit_is_set() {
             self.write_data_reg(byte);
             return Ok(());
         } else {
