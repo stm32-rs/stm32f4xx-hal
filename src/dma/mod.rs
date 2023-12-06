@@ -301,7 +301,7 @@ impl Not for CurrentBuffer {
 
 /// Structure to get or set common interrupts setup
 #[enumflags2::bitflags]
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum DmaEvent {
     DirectModeError = 1 << 1,
@@ -331,7 +331,7 @@ impl DmaEventExt for BitFlags<DmaEvent> {
 
 /// Structure returned by Stream or Transfer flags() method.
 #[enumflags2::bitflags]
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum DmaFlag {
     FifoError = 1 << 0,
@@ -600,7 +600,7 @@ where
 
     #[inline(always)]
     fn events(&self) -> BitFlags<DmaEvent> {
-        BitFlags::from_bits_truncate(unsafe { Self::st() }.cr.read().bits() as u8)
+        BitFlags::from_bits_truncate(unsafe { Self::st() }.cr.read().bits())
     }
 
     #[inline(always)]
@@ -679,10 +679,10 @@ where
                 w.bits({
                     let mut bits = r.bits();
                     if let Some(d) = disable {
-                        bits &= !(d.bits() as u32)
+                        bits &= !d.bits()
                     }
                     if let Some(e) = enable {
-                        bits |= e.bits() as u32;
+                        bits |= e.bits();
                     }
                     bits
                 })
@@ -704,7 +704,7 @@ macro_rules! dma_stream {
                 #[inline(always)]
                 fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>) {
                     let dma = unsafe { &*I::ptr() };
-                    dma.$ifcr.write(|w| unsafe { w.bits((flags.into().bits() as u32) << $isr_shift) });
+                    dma.$ifcr.write(|w| unsafe { w.bits(flags.into().bits() << $isr_shift) });
                 }
             }
 
@@ -717,7 +717,7 @@ macro_rules! dma_stream {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     BitFlags::from_bits_truncate(
-                        ((dma.$isr.read().bits() >> $isr_shift)) as u8
+                        ((dma.$isr.read().bits() >> $isr_shift))
                     )
                 }
             }
