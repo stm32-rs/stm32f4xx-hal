@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - bump embedded-hal to `1.0-rc2`
  - Use `as_ptr` for register address casting
  - Updated `synopsys-usb-otg` to `0.4.0`
+ - use `repr(u32)` for flags, revert `spi::CrcError` clean
 
 ### Fixed
 
