@@ -282,12 +282,11 @@ macro_rules! uartCommon {
             }
 
             fn flags(&self) -> BitFlags<Flag> {
-                BitFlags::from_bits_truncate(self.sr.read().bits() as u16)
+                BitFlags::from_bits_truncate(self.sr.read().bits())
             }
 
             fn clear_flags(&self, flags: BitFlags<CFlag>) {
-                self.sr
-                    .write(|w| unsafe { w.bits(0xffff & !(flags.bits() as u32)) });
+                self.sr.write(|w| unsafe { w.bits(0xffff & !flags.bits()) });
             }
 
             fn clear_idle_interrupt(&self) {

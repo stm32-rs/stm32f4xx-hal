@@ -4,7 +4,7 @@ use core::ops::{Deref, DerefMut};
 use crate::dma::traits::{DMASet, PeriAddress};
 use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
 use crate::gpio::{self, NoPin};
-use crate::{pac, ClearFlags, ReadFlags};
+use crate::{pac, ReadFlags};
 
 /// Clock polarity
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -67,7 +67,7 @@ pub type NoMosi = NoPin;
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u8)]
+#[repr(u32)]
 pub enum Event {
     /// An error occurred.
     ///
@@ -90,7 +90,7 @@ pub enum Event {
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u16)]
+#[repr(u32)]
 pub enum Flag {
     /// Receive buffer not empty
     RxNotEmpty = 1 << 0,
@@ -112,7 +112,7 @@ pub enum Flag {
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u16)]
+#[repr(u32)]
 pub enum CFlag {
     /// CRC error flag
     CrcError = 1 << 4,
@@ -788,7 +788,7 @@ impl<SPI: Instance> Inner<SPI> {
             Error::ModeFault.into()
         } else if flags.contains(Flag::CrcError) {
             // Clear the CRCERR bit
-            self.clear_flags(CFlag::CrcError);
+            self.spi.sr.modify(|_r, w| w.crcerr().clear_bit());
             Error::Crc.into()
         } else if flags.contains(Flag::TxEmpty) {
             self.write_data_reg(byte);
@@ -802,10 +802,10 @@ impl<SPI: Instance> Inner<SPI> {
             w.bits({
                 let mut bits = r.bits();
                 if let Some(d) = disable {
-                    bits &= !(d.bits() as u32)
+                    bits &= !d.bits();
                 }
                 if let Some(e) = enable {
-                    bits |= e.bits() as u32;
+                    bits |= e.bits();
                 }
                 bits
             })
@@ -831,18 +831,19 @@ impl<SPI: Instance> crate::Listen for Inner<SPI> {
 
 impl<SPI: Instance> crate::ClearFlags for Inner<SPI> {
     type Flag = CFlag;
-    fn clear_flags(&mut self, event: impl Into<BitFlags<Self::Flag>>) {
-        // TODO: check
-        self.spi
-            .sr
-            .write(|w| unsafe { w.bits(0xffff & !(event.into().bits() as u32)) });
+    fn clear_flags(&mut self, flags: impl Into<BitFlags<Self::Flag>>) {
+        if flags.into().contains(CFlag::CrcError) {
+            self.spi
+                .sr
+                .write(|w| unsafe { w.bits(0xffff).crcerr().clear_bit() })
+        }
     }
 }
 
 impl<SPI: Instance> crate::ReadFlags for Inner<SPI> {
     type Flag = Flag;
     fn flags(&self) -> BitFlags<Self::Flag> {
-        BitFlags::from_bits_truncate(self.spi.sr.read().bits() as u16)
+        BitFlags::from_bits_truncate(self.spi.sr.read().bits())
     }
 }
 

@@ -90,7 +90,7 @@ pub enum SysEvent {
 
 /// TIM interrupt events
 #[enumflags2::bitflags]
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Event {
@@ -114,7 +114,7 @@ pub enum Event {
 
 /// TIM status flags
 #[enumflags2::bitflags]
-#[repr(u16)]
+#[repr(u32)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Flag {
@@ -450,7 +450,7 @@ macro_rules! hal {
             }
             #[inline(always)]
             fn get_interrupt_flag(&self) -> BitFlags<Flag> {
-                BitFlags::from_bits_truncate(self.sr.read().bits() as u16)
+                BitFlags::from_bits_truncate(self.sr.read().bits())
             }
             #[inline(always)]
             fn read_count(&self) -> Self::Width {
