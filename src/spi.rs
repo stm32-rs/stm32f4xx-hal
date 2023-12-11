@@ -4,7 +4,7 @@ use core::ops::{Deref, DerefMut};
 use crate::dma::traits::{DMASet, PeriAddress};
 use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
 use crate::gpio::{self, NoPin};
-use crate::{pac, ReadFlags};
+use crate::pac;
 
 /// Clock polarity
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
