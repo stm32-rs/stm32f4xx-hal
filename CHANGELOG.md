@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- bump embedded-hal to `1.0.0-rc.3`
+
 ## [v0.19.0] - 2023-12-11
 
 ### Added
