@@ -12,7 +12,7 @@ use crate::pac;
 use crate::rcc::{self, Clocks, Reset};
 use fugit::HertzU32 as Hertz;
 
-#[cfg(feature = "stm32_i2s_v12x")]
+#[cfg(feature = "i2s")]
 pub extern crate stm32_i2s_v12x;
 
 // I2S pins are mostly the same as the corresponding SPI pins:
@@ -202,7 +202,7 @@ macro_rules! i2s {
             }
         }
 
-        #[cfg(feature = "stm32_i2s_v12x")]
+        #[cfg(feature = "i2s")]
         impl stm32_i2s_v12x::WsPin for gpio::alt::$i2s::Ws {
             fn is_high(&self) -> bool {
                 use crate::gpio::ReadPin;
@@ -214,7 +214,7 @@ macro_rules! i2s {
             }
         }
 
-        #[cfg(feature = "stm32_i2s_v12x")]
+        #[cfg(feature = "i2s")]
         unsafe impl stm32_i2s_v12x::I2sPeripheral for I2s<$SPI>
         where
             $SPI: rcc::Reset,
@@ -388,7 +388,7 @@ macro_rules! dual_i2s {
             type I2sExtPeripheral = $I2SEXT;
         }
 
-        #[cfg(feature = "stm32_i2s_v12x")]
+        #[cfg(feature = "i2s")]
         unsafe impl stm32_i2s_v12x::DualI2sPeripheral for DualI2s<$SPI>
         where
             $SPI: rcc::Reset,
@@ -445,7 +445,7 @@ dual_i2s!(pac::SPI3, pac::I2S3EXT, DualI2s3, i2s3, i2s_clk);
 dual_i2s!(pac::SPI3, pac::I2S3EXT, DualI2s3, i2s3, i2s_apb1_clk);
 
 // DMA support: reuse existing mappings for SPI
-#[cfg(feature = "stm32_i2s_v12x")]
+#[cfg(feature = "i2s")]
 mod dma {
     use super::*;
     use crate::dma::traits::{DMASet, PeriAddress};

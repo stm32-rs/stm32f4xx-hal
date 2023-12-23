@@ -47,13 +47,9 @@ pub use embedded_hal_02::Qei as _embedded_hal_Qei;
 pub use fugit::ExtU32 as _fugit_ExtU32;
 pub use fugit::RateExtU32 as _fugit_RateExtU32;
 
-#[cfg(all(
-    feature = "device-selected",
-    feature = "can",
-    any(feature = "can1", feature = "can2",)
-))]
+#[cfg(all(feature = "can", any(feature = "can1", feature = "can2",)))]
 pub use crate::can::CanExt as _stm32f4xx_hal_can_CanExt;
-#[cfg(all(feature = "device-selected", feature = "dac"))]
+#[cfg(feature = "dac")]
 pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;
 pub use crate::dma::traits::DmaEventExt as _;
 pub use crate::dma::traits::DmaFlagExt as _;
@@ -70,7 +66,7 @@ pub use crate::i2c::I2cExt as _stm32f4xx_hal_i2c_I2cExt;
 pub use crate::i2s::I2sExt as _stm32f4xx_hal_i2s_I2sExt;
 pub use crate::qei::QeiExt as _stm32f4xx_hal_QeiExt;
 pub use crate::rcc::RccExt as _stm32f4xx_hal_rcc_RccExt;
-#[cfg(all(feature = "device-selected", feature = "rng"))]
+#[cfg(feature = "rng")]
 pub use crate::rng::RngExt as _stm32f4xx_hal_rng_RngExt;
 pub use crate::serial::RxISR as _stm32f4xx_hal_serial_RxISR;
 pub use crate::serial::RxListen as _stm32f4xx_hal_serial_RxListen;
