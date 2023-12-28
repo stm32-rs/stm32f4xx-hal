@@ -31,29 +31,17 @@ macro_rules! out_port {
             #[doc=concat!("Set/reset pins according to `", $n, "` lower bits")]
             #[inline(never)]
             pub fn write(&mut self, word: u32) {
-                unsafe {
-                    (*Gpio::<P>::ptr())
-                        .bsrr
-                        .write(|w| w.bits(Self::value_for_write_bsrr(word)))
-                }
+                unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(Self::value_for_write_bsrr(word))) }
             }
 
             /// Set all pins to `PinState::High`
             pub fn all_high(&mut self) {
-                unsafe {
-                    (*Gpio::<P>::ptr())
-                        .bsrr
-                        .write(|w| w.bits(Self::mask()))
-                }
+                unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(Self::mask())) }
             }
 
             /// Reset all pins to `PinState::Low`
             pub fn all_low(&mut self) {
-                unsafe {
-                    (*Gpio::<P>::ptr())
-                        .bsrr
-                        .write(|w| w.bits(Self::mask() << 16))
-                }
+                unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(Self::mask() << 16)) }
             }
         }
     }
@@ -98,7 +86,7 @@ impl<const P: char, const SIZE: usize> OutPortArray<P, SIZE> {
     #[inline(never)]
     pub fn write(&mut self, word: u32) {
         unsafe {
-            (*Gpio::<P>::ptr())
+            (*gpiox::<P>())
                 .bsrr
                 .write(|w| w.bits(self.value_for_write_bsrr(word)))
         }
@@ -106,15 +94,11 @@ impl<const P: char, const SIZE: usize> OutPortArray<P, SIZE> {
 
     /// Set all pins to `PinState::High`
     pub fn all_high(&mut self) {
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(self.mask())) }
+        unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(self.mask())) }
     }
 
     /// Reset all pins to `PinState::Low`
     pub fn all_low(&mut self) {
-        unsafe {
-            (*Gpio::<P>::ptr())
-                .bsrr
-                .write(|w| w.bits(self.mask() << 16))
-        }
+        unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(self.mask() << 16)) }
     }
 }

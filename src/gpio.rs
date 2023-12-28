@@ -321,7 +321,7 @@ where
         let offset = 2 * { N };
 
         unsafe {
-            (*Gpio::<P>::ptr())
+            (*gpiox::<P>())
                 .ospeedr
                 .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)));
         }
@@ -353,7 +353,7 @@ where
         let offset = 2 * { N };
         let value = resistor as u32;
         unsafe {
-            (*Gpio::<P>::ptr())
+            (*gpiox::<P>())
                 .pupdr
                 .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)));
         }
@@ -435,22 +435,22 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << N)) }
+        unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(1 << N)) }
     }
     #[inline(always)]
     fn _set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*Gpio::<P>::ptr()).bsrr.write(|w| w.bits(1 << (16 + N))) }
+        unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(1 << (16 + N))) }
     }
     #[inline(always)]
     fn _is_set_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).odr.read().bits() & (1 << N) == 0 }
+        unsafe { (*gpiox::<P>()).odr.read().bits() & (1 << N) == 0 }
     }
     #[inline(always)]
     fn _is_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*Gpio::<P>::ptr()).idr.read().bits() & (1 << N) == 0 }
+        unsafe { (*gpiox::<P>()).idr.read().bits() & (1 << N) == 0 }
     }
 }
 
@@ -603,29 +603,26 @@ use gpio;
 mod f4;
 pub use f4::*;
 
-struct Gpio<const P: char>;
-impl<const P: char> Gpio<P> {
-    const fn ptr() -> *const crate::pac::gpioa::RegisterBlock {
-        match P {
-            'A' => crate::pac::GPIOA::ptr(),
-            'B' => crate::pac::GPIOB::ptr() as _,
-            'C' => crate::pac::GPIOC::ptr() as _,
-            #[cfg(feature = "gpiod")]
-            'D' => crate::pac::GPIOD::ptr() as _,
-            #[cfg(feature = "gpioe")]
-            'E' => crate::pac::GPIOE::ptr() as _,
-            #[cfg(feature = "gpiof")]
-            'F' => crate::pac::GPIOF::ptr() as _,
-            #[cfg(feature = "gpiog")]
-            'G' => crate::pac::GPIOG::ptr() as _,
-            'H' => crate::pac::GPIOH::ptr() as _,
-            #[cfg(feature = "gpioi")]
-            'I' => crate::pac::GPIOI::ptr() as _,
-            #[cfg(feature = "gpioj")]
-            'J' => crate::pac::GPIOJ::ptr() as _,
-            #[cfg(feature = "gpiok")]
-            'K' => crate::pac::GPIOK::ptr() as _,
-            _ => panic!("Unknown GPIO port"),
-        }
+const fn gpiox<const P: char>() -> *const crate::pac::gpioa::RegisterBlock {
+    match P {
+        'A' => crate::pac::GPIOA::ptr(),
+        'B' => crate::pac::GPIOB::ptr() as _,
+        'C' => crate::pac::GPIOC::ptr() as _,
+        #[cfg(feature = "gpiod")]
+        'D' => crate::pac::GPIOD::ptr() as _,
+        #[cfg(feature = "gpioe")]
+        'E' => crate::pac::GPIOE::ptr() as _,
+        #[cfg(feature = "gpiof")]
+        'F' => crate::pac::GPIOF::ptr() as _,
+        #[cfg(feature = "gpiog")]
+        'G' => crate::pac::GPIOG::ptr() as _,
+        'H' => crate::pac::GPIOH::ptr() as _,
+        #[cfg(feature = "gpioi")]
+        'I' => crate::pac::GPIOI::ptr() as _,
+        #[cfg(feature = "gpioj")]
+        'J' => crate::pac::GPIOJ::ptr() as _,
+        #[cfg(feature = "gpiok")]
+        'K' => crate::pac::GPIOK::ptr() as _,
+        _ => panic!("Unknown GPIO port"),
     }
 }
