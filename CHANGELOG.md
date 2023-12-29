@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - shorten gpio ptr access
 - bump embedded-hal to `1.0` (no more RC!)
+- make `embedded-hal` `1.0` main implementation
 
 ## [v0.19.0] - 2023-12-11
 

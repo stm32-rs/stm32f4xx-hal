@@ -71,7 +71,7 @@ mod hal_02;
 mod hal_1;
 pub mod outport;
 
-pub use embedded_hal::digital::v2::PinState;
+pub use embedded_hal_02::digital::v2::PinState;
 
 use core::fmt;
 

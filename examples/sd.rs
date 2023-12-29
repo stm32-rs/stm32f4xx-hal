@@ -51,7 +51,7 @@ fn main() -> ! {
             Err(_err) => (),
         }
 
-        delay.delay_ms(1000u32);
+        delay.delay_ms(1000);
     }
 
     let nblocks = sdio.card().map(|c| c.block_count()).unwrap_or(0);

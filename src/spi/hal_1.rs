@@ -1,4 +1,4 @@
-pub use embedded_hal_one::spi::{Error, ErrorKind, ErrorType, Mode, Phase, Polarity};
+pub use embedded_hal::spi::{Error, ErrorKind, ErrorType, Mode, Phase, Polarity};
 
 use super::Instance;
 
@@ -63,7 +63,7 @@ mod nb {
 
 mod blocking {
     use super::super::{FrameSize, Instance, Spi};
-    use embedded_hal_one::spi::SpiBus;
+    use embedded_hal::spi::SpiBus;
 
     impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, BIDI, W>
     where

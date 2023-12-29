@@ -70,7 +70,7 @@ pub struct I2c<I2C: Instance> {
     pins: (I2C::Scl, I2C::Sda),
 }
 
-pub use embedded_hal_one::i2c::NoAcknowledgeSource;
+pub use embedded_hal::i2c::NoAcknowledgeSource;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 #[non_exhaustive]
@@ -605,5 +605,5 @@ macro_rules! transaction_impl {
 }
 use transaction_impl;
 
-type Hal1Operation<'a> = embedded_hal_one::i2c::Operation<'a>;
-type Hal02Operation<'a> = embedded_hal::blocking::i2c::Operation<'a>;
+type Hal1Operation<'a> = embedded_hal::i2c::Operation<'a>;
+type Hal02Operation<'a> = embedded_hal_02::blocking::i2c::Operation<'a>;

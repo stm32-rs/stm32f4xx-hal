@@ -4,7 +4,7 @@ use super::{
     dynamic::PinModeError, marker, DynamicPin, ErasedPin, Output, PartiallyErasedPin, Pin,
 };
 
-use embedded_hal_one::digital::{ErrorType, InputPin, OutputPin, StatefulOutputPin};
+use embedded_hal::digital::{ErrorType, InputPin, OutputPin, StatefulOutputPin};
 
 // Implementations for `Pin`
 impl<const P: char, const N: u8, MODE> ErrorType for Pin<P, N, MODE> {

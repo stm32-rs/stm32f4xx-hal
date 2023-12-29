@@ -3,7 +3,7 @@
 //! TIM2 and TIM5 are a general purpose 32-bit auto-reload up/downcounter with
 //! a 16-bit prescaler.
 
-use embedded_hal::{
+use embedded_hal_02::{
     blocking::delay::{DelayMs, DelayUs},
     timer::{Cancel, CountDown, Periodic},
 };
@@ -139,7 +139,7 @@ impl<const FREQ: u32> Cancel for SysCounter<FREQ> {
     }
 }
 
-impl<TIM: Instance + WithPwm, const C: u8> embedded_hal::PwmPin for PwmChannel<TIM, C> {
+impl<TIM: Instance + WithPwm, const C: u8> embedded_hal_02::PwmPin for PwmChannel<TIM, C> {
     type Duty = u16;
 
     fn disable(&mut self) {
@@ -159,7 +159,7 @@ impl<TIM: Instance + WithPwm, const C: u8> embedded_hal::PwmPin for PwmChannel<T
     }
 }
 
-impl<TIM, PINS> embedded_hal::Pwm for PwmHz<TIM, PINS>
+impl<TIM, PINS> embedded_hal_02::Pwm for PwmHz<TIM, PINS>
 where
     TIM: Instance + WithPwm,
     PINS: Pins<TIM>,
@@ -269,7 +269,7 @@ impl<TIM: Instance, const FREQ: u32> Cancel for Counter<TIM, FREQ> {
     }
 }
 
-impl<TIM, PINS, const FREQ: u32> embedded_hal::Pwm for Pwm<TIM, PINS, FREQ>
+impl<TIM, PINS, const FREQ: u32> embedded_hal_02::Pwm for Pwm<TIM, PINS, FREQ>
 where
     TIM: Instance + WithPwm,
     PINS: Pins<TIM>,

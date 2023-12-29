@@ -105,7 +105,7 @@ fn main() -> ! {
                 led_bit8.set_low();
             }
 
-            delay.delay_ms(10u32);
+            delay.delay_ms(10);
         }
     }
 }

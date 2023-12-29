@@ -1,13 +1,13 @@
 //! Provides basic Pulse-width modulation (PWM) capabilities
 //!
-//! There are 2 main structures [`Pwm`] and [`PwmHz`]. Both structures implement [`embedded_hal::Pwm`] and have some additional API.
+//! There are 2 main structures [`Pwm`] and [`PwmHz`]. Both structures implement [`embedded_hal_02::Pwm`] and have some additional API.
 //!
 //! First one is based on [`FTimer`] with fixed prescaler
 //! and easy to use with [`fugit::TimerDurationU32`] for setting pulse width and period without advanced calculations.
 //!
 //! Second one is based on [`Timer`] with dynamic internally calculated prescaler and require [`fugit::Hertz`] to set period.
 //!
-//! You can [`split`](Pwm::split) any of those structures on independent `PwmChannel`s if you need that implement [`embedded_hal::PwmPin`]
+//! You can [`split`](Pwm::split) any of those structures on independent `PwmChannel`s if you need that implement [`embedded_hal_02::PwmPin`]
 //! but can't change PWM period.
 //!
 //! Also there is [`PwmExt`] trait implemented on `pac::TIMx` to simplify creating new structure.

@@ -2,7 +2,7 @@ mod nb {
     use core::ops::Deref;
 
     use super::super::{Error, Instance, RegisterBlockImpl, Rx, Serial, Tx};
-    use embedded_hal::serial::{Read, Write};
+    use embedded_hal_02::serial::{Read, Write};
 
     impl<USART: Instance, WORD> Read<WORD> for Serial<USART, WORD>
     where
@@ -98,7 +98,7 @@ mod blocking {
     use core::ops::Deref;
 
     use super::super::{Error, Instance, RegisterBlockImpl, Serial, Tx};
-    use embedded_hal::blocking::serial::Write;
+    use embedded_hal_02::blocking::serial::Write;
 
     impl<USART: Instance> Write<u8> for Tx<USART, u8>
     where

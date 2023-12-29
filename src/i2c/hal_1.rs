@@ -1,4 +1,4 @@
-use embedded_hal_one::i2c::{Error, ErrorKind, ErrorType};
+use embedded_hal::i2c::{Error, ErrorKind, ErrorType};
 
 impl Error for super::Error {
     fn kind(&self) -> ErrorKind {
@@ -18,9 +18,9 @@ impl<I2C: super::Instance> ErrorType for super::I2c<I2C> {
 
 mod blocking {
     use super::super::{I2c, Instance};
-    use embedded_hal_one::i2c::Operation;
+    use embedded_hal::i2c::Operation;
 
-    impl<I2C: Instance> embedded_hal_one::i2c::I2c for I2c<I2C> {
+    impl<I2C: Instance> embedded_hal::i2c::I2c for I2c<I2C> {
         fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
             self.read(addr, buffer)
         }

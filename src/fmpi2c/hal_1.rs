@@ -1,4 +1,4 @@
-use embedded_hal_one::i2c::ErrorType;
+use embedded_hal::i2c::ErrorType;
 
 use super::Instance;
 
@@ -9,9 +9,9 @@ impl<I2C: Instance> ErrorType for super::FMPI2c<I2C> {
 mod blocking {
     use super::super::{fmpi2c1, FMPI2c, Instance};
     use core::ops::Deref;
-    use embedded_hal_one::i2c::Operation;
+    use embedded_hal::i2c::Operation;
 
-    impl<I2C: Instance> embedded_hal_one::i2c::I2c for FMPI2c<I2C>
+    impl<I2C: Instance> embedded_hal::i2c::I2c for FMPI2c<I2C>
     where
         I2C: Deref<Target = fmpi2c1::RegisterBlock>,
     {

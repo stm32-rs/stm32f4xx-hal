@@ -2,7 +2,7 @@
 
 use crate::pac::{DBGMCU, IWDG};
 use core::fmt;
-use embedded_hal::watchdog::{Watchdog, WatchdogEnable};
+use embedded_hal_02::watchdog::{Watchdog, WatchdogEnable};
 use fugit::MillisDurationU32 as MilliSeconds;
 
 /// Wraps the Independent Watchdog (IWDG) peripheral

@@ -1,4 +1,4 @@
-pub use embedded_hal::spi::{Mode, Phase, Polarity};
+pub use embedded_hal_02::spi::{Mode, Phase, Polarity};
 
 impl From<Polarity> for super::Polarity {
     fn from(p: Polarity) -> Self {
@@ -29,7 +29,7 @@ impl From<Mode> for super::Mode {
 
 mod nb {
     use super::super::{Error, FrameSize, Instance, Spi};
-    use embedded_hal::spi::FullDuplex;
+    use embedded_hal_02::spi::FullDuplex;
 
     impl<SPI, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, BIDI, W>
     where
@@ -49,7 +49,7 @@ mod nb {
 
 mod blocking {
     use super::super::{Error, Instance, Spi};
-    use embedded_hal::blocking::spi::{Operation, Transactional, Transfer, Write, WriteIter};
+    use embedded_hal_02::blocking::spi::{Operation, Transactional, Transfer, Write, WriteIter};
 
     impl<SPI> Transfer<u8> for Spi<SPI, false, u8>
     where

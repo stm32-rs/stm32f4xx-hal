@@ -113,7 +113,7 @@ fn main() -> ! {
     let mut delay = Timer::syst(cp.SYST, &clocks).delay();
 
     ss.set_high();
-    delay.delay_ms(100_u32);
+    delay.delay_ms(100);
     ss.set_low();
 
     // Set up the display
@@ -201,7 +201,7 @@ fn main() -> ! {
 
         disp.flush().unwrap();
 
-        delay.delay_ms(100u32);
+        delay.delay_ms(100);
     }
 }
 
