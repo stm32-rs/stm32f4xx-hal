@@ -4,9 +4,7 @@ use super::{
     dynamic::PinModeError, marker, DynamicPin, ErasedPin, Output, PartiallyErasedPin, Pin,
 };
 
-use embedded_hal_one::digital::{
-    ErrorType, InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin,
-};
+use embedded_hal_one::digital::{ErrorType, InputPin, OutputPin, StatefulOutputPin};
 
 // Implementations for `Pin`
 impl<const P: char, const N: u8, MODE> ErrorType for Pin<P, N, MODE> {
@@ -36,14 +34,6 @@ impl<const P: char, const N: u8, MODE> StatefulOutputPin for Pin<P, N, Output<MO
     #[inline(always)]
     fn is_set_low(&mut self) -> Result<bool, Self::Error> {
         Ok(Pin::is_set_low(self))
-    }
-}
-
-impl<const P: char, const N: u8, MODE> ToggleableOutputPin for Pin<P, N, Output<MODE>> {
-    #[inline(always)]
-    fn toggle(&mut self) -> Result<(), Self::Error> {
-        self.toggle();
-        Ok(())
     }
 }
 
@@ -93,14 +83,6 @@ impl<MODE> StatefulOutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
-    #[inline(always)]
-    fn toggle(&mut self) -> Result<(), Self::Error> {
-        self.toggle();
-        Ok(())
-    }
-}
-
 impl<MODE> InputPin for ErasedPin<MODE>
 where
     MODE: marker::Readable,
@@ -144,14 +126,6 @@ impl<const P: char, MODE> StatefulOutputPin for PartiallyErasedPin<P, Output<MOD
     #[inline(always)]
     fn is_set_low(&mut self) -> Result<bool, Self::Error> {
         Ok(PartiallyErasedPin::is_set_low(self))
-    }
-}
-
-impl<const P: char, MODE> ToggleableOutputPin for PartiallyErasedPin<P, Output<MODE>> {
-    #[inline(always)]
-    fn toggle(&mut self) -> Result<(), Self::Error> {
-        self.toggle();
-        Ok(())
     }
 }
 
