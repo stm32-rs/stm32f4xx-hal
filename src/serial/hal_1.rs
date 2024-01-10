@@ -95,3 +95,71 @@ mod nb {
         }
     }
 }
+
+mod io {
+    use core::ops::Deref;
+
+    use super::super::{Error, Instance, RegisterBlockImpl, Rx, Serial, Tx};
+    use embedded_io::Write;
+
+    impl embedded_io::Error for Error {
+        // TODO: fix error conversion
+        fn kind(&self) -> embedded_io::ErrorKind {
+            embedded_io::ErrorKind::Other
+        }
+    }
+
+    impl<USART: Instance, WORD> embedded_io::ErrorType for Serial<USART, WORD> {
+        type Error = Error;
+    }
+
+    impl<USART: Instance, WORD> embedded_io::ErrorType for Tx<USART, WORD> {
+        type Error = Error;
+    }
+
+    impl<USART: Instance, WORD> embedded_io::ErrorType for Rx<USART, WORD> {
+        type Error = Error;
+    }
+
+    impl<USART: Instance> Write for Tx<USART, u8>
+    where
+        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
+        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
+    {
+        fn write(&mut self, bytes: &[u8]) -> Result<usize, Self::Error> {
+            let mut i = 0;
+            for byte in bytes.iter() {
+                match self.usart.write_u8(*byte) {
+                    Ok(_) => {
+                        i += 1;
+                    }
+                    Err(nb::Error::WouldBlock) => {
+                        return Ok(i);
+                    }
+                    Err(nb::Error::Other(e)) => {
+                        return Err(e);
+                    }
+                }
+            }
+            Ok(i)
+        }
+
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.usart.bflush()?;
+            Ok(())
+        }
+    }
+
+    impl<USART: Instance> Write for Serial<USART, u8>
+    where
+        Tx<USART, u8>: Write<Error = Error>,
+    {
+        fn write(&mut self, bytes: &[u8]) -> Result<usize, Self::Error> {
+            self.tx.write(bytes)
+        }
+
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.tx.flush()
+        }
+    }
+}
