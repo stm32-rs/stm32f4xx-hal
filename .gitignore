@@ -2,3 +2,8 @@
 **/*.orig
 **/*.rs.bk
 Cargo.lock
+
+# IDEs
+.vscode
+.idea
+.lapce
