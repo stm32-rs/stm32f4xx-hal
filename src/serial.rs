@@ -17,6 +17,7 @@
 use core::marker::PhantomData;
 
 mod hal_02;
+mod hal_1;
 
 pub(crate) mod uart_impls;
 pub use uart_impls::Instance;
