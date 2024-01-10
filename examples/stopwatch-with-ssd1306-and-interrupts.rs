@@ -137,7 +137,7 @@ fn main() -> ! {
 
             disp.flush().unwrap();
 
-            delay.delay_ms(100u32);
+            delay.delay_ms(100);
         }
     }
 

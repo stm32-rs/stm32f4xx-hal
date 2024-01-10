@@ -97,7 +97,7 @@ impl Delay {
 }
 
 // Implement DelayUs/DelayMs for various integer types
-impl<T: Into<u64>> embedded_hal::blocking::delay::DelayUs<T> for Delay {
+impl<T: Into<u64>> embedded_hal_02::blocking::delay::DelayUs<T> for Delay {
     fn delay_us(&mut self, us: T) {
         // Convert us to ticks
         let start = DWT::cycle_count();
@@ -105,7 +105,7 @@ impl<T: Into<u64>> embedded_hal::blocking::delay::DelayUs<T> for Delay {
         Delay::delay_ticks(start, ticks);
     }
 }
-impl<T: Into<u64>> embedded_hal::blocking::delay::DelayMs<T> for Delay {
+impl<T: Into<u64>> embedded_hal_02::blocking::delay::DelayMs<T> for Delay {
     fn delay_ms(&mut self, ms: T) {
         // Convert ms to ticks
         let start = DWT::cycle_count();
@@ -114,7 +114,7 @@ impl<T: Into<u64>> embedded_hal::blocking::delay::DelayMs<T> for Delay {
     }
 }
 
-impl embedded_hal_one::delay::DelayNs for Delay {
+impl embedded_hal::delay::DelayNs for Delay {
     fn delay_ns(&mut self, ns: u32) {
         // Convert us to ticks
         let start = DWT::cycle_count();

@@ -8,7 +8,7 @@ use stm32f4xx_hal::dma::DmaFlag;
 use core::cell::RefCell;
 use cortex_m::interrupt::Mutex;
 use cortex_m_rt::entry;
-use embedded_hal::spi::{Mode, Phase, Polarity};
+use embedded_hal_02::spi::{Mode, Phase, Polarity};
 use stm32f4xx_hal::pac::interrupt;
 use stm32f4xx_hal::{
     dma::{config, MemoryToPeripheral, Stream4, StreamsTuple, Transfer},

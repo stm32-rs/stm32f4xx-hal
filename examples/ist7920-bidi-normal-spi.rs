@@ -57,7 +57,7 @@ fn main() -> ! {
 
     let mut select_figure = 0;
     loop {
-        delay.delay_ms(500_u16);
+        delay.delay_ms(500);
         let (begin, end) = match select_figure {
             0 => {
                 select_figure = 1;

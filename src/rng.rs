@@ -27,7 +27,7 @@ use crate::pac::RNG;
 use crate::rcc::{Clocks, Enable, Reset};
 use core::num::NonZeroU32;
 use core::ops::Shl;
-use embedded_hal::blocking::rng;
+use embedded_hal_02::blocking::rng;
 use fugit::RateExtU32;
 use rand_core::RngCore;
 

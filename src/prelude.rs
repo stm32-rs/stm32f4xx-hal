@@ -36,15 +36,14 @@
 //! ```
 //! use stm32f4xx_hal::prelude::*;
 //! ```
-pub use embedded_hal::adc::OneShot as _embedded_hal_adc_OneShot;
-pub use embedded_hal::blocking::delay::DelayMs as _embedded_hal_blocking_delay_DelayMs;
-pub use embedded_hal::blocking::delay::DelayUs as _embedded_hal_blocking_delay_DelayUs;
-pub use embedded_hal::blocking::serial::Write as _embedded_hal_blocking_serial_Write;
-pub use embedded_hal::serial::Read as _embedded_hal_serial_Read;
-pub use embedded_hal::serial::Write as _embedded_hal_serial_Write;
-pub use embedded_hal::Capture as _embedded_hal_Capture;
-pub use embedded_hal::Pwm as _embedded_hal_Pwm;
-pub use embedded_hal::Qei as _embedded_hal_Qei;
+pub use embedded_hal::delay::DelayNs as _;
+pub use embedded_hal_02::adc::OneShot as _embedded_hal_adc_OneShot;
+pub use embedded_hal_02::blocking::serial::Write as _embedded_hal_blocking_serial_Write;
+pub use embedded_hal_02::serial::Read as _embedded_hal_serial_Read;
+pub use embedded_hal_02::serial::Write as _embedded_hal_serial_Write;
+pub use embedded_hal_02::Capture as _embedded_hal_Capture;
+pub use embedded_hal_02::Pwm as _embedded_hal_Pwm;
+pub use embedded_hal_02::Qei as _embedded_hal_Qei;
 pub use fugit::ExtU32 as _fugit_ExtU32;
 pub use fugit::RateExtU32 as _fugit_RateExtU32;
 

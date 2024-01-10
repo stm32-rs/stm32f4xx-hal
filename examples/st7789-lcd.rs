@@ -124,7 +124,7 @@ fn main() -> ! {
     let mut drawer = ColoredCircleDrawer::new(&center_points, &test_colors);
     loop {
         drawer.draw(&mut lcd).unwrap();
-        delay.delay_ms(100u16);
+        delay.delay_ms(100);
     }
 }
 

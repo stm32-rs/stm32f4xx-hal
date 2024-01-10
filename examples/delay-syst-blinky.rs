@@ -33,7 +33,7 @@ fn main() -> ! {
         loop {
             // On for 1s, off for 1s.
             led.toggle();
-            delay.delay_ms(1000_u32);
+            delay.delay_ms(1000);
         }
     }
 

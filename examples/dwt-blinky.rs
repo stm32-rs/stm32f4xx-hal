@@ -40,13 +40,13 @@ fn main() -> ! {
             // On for 1s, off for 1s.
             led1.set_high();
             led2.set_low();
-            delay.delay_ms(1000_u32);
+            delay.delay_ms(1000);
             sw.lap();
             led1.set_low();
             led2.set_high();
-            delay.delay_ms(900_u32);
+            delay.delay_ms(900);
             // Also you can measure with almost clock precision
-            let cd: ClockDuration = dwt.measure(|| delay.delay_ms(100_u32));
+            let cd: ClockDuration = dwt.measure(|| delay.delay_ms(100));
             let _t: u32 = cd.as_ticks(); // Should return 48MHz * 0.1s as u32
             let _t: f32 = cd.as_secs_f32(); // Should return ~0.1s as a f32
             let _t: f64 = cd.as_secs_f64(); // Should return ~0.1s as a f64

@@ -26,7 +26,7 @@ compile_error!(
 );
 
 #[cfg(feature = "device-selected")]
-pub use embedded_hal as hal;
+pub use embedded_hal_02 as hal;
 
 #[cfg(feature = "device-selected")]
 pub use nb;

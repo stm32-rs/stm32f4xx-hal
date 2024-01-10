@@ -6,7 +6,7 @@
 #[rtic::app(device = stm32f4xx_hal::pac, peripherals = true, dispatchers = [TIM2])]
 mod app {
 
-    use embedded_hal::spi::{Mode, Phase, Polarity};
+    use embedded_hal_02::spi::{Mode, Phase, Polarity};
     use hal::{
         dma::{
             config::DmaConfig, DmaFlag, MemoryToPeripheral, PeripheralToMemory, Stream0, Stream5,

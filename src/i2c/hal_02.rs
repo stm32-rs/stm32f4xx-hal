@@ -1,6 +1,6 @@
 mod blocking {
     use super::super::{Error, I2c, Instance};
-    use embedded_hal::blocking::i2c::{
+    use embedded_hal_02::blocking::i2c::{
         Operation, Read, Transactional, Write, WriteIter, WriteIterRead, WriteRead,
     };
 

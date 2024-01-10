@@ -3,7 +3,7 @@ use super::*;
 macro_rules! adc_pins {
     ($($pin:ty => ($adc:ident, $chan:expr)),+ $(,)*) => {
         $(
-            impl embedded_hal::adc::Channel<pac::$adc> for $pin {
+            impl embedded_hal_02::adc::Channel<pac::$adc> for $pin {
                 type ID = u8;
                 fn channel() -> u8 { $chan }
             }

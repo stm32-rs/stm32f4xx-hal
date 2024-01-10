@@ -78,18 +78,18 @@ impl<TIM: Instance> Qei<TIM> {
     }
 }
 
-impl<TIM: Instance> embedded_hal::Qei for Qei<TIM> {
+impl<TIM: Instance> embedded_hal_02::Qei for Qei<TIM> {
     type Count = TIM::Width;
 
     fn count(&self) -> Self::Count {
         self.tim.read_count()
     }
 
-    fn direction(&self) -> embedded_hal::Direction {
+    fn direction(&self) -> embedded_hal_02::Direction {
         if self.tim.read_direction() {
-            embedded_hal::Direction::Upcounting
+            embedded_hal_02::Direction::Upcounting
         } else {
-            embedded_hal::Direction::Downcounting
+            embedded_hal_02::Direction::Downcounting
         }
     }
 }

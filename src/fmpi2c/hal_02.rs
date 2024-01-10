@@ -1,7 +1,7 @@
 mod blocking {
     use super::super::{fmpi2c1, Error, FMPI2c, Instance};
     use core::ops::Deref;
-    use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
+    use embedded_hal_02::blocking::i2c::{Read, Write, WriteRead};
 
     impl<I2C: Instance> WriteRead for FMPI2c<I2C>
     where

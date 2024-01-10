@@ -860,7 +860,7 @@ macro_rules! adc {
                 /// to sample for at a given ADC clock frequency
                 pub fn configure_channel<CHANNEL>(&mut self, _channel: &CHANNEL, sequence: config::Sequence, sample_time: config::SampleTime)
                 where
-                    CHANNEL: embedded_hal::adc::Channel<pac::$adc_type, ID=u8>
+                    CHANNEL: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
                 {
                     //Check the sequence is long enough
                     self.adc_reg.sqr1.modify(|r, w| {
@@ -953,7 +953,7 @@ macro_rules! adc {
                 /// Note that it reconfigures the adc sequence and doesn't restore it
                 pub fn convert<PIN>(&mut self, pin: &PIN, sample_time: config::SampleTime) -> u16
                 where
-                    PIN: embedded_hal::adc::Channel<pac::$adc_type, ID=u8>
+                    PIN: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
                 {
                     self.adc_reg.cr2.modify(|_, w| w
                         .dma().clear_bit() //Disable dma
@@ -986,7 +986,7 @@ macro_rules! adc {
 
             impl Adc<pac::$adc_type> {
                 fn read<PIN>(&mut self, pin: &mut PIN) -> nb::Result<u16, ()>
-                    where PIN: embedded_hal::adc::Channel<pac::$adc_type, ID=u8>,
+                    where PIN: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>,
                 {
                     let enabled = self.is_enabled();
                     if !enabled {
@@ -1003,9 +1003,9 @@ macro_rules! adc {
                 }
             }
 
-            impl<PIN> embedded_hal::adc::OneShot<pac::$adc_type, u16, PIN> for Adc<pac::$adc_type>
+            impl<PIN> embedded_hal_02::adc::OneShot<pac::$adc_type, u16, PIN> for Adc<pac::$adc_type>
             where
-                PIN: embedded_hal::adc::Channel<pac::$adc_type, ID=u8>,
+                PIN: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>,
             {
                 type Error = ();
 

@@ -13,7 +13,7 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
-use embedded_hal::Direction as RotaryDirection;
+use embedded_hal_02::Direction as RotaryDirection;
 use stm32f4xx_hal::{pac, prelude::*, qei::Qei};
 
 #[entry]
@@ -58,6 +58,6 @@ fn main() -> ! {
             current_count = new_count;
         }
 
-        delay.delay_ms(10_u32);
+        delay.delay_ms(10);
     }
 }
