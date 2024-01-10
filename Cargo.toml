@@ -47,6 +47,7 @@ systick-monotonic = { version = "1.0", optional = true }
 enumflags2 = "0.7.8"
 embedded-storage = "0.3"
 vcell = "0.1.3"
+document-features = "0.2"
 
 [dependencies.time]
 version = "0.3.14"
@@ -99,27 +100,30 @@ default-features = false
 features = ["macros"]
 
 [features]
-device-selected = []
-rt = [] # deprecated
+#! Use one of the supported STM32-serie related features:
+#! `stm32f401`, `stm32f405`, `stm32f407`, `stm32f415`, `stm32f417`, `stm32f410`,
+#! `stm32f411`, `stm32f412`, `stm32f413`, `stm32f423`, `stm32f427`, `stm32f429`,
+#! `stm32f437`, `stm32f439`, `stm32f446`, `stm32f469`, `stm32f479`.
+
 # Note: stm32f4 has only one feature for some very similar device families,
 # so it's intended for e.g. stm32f405/415 to both enable stm32f4/stm32f405.
-stm32f401 = ["stm32f4/stm32f401", "device-selected", "gpio-f401",]
-stm32f405 = ["stm32f4/stm32f405", "device-selected", "gpio-f417"]
-stm32f407 = ["stm32f4/stm32f407", "device-selected", "gpio-f417"]
-stm32f415 = ["stm32f4/stm32f405", "device-selected", "gpio-f417", "cryp"]
-stm32f417 = ["stm32f4/stm32f407", "device-selected", "gpio-f417", "cryp"]
-stm32f410 = ["stm32f4/stm32f410", "device-selected", "gpio-f410"]
-stm32f411 = ["stm32f4/stm32f411", "device-selected", "gpio-f411"]
-stm32f412 = ["stm32f4/stm32f412", "device-selected", "gpio-f412"]
-stm32f413 = ["stm32f4/stm32f413", "device-selected", "gpio-f413"]
-stm32f423 = ["stm32f4/stm32f413", "device-selected", "gpio-f413", "aes"]
-stm32f427 = ["stm32f4/stm32f427", "device-selected", "gpio-f427", "fsmc"]
-stm32f429 = ["stm32f4/stm32f429", "device-selected", "gpio-f427", "fmc"]
-stm32f437 = ["stm32f4/stm32f427", "device-selected", "gpio-f427", "fsmc", "cryp"]
-stm32f439 = ["stm32f4/stm32f429", "device-selected", "gpio-f427", "fmc", "cryp"]
-stm32f446 = ["stm32f4/stm32f446", "device-selected", "gpio-f446"]
-stm32f469 = ["stm32f4/stm32f469", "device-selected", "gpio-f469"]
-stm32f479 = ["stm32f4/stm32f469", "device-selected", "gpio-f469", "cryp"]
+stm32f401 = ["stm32f4/stm32f401", "gpio-f401",]
+stm32f405 = ["stm32f4/stm32f405", "gpio-f417"]
+stm32f407 = ["stm32f4/stm32f407", "gpio-f417"]
+stm32f415 = ["stm32f4/stm32f405", "gpio-f417", "cryp"]
+stm32f417 = ["stm32f4/stm32f407", "gpio-f417", "cryp"]
+stm32f410 = ["stm32f4/stm32f410", "gpio-f410"]
+stm32f411 = ["stm32f4/stm32f411", "gpio-f411"]
+stm32f412 = ["stm32f4/stm32f412", "gpio-f412"]
+stm32f413 = ["stm32f4/stm32f413", "gpio-f413"]
+stm32f423 = ["stm32f4/stm32f413", "gpio-f413", "aes"]
+stm32f427 = ["stm32f4/stm32f427", "gpio-f427", "fsmc"]
+stm32f429 = ["stm32f4/stm32f429", "gpio-f427", "fmc"]
+stm32f437 = ["stm32f4/stm32f427", "gpio-f427", "fsmc", "cryp"]
+stm32f439 = ["stm32f4/stm32f429", "gpio-f427", "fmc", "cryp"]
+stm32f446 = ["stm32f4/stm32f446", "gpio-f446"]
+stm32f469 = ["stm32f4/stm32f469", "gpio-f469"]
+stm32f479 = ["stm32f4/stm32f469", "gpio-f469", "cryp"]
 
 gpio-f401 = [
     "gpiod", "gpioe",
@@ -255,16 +259,29 @@ gpio-f469 = [
     "usart3", "uart4", "uart5", "uart7", "uart8",
 ]
 
-usb_fs = ["synopsys-usb-otg", "synopsys-usb-otg/fs"]
-usb_hs = ["synopsys-usb-otg", "synopsys-usb-otg/hs"]
+## Support monotonic timers that can be used by [RTIC framework](https://crates.io/crates/cortex-m-rtic)
+rtic = ["dep:rtic-monotonic", "dep:systick-monotonic"]
 
-can = ["bxcan"]
-
-i2s = ["stm32_i2s_v12x"]
-
-fsmc_lcd = ["display-interface"]
-
+## Implementation of `defmt::Format` for public enums and structures. See [defmt](https://crates.io/crates/defmt)
 defmt = ["dep:defmt", "fugit/defmt", "nb/defmt-0-3"]
+
+## bxCAN peripheral support. See [bxcan](https://crates.io/crates/bxcan)
+can = ["dep:bxcan"]
+
+## I2S peripheral support. See [stm32_i2s_v12x](https://crates.io/crates/stm32_i2s_v12x)
+i2s = ["dep:stm32_i2s_v12x"]
+
+## USB OTG-FS peripheral support. See [synopsys-usb-otg](https://crates.io/crates/synopsys-usb-otg)
+usb_fs = ["dep:synopsys-usb-otg", "synopsys-usb-otg/fs"]
+## USB OTG-HS peripheral support. See [synopsys-usb-otg](https://crates.io/crates/synopsys-usb-otg)
+usb_hs = ["dep:synopsys-usb-otg", "synopsys-usb-otg/hs"]
+
+## LCD support via FMC/FSMC peripheral. See [display-interface](https://crates.io/crates/display-interface)
+fsmc_lcd = ["dep:display-interface"]
+
+## SDIO peripheral support. See [sdio-host](https://crates.io/crates/sdio-host)
+sdio-host = ["dep:sdio-host"]
+
 dfsdm = []
 sai = []
 
@@ -328,8 +345,6 @@ uart8 = []
 uart9 = []
 uart10 = []
 
-rtic = ["rtic-monotonic", "systick-monotonic"]
-
 [profile.dev]
 debug = true
 lto = true
@@ -355,11 +370,11 @@ required-features = ["can", "stm32f405"]
 
 [[example]]
 name = "delay-syst-blinky"
-required-features = ["device-selected"] # stm32f411
+required-features = [] # stm32f411
 
 [[example]]
 name = "delay-timer-blinky"
-required-features = ["device-selected"] # stm32f411
+required-features = [] # stm32f411
 
 [[example]]
 name = "display-touch"
@@ -371,7 +386,7 @@ required-features = ["gpiog"] # "stm32f429"
 
 [[example]]
 name = "dynamic-gpio"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "f413disco-lcd-ferris"
@@ -379,7 +394,7 @@ required-features = ["gpiod", "gpioe", "gpiof", "gpiog", "fsmc", "fsmc_lcd"] # s
 
 [[example]]
 name = "hd44780"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "i2s-audio-out"
@@ -387,11 +402,11 @@ required-features = ["stm32f411", "i2s"]
 
 [[example]]
 name = "ist7920-bidi-normal-spi"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "pwm"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "pwm-input"
@@ -415,7 +430,7 @@ required-features = ["rng"] # stm32f407
 
 [[example]]
 name = "rtc"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "rtc_alarm"
@@ -423,7 +438,7 @@ required-features = ["stm32f411"]
 
 [[example]]
 name = "rtic-adc-dma"
-required-features = ["device-selected", "rtic"] # stm32f401
+required-features = ["rtic"] # stm32f401
 
 [[example]]
 name = "rtic-button"
@@ -467,7 +482,7 @@ required-features = ["gpiod", "sdio", "sdio-host"] # stm32f405
 
 [[example]]
 name = "serial"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "serial-9bit"
@@ -483,7 +498,7 @@ required-features = ["stm32f405"]
 
 [[example]]
 name = "ssd1306-image"
-required-features = ["device-selected"] # stm32f411
+required-features = [] # stm32f411
 
 [[example]]
 name = "st7789-lcd"
@@ -499,11 +514,11 @@ required-features = ["tim2", "stm32f411"] # stm32f411
 
 [[example]]
 name = "timer-periph"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "timer-syst"
-required-features = ["device-selected"]
+required-features = []
 
 [[example]]
 name = "usb-serial-irq"
@@ -515,4 +530,4 @@ required-features = ["otg-fs", "usb_fs"] # stm32f401
 
 [[example]]
 name = "ws2812-spi"
-required-features = ["device-selected"]
+required-features = []
