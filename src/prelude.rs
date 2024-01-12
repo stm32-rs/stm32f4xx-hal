@@ -76,12 +76,12 @@ pub use crate::serial::TxListen as _stm32f4xx_hal_serial_TxListen;
 pub use crate::spi::SpiExt as _stm32f4xx_hal_spi_SpiExt;
 pub use crate::syscfg::SysCfgExt as _stm32f4xx_hal_syscfg_SysCfgExt;
 pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;
-#[cfg(feature = "rtic")]
+#[cfg(feature = "rtic1")]
 pub use crate::timer::MonoTimer64Ext as _;
-#[cfg(feature = "rtic")]
+#[cfg(feature = "rtic1")]
 pub use crate::timer::MonoTimerExt as _;
 pub use crate::timer::PwmExt as _stm32f4xx_hal_timer_PwmExt;
-#[cfg(feature = "rtic")]
+#[cfg(feature = "rtic1")]
 pub use crate::timer::SysMonoTimerExt as _stm32f4xx_hal_timer_SysMonoTimerExt;
 pub use crate::timer::SysTimerExt as _stm32f4xx_hal_timer_SysCounterExt;
 pub use crate::timer::TimerExt as _stm32f4xx_hal_timer_TimerExt;

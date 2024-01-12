@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - bump embedded-hal to `1.0` (no more RC!)
 - make `embedded-hal` `1.0` main implementation
 - add `embedded-hal-nb::serial`
+- rename `rtic` feature to `rtic1`, add `rtic2`
 
 ## [v0.19.0] - 2023-12-11
 
