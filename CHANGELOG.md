@@ -7,13 +7,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.20.0] - 2024-01-14
+
 ### Changed
 
-- shorten gpio ptr access
-- bump embedded-hal to `1.0` (no more RC!)
-- make `embedded-hal` `1.0` main implementation
-- add `embedded-hal-nb::serial`
-- rename `rtic` feature to `rtic1`, add `rtic2`
+ - shorten gpio ptr access [#719]
+ - bump embedded-hal to `1.0` (no more RC!) [#723]
+ - make `embedded-hal` `1.0` main implementation [#720]
+ - add `embedded-hal-nb::serial` [#726]
+ - rename `rtic` feature to `rtic1`, add `rtic2` [#727]
+ - rename `stm32_i2s_v12x` feature to `i2s` [#718]
+ - Check features enabled in `build-rs` [#718]
+
+[#718]: https://github.com/stm32-rs/stm32f4xx-hal/pull/718
+[#719]: https://github.com/stm32-rs/stm32f4xx-hal/pull/719
+[#720]: https://github.com/stm32-rs/stm32f4xx-hal/pull/720
+[#723]: https://github.com/stm32-rs/stm32f4xx-hal/pull/723
+[#726]: https://github.com/stm32-rs/stm32f4xx-hal/pull/726
+[#727]: https://github.com/stm32-rs/stm32f4xx-hal/pull/727
 
 ## [v0.19.0] - 2023-12-11
 
@@ -22,34 +33,32 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Added an example to show how to do DMA with UART (Rx only) [#698]
 
 ### Changed
-
- - Check features enabled in `build-rs`
- - bump embedded-hal to `1.0-rc2`
- - Use `as_ptr` for register address casting
- - Updated `synopsys-usb-otg` to `0.4.0`
- - use `repr(u32)` for flags, revert `spi::CrcError` clean,
- - revert `spi::check_read`/`check_write`
+ - bump embedded-hal to `1.0-rc2` [#704]
+ - Use `as_ptr` for register address casting [#703]
+ - Updated `synopsys-usb-otg` to `0.4.0` [#699]
+ - use `repr(u32)` for flags, revert `spi::CrcError` clean [#709]
+ - revert `spi::check_read`/`check_write` [#712]
 
 ### Fixed
 
- - Wait at least given time in `embedded-hal` `delay`
+ - Wait at least given time in `embedded-hal` `delay` [#704]
 
 ## [v0.18.0] - 2023-11-19
 
- - bump embedded-hal to `1.0-rc1` (remove `serial` part)
+ - bump embedded-hal to `1.0-rc1` (remove `serial` part) [#694]
  - complete and rework Dma Stream API [#666]
  - Use `enumflags2::BitFlags` for interrupt flags and events [#673]
  - SPI bidi takes 2 pins [#526]
  - `Fast Read Quad I/O (EBh)` in `qspi-w25q` example now matches W25QXX datasheet. [#682]
- - `embedded-storage` version bumped to 0.3
+ - `embedded-storage` version bumped to 0.3 [#693]
 
 ### Fixed
 
- - fix serial RxN & TxN alises
+ - fix serial RxN & TxN alises [#680]
 
 ### Added
 
- -  add `.set_count()` for QEI, add `.write_count()` for TIM [#677]
+ - add `.set_count()` for QEI, add `.write_count()` for TIM [#677]
  - add "Fast start" section in README [#678]
 
 [#526]: https://github.com/stm32-rs/stm32f4xx-hal/pull/526
@@ -57,7 +66,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#673]: https://github.com/stm32-rs/stm32f4xx-hal/pull/673
 [#677]: https://github.com/stm32-rs/stm32f4xx-hal/pull/677
 [#678]: https://github.com/stm32-rs/stm32f4xx-hal/pull/678
+[#680]: https://github.com/stm32-rs/stm32f4xx-hal/pull/680
 [#682]: https://github.com/stm32-rs/stm32f4xx-hal/pull/682
+[#693]: https://github.com/stm32-rs/stm32f4xx-hal/pull/693
+[#694]: https://github.com/stm32-rs/stm32f4xx-hal/pull/694
+[#699]: https://github.com/stm32-rs/stm32f4xx-hal/pull/699
+[#703]: https://github.com/stm32-rs/stm32f4xx-hal/pull/703
+[#704]: https://github.com/stm32-rs/stm32f4xx-hal/pull/704
+[#709]: https://github.com/stm32-rs/stm32f4xx-hal/pull/709
+[#712]: https://github.com/stm32-rs/stm32f4xx-hal/pull/712
 
 ## [v0.17.1] - 2023-07-24
 
@@ -981,7 +998,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.19.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.20.0...HEAD
+[v0.20.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.19.0...v0.20.0
 [v0.19.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.18.0...v0.19.0
 [v0.18.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.17.1...v0.18.0
 [v0.17.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.17.0...v0.17.1

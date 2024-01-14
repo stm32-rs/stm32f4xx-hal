@@ -1,4 +1,4 @@
 [lapce-rust]
 check.allTargets = false
 check.targets = "thumbv7em-none-eabihf"
-cargo.features = ["rtic", "stm32f411"]
+cargo.features = ["defmt", "rtic1", "stm32f411"]

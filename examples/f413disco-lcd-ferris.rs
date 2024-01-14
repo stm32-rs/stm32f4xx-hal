@@ -11,7 +11,7 @@
 #![no_std]
 
 use panic_halt as _;
-use rtt_target::{self, rtt_init_print};
+use rtt_target::{self, rtt_init_print, ChannelMode};
 
 use stm32f4xx_hal as hal;
 
@@ -694,7 +694,7 @@ const FERRIS: [u8; 11008] = [
 #[cortex_m_rt::entry]
 fn main() -> ! {
     // Initialise RTT so you can see panics and other output in your `probe-run` output
-    rtt_init_print!(NoBlockTrim);
+    rtt_init_print!(ChannelMode::NoBlockTrim);
 
     if let (Some(p), Some(cp)) = (Peripherals::take(), CorePeripherals::take()) {
         // Split all the GPIO blocks we need
