@@ -137,7 +137,7 @@ impl Rng {
         }
     }
 
-    /// Releases ownership of the [RNG](crate::pac::RNG) peripheral object
+    /// Releases ownership of the [`RNG`] peripheral object
     /// (after which `self` can't be used anymore).
     pub fn release(self) -> RNG {
         self.rb
