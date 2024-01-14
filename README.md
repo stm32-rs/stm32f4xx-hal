@@ -48,7 +48,8 @@ single model.
 
 ### Other optional features
 
-* `rtic` — support monotonic timers that can be used by [RTIC framework](https://crates.io/crates/cortex-m-rtic).
+* `rtic1` — support [RTICv1 framework](https://crates.io/crates/cortex-m-rtic).
+* `rtic2` — support [RTICv2 framework](https://crates.io/crates/rtic) (incompatible with `rtic1`, require nightly compiller).
 * `defmt` — implementation of `defmt::Format` for public enums and structures. See [defmt](https://crates.io/crates/defmt).
 * `can` — bxCAN peripheral support. See [bxcan](https://crates.io/crates/bxcan).
 * `i2s` — I2S peripheral support. See [stm32_i2s_v12x](https://crates.io/crates/stm32_i2s_v12x).

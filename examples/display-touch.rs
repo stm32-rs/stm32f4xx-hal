@@ -25,7 +25,7 @@ use stm32f4xx_hal::{
     rcc::Rcc,
 };
 
-use embedded_graphics::{
+use embedded_graphics_07::{
     pixelcolor::Rgb565,
     prelude::*,
     primitives::{Circle, PrimitiveStyle},

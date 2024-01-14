@@ -190,7 +190,7 @@ mod usart_shell {
         } else {
             write!(ledstr, "LED is OFF").unwrap();
         }
-        ldisp.clear();
+        ldisp.clear_buffer();
         Text::with_baseline(fpsstr.as_str(), Point::zero(), text_style, Baseline::Top)
             .draw(ldisp)
             .unwrap();

@@ -25,10 +25,10 @@ use core::slice::Iter;
 use cortex_m_rt::entry;
 use panic_semihosting as _;
 
-use embedded_graphics::pixelcolor::Rgb565;
-use embedded_graphics::prelude::*;
+use embedded_graphics_07::pixelcolor::Rgb565;
+use embedded_graphics_07::prelude::*;
 
-use embedded_graphics::primitives::{Circle, PrimitiveStyle};
+use embedded_graphics_07::primitives::{Circle, PrimitiveStyle};
 use st7789::ST7789;
 use stm32f4xx_hal::fsmc_lcd::{DataPins16, FsmcLcd, LcdPins, Timing};
 use stm32f4xx_hal::pac::{CorePeripherals, Peripherals};

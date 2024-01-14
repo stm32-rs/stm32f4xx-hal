@@ -147,7 +147,7 @@ fn main() -> ! {
         let mut format_buf = String::<10>::new();
         format_elapsed(&mut format_buf, elapsed);
 
-        disp.clear();
+        disp.clear_buffer();
 
         let state = free(|cs| STATE.borrow(cs).get());
         let state_msg = match state {

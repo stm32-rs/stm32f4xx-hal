@@ -133,11 +133,11 @@ mod app {
         let channels = rtt_init! {
             up: {
                 0: {
-                    size: 128
+                    size: 128,
                     name: "Logs"
                 }
                 1: {
-                    size: 128
+                    size: 128,
                     name: "Panics"
                 }
             }
