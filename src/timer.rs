@@ -26,9 +26,9 @@ pub use pwm::*;
 pub mod pwm_input;
 #[cfg(not(feature = "gpio-f410"))]
 pub use pwm_input::PwmInput;
-#[cfg(feature = "rtic")]
+#[cfg(feature = "rtic1")]
 pub mod monotonic;
-#[cfg(feature = "rtic")]
+#[cfg(feature = "rtic1")]
 pub use monotonic::*;
 
 mod hal_02;

@@ -28,7 +28,7 @@ def main():
 
     crate_info = cargo_meta["packages"][0]
 
-    features = ["{},usb_fs,can,i2s,fsmc_lcd,rtic,defmt".format(x)
+    features = ["{},usb_fs,can,i2s,fsmc_lcd,rtic1,defmt".format(x)
             for x in crate_info["features"].keys()
             if x.startswith("stm32f4")]
 
