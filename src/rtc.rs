@@ -3,7 +3,7 @@
 //! [ST AN4759](https:/www.st.com%2Fresource%2Fen%2Fapplication_note%2Fdm00226326-using-the-hardware-realtime-clock-rtc-and-the-tamper-management-unit-tamp-with-stm32-microcontrollers-stmicroelectronics.pdf&usg=AOvVaw3PzvL2TfYtwS32fw-Uv37h)
 
 use crate::bb;
-use crate::pac::rtc::{dr, tr, DR, TR};
+use crate::pac::rtc::{dr, tr};
 use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
 use core::convert::{TryFrom, TryInto};
@@ -584,10 +584,8 @@ impl<CS> Rtc<CS> {
         let ss = self.regs.tsssr().read().ss().bits();
 
         // TODO: remove unsafe after PAC update
-        let tr = self.regs.tstr();
-        let tr = unsafe { (*(tr.as_ptr().cast::<TR>())).read() };
-        let dr = self.regs.tsdr();
-        let dr = unsafe { (*(dr.as_ptr().cast::<DR>())).read() };
+        let tr = self.regs.tstr().read();
+        let dr = self.regs.tsdr().read();
         let dry = self.regs.dr().read();
         let seconds = decode_seconds(&tr);
         let minutes = decode_minutes(&tr);
