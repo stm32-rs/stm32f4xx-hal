@@ -23,7 +23,7 @@ repository = "https://github.com/stm32-rs/stm32f4xx-hal"
 version = "0.20.0"
 
 [package.metadata.docs.rs]
-features = ["stm32f429", "usb_fs", "can", "i2s", "fsmc_lcd", "rtic1", "defmt"]
+features = ["stm32f429", "usb_fs", "can", "i2s", "fsmc_lcd", "rtic1", "defmt", "sdio-host"]
 targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]

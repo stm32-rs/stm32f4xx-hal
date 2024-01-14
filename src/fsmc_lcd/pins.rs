@@ -174,6 +174,7 @@ pub struct DataPins16 {
 impl DataPins for DataPins16 {}
 
 impl DataPins16 {
+    #[allow(clippy::too_many_arguments)]
     #[inline(always)]
     pub fn new(
         d0: impl Into<alt::D0>,
