@@ -575,7 +575,7 @@ macro_rules! hal {
         )?
 
         $(impl MasterTimer for $TIM {
-            type Mms = pac::$timbase::cr2::MMS_A;
+            type Mms = pac::$timbase::cr2::MMS;
             fn master_mode(&mut self, mode: Self::Mms) {
                 self.cr2().modify(|_,w| w.mms().variant(mode));
             }

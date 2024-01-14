@@ -35,7 +35,7 @@ macro_rules! halUart {
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
-                use crate::pac::uart4::cr2::STOP_A;
+                use crate::pac::uart4::cr2::STOP;
                 use config::StopBits;
 
                 /*
@@ -44,10 +44,10 @@ macro_rules! halUart {
                 */
                 self.cr2().write(|w| {
                     w.stop().variant(match bits {
-                        StopBits::STOP0P5 => STOP_A::Stop1,
-                        StopBits::STOP1 => STOP_A::Stop1,
-                        StopBits::STOP1P5 => STOP_A::Stop2,
-                        StopBits::STOP2 => STOP_A::Stop2,
+                        StopBits::STOP0P5 => STOP::Stop1,
+                        StopBits::STOP1 => STOP::Stop1,
+                        StopBits::STOP1P5 => STOP::Stop2,
+                        StopBits::STOP2 => STOP::Stop2,
                     })
                 });
             }

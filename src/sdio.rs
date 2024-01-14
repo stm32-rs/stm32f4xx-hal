@@ -200,13 +200,13 @@ impl<P: SdioPeripheral> Sdio<P> {
     }
 
     fn power_card(&mut self, on: bool) {
-        use crate::pac::sdio::power::PWRCTRL_A;
+        use crate::pac::sdio::power::PWRCTRL;
 
         self.sdio.power().modify(|_, w| {
             w.pwrctrl().variant(if on {
-                PWRCTRL_A::PowerOn
+                PWRCTRL::PowerOn
             } else {
-                PWRCTRL_A::PowerOff
+                PWRCTRL::PowerOff
             })
         });
 
@@ -318,7 +318,7 @@ impl<P: SdioPeripheral> Sdio<P> {
     }
 
     fn start_datapath_transfer(&self, length_bytes: u32, block_size: u8, card_to_controller: bool) {
-        use crate::pac::sdio::dctrl::DTDIR_A;
+        use crate::pac::sdio::dctrl::DTDIR;
 
         // Block Size up to 2^14 bytes
         assert!(block_size <= 14);
@@ -336,9 +336,9 @@ impl<P: SdioPeripheral> Sdio<P> {
         }
 
         let dtdir = if card_to_controller {
-            DTDIR_A::CardToController
+            DTDIR::CardToController
         } else {
-            DTDIR_A::ControllerToCard
+            DTDIR::ControllerToCard
         };
 
         // Data timeout, in bus cycles
@@ -390,7 +390,7 @@ impl<P: SdioPeripheral> Sdio<P> {
 
     /// Send command to card
     fn cmd<R: common_cmd::Resp>(&self, cmd: Cmd<R>) -> Result<(), Error> {
-        use crate::pac::sdio::cmd::WAITRESP_A;
+        use crate::pac::sdio::cmd::WAITRESP;
 
         // Command state machines must be idle
         while self.sdio.sta().read().cmdact().bit_is_set() {}
@@ -403,9 +403,9 @@ impl<P: SdioPeripheral> Sdio<P> {
 
         // Determine what kind of response the CPSM should wait for
         let waitresp = match cmd.response_len() {
-            ResponseLen::Zero => WAITRESP_A::NoResponse,
-            ResponseLen::R48 => WAITRESP_A::ShortResponse,
-            ResponseLen::R136 => WAITRESP_A::LongResponse,
+            ResponseLen::Zero => WAITRESP::NoResponse,
+            ResponseLen::R48 => WAITRESP::ShortResponse,
+            ResponseLen::R136 => WAITRESP::LongResponse,
         };
 
         // Send the command
@@ -623,17 +623,17 @@ impl Sdio<SdCard> {
 
     /// Set bus width and clock frequency
     fn set_bus(&self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
-        use crate::pac::sdio::clkcr::WIDBUS_A;
+        use crate::pac::sdio::clkcr::WIDBUS;
 
         let card_widebus = self.card()?.supports_widebus();
 
         let width = match width {
-            Buswidth::Buswidth4 if card_widebus => WIDBUS_A::BusWidth4,
+            Buswidth::Buswidth4 if card_widebus => WIDBUS::BusWidth4,
             // Buswidth8 is not supported for SD cards
-            _ => WIDBUS_A::BusWidth1,
+            _ => WIDBUS::BusWidth1,
         };
 
-        self.app_cmd(sd_cmd::set_bus_width(width == WIDBUS_A::BusWidth4))?;
+        self.app_cmd(sd_cmd::set_bus_width(width == WIDBUS::BusWidth4))?;
 
         self.sdio.clkcr().modify(|_, w| {
             w.clkdiv()
@@ -723,7 +723,7 @@ impl Sdio<Emmc> {
     }
 
     pub fn set_bus(&mut self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
-        use crate::pac::sdio::clkcr::WIDBUS_A;
+        use crate::pac::sdio::clkcr::WIDBUS;
 
         // Use access mode 0b11 to write a value of 0x02 to byte 183. Cmd Set is 0 (not used).
         self.cmd(emmc_cmd::modify_ext_csd(
@@ -733,9 +733,9 @@ impl Sdio<Emmc> {
         ))?;
 
         let width = match width {
-            Buswidth::Buswidth1 => WIDBUS_A::BusWidth1,
-            Buswidth::Buswidth4 => WIDBUS_A::BusWidth4,
-            Buswidth::Buswidth8 => WIDBUS_A::BusWidth8,
+            Buswidth::Buswidth1 => WIDBUS::BusWidth1,
+            Buswidth::Buswidth4 => WIDBUS::BusWidth4,
+            Buswidth::Buswidth8 => WIDBUS::BusWidth8,
         };
 
         // CMD6 is R1b, so wait for the card to be ready again before proceeding.
