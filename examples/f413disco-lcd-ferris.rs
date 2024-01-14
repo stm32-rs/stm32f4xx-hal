@@ -22,14 +22,14 @@ use crate::hal::{
     prelude::*,
 };
 
-use embedded_graphics::geometry::Size;
-use embedded_graphics::image::*;
-use embedded_graphics::pixelcolor::Rgb565;
-use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::*;
+use embedded_graphics_07::geometry::Size;
+use embedded_graphics_07::image::*;
+use embedded_graphics_07::pixelcolor::Rgb565;
+use embedded_graphics_07::prelude::*;
+use embedded_graphics_07::primitives::*;
 use st7789::*;
 
-pub use display_interface::{DisplayError, WriteOnlyDataCommand};
+pub use display_interface_04::{DisplayError, WriteOnlyDataCommand};
 
 /// Define the lovely ferris crab sprite
 const FERRIS: [u8; 11008] = [

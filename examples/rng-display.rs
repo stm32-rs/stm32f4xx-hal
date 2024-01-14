@@ -87,7 +87,7 @@ fn main() -> ! {
         let mut format_buf = String::<20>::new();
         loop {
             //display clear
-            disp.clear();
+            disp.clear_buffer();
 
             //this will continuously report an error if RNG_CLK < HCLK/16
             let rand_val = rand_source.next_u32();
