@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - port LTDC implementation and example from stm32f7xx-hal
+
 ## [v0.20.0] - 2024-01-14
 
 ### Changed
