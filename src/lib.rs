@@ -109,6 +109,8 @@ pub mod dwt;
 pub mod flash;
 #[cfg(all(feature = "fsmc_lcd", any(feature = "fmc", feature = "fsmc")))]
 pub mod fsmc_lcd;
+#[cfg(all(feature = "dma2d", feature = "ltdc"))]
+pub mod ltdc;
 pub mod prelude;
 pub mod qei;
 #[cfg(feature = "quadspi")]
