@@ -85,6 +85,7 @@ pub use stm32f4::stm32f469 as pac;
 pub use crate::pac::interrupt;
 
 pub mod adc;
+#[cfg(feature = "bb")]
 pub mod bb;
 #[cfg(all(feature = "can", any(feature = "can1", feature = "can2",)))]
 pub mod can;

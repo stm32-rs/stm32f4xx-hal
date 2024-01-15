@@ -59,6 +59,7 @@ document-features = "0.2"
 [dependencies.stm32f4]
 git = "https://github.com/stm32-rs/stm32-rs-nightlies"
 features = ["defmt", "atomics"]
+optional = true
 
 [dependencies.time]
 version = "0.3.14"
@@ -112,6 +113,8 @@ default-features = false
 features = ["macros"]
 
 [features]
+f4 = ["dep:stm32f4", "bb"]
+
 #! Use one of the supported STM32-serie related features:
 #! `stm32f401`, `stm32f405`, `stm32f407`, `stm32f415`, `stm32f417`, `stm32f410`,
 #! `stm32f411`, `stm32f412`, `stm32f413`, `stm32f423`, `stm32f427`, `stm32f429`,
@@ -119,23 +122,23 @@ features = ["macros"]
 
 # Note: stm32f4 has only one feature for some very similar device families,
 # so it's intended for e.g. stm32f405/415 to both enable stm32f4/stm32f405.
-stm32f401 = ["stm32f4/stm32f401", "gpio-f401",]
-stm32f405 = ["stm32f4/stm32f405", "gpio-f417"]
-stm32f407 = ["stm32f4/stm32f407", "gpio-f417"]
-stm32f415 = ["stm32f4/stm32f405", "gpio-f417", "cryp"]
-stm32f417 = ["stm32f4/stm32f407", "gpio-f417", "cryp"]
-stm32f410 = ["stm32f4/stm32f410", "gpio-f410"]
-stm32f411 = ["stm32f4/stm32f411", "gpio-f411"]
-stm32f412 = ["stm32f4/stm32f412", "gpio-f412"]
-stm32f413 = ["stm32f4/stm32f413", "gpio-f413"]
-stm32f423 = ["stm32f4/stm32f413", "gpio-f413", "aes"]
-stm32f427 = ["stm32f4/stm32f427", "gpio-f427", "fsmc"]
-stm32f429 = ["stm32f4/stm32f429", "gpio-f427", "fmc"]
-stm32f437 = ["stm32f4/stm32f427", "gpio-f427", "fsmc", "cryp"]
-stm32f439 = ["stm32f4/stm32f429", "gpio-f427", "fmc", "cryp"]
-stm32f446 = ["stm32f4/stm32f446", "gpio-f446"]
-stm32f469 = ["stm32f4/stm32f469", "gpio-f469"]
-stm32f479 = ["stm32f4/stm32f469", "gpio-f469", "cryp"]
+stm32f401 = ["f4", "stm32f4?/stm32f401", "gpio-f401",]
+stm32f405 = ["f4", "stm32f4?/stm32f405", "gpio-f417"]
+stm32f407 = ["f4", "stm32f4?/stm32f407", "gpio-f417"]
+stm32f415 = ["f4", "stm32f4?/stm32f405", "gpio-f417", "cryp"]
+stm32f417 = ["f4", "stm32f4?/stm32f407", "gpio-f417", "cryp"]
+stm32f410 = ["f4", "stm32f4?/stm32f410", "gpio-f410"]
+stm32f411 = ["f4", "stm32f4?/stm32f411", "gpio-f411"]
+stm32f412 = ["f4", "stm32f4?/stm32f412", "gpio-f412"]
+stm32f413 = ["f4", "stm32f4?/stm32f413", "gpio-f413"]
+stm32f423 = ["f4", "stm32f4?/stm32f413", "gpio-f413", "aes"]
+stm32f427 = ["f4", "stm32f4?/stm32f427", "gpio-f427", "fsmc"]
+stm32f429 = ["f4", "stm32f4?/stm32f429", "gpio-f427", "fmc"]
+stm32f437 = ["f4", "stm32f4?/stm32f427", "gpio-f427", "fsmc", "cryp"]
+stm32f439 = ["f4", "stm32f4?/stm32f429", "gpio-f427", "fmc", "cryp"]
+stm32f446 = ["f4", "stm32f4?/stm32f446", "gpio-f446"]
+stm32f469 = ["f4", "stm32f4?/stm32f469", "gpio-f469"]
+stm32f479 = ["f4", "stm32f4?/stm32f469", "gpio-f469", "cryp"]
 
 gpio-f401 = [
     "gpiod", "gpioe",
@@ -299,6 +302,7 @@ fsmc_lcd = ["dep:display-interface", "dep:display-interface-04"]
 ## SDIO peripheral support. See [sdio-host](https://crates.io/crates/sdio-host)
 sdio-host = ["dep:sdio-host"]
 
+bb = []
 dfsdm = []
 sai = []
 

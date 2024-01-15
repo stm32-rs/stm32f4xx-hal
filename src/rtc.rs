@@ -2,6 +2,7 @@
 //! For more details, see
 //! [ST AN4759](https:/www.st.com%2Fresource%2Fen%2Fapplication_note%2Fdm00226326-using-the-hardware-realtime-clock-rtc-and-the-tamper-management-unit-tamp-with-stm32-microcontrollers-stmicroelectronics.pdf&usg=AOvVaw3PzvL2TfYtwS32fw-Uv37h)
 
+#[cfg(feature = "bb")]
 use crate::bb;
 use crate::pac::rtc::{dr, tr};
 use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
@@ -165,12 +166,25 @@ impl Rtc<Lse> {
             self.backup_reset(rcc);
             // Enable the LSE.
             // Set BDCR - Bit 0 (LSEON)
+            #[cfg(feature = "bb")]
             bb::set(rcc.bdcr(), 0);
+            #[cfg(not(feature = "bb"))]
+            rcc.bdcr().modify(|_, w| w.lseon().set_bit());
             match mode {
                 // Set BDCR - Bit 2 (LSEBYP)
-                LSEClockMode::Bypass => bb::set(rcc.bdcr(), 2),
+                LSEClockMode::Bypass => {
+                    #[cfg(feature = "bb")]
+                    bb::set(rcc.bdcr(), 2);
+                    #[cfg(not(feature = "bb"))]
+                    rcc.bdcr().modify(|_, w| w.lsebyp().bypassed());
+                }
                 // Clear BDCR - Bit 2 (LSEBYP)
-                LSEClockMode::Oscillator => bb::clear(rcc.bdcr(), 2),
+                LSEClockMode::Oscillator => {
+                    #[cfg(feature = "bb")]
+                    bb::clear(rcc.bdcr(), 2);
+                    #[cfg(not(feature = "bb"))]
+                    rcc.bdcr().modify(|_, w| w.lsebyp().not_bypassed());
+                }
             }
             while rcc.bdcr().read().lserdy().bit_is_clear() {}
         }
@@ -252,9 +266,15 @@ impl<CS> Rtc<CS> {
     fn backup_reset(&mut self, rcc: &RegisterBlock) {
         unsafe {
             // Set BDCR - Bit 16 (BDRST)
+            #[cfg(feature = "bb")]
             bb::set(rcc.bdcr(), 16);
+            #[cfg(not(feature = "bb"))]
+            rcc.bdcr().modify(|_,w| w.bdrst().set_bit());
             // Clear BDCR - Bit 16 (BDRST)
+            #[cfg(feature = "bb")]
             bb::clear(rcc.bdcr(), 16);
+            #[cfg(not(feature = "bb"))]
+            rcc.bdcr().modify(|_,w| w.bdrst().clear_bit());
         }
     }
 
@@ -262,7 +282,10 @@ impl<CS> Rtc<CS> {
         // Start the actual RTC.
         // Set BDCR - Bit 15 (RTCEN)
         unsafe {
+            #[cfg(feature = "bb")]
             bb::set(rcc.bdcr(), 15);
+            #[cfg(not(feature = "bb"))]
+            rcc.bdcr().modify(|_,w| w.rtcen().set_bit());
         }
     }
 
