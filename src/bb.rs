@@ -49,3 +49,32 @@ pub unsafe fn write<T>(register: *const T, bit: u8, set: bool) {
     let bb_addr = (PERI_BIT_BAND_BASE + (addr - PERI_ADDRESS_START) * 32) + 4 * bit;
     ptr::write_volatile(bb_addr as *mut u32, u32::from(set));
 }
+
+use stm32f4::{W, Reg, Writable};
+
+pub trait BitBanding<REG> {
+    fn bb_write<F>(&self, f: F, set: bool)
+    where
+        F: FnOnce(&mut W<REG>) -> u8;
+    #[inline]
+    fn bb_set<F>(&self, f: F)
+    where
+        F: FnOnce(&mut W<REG>) -> u8 {
+            self.bb_write(f, true)
+        }
+    #[inline]
+    fn bb_clear<F>(&self, f: F)
+    where
+        F: FnOnce(&mut W<REG>) -> u8 {
+            self.bb_write(f, false)
+        }
+}
+
+impl<REG: Writable> BitBanding<REG> for Reg<REG> {
+    fn bb_write<F>(&self, f: F, set: bool)
+    where
+        F: FnOnce(&mut W<REG>) -> u8 {
+            let bit = f();
+            write(self as *const Self, bit, set);
+        }
+}
