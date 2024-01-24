@@ -35,10 +35,7 @@ mod nb {
         }
     }
 
-    impl<USART: Instance> Read<u8> for Rx<USART, u8>
-    where
-        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
-    {
+    impl<USART: Instance> Read<u8> for Rx<USART, u8> {
         fn read(&mut self) -> nb::Result<u8, Self::Error> {
             unsafe { (*USART::ptr()).read_u8() }
         }
@@ -49,10 +46,7 @@ mod nb {
     /// If the UART/USART was configured with `WordLength::DataBits9`, the returned value will contain
     /// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
     /// 8 received data bits and all other bits set to zero.
-    impl<USART: Instance> Read<u16> for Rx<USART, u16>
-    where
-        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
-    {
+    impl<USART: Instance> Read<u16> for Rx<USART, u16> {
         fn read(&mut self) -> nb::Result<u16, Self::Error> {
             unsafe { (*USART::ptr()).read_u16() }
         }
@@ -73,7 +67,6 @@ mod nb {
 
     impl<USART: Instance> Write<u8> for Tx<USART, u8>
     where
-        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
         USART: Deref<Target = <USART as Instance>::RegisterBlock>,
     {
         fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
@@ -91,7 +84,6 @@ mod nb {
     /// will be transmitted and the other 8 bits will be ignored.
     impl<USART: Instance> Write<u16> for Tx<USART, u16>
     where
-        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
         USART: Deref<Target = <USART as Instance>::RegisterBlock>,
     {
         fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
