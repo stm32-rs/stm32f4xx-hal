@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - add trait bound `RegisterBlockImpl` to type `RegisterBlock` associated with `serial::Instance` [#732]
  - remove unneeded trait bound for methods that take in a `serial::Instance` and use the associated `RegisterBlock`
+ - bump `sdio-host` to 0.9.0, refactor SDIO initialization [#734]
 
 ## [v0.20.0] - 2024-01-14
 
