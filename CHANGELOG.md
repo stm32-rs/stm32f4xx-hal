@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - add trait bound `RegisterBlockImpl` to type `RegisterBlock` associated with `serial::Instance` [#732]
+ - remove unneeded trait bound for methods that take in a `serial::Instance` and use the associated `RegisterBlock`
+
 ## [v0.20.0] - 2024-01-14
 
 ### Changed

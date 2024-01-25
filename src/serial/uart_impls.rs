@@ -23,7 +23,7 @@ impl crate::Sealed for RegisterBlockUsart {}
 
 // Implemented by all USART/UART instances
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + CommonPins {
-    type RegisterBlock;
+    type RegisterBlock: RegisterBlockImpl;
 
     #[doc(hidden)]
     fn ptr() -> *const Self::RegisterBlock;
@@ -343,10 +343,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> RxISR for Rx<UART, WORD>
-where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
-{
+impl<UART: Instance, WORD> RxISR for Rx<UART, WORD> {
     fn is_idle(&self) -> bool {
         unsafe { (*UART::ptr()).is_idle() }
     }
@@ -374,7 +371,6 @@ where
 
 impl<UART: Instance, WORD> TxISR for Tx<UART, WORD>
 where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
     fn is_tx_empty(&self) -> bool {
@@ -382,10 +378,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> RxListen for Rx<UART, WORD>
-where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
-{
+impl<UART: Instance, WORD> RxListen for Rx<UART, WORD> {
     fn listen(&mut self) {
         unsafe { (*UART::ptr()).listen_rxne() }
     }
@@ -405,7 +398,6 @@ where
 
 impl<UART: Instance, WORD> TxListen for Tx<UART, WORD>
 where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
     fn listen(&mut self) {
@@ -419,7 +411,6 @@ where
 
 impl<UART: Instance, WORD> crate::ClearFlags for Serial<UART, WORD>
 where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
     type Flag = CFlag;
@@ -432,7 +423,6 @@ where
 
 impl<UART: Instance, WORD> crate::ReadFlags for Serial<UART, WORD>
 where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
     type Flag = Flag;
@@ -445,7 +435,6 @@ where
 
 impl<UART: Instance, WORD> crate::Listen for Serial<UART, WORD>
 where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
     type Event = Event;
@@ -479,7 +468,6 @@ where
 
 impl<UART: Instance> fmt::Write for Tx<UART>
 where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
@@ -489,10 +477,7 @@ where
     }
 }
 
-impl<UART: Instance> SerialExt for UART
-where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
-{
+impl<UART: Instance> SerialExt for UART {
     fn serial<WORD>(
         self,
         pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
@@ -525,10 +510,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> Serial<UART, WORD>
-where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
-{
+impl<UART: Instance, WORD> Serial<UART, WORD> {
     pub fn tx(
         usart: UART,
         tx_pin: impl Into<UART::Tx<PushPull>>,
@@ -542,10 +524,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> Serial<UART, WORD>
-where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
-{
+impl<UART: Instance, WORD> Serial<UART, WORD> {
     pub fn rx(
         usart: UART,
         rx_pin: impl Into<UART::Rx<PushPull>>,
@@ -559,10 +538,7 @@ where
     }
 }
 
-unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8>
-where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
-{
+unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
         unsafe { (*UART::ptr()).peri_address() }
@@ -580,7 +556,6 @@ where
 
 unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8>
 where
-    <UART as Instance>::RegisterBlock: RegisterBlockImpl,
     UART: Deref<Target = <UART as Instance>::RegisterBlock>,
 {
     #[inline(always)]
