@@ -133,6 +133,12 @@ pub enum Error {
     NoCard,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum AddressMode {
+    Byte,
+    Block512,
+}
+
 /// A peripheral that uses the SDIO hardware, generic over the particular type of device.
 pub struct Sdio<P: SdioPeripheral> {
     sdio: SDIO,
@@ -153,7 +159,6 @@ pub struct SdCard {
 
 /// eMMC device peripheral
 pub struct Emmc {
-    pub capacity: CardCapacity,
     pub ocr: OCR<EMMC>,
     pub rca: RCA<EMMC>, // Relative Card Address
     pub cid: CID<EMMC>,
@@ -232,9 +237,9 @@ impl<P: SdioPeripheral> Sdio<P> {
 
         // Always read 1 block of 512 bytes
         // SDSC cards are byte addressed hence the blockaddress is in multiples of 512 bytes
-        let blockaddr = match card.get_capacity() {
-            CardCapacity::StandardCapacity => blockaddr * 512,
-            _ => blockaddr,
+        let blockaddr = match card.get_address_mode() {
+            AddressMode::Byte => blockaddr * 512,
+            AddressMode::Block512 => blockaddr,
         };
         self.cmd(common_cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, true);
@@ -276,9 +281,9 @@ impl<P: SdioPeripheral> Sdio<P> {
 
         // Always write 1 block of 512 bytes
         // SDSC cards are byte addressed hence the blockaddress is in multiples of 512 bytes
-        let blockaddr = match card.get_capacity() {
-            CardCapacity::StandardCapacity => blockaddr * 512,
-            _ => blockaddr,
+        let blockaddr = match card.get_address_mode() {
+            AddressMode::Byte => blockaddr * 512,
+            AddressMode::Block512 => blockaddr,
         };
         self.cmd(common_cmd::set_block_length(512))?;
         self.start_datapath_transfer(512, 9, false);
@@ -496,7 +501,7 @@ impl Sdio<SdCard> {
             // Initialize card
 
             // 3.2-3.3V
-            let voltage_window = 1 << 20;
+            let voltage_window = 1 << 5;
             match self.app_cmd(sd_cmd::sd_send_op_cond(true, false, true, voltage_window)) {
                 Ok(_) => (),
                 Err(Error::Crc) => (),
@@ -653,7 +658,7 @@ impl Sdio<SdCard> {
 }
 
 impl Sdio<Emmc> {
-    /// Initializes eMMC device (if present) and sets the bus at the specified frequency.
+    /// Initializes eMMC device (if present) and sets the bus at the specified frequency. eMMC device must support 512 byte blocks.
     pub fn init(&mut self, freq: ClockFreq) -> Result<(), Error> {
         let card_addr: RCA<EMMC> = RCA::from(1u16);
 
@@ -675,17 +680,10 @@ impl Sdio<Emmc> {
                 Err(Error::Crc) => (),
                 Err(err) => return Err(err),
             };
-            let ocr = OCR::from(self.sdio.resp1.read().bits());
+            let ocr = OCR::<EMMC>::from(self.sdio.resp1.read().bits());
             if !ocr.is_busy() {
                 break ocr;
             }
-        };
-
-        // True for SDHC and SDXC False for SDSC
-        let capacity = if ocr.high_capacity() {
-            CardCapacity::HighCapacity
-        } else {
-            CardCapacity::StandardCapacity
         };
 
         // Get CID
@@ -695,7 +693,7 @@ impl Sdio<Emmc> {
         cid[2] = self.sdio.resp2.read().bits();
         cid[1] = self.sdio.resp3.read().bits();
         cid[0] = self.sdio.resp4.read().bits();
-        let cid = CID::from(cid);
+        let cid = CID::<EMMC>::from(cid);
 
         self.cmd(emmc_cmd::assign_relative_address(card_addr.address()))?;
 
@@ -706,12 +704,11 @@ impl Sdio<Emmc> {
         csd[2] = self.sdio.resp2.read().bits();
         csd[1] = self.sdio.resp3.read().bits();
         csd[0] = self.sdio.resp4.read().bits();
-        let csd = CSD::from(csd);
+        let csd = CSD::<EMMC>::from(csd);
 
         self.select_card(card_addr.address())?;
 
         let card = Emmc {
-            capacity,
             ocr,
             rca: card_addr,
             cid,
@@ -807,7 +804,7 @@ fn clear_all_interrupts(icr: &pac::sdio::ICR) {
 
 impl SdCard {
     /// Size in blocks
-    pub fn block_count(&self) -> u32 {
+    pub fn block_count(&self) -> u64 {
         self.csd.block_count()
     }
 
@@ -821,8 +818,12 @@ impl SdioPeripheral for SdCard {
     fn get_address(&self) -> u16 {
         self.rca.address()
     }
-    fn get_capacity(&self) -> CardCapacity {
-        self.capacity
+    fn get_address_mode(&self) -> AddressMode {
+        match self.capacity {
+            CardCapacity::StandardCapacity => AddressMode::Byte,
+            CardCapacity::HighCapacity => AddressMode::Block512,
+            _ => AddressMode::Block512,
+        }
     }
 }
 
@@ -830,12 +831,12 @@ impl SdioPeripheral for Emmc {
     fn get_address(&self) -> u16 {
         self.rca.address()
     }
-    fn get_capacity(&self) -> CardCapacity {
-        self.capacity
+    fn get_address_mode(&self) -> AddressMode {
+        AddressMode::Block512
     }
 }
 
 pub trait SdioPeripheral {
     fn get_address(&self) -> u16;
-    fn get_capacity(&self) -> CardCapacity;
+    fn get_address_mode(&self) -> AddressMode;
 }
