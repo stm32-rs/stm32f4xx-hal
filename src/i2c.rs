@@ -285,6 +285,9 @@ impl<I2C: Instance> I2c<I2C> {
     /// Sends START and Address for writing
     #[inline(always)]
     fn prepare_write(&self, addr: u8) -> Result<(), Error> {
+        // Wait until a previous STOP condition finishes
+        while self.i2c.cr1.read().stop().bit_is_set() {}
+
         // Send a START condition
         self.i2c.cr1.modify(|_, w| w.start().set_bit());
 
@@ -327,6 +330,9 @@ impl<I2C: Instance> I2c<I2C> {
 
     /// Sends START and Address for reading
     fn prepare_read(&self, addr: u8) -> Result<(), Error> {
+        // Wait until a previous STOP condition finishes
+        while self.i2c.cr1.read().stop().bit_is_set() {}
+
         // Send a START condition and set ACK bit
         self.i2c
             .cr1
@@ -443,9 +449,6 @@ impl<I2C: Instance> I2c<I2C> {
             // Receive last byte
             *last = self.recv_byte()?;
 
-            // Wait for the STOP to be sent.
-            while self.i2c.cr1.read().stop().bit_is_set() {}
-
             // Fallthrough is success
             Ok(())
         } else {
@@ -465,9 +468,6 @@ impl<I2C: Instance> I2c<I2C> {
         // Send a STOP condition
         self.i2c.cr1.modify(|_, w| w.stop().set_bit());
 
-        // Wait for STOP condition to transmit.
-        while self.i2c.cr1.read().stop().bit_is_set() {}
-
         // Fallthrough is success
         Ok(())
     }
@@ -481,9 +481,6 @@ impl<I2C: Instance> I2c<I2C> {
 
         // Send a STOP condition
         self.i2c.cr1.modify(|_, w| w.stop().set_bit());
-
-        // Wait for STOP condition to transmit.
-        while self.i2c.cr1.read().stop().bit_is_set() {}
 
         // Fallthrough is success
         Ok(())

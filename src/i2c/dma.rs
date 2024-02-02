@@ -628,7 +628,6 @@ where
                 // Wait for BTF
                 while self.hal_i2c.i2c.sr1.read().btf().bit_is_clear() {}
 
-                // Generate stop and wait for it
                 self.send_stop();
             }
         }
@@ -668,7 +667,7 @@ where
 
                 // Clear ACK
                 self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
-                // Generate stop and wait for it
+
                 self.send_stop();
             }
         }
@@ -730,7 +729,6 @@ where
 
                     self.rx.rx_transfer.as_mut().unwrap().start(|_| {});
                 } else {
-                    // Generate stop and wait for it
                     self.send_stop();
                 }
             }
@@ -756,7 +754,7 @@ where
 
                 // Clear ACK
                 self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
-                // Generate stop and wait for it
+
                 self.send_stop();
             }
         }
