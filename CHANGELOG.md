@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
  - Fix transmission termination in I2C master DMA read [#736]
+ - Prevent starting a new I2C transmission before previous stop finishes [#737]
 
 ## [v0.20.0] - 2024-01-14
 
