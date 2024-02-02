@@ -509,8 +509,21 @@ where
         // Send address
         self.send_address(addr, true)?;
 
+        // Note from STM32 RM0090:
+        // When the number of bytes to be received is equal to or greater than two,
+        // the DMA controller sends a hardware signal, EOT_1, corresponding to the
+        // last but one data byte (number_of_bytes – 1). If, in the I2C_CR2 register,
+        // the LAST bit is set, I2C automatically sends a NACK after the next byte
+        // following EOT_1. The user can generate a Stop condition in the DMA
+        // Transfer Complete interrupt routine if enabled.
         // On small sized array we need to set ACK=0 before ADDR cleared
-        if buf_len <= 1 {
+        if buf_len >= 2 {
+            self.hal_i2c.i2c.cr2.modify(|_, w| w.last().set_bit());
+        // When a single byte must be received: the NACK must be programmed during
+        // EV6 event, i.e. program ACK=0 when ADDR=1, before clearing ADDR flag.
+        // Then the user can program the STOP condition either after clearing ADDR
+        // flag, or in the DMA Transfer Complete interrupt routine.
+        } else {
             self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
         }
 
@@ -570,6 +583,7 @@ where
     fn finish_transfer_with_result(&mut self, result: Result<(), Error>) {
         self.disable_dma_requests();
         self.disable_error_interrupt_generation();
+        self.hal_i2c.i2c.cr2.modify(|_, w| w.last().clear_bit());
 
         if let Err(Error::I2CError(super::Error::NoAcknowledge(_))) = &result {
             self.send_stop();
