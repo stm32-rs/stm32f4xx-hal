@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - remove unneeded trait bound for methods that take in a `serial::Instance` and use the associated `RegisterBlock`
  - bump `sdio-host` to 0.9.0, refactor SDIO initialization [#734]
 
+### Fixed
+
+ - Fix transmission termination in I2C master DMA read [#736]
+
 ## [v0.20.0] - 2024-01-14
 
 ### Changed
