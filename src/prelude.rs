@@ -68,6 +68,10 @@ pub use crate::qei::QeiExt as _stm32f4xx_hal_QeiExt;
 pub use crate::rcc::RccExt as _stm32f4xx_hal_rcc_RccExt;
 #[cfg(feature = "rng")]
 pub use crate::rng::RngExt as _stm32f4xx_hal_rng_RngExt;
+pub use crate::serial::dma::SerialHandleIT as _stm32f4xx_hal_serial_dma_SerialHandleIT;
+pub use crate::serial::dma::SerialReadDMA as _stm32f4xx_hal_serial_dma_SerialReadDMA;
+pub use crate::serial::dma::SerialWriteDMA as _stm32f4xx_hal_serial_dma_SerialWriteDMA;
+pub use crate::serial::dma::SerialWriteReadDMA as _stm32f4xx_hal_serial_dma_SerialWriteReadDMA;
 pub use crate::serial::RxISR as _stm32f4xx_hal_serial_RxISR;
 pub use crate::serial::RxListen as _stm32f4xx_hal_serial_RxListen;
 pub use crate::serial::SerialExt as _stm32f4xx_hal_serial_SerialExt;
