@@ -726,7 +726,7 @@ where
                     if let Err(e) = self.prepare_read(self.address, self.rx_len) {
                         self.finish_transfer_with_result(Err(Error::I2CError(e)))
                     }
-
+                    self.hal_i2c.i2c.cr2.modify(|_, w| w.last().set_bit());
                     self.rx.rx_transfer.as_mut().unwrap().start(|_| {});
                 } else {
                     self.send_stop();
@@ -840,6 +840,7 @@ where
             return Err(nb::Error::Other(e));
         }
 
+        self.hal_i2c.i2c.cr2.modify(|_, w| w.last().set_bit());
         // Start DMA processing
         self.rx.rx_transfer.as_mut().unwrap().start(|_| {});
 
