@@ -5,10 +5,12 @@
 #![allow(non_upper_case_globals)]
 
 use core::convert::TryFrom;
+use core::marker::PhantomData;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 use enumflags2::BitFlags;
 
+#[cfg(feature = "bb")]
 use crate::bb;
 use crate::pac;
 
@@ -291,14 +293,18 @@ pub enum Ocm {
 }
 
 /// Wrapper type that indicates which register of the contained timer to use for DMA.
-pub struct CCR<T, const C: u8>(T);
+pub struct CCR<T, const C: u8> {
+    _per: PhantomData<T>,
+}
 pub type CCR1<T> = CCR<T, 0>;
 pub type CCR2<T> = CCR<T, 1>;
 pub type CCR3<T> = CCR<T, 2>;
 pub type CCR4<T> = CCR<T, 3>;
 
 /// Wrapper type that indicates which register of the contained timer to use for DMA.
-pub struct DMAR<T>(T);
+pub struct DMAR<T> {
+    _per: PhantomData<T>,
+}
 
 mod sealed {
     use super::{BitFlags, Channel, Event, Flag, IdleState, Ocm, Polarity};
@@ -510,7 +516,14 @@ macro_rules! hal {
                 fn enable_channel(c: u8, b: bool) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
+                        #[cfg(feature = "bb")]
                         unsafe { bb::write(&tim.ccer, c*4, b); }
+                        #[cfg(not(feature = "bb"))]
+                        tim.ccer.modify(|r,w| unsafe { if b {
+                            w.bits(r.bits() | (1 << c*4))
+                        } else {
+                            w.bits(r.bits() & !(1 << c*4))
+                        }});
                     }
                 }
 
@@ -518,7 +531,15 @@ macro_rules! hal {
                 fn set_channel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
-                        unsafe { bb::write(&tim.ccer, c*4 + 1, p == Polarity::ActiveLow); }
+                        let b = p == Polarity::ActiveLow;
+                        #[cfg(feature = "bb")]
+                        unsafe { bb::write(&tim.ccer, c*4 + 1, b); }
+                        #[cfg(not(feature = "bb"))]
+                        tim.ccer.modify(|r,w| unsafe { if b {
+                            w.bits(r.bits() | (1 << (c*4 + 1)))
+                        } else {
+                            w.bits(r.bits() & !(1 << (c*4 + 1)))
+                        }});
                     }
                 }
 
@@ -526,7 +547,15 @@ macro_rules! hal {
                 fn set_nchannel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::COMP_CH_NUMBER {
-                        unsafe { bb::write(&tim.ccer, c*4 + 3, p == Polarity::ActiveLow); }
+                        let b = p == Polarity::ActiveLow;
+                        #[cfg(feature = "bb")]
+                        unsafe { bb::write(&tim.ccer, c*4 + 3, b); }
+                        #[cfg(not(feature = "bb"))]
+                        tim.ccer.modify(|r,w| unsafe { if b {
+                            w.bits(r.bits() | (1 << (c*4 + 3)))
+                        } else {
+                            w.bits(r.bits() & !(1 << (c*4 + 3)))
+                        }});
                     }
                 }
             }
@@ -537,7 +566,14 @@ macro_rules! hal {
                         let $aoe = ();
                         let tim = unsafe { &*<$TIM>::ptr() };
                         if c < Self::COMP_CH_NUMBER {
+                            #[cfg(feature = "bb")]
                             unsafe { bb::write(&tim.ccer, c*4 + 2, b); }
+                            #[cfg(not(feature = "bb"))]
+                            tim.ccer.modify(|r,w| unsafe { if b {
+                                w.bits(r.bits() | (1 << (c*4 + 2)))
+                            } else {
+                                w.bits(r.bits() & !(1 << (c*4 + 2)))
+                            }});
                         }
                     }
                     fn set_dtg_value(value: u8) {
@@ -552,11 +588,27 @@ macro_rules! hal {
                         let tim = unsafe { &*<$TIM>::ptr() };
                         if !comp {
                             if c < Self::CH_NUMBER {
-                                unsafe { bb::write(&tim.cr2, c*2 + 8, s == IdleState::Set); }
+                                let b = s == IdleState::Set;
+                                #[cfg(feature = "bb")]
+                                unsafe { bb::write(&tim.cr2, c*2 + 8, b); }
+                                #[cfg(not(feature = "bb"))]
+                                tim.cr2.modify(|r,w| unsafe { if b {
+                                    w.bits(r.bits() | (1 << (c*2 + 8)))
+                                } else {
+                                    w.bits(r.bits() & !(1 << (c*2 + 8)))
+                                }});
                             }
                         } else {
                             if c < Self::COMP_CH_NUMBER {
-                                unsafe { bb::write(&tim.cr2, c*2 + 9, s == IdleState::Set); }
+                                let b = s == IdleState::Set;
+                                #[cfg(feature = "bb")]
+                                unsafe { bb::write(&tim.cr2, c*2 + 9, b); }
+                                #[cfg(not(feature = "bb"))]
+                                tim.cr2.modify(|r,w| unsafe { if b {
+                                    w.bits(r.bits() | (1 << (c*2 + 9)))
+                                } else {
+                                    w.bits(r.bits() & !(1 << (c*2 + 9)))
+                                }});
                             }
                         }
                     }
@@ -567,7 +619,7 @@ macro_rules! hal {
             unsafe impl<const C: u8> PeriAddress for CCR<$TIM, C> {
                 #[inline(always)]
                 fn address(&self) -> u32 {
-                    self.0.ccr[C as usize].as_ptr() as u32
+                    unsafe { (*<$TIM>::ptr()).ccr[C as usize].as_ptr() as u32 }
                 }
 
                 type MemSize = $bits;
@@ -589,7 +641,7 @@ macro_rules! with_dmar {
         unsafe impl PeriAddress for DMAR<$TIM> {
             #[inline(always)]
             fn address(&self) -> u32 {
-                self.0.dmar.as_ptr() as u32
+                unsafe { (*<$TIM>::ptr()).dmar.as_ptr() as u32 }
             }
 
             type MemSize = $memsize;

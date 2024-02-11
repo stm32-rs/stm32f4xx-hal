@@ -58,11 +58,17 @@ pub use crate::dma::traits::StreamISR as _;
 pub use crate::gpio::outport::OutPort as _;
 pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
+#[cfg(feature = "f4")]
 pub use crate::i2c::dma::I2CMasterHandleIT as _stm32f4xx_hal_i2c_dma_I2CMasterHandleIT;
+#[cfg(feature = "f4")]
 pub use crate::i2c::dma::I2CMasterReadDMA as _stm32f4xx_hal_i2c_dma_I2CMasterReadDMA;
+#[cfg(feature = "f4")]
 pub use crate::i2c::dma::I2CMasterWriteDMA as _stm32f4xx_hal_i2c_dma_I2CMasterWriteDMA;
+#[cfg(feature = "f4")]
 pub use crate::i2c::dma::I2CMasterWriteReadDMA as _stm32f4xx_hal_i2c_dma_I2CMasterWriteReadDMA;
+#[cfg(feature = "f4")]
 pub use crate::i2c::I2cExt as _stm32f4xx_hal_i2c_I2cExt;
+#[cfg(feature = "f4")]
 pub use crate::i2s::I2sExt as _stm32f4xx_hal_i2s_I2sExt;
 pub use crate::qei::QeiExt as _stm32f4xx_hal_QeiExt;
 pub use crate::rcc::RccExt as _stm32f4xx_hal_rcc_RccExt;

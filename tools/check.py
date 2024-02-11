@@ -30,7 +30,7 @@ def main():
 
     features = ["{},usb_fs,can,i2s,fsmc_lcd,rtic1,defmt".format(x)
             for x in crate_info["features"].keys()
-            if x.startswith("stm32f4")]
+            if x.startswith("stm32f4") or x.startswith("stm32f7")]
 
     if 'size_check' in sys.argv:
         cargo_cmd = ['cargo', 'build', '--release']

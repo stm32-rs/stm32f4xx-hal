@@ -4,6 +4,8 @@ use crate::time::U32Ext;
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WordLength {
+    #[cfg(feature = "uart_v3")]
+    DataBits7,
     DataBits8,
     DataBits9,
 }

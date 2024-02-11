@@ -18,7 +18,7 @@ use cortex_m;
 use cortex_m_rt::entry;
 use rtt_target::{rprintln, rtt_init_print};
 use stm32f4xx_hal::{
-    fsmc_lcd::{DataPins16, FsmcLcd, LcdPins, Timing},
+    fsmc_lcd::{FsmcLcd, LcdPins, Timing},
     gpio::Speed,
     pac,
     prelude::*,
@@ -67,20 +67,33 @@ fn main() -> ! {
 
     // Pins connected to the LCD on the board
     use stm32f4xx_hal::gpio::alt::fsmc as alt;
-    let lcd_pins = LcdPins::new(
-        DataPins16::new(
-            gpiod.pd14, gpiod.pd15, gpiod.pd0, gpiod.pd1, gpioe.pe7, gpioe.pe8, gpioe.pe9,
-            gpioe.pe10, gpioe.pe11, gpioe.pe12, gpioe.pe13, gpioe.pe14, gpioe.pe15, gpiod.pd8,
-            gpiod.pd9, gpiod.pd10,
+    let lcd_pins = LcdPins {
+        data: (
+            gpiod.pd14.into(),
+            gpiod.pd15.into(),
+            gpiod.pd0.into(),
+            gpiod.pd1.into(),
+            gpioe.pe7.into(),
+            gpioe.pe8.into(),
+            gpioe.pe9.into(),
+            gpioe.pe10.into(),
+            gpioe.pe11.into(),
+            gpioe.pe12.into(),
+            gpioe.pe13.into(),
+            gpioe.pe14.into(),
+            gpioe.pe15.into(),
+            gpiod.pd8.into(),
+            gpiod.pd9.into(),
+            gpiod.pd10.into(),
         ),
-        alt::Address::from(gpiof.pf0),
-        gpiod.pd4,
-        gpiod.pd5,
+        address: alt::Address::from(gpiof.pf0),
+        read_enable: gpiod.pd4.into(),
+        write_enable: gpiod.pd5.into(),
         #[cfg(feature = "stm32f413")]
-        alt::ChipSelect3::from(gpiog.pg10),
+        chip_select: alt::ChipSelect3::from(gpiog.pg10),
         #[cfg(feature = "stm32f412")]
-        alt::ChipSelect1::from(gpiod.pd7),
-    );
+        chip_select: alt::ChipSelect1::from(gpiod.pd7),
+    };
 
     // Enable backlight
     #[cfg(feature = "stm32f413")]

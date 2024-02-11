@@ -333,3 +333,12 @@ bus! {
     TIM13 => (APB1, 7),
     TIM14 => (APB1, 8),
 }
+
+#[cfg(feature = "ltdc")]
+bus! {
+    LTDC => (APB2, 26),
+}
+#[cfg(feature = "dma2d")]
+bus! {
+    DMA2D => (AHB1, 23),
+}

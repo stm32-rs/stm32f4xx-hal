@@ -1,8 +1,10 @@
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 
-use crate::dma::traits::{DMASet, PeriAddress};
-use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
+use crate::dma::{
+    traits::{DMASet, PeriAddress},
+    MemoryToPeripheral, PeripheralToMemory,
+};
 use crate::gpio::{self, NoPin};
 use crate::pac;
 
@@ -125,16 +127,39 @@ pub const TransferModeNormal: bool = false;
 #[allow(non_upper_case_globals)]
 pub const TransferModeBidi: bool = true;
 
+#[cfg(feature = "spi_v1")]
 pub trait FrameSize: Copy + Default {
     const DFF: bool;
 }
 
+#[cfg(feature = "spi_v1")]
 impl FrameSize for u8 {
     const DFF: bool = false;
 }
 
+#[cfg(feature = "spi_v1")]
 impl FrameSize for u16 {
     const DFF: bool = true;
+}
+
+#[cfg(feature = "spi_v2")]
+use crate::pac::spi1::cr2;
+#[cfg(feature = "spi_v2")]
+pub trait FrameSize: Copy + Default {
+    const FRXTH: cr2::FRXTH_A;
+    const DS: cr2::DS_A;
+}
+
+#[cfg(feature = "spi_v2")]
+impl FrameSize for u8 {
+    const FRXTH: cr2::FRXTH_A = cr2::FRXTH_A::Quarter;
+    const DS: cr2::DS_A = cr2::DS_A::EightBit;
+}
+
+#[cfg(feature = "spi_v2")]
+impl FrameSize for u16 {
+    const FRXTH: cr2::FRXTH_A = cr2::FRXTH_A::Half;
+    const DS: cr2::DS_A = cr2::DS_A::SixteenBit;
 }
 
 /// The bit format to send the data in
@@ -220,19 +245,20 @@ macro_rules! spi {
     };
 }
 
+#[cfg(feature = "spi1")]
 spi! { pac::SPI1: Spi1, SpiSlave1 }
+#[cfg(feature = "spi2")]
+#[cfg(not(any(feature = "svd-f750", feature = "svd-f7x6")))]
 spi! { pac::SPI2: Spi2, SpiSlave2 }
-
 #[cfg(feature = "spi3")]
+#[cfg(not(any(feature = "svd-f745", feature = "svd-f765")))]
 spi! { pac::SPI3: Spi3, SpiSlave3 }
-
 #[cfg(feature = "spi4")]
 spi! { pac::SPI4: Spi4, SpiSlave4 }
-
 #[cfg(feature = "spi5")]
 spi! { pac::SPI5: Spi5, SpiSlave5 }
-
 #[cfg(feature = "spi6")]
+#[cfg(not(any(feature = "svd-f745", feature = "svd-f765")))]
 spi! { pac::SPI6: Spi6, SpiSlave6 }
 
 pub trait SpiExt: Sized + Instance {
@@ -358,11 +384,16 @@ impl<SPI: Instance> SpiExt for SPI {
 
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     pub fn init(self) -> Self {
+        #[cfg(feature = "spi_v2")]
+        self.spi
+            .cr2
+            .modify(|_, w| w.frxth().variant(W::FRXTH).ds().variant(W::DS));
         self.spi.cr1.modify(|_, w| {
             // bidimode: 2-line or 1-line unidirectional
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
             // data frame size
+            #[cfg(feature = "spi_v1")]
             w.dff().bit(W::DFF);
             // spe: enable the SPI bus
             w.spe().set_bit()
@@ -374,11 +405,16 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
 
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     pub fn init(self) -> Self {
+        #[cfg(feature = "spi_v2")]
+        self.spi
+            .cr2
+            .modify(|_, w| w.frxth().variant(W::FRXTH).ds().variant(W::DS));
         self.spi.cr1.modify(|_, w| {
             // bidimode: 2-line or 1-line unidirectional
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
             // data frame size
+            #[cfg(feature = "spi_v1")]
             w.dff().bit(W::DFF);
             // spe: enable the SPI bus
             w.spe().set_bit()
@@ -611,7 +647,7 @@ impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     /// Pre initializing the SPI bus.
     fn pre_init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self {
         // disable SS output
@@ -629,6 +665,11 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
             _ => 0b111,
         };
 
+        #[cfg(feature = "spi_v2")]
+        self.spi
+            .cr2
+            .modify(|_, w| w.frxth().variant(W::FRXTH).ds().variant(W::DS));
+
         self.spi.cr1.write(|w| {
             w.cpha().bit(mode.phase == Phase::CaptureOnSecondTransition);
             w.cpol().bit(mode.polarity == Polarity::IdleHigh);
@@ -643,16 +684,23 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
             w.ssi().set_bit();
             w.rxonly().clear_bit();
             // dff: 8 bit frames
-            w.dff().clear_bit()
+            #[cfg(feature = "spi_v1")]
+            w.dff().clear_bit();
+            w
         });
 
         self
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
+impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     /// Pre initializing the SPI bus.
     fn pre_init(self, mode: Mode) -> Self {
+        #[cfg(feature = "spi_v2")]
+        self.spi
+            .cr2
+            .modify(|_, w| w.frxth().variant(W::FRXTH).ds().variant(W::DS));
+
         self.spi.cr1.write(|w| {
             w.cpha().bit(mode.phase == Phase::CaptureOnSecondTransition);
             w.cpol().bit(mode.polarity == Polarity::IdleHigh);
@@ -667,7 +715,9 @@ impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
             w.ssi().set_bit();
             w.rxonly().clear_bit();
             // dff: 8 bit frames
-            w.dff().clear_bit()
+            #[cfg(feature = "spi_v1")]
+            w.dff().clear_bit();
+            w
         });
 
         self

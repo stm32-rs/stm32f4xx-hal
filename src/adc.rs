@@ -139,7 +139,14 @@ use crate::{
 };
 use core::fmt;
 
+#[cfg(feature = "f2")]
+mod f2;
+
+#[cfg(feature = "f4")]
 mod f4;
+
+#[cfg(feature = "f7")]
+mod f7;
 
 /// Vref internal signal, used for calibration
 pub struct Vref;
@@ -649,16 +656,12 @@ macro_rules! adc {
                 /// * `reset` - should a reset be performed. This is provided because on some devices multiple ADCs share the same common reset
                 pub fn $constructor_fn_name(adc: pac::$adc_type, reset: bool, config: config::AdcConfig) -> Adc<pac::$adc_type> {
                     unsafe {
-                        // All ADCs share the same reset interface.
-                        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-                        let rcc = &(*pac::RCC::ptr());
-
                         //Enable the clock
-                        pac::$adc_type::enable(rcc);
+                        pac::$adc_type::enable_unchecked();
 
                         if reset {
                             //Reset the peripheral(s)
-                            pac::$adc_type::reset(rcc);
+                            pac::$adc_type::reset_unchecked();
                         }
                     }
 
@@ -771,6 +774,7 @@ macro_rules! adc {
                         feature = "stm32f401",
                         feature = "stm32f410",
                         feature = "stm32f411",
+                        feature = "f7",
                     ))] // TODO: fix pac
                     self.adc_reg.cr2.modify(|_, w| unsafe { w
                         .extsel().bits(extsel as _)
@@ -780,6 +784,7 @@ macro_rules! adc {
                         feature = "stm32f401",
                         feature = "stm32f410",
                         feature = "stm32f411",
+                        feature = "f7",
                     )))]
                     self.adc_reg.cr2.modify(|_, w| w
                         .extsel().bits(extsel as _)
