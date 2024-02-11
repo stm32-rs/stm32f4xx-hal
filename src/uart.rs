@@ -21,7 +21,7 @@ use crate::serial::uart_impls::RegisterBlockUart;
 pub use crate::serial::{config, Error, Event, Instance, NoRx, NoTx, Rx, RxISR, Serial, Tx, TxISR};
 pub use config::Config;
 
-#[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
+#[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
 macro_rules! halUart {
     ($UART:ty, $Serial:ident, $Rx:ident, $Tx:ident) => {
         pub type $Serial<WORD = u8> = Serial<$UART, WORD>;
@@ -56,14 +56,14 @@ macro_rules! halUart {
     };
 }
 
-#[cfg(feature = "uart4")]
+#[cfg(pac_uart4)]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
 halUart! { pac::UART4, Serial4, Rx4, Tx4 }
-#[cfg(feature = "uart5")]
+#[cfg(pac_uart5)]
 #[cfg(not(any(feature = "stm32f413", feature = "stm32f423")))]
 halUart! { pac::UART5, Serial5, Rx5, Tx5 }
 
-#[cfg(feature = "uart4")]
+#[cfg(pac_uart4)]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 impl Instance for pac::UART4 {
     type RegisterBlock = RegisterBlockUart;
@@ -77,15 +77,15 @@ impl Instance for pac::UART4 {
     }
 }
 
-#[cfg(feature = "uart5")]
+#[cfg(pac_uart5)]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
 crate::serial::halUsart! { pac::UART5, Serial5, Rx5, Tx5 }
 
-#[cfg(feature = "uart7")]
+#[cfg(pac_uart7)]
 crate::serial::halUsart! { pac::UART7, Serial7, Rx7, Tx7 }
-#[cfg(feature = "uart8")]
+#[cfg(pac_uart8)]
 crate::serial::halUsart! { pac::UART8, Serial8, Rx8, Tx8 }
-#[cfg(feature = "uart9")]
+#[cfg(pac_uart9)]
 crate::serial::halUsart! { pac::UART9, Serial9, Rx9, Tx9 }
-#[cfg(feature = "uart10")]
+#[cfg(pac_uart10)]
 crate::serial::halUsart! { pac::UART10, Serial10, Rx10, Tx10 }

@@ -608,20 +608,20 @@ const fn gpiox<const P: char>() -> *const crate::pac::gpioa::RegisterBlock {
         'A' => crate::pac::GPIOA::ptr(),
         'B' => crate::pac::GPIOB::ptr() as _,
         'C' => crate::pac::GPIOC::ptr() as _,
-        #[cfg(feature = "gpiod")]
+        #[cfg(pac_gpiod)]
         'D' => crate::pac::GPIOD::ptr() as _,
-        #[cfg(feature = "gpioe")]
+        #[cfg(pac_gpioe)]
         'E' => crate::pac::GPIOE::ptr() as _,
-        #[cfg(feature = "gpiof")]
+        #[cfg(pac_gpiof)]
         'F' => crate::pac::GPIOF::ptr() as _,
-        #[cfg(feature = "gpiog")]
+        #[cfg(pac_gpiog)]
         'G' => crate::pac::GPIOG::ptr() as _,
         'H' => crate::pac::GPIOH::ptr() as _,
-        #[cfg(feature = "gpioi")]
+        #[cfg(pac_gpioi)]
         'I' => crate::pac::GPIOI::ptr() as _,
-        #[cfg(feature = "gpioj")]
+        #[cfg(pac_gpioj)]
         'J' => crate::pac::GPIOJ::ptr() as _,
-        #[cfg(feature = "gpiok")]
+        #[cfg(pac_gpiok)]
         'K' => crate::pac::GPIOK::ptr() as _,
         _ => panic!("Unknown GPIO port"),
     }

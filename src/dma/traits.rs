@@ -346,20 +346,20 @@ use dma_map;
 
 mod f4;
 
-#[cfg(feature = "dfsdm")]
+#[cfg(any_dfsdm)]
 pub struct FLT<T, const F: u8> {
     _per: PhantomData<T>,
 }
 
-#[cfg(feature = "dfsdm")]
+#[cfg(any_dfsdm)]
 impl<T, const F: u8> crate::Sealed for FLT<T, F> {}
 
-#[cfg(feature = "sai")]
+#[cfg(any_sai)]
 pub struct SAICH<T, const C: u8> {
     _per: PhantomData<T>,
 }
 
-#[cfg(feature = "sai")]
+#[cfg(any_sai)]
 impl<T, const C: u8> crate::Sealed for SAICH<T, C> {}
 
 dma_map!(
@@ -373,22 +373,22 @@ dma_map!(
     (Stream7<DMA2>:0, MemoryToMemory<u8>, [MemoryToMemory<u8> | MemoryToMemory<u16> | MemoryToMemory<u32>]),
 );
 
-#[cfg(feature = "spdifrx")]
+#[cfg(pac_spdifrx)]
 address!((pac::SPDIFRX, dr, u32),);
 
-#[cfg(feature = "aes")]
+#[cfg(pac_aes)]
 pub struct AES_IN(());
-#[cfg(feature = "aes")]
+#[cfg(pac_aes)]
 pub struct AES_OUT(());
 
-#[cfg(feature = "aes")]
+#[cfg(pac_aes)]
 unsafe impl PeriAddress for AES_IN {
     fn address(&self) -> u32 {
         unsafe { (*pac::AES::ptr()).dinr.as_ptr() as u32 }
     }
     type MemSize = u32;
 }
-#[cfg(feature = "aes")]
+#[cfg(pac_aes)]
 unsafe impl PeriAddress for AES_OUT {
     fn address(&self) -> u32 {
         unsafe { (*pac::AES::ptr()).doutr.as_ptr() as u32 }
@@ -396,19 +396,19 @@ unsafe impl PeriAddress for AES_OUT {
     type MemSize = u32;
 }
 
-#[cfg(feature = "cryp")]
+#[cfg(pac_cryp)]
 pub struct CRYP_IN(());
-#[cfg(feature = "cryp")]
+#[cfg(pac_cryp)]
 pub struct CRYP_OUT(());
 
-#[cfg(feature = "cryp")]
+#[cfg(pac_cryp)]
 unsafe impl PeriAddress for CRYP_IN {
     fn address(&self) -> u32 {
         unsafe { (*pac::CRYP::ptr()).din.as_ptr() as u32 }
     }
     type MemSize = u32;
 }
-#[cfg(feature = "cryp")]
+#[cfg(pac_cryp)]
 unsafe impl PeriAddress for CRYP_OUT {
     fn address(&self) -> u32 {
         unsafe { (*pac::CRYP::ptr()).dout.as_ptr() as u32 }

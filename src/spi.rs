@@ -223,16 +223,16 @@ macro_rules! spi {
 spi! { pac::SPI1: Spi1, SpiSlave1 }
 spi! { pac::SPI2: Spi2, SpiSlave2 }
 
-#[cfg(feature = "spi3")]
+#[cfg(pac_spi3)]
 spi! { pac::SPI3: Spi3, SpiSlave3 }
 
-#[cfg(feature = "spi4")]
+#[cfg(pac_spi4)]
 spi! { pac::SPI4: Spi4, SpiSlave4 }
 
-#[cfg(feature = "spi5")]
+#[cfg(pac_spi5)]
 spi! { pac::SPI5: Spi5, SpiSlave5 }
 
-#[cfg(feature = "spi6")]
+#[cfg(pac_spi6)]
 spi! { pac::SPI6: Spi6, SpiSlave6 }
 
 pub trait SpiExt: Sized + Instance {

@@ -1033,8 +1033,8 @@ unsafe impl<ADC, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralTo
 
 adc!(ADC1 => (adc1, ADC_COMMON, 8));
 
-#[cfg(feature = "adc2")]
+#[cfg(pac_adc2)]
 adc!(ADC2 => (adc2, ADC_COMMON, 9));
 
-#[cfg(feature = "adc3")]
+#[cfg(pac_adc3)]
 adc!(ADC3 => (adc3, ADC_COMMON, 10));

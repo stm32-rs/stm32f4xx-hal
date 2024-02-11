@@ -13,11 +13,11 @@ use crate::dma::{
 use crate::gpio::{alt::SerialAsync as CommonPins, NoPin, PushPull};
 use crate::rcc::{self, Clocks};
 
-#[cfg(feature = "uart4")]
+#[cfg(pac_uart4)]
 pub(crate) use crate::pac::uart4::RegisterBlock as RegisterBlockUart;
 pub(crate) use crate::pac::usart1::RegisterBlock as RegisterBlockUsart;
 
-#[cfg(feature = "uart4")]
+#[cfg(pac_uart4)]
 impl crate::Sealed for RegisterBlockUart {}
 impl crate::Sealed for RegisterBlockUsart {}
 
@@ -322,7 +322,7 @@ macro_rules! uartCommon {
 
 uartCommon! { RegisterBlockUsart }
 
-#[cfg(feature = "uart4")]
+#[cfg(pac_uart4)]
 uartCommon! { RegisterBlockUart }
 
 impl<UART: Instance, WORD> RxISR for Serial<UART, WORD>

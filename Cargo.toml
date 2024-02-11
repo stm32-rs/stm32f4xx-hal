@@ -76,6 +76,10 @@ version = "1.0"
 version = "0.5.0"
 optional = true
 
+[build-dependencies.phf]
+version = "0.11.2"
+features = ["macros"]
+
 [dev-dependencies]
 defmt = "0.3.4"
 defmt-rtt = "0.4.0"
@@ -116,157 +120,23 @@ features = ["macros"]
 
 # Note: stm32f4 has only one feature for some very similar device families,
 # so it's intended for e.g. stm32f405/415 to both enable stm32f4/stm32f405.
-stm32f401 = ["stm32f4/stm32f401", "gpio-f401",]
-stm32f405 = ["stm32f4/stm32f405", "gpio-f417"]
-stm32f407 = ["stm32f4/stm32f407", "gpio-f417"]
-stm32f415 = ["stm32f4/stm32f405", "gpio-f417", "cryp"]
-stm32f417 = ["stm32f4/stm32f407", "gpio-f417", "cryp"]
-stm32f410 = ["stm32f4/stm32f410", "gpio-f410"]
-stm32f411 = ["stm32f4/stm32f411", "gpio-f411"]
-stm32f412 = ["stm32f4/stm32f412", "gpio-f412"]
-stm32f413 = ["stm32f4/stm32f413", "gpio-f413"]
-stm32f423 = ["stm32f4/stm32f413", "gpio-f413", "aes"]
-stm32f427 = ["stm32f4/stm32f427", "gpio-f427", "fsmc"]
-stm32f429 = ["stm32f4/stm32f429", "gpio-f427", "fmc"]
-stm32f437 = ["stm32f4/stm32f427", "gpio-f427", "fsmc", "cryp"]
-stm32f439 = ["stm32f4/stm32f429", "gpio-f427", "fmc", "cryp"]
-stm32f446 = ["stm32f4/stm32f446", "gpio-f446"]
-stm32f469 = ["stm32f4/stm32f469", "gpio-f469"]
-stm32f479 = ["stm32f4/stm32f469", "gpio-f469", "cryp"]
-
-gpio-f401 = [
-    "gpiod", "gpioe",
-    "i2c3",
-    "otg-fs",
-    "sdio",
-    "spi3", "spi4",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11",
-]
-gpio-f410 = [
-    "dac",
-    "fmpi2c1",
-    "lptim1",
-    "spi5",
-    "tim1", "tim5", "tim6", "tim9", "tim11",
-]
-gpio-f411 = [
-    "gpiod", "gpioe", # "gpioi",
-    "i2c3",
-    "otg-fs",
-    "sdio",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11",
-    "spi3", "spi4", "spi5",
-]
-gpio-f412 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "can1", "can2",
-    "dfsdm1",
-    "fmpi2c1",
-    "fsmc",
-    "i2c3",
-    "quadspi",
-    "otg-fs",
-    "rng",
-    "sdio",
-    "spi3", "spi4", "spi5",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3",
-]
-gpio-f413 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "can1", "can2", "can3",
-    "dac",
-    "dfsdm1",
-    "dfsdm2",
-    "fsmc",
-    "fmpi2c1",
-    "i2c3",
-    "lptim1",
-    "quadspi",
-    "otg-fs",
-    "rng",
-    "sai1",
-    "sdio",
-    "spi3", "spi4", "spi5",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8", "uart9", "uart10",
-]
-gpio-f417 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi",
-    "adc2", "adc3",
-    "can1", "can2",
-    "dac",
-    "dcmi",
-    "eth",
-    "fsmc",
-    "i2c3",
-    "otg-fs",
-    "otg-hs",
-    "rng",
-    "sdio",
-    "spi3",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5",
-]
-gpio-f427 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "gpioj", "gpiok",
-    "adc2", "adc3",
-    "can1", "can2",
-    "dac",
-    "dcmi",
-    "eth",
-    "i2c3",
-    "ltdc",
-    "otg-fs",
-    "otg-hs",
-    "rng",
-    "sai1",
-    "sdio",
-    "spi3", "spi4", "spi5", "spi6",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8",
-]
-gpio-f446 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "adc2", "adc3",
-    "can1", "can2",
-    "dac",
-    "dcmi",
-    "fmpi2c1",
-    "fmc",
-    "i2c3",
-    "quadspi",
-    "otg-fs",
-    "otg-hs",
-    "sai1",
-    "sai2",
-    #"sdio",
-    "spi3", "spi4",
-    "spdifrx",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5",
-]
-gpio-f469 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "gpioj", "gpiok",
-    "adc2", "adc3",
-    "can1", "can2",
-    "dac",
-    "dcmi",
-    "dsihost",
-    "eth",
-    "fmc",
-    "i2c3",
-    "ltdc",
-    "quadspi",
-    "otg-fs",
-    "otg-hs",
-    "rng",
-    "sai1",
-    "sdio",
-    "spi3", "spi4", "spi5", "spi6",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8",
-]
+stm32f401 = ["stm32f4/stm32f401"]
+stm32f405 = ["stm32f4/stm32f405"]
+stm32f407 = ["stm32f4/stm32f407"]
+stm32f415 = ["stm32f4/stm32f405"]
+stm32f417 = ["stm32f4/stm32f407"]
+stm32f410 = ["stm32f4/stm32f410"]
+stm32f411 = ["stm32f4/stm32f411"]
+stm32f412 = ["stm32f4/stm32f412"]
+stm32f413 = ["stm32f4/stm32f413"]
+stm32f423 = ["stm32f4/stm32f413"]
+stm32f427 = ["stm32f4/stm32f427"]
+stm32f429 = ["stm32f4/stm32f429"]
+stm32f437 = ["stm32f4/stm32f427"]
+stm32f439 = ["stm32f4/stm32f429"]
+stm32f446 = ["stm32f4/stm32f446"]
+stm32f469 = ["stm32f4/stm32f469"]
+stm32f479 = ["stm32f4/stm32f469"]
 
 ## Support monotonic timers and other stuff that can be used by [RTICv1 framework](https://crates.io/crates/cortex-m-rtic)
 rtic1 = ["dep:rtic-monotonic", "dep:systick-monotonic", "cortex-m-rtic"]
@@ -295,69 +165,6 @@ fsmc_lcd = ["dep:display-interface", "dep:display-interface-04"]
 
 ## SDIO peripheral support. See [sdio-host](https://crates.io/crates/sdio-host)
 sdio-host = ["dep:sdio-host"]
-
-dfsdm = []
-sai = []
-
-adc2 = []
-adc3 = []
-aes = []
-can1 = []
-can2 = []
-can3 = []
-cryp = []
-dac = []
-dcmi = []
-dfsdm1 = ["dfsdm"]
-dfsdm2 = ["dfsdm"]
-dsihost = []
-eth = []
-fmc = []
-fsmc = []
-fmpi2c1 = []
-gpiod = []
-gpioe = []
-gpiof = []
-gpiog = []
-gpioi = []
-gpioj = []
-gpiok = []
-i2c3 = []
-lptim1 = []
-ltdc = []
-quadspi = []
-otg-fs = []
-otg-hs = []
-rng = []
-sai1 = ["sai"]
-sai2 = ["sai"]
-sdio = []
-spi3 = []
-spi4 = []
-spi5 = []
-spi6 = []
-spdifrx = []
-tim1 = []
-tim2 = []
-tim3 = []
-tim4 = []
-tim5 = []
-tim6 = []
-tim7 = []
-tim8 = []
-tim9 = []
-tim10 = []
-tim11 = []
-tim12 = []
-tim13 = []
-tim14 = []
-usart3 = []
-uart4 = []
-uart5 = []
-uart7 = []
-uart8 = []
-uart9 = []
-uart10 = []
 
 [profile.dev]
 debug = true

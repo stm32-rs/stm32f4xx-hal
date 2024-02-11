@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#727]: https://github.com/stm32-rs/stm32f4xx-hal/pull/727
 
 ## [v0.19.0] - 2023-12-11
+ - Move private features to `build.rs`
 
 ### Added
 
