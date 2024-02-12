@@ -285,7 +285,12 @@ impl<I2C: Instance> I2c<I2C> {
     /// Sends START and Address for writing
     #[inline(always)]
     fn prepare_write(&self, addr: u8) -> Result<(), Error> {
-        // Wait until a previous STOP condition finishes
+        // Wait until a previous STOP condition finishes. When the previous
+        // STOP was generated inside an ISR (e.g. DMA interrupt handler),
+        // the ISR returns without waiting for the STOP condition to finish.
+        // It is possible that the STOP condition is still being generated
+        // when we reach here, so we wait until it finishes before proceeding
+        // to start a new transaction.
         while self.i2c.cr1.read().stop().bit_is_set() {}
 
         // Send a START condition
@@ -330,7 +335,12 @@ impl<I2C: Instance> I2c<I2C> {
 
     /// Sends START and Address for reading
     fn prepare_read(&self, addr: u8) -> Result<(), Error> {
-        // Wait until a previous STOP condition finishes
+        // Wait until a previous STOP condition finishes. When the previous
+        // STOP was generated inside an ISR (e.g. DMA interrupt handler),
+        // the ISR returns without waiting for the STOP condition to finish.
+        // It is possible that the STOP condition is still being generated
+        // when we reach here, so we wait until it finishes before proceeding
+        // to start a new transaction.
         while self.i2c.cr1.read().stop().bit_is_set() {}
 
         // Send a START condition and set ACK bit
@@ -449,6 +459,13 @@ impl<I2C: Instance> I2c<I2C> {
             // Receive last byte
             *last = self.recv_byte()?;
 
+            // Wait for the STOP to be sent. Otherwise, the interface will still be
+            // busy for a while after this function returns. Immediate following
+            // operations through the DMA handle might thus encounter `WouldBlock`
+            // error. Instead, we should make sure that the interface becomes idle
+            // before returning.
+            while self.i2c.cr1.read().stop().bit_is_set() {}
+
             // Fallthrough is success
             Ok(())
         } else {
@@ -468,6 +485,13 @@ impl<I2C: Instance> I2c<I2C> {
         // Send a STOP condition
         self.i2c.cr1.modify(|_, w| w.stop().set_bit());
 
+        // Wait for the STOP to be sent. Otherwise, the interface will still be
+        // busy for a while after this function returns. Immediate following
+        // operations through the DMA handle might thus encounter `WouldBlock`
+        // error. Instead, we should make sure that the interface becomes idle
+        // before returning.
+        while self.i2c.cr1.read().stop().bit_is_set() {}
+
         // Fallthrough is success
         Ok(())
     }
@@ -481,6 +505,13 @@ impl<I2C: Instance> I2c<I2C> {
 
         // Send a STOP condition
         self.i2c.cr1.modify(|_, w| w.stop().set_bit());
+
+        // Wait for the STOP to be sent. Otherwise, the interface will still be
+        // busy for a while after this function returns. Immediate following
+        // operations through the DMA handle might thus encounter `WouldBlock`
+        // error. Instead, we should make sure that the interface becomes idle
+        // before returning.
+        while self.i2c.cr1.read().stop().bit_is_set() {}
 
         // Fallthrough is success
         Ok(())
