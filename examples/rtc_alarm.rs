@@ -42,7 +42,7 @@ fn main() -> ! {
     // Set alarm A for 1 minute
     rtc.set_alarm(Alarm::AlarmA, today, time!(21:58:32))
         .unwrap();
-    rtc.enable_wakeup(8.secs());
+    rtc.enable_wakeup(8.secs().into());
     rtc.listen(&mut p.EXTI, Event::AlarmA);
     rtc.listen(&mut p.EXTI, Event::Wakeup);
 
