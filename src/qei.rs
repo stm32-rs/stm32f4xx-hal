@@ -111,18 +111,18 @@ macro_rules! hal {
                 self.ccmr1_input()
                     .write(|w| unsafe { w.cc1s().bits(0b01).cc2s().bits(0b01) });
                 // enable and configure to capture on rising edge
-                self.ccer.write(|w| {
+                self.ccer().write(|w| {
                     w.cc1e().set_bit().cc1p().clear_bit();
                     w.cc2e().set_bit().cc2p().clear_bit()
                 });
-                self.smcr.write(|w| w.sms().encoder_mode_3());
+                self.smcr().write(|w| w.sms().encoder_mode_3());
                 self.set_auto_reload(<$TIM as General>::Width::MAX as u32)
                     .unwrap();
-                self.cr1.write(|w| w.cen().set_bit());
+                self.cr1().write(|w| w.cen().set_bit());
             }
 
             fn read_direction(&self) -> bool {
-                self.cr1.read().dir().bit_is_clear()
+                self.cr1().read().dir().bit_is_clear()
             }
         }
     };

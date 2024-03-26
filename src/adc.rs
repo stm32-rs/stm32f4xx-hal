@@ -98,7 +98,7 @@
 //!
 //!     //Channel 1
 //!     //Disable the channel before configuring it
-//!     tim.ccer.modify(|_, w| w.cc1e().clear_bit());
+//!     tim.ccer().modify(|_, w| w.cc1e().clear_bit());
 //!
 //!     tim.ccmr1_output().modify(|_, w| w
 //!       //Preload enable for channel
@@ -591,7 +591,7 @@ macro_rules! adc {
         pub fn enable_vbat(&self) {
             unsafe {
                 let common = &(*pac::$common_type::ptr());
-                common.ccr.modify(|_, w| w.vbate().set_bit());
+                common.ccr().modify(|_, w| w.vbate().set_bit());
             }
         }
 
@@ -599,7 +599,7 @@ macro_rules! adc {
         pub fn disable_vbat(&self) {
             unsafe {
                 let common = &(*pac::$common_type::ptr());
-                common.ccr.modify(|_, w| w.vbate().clear_bit());
+                common.ccr().modify(|_, w| w.vbate().clear_bit());
             }
         }
 
@@ -610,7 +610,7 @@ macro_rules! adc {
             self.disable_vbat();
             unsafe {
                 let common = &(*pac::$common_type::ptr());
-                common.ccr.modify(|_, w| w.tsvrefe().set_bit());
+                common.ccr().modify(|_, w| w.tsvrefe().set_bit());
             }
         }
 
@@ -618,7 +618,7 @@ macro_rules! adc {
         pub fn disable_temperature_and_vref(&mut self) {
             unsafe {
                 let common = &(*pac::$common_type::ptr());
-                common.ccr.modify(|_, w| w.tsvrefe().clear_bit());
+                common.ccr().modify(|_, w| w.tsvrefe().clear_bit());
             }
         }
 
@@ -626,7 +626,7 @@ macro_rules! adc {
         pub fn temperature_and_vref_enabled(&mut self) -> bool {
             unsafe {
                 let common = &(*pac::$common_type::ptr());
-                common.ccr.read().tsvrefe().bit_is_set()
+                common.ccr().read().tsvrefe().bit_is_set()
             }
         }
     };
@@ -703,12 +703,12 @@ macro_rules! adc {
 
                 /// Returns if the adc is enabled
                 pub fn is_enabled(&self) -> bool {
-                    self.adc_reg.cr2.read().adon().bit_is_set()
+                    self.adc_reg.cr2().read().adon().bit_is_set()
                 }
 
                 /// Enables the adc
                 pub fn enable(&mut self) {
-                    self.adc_reg.cr2.modify(|_, w| w.adon().set_bit());
+                    self.adc_reg.cr2().modify(|_, w| w.adon().set_bit());
                 }
 
                 /// Disables the adc
@@ -718,7 +718,7 @@ macro_rules! adc {
                 /// the ADC before changing them. The reference manual for the chip I'm using only states
                 /// that the sequence registers are locked when they are being converted.
                 pub fn disable(&mut self) {
-                    self.adc_reg.cr2.modify(|_, w| w.adon().clear_bit());
+                    self.adc_reg.cr2().modify(|_, w| w.adon().clear_bit());
                 }
 
                 /// Starts conversion sequence. Waits for the hardware to indicate it's actually started.
@@ -726,9 +726,9 @@ macro_rules! adc {
                     self.enable();
                     self.clear_end_of_conversion_flag();
                     //Start conversion
-                    self.adc_reg.cr2.modify(|_, w| w.swstart().set_bit());
+                    self.adc_reg.cr2().modify(|_, w| w.swstart().set_bit());
 
-                    while !self.adc_reg.sr.read().strt().bit_is_set() {}
+                    while !self.adc_reg.sr().read().strt().bit_is_set() {}
                 }
 
                 /// Sets the clock for the adc
@@ -736,7 +736,7 @@ macro_rules! adc {
                     self.config.clock = clock;
                     unsafe {
                         let common = &(*pac::$common_type::ptr());
-                        common.ccr.modify(|_, w| w.adcpre().bits(clock as _));
+                        common.ccr().modify(|_, w| w.adcpre().bits(clock as _));
                     }
                 }
 
@@ -749,19 +749,19 @@ macro_rules! adc {
                         config::Resolution::Six => (1 << 6),
                     };
                     self.config.resolution = resolution;
-                    self.adc_reg.cr1.modify(|_, w| w.res().bits(resolution as _));
+                    self.adc_reg.cr1().modify(|_, w| w.res().bits(resolution as _));
                 }
 
                 /// Sets the DR register alignment to left or right
                 pub fn set_align(&mut self, align: config::Align) {
                     self.config.align = align;
-                    self.adc_reg.cr2.modify(|_, w| w.align().bit(align.into()));
+                    self.adc_reg.cr2().modify(|_, w| w.align().bit(align.into()));
                 }
 
                 /// Enables and disables scan mode
                 pub fn set_scan(&mut self, scan: config::Scan) {
                     self.config.scan = scan;
-                    self.adc_reg.cr1.modify(|_, w| w.scan().bit(scan.into()));
+                    self.adc_reg.cr1().modify(|_, w| w.scan().bit(scan.into()));
                 }
 
                 /// Sets which external trigger to use and if it is disabled, rising, falling or both
@@ -772,7 +772,7 @@ macro_rules! adc {
                         feature = "stm32f410",
                         feature = "stm32f411",
                     ))] // TODO: fix pac
-                    self.adc_reg.cr2.modify(|_, w| unsafe { w
+                    self.adc_reg.cr2().modify(|_, w| unsafe { w
                         .extsel().bits(extsel as _)
                         .exten().bits(edge as _)
                     });
@@ -781,7 +781,7 @@ macro_rules! adc {
                         feature = "stm32f410",
                         feature = "stm32f411",
                     )))]
-                    self.adc_reg.cr2.modify(|_, w| w
+                    self.adc_reg.cr2().modify(|_, w| w
                         .extsel().bits(extsel as _)
                         .exten().bits(edge as _)
                     );
@@ -790,7 +790,7 @@ macro_rules! adc {
                 /// Enables and disables continuous mode
                 pub fn set_continuous(&mut self, continuous: config::Continuous) {
                     self.config.continuous = continuous;
-                    self.adc_reg.cr2.modify(|_, w| w.cont().bit(continuous.into()));
+                    self.adc_reg.cr2().modify(|_, w| w.cont().bit(continuous.into()));
                 }
 
                 /// Sets DMA to disabled, single or continuous
@@ -801,7 +801,7 @@ macro_rules! adc {
                         config::Dma::Single => (false, true),
                         config::Dma::Continuous => (true, true),
                     };
-                    self.adc_reg.cr2.modify(|_, w| w
+                    self.adc_reg.cr2().modify(|_, w| w
                         //DDS stands for "DMA disable selection"
                         //0 means do one DMA then stop
                         //1 means keep sending DMA requests as long as DMA=1
@@ -819,13 +819,13 @@ macro_rules! adc {
                         config::Eoc::Conversion => (true, true),
                         config::Eoc::Sequence => (true, false),
                     };
-                    self.adc_reg.cr1.modify(|_, w| w.eocie().bit(en));
-                    self.adc_reg.cr2.modify(|_, w| w.eocs().bit(eocs));
+                    self.adc_reg.cr1().modify(|_, w| w.eocie().bit(en));
+                    self.adc_reg.cr2().modify(|_, w| w.eocs().bit(eocs));
                 }
 
                 /// Resets the end-of-conversion flag
                 pub fn clear_end_of_conversion_flag(&mut self) {
-                    self.adc_reg.sr.modify(|_, w| w.eoc().clear_bit());
+                    self.adc_reg.sr().modify(|_, w| w.eoc().clear_bit());
                 }
 
                 /// Sets the default sample time that is used for one-shot conversions.
@@ -837,18 +837,18 @@ macro_rules! adc {
 
                 /// Returns the current sequence length. Primarily useful for configuring DMA.
                 pub fn sequence_length(&mut self) -> u8 {
-                    self.adc_reg.sqr1.read().l().bits() + 1
+                    self.adc_reg.sqr1().read().l().bits() + 1
                 }
 
                 /// Reset the sequence
                 pub fn reset_sequence(&mut self) {
                     //The reset state is One conversion selected
-                    self.adc_reg.sqr1.modify(|_, w| w.l().bits(config::Sequence::One.into()));
+                    self.adc_reg.sqr1().modify(|_, w| w.l().bits(config::Sequence::One.into()));
                 }
 
                 /// Returns the address of the ADC data register. Primarily useful for configuring DMA.
                 pub fn data_register_address(&mut self) -> u32 {
-                    self.adc_reg.dr.as_ptr() as u32
+                    self.adc_reg.dr().as_ptr() as u32
                 }
 
                 /// Configure a channel for sampling.
@@ -863,7 +863,7 @@ macro_rules! adc {
                     CHANNEL: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
                 {
                     //Check the sequence is long enough
-                    self.adc_reg.sqr1.modify(|r, w| {
+                    self.adc_reg.sqr1().modify(|r, w| {
                         let prev: config::Sequence = r.l().bits().into();
                         if prev < sequence {
                             w.l().bits(sequence.into())
@@ -876,22 +876,22 @@ macro_rules! adc {
 
                     //Set the channel in the right sequence field
                     match sequence {
-                        config::Sequence::One      => self.adc_reg.sqr3.modify(|_, w| unsafe {w.sq1().bits(channel) }),
-                        config::Sequence::Two      => self.adc_reg.sqr3.modify(|_, w| unsafe {w.sq2().bits(channel) }),
-                        config::Sequence::Three    => self.adc_reg.sqr3.modify(|_, w| unsafe {w.sq3().bits(channel) }),
-                        config::Sequence::Four     => self.adc_reg.sqr3.modify(|_, w| unsafe {w.sq4().bits(channel) }),
-                        config::Sequence::Five     => self.adc_reg.sqr3.modify(|_, w| unsafe {w.sq5().bits(channel) }),
-                        config::Sequence::Six      => self.adc_reg.sqr3.modify(|_, w| unsafe {w.sq6().bits(channel) }),
-                        config::Sequence::Seven    => self.adc_reg.sqr2.modify(|_, w| unsafe {w.sq7().bits(channel) }),
-                        config::Sequence::Eight    => self.adc_reg.sqr2.modify(|_, w| unsafe {w.sq8().bits(channel) }),
-                        config::Sequence::Nine     => self.adc_reg.sqr2.modify(|_, w| unsafe {w.sq9().bits(channel) }),
-                        config::Sequence::Ten      => self.adc_reg.sqr2.modify(|_, w| unsafe {w.sq10().bits(channel) }),
-                        config::Sequence::Eleven   => self.adc_reg.sqr2.modify(|_, w| unsafe {w.sq11().bits(channel) }),
-                        config::Sequence::Twelve   => self.adc_reg.sqr2.modify(|_, w| unsafe {w.sq12().bits(channel) }),
-                        config::Sequence::Thirteen => self.adc_reg.sqr1.modify(|_, w| unsafe {w.sq13().bits(channel) }),
-                        config::Sequence::Fourteen => self.adc_reg.sqr1.modify(|_, w| unsafe {w.sq14().bits(channel) }),
-                        config::Sequence::Fifteen  => self.adc_reg.sqr1.modify(|_, w| unsafe {w.sq15().bits(channel) }),
-                        config::Sequence::Sixteen  => self.adc_reg.sqr1.modify(|_, w| unsafe {w.sq16().bits(channel) }),
+                        config::Sequence::One      => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq1().bits(channel) }),
+                        config::Sequence::Two      => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq2().bits(channel) }),
+                        config::Sequence::Three    => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq3().bits(channel) }),
+                        config::Sequence::Four     => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq4().bits(channel) }),
+                        config::Sequence::Five     => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq5().bits(channel) }),
+                        config::Sequence::Six      => self.adc_reg.sqr3().modify(|_, w| unsafe {w.sq6().bits(channel) }),
+                        config::Sequence::Seven    => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq7().bits(channel) }),
+                        config::Sequence::Eight    => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq8().bits(channel) }),
+                        config::Sequence::Nine     => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq9().bits(channel) }),
+                        config::Sequence::Ten      => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq10().bits(channel) }),
+                        config::Sequence::Eleven   => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq11().bits(channel) }),
+                        config::Sequence::Twelve   => self.adc_reg.sqr2().modify(|_, w| unsafe {w.sq12().bits(channel) }),
+                        config::Sequence::Thirteen => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq13().bits(channel) }),
+                        config::Sequence::Fourteen => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq14().bits(channel) }),
+                        config::Sequence::Fifteen  => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq15().bits(channel) }),
+                        config::Sequence::Sixteen  => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq16().bits(channel) }),
                     }
 
                     fn replace_bits(mut v: u32, offset: u32, width: u32, value: u32) -> u32 {
@@ -905,15 +905,15 @@ macro_rules! adc {
                     let st = sample_time as u32;
                     let ch = channel as u32;
                     match channel {
-                        0..=9   => self.adc_reg.smpr2.modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch, 3, st)) }),
-                        10..=18 => self.adc_reg.smpr1.modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch-10, 3, st)) }),
+                        0..=9   => self.adc_reg.smpr2().modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch, 3, st)) }),
+                        10..=18 => self.adc_reg.smpr1().modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch-10, 3, st)) }),
                         _ => unimplemented!(),
                     }
                 }
 
                 /// Returns the current sample stored in the ADC data register
                 pub fn current_sample(&self) -> u16 {
-                    self.adc_reg.dr.read().data().bits()
+                    self.adc_reg.dr().read().data().bits()
                 }
 
                 /// Converts a sample value to millivolts using calibrated VDDA and configured resolution.
@@ -941,12 +941,12 @@ macro_rules! adc {
                 /// # Panics
                 /// Will panic if there is no conversion started and the end-of-conversion bit is not set
                 pub fn wait_for_conversion_sequence(&self) {
-                    if !self.adc_reg.sr.read().strt().bit_is_set() && !self.adc_reg.sr.read().eoc().bit_is_set() {
+                    if !self.adc_reg.sr().read().strt().bit_is_set() && !self.adc_reg.sr().read().eoc().bit_is_set() {
                         panic!("Waiting for end-of-conversion but no conversion started");
                     }
-                    while !self.adc_reg.sr.read().eoc().bit_is_set() {}
+                    while !self.adc_reg.sr().read().eoc().bit_is_set() {}
                     //Clear the conversion started flag
-                    self.adc_reg.sr.modify(|_, w| w.strt().clear_bit());
+                    self.adc_reg.sr().modify(|_, w| w.strt().clear_bit());
                 }
 
                 /// Synchronously convert a single sample
@@ -955,13 +955,13 @@ macro_rules! adc {
                 where
                     PIN: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
                 {
-                    self.adc_reg.cr2.modify(|_, w| w
+                    self.adc_reg.cr2().modify(|_, w| w
                         .dma().clear_bit() //Disable dma
                         .cont().clear_bit() //Disable continuous mode
                         .exten().bits(config::TriggerMode::Disabled.into()) //Disable trigger
                         .eocs().clear_bit() //EOC is set at the end of the sequence
                     );
-                    self.adc_reg.cr1.modify(|_, w| w
+                    self.adc_reg.cr1().modify(|_, w| w
                         .scan().clear_bit() //Disable scan mode
                         .eocie().clear_bit() //Disable end of conversion interrupt
                     );
@@ -1017,7 +1017,7 @@ macro_rules! adc {
             unsafe impl PeriAddress for Adc<pac::$adc_type> {
                 #[inline(always)]
                 fn address(&self) -> u32 {
-                    self.adc_reg.dr.as_ptr() as u32
+                    self.adc_reg.dr().as_ptr() as u32
                 }
 
                 type MemSize = u16;

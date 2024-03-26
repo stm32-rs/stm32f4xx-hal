@@ -322,7 +322,7 @@ where
 
         unsafe {
             (*gpiox::<P>())
-                .ospeedr
+                .ospeedr()
                 .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)));
         }
     }
@@ -354,7 +354,7 @@ where
         let value = resistor as u32;
         unsafe {
             (*gpiox::<P>())
-                .pupdr
+                .pupdr()
                 .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (value << offset)));
         }
     }
@@ -435,22 +435,22 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     #[inline(always)]
     fn _set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(1 << N)) }
+        unsafe { (*gpiox::<P>()).bsrr().write(|w| w.bits(1 << N)) }
     }
     #[inline(always)]
     fn _set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*gpiox::<P>()).bsrr.write(|w| w.bits(1 << (16 + N))) }
+        unsafe { (*gpiox::<P>()).bsrr().write(|w| w.bits(1 << (16 + N))) }
     }
     #[inline(always)]
     fn _is_set_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*gpiox::<P>()).odr.read().bits() & (1 << N) == 0 }
+        unsafe { (*gpiox::<P>()).odr().read().bits() & (1 << N) == 0 }
     }
     #[inline(always)]
     fn _is_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*gpiox::<P>()).idr.read().bits() & (1 << N) == 0 }
+        unsafe { (*gpiox::<P>()).idr().read().bits() & (1 << N) == 0 }
     }
 }
 

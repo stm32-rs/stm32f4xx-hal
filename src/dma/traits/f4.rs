@@ -390,7 +390,7 @@ mod dfsdm1 {
     unsafe impl<const F: u8> PeriAddress for FLT<DFSDM1, F> {
         #[inline(always)]
         fn address(&self) -> u32 {
-            unsafe { (*DFSDM1::ptr()).flt[F as usize].rdatar.as_ptr() as u32 }
+            unsafe { (*DFSDM1::ptr()).flt(F as usize).rdatar().as_ptr() as u32 }
         }
 
         type MemSize = u32;
@@ -412,7 +412,7 @@ dma_map!(
 unsafe impl<const F: u8> PeriAddress for FLT<pac::DFSDM2, F> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*DFSDM2::ptr()).flt[F as usize].rdatar.as_ptr() as u32 }
+        unsafe { (*DFSDM2::ptr()).flt(F as usize).rdatar().as_ptr() as u32 }
     }
 
     type MemSize = u32;
@@ -484,7 +484,7 @@ mod sai1 {
     unsafe impl<const C: u8> PeriAddress for SAICH<SAI1, C> {
         #[inline(always)]
         fn address(&self) -> u32 {
-            unsafe { (*SAI1::ptr()).ch[C as usize].dr.as_ptr() as u32 }
+            unsafe { (*SAI1::ptr()).ch(C as usize).dr().as_ptr() as u32 }
         }
 
         type MemSize = u32;
@@ -501,7 +501,7 @@ dma_map!(
 unsafe impl<const C: u8> PeriAddress for SAICH<pac::SAI2, C> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*pac::SAI2::ptr()).ch[C as usize].dr.as_ptr() as u32 }
+        unsafe { (*pac::SAI2::ptr()).ch(C as usize).dr().as_ptr() as u32 }
     }
 
     type MemSize = u32;

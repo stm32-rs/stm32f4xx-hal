@@ -15,22 +15,22 @@ pub enum AccessMode {
 }
 
 impl AccessMode {
-    pub(crate) fn as_read_variant(&self) -> fsmc::btr::ACCMOD_A {
-        use fsmc::btr::ACCMOD_A;
+    pub(crate) fn as_read_variant(&self) -> fsmc::btr::ACCMOD {
+        use fsmc::btr::ACCMOD;
         match *self {
-            AccessMode::ModeA => ACCMOD_A::A,
-            AccessMode::ModeB => ACCMOD_A::B,
-            AccessMode::ModeC => ACCMOD_A::C,
-            AccessMode::ModeD => ACCMOD_A::D,
+            AccessMode::ModeA => ACCMOD::A,
+            AccessMode::ModeB => ACCMOD::B,
+            AccessMode::ModeC => ACCMOD::C,
+            AccessMode::ModeD => ACCMOD::D,
         }
     }
-    pub(crate) fn as_write_variant(&self) -> fsmc::bwtr::ACCMOD_A {
-        use fsmc::bwtr::ACCMOD_A;
+    pub(crate) fn as_write_variant(&self) -> fsmc::bwtr::ACCMOD {
+        use fsmc::bwtr::ACCMOD;
         match *self {
-            AccessMode::ModeA => ACCMOD_A::A,
-            AccessMode::ModeB => ACCMOD_A::B,
-            AccessMode::ModeC => ACCMOD_A::C,
-            AccessMode::ModeD => ACCMOD_A::D,
+            AccessMode::ModeA => ACCMOD::A,
+            AccessMode::ModeB => ACCMOD::B,
+            AccessMode::ModeC => ACCMOD::C,
+            AccessMode::ModeD => ACCMOD::D,
         }
     }
 }

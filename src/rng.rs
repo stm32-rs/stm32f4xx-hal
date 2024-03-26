@@ -94,7 +94,7 @@ impl RngExt for RNG {
             assert!(rng_clk >= (hclk / 16));
 
             // enable the RNG peripheral
-            self.cr.modify(|_, w| w.rngen().set_bit());
+            self.cr().modify(|_, w| w.rngen().set_bit());
         });
 
         Rng { rb: self }
@@ -124,7 +124,7 @@ impl Rng {
     /// May fail if, for example RNG_CLK is misconfigured.
     fn next_random_word(&mut self) -> Result<u32, ErrorKind> {
         loop {
-            let status = self.rb.sr.read();
+            let status = self.rb.sr().read();
             if status.cecs().bit() {
                 return Err(ErrorKind::ClockError);
             }
@@ -132,7 +132,7 @@ impl Rng {
                 return Err(ErrorKind::SeedError);
             }
             if status.drdy().bit() {
-                return Ok(self.rb.dr.read().rndata().bits());
+                return Ok(self.rb.dr().read().rndata().bits());
             }
         }
     }

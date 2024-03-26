@@ -83,25 +83,29 @@ use crate::pac::FSMC;
 /// A sub-bank of bank 1, with its own chip select output
 pub trait SubBank: sealed::SealedSubBank {}
 /// Sub-bank 1
-pub struct SubBank1(());
+#[non_exhaustive]
+pub struct SubBank1;
 impl sealed::SealedSubBank for SubBank1 {
     const BASE_ADDRESS: usize = 0x6000_0000;
 }
 impl SubBank for SubBank1 {}
 /// Sub-bank 2
-pub struct SubBank2(());
+#[non_exhaustive]
+pub struct SubBank2;
 impl sealed::SealedSubBank for SubBank2 {
     const BASE_ADDRESS: usize = 0x6400_0000;
 }
 impl SubBank for SubBank2 {}
 /// Sub-bank 3
-pub struct SubBank3(());
+#[non_exhaustive]
+pub struct SubBank3;
 impl sealed::SealedSubBank for SubBank3 {
     const BASE_ADDRESS: usize = 0x6800_0000;
 }
 impl SubBank for SubBank3 {}
 /// Sub-bank 4
-pub struct SubBank4(());
+#[non_exhaustive]
+pub struct SubBank4;
 impl sealed::SealedSubBank for SubBank4 {
     const BASE_ADDRESS: usize = 0x6c00_0000;
 }
@@ -213,18 +217,18 @@ where
         // and sub-banks of bank 1. This driver uses addresses in the different sub-banks of
         // bank 1. The configuration registers for "bank x" (like FMC_BCRx) actually refer to
         // sub-banks, not banks. We need to configure and enable all four of them.
-        configure_bcr1(&fsmc.bcr1);
-        configure_bcr(&fsmc.bcr2);
-        configure_bcr(&fsmc.bcr3);
-        configure_bcr(&fsmc.bcr4);
-        configure_btr(&fsmc.btr1, read_timing);
-        configure_btr(&fsmc.btr2, read_timing);
-        configure_btr(&fsmc.btr3, read_timing);
-        configure_btr(&fsmc.btr4, read_timing);
-        configure_bwtr(&fsmc.bwtr1, write_timing);
-        configure_bwtr(&fsmc.bwtr2, write_timing);
-        configure_bwtr(&fsmc.bwtr3, write_timing);
-        configure_bwtr(&fsmc.bwtr4, write_timing);
+        configure_bcr1(fsmc.bcr1());
+        configure_bcr(fsmc.bcr2());
+        configure_bcr(fsmc.bcr3());
+        configure_bcr(fsmc.bcr4());
+        configure_btr(fsmc.btr1(), read_timing);
+        configure_btr(fsmc.btr2(), read_timing);
+        configure_btr(fsmc.btr3(), read_timing);
+        configure_btr(fsmc.btr4(), read_timing);
+        configure_bwtr(fsmc.bwtr1(), write_timing);
+        configure_bwtr(fsmc.bwtr2(), write_timing);
+        configure_bwtr(fsmc.bwtr3(), write_timing);
+        configure_bwtr(fsmc.bwtr4(), write_timing);
 
         (FsmcLcd { pins, fsmc }, PINS::Lcds::conjure())
     }
