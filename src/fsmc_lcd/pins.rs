@@ -15,10 +15,12 @@
 //! * Read enable instead of output enable
 //! * Write enable
 
+use core::marker::PhantomData;
+
 use crate::gpio::alt::fsmc as alt;
 
 use super::sealed;
-use super::{Lcd, SubBank1};
+use super::{Lcd, SubBank1, Word};
 use crate::fsmc_lcd::{SubBank2, SubBank3, SubBank4};
 
 /// One, two, three, or four address pins
@@ -37,9 +39,9 @@ macro_rules! conjure {
     ($($($sb:ident),+;)+) => {
         $(
             #[allow(unused_parens)]
-            impl sealed::Conjure for ($(Lcd<$sb>),+) {
+            impl<WORD: Word> sealed::Conjure for ($(Lcd<$sb, WORD>),+) {
                 fn conjure() -> Self {
-                    ($(Lcd::<$sb>::new()),+)
+                    ($(Lcd::<$sb, WORD>::new()),+)
                 }
             }
         )+
@@ -88,7 +90,7 @@ conjure! {
 pub trait ChipSelectPins: sealed::Sealed {
     /// One, two, three, or four `Lcd<_>` objects associated with the sub-bank(s) that these pin(s)
     /// control
-    type Lcds: sealed::Conjure;
+    type Lcds<WORD: Word>: sealed::Conjure;
 }
 
 // The set of 4 chip selects has 15 subsets (excluding the empty set):
@@ -112,7 +114,7 @@ macro_rules! chipselect {
     ($($([$sb:ident, $Ne:ident, $i:tt]),+;)+) => {
         $(
             impl ChipSelectPins for ($(alt::$Ne),+) {
-                type Lcds = ($(Lcd<$sb>),+);
+                type Lcds<WORD: Word> = ($(Lcd<$sb, WORD>),+);
             }
             impl sealed::Sealed for ($(alt::$Ne),+) {}
         )+
@@ -120,16 +122,16 @@ macro_rules! chipselect {
 }
 
 impl ChipSelectPins for alt::Ne1 {
-    type Lcds = Lcd<SubBank1>;
+    type Lcds<WORD: Word> = Lcd<SubBank1, WORD>;
 }
 impl ChipSelectPins for alt::Ne2 {
-    type Lcds = Lcd<SubBank2>;
+    type Lcds<WORD: Word> = Lcd<SubBank2, WORD>;
 }
 impl ChipSelectPins for alt::Ne3 {
-    type Lcds = Lcd<SubBank3>;
+    type Lcds<WORD: Word> = Lcd<SubBank3, WORD>;
 }
 impl ChipSelectPins for alt::Ne4 {
-    type Lcds = Lcd<SubBank4>;
+    type Lcds<WORD: Word> = Lcd<SubBank4, WORD>;
 }
 chipselect! {
     [SubBank1, Ne1, 0], [SubBank2, Ne2, 1];
@@ -147,9 +149,8 @@ chipselect! {
 
 /// A set of data pins
 ///
-/// Currently this trait is only implemented for tuples of 16 data pins. In the future,
-/// this driver may support 8-bit mode using 8 data pins.
-pub trait DataPins: sealed::Sealed {}
+/// `WORD` is `u8` or `u16`
+pub trait DataPins<WORD: Word>: sealed::Sealed {}
 
 #[allow(unused)]
 pub struct DataPins16 {
@@ -171,7 +172,7 @@ pub struct DataPins16 {
     pub d15: alt::D15,
 }
 
-impl DataPins for DataPins16 {}
+impl DataPins<u16> for DataPins16 {}
 
 impl DataPins16 {
     #[allow(clippy::too_many_arguments)]
@@ -216,11 +217,69 @@ impl DataPins16 {
 }
 impl sealed::Sealed for DataPins16 {}
 
+#[allow(unused)]
+pub struct DataPins8 {
+    pub d0: alt::D0,
+    pub d1: alt::D1,
+    pub d2: alt::D2,
+    pub d3: alt::D3,
+    pub d4: alt::D4,
+    pub d5: alt::D5,
+    pub d6: alt::D6,
+    pub d7: alt::D7,
+}
+
+impl DataPins<u8> for DataPins8 {}
+
+impl DataPins8 {
+    #[allow(clippy::too_many_arguments)]
+    #[inline(always)]
+    pub fn new(
+        d0: impl Into<alt::D0>,
+        d1: impl Into<alt::D1>,
+        d2: impl Into<alt::D2>,
+        d3: impl Into<alt::D3>,
+        d4: impl Into<alt::D4>,
+        d5: impl Into<alt::D5>,
+        d6: impl Into<alt::D6>,
+        d7: impl Into<alt::D7>,
+    ) -> Self {
+        Self {
+            d0: d0.into(),
+            d1: d1.into(),
+            d2: d2.into(),
+            d3: d3.into(),
+            d4: d4.into(),
+            d5: d5.into(),
+            d6: d6.into(),
+            d7: d7.into(),
+        }
+    }
+
+    pub fn split(
+        self,
+    ) -> (
+        alt::D0,
+        alt::D1,
+        alt::D2,
+        alt::D3,
+        alt::D4,
+        alt::D5,
+        alt::D6,
+        alt::D7,
+    ) {
+        (
+            self.d0, self.d1, self.d2, self.d3, self.d4, self.d5, self.d6, self.d7,
+        )
+    }
+}
+impl sealed::Sealed for DataPins8 {}
+
 /// A set of pins used to interface with an LCD
 ///
 /// The `address` and `enable` fields can be individual pins, or tuples of 2, 3, or 4 pins.
 #[allow(unused)]
-pub struct LcdPins<D, AD, NE> {
+pub struct LcdPins<D, AD, NE, WORD> {
     /// The 16-bit data bus
     pub data: D,
     /// Address pin(s) (data/command)
@@ -231,13 +290,15 @@ pub struct LcdPins<D, AD, NE> {
     pub write_enable: alt::Nwe,
     /// Chip select / bank enable pin(s)
     pub chip_select: NE,
+    _word: PhantomData<WORD>,
 }
 
-impl<D, AD, NE> LcdPins<D, AD, NE>
+impl<D, AD, NE, WORD> LcdPins<D, AD, NE, WORD>
 where
-    D: DataPins,
+    D: DataPins<WORD>,
     AD: AddressPins,
     NE: ChipSelectPins,
+    WORD: Word,
 {
     pub fn new(
         data: D,
@@ -252,6 +313,7 @@ where
             read_enable: read_enable.into(),
             write_enable: write_enable.into(),
             chip_select,
+            _word: PhantomData,
         }
     }
     pub fn split(self) -> (D, AD, alt::Noe, alt::Nwe, NE) {
@@ -270,25 +332,27 @@ where
 /// This trait is implemented for the `LcdPins` struct that contains 16 data pins, 1 through 4
 /// address pins, 1 through 4 chip select / bank enable pins, an output enable pin, and a write
 /// enable pin.
-pub trait Pins: sealed::Sealed {
+pub trait Pins<WORD: Word>: sealed::Sealed {
     /// One, two, three, or four `Lcd<_>` objects associated with the sub-bank(s) that the chip
     /// select pin pin(s) control
     type Lcds: sealed::Conjure;
 }
 
-impl<D, AD, NE> Pins for LcdPins<D, AD, NE>
+impl<D, AD, NE, WORD> Pins<WORD> for LcdPins<D, AD, NE, WORD>
 where
-    D: DataPins,
+    D: DataPins<WORD>,
     AD: AddressPins,
     NE: ChipSelectPins,
+    WORD: Word,
 {
-    type Lcds = NE::Lcds;
+    type Lcds = NE::Lcds<WORD>;
 }
 
-impl<D, AD, NE> sealed::Sealed for LcdPins<D, AD, NE>
+impl<D, AD, NE, WORD> sealed::Sealed for LcdPins<D, AD, NE, WORD>
 where
-    D: DataPins,
+    D: DataPins<WORD>,
     AD: AddressPins,
     NE: ChipSelectPins,
+    WORD: Word,
 {
 }
