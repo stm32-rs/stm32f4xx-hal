@@ -8,7 +8,7 @@ use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
 use core::fmt;
 use core::marker::PhantomData;
-use fugit::{Duration, ExtU32, Rate, RateExtU32};
+use fugit::RateExtU32;
 use time::{Date, PrimitiveDateTime, Time, Weekday};
 
 /// Invalid input error
@@ -541,21 +541,22 @@ impl<CS: FrequencySource> Rtc<CS> {
         )
     }
 
-    /// Configures the wakeup timer to trigger periodically every `interval` seconds
+    /// Configures the wakeup timer to trigger periodically every `interval` duration
     ///
     /// # Panics
     ///
-    /// Panics if interval is greater than 2¹⁷-1.
+    /// Panics if interval is greater than 2¹⁷-1 seconds.
     pub fn enable_wakeup(&mut self, interval: fugit::MicrosDurationU64) {
         self.modify(false, |regs| {
             regs.cr.modify(|_, w| w.wute().clear_bit());
             regs.isr.modify(|_, w| w.wutf().clear_bit());
             while regs.isr.read().wutwf().bit_is_clear() {}
 
-            if interval < 32u32.secs::<1, 1_000_000>() {
+            use crate::pac::rtc::cr::WUCKSEL_A;
+            if interval < fugit::MicrosDurationU64::secs(32) {
                 // Use RTCCLK as the wakeup timer clock source
-                let frequency: Rate<u64, 1, 1> = (CS::frequency() / 2).into();
-                let freq_duration: Duration<u64, 1, 1000000> = frequency.into_duration();
+                let frequency: fugit::Hertz<u64> = (CS::frequency() / 2).into();
+                let freq_duration: fugit::MicrosDurationU64 = frequency.into_duration();
                 let ticks_per_interval = interval / freq_duration;
 
                 let mut prescaler = 0;
@@ -563,29 +564,30 @@ impl<CS: FrequencySource> Rtc<CS> {
                     prescaler += 1;
                 }
 
-                let prescaler_bits = match prescaler {
-                    0 => 0b11, // RTCCLK/2
-                    1 => 0b10, // RTCCLK/4
-                    2 => 0b01, // RTCCLK/8
-                    3 => 0b00, // RTCCLK/16
+                let wucksel = match prescaler {
+                    0 => WUCKSEL_A::Div2,
+                    1 => WUCKSEL_A::Div4,
+                    2 => WUCKSEL_A::Div8,
+                    3 => WUCKSEL_A::Div16,
                     _ => unreachable!("Longer durations should use ck_spre"),
                 };
 
                 let interval = u16::try_from((ticks_per_interval >> prescaler) - 1).unwrap();
 
-                regs.cr
-                    .modify(|_, w| unsafe { w.wucksel().bits(prescaler_bits) });
+                regs.cr.modify(|_, w| w.wucksel().variant(wucksel));
                 regs.wutr.write(|w| w.wut().bits(interval));
             } else {
                 // Use ck_spre (1Hz) as the wakeup timer clock source
                 let interval = interval.to_secs();
                 if interval > 1 << 16 {
-                    regs.cr.modify(|_, w| unsafe { w.wucksel().bits(0b110) });
+                    regs.cr
+                        .modify(|_, w| w.wucksel().variant(WUCKSEL_A::ClockSpareWithOffset));
                     let interval = u16::try_from(interval - (1 << 16) - 1)
                         .expect("Interval was too large for wakeup timer");
                     regs.wutr.write(|w| w.wut().bits(interval));
                 } else {
-                    regs.cr.modify(|_, w| unsafe { w.wucksel().bits(0b100) });
+                    regs.cr
+                        .modify(|_, w| w.wucksel().variant(WUCKSEL_A::ClockSpare));
                     let interval = u16::try_from(interval - 1)
                         .expect("Interval was too large for wakeup timer");
                     regs.wutr.write(|w| w.wut().bits(interval));
