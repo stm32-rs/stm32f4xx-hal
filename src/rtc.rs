@@ -6,9 +6,9 @@ use crate::bb;
 use crate::pac::rtc::{dr, tr, DR, TR};
 use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
-use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::marker::PhantomData;
+use fugit::RateExtU32;
 use time::{Date, PrimitiveDateTime, Time, Weekday};
 
 /// Invalid input error
@@ -67,8 +67,24 @@ pub struct Lse;
 /// RTC clock source LSI oscillator clock (type state)
 pub struct Lsi;
 
+pub trait FrequencySource {
+    fn frequency() -> fugit::Hertz<u32>;
+}
+
+impl FrequencySource for Lse {
+    fn frequency() -> fugit::Hertz<u32> {
+        32_768u32.Hz()
+    }
+}
+
+impl FrequencySource for Lsi {
+    fn frequency() -> fugit::Hertz<u32> {
+        32_000u32.Hz()
+    }
+}
+
 /// Real Time Clock peripheral
-pub struct Rtc<CS = Lse> {
+pub struct Rtc<CS: FrequencySource = Lse> {
     /// RTC Peripheral register
     pub regs: RTC,
     _clock_source: PhantomData<CS>,
@@ -239,7 +255,7 @@ impl Rtc<Lsi> {
     }
 }
 
-impl<CS> Rtc<CS> {
+impl<CS: FrequencySource> Rtc<CS> {
     fn unlock(&mut self, rcc: &RegisterBlock, pwr: &mut PWR) {
         // Enable the backup interface
         // Set APB1 - Bit 28 (PWREN)
@@ -525,28 +541,57 @@ impl<CS> Rtc<CS> {
         )
     }
 
-    /// Configures the wakeup timer to trigger periodically every `interval` seconds
+    /// Configures the wakeup timer to trigger periodically every `interval` duration
     ///
     /// # Panics
     ///
-    /// Panics if interval is greater than 2¹⁷-1.
-    pub fn enable_wakeup(&mut self, interval: fugit::SecsDurationU32) {
-        let interval = interval.ticks();
+    /// Panics if interval is greater than 2¹⁷-1 seconds.
+    pub fn enable_wakeup(&mut self, interval: fugit::MicrosDurationU64) {
         self.modify(false, |regs| {
             regs.cr.modify(|_, w| w.wute().clear_bit());
             regs.isr.modify(|_, w| w.wutf().clear_bit());
             while regs.isr.read().wutwf().bit_is_clear() {}
 
-            if interval > 1 << 16 {
-                regs.cr.modify(|_, w| unsafe { w.wucksel().bits(0b110) });
-                let interval = u16::try_from(interval - (1 << 16) - 1)
-                    .expect("Interval was too large for wakeup timer");
+            use crate::pac::rtc::cr::WUCKSEL_A;
+            if interval < fugit::MicrosDurationU64::secs(32) {
+                // Use RTCCLK as the wakeup timer clock source
+                let frequency: fugit::Hertz<u64> = (CS::frequency() / 2).into();
+                let freq_duration: fugit::MicrosDurationU64 = frequency.into_duration();
+                let ticks_per_interval = interval / freq_duration;
+
+                let mut prescaler = 0;
+                while ticks_per_interval >> prescaler > 1 << 16 {
+                    prescaler += 1;
+                }
+
+                let wucksel = match prescaler {
+                    0 => WUCKSEL_A::Div2,
+                    1 => WUCKSEL_A::Div4,
+                    2 => WUCKSEL_A::Div8,
+                    3 => WUCKSEL_A::Div16,
+                    _ => unreachable!("Longer durations should use ck_spre"),
+                };
+
+                let interval = u16::try_from((ticks_per_interval >> prescaler) - 1).unwrap();
+
+                regs.cr.modify(|_, w| w.wucksel().variant(wucksel));
                 regs.wutr.write(|w| w.wut().bits(interval));
             } else {
-                regs.cr.modify(|_, w| unsafe { w.wucksel().bits(0b100) });
-                let interval =
-                    u16::try_from(interval - 1).expect("Interval was too large for wakeup timer");
-                regs.wutr.write(|w| w.wut().bits(interval));
+                // Use ck_spre (1Hz) as the wakeup timer clock source
+                let interval = interval.to_secs();
+                if interval > 1 << 16 {
+                    regs.cr
+                        .modify(|_, w| w.wucksel().variant(WUCKSEL_A::ClockSpareWithOffset));
+                    let interval = u16::try_from(interval - (1 << 16) - 1)
+                        .expect("Interval was too large for wakeup timer");
+                    regs.wutr.write(|w| w.wut().bits(interval));
+                } else {
+                    regs.cr
+                        .modify(|_, w| w.wucksel().variant(WUCKSEL_A::ClockSpare));
+                    let interval = u16::try_from(interval - 1)
+                        .expect("Interval was too large for wakeup timer");
+                    regs.wutr.write(|w| w.wut().bits(interval));
+                }
             }
 
             regs.cr.modify(|_, w| w.wute().set_bit());
