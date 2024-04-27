@@ -65,7 +65,7 @@ mod timing;
 
 use core::marker::PhantomData;
 
-pub use self::pins::{AddressPins, ChipSelectPins, DataPins, DataPins16, LcdPins, Pins};
+pub use self::pins::{AddressPins, ChipSelectPins, DataPins, DataPins16, DataPins8, LcdPins, Pins};
 pub use self::timing::{AccessMode, Timing};
 
 use crate::rcc::{Enable, Reset};
@@ -108,14 +108,26 @@ impl sealed::SealedSubBank for SubBank4 {
 impl SubBank for SubBank4 {}
 
 /// An FMC or FSMC configured as an LCD interface
-pub struct FsmcLcd<PINS> {
+pub struct FsmcLcd<PINS, WORD: Word = u16> {
     pins: PINS,
     fsmc: FSMC,
+    _word: PhantomData<WORD>,
 }
 
-impl<PINS> FsmcLcd<PINS>
+pub trait Word {
+    const MWID: fsmc::bcr1::MWID_A;
+}
+
+impl Word for u8 {
+    const MWID: fsmc::bcr1::MWID_A = fsmc::bcr1::MWID_A::Bits8;
+}
+impl Word for u16 {
+    const MWID: fsmc::bcr1::MWID_A = fsmc::bcr1::MWID_A::Bits8;
+}
+
+impl<PINS, WORD: Word> FsmcLcd<PINS, WORD>
 where
-    PINS: Pins,
+    PINS: Pins<WORD>,
 {
     /// Configures the FSMC/FMC to interface with an LCD using the provided pins
     ///
@@ -213,7 +225,7 @@ where
         // and sub-banks of bank 1. This driver uses addresses in the different sub-banks of
         // bank 1. The configuration registers for "bank x" (like FMC_BCRx) actually refer to
         // sub-banks, not banks. We need to configure and enable all four of them.
-        configure_bcr1(&fsmc.bcr1);
+        configure_bcr1::<WORD>(&fsmc.bcr1);
         configure_bcr(&fsmc.bcr2);
         configure_bcr(&fsmc.bcr3);
         configure_bcr(&fsmc.bcr4);
@@ -226,7 +238,14 @@ where
         configure_bwtr(&fsmc.bwtr3, write_timing);
         configure_bwtr(&fsmc.bwtr4, write_timing);
 
-        (FsmcLcd { pins, fsmc }, PINS::Lcds::conjure())
+        (
+            FsmcLcd {
+                pins,
+                fsmc,
+                _word: PhantomData,
+            },
+            PINS::Lcds::conjure(),
+        )
     }
 
     /// Reunites this FsmcLcd and all its associated LCDs, and returns the FSMC and pins for other
@@ -246,54 +265,39 @@ where
 }
 
 /// Configures an SRAM/NOR-Flash chip-select control register for LCD interface use
-fn configure_bcr1(bcr: &fsmc::BCR1) {
+fn configure_bcr1<WORD: Word>(bcr: &fsmc::BCR1) {
     bcr.write(|w| {
-        w
-            // The write fifo and WFDIS bit are missing from some models.
-            // Where present, the FIFO is enabled by default.
-            // ------------
-            // Disable synchronous writes
-            .cburstrw()
-            .disabled()
-            // Don't split burst transactions (doesn't matter for LCD mode)
-            .cpsize()
-            .no_burst_split()
-            // Ignore wait signal (asynchronous mode)
-            .asyncwait()
-            .disabled()
-            // Enable extended mode, for different read and write timings
-            .extmod()
-            .enabled()
-            // Ignore wait signal (synchronous mode)
-            .waiten()
-            .disabled()
-            // Allow write operations
-            .wren()
-            .enabled()
-            // Default wait timing
-            .waitcfg()
-            .before_wait_state()
-            // Default wait polarity
-            .waitpol()
-            .active_low()
-            // Disable burst reads
-            .bursten()
-            .disabled()
-            // Enable NOR flash operations
-            .faccen()
-            .enabled()
-            // 16-bit bus width
-            .mwid()
-            .bits16()
-            // NOR flash mode (compatible with LCD controllers)
-            .mtyp()
-            .flash()
-            // Address and data not multiplexed
-            .muxen()
-            .disabled()
-            // Enable this memory bank
-            .mbken()
-            .enabled()
+        // The write fifo and WFDIS bit are missing from some models.
+        // Where present, the FIFO is enabled by default.
+        // ------------
+        // Disable synchronous writes
+        w.cburstrw().disabled();
+        // Don't split burst transactions (doesn't matter for LCD mode)
+        w.cpsize().no_burst_split();
+        // Ignore wait signal (asynchronous mode)
+        w.asyncwait().disabled();
+        // Enable extended mode, for different read and write timings
+        w.extmod().enabled();
+        // Ignore wait signal (synchronous mode)
+        w.waiten().disabled();
+        // Allow write operations
+        w.wren().enabled();
+        // Default wait timing
+        w.waitcfg().before_wait_state();
+        // Default wait polarity
+        w.waitpol().active_low();
+        // Disable burst reads
+        w.bursten().disabled();
+        // Enable NOR flash operations
+        w.faccen().enabled();
+        // 8/16-bit bus width
+        w.mwid().variant(WORD::MWID);
+        // NOR flash mode (compatible with LCD controllers)
+        w.mtyp().flash();
+        // Address and data not multiplexed
+        w.muxen().disabled();
+        // Enable this memory bank
+        w.mbken().enabled()
     })
 }
 
@@ -384,13 +388,13 @@ fn configure_bwtr(bwtr: &fsmc::BWTR, write_timing: &Timing) {
 ///
 /// This struct provides low-level read and write commands that can be used to implement
 /// drivers for LCD controllers. Each function corresponds to exactly one transaction on the bus.
-pub struct Lcd<S> {
+pub struct Lcd<S, WORD> {
     /// Phantom S
     ///
     /// S determines the chip select signal to use, and the addresses used with that signal.
-    _sub_bank: PhantomData<S>,
+    _sub_bank: PhantomData<(S, WORD)>,
 }
-impl<S> Lcd<S> {
+impl<S, WORD: Word> Lcd<S, WORD> {
     fn new() -> Self {
         Self {
             _sub_bank: PhantomData,
@@ -398,31 +402,31 @@ impl<S> Lcd<S> {
     }
 }
 
-impl<S> Lcd<S>
+impl<S, WORD: Word> Lcd<S, WORD>
 where
     S: SubBank,
 {
     /// Writes a value with the data/command (address) signals set high
-    pub fn write_data(&mut self, value: u16) {
+    pub fn write_data(&mut self, value: WORD) {
         unsafe {
-            core::ptr::write_volatile(S::DATA_ADDRESS as *mut u16, value);
+            core::ptr::write_volatile(S::DATA_ADDRESS as *mut WORD, value);
         }
     }
 
     /// Writes a value with the data/command (address) signals set low
-    pub fn write_command(&mut self, value: u16) {
+    pub fn write_command(&mut self, value: WORD) {
         unsafe {
-            core::ptr::write_volatile(S::COMMAND_ADDRESS as *mut u16, value);
+            core::ptr::write_volatile(S::COMMAND_ADDRESS as *mut WORD, value);
         }
     }
 
     /// Reads a value with the data/command (address) signals set high
-    pub fn read_data(&self) -> u16 {
-        unsafe { core::ptr::read_volatile(S::DATA_ADDRESS as *const u16) }
+    pub fn read_data(&self) -> WORD {
+        unsafe { core::ptr::read_volatile(S::DATA_ADDRESS as *const WORD) }
     }
 
     /// Reads a value with the data/command (address) signals set low
-    pub fn read_command(&self) -> u16 {
-        unsafe { core::ptr::read_volatile(S::COMMAND_ADDRESS as *const u16) }
+    pub fn read_command(&self) -> WORD {
+        unsafe { core::ptr::read_volatile(S::COMMAND_ADDRESS as *const WORD) }
     }
 }
