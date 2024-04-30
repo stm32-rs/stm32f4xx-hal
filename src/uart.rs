@@ -16,7 +16,7 @@
 
 use crate::pac;
 
-use crate::serial::uart_impls::RegisterBlockUart;
+use crate::serial::uart_impls::{RegisterBlockImpl, RegisterBlockUart};
 
 pub use crate::serial::{config, Error, Event, Instance, NoRx, NoTx, Rx, RxISR, Serial, Tx, TxISR};
 pub use config::Config;
@@ -52,6 +52,10 @@ macro_rules! halUart {
                     })
                 });
             }
+
+            fn peri_address() -> u32 {
+                unsafe { (*Self::ptr()).peri_address() }
+            }
         }
     };
 }
@@ -74,6 +78,10 @@ impl Instance for pac::UART4 {
 
     fn set_stopbits(&self, _bits: config::StopBits) {
         todo!()
+    }
+
+    fn peri_address() -> u32 {
+        unsafe { (*Self::ptr()).peri_address() }
     }
 }
 

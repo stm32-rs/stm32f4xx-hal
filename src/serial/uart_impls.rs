@@ -29,6 +29,8 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + C
     fn ptr() -> *const Self::RegisterBlock;
     #[doc(hidden)]
     fn set_stopbits(&self, bits: config::StopBits);
+    #[doc(hidden)]
+    fn peri_address() -> u32;
 }
 
 pub trait RegisterBlockImpl: crate::Sealed {
@@ -54,6 +56,20 @@ pub trait RegisterBlockImpl: crate::Sealed {
     }
 
     fn flush(&self) -> nb::Result<(), Error>;
+
+    fn bread_all_u8(&self, buffer: &mut [u8]) -> Result<(), Error> {
+        for b in buffer.iter_mut() {
+            *b = nb::block!(self.read_u8())?;
+        }
+        Ok(())
+    }
+
+    fn bread_all_u16(&self, buffer: &mut [u16]) -> Result<(), Error> {
+        for b in buffer.iter_mut() {
+            *b = nb::block!(self.read_u16())?;
+        }
+        Ok(())
+    }
 
     fn bwrite_all_u8(&self, buffer: &[u8]) -> Result<(), Error> {
         for &b in buffer {
@@ -87,6 +103,9 @@ pub trait RegisterBlockImpl: crate::Sealed {
     }
     fn clear_flags(&self, flags: BitFlags<CFlag>);
     fn clear_idle_interrupt(&self);
+    fn check_and_clear_error_flags(&self) -> Result<(), Error>;
+    fn enable_error_interrupt_generation(&self);
+    fn disable_error_interrupt_generation(&self);
 
     // Listen
     fn listen_event(&self, disable: Option<BitFlags<Event>>, enable: Option<BitFlags<Event>>);
@@ -292,6 +311,31 @@ macro_rules! uartCommon {
             fn clear_idle_interrupt(&self) {
                 let _ = self.sr.read();
                 let _ = self.dr.read();
+            }
+
+            fn check_and_clear_error_flags(&self) -> Result<(), Error> {
+                let sr = self.sr.read();
+                let _ = self.dr.read();
+
+                if sr.ore().bit_is_set() {
+                    Err(Error::Overrun)
+                } else if sr.nf().bit_is_set() {
+                    Err(Error::Noise)
+                } else if sr.fe().bit_is_set() {
+                    Err(Error::FrameFormat)
+                } else if sr.pe().bit_is_set() {
+                    Err(Error::Parity)
+                } else {
+                    Ok(())
+                }
+            }
+
+            fn enable_error_interrupt_generation(&self) {
+                self.cr3.modify(|_, w| w.eie().enabled());
+            }
+
+            fn disable_error_interrupt_generation(&self) {
+                self.cr3.modify(|_, w| w.eie().disabled());
             }
 
             fn listen_event(

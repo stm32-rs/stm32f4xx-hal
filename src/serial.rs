@@ -30,6 +30,8 @@ use crate::pac;
 use crate::gpio::NoPin;
 use crate::rcc::Clocks;
 
+pub mod dma;
+
 /// Serial error kind
 ///
 /// This represents a common set of serial operation errors. HAL implementations are
@@ -272,6 +274,10 @@ macro_rules! halUsart {
                         StopBits::STOP2 => STOP_A::Stop2,
                     })
                 });
+            }
+
+            fn peri_address() -> u32 {
+                unsafe { (*(<$USART>::ptr() as *const Self::RegisterBlock)).peri_address() }
             }
         }
     };
