@@ -507,6 +507,10 @@ name = "serial-9bit"
 required-features = ["gpiod"] # stm32f411
 
 [[example]]
+name = "serial-dma"
+required-features = ["stm32f407"]
+
+[[example]]
 name = "spi-dma"
 required-features = ["stm32f411"]
 
