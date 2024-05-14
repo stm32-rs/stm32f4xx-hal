@@ -484,7 +484,7 @@ where
     /// Set the polarity of the active state for the complementary PWM output of the advanced timer on channel `channel`
     #[inline]
     pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
+        TIM::set_nchannel_polarity(PINS::check_complementary_used(channel) as u8, p);
     }
 }
 
