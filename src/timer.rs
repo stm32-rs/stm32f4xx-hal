@@ -30,6 +30,22 @@ pub use pwm_input::PwmInput;
 pub mod monotonic;
 #[cfg(feature = "rtic1")]
 pub use monotonic::*;
+#[cfg(feature = "rtic2")]
+#[cfg(any(
+    feature = "rtic-tim2",
+    feature = "rtic-tim3",
+    feature = "rtic-tim4",
+    feature = "rtic-tim5"
+))]
+pub mod monotonics;
+#[cfg(feature = "rtic2")]
+#[cfg(any(
+    feature = "rtic-tim2",
+    feature = "rtic-tim3",
+    feature = "rtic-tim4",
+    feature = "rtic-tim5"
+))]
+pub use monotonics::*;
 
 mod hal_02;
 mod hal_1;

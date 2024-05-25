@@ -15,7 +15,4 @@ jobs:
       - name: Use the latest stable rustc
         run: rustup update stable && rustup default stable
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+      - run: cargo fmt --all -- --check

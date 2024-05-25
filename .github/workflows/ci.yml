@@ -46,7 +46,7 @@ jobs:
           - rust: nightly
             mcu: stm32f479
             experimental: true
-            features: usb_fs,sdio-host,can,i2s,fsmc_lcd,rtic2
+            features: usb_fs,sdio-host,can,i2s,fsmc_lcd,rtic2,rtic-tim2
 
     steps:
       - uses: actions/checkout@v4
@@ -58,9 +58,6 @@ jobs:
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: v0.19.0-${{ matrix.mcu }}
+          key: v0.20.0-${{ matrix.mcu }}
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --features=${{ matrix.mcu }},${{ matrix.features }} --examples
+      - run: cargo check --features=${{ matrix.mcu }},${{ matrix.features }} --examples

@@ -4,13 +4,19 @@
 
 use defmt_rtt as _;
 use panic_probe as _;
-use rtic::app;
-use rtic_monotonics::systick::*;
+use rtic_time::Monotonic;
 use stm32f4xx_hal::{
     gpio::{Output, PC13},
     pac,
     prelude::*,
 };
+type Mono = stm32f4xx_hal::timer::MonoTimerUs<pac::TIM2>;
+
+// Uncomment if use SysTick as monotonic timer
+//use rtic_monotonics::systick::prelude::*;
+//systick_monotonic!(Mono, 1000);
+
+use rtic::app;
 
 #[app(device = pac, dispatchers = [USART1], peripherals = true)]
 mod app {
@@ -25,14 +31,15 @@ mod app {
     }
 
     #[init]
-    fn init(ctx: init::Context) -> (Shared, Local) {
+    fn init(mut ctx: init::Context) -> (Shared, Local) {
         let rcc = ctx.device.RCC.constrain();
-        let freq = 48.MHz();
-        let _clocks = rcc.cfgr.sysclk(freq).freeze();
+        let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
 
-        // Initialize the systick interrupt & obtain the token to prove that we did
-        let systick_mono_token = rtic_monotonics::create_systick_token!();
-        Systick::start(ctx.core.SYST, freq.to_Hz(), systick_mono_token);
+        // Create TIM2 monotonic and initialize timer queue
+        ctx.device.TIM2.monotonic_us(&mut ctx.core.NVIC, &clocks);
+
+        // Uncomment if use SysTick as monotonic timer
+        //Mono::start(ctx.core.SYST, 48_000_000);
 
         let gpioc = ctx.device.GPIOC.split();
         let led = gpioc.pc13.into_push_pull_output();
@@ -48,7 +55,12 @@ mod app {
             ctx.local.led.toggle();
             *ctx.local.count += 1;
             defmt::info!("Tick {}", *ctx.local.count);
-            Systick::delay(500.millis()).await;
+            Mono::delay(500.millis().into()).await;
         }
     }
 }
+
+//Add this to Cargo.toml if use SysTick as monotonic timer
+//[dependencies.rtic-monotonics]
+//version = "2.0"
+//features = ["cortex-m-systick"]
