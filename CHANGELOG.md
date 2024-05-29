@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Implement `embedded_hal::i2c::I2c` for `I2cMasterDma` [#838]
  - Back to `stm32f4`
  - Implement `Ptr`, `Sealed`, `Steal` for generic `Periph` [#834]
  - Unmacro `Adc` [#832]
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#832]: https://github.com/stm32-rs/stm32f4xx-hal/pull/832
 [#833]: https://github.com/stm32-rs/stm32f4xx-hal/pull/833
 [#834]: https://github.com/stm32-rs/stm32f4xx-hal/pull/834
+[#838]: https://github.com/stm32-rs/stm32f4xx-hal/pull/838
 
 ## [v0.22.1] - 2024-11-03
 
