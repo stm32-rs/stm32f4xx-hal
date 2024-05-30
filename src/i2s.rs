@@ -449,8 +449,12 @@ dual_i2s!(pac::SPI3, pac::I2S3EXT, DualI2s3, i2s3, i2s_apb1_clk);
 mod dma {
     use super::*;
     use crate::dma::traits::{DMASet, PeriAddress};
+    use crate::pac::spi1::RegisterBlock;
+    use core::marker::PhantomData;
     use core::ops::Deref;
-    use stm32_i2s_v12x::driver::I2sDriver;
+    use stm32_i2s_v12x::driver::{I2sCore, I2sDriver};
+    use stm32_i2s_v12x::transfer::{Ext, Main};
+    use stm32_i2s_v12x::DualI2sPeripheral;
 
     /// I2S DMA reads from and writes to the data register
     unsafe impl<SPI: Instance, MS, TR, STD> PeriAddress for I2sDriver<I2s<SPI>, MS, TR, STD>
@@ -474,4 +478,68 @@ mod dma {
         SPI: DMASet<STREAM, CHANNEL, DIR>,
     {
     }
+
+    pub trait DualI2sDmaTargetExt<I, PART, MS, DIR, STD> {
+        fn dma_target(&self) -> DualI2sDmaTarget<I, PART, MS, DIR, STD>;
+    }
+    impl<I, PART, MS, DIR, STD> DualI2sDmaTargetExt<I, PART, MS, DIR, STD>
+        for I2sCore<I, PART, MS, DIR, STD>
+    {
+        fn dma_target(&self) -> DualI2sDmaTarget<I, PART, MS, DIR, STD> {
+            DualI2sDmaTarget {
+                _dual_i2s_peripheral: PhantomData,
+                _part: PhantomData,
+                _ms: PhantomData,
+                _dir: PhantomData,
+                _std: PhantomData,
+            }
+        }
+    }
+
+    ///  - `I`: The [DualI2sPeripheral] controlled by the I2sCore.
+    ///  - `PART`: `Main` or `Ext`. The part of [DualI2sPeripheral] controlled by I2sCore.
+    ///  - `MS`: `Master` or `Slave`. The role of the I2sCore. Only a `Main` I2sCore can be Master.
+    ///  - `DIR` : `Transmit` or `Receive`. Communication direction.
+    ///  - `STD`: I2S standard, eg `Philips`
+    pub struct DualI2sDmaTarget<I, PART, MS, DIR, STD> {
+        _dual_i2s_peripheral: PhantomData<I>,
+        _part: PhantomData<PART>,
+        _ms: PhantomData<MS>,
+        _dir: PhantomData<DIR>,
+        _std: PhantomData<STD>,
+    }
+
+    macro_rules! dual_dma {
+        ($ext: ty, $reg: ident) => {
+            /// I2S DMA reads from and writes to the data register
+            unsafe impl<SPIext: DualInstance, MS, TR, STD> PeriAddress
+                for DualI2sDmaTarget<DualI2s<SPIext>, $ext, MS, TR, STD>
+            where
+                DualI2s<SPIext>: DualI2sPeripheral,
+            {
+                /// SPI_DR is only 16 bits. Multiple transfers are needed for a 24-bit or 32-bit sample,
+                /// as explained in the reference manual.
+                type MemSize = u16;
+
+                fn address(&self) -> u32 {
+                    let reg = unsafe { &*(DualI2s::$reg as *const RegisterBlock) };
+                    (&reg.dr) as *const _ as u32
+                }
+            }
+        };
+    }
+
+    dual_dma!(Main, MAIN_REGISTERS);
+    dual_dma!(Ext, EXT_REGISTERS);
+
+    /// DMA is available for I2S based on the underlying implementations for SPI
+    unsafe impl<SPIext: DualInstance, PART, MS, TR, STD, STREAM, const CHANNEL: u8, DIR>
+        DMASet<STREAM, CHANNEL, DIR> for DualI2sDmaTarget<DualI2s<SPIext>, PART, MS, TR, STD>
+    where
+        SPIext: DMASet<STREAM, CHANNEL, DIR>,
+    {
+    }
 }
+
+#[cfg(feature = "stm32_i2s_v12x")]
+pub use dma::{DualI2sDmaTarget, DualI2sDmaTargetExt};

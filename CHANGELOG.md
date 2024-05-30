@@ -7,19 +7,31 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
  - add trait bound `RegisterBlockImpl` to type `RegisterBlock` associated with `serial::Instance` [#732]
  - remove unneeded trait bound for methods that take in a `serial::Instance` and use the associated `RegisterBlock`
  - bump `sdio-host` to 0.9.0, refactor SDIO initialization [#734]
  - Added non-blocking serial based on DMA [#738]
  - use RTCCLK for RTC wakeup timer for short durations [#746]
+ - Enable DMA for DualI2sDriver main() and ext() respectively [#684]
  - Support 8-bit FMC data bus
- - Port `rtic-time::Monotonic` implementations from `rtic-monotonics` for TIMx
+ - Port `rtic-time::Monotonic` implementations from `rtic-monotonics` for TIMx [#756]
 
 ### Fixed
 
  - Fix transmission termination in I2C master DMA read [#736]
  - Prevent starting a new I2C transmission before previous stop finishes [#737]
  - Fix complementary output polarity for PWM [#754]
+
+ [#684]: https://github.com/stm32-rs/stm32f4xx-hal/pull/684
+ [#732]: https://github.com/stm32-rs/stm32f4xx-hal/pull/732
+ [#734]: https://github.com/stm32-rs/stm32f4xx-hal/pull/734
+ [#736]: https://github.com/stm32-rs/stm32f4xx-hal/pull/736
+ [#737]: https://github.com/stm32-rs/stm32f4xx-hal/pull/737
+ [#738]: https://github.com/stm32-rs/stm32f4xx-hal/pull/738
+ [#746]: https://github.com/stm32-rs/stm32f4xx-hal/pull/746
+ [#756]: https://github.com/stm32-rs/stm32f4xx-hal/pull/756
 
 ## [v0.20.0] - 2024-01-14
 
