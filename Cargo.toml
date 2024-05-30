@@ -3,19 +3,10 @@ edition = "2021"
 rust-version = "1.60"
 
 authors = ["Daniel Egger <daniel@eggers-club.de>"]
-categories = [
-    "embedded",
-    "hardware-support",
-    "no-std",
-]
+categories = ["embedded", "hardware-support", "no-std"]
 description = "Peripheral access API for STM32F4 series microcontrollers"
 documentation = "https://docs.rs/stm32f4xx-hal"
-keywords = [
-    "arm",
-    "cortex-m",
-    "stm32f4xx",
-    "hal",
-]
+keywords = ["arm", "cortex-m", "stm32f4xx", "hal"]
 license = "0BSD"
 name = "stm32f4xx-hal"
 readme = "README.md"
@@ -23,18 +14,29 @@ repository = "https://github.com/stm32-rs/stm32f4xx-hal"
 version = "0.20.0"
 
 [package.metadata.docs.rs]
-features = ["stm32f429", "usb_fs", "can", "i2s", "fsmc_lcd", "rtic1", "defmt", "sdio-host"]
+features = [
+    "stm32f429",
+    "usb_fs",
+    "can",
+    "i2s",
+    "fsmc_lcd",
+    "rtic1",
+    "defmt",
+    "sdio-host",
+]
 targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]
 defmt = { version = "0.3.5", optional = true }
 bxcan = { version = "0.7", optional = true }
-cortex-m = { version = "0.7.7", features = ["critical-section-single-core"]}
+cortex-m = { version = "0.7.7", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7.3"
 nb = "1.1"
 rand_core = "0.6.4"
 stm32f4 = "0.15.1"
-synopsys-usb-otg = { version = "0.4.0", features = ["cortex-m"], optional = true }
+synopsys-usb-otg = { version = "0.4.0", features = [
+    "cortex-m",
+], optional = true }
 sdio-host = { version = "0.9.0", optional = true }
 embedded-dma = "0.2.0"
 bare-metal = { version = "1" }
@@ -46,11 +48,14 @@ fugit-timer = "0.1.3"
 # rtic1
 rtic-monotonic = { version = "1.0", optional = true }
 systick-monotonic = { version = "1.0.1", optional = true }
-cortex-m-rtic = { version = "1.1.4", features = ["test-critical-section"], optional = true }
+cortex-m-rtic = { version = "1.1.4", features = [
+    "test-critical-section",
+], optional = true }
 # rtic2
-rtic-time = { version = "1.3", optional = true }
-rtic-monotonics = { version = "1.5", features = ["cortex-m-systick"], optional = true }
+rtic-time = { version = "2.0", optional = true }
+embedded-hal-async = { version = "1.0", optional = true }
 rtic = { version = "2.0.1", features = ["thumbv7-backend"], optional = true }
+atomic-polyfill = { version = "1.0.3", optional = true }
 
 enumflags2 = "0.7.8"
 embedded-storage = "0.3"
@@ -79,7 +84,7 @@ optional = true
 [dev-dependencies]
 defmt = "0.3.4"
 defmt-rtt = "0.4.0"
-panic-probe = { version = "0.3.0", features = [ "print-defmt" ] }
+panic-probe = { version = "0.3.0", features = ["print-defmt"] }
 panic-semihosting = "0.6.0"
 cortex-m-semihosting = "0.5.0"
 heapless = "0.8"
@@ -116,7 +121,7 @@ features = ["macros"]
 
 # Note: stm32f4 has only one feature for some very similar device families,
 # so it's intended for e.g. stm32f405/415 to both enable stm32f4/stm32f405.
-stm32f401 = ["stm32f4/stm32f401", "gpio-f401",]
+stm32f401 = ["stm32f4/stm32f401", "gpio-f401"]
 stm32f405 = ["stm32f4/stm32f405", "gpio-f417"]
 stm32f407 = ["stm32f4/stm32f407", "gpio-f417"]
 stm32f415 = ["stm32f4/stm32f405", "gpio-f417", "cryp"]
@@ -135,31 +140,58 @@ stm32f469 = ["stm32f4/stm32f469", "gpio-f469"]
 stm32f479 = ["stm32f4/stm32f469", "gpio-f469", "cryp"]
 
 gpio-f401 = [
-    "gpiod", "gpioe",
+    "gpiod",
+    "gpioe",
     "i2c3",
     "otg-fs",
     "sdio",
-    "spi3", "spi4",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11",
+    "spi3",
+    "spi4",
+    "tim1",
+    "tim2",
+    "tim3",
+    "tim4",
+    "tim5",
+    "tim9",
+    "tim10",
+    "tim11",
 ]
 gpio-f410 = [
     "dac",
     "fmpi2c1",
     "lptim1",
     "spi5",
-    "tim1", "tim5", "tim6", "tim9", "tim11",
+    "tim1",
+    "tim5",
+    "tim6",
+    "tim9",
+    "tim11",
 ]
 gpio-f411 = [
-    "gpiod", "gpioe", # "gpioi",
+    "gpiod",
+    "gpioe",  # "gpioi",
     "i2c3",
     "otg-fs",
     "sdio",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim9", "tim10", "tim11",
-    "spi3", "spi4", "spi5",
+    "tim1",
+    "tim2",
+    "tim3",
+    "tim4",
+    "tim5",
+    "tim9",
+    "tim10",
+    "tim11",
+    "spi3",
+    "spi4",
+    "spi5",
 ]
 gpio-f412 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "can1", "can2",
+    "gpiod",
+    "gpioe",
+    "gpiof",
+    "gpiog",
+    "can1",
+    "can2",
     "dfsdm1",
     "fmpi2c1",
     "fsmc",
@@ -168,13 +200,33 @@ gpio-f412 = [
     "otg-fs",
     "rng",
     "sdio",
-    "spi3", "spi4", "spi5",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
+    "spi3",
+    "spi4",
+    "spi5",
+    "tim1",
+    "tim2",
+    "tim3",
+    "tim4",
+    "tim5",
+    "tim6",
+    "tim7",
+    "tim8",
+    "tim9",
+    "tim10",
+    "tim11",
+    "tim12",
+    "tim13",
+    "tim14",
     "usart3",
 ]
 gpio-f413 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "can1", "can2", "can3",
+    "gpiod",
+    "gpioe",
+    "gpiof",
+    "gpiog",
+    "can1",
+    "can2",
+    "can3",
     "dac",
     "dfsdm1",
     "dfsdm2",
@@ -187,14 +239,41 @@ gpio-f413 = [
     "rng",
     "sai1",
     "sdio",
-    "spi3", "spi4", "spi5",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8", "uart9", "uart10",
+    "spi3",
+    "spi4",
+    "spi5",
+    "tim1",
+    "tim2",
+    "tim3",
+    "tim4",
+    "tim5",
+    "tim6",
+    "tim7",
+    "tim8",
+    "tim9",
+    "tim10",
+    "tim11",
+    "tim12",
+    "tim13",
+    "tim14",
+    "usart3",
+    "uart4",
+    "uart5",
+    "uart7",
+    "uart8",
+    "uart9",
+    "uart10",
 ]
 gpio-f417 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi",
-    "adc2", "adc3",
-    "can1", "can2",
+    "gpiod",
+    "gpioe",
+    "gpiof",
+    "gpiog",
+    "gpioi",
+    "adc2",
+    "adc3",
+    "can1",
+    "can2",
     "dac",
     "dcmi",
     "eth",
@@ -205,13 +284,36 @@ gpio-f417 = [
     "rng",
     "sdio",
     "spi3",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5",
+    "tim1",
+    "tim2",
+    "tim3",
+    "tim4",
+    "tim5",
+    "tim6",
+    "tim7",
+    "tim8",
+    "tim9",
+    "tim10",
+    "tim11",
+    "tim12",
+    "tim13",
+    "tim14",
+    "usart3",
+    "uart4",
+    "uart5",
 ]
 gpio-f427 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "gpioj", "gpiok",
-    "adc2", "adc3",
-    "can1", "can2",
+    "gpiod",
+    "gpioe",
+    "gpiof",
+    "gpiog",
+    "gpioi",
+    "gpioj",
+    "gpiok",
+    "adc2",
+    "adc3",
+    "can1",
+    "can2",
     "dac",
     "dcmi",
     "eth",
@@ -222,14 +324,39 @@ gpio-f427 = [
     "rng",
     "sai1",
     "sdio",
-    "spi3", "spi4", "spi5", "spi6",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8",
+    "spi3",
+    "spi4",
+    "spi5",
+    "spi6",
+    "tim1",
+    "tim2",
+    "tim3",
+    "tim4",
+    "tim5",
+    "tim6",
+    "tim7",
+    "tim8",
+    "tim9",
+    "tim10",
+    "tim11",
+    "tim12",
+    "tim13",
+    "tim14",
+    "usart3",
+    "uart4",
+    "uart5",
+    "uart7",
+    "uart8",
 ]
 gpio-f446 = [
-    "gpiod", "gpioe", "gpiof", "gpiog",
-    "adc2", "adc3",
-    "can1", "can2",
+    "gpiod",
+    "gpioe",
+    "gpiof",
+    "gpiog",
+    "adc2",
+    "adc3",
+    "can1",
+    "can2",
     "dac",
     "dcmi",
     "fmpi2c1",
@@ -241,15 +368,39 @@ gpio-f446 = [
     "sai1",
     "sai2",
     #"sdio",
-    "spi3", "spi4",
+    "spi3",
+    "spi4",
     "spdifrx",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5",
+    "tim1",
+    "tim2",
+    "tim3",
+    "tim4",
+    "tim5",
+    "tim6",
+    "tim7",
+    "tim8",
+    "tim9",
+    "tim10",
+    "tim11",
+    "tim12",
+    "tim13",
+    "tim14",
+    "usart3",
+    "uart4",
+    "uart5",
 ]
 gpio-f469 = [
-    "gpiod", "gpioe", "gpiof", "gpiog", "gpioi", "gpioj", "gpiok",
-    "adc2", "adc3",
-    "can1", "can2",
+    "gpiod",
+    "gpioe",
+    "gpiof",
+    "gpiog",
+    "gpioi",
+    "gpioj",
+    "gpiok",
+    "adc2",
+    "adc3",
+    "can1",
+    "can2",
     "dac",
     "dcmi",
     "dsihost",
@@ -263,18 +414,47 @@ gpio-f469 = [
     "rng",
     "sai1",
     "sdio",
-    "spi3", "spi4", "spi5", "spi6",
-    "tim1", "tim2", "tim3", "tim4", "tim5", "tim6", "tim7", "tim8", "tim9", "tim10", "tim11", "tim12", "tim13", "tim14",
-    "usart3", "uart4", "uart5", "uart7", "uart8",
+    "spi3",
+    "spi4",
+    "spi5",
+    "spi6",
+    "tim1",
+    "tim2",
+    "tim3",
+    "tim4",
+    "tim5",
+    "tim6",
+    "tim7",
+    "tim8",
+    "tim9",
+    "tim10",
+    "tim11",
+    "tim12",
+    "tim13",
+    "tim14",
+    "usart3",
+    "uart4",
+    "uart5",
+    "uart7",
+    "uart8",
 ]
 
 ## Support monotonic timers and other stuff that can be used by [RTICv1 framework](https://crates.io/crates/cortex-m-rtic)
 rtic1 = ["dep:rtic-monotonic", "dep:systick-monotonic", "cortex-m-rtic"]
 
 ## Support monotonic timers and other stuff that can be used by [RTICv2 framework](https://crates.io/crates/rtic)
-## 
+##
 ## Requires nightly rust compiler
-rtic2 = ["dep:rtic-time", "dep:rtic-monotonics", "dep:rtic"]
+rtic2 = [
+    "dep:rtic-time",
+    "dep:rtic",
+    "dep:atomic-polyfill",
+    "dep:embedded-hal-async",
+]
+rtic-tim2 = []
+rtic-tim3 = []
+rtic-tim4 = []
+rtic-tim5 = []
 
 ## Implementation of `defmt::Format` for public enums and structures. See [defmt](https://crates.io/crates/defmt)
 defmt = ["dep:defmt", "fugit/defmt", "nb/defmt-0-3"]
@@ -384,11 +564,11 @@ required-features = ["can", "stm32f405"]
 
 [[example]]
 name = "delay-syst-blinky"
-required-features = [] # stm32f411
+required-features = []     # stm32f411
 
 [[example]]
 name = "delay-timer-blinky"
-required-features = [] # stm32f411
+required-features = []      # stm32f411
 
 [[example]]
 name = "display-touch"
@@ -404,7 +584,14 @@ required-features = []
 
 [[example]]
 name = "f413disco-lcd-ferris"
-required-features = ["gpiod", "gpioe", "gpiof", "gpiog", "fsmc", "fsmc_lcd"] # stm32f413
+required-features = [
+    "gpiod",
+    "gpioe",
+    "gpiof",
+    "gpiog",
+    "fsmc",
+    "fsmc_lcd",
+] # stm32f413
 
 [[example]]
 name = "hd44780"
@@ -479,6 +666,10 @@ name = "rtic-tick"
 required-features = ["tim2", "rtic1"]
 
 [[example]]
+name = "rtic2-tick"
+required-features = ["rtic2", "rtic-tim2"]
+
+[[example]]
 name = "rtic-usart-shell"
 required-features = ["stm32f411", "rtic1"] # stm32f411
 
@@ -489,10 +680,6 @@ required-features = ["stm32f411", "rtic1"] # stm32f411
 [[example]]
 name = "rtic-usb-cdc-echo"
 required-features = ["stm32f411", "rtic1", "otg-fs", "usb_fs"] # stm32f411
-
-[[example]]
-name = "rtic2-systick"
-required-features = ["rtic2"]
 
 [[example]]
 name = "sd"
@@ -528,11 +715,11 @@ required-features = ["fsmc", "fsmc_lcd"] # stm32f412
 
 [[example]]
 name = "stopwatch-with-ssd1306-and-interrupts"
-required-features = ["tim2"] # stm32f411
+required-features = ["tim2"]                   # stm32f411
 
 [[example]]
 name = "stopwatch-with-ssd1306-and-interrupts-and-dma-i2c"
-required-features = ["tim2", "stm32f411"] # stm32f411
+required-features = ["tim2", "stm32f411"]                  # stm32f411
 
 [[example]]
 name = "timer-periph"

@@ -83,6 +83,14 @@ pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;
 pub use crate::timer::MonoTimer64Ext as _;
 #[cfg(feature = "rtic1")]
 pub use crate::timer::MonoTimerExt as _;
+#[cfg(feature = "rtic2")]
+#[cfg(any(
+    feature = "rtic-tim2",
+    feature = "rtic-tim3",
+    feature = "rtic-tim4",
+    feature = "rtic-tim5"
+))]
+pub use crate::timer::MonoTimerExt as _;
 pub use crate::timer::PwmExt as _stm32f4xx_hal_timer_PwmExt;
 #[cfg(feature = "rtic1")]
 pub use crate::timer::SysMonoTimerExt as _stm32f4xx_hal_timer_SysMonoTimerExt;

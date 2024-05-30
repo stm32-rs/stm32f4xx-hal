@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Added non-blocking serial based on DMA [#738]
  - use RTCCLK for RTC wakeup timer for short durations [#746]
  - Support 8-bit FMC data bus
+ - Port `rtic-time::Monotonic` implementations from `rtic-monotonics` for TIMx
 
 ### Fixed
 

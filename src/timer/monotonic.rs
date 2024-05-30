@@ -1,4 +1,4 @@
-// RTIC Monotonic impl for the 32-bit timers
+// RTICv1 Monotonic impl for the 32-bit timers
 use super::{Channel, Event, FTimer, Flag, General, Instance, WithPwm};
 use crate::rcc::Clocks;
 use crate::ReadFlags;
