@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.21.0] - 2024-05-30
+
 ### Changed
 
  - add trait bound `RegisterBlockImpl` to type `RegisterBlock` associated with `serial::Instance` [#732]
@@ -24,14 +26,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Prevent starting a new I2C transmission before previous stop finishes [#737]
  - Fix complementary output polarity for PWM [#754]
 
- [#684]: https://github.com/stm32-rs/stm32f4xx-hal/pull/684
- [#732]: https://github.com/stm32-rs/stm32f4xx-hal/pull/732
- [#734]: https://github.com/stm32-rs/stm32f4xx-hal/pull/734
- [#736]: https://github.com/stm32-rs/stm32f4xx-hal/pull/736
- [#737]: https://github.com/stm32-rs/stm32f4xx-hal/pull/737
- [#738]: https://github.com/stm32-rs/stm32f4xx-hal/pull/738
- [#746]: https://github.com/stm32-rs/stm32f4xx-hal/pull/746
- [#756]: https://github.com/stm32-rs/stm32f4xx-hal/pull/756
+[#684]: https://github.com/stm32-rs/stm32f4xx-hal/pull/684
+[#732]: https://github.com/stm32-rs/stm32f4xx-hal/pull/732
+[#734]: https://github.com/stm32-rs/stm32f4xx-hal/pull/734
+[#736]: https://github.com/stm32-rs/stm32f4xx-hal/pull/736
+[#737]: https://github.com/stm32-rs/stm32f4xx-hal/pull/737
+[#738]: https://github.com/stm32-rs/stm32f4xx-hal/pull/738
+[#746]: https://github.com/stm32-rs/stm32f4xx-hal/pull/746
+[#754]: https://github.com/stm32-rs/stm32f4xx-hal/pull/754
+[#756]: https://github.com/stm32-rs/stm32f4xx-hal/pull/756
 
 ## [v0.20.0] - 2024-01-14
 
@@ -1024,7 +1027,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.21.0...HEAD
+[v0.21.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.20.0...v0.21.0
 [v0.20.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.19.0...v0.20.0
 [v0.19.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.18.0...v0.19.0
 [v0.18.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.17.1...v0.18.0
