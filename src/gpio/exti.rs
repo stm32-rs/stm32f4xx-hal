@@ -56,22 +56,22 @@ where
         let offset = 4 * (i % 4);
         match i {
             0..=3 => {
-                syscfg.exticr1.modify(|r, w| unsafe {
+                syscfg.exticr1().modify(|r, w| unsafe {
                     w.bits((r.bits() & !(0xf << offset)) | (port << offset))
                 });
             }
             4..=7 => {
-                syscfg.exticr2.modify(|r, w| unsafe {
+                syscfg.exticr2().modify(|r, w| unsafe {
                     w.bits((r.bits() & !(0xf << offset)) | (port << offset))
                 });
             }
             8..=11 => {
-                syscfg.exticr3.modify(|r, w| unsafe {
+                syscfg.exticr3().modify(|r, w| unsafe {
                     w.bits((r.bits() & !(0xf << offset)) | (port << offset))
                 });
             }
             12..=15 => {
-                syscfg.exticr4.modify(|r, w| unsafe {
+                syscfg.exticr4().modify(|r, w| unsafe {
                     w.bits((r.bits() & !(0xf << offset)) | (port << offset))
                 });
             }
@@ -84,21 +84,21 @@ where
         let i = self.pin_id();
         match edge {
             Edge::Rising => {
-                exti.rtsr
+                exti.rtsr()
                     .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
-                exti.ftsr
+                exti.ftsr()
                     .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << i)) });
             }
             Edge::Falling => {
-                exti.ftsr
+                exti.ftsr()
                     .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
-                exti.rtsr
+                exti.rtsr()
                     .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << i)) });
             }
             Edge::RisingFalling => {
-                exti.rtsr
+                exti.rtsr()
                     .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
-                exti.ftsr
+                exti.ftsr()
                     .modify(|r, w| unsafe { w.bits(r.bits() | (1 << i)) });
             }
         }
@@ -106,23 +106,23 @@ where
 
     #[inline(always)]
     fn enable_interrupt(&mut self, exti: &mut EXTI) {
-        exti.imr
+        exti.imr()
             .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.pin_id())) });
     }
 
     #[inline(always)]
     fn disable_interrupt(&mut self, exti: &mut EXTI) {
-        exti.imr
+        exti.imr()
             .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.pin_id())) });
     }
 
     #[inline(always)]
     fn clear_interrupt_pending_bit(&mut self) {
-        unsafe { (*EXTI::ptr()).pr.write(|w| w.bits(1 << self.pin_id())) };
+        unsafe { (*EXTI::ptr()).pr().write(|w| w.bits(1 << self.pin_id())) };
     }
 
     #[inline(always)]
     fn check_interrupt(&self) -> bool {
-        unsafe { ((*EXTI::ptr()).pr.read().bits() & (1 << self.pin_id())) != 0 }
+        unsafe { ((*EXTI::ptr()).pr().read().bits() & (1 << self.pin_id())) != 0 }
     }
 }

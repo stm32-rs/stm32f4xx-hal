@@ -263,15 +263,15 @@ macro_rules! halUsart {
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
-                use crate::pac::usart1::cr2::STOP_A;
+                use crate::pac::usart1::cr2::STOP;
                 use config::StopBits;
 
-                self.cr2.write(|w| {
+                self.cr2().write(|w| {
                     w.stop().variant(match bits {
-                        StopBits::STOP0P5 => STOP_A::Stop0p5,
-                        StopBits::STOP1 => STOP_A::Stop1,
-                        StopBits::STOP1P5 => STOP_A::Stop1p5,
-                        StopBits::STOP2 => STOP_A::Stop2,
+                        StopBits::STOP0P5 => STOP::Stop0p5,
+                        StopBits::STOP1 => STOP::Stop1,
+                        StopBits::STOP1P5 => STOP::Stop1p5,
+                        StopBits::STOP2 => STOP::Stop2,
                     })
                 });
             }

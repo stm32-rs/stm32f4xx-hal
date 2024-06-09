@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+ - Use `stm32f4-staging` until `stm32f4` is released [#706]
+
+[#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
+
 ## [v0.21.0] - 2024-05-30
 
 ### Changed

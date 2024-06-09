@@ -389,7 +389,7 @@ where
     /// Checks if there is communication in progress
     #[inline(always)]
     pub fn busy(&self) -> bool {
-        self.hal_i2c.i2c.sr2.read().busy().bit_is_set()
+        self.hal_i2c.i2c.sr2().read().busy().bit_is_set()
     }
 
     /// Like `busy` but returns `WouldBlock` if busy
@@ -402,22 +402,22 @@ where
 
     #[inline(always)]
     fn enable_dma_requests(&mut self) {
-        self.hal_i2c.i2c.cr2.modify(|_, w| w.dmaen().enabled());
+        self.hal_i2c.i2c.cr2().modify(|_, w| w.dmaen().enabled());
     }
 
     #[inline(always)]
     fn disable_dma_requests(&mut self) {
-        self.hal_i2c.i2c.cr2.modify(|_, w| w.dmaen().disabled());
+        self.hal_i2c.i2c.cr2().modify(|_, w| w.dmaen().disabled());
     }
 
     #[inline(always)]
     fn enable_error_interrupt_generation(&mut self) {
-        self.hal_i2c.i2c.cr2.modify(|_, w| w.iterren().enabled());
+        self.hal_i2c.i2c.cr2().modify(|_, w| w.iterren().enabled());
     }
 
     #[inline(always)]
     fn disable_error_interrupt_generation(&mut self) {
-        self.hal_i2c.i2c.cr2.modify(|_, w| w.iterren().disabled());
+        self.hal_i2c.i2c.cr2().modify(|_, w| w.iterren().disabled());
     }
 
     fn send_start(&mut self, read: bool) -> Result<(), super::Error> {
@@ -427,9 +427,9 @@ where
         // read-modify-write operation to avoid race condition.
         // See PR: https://github.com/stm32-rs/stm32f4xx-hal/pull/662
         if read {
-            i2c.cr1.modify(|_, w| w.ack().set_bit().start().set_bit());
+            i2c.cr1().modify(|_, w| w.ack().set_bit().start().set_bit());
         } else {
-            i2c.cr1.modify(|_, w| w.start().set_bit());
+            i2c.cr1().modify(|_, w| w.start().set_bit());
         }
 
         // Wait until START condition was generated
@@ -444,7 +444,7 @@ where
         loop {
             self.hal_i2c.check_and_clear_error_flags()?;
 
-            let sr2 = i2c.sr2.read();
+            let sr2 = i2c.sr2().read();
             if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
                 break;
             }
@@ -454,7 +454,7 @@ where
     }
 
     fn send_stop(&mut self) {
-        self.hal_i2c.i2c.cr1.modify(|_, w| w.stop().set_bit());
+        self.hal_i2c.i2c.cr1().modify(|_, w| w.stop().set_bit());
     }
 
     fn send_address(&mut self, addr: u8, read: bool) -> Result<(), super::Error> {
@@ -466,7 +466,7 @@ where
         }
 
         // Set up current address, we're trying to talk to
-        i2c.dr.write(|w| unsafe { w.bits(to_send_addr) });
+        i2c.dr().write(|w| unsafe { w.bits(to_send_addr) });
 
         // Wait until address was sent
         loop {
@@ -493,7 +493,7 @@ where
         self.send_address(addr, false)?;
 
         // Clear condition by reading SR2. This will clear ADDR flag
-        self.hal_i2c.i2c.sr2.read();
+        self.hal_i2c.i2c.sr2().read();
 
         // Enable error interrupts
         self.enable_error_interrupt_generation();
@@ -518,17 +518,17 @@ where
         // Transfer Complete interrupt routine if enabled.
         // On small sized array we need to set ACK=0 before ADDR cleared
         if buf_len >= 2 {
-            self.hal_i2c.i2c.cr2.modify(|_, w| w.last().set_bit());
+            self.hal_i2c.i2c.cr2().modify(|_, w| w.last().set_bit());
         // When a single byte must be received: the NACK must be programmed during
         // EV6 event, i.e. program ACK=0 when ADDR=1, before clearing ADDR flag.
         // Then the user can program the STOP condition either after clearing ADDR
         // flag, or in the DMA Transfer Complete interrupt routine.
         } else {
-            self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
+            self.hal_i2c.i2c.cr1().modify(|_, w| w.ack().clear_bit());
         }
 
         // Clear condition by reading SR2. This will clear ADDR flag
-        self.hal_i2c.i2c.sr2.read();
+        self.hal_i2c.i2c.sr2().read();
 
         // Enable error interrupts
         self.enable_error_interrupt_generation();
@@ -583,7 +583,7 @@ where
     fn finish_transfer_with_result(&mut self, result: Result<(), Error>) {
         self.disable_dma_requests();
         self.disable_error_interrupt_generation();
-        self.hal_i2c.i2c.cr2.modify(|_, w| w.last().clear_bit());
+        self.hal_i2c.i2c.cr2().modify(|_, w| w.last().clear_bit());
 
         if let Err(Error::I2CError(super::Error::NoAcknowledge(_))) = &result {
             self.send_stop();
@@ -626,7 +626,7 @@ where
                 self.finish_transfer_with_result(Ok(()));
 
                 // Wait for BTF
-                while self.hal_i2c.i2c.sr1.read().btf().bit_is_clear() {}
+                while self.hal_i2c.i2c.sr1().read().btf().bit_is_clear() {}
 
                 self.send_stop();
             }
@@ -666,7 +666,7 @@ where
                 self.finish_transfer_with_result(Ok(()));
 
                 // Clear ACK
-                self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
+                self.hal_i2c.i2c.cr1().modify(|_, w| w.ack().clear_bit());
 
                 self.send_stop();
             }
@@ -718,7 +718,7 @@ where
                 }
 
                 // Wait for BTF
-                while self.hal_i2c.i2c.sr1.read().btf().bit_is_clear() {}
+                while self.hal_i2c.i2c.sr1().read().btf().bit_is_clear() {}
 
                 // If we have prepared Rx Transfer, there are write_read command, generate restart signal
                 if have_read_after {
@@ -753,7 +753,7 @@ where
                 self.finish_transfer_with_result(Ok(()));
 
                 // Clear ACK
-                self.hal_i2c.i2c.cr1.modify(|_, w| w.ack().clear_bit());
+                self.hal_i2c.i2c.cr1().modify(|_, w| w.ack().clear_bit());
 
                 self.send_stop();
             }
@@ -902,7 +902,7 @@ pub struct Rx<I2C> {
 unsafe impl<I2C: Instance> PeriAddress for Rx<I2C> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*I2C::ptr()).dr.as_ptr() as u32 }
+        unsafe { (*I2C::ptr()).dr().as_ptr() as u32 }
     }
 
     type MemSize = u8;
@@ -911,7 +911,7 @@ unsafe impl<I2C: Instance> PeriAddress for Rx<I2C> {
 unsafe impl<I2C: Instance> PeriAddress for Tx<I2C> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*I2C::ptr()).dr.as_ptr() as u32 }
+        unsafe { (*I2C::ptr()).dr().as_ptr() as u32 }
     }
 
     type MemSize = u8;

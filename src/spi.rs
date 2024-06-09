@@ -358,7 +358,7 @@ impl<SPI: Instance> SpiExt for SPI {
 
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     pub fn init(self) -> Self {
-        self.spi.cr1.modify(|_, w| {
+        self.spi.cr1().modify(|_, w| {
             // bidimode: 2-line or 1-line unidirectional
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
@@ -374,7 +374,7 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
 
 impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     pub fn init(self) -> Self {
-        self.spi.cr1.modify(|_, w| {
+        self.spi.cr1().modify(|_, w| {
             // bidimode: 2-line or 1-line unidirectional
             w.bidimode().bit(BIDI);
             w.bidioe().bit(BIDI);
@@ -615,7 +615,7 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
     /// Pre initializing the SPI bus.
     fn pre_init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self {
         // disable SS output
-        self.spi.cr2.write(|w| w.ssoe().clear_bit());
+        self.spi.cr2().write(|w| w.ssoe().clear_bit());
 
         let br = match clock.raw() / freq.raw() {
             0 => unreachable!(),
@@ -629,12 +629,12 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
             _ => 0b111,
         };
 
-        self.spi.cr1.write(|w| {
+        self.spi.cr1().write(|w| {
             w.cpha().bit(mode.phase == Phase::CaptureOnSecondTransition);
             w.cpol().bit(mode.polarity == Polarity::IdleHigh);
             // mstr: master configuration
             w.mstr().set_bit();
-            w.br().bits(br);
+            w.br().set(br);
             // lsbfirst: MSB first
             w.lsbfirst().clear_bit();
             // ssm: enable software slave management (NSS pin free for other uses)
@@ -653,12 +653,12 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
 impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
     /// Pre initializing the SPI bus.
     fn pre_init(self, mode: Mode) -> Self {
-        self.spi.cr1.write(|w| {
+        self.spi.cr1().write(|w| {
             w.cpha().bit(mode.phase == Phase::CaptureOnSecondTransition);
             w.cpol().bit(mode.polarity == Polarity::IdleHigh);
             // mstr: slave configuration
             w.mstr().clear_bit();
-            w.br().bits(0);
+            w.br().set(0);
             // lsbfirst: MSB first
             w.lsbfirst().clear_bit();
             // ssm: enable software slave management (NSS pin free for other uses)
@@ -676,7 +676,7 @@ impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
     /// Set the slave select bit programmatically.
     #[inline]
     pub fn set_internal_nss(&mut self, value: bool) {
-        self.spi.cr1.modify(|_, w| w.ssi().bit(value));
+        self.spi.cr1().modify(|_, w| w.ssi().bit(value));
     }
 }
 
@@ -687,7 +687,7 @@ impl<SPI: Instance> Inner<SPI> {
 
     /// Enable/disable spi
     pub fn enable(&mut self, enable: bool) {
-        self.spi.cr1.modify(|_, w| {
+        self.spi.cr1().modify(|_, w| {
             // spe: enable the SPI bus
             w.spe().bit(enable)
         });
@@ -696,7 +696,7 @@ impl<SPI: Instance> Inner<SPI> {
     /// Select which frame format is used for data transfers
     pub fn bit_format(&mut self, format: BitFormat) {
         self.spi
-            .cr1
+            .cr1()
             .modify(|_, w| w.lsbfirst().bit(format == BitFormat::LsbFirst));
     }
 
@@ -704,62 +704,62 @@ impl<SPI: Instance> Inner<SPI> {
     /// can be written to the SPI.
     #[inline]
     pub fn is_tx_empty(&self) -> bool {
-        self.spi.sr.read().txe().bit_is_set()
+        self.spi.sr().read().txe().bit_is_set()
     }
 
     /// Return `true` if the RXNE flag is set, i.e. new data has been received
     /// and can be read from the SPI.
     #[inline]
     pub fn is_rx_not_empty(&self) -> bool {
-        self.spi.sr.read().rxne().bit_is_set()
+        self.spi.sr().read().rxne().bit_is_set()
     }
 
     /// Return `true` if the MODF flag is set, i.e. the SPI has experienced a
     /// Master Mode Fault. (see chapter 28.3.10 of the STM32F4 Reference Manual)
     #[inline]
     pub fn is_modf(&self) -> bool {
-        self.spi.sr.read().modf().bit_is_set()
+        self.spi.sr().read().modf().bit_is_set()
     }
 
     /// Returns true if the transfer is in progress
     #[inline]
     pub fn is_busy(&self) -> bool {
-        self.spi.sr.read().bsy().bit_is_set()
+        self.spi.sr().read().bsy().bit_is_set()
     }
 
     /// Return `true` if the OVR flag is set, i.e. new data has been received
     /// while the receive data register was already filled.
     #[inline]
     pub fn is_overrun(&self) -> bool {
-        self.spi.sr.read().ovr().bit_is_set()
+        self.spi.sr().read().ovr().bit_is_set()
     }
 
     #[inline]
     fn bidi_output(&mut self) {
-        self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+        self.spi.cr1().modify(|_, w| w.bidioe().set_bit());
     }
 
     #[inline]
     fn bidi_input(&mut self) {
-        self.spi.cr1.modify(|_, w| w.bidioe().set_bit());
+        self.spi.cr1().modify(|_, w| w.bidioe().set_bit());
     }
 
     fn read_data_reg<W: FrameSize>(&mut self) -> W {
         // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
         // reading a half-word)
-        unsafe { (*(&self.spi.dr as *const pac::spi1::DR).cast::<vcell::VolatileCell<W>>()).get() }
+        unsafe { (*(self.spi.dr() as *const pac::spi1::DR).cast::<vcell::VolatileCell<W>>()).get() }
     }
 
     fn write_data_reg<W: FrameSize>(&mut self, data: W) {
         // NOTE(write_volatile) see note above
         unsafe {
-            (*(&self.spi.dr as *const pac::spi1::DR).cast::<vcell::VolatileCell<W>>()).set(data)
+            (*(self.spi.dr() as *const pac::spi1::DR).cast::<vcell::VolatileCell<W>>()).set(data)
         }
     }
 
     #[inline(always)]
     fn check_read<W: FrameSize>(&mut self) -> nb::Result<W, Error> {
-        let sr = self.spi.sr.read();
+        let sr = self.spi.sr().read();
 
         Err(if sr.ovr().bit_is_set() {
             Error::Overrun.into()
@@ -776,19 +776,19 @@ impl<SPI: Instance> Inner<SPI> {
 
     #[inline(always)]
     fn check_send<W: FrameSize>(&mut self, byte: W) -> nb::Result<(), Error> {
-        let sr = self.spi.sr.read();
+        let sr = self.spi.sr().read();
 
         Err(if sr.ovr().bit_is_set() {
             // Read from the DR to clear the OVR bit
-            let _ = self.spi.dr.read();
+            let _ = self.spi.dr().read();
             Error::Overrun.into()
         } else if sr.modf().bit_is_set() {
             // Write to CR1 to clear MODF
-            self.spi.cr1.modify(|_r, w| w);
+            self.spi.cr1().modify(|_r, w| w);
             Error::ModeFault.into()
         } else if sr.crcerr().bit_is_set() {
             // Clear the CRCERR bit
-            self.spi.sr.modify(|_r, w| w.crcerr().clear_bit());
+            self.spi.sr().modify(|_r, w| w.crcerr().clear_bit());
             Error::Crc.into()
         } else if sr.txe().bit_is_set() {
             self.write_data_reg(byte);
@@ -798,7 +798,7 @@ impl<SPI: Instance> Inner<SPI> {
         })
     }
     fn listen_event(&mut self, disable: Option<BitFlags<Event>>, enable: Option<BitFlags<Event>>) {
-        self.spi.cr2.modify(|r, w| unsafe {
+        self.spi.cr2().modify(|r, w| unsafe {
             w.bits({
                 let mut bits = r.bits();
                 if let Some(d) = disable {
@@ -834,7 +834,7 @@ impl<SPI: Instance> crate::ClearFlags for Inner<SPI> {
     fn clear_flags(&mut self, flags: impl Into<BitFlags<Self::Flag>>) {
         if flags.into().contains(CFlag::CrcError) {
             self.spi
-                .sr
+                .sr()
                 .write(|w| unsafe { w.bits(0xffff).crcerr().clear_bit() })
         }
     }
@@ -843,7 +843,7 @@ impl<SPI: Instance> crate::ClearFlags for Inner<SPI> {
 impl<SPI: Instance> crate::ReadFlags for Inner<SPI> {
     type Flag = Flag;
     fn flags(&self) -> BitFlags<Self::Flag> {
-        BitFlags::from_bits_truncate(self.spi.sr.read().bits())
+        BitFlags::from_bits_truncate(self.spi.sr().read().bits())
     }
 }
 
@@ -879,17 +879,17 @@ pub struct Rx<SPI> {
 
 impl<SPI: Instance> DmaBuilder<SPI> {
     pub fn tx(self) -> Tx<SPI> {
-        self.spi.cr2.modify(|_, w| w.txdmaen().enabled());
+        self.spi.cr2().modify(|_, w| w.txdmaen().enabled());
         Tx { spi: PhantomData }
     }
 
     pub fn rx(self) -> Rx<SPI> {
-        self.spi.cr2.modify(|_, w| w.rxdmaen().enabled());
+        self.spi.cr2().modify(|_, w| w.rxdmaen().enabled());
         Rx { spi: PhantomData }
     }
 
     pub fn txrx(self) -> (Tx<SPI>, Rx<SPI>) {
-        self.spi.cr2.modify(|_, w| {
+        self.spi.cr2().modify(|_, w| {
             w.txdmaen().enabled();
             w.rxdmaen().enabled()
         });
@@ -900,7 +900,7 @@ impl<SPI: Instance> DmaBuilder<SPI> {
 unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*SPI::ptr()).dr.as_ptr() as u32 }
+        unsafe { (*SPI::ptr()).dr().as_ptr() as u32 }
     }
 
     type MemSize = u8;
@@ -914,7 +914,7 @@ unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralTo
 unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*SPI::ptr()).dr.as_ptr() as u32 }
+        unsafe { (*SPI::ptr()).dr().as_ptr() as u32 }
     }
 
     type MemSize = u8;

@@ -47,7 +47,7 @@ pub use embedded_hal_nb::serial::Write as _embedded_hal_serial_nb_Write;
 pub use fugit::ExtU32 as _fugit_ExtU32;
 pub use fugit::RateExtU32 as _fugit_RateExtU32;
 
-#[cfg(all(feature = "can", any(feature = "can1", feature = "can2",)))]
+#[cfg(all(feature = "can", any(feature = "can1", feature = "can2")))]
 pub use crate::can::CanExt as _stm32f4xx_hal_can_CanExt;
 #[cfg(feature = "dac")]
 pub use crate::dac::DacExt as _stm32f4xx_hal_dac_DacExt;

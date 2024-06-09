@@ -22,7 +22,7 @@ impl MainPll {
             // Even if we do not use the main PLL, we still need to set the PLL source as that setting
             // applies to the I2S and SAI PLLs as well.
             unsafe { &*RCC::ptr() }
-                .pllcfgr
+                .pllcfgr()
                 .write(|w| w.pllsrc().bit(use_hse));
 
             return MainPll {
@@ -82,7 +82,7 @@ impl MainPll {
         let pllq = (vco_in * plln + 47_999_999) / 48_000_000;
         let real_pll48clk = vco_in * plln / pllq;
 
-        unsafe { &*RCC::ptr() }.pllcfgr.write(|w| unsafe {
+        unsafe { &*RCC::ptr() }.pllcfgr().write(|w| unsafe {
             w.pllm().bits(pllm as u8);
             w.plln().bits(plln as u16);
             w.pllp().bits(pllp as u8);
@@ -164,7 +164,7 @@ impl MainPll {
             .min_by_key(|(_, _, _, _, _, error)| *error)
             .expect("could not find a valid main PLL configuration");
 
-        unsafe { &*RCC::ptr() }.pllcfgr.write(|w| unsafe {
+        unsafe { &*RCC::ptr() }.pllcfgr().write(|w| unsafe {
             w.pllm().bits(pllm as u8);
             w.plln().bits(plln as u16);
             if let Some(pllp) = pllp {
@@ -296,9 +296,9 @@ impl I2sPll {
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
         // "M" may have been written before, but the value is identical.
-        rcc.pllcfgr
+        rcc.pllcfgr()
             .modify(|_, w| unsafe { w.pllm().bits(config.m) });
-        rcc.plli2scfgr
+        rcc.plli2scfgr()
             .modify(|_, w| unsafe { w.plli2sn().bits(config.n).plli2sr().bits(config.outdiv) });
     }
     #[cfg(any(
@@ -309,7 +309,7 @@ impl I2sPll {
     ))]
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
-        rcc.plli2scfgr.modify(|_, w| unsafe {
+        rcc.plli2scfgr().modify(|_, w| unsafe {
             w.plli2sm().bits(config.m);
             w.plli2sn().bits(config.n);
             w.plli2sr().bits(config.outdiv)
@@ -317,14 +317,14 @@ impl I2sPll {
     }
 }
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469",))]
+#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
 pub struct SaiPll {
     pub use_pll: bool,
     /// SAI clock (PLL output divided by the SAI clock divider).
     pub sai_clk: Option<u32>,
 }
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469",))]
+#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
 impl SaiPll {
     pub fn unused() -> SaiPll {
         SaiPll {
@@ -349,7 +349,7 @@ impl SaiPll {
         pll
     }
 
-    #[cfg(any(feature = "gpio-f427", feature = "gpio-f469",))]
+    #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
     pub fn setup_shared_m(pllsrcclk: u32, m: Option<u32>, sai_clk: Option<u32>) -> SaiPll {
         // "m" is None if both other PLLs are not in use.
         let Some(m) = m else {
@@ -393,20 +393,20 @@ impl SaiPll {
     #[cfg(not(feature = "gpio-f446"))]
     fn apply_config(config: SingleOutputPll, saidiv: u32) {
         let rcc = unsafe { &*RCC::ptr() };
-        rcc.dckcfgr
-            .modify(|_, w| w.pllsaidivq().bits(saidiv as u8 - 1));
+        rcc.dckcfgr()
+            .modify(|_, w| w.pllsaidivq().set(saidiv as u8 - 1));
         // "M" may have been written before, but the value is identical.
-        rcc.pllcfgr
+        rcc.pllcfgr()
             .modify(|_, w| unsafe { w.pllm().bits(config.m) });
-        rcc.pllsaicfgr
+        rcc.pllsaicfgr()
             .modify(|_, w| unsafe { w.pllsain().bits(config.n).pllsaiq().bits(config.outdiv) });
     }
     #[cfg(feature = "gpio-f446")]
     fn apply_config(config: SingleOutputPll, saidiv: u32) {
         let rcc = unsafe { &*RCC::ptr() };
-        rcc.dckcfgr
-            .modify(|_, w| w.pllsaidivq().bits(saidiv as u8 - 1));
-        rcc.pllsaicfgr.modify(|_, w| unsafe {
+        rcc.dckcfgr()
+            .modify(|_, w| w.pllsaidivq().set(saidiv as u8 - 1));
+        rcc.pllsaicfgr().modify(|_, w| unsafe {
             w.pllsaim().bits(config.m);
             w.pllsain().bits(config.n);
             w.pllsaiq().bits(config.outdiv)

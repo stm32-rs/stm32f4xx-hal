@@ -20,5 +20,4 @@ jobs:
           key: v0.21.0
 
       - run: cargo clippy --examples --features=stm32f479,usb_fs,sdio-host,can,i2s,fsmc_lcd,rtic1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+

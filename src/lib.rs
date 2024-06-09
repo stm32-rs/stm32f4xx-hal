@@ -86,7 +86,7 @@ pub use crate::pac::interrupt;
 
 pub mod adc;
 pub mod bb;
-#[cfg(all(feature = "can", any(feature = "can1", feature = "can2",)))]
+#[cfg(all(feature = "can", any(feature = "can1", feature = "can2")))]
 pub mod can;
 pub mod crc32;
 #[cfg(feature = "dac")]
@@ -98,7 +98,7 @@ pub mod i2c;
 pub mod i2s;
 #[cfg(all(feature = "usb_fs", feature = "otg-fs"))]
 pub mod otg_fs;
-#[cfg(all(any(feature = "usb_hs", docsrs), feature = "otg-hs",))]
+#[cfg(all(any(feature = "usb_hs", docsrs), feature = "otg-hs"))]
 pub mod otg_hs;
 
 #[cfg(feature = "rng")]

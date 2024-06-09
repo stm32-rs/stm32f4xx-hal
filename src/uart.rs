@@ -21,7 +21,6 @@ use crate::serial::uart_impls::{RegisterBlockImpl, RegisterBlockUart};
 pub use crate::serial::{config, Error, Event, Instance, NoRx, NoTx, Rx, RxISR, Serial, Tx, TxISR};
 pub use config::Config;
 
-#[cfg(not(any(feature = "stm32f413", feature = "stm32f423",)))]
 macro_rules! halUart {
     ($UART:ty, $Serial:ident, $Rx:ident, $Tx:ident) => {
         pub type $Serial<WORD = u8> = Serial<$UART, WORD>;
@@ -36,19 +35,19 @@ macro_rules! halUart {
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
-                use crate::pac::uart4::cr2::STOP_A;
+                use crate::pac::uart4::cr2::STOP;
                 use config::StopBits;
 
                 /*
                     StopBits::STOP0P5 and StopBits::STOP1P5 aren't supported when using UART
                     STOP_A::STOP1 and STOP_A::STOP2 will be used, respectively
                 */
-                self.cr2.write(|w| {
+                self.cr2().write(|w| {
                     w.stop().variant(match bits {
-                        StopBits::STOP0P5 => STOP_A::Stop1,
-                        StopBits::STOP1 => STOP_A::Stop1,
-                        StopBits::STOP1P5 => STOP_A::Stop2,
-                        StopBits::STOP2 => STOP_A::Stop2,
+                        StopBits::STOP0P5 => STOP::Stop1,
+                        StopBits::STOP1 => STOP::Stop1,
+                        StopBits::STOP1P5 => STOP::Stop2,
+                        StopBits::STOP2 => STOP::Stop2,
                     })
                 });
             }
@@ -87,13 +86,13 @@ impl Instance for pac::UART4 {
 
 #[cfg(feature = "uart5")]
 #[cfg(any(feature = "stm32f413", feature = "stm32f423"))]
-crate::serial::halUsart! { pac::UART5, Serial5, Rx5, Tx5 }
+halUart! { pac::UART5, Serial5, Rx5, Tx5 }
 
 #[cfg(feature = "uart7")]
-crate::serial::halUsart! { pac::UART7, Serial7, Rx7, Tx7 }
+halUart! { pac::UART7, Serial7, Rx7, Tx7 }
 #[cfg(feature = "uart8")]
-crate::serial::halUsart! { pac::UART8, Serial8, Rx8, Tx8 }
+halUart! { pac::UART8, Serial8, Rx8, Tx8 }
 #[cfg(feature = "uart9")]
-crate::serial::halUsart! { pac::UART9, Serial9, Rx9, Tx9 }
+halUart! { pac::UART9, Serial9, Rx9, Tx9 }
 #[cfg(feature = "uart10")]
-crate::serial::halUsart! { pac::UART10, Serial10, Rx10, Tx10 }
+halUart! { pac::UART10, Serial10, Rx10, Tx10 }

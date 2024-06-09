@@ -383,12 +383,12 @@ impl<DMA: Instance, const S: u8> StreamX<DMA, S> {
     #[cfg(not(any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410")))]
     #[inline(always)]
     unsafe fn st() -> &'static pac::dma2::ST {
-        &(*DMA::ptr()).st[S as usize]
+        (*DMA::ptr()).st(S as usize)
     }
     #[cfg(any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410"))]
     #[inline(always)]
     unsafe fn st() -> &'static pac::dma1::ST {
-        &(*DMA::ptr()).st[S as usize]
+        (*DMA::ptr()).st(S as usize)
     }
 }
 
@@ -481,183 +481,187 @@ where
     #[inline(always)]
     fn set_peripheral_address(&mut self, value: u32) {
         unsafe { Self::st() }
-            .par
+            .par()
             .write(|w| unsafe { w.pa().bits(value) });
     }
 
     #[inline(always)]
     fn set_memory_address(&mut self, value: u32) {
         unsafe { Self::st() }
-            .m0ar
+            .m0ar()
             .write(|w| unsafe { w.m0a().bits(value) });
     }
 
     #[inline(always)]
     fn memory_address(&self) -> u32 {
-        unsafe { Self::st() }.m0ar.read().m0a().bits()
+        unsafe { Self::st() }.m0ar().read().m0a().bits()
     }
 
     #[inline(always)]
     fn set_alternate_memory_address(&mut self, value: u32) {
         unsafe { Self::st() }
-            .m1ar
+            .m1ar()
             .write(|w| unsafe { w.m1a().bits(value) });
     }
 
     #[inline(always)]
     fn alternate_memory_address(&self) -> u32 {
-        unsafe { Self::st() }.m1ar.read().m1a().bits()
+        unsafe { Self::st() }.m1ar().read().m1a().bits()
     }
 
     #[inline(always)]
     fn set_number_of_transfers(&mut self, value: u16) {
-        unsafe { Self::st() }.ndtr.write(|w| w.ndt().bits(value));
+        unsafe { Self::st() }.ndtr().write(|w| w.ndt().set(value));
     }
 
     #[inline(always)]
     fn number_of_transfers(&self) -> u16 {
-        unsafe { Self::st() }.ndtr.read().ndt().bits()
+        unsafe { Self::st() }.ndtr().read().ndt().bits()
     }
 
     #[inline(always)]
     unsafe fn enable(&mut self) {
-        Self::st().cr.modify(|_, w| w.en().set_bit());
+        Self::st().cr().modify(|_, w| w.en().set_bit());
     }
 
     #[inline(always)]
     fn is_enabled(&self) -> bool {
-        unsafe { Self::st() }.cr.read().en().bit_is_set()
+        unsafe { Self::st() }.cr().read().en().bit_is_set()
     }
 
     #[inline(always)]
     unsafe fn disable(&mut self) {
-        unsafe { Self::st() }.cr.modify(|_, w| w.en().clear_bit());
+        unsafe { Self::st() }.cr().modify(|_, w| w.en().clear_bit());
     }
 
     #[inline(always)]
     fn set_channel(&mut self, channel: DmaChannel) {
         unsafe { Self::st() }
-            .cr
-            .modify(|_, w| w.chsel().bits(channel.bits()));
+            .cr()
+            .modify(|_, w| w.chsel().set(channel.bits()));
     }
 
     #[inline(always)]
     fn set_priority(&mut self, priority: config::Priority) {
         unsafe { Self::st() }
-            .cr
-            .modify(|_, w| w.pl().bits(priority.bits()));
+            .cr()
+            .modify(|_, w| w.pl().set(priority.bits()));
     }
 
     #[inline(always)]
     fn set_peripheral_increment_offset(&mut self, value: PeripheralIncrementOffset) {
         unsafe { Self::st() }
-            .cr
+            .cr()
             .modify(|_, w| w.pincos().bit(value.bits()));
     }
 
     #[inline(always)]
     unsafe fn set_memory_size(&mut self, size: DmaDataSize) {
-        Self::st().cr.modify(|_, w| w.msize().bits(size.bits()));
+        Self::st().cr().modify(|_, w| w.msize().bits(size.bits()));
     }
 
     #[inline(always)]
     unsafe fn set_peripheral_size(&mut self, size: DmaDataSize) {
-        Self::st().cr.modify(|_, w| w.psize().bits(size.bits()));
+        Self::st().cr().modify(|_, w| w.psize().bits(size.bits()));
     }
 
     #[inline(always)]
     fn set_memory_increment(&mut self, increment: bool) {
         unsafe { Self::st() }
-            .cr
+            .cr()
             .modify(|_, w| w.minc().bit(increment));
     }
 
     #[inline(always)]
     fn set_peripheral_increment(&mut self, increment: bool) {
         unsafe { Self::st() }
-            .cr
+            .cr()
             .modify(|_, w| w.pinc().bit(increment));
     }
 
     #[inline(always)]
     fn set_circular_mode(&mut self, value: bool) {
-        unsafe { Self::st() }.cr.modify(|_, w| w.circ().bit(value));
+        unsafe { Self::st() }
+            .cr()
+            .modify(|_, w| w.circ().bit(value));
     }
 
     #[inline(always)]
     fn set_direction(&mut self, direction: DmaDirection) {
         unsafe { Self::st() }
-            .cr
+            .cr()
             .modify(|_, w| unsafe { w.dir().bits(direction.bits()) });
     }
 
     #[inline(always)]
     fn set_flow_controller(&mut self, value: DmaFlowController) {
         unsafe { Self::st() }
-            .cr
+            .cr()
             .modify(|_, w| w.pfctrl().bit(value.bits()));
     }
 
     #[inline(always)]
     fn events(&self) -> BitFlags<DmaEvent> {
-        BitFlags::from_bits_truncate(unsafe { Self::st() }.cr.read().bits())
+        BitFlags::from_bits_truncate(unsafe { Self::st() }.cr().read().bits())
     }
 
     #[inline(always)]
     fn listen_fifo_error(&mut self) {
-        unsafe { Self::st() }.fcr.modify(|_, w| w.feie().set_bit());
+        unsafe { Self::st() }
+            .fcr()
+            .modify(|_, w| w.feie().set_bit());
     }
 
     #[inline(always)]
     fn unlisten_fifo_error(&mut self) {
         unsafe { Self::st() }
-            .fcr
+            .fcr()
             .modify(|_, w| w.feie().clear_bit());
     }
 
     #[inline(always)]
     fn set_double_buffer(&mut self, double_buffer: bool) {
         unsafe { Self::st() }
-            .cr
+            .cr()
             .modify(|_, w| w.dbm().bit(double_buffer));
     }
 
     #[inline(always)]
     fn set_fifo_threshold(&mut self, fifo_threshold: config::FifoThreshold) {
         unsafe { Self::st() }
-            .fcr
-            .modify(|_, w| w.fth().bits(fifo_threshold.bits()));
+            .fcr()
+            .modify(|_, w| w.fth().set(fifo_threshold.bits()));
     }
 
     #[inline(always)]
     fn set_fifo_enable(&mut self, fifo_enable: bool) {
         //Register is actually direct mode disable rather than fifo enable
         unsafe { Self::st() }
-            .fcr
+            .fcr()
             .modify(|_, w| w.dmdis().bit(fifo_enable));
     }
 
     #[inline(always)]
     fn set_memory_burst(&mut self, memory_burst: config::BurstMode) {
         unsafe { Self::st() }
-            .cr
-            .modify(|_, w| w.mburst().bits(memory_burst.bits()));
+            .cr()
+            .modify(|_, w| w.mburst().set(memory_burst.bits()));
     }
 
     #[inline(always)]
     fn set_peripheral_burst(&mut self, peripheral_burst: config::BurstMode) {
         unsafe { Self::st() }
-            .cr
-            .modify(|_, w| w.pburst().bits(peripheral_burst.bits()));
+            .cr()
+            .modify(|_, w| w.pburst().set(peripheral_burst.bits()));
     }
 
     #[inline(always)]
     fn fifo_level(&self) -> FifoLevel {
-        unsafe { Self::st() }.fcr.read().fs().bits().into()
+        unsafe { Self::st() }.fcr().read().fs().bits().into()
     }
 
     fn current_buffer(&self) -> CurrentBuffer {
-        if unsafe { Self::st() }.cr.read().ct().bit_is_set() {
+        if unsafe { Self::st() }.cr().read().ct().bit_is_set() {
             CurrentBuffer::SecondBuffer
         } else {
             CurrentBuffer::FirstBuffer
@@ -675,7 +679,7 @@ where
         enable: Option<BitFlags<DmaEvent>>,
     ) {
         unsafe {
-            Self::st().cr.modify(|r, w| {
+            Self::st().cr().modify(|r, w| {
                 w.bits({
                     let mut bits = r.bits();
                     if let Some(d) = disable {
@@ -704,7 +708,7 @@ macro_rules! dma_stream {
                 #[inline(always)]
                 fn clear_flags(&mut self, flags: impl Into<BitFlags<DmaFlag>>) {
                     let dma = unsafe { &*I::ptr() };
-                    dma.$ifcr.write(|w| unsafe { w.bits(flags.into().bits() << $isr_shift) });
+                    dma.$ifcr().write(|w| unsafe { w.bits(flags.into().bits() << $isr_shift) });
                 }
             }
 
@@ -717,7 +721,7 @@ macro_rules! dma_stream {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     BitFlags::from_bits_truncate(
-                        ((dma.$isr.read().bits() >> $isr_shift))
+                        ((dma.$isr().read().bits() >> $isr_shift))
                     )
                 }
             }

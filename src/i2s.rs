@@ -245,13 +245,13 @@ macro_rules! i2s {
 
 #[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
 i2s!(pac::SPI1, I2s1, i2s1, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
+#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
 i2s!(pac::SPI1, I2s1, i2s1, i2s_apb2_clk);
 
 // All STM32F4 models support SPI2/I2S2
-#[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",)))]
+#[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
 i2s!(pac::SPI2, I2s2, i2s2, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
+#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
 i2s!(pac::SPI2, I2s2, i2s2, i2s_apb1_clk);
 
 // All STM32F4 models except STM32F410 support SPI3/I2S3
@@ -263,7 +263,7 @@ i2s!(pac::SPI2, I2s2, i2s2, i2s_apb1_clk);
     feature = "gpio-f469",
 ))]
 i2s!(pac::SPI3, I2s3, i2s3, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446",))]
+#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
 i2s!(pac::SPI3, I2s3, i2s3, i2s_apb1_clk);
 
 #[cfg(feature = "gpio-f411")]
@@ -523,7 +523,7 @@ mod dma {
 
                 fn address(&self) -> u32 {
                     let reg = unsafe { &*(DualI2s::$reg as *const RegisterBlock) };
-                    (&reg.dr) as *const _ as u32
+                    reg.dr().as_ptr() as u32
                 }
             }
         };
