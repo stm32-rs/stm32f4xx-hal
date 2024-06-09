@@ -49,7 +49,7 @@ unsafe impl UsbPeripheral for USB {
     const HIGH_SPEED: bool = true;
     const FIFO_DEPTH_WORDS: usize = 1024;
 
-    #[cfg(any(feature = "gpio-f417", feature = "gpio-f427",))]
+    #[cfg(any(feature = "gpio-f417", feature = "gpio-f427"))]
     const ENDPOINT_COUNT: usize = 6;
     #[cfg(any(feature = "gpio-f446", feature = "gpio-f469"))]
     const ENDPOINT_COUNT: usize = 9;

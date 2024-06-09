@@ -119,7 +119,7 @@ dma_map!(
     (Stream2<DMA1>:3, pac::I2C3, [PeripheralToMemory]), //I2C3_RX:DMA_CHANNEL_3
 );
 
-#[cfg(any(feature = "gpio-f401", feature = "gpio-f411",))]
+#[cfg(any(feature = "gpio-f401", feature = "gpio-f411"))]
 dma_map!(
     (Stream1<DMA1>:3, timer::CCR3<pac::TIM2>, [MemoryToPeripheral | PeripheralToMemory]), //TIM2_CH3
     (Stream1<DMA1>:3, timer::DMAR<pac::TIM2>, [MemoryToPeripheral | PeripheralToMemory]), //TIM2_UP
@@ -253,7 +253,7 @@ dma_map!(
 );
 */
 
-#[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469",))]
+#[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
 dma_map!(
     (Stream2<DMA1>:3, pac::I2C3, [PeripheralToMemory]), //I2C3_RX
     (Stream5<DMA2>:2, pac::CRYP, [PeripheralToMemory]), //CRYP_OUT
@@ -261,7 +261,7 @@ dma_map!(
     (Stream7<DMA2>:2, pac::HASH, [MemoryToPeripheral]), //HASH_IN
 );
 
-#[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469",))]
+#[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
 address!((pac::HASH, din, u32), (pac::CRYP, din, u32),);
 
 #[cfg(feature = "cryp")]
@@ -366,7 +366,7 @@ dma_map!(
 ))]
 address!((pac::SPI5, dr, u8),);
 
-#[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413",))]
+#[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
 dma_map!(
     (Stream4<DMA2>:4, pac::SPI4, [PeripheralToMemory]), //SPI4_RX
 );
@@ -426,7 +426,7 @@ dma_map!(
 #[cfg(feature = "quadspi")]
 address!((pac::QUADSPI, dr, u32),);
 
-#[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469",))]
+#[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
 dma_map!(
     (Stream0<DMA1>:5, pac::UART8, [MemoryToPeripheral]), //UART8_TX
     (Stream1<DMA1>:5, pac::UART7, [MemoryToPeripheral]), //UART7_TX
@@ -434,7 +434,7 @@ dma_map!(
     (Stream6<DMA1>:5, pac::UART8, [PeripheralToMemory]), //UART8_RX
 );
 
-#[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469",))]
+#[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
 address!((pac::UART7, dr, u8), (pac::UART8, dr, u8),);
 
 #[cfg(feature = "gpio-f413")]
@@ -522,7 +522,7 @@ dma_map!(
     //(Stream6<DMA1>:0, SPDIFRX_CS, [PeripheralToMemory]), //SPDIF_RX_CS
 );
 
-#[cfg(any(feature = "gpio-f410", feature = "gpio-f412", feature = "gpio-f413",))]
+#[cfg(any(feature = "gpio-f410", feature = "gpio-f412", feature = "gpio-f413"))]
 dma_map!(
     (Stream0<DMA1>:7, pac::FMPI2C1, [PeripheralToMemory]), //FMPI2C1_RX
     (Stream1<DMA1>:2, pac::FMPI2C1, [MemoryToPeripheral]), //FMPI2C1_TX

@@ -317,14 +317,14 @@ impl I2sPll {
     }
 }
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469",))]
+#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
 pub struct SaiPll {
     pub use_pll: bool,
     /// SAI clock (PLL output divided by the SAI clock divider).
     pub sai_clk: Option<u32>,
 }
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469",))]
+#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
 impl SaiPll {
     pub fn unused() -> SaiPll {
         SaiPll {
@@ -349,7 +349,7 @@ impl SaiPll {
         pll
     }
 
-    #[cfg(any(feature = "gpio-f427", feature = "gpio-f469",))]
+    #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
     pub fn setup_shared_m(pllsrcclk: u32, m: Option<u32>, sai_clk: Option<u32>) -> SaiPll {
         // "m" is None if both other PLLs are not in use.
         let Some(m) = m else {
