@@ -635,7 +635,7 @@ pub mod eth {
 
 /// Pins available on all STM32F4 models that have an FSMC/FMC
 #[cfg(any(feature = "fmc", feature = "fsmc"))]
-pub mod fsmc {
+pub mod fmc {
     use super::*;
 
     pub use Ne1 as ChipSelect1;

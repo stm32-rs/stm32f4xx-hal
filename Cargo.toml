@@ -56,10 +56,14 @@ embedded-hal-async = { version = "1.0", optional = true }
 rtic = { version = "2.0.1", features = ["thumbv7-backend"], optional = true }
 atomic-polyfill = { version = "1.0.3", optional = true }
 
+stm32-fmc = { version = "0.3.0", optional = true }
+
 enumflags2 = "0.7.8"
 embedded-storage = "0.3"
 vcell = "0.1.3"
 document-features = "0.2"
+
+micromath = { version = "2.1.0", optional = true }
 
 [dependencies.stm32f4]
 package = "stm32f4-staging"
@@ -320,6 +324,7 @@ gpio-f427 = [
     "can2",
     "dac",
     "dcmi",
+    "dma2d",
     "eth",
     "i2c3",
     "ltdc",
@@ -406,6 +411,7 @@ gpio-f469 = [
     "can1",
     "can2",
     "dac",
+    "dma2d",
     "dcmi",
     "dsihost",
     "eth",
@@ -494,6 +500,7 @@ dac = []
 dcmi = []
 dfsdm1 = ["dfsdm"]
 dfsdm2 = ["dfsdm"]
+dma2d = []
 dsihost = []
 eth = []
 fmc = []
@@ -508,7 +515,7 @@ gpioj = []
 gpiok = []
 i2c3 = []
 lptim1 = []
-ltdc = []
+ltdc = ["dep:micromath"]
 quadspi = []
 otg-fs = []
 otg-hs = []
@@ -724,6 +731,10 @@ required-features = ["tim2"]                   # stm32f411
 [[example]]
 name = "stopwatch-with-ssd1306-and-interrupts-and-dma-i2c"
 required-features = ["tim2", "stm32f411"]                  # stm32f411
+
+[[example]]
+name = "ltdc-screen"
+required-features = ["stm32f429"]
 
 [[example]]
 name = "timer-periph"

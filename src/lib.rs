@@ -107,6 +107,9 @@ pub mod rng;
 pub mod dma;
 pub mod dwt;
 pub mod flash;
+#[cfg(any(feature = "fmc", feature = "fsmc"))]
+#[cfg(feature = "stm32-fmc")]
+pub mod fmc;
 #[cfg(all(feature = "fsmc_lcd", any(feature = "fmc", feature = "fsmc")))]
 pub mod fsmc_lcd;
 pub mod prelude;
