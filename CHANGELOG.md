@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
- - `i2c_scanner` example
+ - `i2c_scanner` example [#758]
+ - port LTDC implementation and example from stm32f7xx-hal [#731]
 
 ### Changed
 
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
 
 [#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
+[#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
+[#758]: https://github.com/stm32-rs/stm32f4xx-hal/pull/758
 
 ## [v0.21.0] - 2024-05-30
 
