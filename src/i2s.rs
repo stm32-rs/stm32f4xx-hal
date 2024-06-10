@@ -541,5 +541,5 @@ mod dma {
     }
 }
 
-#[cfg(feature = "stm32_i2s_v12x")]
+#[cfg(feature = "i2s")]
 pub use dma::{DualI2sDmaTarget, DualI2sDmaTargetExt};
