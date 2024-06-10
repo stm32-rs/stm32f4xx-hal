@@ -6,23 +6,17 @@
 
 use core::ops::Range;
 
-use panic_semihosting as _;
+use rtt_target::{rprint, rprintln, rtt_init_print};
 
 use cortex_m_rt::entry;
-use cortex_m_semihosting::{hprint, hprintln};
 
-use stm32f4xx_hal::{
-    self as hal,
-    gpio::GpioExt,
-    i2c::{DutyCycle, I2c},
-    pac,
-    prelude::*,
-};
+use stm32f4xx_hal::{self as hal, gpio::GpioExt, i2c::I2c, pac, prelude::*};
 
 const VALID_ADDR_RANGE: Range<u8> = 0x08..0x78;
 
 #[entry]
 fn main() -> ! {
+    rtt_init_print!();
     let dp = pac::Peripherals::take().unwrap();
 
     let rcc = dp.RCC.constrain();
@@ -36,31 +30,39 @@ fn main() -> ! {
     let mut i2c = I2c::new(
         dp.I2C1,
         (scl, sda),
-        hal::i2c::Mode::standard(100_000.Hz()),
+        hal::i2c::Mode::standard(100.kHz()),
         &clocks,
     );
 
-    hprintln!("Start i2c scanning...");
-    hprintln!();
+    rprintln!("Start i2c scanning...");
+    rprintln!();
 
     for addr in 0x00_u8..0x80 {
         // Write the empty array and check the slave response.
         let byte: [u8; 1] = [0; 1];
         if VALID_ADDR_RANGE.contains(&addr) && i2c.write(addr, &byte).is_ok() {
-            hprint!("{:02x}", addr);
+            rprint!("{:02x}", addr);
         } else {
-            hprint!("..");
+            rprint!("..");
         }
         if addr % 0x10 == 0x0F {
-            hprintln!();
+            rprintln!();
         } else {
-            hprint!(" ");
+            rprint!(" ");
         }
     }
 
-    hprintln!();
-    hprintln!("Done!");
+    rprintln!();
+    rprintln!("Done!");
 
     #[allow(clippy::empty_loop)]
     loop {}
+}
+
+use core::panic::PanicInfo;
+#[inline(never)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    rprintln!("{}", info);
+    loop {} // You might need a compiler fence in here.
 }
