@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
+ - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
 
+[#566]: https://github.com/stm32-rs/stm32f4xx-hal/pull/566
 [#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
 [#758]: https://github.com/stm32-rs/stm32f4xx-hal/pull/758
@@ -289,7 +291,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#601]: https://github.com/stm32-rs/stm32f4xx-hal/pull/601
 [#603]: https://github.com/stm32-rs/stm32f4xx-hal/pull/603
 [#600]: https://github.com/stm32-rs/stm32f4xx-hal/pull/600
-
 
 ## [v0.14.0] - 2022-12-12
 
