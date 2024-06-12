@@ -13,73 +13,73 @@ pub use embedded_hal_02 as hal_02;
 pub use nb;
 pub use nb::block;
 
-#[cfg(feature = "stm32f401")]
+#[cfg(feature = "svd-f401")]
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f401 peripherals.
 pub use stm32f4::stm32f401 as pac;
 
-#[cfg(feature = "stm32f405")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f405 peripherals.
+#[cfg(feature = "svd-f405")]
+/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f405/f415 peripherals.
 pub use stm32f4::stm32f405 as pac;
 
-#[cfg(feature = "stm32f407")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f407 peripherals.
+#[cfg(feature = "svd-f407")]
+/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f407/f417 peripherals.
 pub use stm32f4::stm32f407 as pac;
 
-#[cfg(feature = "stm32f410")]
+#[cfg(feature = "svd-f410")]
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f410 peripherals.
 pub use stm32f4::stm32f410 as pac;
 
-#[cfg(feature = "stm32f411")]
+#[cfg(feature = "svd-f411")]
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f411 peripherals.
 pub use stm32f4::stm32f411 as pac;
 
-#[cfg(feature = "stm32f412")]
+#[cfg(feature = "svd-f412")]
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f412 peripherals.
 pub use stm32f4::stm32f412 as pac;
 
-#[cfg(feature = "stm32f413")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f413 peripherals.
+#[cfg(feature = "svd-f413")]
+/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f413/f423 peripherals.
 pub use stm32f4::stm32f413 as pac;
 
-#[cfg(feature = "stm32f415")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f405 peripherals.
-pub use stm32f4::stm32f405 as pac;
-
-#[cfg(feature = "stm32f417")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f407 peripherals.
-pub use stm32f4::stm32f407 as pac;
-
-#[cfg(feature = "stm32f423")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f413 peripherals.
-pub use stm32f4::stm32f413 as pac;
-
-#[cfg(feature = "stm32f427")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f427 peripherals.
+#[cfg(feature = "svd-f427")]
+/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f427/f437 peripherals.
 pub use stm32f4::stm32f427 as pac;
 
-#[cfg(feature = "stm32f429")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f429 peripherals.
+#[cfg(feature = "svd-f429")]
+/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f429/f439 peripherals.
 pub use stm32f4::stm32f429 as pac;
 
-#[cfg(feature = "stm32f437")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f427 peripherals.
-pub use stm32f4::stm32f427 as pac;
-
-#[cfg(feature = "stm32f439")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f429 peripherals.
-pub use stm32f4::stm32f429 as pac;
-
-#[cfg(feature = "stm32f446")]
+#[cfg(feature = "svd-f446")]
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f446 peripherals.
 pub use stm32f4::stm32f446 as pac;
 
-#[cfg(feature = "stm32f469")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f469 peripherals.
+#[cfg(feature = "svd-f469")]
+/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f469/f479 peripherals.
 pub use stm32f4::stm32f469 as pac;
 
-#[cfg(feature = "stm32f479")]
-/// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f469 peripherals.
-pub use stm32f4::stm32f469 as pac;
+#[cfg(feature = "svd-f7x2")]
+pub use stm32f7::stm32f7x2 as pac;
+
+#[cfg(feature = "svd-f7x3")]
+pub use stm32f7::stm32f7x3 as pac;
+
+#[cfg(feature = "svd-f730")]
+pub use stm32f7::stm32f730 as pac;
+
+#[cfg(feature = "svd-f745")]
+pub use stm32f7::stm32f745 as pac;
+
+#[cfg(feature = "svd-f7x6")]
+pub use stm32f7::stm32f7x6 as pac;
+
+#[cfg(feature = "svd-f765")]
+pub use stm32f7::stm32f765 as pac;
+
+#[cfg(feature = "svd-f7x7")]
+pub use stm32f7::stm32f7x7 as pac;
+
+#[cfg(feature = "svd-f7x9")]
+pub use stm32f7::stm32f7x9 as pac;
 
 // Enable use of interrupt macro
 pub use crate::pac::interrupt;
@@ -88,19 +88,26 @@ pub mod adc;
 pub mod bb;
 #[cfg(all(feature = "can", any(feature = "can1", feature = "can2")))]
 pub mod can;
+#[cfg(feature = "f4")]
 pub mod crc32;
 #[cfg(feature = "dac")]
 pub mod dac;
 #[cfg(feature = "fmpi2c1")]
 pub mod fmpi2c;
 pub mod gpio;
+#[cfg(feature = "i2c_v1")]
 pub mod i2c;
+#[cfg(feature = "i2c_v2")]
+#[path = "fmpi2c.rs"]
+pub mod i2c;
+#[cfg(feature = "f4")]
 pub mod i2s;
 #[cfg(all(feature = "usb_fs", feature = "otg-fs"))]
 pub mod otg_fs;
 #[cfg(all(any(feature = "usb_hs", docsrs), feature = "otg-hs"))]
 pub mod otg_hs;
 
+#[cfg(feature = "f4")]
 #[cfg(feature = "rng")]
 pub mod rng;
 
@@ -108,6 +115,11 @@ pub mod dma;
 #[cfg(feature = "dsihost")]
 pub mod dsi;
 pub mod dwt;
+#[cfg(feature = "f4")]
+#[path = "flash/f4.rs"]
+pub mod flash;
+#[cfg(feature = "f7")]
+#[path = "flash/f7.rs"]
 pub mod flash;
 #[cfg(any(feature = "fmc", feature = "fsmc"))]
 #[cfg(feature = "stm32-fmc")]
@@ -121,6 +133,7 @@ pub mod qei;
 #[cfg(feature = "quadspi")]
 pub mod qspi;
 pub mod rcc;
+#[cfg(feature = "f4")]
 pub mod rtc;
 #[cfg(feature = "sai")]
 pub mod sai;
