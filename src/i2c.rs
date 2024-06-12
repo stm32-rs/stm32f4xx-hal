@@ -104,10 +104,16 @@ macro_rules! i2c {
 }
 
 i2c! { pac::I2C1: I2c1 }
+#[cfg(feature = "i2c2")]
 i2c! { pac::I2C2: I2c2 }
-
 #[cfg(feature = "i2c3")]
 i2c! { pac::I2C3: I2c3 }
+#[cfg(feature = "i2c4")]
+i2c! { pac::I2C4: I2c4 }
+#[cfg(feature = "i2c5")]
+i2c! { pac::I2C5: I2c5 }
+#[cfg(feature = "i2c6")]
+i2c! { pac::I2C6: I2c6 }
 
 pub trait I2cExt: Sized + Instance {
     fn i2c(
