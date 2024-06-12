@@ -279,9 +279,11 @@ i2s!(pac::SPI2, I2s2, i2s2);
 #[cfg(feature = "spi3")]
 i2s!(pac::SPI3, I2s3, i2s3);
 
+#[cfg(feature = "f4")]
 #[cfg(feature = "spi4")]
 i2s!(pac::SPI4, I2s4, i2s4);
 
+#[cfg(feature = "f4")]
 #[cfg(feature = "spi5")]
 i2s!(pac::SPI5, I2s5, i2s5);
 

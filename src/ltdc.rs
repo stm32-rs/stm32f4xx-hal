@@ -294,7 +294,10 @@ impl<T: 'static + SupportedWord> DisplayController<T> {
             w.pllsain().bits(best_plln as u16);
             w.pllsair().bits(best_pllr as u8)
         });
+        #[cfg(feature = "f4")]
         rcc.dckcfgr().modify(|_, w| w.pllsaidivr().set(pllsaidivr));
+        #[cfg(feature = "f7")]
+        rcc.dckcfgr1().modify(|_, w| w.pllsaidivr().set(pllsaidivr));
 
         // Enable PLLSAI and wait for it
         rcc.cr().modify(|_, w| w.pllsaion().on());

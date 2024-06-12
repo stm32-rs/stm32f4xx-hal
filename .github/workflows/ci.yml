@@ -38,6 +38,15 @@ jobs:
           - stm32f446
           - stm32f469
           - stm32f479
+          - stm32f722
+          - stm32f723
+          - stm32f730
+          - stm32f745
+          - stm32f746
+          - stm32f765
+          - stm32f767
+          - stm32f769
+
         rust:
           - stable
         features:
