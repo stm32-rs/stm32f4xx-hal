@@ -351,6 +351,12 @@ macro_rules! dma_map {
 }
 use dma_map;
 
+#[cfg(feature = "f2")]
+mod f2;
+#[allow(unused)]
+#[cfg(feature = "f2")]
+pub use f2::*;
+
 #[cfg(feature = "f4")]
 mod f4;
 #[allow(unused)]

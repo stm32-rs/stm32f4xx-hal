@@ -13,6 +13,12 @@ pub use embedded_hal_02 as hal_02;
 pub use nb;
 pub use nb::block;
 
+#[cfg(feature = "svd-f215")]
+pub use stm32f2::stm32f215 as pac;
+
+#[cfg(feature = "svd-f217")]
+pub use stm32f2::stm32f217 as pac;
+
 #[cfg(feature = "svd-f401")]
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f401 peripherals.
 pub use stm32f4::stm32f401 as pac;

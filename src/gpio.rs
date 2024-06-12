@@ -618,6 +618,11 @@ macro_rules! gpio {
 }
 use gpio;
 
+#[cfg(feature = "f2")]
+mod f2;
+#[cfg(feature = "f2")]
+pub use f2::*;
+
 #[cfg(feature = "f4")]
 mod f4;
 #[cfg(feature = "f4")]
