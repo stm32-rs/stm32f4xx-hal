@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Integrate STM32F7 support
  - Implement `Ptr`, `Sealed`, `Steal` for generic `Periph` [#834]
  - Use `&mut RCC` for `PER::enable/reset`
  - Unmacro `Adc` [#832]
@@ -16,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - FMPI2c APB timings [#770]
  - Fefactor FMPI2c `embedded-hal` implementations [#784]
 
+[#667]: https://github.com/stm32-rs/stm32f4xx-hal/pull/667
 [#770]: https://github.com/stm32-rs/stm32f4xx-hal/pull/770
 [#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
 [#829]: https://github.com/stm32-rs/stm32f4xx-hal/pull/829

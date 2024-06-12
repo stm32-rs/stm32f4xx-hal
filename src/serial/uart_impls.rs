@@ -1,4 +1,8 @@
+#[cfg(feature = "f4")]
 use crate::pacext::uart::{Cr3W, SrR, UartRB};
+
+#[cfg(feature = "f7")]
+use crate::pacext::uart::UartRB;
 
 use super::{config, config::IrdaMode, CFlag, Error, Event, Flag};
 use enumflags2::BitFlags;
@@ -10,9 +14,13 @@ pub trait RegisterBlockImpl: UartRB {
 
     fn read_u16(&self) -> nb::Result<u16, Error> {
         // NOTE(unsafe) atomic read with no side effects
+        #[cfg(feature = "uart_v2")]
         let sr = self.sr().read();
+        #[cfg(feature = "uart_v3")]
+        let sr = self.isr().read();
 
         // Any error requires the dr to be read to clear
+        #[cfg(feature = "uart_v2")]
         if sr.pe().bit_is_set()
             || sr.fe().bit_is_set()
             || sr.nf().bit_is_set()
@@ -21,17 +29,30 @@ pub trait RegisterBlockImpl: UartRB {
             self.dr().read();
         }
 
+        #[cfg(feature = "uart_v3")]
+        let icr = self.icr();
         Err(if sr.pe().bit_is_set() {
+            #[cfg(feature = "uart_v3")]
+            icr.write(|w| w.pecf().clear());
             Error::Parity.into()
         } else if sr.fe().bit_is_set() {
+            #[cfg(feature = "uart_v3")]
+            icr.write(|w| w.fecf().clear());
             Error::FrameFormat.into()
         } else if sr.nf().bit_is_set() {
+            #[cfg(feature = "uart_v3")]
+            icr.write(|w| w.ncf().clear());
             Error::Noise.into()
         } else if sr.ore().bit_is_set() {
+            #[cfg(feature = "uart_v3")]
+            icr.write(|w| w.orecf().clear());
             Error::Overrun.into()
         } else if sr.rxne().bit_is_set() {
             // NOTE(unsafe) atomic read from stateless register
+            #[cfg(feature = "uart_v2")]
             return Ok(self.dr().read().dr().bits());
+            #[cfg(feature = "uart_v3")]
+            return Ok(self.rdr().read().rdr().bits());
         } else {
             nb::Error::WouldBlock
         })
@@ -39,11 +60,17 @@ pub trait RegisterBlockImpl: UartRB {
 
     fn write_u16(&self, word: u16) -> nb::Result<(), Error> {
         // NOTE(unsafe) atomic read with no side effects
+        #[cfg(feature = "uart_v2")]
         let sr = self.sr().read();
+        #[cfg(feature = "uart_v3")]
+        let sr = self.isr().read();
 
         if sr.txe().bit_is_set() {
             // NOTE(unsafe) atomic write to stateless register
+            #[cfg(feature = "uart_v2")]
             self.dr().write(|w| w.dr().set(word));
+            #[cfg(feature = "uart_v3")]
+            self.tdr().write(|w| w.tdr().set(word));
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -64,7 +91,10 @@ pub trait RegisterBlockImpl: UartRB {
 
     fn flush(&self) -> nb::Result<(), Error> {
         // NOTE(unsafe) atomic read with no side effects
+        #[cfg(feature = "uart_v2")]
         let sr = self.sr().read();
+        #[cfg(feature = "uart_v3")]
+        let sr = self.isr().read();
 
         if sr.tc().bit_is_set() {
             Ok(())
@@ -109,7 +139,11 @@ pub trait RegisterBlockImpl: UartRB {
     // ISR
     #[inline(always)]
     fn flags(&self) -> BitFlags<Flag> {
-        BitFlags::from_bits_truncate(self.sr().read().bits())
+        #[cfg(feature = "uart_v2")]
+        let sr = self.sr().read();
+        #[cfg(feature = "uart_v3")]
+        let sr = self.isr().read();
+        BitFlags::from_bits_truncate(sr.bits())
     }
 
     #[inline(always)]
@@ -126,12 +160,21 @@ pub trait RegisterBlockImpl: UartRB {
     }
     #[inline(always)]
     fn clear_flags(&self, flags: BitFlags<CFlag>) {
+        #[cfg(feature = "uart_v2")]
         self.sr().write(|w| unsafe { w.bits(!flags.bits()) });
+        #[cfg(feature = "uart_v3")]
+        self.icr().write(|w| unsafe { w.bits(flags.bits()) });
     }
     fn clear_idle_interrupt(&self) {
-        let _ = self.sr().read();
-        let _ = self.dr().read();
+        #[cfg(feature = "uart_v2")]
+        {
+            let _ = self.sr().read();
+            let _ = self.dr().read();
+        }
+        #[cfg(feature = "uart_v3")]
+        self.icr().write(|w| w.idlecf().clear_bit_by_one());
     }
+    #[cfg(feature = "uart_v2")]
     fn check_and_clear_error_flags(&self) -> Result<(), Error> {
         let sr = self.sr().read();
         let _ = self.dr().read();
@@ -144,6 +187,27 @@ pub trait RegisterBlockImpl: UartRB {
             Err(Error::FrameFormat)
         } else if sr.pe().bit_is_set() {
             Err(Error::Parity)
+        } else {
+            Ok(())
+        }
+    }
+    #[cfg(feature = "uart_v3")]
+    fn check_and_clear_error_flags(&self) -> Result<(), Error> {
+        let sr = self.isr().read();
+        let icr = self.icr();
+
+        if sr.pe().bit_is_set() {
+            icr.write(|w| w.pecf().clear());
+            Err(Error::Parity)
+        } else if sr.fe().bit_is_set() {
+            icr.write(|w| w.fecf().clear());
+            Err(Error::FrameFormat)
+        } else if sr.nf().bit_is_set() {
+            icr.write(|w| w.ncf().clear());
+            Err(Error::Noise)
+        } else if sr.ore().bit_is_set() {
+            icr.write(|w| w.orecf().clear());
+            Err(Error::Overrun)
         } else {
             Ok(())
         }
@@ -199,13 +263,27 @@ pub trait RegisterBlockImpl: UartRB {
     // PeriAddress for transfer data
     #[inline(always)]
     fn tx_peri_address(&self) -> u32 {
-        self.dr().as_ptr() as u32
+        #[cfg(feature = "uart_v2")]
+        {
+            self.dr().as_ptr() as u32
+        }
+        #[cfg(feature = "uart_v3")]
+        {
+            self.tdr().as_ptr() as u32
+        }
     }
 
     // PeriAddress for receive data
     #[inline(always)]
     fn rx_peri_address(&self) -> u32 {
-        self.dr().as_ptr() as u32
+        #[cfg(feature = "uart_v2")]
+        {
+            self.dr().as_ptr() as u32
+        }
+        #[cfg(feature = "uart_v3")]
+        {
+            self.rdr().as_ptr() as u32
+        }
     }
 
     fn enable_dma(&self, dc: config::DmaConfig) {
@@ -262,6 +340,7 @@ impl RegisterBlockImpl for crate::pac::usart1::RegisterBlock {
     }
 }
 
+#[cfg(feature = "f4")]
 #[cfg(feature = "uart4")]
 impl RegisterBlockImpl for crate::pac::uart4::RegisterBlock {
     const IRDA: bool = false;
