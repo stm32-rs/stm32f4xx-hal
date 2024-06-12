@@ -22,9 +22,9 @@ pub mod delay;
 pub use delay::*;
 pub mod pwm;
 pub use pwm::*;
-#[cfg(not(feature = "gpio-f410"))]
+#[cfg(not(gpio_f410))]
 pub mod pwm_input;
-#[cfg(not(feature = "gpio-f410"))]
+#[cfg(not(gpio_f410))]
 pub use pwm_input::PwmInput;
 #[cfg(feature = "rtic1")]
 pub mod monotonic;
@@ -815,42 +815,42 @@ impl<TIM: Instance, const FREQ: u32> crate::ReadFlags for FTimer<TIM, FREQ> {
     }
 }
 
-#[cfg(not(feature = "gpio-f410"))]
-#[cfg(feature = "tim1")]
+#[cfg(not(gpio_f410))]
+#[cfg(pac_tim1)]
 hal!(pac::TIM1: [Timer1, u16, dmar: u32, c: (4, _aoe), m: tim1,]);
-#[cfg(feature = "tim2")]
+#[cfg(pac_tim2)]
 hal!(pac::TIM2: [Timer2, u32, dmar: u16, c: (4), m: tim2,]);
-#[cfg(feature = "tim3")]
+#[cfg(pac_tim3)]
 hal!(pac::TIM3: [Timer3, u16, dmar: u16, c: (4), m: tim3,]);
-#[cfg(feature = "tim4")]
+#[cfg(pac_tim4)]
 hal!(pac::TIM4: [Timer4, u16, dmar: u16, c: (4), m: tim3,]);
-#[cfg(not(feature = "gpio-f410"))]
-#[cfg(feature = "tim5")]
+#[cfg(not(gpio_f410))]
+#[cfg(pac_tim5)]
 hal!(pac::TIM5: [Timer5, u32, dmar: u16, c: (4), m: tim5,]);
 
 // TIM5 on F410 is 16-bit
-#[cfg(feature = "gpio-f410")]
-#[cfg(feature = "tim1")]
+#[cfg(gpio_f410)]
+#[cfg(pac_tim1)]
 hal!(pac::TIM1: [Timer1, u16, dmar: u16, c: (4, _aoe), m: tim1,]);
-#[cfg(feature = "gpio-f410")]
-#[cfg(feature = "tim5")]
+#[cfg(gpio_f410)]
+#[cfg(pac_tim5)]
 hal!(pac::TIM5: [Timer5, u16, dmar: u16, c: (4), m: tim5,]);
 
-#[cfg(feature = "tim6")]
+#[cfg(pac_tim6)]
 hal!(pac::TIM6: [Timer6, u16, m: tim6,]);
-#[cfg(feature = "tim7")]
+#[cfg(pac_tim7)]
 hal!(pac::TIM7: [Timer7, u16, m: tim7,]);
-#[cfg(feature = "tim8")]
+#[cfg(pac_tim8)]
 hal!(pac::TIM8: [Timer8, u16, dmar: u32, c: (4, _aoe), m: tim8,]);
-#[cfg(feature = "tim9")]
+#[cfg(pac_tim9)]
 hal!(pac::TIM9: [Timer9, u16, c: (2),]);
-#[cfg(feature = "tim10")]
+#[cfg(pac_tim10)]
 hal!(pac::TIM10: [Timer10, u16, c: (1),]);
-#[cfg(feature = "tim11")]
+#[cfg(pac_tim11)]
 hal!(pac::TIM11: [Timer11, u16, c: (1),]);
-#[cfg(feature = "tim12")]
+#[cfg(pac_tim12)]
 hal!(pac::TIM12: [Timer12, u16, c: (2),]);
-#[cfg(feature = "tim13")]
+#[cfg(pac_tim13)]
 hal!(pac::TIM13: [Timer13, u16, c: (1),]);
-#[cfg(feature = "tim14")]
+#[cfg(pac_tim14)]
 hal!(pac::TIM14: [Timer14, u16, c: (1),]);

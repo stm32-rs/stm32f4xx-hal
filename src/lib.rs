@@ -86,38 +86,38 @@ pub use crate::pac::interrupt;
 
 pub mod adc;
 pub mod bb;
-#[cfg(all(feature = "can", any(feature = "can1", feature = "can2")))]
+#[cfg(all(feature = "can", any(pac_can1, pac_can2)))]
 pub mod can;
 pub mod crc32;
-#[cfg(feature = "dac")]
+#[cfg(pac_dac)]
 pub mod dac;
-#[cfg(feature = "fmpi2c1")]
+#[cfg(pac_fmpi2c1)]
 pub mod fmpi2c;
 pub mod gpio;
 pub mod i2c;
 pub mod i2s;
-#[cfg(all(feature = "usb_fs", feature = "otg-fs"))]
+#[cfg(all(feature = "usb_fs", pac_otg_fs))]
 pub mod otg_fs;
-#[cfg(all(any(feature = "usb_hs", docsrs), feature = "otg-hs"))]
+#[cfg(all(any(feature = "usb_hs", docsrs), pac_otg_hs))]
 pub mod otg_hs;
 
-#[cfg(feature = "rng")]
+#[cfg(pac_rng)]
 pub mod rng;
 
 pub mod dma;
 pub mod dwt;
 pub mod flash;
-#[cfg(all(feature = "fsmc_lcd", any(feature = "fmc", feature = "fsmc")))]
+#[cfg(all(feature = "fsmc_lcd", any(pac_fmc, pac_fsmc)))]
 pub mod fsmc_lcd;
-#[cfg(all(feature = "dma2d", feature = "ltdc"))]
+#[cfg(all(pac_dma2d, pac_ltdc))]
 pub mod ltdc;
 pub mod prelude;
 pub mod qei;
-#[cfg(feature = "quadspi")]
+#[cfg(pac_quadspi)]
 pub mod qspi;
 pub mod rcc;
 pub mod rtc;
-#[cfg(all(feature = "sdio-host", feature = "sdio"))]
+#[cfg(all(feature = "sdio-host", pac_sdio))]
 pub mod sdio;
 pub mod serial;
 pub mod signature;
@@ -125,7 +125,7 @@ pub mod spi;
 pub mod syscfg;
 pub mod time;
 pub mod timer;
-#[cfg(feature = "uart4")]
+#[cfg(pac_uart4)]
 pub mod uart;
 pub mod watchdog;
 

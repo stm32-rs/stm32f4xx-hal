@@ -59,15 +59,15 @@ macro_rules! halUart {
     };
 }
 
-#[cfg(feature = "uart4")]
+#[cfg(pac_uart4)]
 halUart! { pac::UART4, Serial4, Rx4, Tx4 }
-#[cfg(feature = "uart5")]
+#[cfg(pac_uart5)]
 halUart! { pac::UART5, Serial5, Rx5, Tx5 }
-#[cfg(feature = "uart7")]
+#[cfg(pac_uart7)]
 halUart! { pac::UART7, Serial7, Rx7, Tx7 }
-#[cfg(feature = "uart8")]
+#[cfg(pac_uart8)]
 halUart! { pac::UART8, Serial8, Rx8, Tx8 }
-#[cfg(feature = "uart9")]
+#[cfg(pac_uart9)]
 halUart! { pac::UART9, Serial9, Rx9, Tx9 }
-#[cfg(feature = "uart10")]
+#[cfg(pac_uart10)]
 halUart! { pac::UART10, Serial10, Rx10, Tx10 }

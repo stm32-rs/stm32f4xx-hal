@@ -63,7 +63,7 @@ where
     }
 }
 
-#[cfg(not(feature = "gpio-f410"))]
+#[cfg(not(gpio_f410))]
 macro_rules! hal {
     ($TIM:ty) => {
         impl Timer<$TIM> {
@@ -188,19 +188,19 @@ macro_rules! hal {
     };
 }
 
-#[cfg(feature = "tim1")]
+#[cfg(pac_tim1)]
 hal! { pac::TIM1 }
-#[cfg(feature = "tim2")]
+#[cfg(pac_tim2)]
 hal! { pac::TIM2 }
-#[cfg(feature = "tim3")]
+#[cfg(pac_tim3)]
 hal! { pac::TIM3 }
-#[cfg(feature = "tim4")]
+#[cfg(pac_tim4)]
 hal! { pac::TIM4 }
-#[cfg(feature = "tim5")]
+#[cfg(pac_tim5)]
 hal! { pac::TIM5 }
-#[cfg(feature = "tim8")]
+#[cfg(pac_tim8)]
 hal! { pac::TIM8 }
-#[cfg(feature = "tim9")]
+#[cfg(pac_tim9)]
 hal! { pac::TIM9 }
-#[cfg(feature = "tim12")]
+#[cfg(pac_tim12)]
 hal! { pac::TIM12 }

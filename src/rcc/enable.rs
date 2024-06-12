@@ -79,16 +79,16 @@ macro_rules! bus {
     }
 }
 
-#[cfg(feature = "quadspi")]
+#[cfg(pac_quadspi)]
 impl crate::Sealed for crate::pac::QUADSPI {}
-#[cfg(feature = "quadspi")]
+#[cfg(pac_quadspi)]
 impl RccBus for crate::pac::QUADSPI {
     type Bus = AHB3;
 }
 
-#[cfg(feature = "quadspi")]
+#[cfg(pac_quadspi)]
 bus_enable! { QUADSPI => 1 }
-#[cfg(feature = "quadspi")]
+#[cfg(pac_quadspi)]
 bus_reset! { QUADSPI => 1 }
 
 bus! {
@@ -104,58 +104,58 @@ bus! {
     GPIOH => (AHB1, 7),
 }
 
-#[cfg(any(feature = "gpiod", feature = "gpioe"))]
+#[cfg(any(pac_gpiod, pac_gpioe))]
 bus! {
     GPIOD => (AHB1, 3),
     GPIOE => (AHB1, 4),
 }
-#[cfg(any(feature = "gpiof", feature = "gpiog"))]
+#[cfg(any(pac_gpiof, pac_gpiog))]
 bus! {
     GPIOF => (AHB1, 5),
     GPIOG => (AHB1, 6),
 }
 
-#[cfg(feature = "gpioi")]
+#[cfg(pac_gpioi)]
 bus! {
     GPIOI => (AHB1, 8),
 }
 
-#[cfg(any(feature = "gpioj", feature = "gpiok"))]
+#[cfg(any(pac_gpioj, pac_gpiok))]
 bus! {
     GPIOJ => (AHB1, 9),
     GPIOK => (AHB1, 10),
 }
 
-#[cfg(feature = "rng")]
+#[cfg(pac_rng)]
 bus! {
     RNG => (AHB2, 6),
 }
 
-#[cfg(feature = "otg-fs")]
+#[cfg(pac_otg_fs)]
 bus! {
     OTG_FS_GLOBAL => (AHB2, 7),
 }
 
-#[cfg(feature = "otg-hs")]
+#[cfg(pac_otg_hs)]
 bus! {
     OTG_HS_GLOBAL => (AHB1, 29),
 }
 
-#[cfg(feature = "fmc")]
+#[cfg(pac_fmc)]
 bus! {
     FMC => (AHB3, 0),
 }
 
 // TODO: fix absent ahb3lpenr
-#[cfg(feature = "fsmc")]
+#[cfg(pac_fsmc)]
 impl crate::Sealed for crate::pac::FSMC {}
-#[cfg(feature = "fsmc")]
+#[cfg(pac_fsmc)]
 impl RccBus for crate::pac::FSMC {
     type Bus = AHB3;
 }
-#[cfg(feature = "fsmc")]
+#[cfg(pac_fsmc)]
 bus_enable!(FSMC => 0);
-#[cfg(feature = "fsmc")]
+#[cfg(pac_fsmc)]
 bus_reset!(FSMC => 0);
 
 bus! {
@@ -166,22 +166,22 @@ bus! {
     SPI1 => (APB2, 12),
     SPI2 => (APB1, 14),
 }
-#[cfg(feature = "spi3")]
+#[cfg(pac_spi3)]
 bus! {
     SPI3 => (APB1, 15),
 }
 
-#[cfg(feature = "spi4")]
+#[cfg(pac_spi4)]
 bus! {
     SPI4 => (APB2, 13),
 }
 
-#[cfg(feature = "spi5")]
+#[cfg(pac_spi5)]
 bus! {
     SPI5 => (APB2, 20),
 }
 
-#[cfg(feature = "spi6")]
+#[cfg(pac_spi6)]
 bus! {
     SPI6 => (APB2, 21),
 }
@@ -190,11 +190,11 @@ bus! {
     I2C1 => (APB1, 21),
     I2C2 => (APB1, 22),
 }
-#[cfg(feature = "i2c3")]
+#[cfg(pac_i2c3)]
 bus! {
     I2C3 => (APB1, 23),
 }
-#[cfg(feature = "fmpi2c1")]
+#[cfg(pac_fmpi2c1)]
 bus! {
     FMPI2C1 => (APB1, 24),
 }
@@ -204,40 +204,40 @@ bus! {
     USART2 => (APB1, 17),
     USART6 => (APB2, 5),
 }
-#[cfg(feature = "usart3")]
+#[cfg(pac_usart3)]
 bus! {
     USART3 => (APB1, 18),
 }
 
-#[cfg(any(feature = "uart4", feature = "uart5"))]
+#[cfg(any(pac_uart4, pac_uart5))]
 bus! {
     UART4 => (APB1, 19),
     UART5 => (APB1, 20),
 }
 
-#[cfg(any(feature = "uart7", feature = "uart8"))]
+#[cfg(any(pac_uart7, pac_uart8))]
 bus! {
     UART7 => (APB1, 30),
     UART8 => (APB1, 31),
 }
-#[cfg(any(feature = "uart9", feature = "uart10"))]
+#[cfg(any(pac_uart9, pac_uart10))]
 bus! {
     UART9 => (APB2, 6),
     UART10 => (APB2, 7),
 }
 
-#[cfg(any(feature = "can1", feature = "can2"))]
+#[cfg(any(pac_can1, pac_can2))]
 bus! {
     CAN1 => (APB1, 25),
     CAN2 => (APB1, 26),
 }
 
-#[cfg(feature = "can3")]
+#[cfg(pac_can3)]
 bus! {
     CAN3 => (APB1, 27),
 }
 
-#[cfg(feature = "dac")]
+#[cfg(pac_dac)]
 bus! {
     DAC => (APB1, 29),
 }
@@ -250,30 +250,30 @@ bus! {
     ADC1 => (APB2, 8),
 }
 
-#[cfg(feature = "adc2")]
+#[cfg(pac_adc2)]
 impl crate::Sealed for crate::pac::ADC2 {}
-#[cfg(feature = "adc2")]
+#[cfg(pac_adc2)]
 impl RccBus for crate::pac::ADC2 {
     type Bus = APB2;
 }
-#[cfg(feature = "adc2")]
+#[cfg(pac_adc2)]
 bus_enable!(ADC2 => 9);
-#[cfg(feature = "adc2")]
+#[cfg(pac_adc2)]
 bus_lpenable!(ADC2 => 9);
-#[cfg(feature = "adc2")]
+#[cfg(pac_adc2)]
 bus_reset!(ADC2 => 8);
 
-#[cfg(feature = "adc3")]
+#[cfg(pac_adc3)]
 impl crate::Sealed for crate::pac::ADC3 {}
-#[cfg(feature = "adc3")]
+#[cfg(pac_adc3)]
 impl RccBus for crate::pac::ADC3 {
     type Bus = APB2;
 }
-#[cfg(feature = "adc3")]
+#[cfg(pac_adc3)]
 bus_enable!(ADC3 => 10);
-#[cfg(feature = "adc3")]
+#[cfg(pac_adc3)]
 bus_lpenable!(ADC3 => 10);
-#[cfg(feature = "adc3")]
+#[cfg(pac_adc3)]
 bus_reset!(ADC3 => 8);
 
 #[cfg(feature = "stm32f413")]
@@ -286,12 +286,12 @@ bus! {
     SAI1 => (APB2, 22),
 }
 
-#[cfg(feature = "sai2")]
+#[cfg(pac_sai2)]
 bus! {
     SAI2 => (APB2, 23),
 }
 
-#[cfg(feature = "sdio")]
+#[cfg(pac_sdio)]
 bus! {
     SDIO => (APB2, 11),
 }
@@ -304,14 +304,7 @@ bus! {
 }
 
 #[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f417",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-    feature = "gpio-f427",
-    feature = "gpio-f446",
-    feature = "gpio-f469",
+    gpio_f401, gpio_f417, gpio_f411, gpio_f412, gpio_f413, gpio_f427, gpio_f446, gpio_f469,
 ))]
 bus! {
     TIM2 => (APB1, 0),
@@ -321,26 +314,13 @@ bus! {
 }
 
 #[cfg(any(
-    feature = "gpio-f410",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f446",
-    feature = "gpio-f469",
+    gpio_f410, gpio_f412, gpio_f413, gpio_f417, gpio_f427, gpio_f446, gpio_f469,
 ))]
 bus! {
     TIM6 => (APB1, 4),
 }
 
-#[cfg(any(
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f446",
-    feature = "gpio-f469",
-))]
+#[cfg(any(gpio_f412, gpio_f413, gpio_f417, gpio_f427, gpio_f446, gpio_f469))]
 bus! {
     TIM7 => (APB1, 5),
     TIM8 => (APB2, 1),
@@ -349,11 +329,11 @@ bus! {
     TIM14 => (APB1, 8),
 }
 
-#[cfg(feature = "ltdc")]
+#[cfg(pac_ltdc)]
 bus! {
     LTDC => (APB2, 26),
 }
-#[cfg(feature = "dma2d")]
+#[cfg(pac_dma2d)]
 bus! {
     DMA2D => (AHB1, 23),
 }

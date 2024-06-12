@@ -52,7 +52,7 @@ impl<T> Debug for DMAError<T> {
 }
 
 // most of STM32F4 have 8 DmaChannel
-#[cfg(not(feature = "gpio-f413"))]
+#[cfg(not(gpio_f413))]
 /// Possible Channel of a DMA Stream.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DmaChannel {
@@ -67,7 +67,7 @@ pub enum DmaChannel {
 }
 
 //  STM32F413 and STM32F423 have 16 DmaChannel
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 /// Possible Channel of a DMA Stream.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DmaChannel {
@@ -380,12 +380,12 @@ impl<DMA, const S: u8> StreamX<DMA, S> {
 }
 
 impl<DMA: Instance, const S: u8> StreamX<DMA, S> {
-    #[cfg(not(any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410")))]
+    #[cfg(not(any(gpio_f411, gpio_f413, gpio_f410)))]
     #[inline(always)]
     unsafe fn st() -> &'static pac::dma2::ST {
         (*DMA::ptr()).st(S as usize)
     }
-    #[cfg(any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410"))]
+    #[cfg(any(gpio_f411, gpio_f413, gpio_f410))]
     #[inline(always)]
     unsafe fn st() -> &'static pac::dma1::ST {
         (*DMA::ptr()).st(S as usize)
@@ -768,7 +768,7 @@ dma_channel!(
     (Channel7, 7),
 );
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 dma_channel!((Channel8, 8), (Channel9, 9),);
 
 /// Contains types related to DMA configuration.

@@ -289,14 +289,14 @@ macro_rules! pin {
 use pin;
 
 // CAN pins
-#[cfg(feature = "can1")]
+#[cfg(pac_can1)]
 pub trait CanCommon {
     type Rx;
     type Tx;
 }
 
 // DFSDM pins
-#[cfg(feature = "dfsdm")]
+#[cfg(any_dfsdm)]
 pub trait DfsdmBasic {
     type Ckin0;
     type Ckin1;
@@ -304,14 +304,14 @@ pub trait DfsdmBasic {
     type Datin0;
     type Datin1;
 }
-#[cfg(feature = "dfsdm")]
+#[cfg(any_dfsdm)]
 pub trait DfsdmGeneral: DfsdmBasic {
     type Ckin2;
     type Ckin3;
     type Datin2;
     type Datin3;
 }
-#[cfg(feature = "dfsdm")]
+#[cfg(any_dfsdm)]
 pub trait DfsdmAdvanced: DfsdmGeneral {
     type Ckin4;
     type Ckin5;
@@ -364,12 +364,12 @@ pub trait I2sExtPin {
 
 // QuadSPI pins
 
-#[cfg(feature = "quadspi")]
+#[cfg(pac_quadspi)]
 pub trait QuadSpiBanks {
     type Bank1;
     type Bank2;
 }
-#[cfg(feature = "quadspi")]
+#[cfg(pac_quadspi)]
 pub trait QuadSpiBank {
     type Io0: crate::gpio::PinSpeed;
     type Io1: crate::gpio::PinSpeed;
@@ -380,12 +380,12 @@ pub trait QuadSpiBank {
 
 // SAI pins
 
-#[cfg(feature = "sai1")]
+#[cfg(pac_sai1)]
 pub trait SaiChannels {
     type A;
     type B;
 }
-#[cfg(feature = "sai1")]
+#[cfg(pac_sai1)]
 pub trait SaiChannel {
     type Fs;
     type Mclk;
@@ -395,7 +395,7 @@ pub trait SaiChannel {
 
 // SPDIFRX pins
 
-#[cfg(feature = "spdifrx")]
+#[cfg(pac_spdifrx)]
 pub trait SPdifIn<const C: u8> {
     type In;
 }
