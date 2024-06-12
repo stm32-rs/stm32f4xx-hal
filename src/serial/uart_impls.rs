@@ -18,6 +18,7 @@ pub(crate) use crate::pac::uart4::RegisterBlock as RegisterBlockUart;
 pub(crate) use crate::pac::usart1::RegisterBlock as RegisterBlockUsart;
 
 #[cfg(feature = "uart4")]
+#[cfg(not(feature = "f7"))]
 impl crate::Sealed for RegisterBlockUart {}
 impl crate::Sealed for RegisterBlockUsart {}
 
@@ -163,9 +164,13 @@ macro_rules! uartCommon {
     () => {
         fn read_u16(&self) -> nb::Result<u16, Error> {
             // NOTE(unsafe) atomic read with no side effects
+            #[cfg(feature = "uart_v2")]
             let sr = self.sr().read();
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
 
             // Any error requires the dr to be read to clear
+            #[cfg(feature = "uart_v2")]
             if sr.pe().bit_is_set()
                 || sr.fe().bit_is_set()
                 || sr.nf().bit_is_set()
@@ -174,17 +179,30 @@ macro_rules! uartCommon {
                 self.dr().read();
             }
 
+            #[cfg(feature = "uart_v3")]
+            let icr = self.icr();
             Err(if sr.pe().bit_is_set() {
+                #[cfg(feature = "uart_v3")]
+                icr.write(|w| w.pecf().clear());
                 Error::Parity.into()
             } else if sr.fe().bit_is_set() {
+                #[cfg(feature = "uart_v3")]
+                icr.write(|w| w.fecf().clear());
                 Error::FrameFormat.into()
             } else if sr.nf().bit_is_set() {
+                #[cfg(feature = "uart_v3")]
+                icr.write(|w| w.ncf().clear());
                 Error::Noise.into()
             } else if sr.ore().bit_is_set() {
+                #[cfg(feature = "uart_v3")]
+                icr.write(|w| w.orecf().clear());
                 Error::Overrun.into()
             } else if sr.rxne().bit_is_set() {
                 // NOTE(unsafe) atomic read from stateless register
+                #[cfg(feature = "uart_v2")]
                 return Ok(self.dr().read().dr().bits());
+                #[cfg(feature = "uart_v3")]
+                return Ok(self.rdr().read().rdr().bits());
             } else {
                 nb::Error::WouldBlock
             })
@@ -192,11 +210,17 @@ macro_rules! uartCommon {
 
         fn write_u16(&self, word: u16) -> nb::Result<(), Error> {
             // NOTE(unsafe) atomic read with no side effects
+            #[cfg(feature = "uart_v2")]
             let sr = self.sr().read();
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
 
             if sr.txe().bit_is_set() {
                 // NOTE(unsafe) atomic write to stateless register
+                #[cfg(feature = "uart_v2")]
                 self.dr().write(|w| w.dr().set(word));
+                #[cfg(feature = "uart_v3")]
+                self.tdr().write(|w| w.tdr().set(word));
                 Ok(())
             } else {
                 Err(nb::Error::WouldBlock)
@@ -205,7 +229,10 @@ macro_rules! uartCommon {
 
         fn flush(&self) -> nb::Result<(), Error> {
             // NOTE(unsafe) atomic read with no side effects
+            #[cfg(feature = "uart_v2")]
             let sr = self.sr().read();
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
 
             if sr.tc().bit_is_set() {
                 Ok(())
@@ -215,22 +242,40 @@ macro_rules! uartCommon {
         }
 
         fn flags(&self) -> BitFlags<Flag> {
-            BitFlags::from_bits_truncate(self.sr().read().bits())
+            #[cfg(feature = "uart_v2")]
+            let sr = self.sr().read();
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
+            BitFlags::from_bits_truncate(sr.bits())
         }
 
         fn clear_flags(&self, flags: BitFlags<CFlag>) {
+            #[cfg(feature = "uart_v2")]
             self.sr()
                 .write(|w| unsafe { w.bits(0xffff & !flags.bits()) });
+            #[cfg(feature = "uart_v3")]
+            self.icr().write(|w| unsafe { w.bits(flags.bits()) });
         }
 
         fn clear_idle_interrupt(&self) {
-            let _ = self.sr().read();
-            let _ = self.dr().read();
+            #[cfg(feature = "uart_v2")]
+            {
+                let _ = self.sr().read();
+                let _ = self.dr().read();
+            }
+            #[cfg(feature = "uart_v3")]
+            self.icr().write(|w| w.idlecf().set_bit());
         }
 
         fn check_and_clear_error_flags(&self) -> Result<(), Error> {
+            #[cfg(feature = "uart_v2")]
             let sr = self.sr().read();
+            #[cfg(feature = "uart_v2")]
             let _ = self.dr().read();
+
+            // TODO: clear flags
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
 
             if sr.ore().bit_is_set() {
                 Err(Error::Overrun)
@@ -268,12 +313,22 @@ macro_rules! uartCommon {
             });
         }
 
+        #[cfg(feature = "uart_v2")]
+        fn rx_peri_address(&self) -> u32 {
+            self.dr().as_ptr() as u32
+        }
+        #[cfg(feature = "uart_v2")]
         fn tx_peri_address(&self) -> u32 {
             self.dr().as_ptr() as u32
         }
 
+        #[cfg(feature = "uart_v3")]
         fn rx_peri_address(&self) -> u32 {
-            self.dr().as_ptr() as u32
+            self.rdr().as_ptr() as u32
+        }
+        #[cfg(feature = "uart_v3")]
+        fn tx_peri_address(&self) -> u32 {
+            self.tdr().as_ptr() as u32
         }
 
         fn enable_dma(&self, dc: config::DmaConfig) {
@@ -396,12 +451,22 @@ where {
         // Enable transmission and receiving
         // and configure frame
 
+        // M[1:0] are used to set data bits
+        // M[1:0] = 00: 1 Start bit, 8 data bits, n stop bits
+        // M[1:0] = 01: 1 Start bit, 9 data bits, n stop bits
+        // M[1:0] = 10: 1 Start bit, 7 data bits, n stop bits
         uart.cr1().write(|w| {
             w.ue().set_bit();
             w.over8().bit(over8);
             w.te().set_bit();
             w.re().set_bit();
+            #[cfg(feature = "uart_v2")]
             w.m().bit(config.wordlength == WordLength::DataBits9);
+            #[cfg(feature = "uart_v3")]
+            {
+                w.m0().bit(config.wordlength == WordLength::DataBits9);
+                w.m1().bit(config.wordlength == WordLength::DataBits7);
+            }
             w.pce().bit(config.parity != Parity::ParityNone);
             w.ps().bit(config.parity == Parity::ParityOdd)
         });
@@ -420,6 +485,7 @@ where {
 }
 
 #[cfg(feature = "uart4")]
+#[cfg(not(feature = "f7"))]
 impl RegisterBlockImpl for RegisterBlockUart {
     fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
@@ -451,12 +517,22 @@ where {
         // Enable transmission and receiving
         // and configure frame
 
+        // M[1:0] are used to set data bits
+        // M[1:0] = 00: 1 Start bit, 8 data bits, n stop bits
+        // M[1:0] = 01: 1 Start bit, 9 data bits, n stop bits
+        // M[1:0] = 10: 1 Start bit, 7 data bits, n stop bits
         uart.cr1().write(|w| {
             w.ue().set_bit();
             w.over8().bit(over8);
             w.te().set_bit();
             w.re().set_bit();
+            #[cfg(feature = "uart_v2")]
             w.m().bit(config.wordlength == WordLength::DataBits9);
+            #[cfg(feature = "uart_v3")]
+            {
+                w.m0().bit(config.wordlength == WordLength::DataBits9);
+                w.m1().bit(config.wordlength == WordLength::DataBits7);
+            }
             w.pce().bit(config.parity != Parity::ParityNone);
             w.ps().bit(config.parity == Parity::ParityOdd)
         });
