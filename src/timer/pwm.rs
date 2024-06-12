@@ -43,7 +43,6 @@ use super::{
 pub use super::{Ch, C1, C2, C3, C4};
 use crate::gpio::{OpenDrain, PushPull};
 use crate::rcc::Clocks;
-use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use fugit::{HertzU32 as Hertz, TimerDurationU32};
 
@@ -92,7 +91,7 @@ where
     TIM: CPin<C>,
 {
     pub fn has_complementary(&self) -> bool {
-        matches!(self.comp_lines, Lines::None)
+        !matches!(self.comp_lines, Lines::None)
     }
 
     pub fn new(pin: impl Into<TIM::Ch<Otype>>) -> Self {
@@ -128,9 +127,12 @@ impl<TIM, Otype, const C: u8> sealed::Split for ChannelBuilder<TIM, C, Otype>
 where
     TIM: CPin<C>,
 {
-    type Channels = PwmChannel<TIM, C>;
+    type Channels = PwmChannel<TIM, C, Otype>;
     fn split(self) -> Self::Channels {
-        PwmChannel::new(self.has_complementary())
+        PwmChannel {
+            _lines: self.lines,
+            comp_lines: self.comp_lines,
+        }
     }
 }
 
@@ -273,9 +275,21 @@ pins_impl1!(
     (O4, C4, NC4);
 );
 
-pub struct PwmChannel<TIM, const C: u8> {
-    pub(super) _tim: PhantomData<TIM>,
-    comp: bool,
+pub struct PwmChannel<TIM, const C: u8, Otype = PushPull>
+where
+    TIM: CPin<C>,
+{
+    _lines: Lines<TIM::Ch<Otype>>,
+    comp_lines: Lines<TIM::ChN<Otype>>,
+}
+
+impl<TIM, const C: u8, Otype> PwmChannel<TIM, C, Otype>
+where
+    TIM: CPin<C>,
+{
+    pub fn has_complementary(&self) -> bool {
+        !matches!(self.comp_lines, Lines::None)
+    }
 }
 
 pub trait PwmExt
@@ -332,16 +346,10 @@ where
     }
 }
 
-impl<TIM, const C: u8> PwmChannel<TIM, C> {
-    pub(crate) fn new(comp: bool) -> Self {
-        Self {
-            _tim: core::marker::PhantomData,
-            comp,
-        }
-    }
-}
-
-impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
+impl<TIM, const C: u8, Otype> PwmChannel<TIM, C, Otype>
+where
+    TIM: CPin<C> + Instance + WithPwm,
+{
     /// Disable PWM channel
     #[inline]
     pub fn disable(&mut self) {
@@ -383,17 +391,20 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     /// Set complementary PWM channel polarity
     #[inline]
     pub fn set_complementary_polarity(&mut self, p: Polarity) {
-        if self.comp {
+        if self.has_complementary() {
             TIM::set_nchannel_polarity(C, p);
         }
     }
 }
 
-impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C> {
+impl<TIM, const C: u8, Otype> PwmChannel<TIM, C, Otype>
+where
+    TIM: CPin<C> + Instance + WithPwm + Advanced,
+{
     /// Disable complementary PWM channel
     #[inline]
     pub fn disable_complementary(&mut self) {
-        if self.comp {
+        if self.has_complementary() {
             TIM::enable_nchannel(C, false);
         }
     }
@@ -401,7 +412,7 @@ impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C> {
     /// Enable complementary PWM channel
     #[inline]
     pub fn enable_complementary(&mut self) {
-        if self.comp {
+        if self.has_complementary() {
             TIM::enable_nchannel(C, true);
         }
     }
@@ -415,7 +426,7 @@ impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C> {
     /// Set complementary PWM channel idle state
     #[inline]
     pub fn set_complementary_idle_state(&mut self, s: IdleState) {
-        if self.comp {
+        if self.has_complementary() {
             TIM::idle_state(C, true, s);
         }
     }
