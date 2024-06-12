@@ -9,7 +9,7 @@ stm32f4xx-hal
 [![Continuous integration](https://github.com/stm32-rs/stm32f4xx-hal/workflows/Continuous%20integration/badge.svg)](https://github.com/stm32-rs/stm32f4xx-hal)
 
 _stm32f4xx-hal_ contains a multi device hardware abstraction on top of the
-peripheral access API for the STMicro STM32F4/F7 series microcontrollers. The
+peripheral access API for the STMicro STM32F2/F4/F7 series microcontrollers. The
 selection of the MCU is done by feature gates, typically specified by board
 support crates. Currently supported configurations are:
 
@@ -17,6 +17,9 @@ support crates. Currently supported configurations are:
 <tr>
 <td>
 
+* stm32f215
+* stm32f217
+* 
 * stm32f401
 * stm32f405
 * stm32f407
