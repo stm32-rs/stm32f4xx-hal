@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
  - `i2c_scanner` example [#758]
+ - Enable `sdio` for stm32f446
  - port LTDC implementation and example from stm32f7xx-hal [#731]
  - IrDA mode for USARTs
 

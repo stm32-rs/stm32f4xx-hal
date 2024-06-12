@@ -352,7 +352,10 @@ impl<P: SdioPeripheral> Sdio<P> {
         self.sdio.dlen().write(|w| w.datalength().set(length_bytes));
         // Transfer
         self.sdio.dctrl().write(|w| {
-            w.dblocksize().set(block_size); // 2^n bytes block size
+            #[allow(unused_unsafe)]
+            unsafe {
+                w.dblocksize().bits(block_size);
+            } // 2^n bytes block size
             w.dtdir().variant(dtdir);
             w.dten().enabled() // Enable transfer
         });
@@ -755,6 +758,7 @@ fn clear_all_interrupts(icr: &pac::sdio::ICR) {
     icr.modify(|_, w| {
         w.ccrcfailc().set_bit();
         w.ctimeoutc().set_bit();
+        #[cfg(not(feature = "stm32f446"))]
         w.ceataendc().set_bit();
         w.cmdrendc().set_bit();
         w.cmdsentc().set_bit();
@@ -763,6 +767,7 @@ fn clear_all_interrupts(icr: &pac::sdio::ICR) {
         w.dcrcfailc().set_bit();
         w.dtimeoutc().set_bit();
         w.sdioitc().set_bit();
+        #[cfg(not(feature = "stm32f446"))]
         w.stbiterrc().set_bit();
         w.rxoverrc().set_bit();
         w.txunderrc().set_bit()
