@@ -122,7 +122,7 @@ pub mod flash;
 #[path = "flash/f7.rs"]
 pub mod flash;
 #[cfg(any(feature = "fmc", feature = "fsmc"))]
-#[cfg(feature = "stm32-fmc")]
+#[cfg(feature = "f7")]
 pub mod fmc;
 #[cfg(all(feature = "fsmc_lcd", any(feature = "fmc", feature = "fsmc")))]
 pub mod fsmc_lcd;

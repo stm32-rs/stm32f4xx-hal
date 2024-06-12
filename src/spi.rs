@@ -130,6 +130,7 @@ pub const TransferModeNormal: bool = false;
 #[allow(non_upper_case_globals)]
 pub const TransferModeBidi: bool = true;
 
+#[cfg(feature = "spi_v1")]
 pub trait FrameSize: Copy + Default {
     #[cfg(feature = "spi_v1")]
     const DFF: bool;
@@ -143,6 +144,7 @@ pub trait FrameSize: Copy + Default {
     fn write_data(self, spi: &spi1::RegisterBlock);
 }
 
+#[cfg(feature = "spi_v1")]
 impl FrameSize for u8 {
     #[cfg(feature = "spi_v1")]
     const DFF: bool = false;
@@ -158,6 +160,7 @@ impl FrameSize for u8 {
     }
 }
 
+#[cfg(feature = "spi_v1")]
 impl FrameSize for u16 {
     #[cfg(feature = "spi_v1")]
     const DFF: bool = true;
@@ -171,6 +174,26 @@ impl FrameSize for u16 {
     fn write_data(self, spi: &spi1::RegisterBlock) {
         spi.dr().write(|w| w.dr().set(self))
     }
+}
+
+#[cfg(feature = "spi_v2")]
+use crate::pac::spi1::cr2;
+#[cfg(feature = "spi_v2")]
+pub trait FrameSize: Copy + Default {
+    const FRXTH: cr2::FRXTH;
+    const DS: cr2::DS;
+}
+
+#[cfg(feature = "spi_v2")]
+impl FrameSize for u8 {
+    const FRXTH: cr2::FRXTH = cr2::FRXTH::Quarter;
+    const DS: cr2::DS = cr2::DS::EightBit;
+}
+
+#[cfg(feature = "spi_v2")]
+impl FrameSize for u16 {
+    const FRXTH: cr2::FRXTH = cr2::FRXTH::Half;
+    const DS: cr2::DS = cr2::DS::SixteenBit;
 }
 
 /// The bit format to send the data in
