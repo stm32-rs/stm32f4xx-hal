@@ -105,9 +105,9 @@ macro_rules! hal {
         impl Instance for $TIM {
             fn setup_qei(&mut self) {
                 // Configure TxC1 and TxC2 as captures
-                #[cfg(not(feature = "gpio-f410"))]
+                #[cfg(not(gpio_f410))]
                 self.ccmr1_input().write(|w| w.cc1s().ti1().cc2s().ti2());
-                #[cfg(feature = "gpio-f410")]
+                #[cfg(gpio_f410)]
                 self.ccmr1_input()
                     .write(|w| unsafe { w.cc1s().bits(0b01).cc2s().bits(0b01) });
                 // enable and configure to capture on rising edge
@@ -128,15 +128,15 @@ macro_rules! hal {
     };
 }
 
-#[cfg(feature = "tim1")]
+#[cfg(pac_tim1)]
 hal! { pac::TIM1 }
-#[cfg(feature = "tim2")]
+#[cfg(pac_tim2)]
 hal! { pac::TIM2 }
-#[cfg(feature = "tim3")]
+#[cfg(pac_tim3)]
 hal! { pac::TIM3 }
-#[cfg(feature = "tim4")]
+#[cfg(pac_tim4)]
 hal! { pac::TIM4 }
-#[cfg(feature = "tim5")]
+#[cfg(pac_tim5)]
 hal! { pac::TIM5 }
-#[cfg(feature = "tim8")]
+#[cfg(pac_tim8)]
 hal! { pac::TIM8 }

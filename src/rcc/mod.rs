@@ -46,10 +46,10 @@ use crate::pac::{self, rcc, RCC};
 use fugit::HertzU32 as Hertz;
 use fugit::RateExtU32;
 
-#[cfg(not(feature = "gpio-f410"))]
+#[cfg(not(gpio_f410))]
 use pll::I2sPll;
 use pll::MainPll;
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+#[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
 use pll::SaiPll;
 
 mod pll;
@@ -216,24 +216,24 @@ bus_struct! {
     APB1 => (APB1ENR, apb1enr, APB1LPENR, apb1lpenr, APB1RSTR, apb1rstr, "Advanced Peripheral Bus 1 (APB1) registers"),
     APB2 => (APB2ENR, apb2enr, APB2LPENR, apb2lpenr, APB2RSTR, apb2rstr, "Advanced Peripheral Bus 2 (APB2) registers"),
     AHB1 => (AHB1ENR, ahb1enr, AHB1LPENR, ahb1lpenr, AHB1RSTR, ahb1rstr, "Advanced High-performance Bus 1 (AHB1) registers"),
-    #[cfg(not(feature = "gpio-f410"))]
+    #[cfg(not(gpio_f410))]
     AHB2 => (AHB2ENR, ahb2enr, AHB2LPENR, ahb2lpenr, AHB2RSTR, ahb2rstr, "Advanced High-performance Bus 2 (AHB2) registers"),
-    //#[cfg(any(feature = "fsmc", feature = "fmc"))]
+    //#[cfg(any(pac_fsmc, pac_fmc))]
     //AHB3 => (AHB3ENR, ahb3enr, AHB3LPENR, ahb3lpenr, AHB3RSTR, ahb3rstr, "Advanced High-performance Bus 3 (AHB3) registers"),
 }
 
 /// AMBA High-performance Bus 3 (AHB3) registers
-#[cfg(any(feature = "fsmc", feature = "fmc"))]
+#[cfg(any(pac_fsmc, pac_fmc))]
 #[non_exhaustive]
 pub struct AHB3;
 
-#[cfg(any(feature = "fsmc", feature = "fmc"))]
+#[cfg(any(pac_fsmc, pac_fmc))]
 impl AHB3 {
     #[inline(always)]
     fn enr(rcc: &RccRB) -> &rcc::AHB3ENR {
         rcc.ahb3enr()
     }
-    #[cfg(feature = "fmc")]
+    #[cfg(pac_fmc)]
     #[inline(always)]
     fn lpenr(rcc: &RccRB) -> &rcc::AHB3LPENR {
         rcc.ahb3lpenr()
@@ -250,14 +250,14 @@ impl BusClock for AHB1 {
     }
 }
 
-#[cfg(not(feature = "gpio-f410"))]
+#[cfg(not(gpio_f410))]
 impl BusClock for AHB2 {
     fn clock(clocks: &Clocks) -> Hertz {
         clocks.hclk
     }
 }
 
-#[cfg(any(feature = "fsmc", feature = "fmc"))]
+#[cfg(any(pac_fsmc, pac_fmc))]
 impl BusClock for AHB3 {
     fn clock(clocks: &Clocks) -> Hertz {
         clocks.hclk
@@ -300,22 +300,15 @@ impl RccExt for RCC {
                 sysclk: None,
                 pll48clk: false,
                 i2s_ckin: None,
-                #[cfg(any(
-                    feature = "gpio-f401",
-                    feature = "gpio-f410",
-                    feature = "gpio-f411",
-                    feature = "gpio-f417",
-                    feature = "gpio-f427",
-                    feature = "gpio-f469",
-                ))]
+                #[cfg(any(gpio_f401, gpio_f410, gpio_f411, gpio_f417, gpio_f427, gpio_f469))]
                 i2s_clk: None,
-                #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+                #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
                 i2s_apb1_clk: None,
-                #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+                #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
                 i2s_apb2_clk: None,
-                #[cfg(feature = "sai1")]
+                #[cfg(pac_sai1)]
                 sai1_clk: None,
-                #[cfg(feature = "sai1")]
+                #[cfg(pac_sai1)]
                 sai2_clk: None,
             },
         }
@@ -331,60 +324,36 @@ pub struct Rcc {
 pub const HSI: u32 = 16_000_000; // Hz
 
 #[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f410",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f469",
+    gpio_f401, gpio_f410, gpio_f411, gpio_f412, gpio_f413, gpio_f417, gpio_f427, gpio_f469,
 ))]
 /// Minimum system clock frequency
 pub const SYSCLK_MIN: u32 = 24_000_000;
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 /// Minimum system clock frequency
 pub const SYSCLK_MIN: u32 = 12_500_000;
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 /// Maximum system clock frequency
 pub const SYSCLK_MAX: u32 = 84_000_000;
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 /// Maximum system clock frequency
 pub const SYSCLK_MAX: u32 = 168_000_000;
 
-#[cfg(any(
-    feature = "gpio-f410",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-))]
+#[cfg(any(gpio_f410, gpio_f411, gpio_f412, gpio_f413))]
 /// Maximum system clock frequency
 pub const SYSCLK_MAX: u32 = 100_000_000;
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+#[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
 /// Maximum system clock frequency
 pub const SYSCLK_MAX: u32 = 180_000_000;
 
-#[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f410",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-))]
+#[cfg(any(gpio_f401, gpio_f410, gpio_f411, gpio_f412, gpio_f413))]
 /// Maximum APB2 peripheral clock frequency
 pub const PCLK2_MAX: u32 = SYSCLK_MAX;
 
-#[cfg(not(any(
-    feature = "gpio-f401",
-    feature = "gpio-f410",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-)))]
+#[cfg(not(any(gpio_f401, gpio_f410, gpio_f411, gpio_f412, gpio_f413)))]
 /// Maximum APB2 peripheral clock frequency
 pub const PCLK2_MAX: u32 = SYSCLK_MAX / 2;
 
@@ -401,22 +370,15 @@ pub struct CFGR {
     pll48clk: bool,
 
     i2s_ckin: Option<u32>,
-    #[cfg(any(
-        feature = "gpio-f401",
-        feature = "gpio-f410",
-        feature = "gpio-f411",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f469",
-    ))]
+    #[cfg(any(gpio_f401, gpio_f410, gpio_f411, gpio_f417, gpio_f427, gpio_f469))]
     i2s_clk: Option<u32>,
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     i2s_apb1_clk: Option<u32>,
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     i2s_apb2_clk: Option<u32>,
-    #[cfg(feature = "sai1")]
+    #[cfg(pac_sai1)]
     sai1_clk: Option<u32>,
-    #[cfg(feature = "sai1")]
+    #[cfg(pac_sai1)]
     sai2_clk: Option<u32>,
 }
 
@@ -477,61 +439,54 @@ impl CFGR {
     }
 
     /// Selects an I2S clock frequency and enables the I2S clock.
-    #[cfg(any(
-        feature = "gpio-f401",
-        feature = "gpio-f410",
-        feature = "gpio-f411",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f469",
-    ))]
+    #[cfg(any(gpio_f401, gpio_f410, gpio_f411, gpio_f417, gpio_f427, gpio_f469))]
     pub fn i2s_clk(mut self, freq: Hertz) -> Self {
         self.i2s_clk = Some(freq.raw());
         self
     }
 
     /// Selects an I2S clock frequency for the first set of I2S instancesand enables the I2S clock.
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     pub fn i2s_apb1_clk(mut self, freq: Hertz) -> Self {
         self.i2s_apb1_clk = Some(freq.raw());
         self
     }
 
     /// Selects an I2S clock frequency for the second set of I2S instances and enables the I2S clock.
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     pub fn i2s_apb2_clk(mut self, freq: Hertz) -> Self {
         self.i2s_apb2_clk = Some(freq.raw());
         self
     }
 
     /// Selects a SAIA clock frequency and enables the SAIA clock.
-    #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f413, gpio_f427, gpio_f469))]
     pub fn saia_clk(mut self, freq: Hertz) -> Self {
         self.sai1_clk = Some(freq.raw());
         self
     }
 
     /// Selects a SAIB clock frequency and enables the SAIB clock.
-    #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f413, gpio_f427, gpio_f469))]
     pub fn saib_clk(mut self, freq: Hertz) -> Self {
         self.sai2_clk = Some(freq.raw());
         self
     }
 
     /// Selects a SAI1 clock frequency and enables the SAI1 clock.
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     pub fn sai1_clk(mut self, freq: Hertz) -> Self {
         self.sai1_clk = Some(freq.raw());
         self
     }
 
     /// Selects a SAI2 clock frequency and enables the SAI2 clock.
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     pub fn sai2_clk(mut self, freq: Hertz) -> Self {
         self.sai2_clk = Some(freq.raw());
         self
     }
-    #[cfg(feature = "gpio-f410")]
+    #[cfg(gpio_f410)]
     #[inline(always)]
     fn pll_setup(&self, pllsrcclk: u32, pllsysclk: Option<u32>) -> PllSetup {
         let i2s_clocks = self.i2s_clocks();
@@ -558,7 +513,7 @@ impl CFGR {
         }
     }
 
-    #[cfg(feature = "gpio-f413")]
+    #[cfg(gpio_f413)]
     #[inline(always)]
     fn pll_setup(&self, pllsrcclk: u32, pllsysclk: Option<u32>) -> PllSetup {
         let rcc = unsafe { &*RCC::ptr() };
@@ -613,88 +568,83 @@ impl CFGR {
         }
     }
 
-    #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f411, gpio_f412, gpio_f446))]
     #[inline(always)]
     fn pll_setup(&self, pllsrcclk: u32, pllsysclk: Option<u32>) -> PllSetup {
         let i2s_clocks = self.i2s_clocks();
-        #[cfg(feature = "gpio-f446")]
+        #[cfg(gpio_f446)]
         let sai_clocks = self.sai_clocks();
 
         // All PLLs are completely independent.
         let main_pll = MainPll::fast_setup(pllsrcclk, self.hse.is_some(), pllsysclk, self.pll48clk);
         let i2s_pll = I2sPll::setup(pllsrcclk, i2s_clocks.pll_i2s_clk);
-        #[cfg(feature = "gpio-f446")]
+        #[cfg(gpio_f446)]
         let sai_pll = SaiPll::setup(pllsrcclk, sai_clocks.pll_sai_clk);
 
         PllSetup {
             use_pll: main_pll.use_pll,
             use_i2spll: i2s_pll.use_pll,
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             use_saipll: sai_pll.use_pll,
             pllsysclk: main_pll.pllsysclk,
             pll48clk: main_pll.pll48clk,
             i2s: i2s_clocks.real(i2s_pll.plli2sclk, self.i2s_ckin),
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             sai: sai_clocks.real(sai_pll.sai_clk, self.i2s_ckin),
         }
     }
 
-    #[cfg(any(
-        feature = "gpio-f401",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f469",
-    ))]
+    #[cfg(any(gpio_f401, gpio_f417, gpio_f427, gpio_f469))]
     #[inline(always)]
     fn pll_setup(&self, pllsrcclk: u32, pllsysclk: Option<u32>) -> PllSetup {
         let i2s_clocks = self.i2s_clocks();
-        #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+        #[cfg(any(gpio_f427, gpio_f469))]
         let sai_clocks = self.sai_clocks();
 
         // We have separate PLLs, but they share the "M" divider.
         let main_pll = MainPll::fast_setup(pllsrcclk, self.hse.is_some(), pllsysclk, self.pll48clk);
         let i2s_pll = I2sPll::setup_shared_m(pllsrcclk, main_pll.m, i2s_clocks.pll_i2s_clk);
-        #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+        #[cfg(any(gpio_f427, gpio_f469))]
         let sai_pll =
             SaiPll::setup_shared_m(pllsrcclk, main_pll.m.or(i2s_pll.m), sai_clocks.pll_sai_clk);
 
         PllSetup {
             use_pll: main_pll.use_pll,
             use_i2spll: i2s_pll.use_pll,
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             use_saipll: sai_pll.use_pll,
             pllsysclk: main_pll.pllsysclk,
             pll48clk: main_pll.pll48clk,
             i2s: i2s_clocks.real(i2s_pll.plli2sclk, self.i2s_ckin),
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             sai: sai_clocks.real(sai_pll.sai_clk, self.i2s_ckin),
         }
     }
 
-    #[cfg(feature = "sai1")]
+    #[cfg(pac_sai1)]
     fn sai_clocks(&self) -> SaiClocks {
         let sai1_ext = self.sai1_clk.is_some() && self.sai1_clk == self.i2s_ckin;
-        #[cfg(not(feature = "gpio-f446"))]
+        #[cfg(not(gpio_f446))]
         let sai2_ext = self.sai2_clk.is_some() && self.sai2_clk == self.i2s_ckin;
         // Not the PLL output, but the target clock after the divider.
         let pll_sai_clk = if sai1_ext { None } else { self.sai1_clk };
         // The STM32F446 only supports I2S_CKIN for SAI1.
-        #[cfg(feature = "gpio-f446")]
+        #[cfg(gpio_f446)]
         let pll_sai_clk2 = self.sai2_clk;
-        #[cfg(not(feature = "gpio-f446"))]
+        #[cfg(not(gpio_f446))]
         let pll_sai_clk2 = if sai2_ext { None } else { self.sai2_clk };
         if pll_sai_clk.is_some() && pll_sai_clk2.is_some() && pll_sai_clk != pll_sai_clk2 {
             panic!("only one SAI PLL frequency implemented");
         }
         SaiClocks {
             sai1_ext,
-            #[cfg(not(feature = "gpio-f446"))]
+            #[cfg(not(gpio_f446))]
             sai2_ext,
             pll_sai_clk,
         }
     }
 
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     fn i2s_clocks(&self) -> I2sClocks {
         let i2s_apb1_ext = self.i2s_apb1_clk.is_some() && self.i2s_apb1_clk == self.i2s_ckin;
         let i2s_apb2_ext = self.i2s_apb2_clk.is_some() && self.i2s_apb2_clk == self.i2s_ckin;
@@ -718,7 +668,7 @@ impl CFGR {
         }
     }
 
-    #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+    #[cfg(not(any(gpio_f412, gpio_f413, gpio_f446)))]
     fn i2s_clocks(&self) -> I2sClocks {
         let i2s_ext = self.i2s_clk.is_some() && self.i2s_clk == self.i2s_ckin;
         let pll_i2s_clk = if i2s_ext { None } else { self.i2s_clk };
@@ -732,18 +682,11 @@ impl CFGR {
         use crate::pac::FLASH;
 
         #[cfg(any(
-            feature = "gpio-f401",
-            feature = "gpio-f417",
-            feature = "gpio-f410",
-            feature = "gpio-f411",
-            feature = "gpio-f412",
-            feature = "gpio-f427",
-            feature = "gpio-f446",
-            feature = "gpio-f469",
+            gpio_f401, gpio_f417, gpio_f410, gpio_f411, gpio_f412, gpio_f427, gpio_f446, gpio_f469,
         ))]
         let flash_latency_step = 30_000_000;
 
-        #[cfg(feature = "gpio-f413")]
+        #[cfg(gpio_f413)]
         let flash_latency_step = 25_000_000;
 
         unsafe {
@@ -861,7 +804,7 @@ impl CFGR {
             rcc.cr().modify(|_, w| w.pllon().set_bit());
 
             // Enable voltage regulator overdrive if HCLK is above the limit
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             if hclk > 168_000_000 {
                 // Enable clock for PWR peripheral
                 rcc.apb1enr().modify(|_, w| w.pwren().set_bit());
@@ -880,7 +823,7 @@ impl CFGR {
             while rcc.cr().read().pllrdy().bit_is_clear() {}
         }
 
-        #[cfg(not(feature = "gpio-f410"))]
+        #[cfg(not(gpio_f410))]
         if plls.use_i2spll {
             // Enable PLL.
             rcc.cr().modify(|_, w| w.plli2son().set_bit());
@@ -889,7 +832,7 @@ impl CFGR {
             while rcc.cr().read().plli2srdy().bit_is_clear() {}
         }
 
-        #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+        #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
         if plls.use_saipll {
             // Enable PLL.
             rcc.cr().modify(|_, w| w.pllsaion().set_bit());
@@ -900,7 +843,7 @@ impl CFGR {
 
         // Select I2S and SAI clocks
         plls.i2s.config_clocksel();
-        #[cfg(feature = "sai1")]
+        #[cfg(pac_sai1)]
         plls.sai.config_clocksel();
 
         // Set scaling factors
@@ -940,20 +883,20 @@ impl CFGR {
             sysclk: sysclk.Hz(),
             pll48clk: plls.pll48clk.map(Hertz::from_raw),
 
-            #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+            #[cfg(not(any(gpio_f412, gpio_f413, gpio_f446)))]
             i2s_clk: plls.i2s.i2s_clk.map(Hertz::from_raw),
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             i2s_apb1_clk: plls.i2s.i2s_apb1_clk.map(Hertz::from_raw),
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             i2s_apb2_clk: plls.i2s.i2s_apb2_clk.map(Hertz::from_raw),
 
-            #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f413, gpio_f427, gpio_f469))]
             saia_clk: plls.sai.sai1_clk.map(Hertz::from_raw),
-            #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f413, gpio_f427, gpio_f469))]
             saib_clk: plls.sai.sai2_clk.map(Hertz::from_raw),
-            #[cfg(feature = "sai2")]
+            #[cfg(pac_sai2)]
             sai1_clk: plls.sai.sai1_clk.map(Hertz::from_raw),
-            #[cfg(feature = "sai2")]
+            #[cfg(pac_sai2)]
             sai2_clk: plls.sai.sai2_clk.map(Hertz::from_raw),
         };
 
@@ -969,9 +912,9 @@ impl CFGR {
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct PllSetup {
     use_pll: bool,
-    #[cfg(not(feature = "gpio-f410"))]
+    #[cfg(not(gpio_f410))]
     use_i2spll: bool,
-    #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
     use_saipll: bool,
 
     pllsysclk: Option<u32>,
@@ -979,11 +922,11 @@ struct PllSetup {
 
     i2s: RealI2sClocks,
 
-    #[cfg(feature = "sai1")]
+    #[cfg(pac_sai1)]
     sai: RealSaiClocks,
 }
 
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+#[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct I2sClocks {
@@ -995,7 +938,7 @@ struct I2sClocks {
     pll_i2s_clk: Option<u32>,
 }
 
-#[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+#[cfg(not(any(gpio_f412, gpio_f413, gpio_f446)))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct I2sClocks {
@@ -1006,7 +949,7 @@ struct I2sClocks {
 }
 
 impl I2sClocks {
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     fn real(&self, pll_i2s_clk: Option<u32>, i2s_ckin: Option<u32>) -> RealI2sClocks {
         RealI2sClocks {
             i2s_apb1_ext: self.i2s_apb1_ext,
@@ -1024,7 +967,7 @@ impl I2sClocks {
         }
     }
 
-    #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+    #[cfg(not(any(gpio_f412, gpio_f413, gpio_f446)))]
     fn real(&self, pll_i2s_clk: Option<u32>, i2s_ckin: Option<u32>) -> RealI2sClocks {
         RealI2sClocks {
             i2s_ext: self.i2s_ext,
@@ -1033,7 +976,7 @@ impl I2sClocks {
     }
 }
 
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+#[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealI2sClocks {
@@ -1043,7 +986,7 @@ struct RealI2sClocks {
     i2s_apb2_clk: Option<u32>,
 }
 
-#[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+#[cfg(not(any(gpio_f412, gpio_f413, gpio_f446)))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealI2sClocks {
@@ -1055,12 +998,7 @@ impl RealI2sClocks {
     fn config_clocksel(&self) {
         let rcc = unsafe { &*RCC::ptr() };
 
-        #[cfg(not(any(
-            feature = "gpio-f410",
-            feature = "gpio-f412",
-            feature = "gpio-f413",
-            feature = "gpio-f446",
-        )))]
+        #[cfg(not(any(gpio_f410, gpio_f412, gpio_f413, gpio_f446)))]
         rcc.cfgr().modify(|_, w| {
             if self.i2s_ext {
                 w.i2ssrc().ckin()
@@ -1068,7 +1006,7 @@ impl RealI2sClocks {
                 w.i2ssrc().plli2s()
             }
         });
-        #[cfg(feature = "gpio-f410")]
+        #[cfg(gpio_f410)]
         rcc.dckcfgr().modify(|_, w| {
             if self.i2s_ext {
                 w.i2ssrc().i2s_ckin()
@@ -1076,7 +1014,7 @@ impl RealI2sClocks {
                 w.i2ssrc().pllclkr()
             }
         });
-        #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+        #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
         rcc.dckcfgr().modify(|_, w| {
             if self.i2s_apb1_ext {
                 w.i2s1src().i2s_ckin()
@@ -1092,53 +1030,53 @@ impl RealI2sClocks {
     }
 }
 
-#[cfg(feature = "sai1")]
+#[cfg(pac_sai1)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct SaiClocks {
     /// True if the clock for SAI1 (STM32F446) or SAIA (all other models) is identical to I2S_CKIN.
     sai1_ext: bool,
     /// True if the clock for SAIB is identical to I2S_CKIN.
-    #[cfg(not(feature = "gpio-f446"))]
+    #[cfg(not(gpio_f446))]
     sai2_ext: bool,
     /// Target for the SAI clock as generated by PLL and SAI clock divider.
     pll_sai_clk: Option<u32>,
 }
 
-#[cfg(feature = "sai1")]
+#[cfg(pac_sai1)]
 impl SaiClocks {
     fn real(&self, pll_sai_clk: Option<u32>, i2s_ckin: Option<u32>) -> RealSaiClocks {
         RealSaiClocks {
             sai1_ext: self.sai1_ext,
-            #[cfg(not(feature = "gpio-f446"))]
+            #[cfg(not(gpio_f446))]
             sai2_ext: self.sai2_ext,
             sai1_clk: if self.sai1_ext { i2s_ckin } else { pll_sai_clk },
-            #[cfg(not(feature = "gpio-f446"))]
+            #[cfg(not(gpio_f446))]
             sai2_clk: if self.sai2_ext { i2s_ckin } else { pll_sai_clk },
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             sai2_clk: pll_sai_clk,
         }
     }
 }
 
-#[cfg(feature = "sai1")]
+#[cfg(pac_sai1)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealSaiClocks {
     sai1_ext: bool,
-    #[cfg(not(feature = "gpio-f446"))]
+    #[cfg(not(gpio_f446))]
     sai2_ext: bool,
     sai1_clk: Option<u32>,
     sai2_clk: Option<u32>,
 }
 
-#[cfg(feature = "sai1")]
+#[cfg(pac_sai1)]
 impl RealSaiClocks {
     fn config_clocksel(&self) {
         let rcc = unsafe { &*RCC::ptr() };
 
         // Configure SAI clocks.
-        #[cfg(not(feature = "gpio-f446"))]
+        #[cfg(not(gpio_f446))]
         rcc.dckcfgr().modify(|_, w| {
             if self.sai1_ext {
                 w.sai1asrc().i2s_ckin()
@@ -1152,7 +1090,7 @@ impl RealSaiClocks {
             }
         });
 
-        #[cfg(feature = "gpio-f446")]
+        #[cfg(gpio_f446)]
         rcc.dckcfgr().modify(|_, w| {
             if self.sai1_ext {
                 w.sai1src().i2s_ckin()
@@ -1177,20 +1115,20 @@ pub struct Clocks {
     sysclk: Hertz,
     pll48clk: Option<Hertz>,
 
-    #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+    #[cfg(not(any(gpio_f412, gpio_f413, gpio_f446)))]
     i2s_clk: Option<Hertz>,
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     i2s_apb1_clk: Option<Hertz>,
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     i2s_apb2_clk: Option<Hertz>,
 
-    #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f413, gpio_f427, gpio_f469))]
     saia_clk: Option<Hertz>,
-    #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f413, gpio_f427, gpio_f469))]
     saib_clk: Option<Hertz>,
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     sai1_clk: Option<Hertz>,
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     sai2_clk: Option<Hertz>,
 }
 
@@ -1240,38 +1178,38 @@ impl Clocks {
     }
 
     /// Returns the frequency of the I2S clock.
-    #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+    #[cfg(not(any(gpio_f412, gpio_f413, gpio_f446)))]
     pub fn i2s_clk(&self) -> Option<Hertz> {
         self.i2s_clk
     }
     /// Returns the frequency of the first I2S clock (for the I2S peripherals on APB1).
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     pub fn i2s_apb1_clk(&self) -> Option<Hertz> {
         self.i2s_apb1_clk
     }
     /// Returns the frequency of the second I2S clock (for the I2S peripherals on APB2).
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
     pub fn i2s_apb2_clk(&self) -> Option<Hertz> {
         self.i2s_apb2_clk
     }
 
     /// Returns the frequency of the SAI A clock.
-    #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f413, gpio_f427, gpio_f469))]
     pub fn saia_clk(&self) -> Option<Hertz> {
         self.saia_clk
     }
     /// Returns the frequency of the SAI B clock.
-    #[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f413, gpio_f427, gpio_f469))]
     pub fn saib_clk(&self) -> Option<Hertz> {
         self.saib_clk
     }
     /// Returns the frequency of the SAI1 clock.
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     pub fn sai1_clk(&self) -> Option<Hertz> {
         self.sai1_clk
     }
     /// Returns the frequency of the SAI2 clock.
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     pub fn sai2_clk(&self) -> Option<Hertz> {
         self.sai2_clk
     }

@@ -18,11 +18,11 @@ macro_rules! can {
 // Implemented by all SPI instances
 can! { CAN1: Can1 }
 can! { CAN2: Can2 }
-#[cfg(feature = "can3")]
+#[cfg(pac_can3)]
 can! { crate::pac::CAN3: Can3 }
 
 /// Pins and definitions for models with a third CAN peripheral
-#[cfg(feature = "can3")]
+#[cfg(pac_can3)]
 mod can3 {
     use super::*;
     use crate::pac::CAN3;

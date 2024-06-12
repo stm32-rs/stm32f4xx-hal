@@ -288,7 +288,7 @@ halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
 halUsart! { pac::USART2, Serial2, Rx2, Tx2 }
 halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
 
-#[cfg(feature = "usart3")]
+#[cfg(pac_usart3)]
 halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
 
 impl<UART: CommonPins> Rx<UART, u8> {

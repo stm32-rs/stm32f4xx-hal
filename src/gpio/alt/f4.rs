@@ -1,7 +1,7 @@
 use super::*;
 use crate::gpio::{self, NoPin, OpenDrain, PushPull};
 
-#[cfg(feature = "can1")]
+#[cfg(pac_can1)]
 pub mod can1 {
     use super::*;
 
@@ -9,46 +9,46 @@ pub mod can1 {
         <Rx, PushPull> for no:NoPin, [
             PA11<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB8<8>,
 
             #[cfg(any(
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PB8<9>,
 
             PD0<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PG0<9>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI9<9>,
         ],
 
         <Tx, PushPull> for no:NoPin, [
             PA12<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB9<8>,
 
             #[cfg(any(
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PB9<9>,
 
             PD1<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PG1<9>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH13<9>,
         ],
     }
@@ -59,7 +59,7 @@ pub mod can1 {
     }
 }
 
-#[cfg(feature = "can2")]
+#[cfg(pac_can2)]
 pub mod can2 {
     use super::*;
 
@@ -69,7 +69,7 @@ pub mod can2 {
 
             PB12<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PG11<9>,
         ],
 
@@ -78,7 +78,7 @@ pub mod can2 {
 
             PB13<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PG12<9>,
         ],
     }
@@ -89,7 +89,7 @@ pub mod can2 {
     }
 }
 
-#[cfg(feature = "can3")]
+#[cfg(pac_can3)]
 pub mod can3 {
     use super::*;
 
@@ -113,12 +113,7 @@ pub mod can3 {
     }
 }
 
-#[cfg(any(
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f446",
-    feature = "gpio-f469"
-))]
+#[cfg(any(gpio_f417, gpio_f427, gpio_f446, gpio_f469))]
 pub mod dcmi {
     use super::*;
 
@@ -128,7 +123,7 @@ pub mod dcmi {
 
             PC6<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH9<13>,
         ],
 
@@ -137,44 +132,44 @@ pub mod dcmi {
 
             PC7<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH10<13>,
         ],
 
         <D10, PushPull> for [
             PB5<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PD6<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI3<13>,
         ],
 
         <D11, PushPull> for [
             PD2<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PF10<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH15<13>,
         ],
 
         <D12, PushPull> for [
             PF11<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PG6<13>,
         ],
 
         <D13, PushPull> for [
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PG7<13>,
 
             PG15<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI0<13>,
         ],
 
@@ -183,10 +178,10 @@ pub mod dcmi {
 
             PE0<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PG10<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH11<13>,
         ],
 
@@ -195,10 +190,10 @@ pub mod dcmi {
 
             PE1<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PG11<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH12<13>,
         ],
 
@@ -207,17 +202,17 @@ pub mod dcmi {
 
             PE4<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH14<13>,
         ],
 
         <D5, PushPull> for [
             PB6<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PD3<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI4<13>,
         ],
 
@@ -226,7 +221,7 @@ pub mod dcmi {
 
             PE5<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI6<13>,
         ],
 
@@ -235,34 +230,34 @@ pub mod dcmi {
 
             PE6<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI7<13>,
         ],
 
         <D8, PushPull> for [
             PC10<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH6<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI1<13>,
         ],
 
         <D9, PushPull> for [
             PC12<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH7<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI2<13>,
         ],
 
         <Hsync, PushPull> for [
             PA4<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH8<13>,
         ],
 
@@ -273,16 +268,16 @@ pub mod dcmi {
         <Vsync, PushPull> for [
             PB7<13>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PG9<13>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI5<13>,
         ],
     }
 }
 
-#[cfg(feature = "dfsdm1")]
+#[cfg(pac_dfsdm1)]
 pub mod dfsdm1 {
     use super::*;
 
@@ -314,7 +309,7 @@ pub mod dfsdm1 {
         ],
 
         <Ckout, PushPull> for [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA8<6>,
 
             PC2<8>,
@@ -349,9 +344,9 @@ pub mod dfsdm1 {
         ],
     }
 
-    #[cfg(feature = "gpio-f412")]
+    #[cfg(gpio_f412)]
     use crate::pac::DFSDM;
-    #[cfg(feature = "gpio-f413")]
+    #[cfg(gpio_f413)]
     use crate::pac::DFSDM1 as DFSDM;
     impl DfsdmBasic for DFSDM {
         type Ckin0 = Ckin0;
@@ -368,7 +363,7 @@ pub mod dfsdm1 {
     }
 }
 
-#[cfg(feature = "dfsdm2")]
+#[cfg(pac_dfsdm2)]
 pub mod dfsdm2 {
     use super::*;
 
@@ -513,7 +508,7 @@ pub mod dfsdm2 {
     }
 }
 
-#[cfg(feature = "dsihost")]
+#[cfg(pac_dsihost)]
 pub mod dsihost {
     use super::*;
 
@@ -526,7 +521,7 @@ pub mod dsihost {
     }
 }
 
-#[cfg(feature = "eth")]
+#[cfg(pac_eth)]
 pub mod eth {
     use super::*;
 
@@ -634,7 +629,7 @@ pub mod eth {
 }
 
 /// Pins available on all STM32F4 models that have an FSMC/FMC
-#[cfg(any(feature = "fmc", feature = "fsmc"))]
+#[cfg(any(pac_fmc, pac_fsmc))]
 pub mod fsmc {
     use super::*;
 
@@ -677,14 +672,14 @@ pub mod fsmc {
             PG5<12, Speed::VeryHigh>,
             PG13<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC3<12, Speed::VeryHigh>,
         ],
     }
 
     pin! {
         <A0, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC3<12, Speed::VeryHigh>,
 
             PF0<12, Speed::VeryHigh>,
@@ -796,7 +791,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 0
         <D0, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB14<10, Speed::VeryHigh>,
 
             PD14<12, Speed::VeryHigh>,
@@ -804,7 +799,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 1
         <D1, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC6<10, Speed::VeryHigh>,
 
             PD15<12, Speed::VeryHigh>,
@@ -812,7 +807,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 2
         <D2, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC11<10, Speed::VeryHigh>,
 
             PD0<12, Speed::VeryHigh>,
@@ -820,7 +815,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 3
         <D3, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC12<10, Speed::VeryHigh>,
 
             PD1<12, Speed::VeryHigh>,
@@ -828,7 +823,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 4
         <D4, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA2<12, Speed::VeryHigh>,
 
             PE7<12, Speed::VeryHigh>,
@@ -836,7 +831,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 5
         <D5, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA3<12, Speed::VeryHigh>,
 
             PE8<12, Speed::VeryHigh>,
@@ -844,7 +839,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 6
         <D6, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA4<12, Speed::VeryHigh>,
 
             PE9<12, Speed::VeryHigh>,
@@ -852,7 +847,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 7
         <D7, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA5<12, Speed::VeryHigh>,
 
             PE10<12, Speed::VeryHigh>,
@@ -885,7 +880,7 @@ pub mod fsmc {
 
         /// A pin that can be used for data bus 13
         <D13, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB12<12, Speed::VeryHigh>,
 
             PD8<12, Speed::VeryHigh>,
@@ -902,56 +897,56 @@ pub mod fsmc {
         ],
 
         <Da0, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB14<10, Speed::VeryHigh>,
 
             PD14<12, Speed::VeryHigh>,
         ],
 
         <Da1, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC6<10, Speed::VeryHigh>,
 
             PD15<12, Speed::VeryHigh>,
         ],
 
         <Da2, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC11<10, Speed::VeryHigh>,
 
             PD0<12, Speed::VeryHigh>,
         ],
 
         <Da3, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC12<10, Speed::VeryHigh>,
 
             PD1<12, Speed::VeryHigh>,
         ],
 
         <Da4, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA2<12, Speed::VeryHigh>,
 
             PE7<12, Speed::VeryHigh>,
         ],
 
         <Da5, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA3<12, Speed::VeryHigh>,
 
             PE8<12, Speed::VeryHigh>,
         ],
 
         <Da6, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA4<12, Speed::VeryHigh>,
 
             PE9<12, Speed::VeryHigh>,
         ],
 
         <Da7, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA5<12, Speed::VeryHigh>,
 
             PE10<12, Speed::VeryHigh>,
@@ -978,7 +973,7 @@ pub mod fsmc {
         ],
 
         <Da13, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB12<12, Speed::VeryHigh>,
 
             PD8<12, Speed::VeryHigh>,
@@ -1017,7 +1012,7 @@ pub mod fsmc {
 
         /// A pin that can be used to enable a memory device on sub-bank 4
         <Ne4, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC4<12, Speed::VeryHigh>,
 
             PG12<12, Speed::VeryHigh>,
@@ -1029,7 +1024,7 @@ pub mod fsmc {
 
         /// A pin that can be used for the output enable (read enable, NOE) signal
         <Noe, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC5<12, Speed::VeryHigh>,
 
             PD4<12, Speed::VeryHigh>,
@@ -1041,17 +1036,17 @@ pub mod fsmc {
 
         /// A pin that can be used for the write enable (NOE) signal
         <Nwe, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC2<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PD2<10, Speed::VeryHigh>,
 
             PD5<12, Speed::VeryHigh>,
         ],
     }
 
-    #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
     pin! {
         <Ba0, PushPull> for [
             PG4<12, Speed::VeryHigh>,
@@ -1064,17 +1059,17 @@ pub mod fsmc {
         <Sdcke0, PushPull> for [
             PC3<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f446, gpio_f469))]
             PC5<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH2<12, Speed::VeryHigh>,
         ],
 
         <Sdcke1, PushPull> for [
             PB5<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH7<12, Speed::VeryHigh>,
         ],
 
@@ -1089,17 +1084,17 @@ pub mod fsmc {
         <Sdne0, PushPull> for [
             PC2<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f446, gpio_f469))]
             PC4<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH3<12, Speed::VeryHigh>,
         ],
 
         <Sdne1, PushPull> for [
             PB6<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH6<12, Speed::VeryHigh>,
         ],
 
@@ -1108,17 +1103,17 @@ pub mod fsmc {
         ],
 
         <Sdnwe, PushPull> for [
-            #[cfg(any(feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f446, gpio_f469))]
             PA7<12, Speed::VeryHigh>,
 
             PC0<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH5<12, Speed::VeryHigh>,
         ],
     }
 
-    #[cfg(any(feature = "gpio-f417", feature = "gpio-f427"))]
+    #[cfg(any(gpio_f417, gpio_f427))]
     pin! {
         <Cd, PushPull> for [
             PF9<12, Speed::VeryHigh>,
@@ -1157,7 +1152,7 @@ pub mod fsmc {
         ],
     }
 
-    #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
     pin! {
         <Ale, PushPull> for [
             PD12<12, Speed::VeryHigh>,
@@ -1168,33 +1163,28 @@ pub mod fsmc {
         ],
     }
 
-    #[cfg(feature = "gpio-f469")]
+    #[cfg(gpio_f469)]
     pin! {
         <Int, PushPull> for [
             PG7<12, Speed::VeryHigh>,
         ],
     }
 
-    #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f446"))]
+    #[cfg(any(gpio_f417, gpio_f427, gpio_f446))]
     pin! {
         <Int3, PushPull> for [
             PG7<12, Speed::VeryHigh>,
         ],
     }
 
-    #[cfg(any(
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f446",
-        feature = "gpio-f469"
-    ))]
+    #[cfg(any(gpio_f417, gpio_f427, gpio_f446, gpio_f469))]
     pin! {
         <Nce3, PushPull> for [
             PG9<12, Speed::VeryHigh>,
         ],
     }
 
-    #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(any(gpio_f427, gpio_f469))]
     pin! {
         <D16, PushPull> for [
             PH8<12, Speed::VeryHigh>,
@@ -1270,66 +1260,66 @@ pub mod fsmc {
     }
 }
 
-#[cfg(feature = "fmpi2c1")]
+#[cfg(pac_fmpi2c1)]
 pub mod fmpi2c1 {
     use super::*;
 
     pin! {
         <Scl, OpenDrain> for [
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PA8<4>,
 
-            #[cfg(any(feature = "gpio-f410", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f410, gpio_f412, gpio_f413))]
             PB10<9>,
 
-            #[cfg(any(feature = "gpio-f410", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f410, gpio_f412, gpio_f413))]
             PB15<4>,
 
             PC6<4>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PD12<4>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PD14<4>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PF14<4>,
         ],
 
         <Sda, OpenDrain> for [
-            #[cfg(any(feature = "gpio-f410", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f410, gpio_f412, gpio_f413))]
             PB3<4>,
 
-            #[cfg(any(feature = "gpio-f410", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f410, gpio_f412, gpio_f413))]
             PB14<4>,
 
             PC7<4>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC9<4>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PD13<4>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PD15<4>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PF15<4>,
         ],
 
         <Smba, OpenDrain> for [
-            #[cfg(any(feature = "gpio-f410", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f410, gpio_f412, gpio_f413))]
             PB13<4>,
 
-            #[cfg(any(feature = "gpio-f410", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f410, gpio_f412, gpio_f413))]
             PC5<4>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PD11<4>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PF13<4>,
         ],
     }
@@ -1379,56 +1369,56 @@ pub mod i2c2 {
             PB10<4>,
 
             #[cfg(any(
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PF1<4>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH4<4>,
         ],
 
         <Sda, OpenDrain> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB3<4>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f401,
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PB3<9>,
 
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PB9<9>,
 
             PB11<4>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PC12<4>,
 
             #[cfg(any(
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PF0<4>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH5<4>,
         ],
 
@@ -1436,16 +1426,16 @@ pub mod i2c2 {
             PB12<4>,
 
             #[cfg(any(
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PF2<4>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH6<4>,
         ],
     }
@@ -1458,7 +1448,7 @@ pub mod i2c2 {
     }
 }
 
-#[cfg(feature = "i2c3")]
+#[cfg(pac_i2c3)]
 pub mod i2c3 {
     use super::*;
 
@@ -1466,35 +1456,35 @@ pub mod i2c3 {
         <Scl, OpenDrain> for [
             PA8<4>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH7<4>,
         ],
 
         <Sda, OpenDrain> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB4<4>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PB4<9>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB8<9>,
 
             PC9<4>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH8<4>,
         ],
 
         <Smba, OpenDrain> for [
             PA9<4>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH9<4>,
         ],
     }
@@ -1513,18 +1503,18 @@ pub mod i2s {
     pin! {
         <Ckin, PushPull> for [
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PA2<5>,
 
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PB11<5>,
 
@@ -1533,13 +1523,7 @@ pub mod i2s {
     }
 }
 
-#[cfg(any(
-    feature = "gpio-f410",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-    feature = "gpio-f446"
-))]
+#[cfg(any(gpio_f410, gpio_f411, gpio_f412, gpio_f413, gpio_f446))]
 pub mod i2s1 {
     use super::*;
 
@@ -1551,13 +1535,13 @@ pub mod i2s1 {
         ],
 
         <Mck, PushPull> for no:NoPin, [
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PB10<6>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PC4<5>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC7<6>,
         ],
 
@@ -1591,7 +1575,7 @@ pub mod i2s2 {
 
     pin! {
         <Ck, PushPull> for [
-            #[cfg(any(feature = "gpio-f413", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f413, gpio_f446, gpio_f469))]
             PA9<5>,
 
             PB10<5>,
@@ -1599,44 +1583,44 @@ pub mod i2s2 {
             PB13<5>,
 
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f446"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f446
             ))]
             PC7<5>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PD3<5>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI1<5>,
         ],
 
         <Mck, PushPull> for no:NoPin, [
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PA3<5>,
 
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f446"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f446
             ))]
             PA6<6>,
 
@@ -1644,68 +1628,68 @@ pub mod i2s2 {
         ],
 
         <Sd, PushPull> for [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA10<5>,
 
             PB15<5>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PC1<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PC1<7>,
 
             PC3<5>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI3<5>,
         ],
 
         <Ws, PushPull> for [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA11<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB4<7>,
 
             PB9<5>,
 
             PB12<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PD1<7>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI0<5>,
         ],
     }
 
-    #[cfg(not(any(feature = "gpio-f410", feature = "gpio-f446")))]
+    #[cfg(not(any(gpio_f410, gpio_f446)))]
     pin! {
         <ExtSd, PushPull> for [
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f469"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f469
             ))]
             PB14<6>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f469"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f469
             ))]
             PC2<6>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI2<6>,
         ],
     }
@@ -1720,13 +1704,13 @@ pub mod i2s2 {
     impl I2sMaster for SPI {
         type Mck = Mck;
     }
-    #[cfg(not(any(feature = "gpio-f410", feature = "gpio-f446")))]
+    #[cfg(not(any(gpio_f410, gpio_f446)))]
     impl I2sExtPin for SPI {
         type ExtSd = ExtSd;
     }
 }
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 pub mod i2s2ext {
     use super::*;
 
@@ -1745,7 +1729,7 @@ pub mod i2s2ext {
     }
 }
 
-#[cfg(feature = "spi3")]
+#[cfg(pac_spi3)]
 pub mod i2s3 {
     use super::*;
 
@@ -1753,47 +1737,47 @@ pub mod i2s3 {
         <Ck, PushPull> for [
             PB3<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB12<5>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412"))]
+            #[cfg(any(gpio_f411, gpio_f412))]
             PB12<7>,
 
             PC10<6>,
         ],
 
         <Mck, PushPull> for no:NoPin, [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB10<6>,
 
             PC7<6>,
         ],
 
         <Sd, PushPull> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB0<7>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB2<7>,
 
             PB5<6>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PC1<5>,
 
             PC12<6>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PD0<6>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PD6<5>,
         ],
@@ -1805,30 +1789,30 @@ pub mod i2s3 {
         ],
     }
 
-    #[cfg(not(feature = "gpio-f446"))]
+    #[cfg(not(gpio_f446))]
     pin! {
         <ExtSd, PushPull> for [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB4<5>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f469"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f417,
+                gpio_f427,
+                gpio_f469
             ))]
             PB4<7>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f469"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f469
             ))]
             PC11<5>,
         ],
@@ -1844,13 +1828,13 @@ pub mod i2s3 {
     impl I2sMaster for SPI {
         type Mck = Mck;
     }
-    #[cfg(not(feature = "gpio-f446"))]
+    #[cfg(not(gpio_f446))]
     impl I2sExtPin for SPI {
         type ExtSd = ExtSd;
     }
 }
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 pub mod i2s3ext {
     use super::*;
 
@@ -1869,7 +1853,7 @@ pub mod i2s3ext {
     }
 }
 
-#[cfg(feature = "spi4")]
+#[cfg(pac_spi4)]
 pub mod i2s4 {
     use super::*;
 
@@ -1913,7 +1897,7 @@ pub mod i2s4 {
     }
 }
 
-#[cfg(feature = "spi5")]
+#[cfg(pac_spi5)]
 pub mod i2s5 {
     use super::*;
 
@@ -1921,10 +1905,10 @@ pub mod i2s5 {
         <Ck, PushPull> for [
             PB0<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE2<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE12<6>,
         ],
 
@@ -1933,10 +1917,10 @@ pub mod i2s5 {
 
             PB8<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE6<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE14<6>,
         ],
 
@@ -1945,10 +1929,10 @@ pub mod i2s5 {
         <Ws, PushPull> for [
             PB1<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE4<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE11<6>,
         ],
     }
@@ -1965,7 +1949,7 @@ pub mod i2s5 {
     }
 }
 
-#[cfg(feature = "lptim1")]
+#[cfg(pac_lptim1)]
 pub mod lptim1 {
     use super::*;
 
@@ -2000,7 +1984,7 @@ pub mod lptim1 {
     }
 }
 
-#[cfg(feature = "ltdc")]
+#[cfg(pac_ltdc)]
 pub mod ltdc {
     use super::*;
 
@@ -2008,7 +1992,7 @@ pub mod ltdc {
         <B0, PushPull> for [
             PE4<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PG14<14>,
 
             PJ12<14>,
@@ -2021,7 +2005,7 @@ pub mod ltdc {
         ],
 
         <B2, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PA3<9>,
 
             PD6<14>,
@@ -2090,22 +2074,22 @@ pub mod ltdc {
         ],
 
         <G0, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PB1<14>,
 
             PE5<14>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PJ7<14>,
         ],
 
         <G1, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PB0<14>,
 
             PE6<14>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PJ8<14>,
         ],
 
@@ -2114,10 +2098,10 @@ pub mod ltdc {
 
             PH13<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PI15<9>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PJ9<14>,
         ],
 
@@ -2128,37 +2112,37 @@ pub mod ltdc {
 
             PH14<14>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PJ10<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PJ12<9>,
         ],
 
         <G4, PushPull> for [
             PB10<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PH4<14>,
 
             PH15<14>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PJ11<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PJ13<9>,
         ],
 
         <G5, PushPull> for [
             PB11<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PH4<9>,
 
             PI0<14>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PK0<14>,
         ],
 
@@ -2167,25 +2151,25 @@ pub mod ltdc {
 
             PI1<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PI11<9>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PK1<14>,
         ],
 
         <G7, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PB5<14>,
 
             PD3<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PG8<14>,
 
             PI2<14>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PK2<14>,
         ],
 
@@ -2198,7 +2182,7 @@ pub mod ltdc {
         ],
 
         <R0, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PG13<14>,
 
             PH2<14>,
@@ -2207,7 +2191,7 @@ pub mod ltdc {
         ],
 
         <R1, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PA2<14>,
 
             PH3<14>,
@@ -2216,7 +2200,7 @@ pub mod ltdc {
         ],
 
         <R2, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PA1<14>,
 
             PC10<14>,
@@ -2235,7 +2219,7 @@ pub mod ltdc {
         ],
 
         <R4, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PA5<14>,
 
             PA11<14>,
@@ -2248,7 +2232,7 @@ pub mod ltdc {
         <R5, PushPull> for [
             PA12<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PC0<14>,
 
             PH11<14>,
@@ -2271,10 +2255,10 @@ pub mod ltdc {
 
             PG6<14>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PJ0<9>,
 
-            #[cfg(feature = "gpio-f427")]
+            #[cfg(gpio_f427)]
             PJ6<14>,
         ],
 
@@ -2288,7 +2272,7 @@ pub mod ltdc {
     }
 }
 
-#[cfg(feature = "quadspi")]
+#[cfg(pac_quadspi)]
 pub mod quadspi {
     use super::*;
 
@@ -2310,7 +2294,7 @@ pub mod quadspi {
         ],
 
         <Bk1Io2, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC8<9>,
 
             PE2<9>,
@@ -2329,35 +2313,35 @@ pub mod quadspi {
         <Bk1Ncs, PushPull> for [
             PB6<10>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PB10<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PG6<10>,
         ],
 
         <Bk2Io0, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA6<10>,
 
             PE7<10>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PH2<9>,
         ],
 
         <Bk2Io1, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PA7<10>,
 
             PE8<10>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PH3<9>,
         ],
 
         <Bk2Io2, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC4<10>,
 
             PE9<10>,
@@ -2366,7 +2350,7 @@ pub mod quadspi {
         ],
 
         <Bk2Io3, PushPull> for [
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PC5<10>,
 
             PE10<10>,
@@ -2379,19 +2363,19 @@ pub mod quadspi {
         ],
 
         <Clk, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PA7<10>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB1<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PB2<9>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PD3<9>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PF10<9>,
         ],
     }
@@ -2432,7 +2416,7 @@ pub mod rcc {
         ],
     }
 
-    #[cfg(feature = "gpio-f417")]
+    #[cfg(gpio_f417)]
     pin! {
         <Osc32In, PushPull> for [
             PC14<0>,
@@ -2455,7 +2439,7 @@ pub mod rcc {
 pub mod rtc {
     use super::*;
 
-    #[cfg(feature = "gpio-f417")]
+    #[cfg(gpio_f417)]
     pin! {
         <Af1, PushPull> for [
             PC13<0>,
@@ -2469,147 +2453,142 @@ pub mod rtc {
     }
 }
 
-#[cfg(feature = "sai1")]
+#[cfg(pac_sai1)]
 pub mod sai1 {
     use super::*;
 
     pin! {
         <FsA, PushPull> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PA3<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB5<10>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PE4<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PE6<7>,
         ],
 
         <FsB, PushPull> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB9<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PC3<7>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PF9<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PF9<7>,
         ],
 
         <MclkA, PushPull> for [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA15<10>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PE2<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PE2<7>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PG7<6>,
         ],
 
         <MclkB, PushPull> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PC0<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PC0<7>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PF7<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PF7<7>,
         ],
 
         <SckA, PushPull> for [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB4<10>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB10<6>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PE5<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PE5<7>,
         ],
 
         <SckB, PushPull> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB12<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PC2<7>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PF8<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PF8<7>,
         ],
 
         <SdA, PushPull> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB2<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB3<10>,
 
-            #[cfg(any(feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f446, gpio_f469))]
             PC1<6>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PD6<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PE4<7>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PE6<6>,
         ],
 
         <SdB, PushPull> for [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA3<10>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PA9<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PC1<7>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PE3<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PE3<7>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f446, gpio_f469))]
             PF6<6>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PF6<7>,
         ],
     }
 
-    #[cfg(any(
-        feature = "gpio-f413",
-        feature = "gpio-f469",
-        feature = "stm32f429",
-        feature = "stm32f439"
-    ))]
+    #[cfg(any(gpio_f413, gpio_f469, feature = "stm32f429", feature = "stm32f439"))]
     use crate::pac::SAI;
-    #[cfg(any(feature = "stm32f427", feature = "stm32f437", feature = "gpio-f446"))]
+    #[cfg(any(feature = "stm32f427", feature = "stm32f437", gpio_f446))]
     use crate::pac::SAI1 as SAI;
     pub struct ChannelA;
     pub struct ChannelB;
@@ -2631,7 +2610,7 @@ pub mod sai1 {
     }
 }
 
-#[cfg(feature = "sai2")]
+#[cfg(pac_sai2)]
 pub mod sai2 {
     use super::*;
 
@@ -2706,63 +2685,63 @@ pub mod sai2 {
     }
 }
 
-#[cfg(feature = "sdio")]
+#[cfg(pac_sdio)]
 pub mod sdio {
     use super::*;
 
     pin! {
         <Ck, PushPull> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB2<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB15<12, Speed::VeryHigh>,
 
             PC12<12, Speed::VeryHigh>,
         ],
 
         <Cmd, PushPull> for [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PA6<12, Speed::VeryHigh>,
 
             PD2<12, Speed::VeryHigh>,
         ],
 
         <D0, PushPull> for [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB4<12, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB6<12, Speed::VeryHigh>,
 
-            #[cfg(feature = "gpio-f411")]
+            #[cfg(gpio_f411)]
             PB7<12, Speed::VeryHigh>,
 
             PC8<12, Speed::VeryHigh>,
         ],
 
         <D1, PushPull> for [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PA8<12, Speed::VeryHigh>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB0<12, Speed::VeryHigh>,
 
             PC9<12, Speed::VeryHigh>,
         ],
 
         <D2, PushPull> for [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PA9<12, Speed::VeryHigh>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB1<12, Speed::VeryHigh>,
 
             PC10<12, Speed::VeryHigh>,
         ],
 
         <D3, PushPull> for [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB5<12, Speed::VeryHigh>,
 
             PC11<12, Speed::VeryHigh>,
@@ -2777,14 +2756,14 @@ pub mod sdio {
         ],
 
         <D6, PushPull> for [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB14<12, Speed::VeryHigh>,
 
             PC6<12>,
         ],
 
         <D7, PushPull> for [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB10<12, Speed::VeryHigh>,
 
             PC7<12, Speed::VeryHigh>,
@@ -2792,7 +2771,7 @@ pub mod sdio {
     }
 }
 
-#[cfg(feature = "spdifrx")]
+#[cfg(pac_spdifrx)]
 pub mod spdifrx {
     use super::*;
 
@@ -2883,55 +2862,55 @@ pub mod spi2 {
 
     pin! {
         <Miso, PushPull> for no:NoPin, [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA12<5>,
 
             PB14<5>,
 
             PC2<5>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI2<5>,
         ],
 
         <Mosi, PushPull> for no:NoPin, [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA10<5>,
 
             PB15<5>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PC1<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PC1<7>,
 
             PC3<5>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI3<5>,
         ],
 
         <Nss, PushPull> for [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA11<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB4<7>,
 
             PB9<5>,
 
             PB12<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PD1<7>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI0<5>,
         ],
 
         <Sck, PushPull> for no:NoPin, [
-            #[cfg(any(feature = "gpio-f413", feature = "gpio-f446", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f413, gpio_f446, gpio_f469))]
             PA9<5>,
 
             PB10<5>,
@@ -2939,26 +2918,26 @@ pub mod spi2 {
             PB13<5>,
 
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f446"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f446
             ))]
             PC7<5>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PD3<5>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI1<5>,
         ],
     }
@@ -2971,7 +2950,7 @@ pub mod spi2 {
     }
 }
 
-#[cfg(feature = "spi3")]
+#[cfg(pac_spi3)]
 pub mod spi3 {
     use super::*;
 
@@ -2983,30 +2962,30 @@ pub mod spi3 {
         ],
 
         <Mosi, PushPull> for no:NoPin, [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB0<7>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB2<7>,
 
             PB5<6>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PC1<5>,
 
             PC12<6>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PD0<6>,
 
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f401,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PD6<5>,
         ],
@@ -3020,7 +2999,7 @@ pub mod spi3 {
         <Sck, PushPull> for no:NoPin, [
             PB3<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB12<7>,
 
             PC10<6>,
@@ -3035,59 +3014,59 @@ pub mod spi3 {
     }
 }
 
-#[cfg(feature = "spi4")]
+#[cfg(pac_spi4)]
 pub mod spi4 {
     use super::*;
 
     pin! {
         <Miso, PushPull> for no:NoPin, [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PA11<6>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PD0<5>,
 
             PE5<5>,
 
             PE13<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PG12<6>,
         ],
 
         <Mosi, PushPull> for no:NoPin, [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PA1<5>,
 
             PE6<5>,
 
             PE14<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PG13<6>,
         ],
 
         <Nss, PushPull> for [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB12<6>,
 
             PE4<5>,
 
             PE11<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PG14<6>,
         ],
 
         <Sck, PushPull> for no:NoPin, [
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PB13<6>,
 
             PE2<5>,
 
             PE12<5>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PG11<6>,
         ],
     }
@@ -3100,104 +3079,104 @@ pub mod spi4 {
     }
 }
 
-#[cfg(feature = "spi5")]
+#[cfg(pac_spi5)]
 pub mod spi5 {
     use super::*;
 
     pin! {
         <Miso, PushPull> for no:NoPin, [
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PA12<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE5<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE13<6>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PF8<5>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH7<5>,
         ],
 
         <Mosi, PushPull> for no:NoPin, [
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PA10<6>,
 
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PB8<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE6<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE14<6>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PF9<5>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PF11<5>,
         ],
 
         <Nss, PushPull> for [
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PB1<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE4<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE11<6>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PF6<5>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH5<5>,
         ],
 
         <Sck, PushPull> for no:NoPin, [
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PB0<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE2<6>,
 
-            #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
             PE12<6>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PF7<5>,
 
-            #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f427, gpio_f469))]
             PH6<5>,
         ],
     }
@@ -3210,7 +3189,7 @@ pub mod spi5 {
     }
 }
 
-#[cfg(feature = "spi6")]
+#[cfg(pac_spi6)]
 pub mod spi6 {
     use super::*;
 
@@ -3265,83 +3244,83 @@ pub mod sys {
         ],
 
         <Traceclk, PushPull> for [
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC6<0>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE2<0>,
         ],
 
         <Traced0, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PC1<0>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PC8<0>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC10<0>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE3<0>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF6<0>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PG13<0>,
         ],
 
         <Traced1, PushPull> for [
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PC8<0>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC11<0>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PD3<0>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE4<0>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF7<0>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PG14<0>,
         ],
 
         <Traced2, PushPull> for [
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC12<0>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PD2<0>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE5<0>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PG13<0>,
         ],
 
         <Traced3, PushPull> for [
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PB11<0>,
 
-            #[cfg(feature = "gpio-f469")]
+            #[cfg(gpio_f469)]
             PC12<0>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE6<0>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PG14<0>,
         ],
     }
 
-    #[cfg(feature = "gpio-f417")]
+    #[cfg(gpio_f417)]
     pin! {
         <Wkup, PushPull> for [
             PA0<0>,
@@ -3356,7 +3335,7 @@ pub mod tim1 {
         <Ch1> default: PushPull for [
             PA8<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE9<1>,
         ],
 
@@ -3365,14 +3344,14 @@ pub mod tim1 {
 
             PB13<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE8<1>,
         ],
 
         <Ch2> default: PushPull for [
             PA9<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE11<1>,
         ],
 
@@ -3381,14 +3360,14 @@ pub mod tim1 {
 
             PB14<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE10<1>,
         ],
 
         <Ch3> default: PushPull for [
             PA10<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE13<1>,
         ],
 
@@ -3397,14 +3376,14 @@ pub mod tim1 {
 
             PB15<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE12<1>,
         ],
 
         <Ch4> default: PushPull for [
             PA11<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE14<1>,
         ],
     }
@@ -3415,17 +3394,17 @@ pub mod tim1 {
 
             PB12<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE15<1>,
         ],
 
         <Etr, PushPull> for [
             PA12<1>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE7<1>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF10<1>,
         ],
     }
@@ -3461,7 +3440,7 @@ pub mod tim1 {
     }
 }
 
-#[cfg(feature = "tim2")]
+#[cfg(pac_tim2)]
 pub mod tim2 {
     use super::*;
 
@@ -3473,7 +3452,7 @@ pub mod tim2 {
 
             PA15<1>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB8<1>,
         ],
 
@@ -3482,7 +3461,7 @@ pub mod tim2 {
 
             PB3<1>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB9<1>,
         ],
 
@@ -3495,7 +3474,7 @@ pub mod tim2 {
         <Ch4> default: PushPull for [
             PA3<1>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB2<1>,
 
             PB11<1>,
@@ -3510,7 +3489,7 @@ pub mod tim2 {
 
             PA15<1>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB8<1>,
         ],
     }
@@ -3534,7 +3513,7 @@ pub mod tim2 {
     }
 }
 
-#[cfg(feature = "tim2")]
+#[cfg(pac_tim2)]
 pub mod tim3 {
     use super::*;
 
@@ -3593,7 +3572,7 @@ pub mod tim3 {
     }
 }
 
-#[cfg(feature = "tim2")]
+#[cfg(pac_tim2)]
 pub mod tim4 {
     use super::*;
 
@@ -3655,52 +3634,52 @@ pub mod tim5 {
         <Ch1> default: PushPull for [
             PA0<2>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PB12<2>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF3<2>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH10<2>,
         ],
 
         <Ch2> default: PushPull for [
             PA1<2>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC10<2>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF4<2>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH11<2>,
         ],
 
         <Ch3> default: PushPull for [
             PA2<2>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC11<2>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF5<2>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH12<2>,
         ],
 
         <Ch4> default: PushPull for [
             PA3<2>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PB11<2>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF10<2>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI0<2>,
         ],
     }
@@ -3721,7 +3700,7 @@ pub mod tim5 {
     }
 }
 
-#[cfg(feature = "tim8")]
+#[cfg(pac_tim8)]
 pub mod tim8 {
     use super::*;
 
@@ -3729,7 +3708,7 @@ pub mod tim8 {
         <Ch1> default: PushPull for [
             PC6<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI5<3>,
         ],
 
@@ -3738,14 +3717,14 @@ pub mod tim8 {
 
             PA7<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH13<3>,
         ],
 
         <Ch2> default: PushPull for [
             PC7<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI6<3>,
         ],
 
@@ -3754,14 +3733,14 @@ pub mod tim8 {
 
             PB14<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH14<3>,
         ],
 
         <Ch3> default: PushPull for [
             PC8<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI7<3>,
         ],
 
@@ -3770,14 +3749,14 @@ pub mod tim8 {
 
             PB15<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH15<3>,
         ],
 
         <Ch4> default: PushPull for [
             PC9<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI2<3>,
         ],
     }
@@ -3786,20 +3765,20 @@ pub mod tim8 {
         <Bkin, PushPull> for [
             PA6<3>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF12<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI4<3>,
         ],
 
         <Etr, PushPull> for [
             PA0<3>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PF11<3>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI3<3>,
         ],
     }
@@ -3842,20 +3821,20 @@ pub mod tim9 {
         <Ch1> default: PushPull for [
             PA2<3>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC4<3>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE5<3>,
         ],
 
         <Ch2> default: PushPull for [
             PA3<3>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC5<3>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PE6<3>,
         ],
     }
@@ -3870,7 +3849,7 @@ pub mod tim9 {
     }
 }
 
-#[cfg(feature = "tim2")]
+#[cfg(pac_tim2)]
 pub mod tim10 {
     use super::*;
 
@@ -3879,12 +3858,12 @@ pub mod tim10 {
             PB8<3>,
 
             #[cfg(any(
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PF6<3>,
         ],
@@ -3904,16 +3883,16 @@ pub mod tim11 {
         <Ch1> default: PushPull for [
             PB9<3>,
 
-            #[cfg(feature = "gpio-f410")]
+            #[cfg(gpio_f410)]
             PC12<3>,
 
             #[cfg(any(
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PF7<3>,
         ],
@@ -3926,7 +3905,7 @@ pub mod tim11 {
     }
 }
 
-#[cfg(feature = "tim8")]
+#[cfg(pac_tim8)]
 pub mod tim12 {
     use super::*;
 
@@ -3934,14 +3913,14 @@ pub mod tim12 {
         <Ch1> default: PushPull for [
             PB14<9>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH6<9>,
         ],
 
         <Ch2> default: PushPull for [
             PB15<9>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH9<9>,
         ],
     }
@@ -3956,7 +3935,7 @@ pub mod tim12 {
     }
 }
 
-#[cfg(feature = "tim8")]
+#[cfg(pac_tim8)]
 pub mod tim13 {
     use super::*;
 
@@ -3975,7 +3954,7 @@ pub mod tim13 {
     }
 }
 
-#[cfg(feature = "tim8")]
+#[cfg(pac_tim8)]
 pub mod tim14 {
     use super::*;
 
@@ -4016,10 +3995,10 @@ pub mod usart1 {
             PA10<7>,
 
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PB3<7>,
 
@@ -4030,10 +4009,10 @@ pub mod usart1 {
             PA9<7>,
 
             #[cfg(any(
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PA15<7>,
 
@@ -4062,21 +4041,21 @@ pub mod usart2 {
         <Ck, PushPull> for [
             PA4<7>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PD7<7>,
         ],
 
         <Cts, PushPull> for [
             PA0<7>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PD3<7>,
         ],
 
         <Rts, PushPull> for [
             PA1<7>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PD4<7>,
         ],
     }
@@ -4085,14 +4064,14 @@ pub mod usart2 {
         <Rx> default: PushPull for no:NoPin, [
             PA3<7>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PD6<7>,
         ],
 
         <Tx> default: PushPull for no:NoPin, [
             PA2<7>,
 
-            #[cfg(not(feature = "gpio-f410"))]
+            #[cfg(not(gpio_f410))]
             PD5<7>,
         ],
     }
@@ -4111,21 +4090,21 @@ pub mod usart2 {
     }
 }
 
-#[cfg(feature = "usart3")]
+#[cfg(pac_usart3)]
 pub mod usart3 {
     use super::*;
 
     pin! {
         <Ck, PushPull> for [
             #[cfg(any(
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PB12<7>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB12<8>,
 
             PC12<7>,
@@ -4135,14 +4114,14 @@ pub mod usart3 {
 
         <Cts, PushPull> for [
             #[cfg(any(
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PB13<7>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+            #[cfg(any(gpio_f412, gpio_f413))]
             PB13<8>,
 
             PD11<7>,
@@ -4159,7 +4138,7 @@ pub mod usart3 {
         <Rx> default: PushPull for no:NoPin, [
             PB11<7>,
 
-            #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+            #[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
             PC5<7>,
 
             PC11<7>,
@@ -4198,25 +4177,18 @@ pub mod usart6 {
             PC8<8>,
 
             #[cfg(any(
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PG7<8>,
         ],
     }
 
-    #[cfg(any(
-        feature = "gpio-f412",
-        feature = "gpio-f413",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f446",
-        feature = "gpio-f469"
-    ))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f417, gpio_f427, gpio_f446, gpio_f469))]
     pin! {
         <Cts, PushPull> for [
             PG13<8>,
@@ -4234,46 +4206,46 @@ pub mod usart6 {
     pin! {
         <Rx> default: PushPull for no:NoPin, [
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f401,
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PA12<8>,
 
             PC7<8>,
 
             #[cfg(any(
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PG9<8>,
         ],
 
         <Tx> default: PushPull for no:NoPin, [
             #[cfg(any(
-                feature = "gpio-f401",
-                feature = "gpio-f410",
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413"
+                gpio_f401,
+                gpio_f410,
+                gpio_f411,
+                gpio_f412,
+                gpio_f413
             ))]
             PA11<8>,
 
             PC6<8>,
 
             #[cfg(any(
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f412,
+                gpio_f413,
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PG14<8>,
         ],
@@ -4287,25 +4259,18 @@ pub mod usart6 {
     impl SerialSync for USART {
         type Ck = Ck;
     }
-    #[cfg(any(
-        feature = "gpio-f412",
-        feature = "gpio-f413",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f446",
-        feature = "gpio-f469"
-    ))]
+    #[cfg(any(gpio_f412, gpio_f413, gpio_f417, gpio_f427, gpio_f446, gpio_f469))]
     impl SerialRs232 for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
 }
 
-#[cfg(feature = "uart4")]
+#[cfg(pac_uart4)]
 pub mod uart4 {
     use super::*;
 
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     pin! {
         <Cts, PushPull> for [
             PB0<8>,
@@ -4320,33 +4285,33 @@ pub mod uart4 {
         <Rx> default: PushPull for no:NoPin, [
             PA1<8>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA11<11>,
 
             PC11<8>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PD0<11>,
         ],
 
         <Tx> default: PushPull for no:NoPin, [
             PA0<8>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA12<11>,
 
             #[cfg(any(
-                feature = "gpio-f417",
-                feature = "gpio-f427",
-                feature = "gpio-f446",
-                feature = "gpio-f469"
+                gpio_f417,
+                gpio_f427,
+                gpio_f446,
+                gpio_f469
             ))]
             PC10<8>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PD1<11>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PD10<8>,
         ],
     }
@@ -4356,18 +4321,18 @@ pub mod uart4 {
         type Rx<Otype> = Rx<Otype>;
         type Tx<Otype> = Tx<Otype>;
     }
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     impl SerialRs232 for UART {
         type Cts = Cts;
         type Rts = Rts;
     }
 }
 
-#[cfg(feature = "uart5")]
+#[cfg(pac_uart5)]
 pub mod uart5 {
     use super::*;
 
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     pin! {
         <Cts, PushPull> for [
             PC9<7>,
@@ -4380,34 +4345,34 @@ pub mod uart5 {
 
     pin! {
         <Rx> default: PushPull for no:NoPin, [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB5<11>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB8<11>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB12<11>,
 
             PD2<8>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PE7<8>,
         ],
 
         <Tx> default: PushPull for no:NoPin, [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB6<11>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB9<11>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB13<11>,
 
             PC12<8>,
 
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PE8<8>,
         ],
     }
@@ -4417,23 +4382,23 @@ pub mod uart5 {
         type Rx<Otype> = Rx<Otype>;
         type Tx<Otype> = Tx<Otype>;
     }
-    #[cfg(feature = "gpio-f446")]
+    #[cfg(gpio_f446)]
     impl SerialRs232 for UART {
         type Cts = Cts;
         type Rts = Rts;
     }
 }
 
-#[cfg(feature = "uart7")]
+#[cfg(pac_uart7)]
 pub mod uart7 {
     use super::*;
 
     pin! {
         <Rx> default: PushPull for no:NoPin, [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA8<8>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB3<8>,
 
             PE7<8>,
@@ -4442,10 +4407,10 @@ pub mod uart7 {
         ],
 
         <Tx> default: PushPull for no:NoPin, [
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PA15<8>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PB4<8>,
 
             PE8<8>,
@@ -4461,7 +4426,7 @@ pub mod uart7 {
     }
 }
 
-#[cfg(feature = "uart8")]
+#[cfg(pac_uart8)]
 pub mod uart8 {
     use super::*;
 
@@ -4469,14 +4434,14 @@ pub mod uart8 {
         <Rx> default: PushPull for no:NoPin, [
             PE0<8>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PF8<8>,
         ],
 
         <Tx> default: PushPull for no:NoPin, [
             PE1<8>,
 
-            #[cfg(feature = "gpio-f413")]
+            #[cfg(gpio_f413)]
             PF9<8>,
         ],
     }
@@ -4488,7 +4453,7 @@ pub mod uart8 {
     }
 }
 
-#[cfg(feature = "uart9")]
+#[cfg(pac_uart9)]
 pub mod uart9 {
     use super::*;
 
@@ -4513,7 +4478,7 @@ pub mod uart9 {
     }
 }
 
-#[cfg(feature = "uart10")]
+#[cfg(pac_uart10)]
 pub mod uart10 {
     use super::*;
 
@@ -4538,7 +4503,7 @@ pub mod uart10 {
     }
 }
 
-#[cfg(feature = "otg-fs")]
+#[cfg(pac_otg_fs)]
 pub mod otg_fs {
     use super::*;
 
@@ -4560,7 +4525,7 @@ pub mod otg_fs {
         ],
     }
 
-    #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+    #[cfg(any(gpio_f411, gpio_f412, gpio_f413))]
     pin! {
         <Vbus, PushPull> for [
             PA9<10>,
@@ -4568,7 +4533,7 @@ pub mod otg_fs {
     }
 }
 
-#[cfg(feature = "otg-hs")]
+#[cfg(pac_otg_hs)]
 pub mod otg_hs {
     use super::*;
     pin! {
@@ -4609,7 +4574,7 @@ pub mod otg_hs {
         ],
 
         <UlpiD4, PushPull> for [
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(gpio_f446)]
             PB2<10, Speed::VeryHigh>,
 
             PB11<10, Speed::VeryHigh>,
@@ -4630,14 +4595,14 @@ pub mod otg_hs {
         <UlpiDir, PushPull> for [
             PC2<10, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PI11<10, Speed::VeryHigh>,
         ],
 
         <UlpiNxt, PushPull> for [
             PC3<10, Speed::VeryHigh>,
 
-            #[cfg(any(feature = "gpio-f417", feature = "gpio-f427", feature = "gpio-f469"))]
+            #[cfg(any(gpio_f417, gpio_f427, gpio_f469))]
             PH4<10, Speed::VeryHigh>,
         ],
 

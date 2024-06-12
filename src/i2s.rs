@@ -243,37 +243,31 @@ macro_rules! i2s {
 // Each one has to be split into two declarations because the F412, F413, F423, and F446
 // have two different I2S clocks while other models have only one.
 
-#[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
+#[cfg(any(gpio_f410, gpio_f411))]
 i2s!(pac::SPI1, I2s1, i2s1, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+#[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
 i2s!(pac::SPI1, I2s1, i2s1, i2s_apb2_clk);
 
 // All STM32F4 models support SPI2/I2S2
-#[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+#[cfg(not(any(gpio_f412, gpio_f413, gpio_f446)))]
 i2s!(pac::SPI2, I2s2, i2s2, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+#[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
 i2s!(pac::SPI2, I2s2, i2s2, i2s_apb1_clk);
 
 // All STM32F4 models except STM32F410 support SPI3/I2S3
-#[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f411",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f469",
-))]
+#[cfg(any(gpio_f401, gpio_f411, gpio_f417, gpio_f427, gpio_f469))]
 i2s!(pac::SPI3, I2s3, i2s3, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+#[cfg(any(gpio_f412, gpio_f413, gpio_f446))]
 i2s!(pac::SPI3, I2s3, i2s3, i2s_apb1_clk);
 
-#[cfg(feature = "gpio-f411")]
+#[cfg(gpio_f411)]
 i2s!(pac::SPI4, I2s4, i2s4, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+#[cfg(any(gpio_f412, gpio_f413))]
 i2s!(pac::SPI4, I2s4, i2s4, i2s_apb2_clk);
 
-#[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
+#[cfg(any(gpio_f410, gpio_f411))]
 i2s!(pac::SPI5, I2s5, i2s5, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
+#[cfg(any(gpio_f412, gpio_f413))]
 i2s!(pac::SPI5, I2s5, i2s5, i2s_apb2_clk);
 
 /// A wrapper around a SPI and a I2SEXT object and pins for full duplex I2S operation
@@ -372,14 +366,7 @@ impl<I: DualInstance> DualI2s<I> {
 /// $i2s: module containing the Ws pin definition. (example: i2s1).
 /// $clock: The name of the Clocks function that returns the frequency of the I2S clock input
 /// to this SPI peripheral (i2s_cl, i2s_apb1_clk, or i2s2_apb_clk)
-#[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f469",
-))]
+#[cfg(any(gpio_f401, gpio_f411, gpio_f412, gpio_f417, gpio_f427, gpio_f469))]
 macro_rules! dual_i2s {
     ($SPI:ty,$I2SEXT:ty, $DualI2s:ident, $i2s:ident, $clock:ident) => {
         pub type $DualI2s = DualI2s<$SPI>;
@@ -418,30 +405,18 @@ macro_rules! dual_i2s {
 // Each one has to be split into two declarations because the F412, F413, F423, and F446
 // have two different I2S clocks while other models have only one.
 // All STM32F4 models except STM32F410 and STM32F446 have dual i2s support on SPI2 and SPI3
-#[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f411",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f469",
-))]
+#[cfg(any(gpio_f401, gpio_f411, gpio_f417, gpio_f427, gpio_f469))]
 dual_i2s!(pac::SPI2, pac::I2S2EXT, DualI2s2, i2s2, i2s_clk);
 
 // add "gpio-f413" feature here when missing I2SEXT in pac wil be fixed.
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 dual_i2s!(pac::SPI2, pac::I2S2EXT, DualI2s2, i2s2, i2s_apb1_clk);
 
-#[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f411",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f469",
-))]
+#[cfg(any(gpio_f401, gpio_f411, gpio_f417, gpio_f427, gpio_f469))]
 dual_i2s!(pac::SPI3, pac::I2S3EXT, DualI2s3, i2s3, i2s_clk);
 
 // add "gpio-f413" feature here when missing I2SEXT in pac wil be fixed.
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 dual_i2s!(pac::SPI3, pac::I2S3EXT, DualI2s3, i2s3, i2s_apb1_clk);
 
 // DMA support: reuse existing mappings for SPI

@@ -2,7 +2,7 @@ use super::*;
 
 pub use super::Input as DefaultMode;
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [1, 2, 7]),
     PA1: (pa1, 1, [1, 2, 7]),
@@ -22,7 +22,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 1, 5, 6], super::Debugger), // JTDI, PullUp
 ]);
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 2]),
     PB1: (pb1, 1, [1, 2]),
@@ -42,7 +42,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 5, 6]),
 ]);
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, []),
     PC1: (pc1, 1, []),
@@ -62,7 +62,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, []),
 ]);
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, []),
     PD1: (pd1, 1, []),
@@ -82,7 +82,7 @@ gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD15: (pd15, 15, [2]),
 ]);
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, [2]),
     PE1: (pe1, 1, []),
@@ -102,13 +102,13 @@ gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE15: (pe15, 15, [1]),
 ]);
 
-#[cfg(feature = "gpio-f401")]
+#[cfg(gpio_f401)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, []),
     PH1: (ph1, 1, []),
 ]);
 
-#[cfg(feature = "gpio-f410")]
+#[cfg(gpio_f410)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [2, 7, 15]),
     PA1: (pa1, 1, [2, 7, 15]),
@@ -128,7 +128,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 5, 7, 15], super::Debugger),
 ]);
 
-#[cfg(feature = "gpio-f410")]
+#[cfg(gpio_f410)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 6, 15]),
     PB1: (pb1, 1, [1, 6, 15]),
@@ -148,7 +148,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 4, 5, 15]),
 ]);
 
-#[cfg(feature = "gpio-f410")]
+#[cfg(gpio_f410)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, [1, 15]),
     PC1: (pc1, 1, [1, 15]),
@@ -168,13 +168,13 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, [15]),
 ]);
 
-#[cfg(feature = "gpio-f410")]
+#[cfg(gpio_f410)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, [15]),
     PH1: (ph1, 1, [15]),
 ]);
 
-#[cfg(feature = "gpio-f411")]
+#[cfg(gpio_f411)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [1, 2, 7]),
     PA1: (pa1, 1, [1, 2, 5, 7]),
@@ -194,7 +194,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 1, 5, 6, 7], super::Debugger),
 ]);
 
-#[cfg(feature = "gpio-f411")]
+#[cfg(gpio_f411)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 2, 6]),
     PB1: (pb1, 1, [1, 2, 6]),
@@ -214,7 +214,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 5, 12]),
 ]);
 
-#[cfg(feature = "gpio-f411")]
+#[cfg(gpio_f411)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, []),
     PC1: (pc1, 1, []),
@@ -234,7 +234,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, []),
 ]);
 
-#[cfg(feature = "gpio-f411")]
+#[cfg(gpio_f411)]
 gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, []),
     PD1: (pd1, 1, []),
@@ -254,7 +254,7 @@ gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD15: (pd15, 15, [2]),
 ]);
 
-#[cfg(feature = "gpio-f411")]
+#[cfg(gpio_f411)]
 gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, [2]),
     PE1: (pe1, 1, []),
@@ -274,13 +274,13 @@ gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE15: (pe15, 15, [1]),
 ]);
 
-#[cfg(feature = "gpio-f411")]
+#[cfg(gpio_f411)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, []),
     PH1: (ph1, 1, []),
 ]);
 
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [1, 2, 3, 7, 15]),
     PA1: (pa1, 1, [1, 2, 5, 7, 9, 15]),
@@ -300,7 +300,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 1, 5, 6, 7, 15], super::Debugger),
 ]);
 
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 2, 3, 6, 15]),
     PB1: (pb1, 1, [1, 2, 3, 6, 8, 9, 15]),
@@ -320,7 +320,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 3, 4, 5, 8, 9, 12, 15]),
 ]);
 
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, [15]),
     PC1: (pc1, 1, [15]),
@@ -340,7 +340,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, [15]),
 ]);
 
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, [9, 12, 15]),
     PD1: (pd1, 1, [9, 12, 15]),
@@ -360,7 +360,7 @@ gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD15: (pd15, 15, [2, 4, 12, 15]),
 ]);
 
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, [2, 12, 15]),
     PE1: (pe1, 1, [12, 15]),
@@ -380,7 +380,7 @@ gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE15: (pe15, 15, [1, 12, 15]),
 ]);
 
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF0: (pf0, 0, [4, 12, 15]),
     PF1: (pf1, 1, [4, 12, 15]),
@@ -400,7 +400,7 @@ gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF15: (pf15, 15, [4, 12, 15]),
 ]);
 
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG0: (pg0, 0, [9, 12, 15]),
     PG1: (pg1, 1, [9, 12, 15]),
@@ -420,13 +420,13 @@ gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG15: (pg15, 15, [8, 15]),
 ]);
 
-#[cfg(feature = "gpio-f412")]
+#[cfg(gpio_f412)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, [15]),
     PH1: (ph1, 1, [15]),
 ]);
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [1, 2, 3, 7, 8, 15]),
     PA1: (pa1, 1, [1, 2, 5, 7, 8, 9, 15]),
@@ -446,7 +446,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 1, 5, 6, 7, 8, 10, 11, 15], super::Debugger),
 ]);
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 2, 3, 6, 15]),
     PB1: (pb1, 1, [1, 2, 3, 6, 8, 9, 15]),
@@ -466,7 +466,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 3, 4, 5, 8, 9, 12, 15]),
 ]);
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, [1, 3, 7, 15]),
     PC1: (pc1, 1, [1, 3, 7, 15]),
@@ -486,7 +486,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, [15]),
 ]);
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, [3, 9, 11, 12, 15]),
     PD1: (pd1, 1, [3, 9, 11, 12, 15]),
@@ -506,7 +506,7 @@ gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD15: (pd15, 15, [2, 4, 10, 11, 12, 15]),
 ]);
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, [2, 3, 8, 12, 15]),
     PE1: (pe1, 1, [3, 8, 12, 15]),
@@ -526,7 +526,7 @@ gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE15: (pe15, 15, [1, 10, 12, 15]),
 ]);
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF0: (pf0, 0, [4, 12, 15]),
     PF1: (pf1, 1, [4, 12, 15]),
@@ -546,7 +546,7 @@ gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF15: (pf15, 15, [4, 12, 15]),
 ]);
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG0: (pg0, 0, [9, 11, 12, 15]),
     PG1: (pg1, 1, [9, 11, 12, 15]),
@@ -566,13 +566,13 @@ gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG15: (pg15, 15, [8, 15]),
 ]);
 
-#[cfg(feature = "gpio-f413")]
+#[cfg(gpio_f413)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, [15]),
     PH1: (ph1, 1, [15]),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [0, 1, 2, 3, 7, 8, 11]),
     PA1: (pa1, 1, [1, 2, 7, 8, 11]),
@@ -592,7 +592,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 1, 5, 6], super::Debugger),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 2, 3, 10, 11]),
     PB1: (pb1, 1, [1, 2, 3, 10, 11]),
@@ -612,7 +612,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 3, 5, 9, 12]),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, [10]),
     PC1: (pc1, 1, [11]),
@@ -632,7 +632,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, [0]),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, [9, 12]),
     PD1: (pd1, 1, [9, 12]),
@@ -652,7 +652,7 @@ gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD15: (pd15, 15, [2, 12]),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, [2, 12, 13]),
     PE1: (pe1, 1, [12, 13]),
@@ -672,7 +672,7 @@ gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE15: (pe15, 15, [1, 12]),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF0: (pf0, 0, [4, 12]),
     PF1: (pf1, 1, [4, 12]),
@@ -692,7 +692,7 @@ gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF15: (pf15, 15, [12]),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG0: (pg0, 0, [12]),
     PG1: (pg1, 1, [12]),
@@ -712,7 +712,7 @@ gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG15: (pg15, 15, [8, 13]),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, [0]),
     PH1: (ph1, 1, [0]),
@@ -732,7 +732,7 @@ gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH15: (ph15, 15, [3, 13]),
 ]);
 
-#[cfg(feature = "gpio-f417")]
+#[cfg(gpio_f417)]
 gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI0: (pi0, 0, [2, 5, 13]),
     PI1: (pi1, 1, [5, 13]),
@@ -748,7 +748,7 @@ gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI11: (pi11, 11, [10]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [1, 2, 3, 7, 8, 11]),
     PA1: (pa1, 1, [1, 2, 7, 8, 11]),
@@ -768,7 +768,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 1, 5, 6], super::Debugger),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 2, 3, 9, 10, 11]),
     PB1: (pb1, 1, [1, 2, 3, 9, 10, 11]),
@@ -788,7 +788,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 3, 5, 9, 12]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, [10, 12]),
     PC1: (pc1, 1, [11]),
@@ -808,7 +808,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, []),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, [9, 12]),
     PD1: (pd1, 1, [9, 12]),
@@ -828,7 +828,7 @@ gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD15: (pd15, 15, [2, 12]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, [2, 8, 12, 13]),
     PE1: (pe1, 1, [8, 12, 13]),
@@ -848,7 +848,7 @@ gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE15: (pe15, 15, [1, 12, 14]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF0: (pf0, 0, [4, 12]),
     PF1: (pf1, 1, [4, 12]),
@@ -868,7 +868,7 @@ gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF15: (pf15, 15, [12]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG0: (pg0, 0, [12]),
     PG1: (pg1, 1, [12]),
@@ -888,7 +888,7 @@ gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG15: (pg15, 15, [8, 12, 13]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, []),
     PH1: (ph1, 1, []),
@@ -908,7 +908,7 @@ gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH15: (ph15, 15, [3, 12, 13, 14]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI0: (pi0, 0, [2, 5, 12, 13, 14]),
     PI1: (pi1, 1, [5, 12, 13, 14]),
@@ -928,7 +928,7 @@ gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI15: (pi15, 15, [14]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOJ, gpioj, PJ, 'J', PJn, [
     PJ0: (pj0, 0, [14]),
     PJ1: (pj1, 1, [14]),
@@ -948,7 +948,7 @@ gpio!(GPIOJ, gpioj, PJ, 'J', PJn, [
     PJ15: (pj15, 15, [14]),
 ]);
 
-#[cfg(feature = "gpio-f427")]
+#[cfg(gpio_f427)]
 gpio!(GPIOK, gpiok, PK, 'K', PKn, [
     PK0: (pk0, 0, [14]),
     PK1: (pk1, 1, [14]),
@@ -960,7 +960,7 @@ gpio!(GPIOK, gpiok, PK, 'K', PKn, [
     PK7: (pk7, 7, [14]),
 ]);
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [1, 2, 3, 7, 8]),
     PA1: (pa1, 1, [1, 2, 7, 8, 9, 10]),
@@ -980,7 +980,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 1, 4, 5, 6, 8], super::Debugger),
 ]);
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 2, 3, 7, 8, 10, 12]),
     PB1: (pb1, 1, [1, 2, 3, 10, 12]),
@@ -1000,7 +1000,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 3, 5, 9, 12]),
 ]);
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, [6, 10, 12]),
     PC1: (pc1, 1, [5, 6, 7]),
@@ -1020,7 +1020,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, []),
 ]);
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, [5, 6, 9, 12]),
     PD1: (pd1, 1, [7, 9, 12]),
@@ -1040,7 +1040,7 @@ gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD15: (pd15, 15, [2, 4, 12]),
 ]);
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, [2, 10, 12, 13]),
     PE1: (pe1, 1, [12, 13]),
@@ -1060,7 +1060,7 @@ gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE15: (pe15, 15, [1, 12]),
 ]);
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF0: (pf0, 0, [4, 12]),
     PF1: (pf1, 1, [4, 12]),
@@ -1080,7 +1080,7 @@ gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF15: (pf15, 15, [4, 12]),
 ]);
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG0: (pg0, 0, [12]),
     PG1: (pg1, 1, [12]),
@@ -1100,13 +1100,13 @@ gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG15: (pg15, 15, [8, 12, 13]),
 ]);
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(gpio_f446)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, []),
     PH1: (ph1, 1, []),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0, [1, 2, 3, 7, 8, 11]),
     PA1: (pa1, 1, [1, 2, 7, 8, 9, 11, 14]),
@@ -1126,7 +1126,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, [0, 1, 5, 6], super::Debugger),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB0: (pb0, 0, [1, 2, 3, 9, 10, 11, 14]),
     PB1: (pb1, 1, [1, 2, 3, 9, 10, 11, 14]),
@@ -1146,7 +1146,7 @@ gpio!(GPIOB, gpiob, PB, 'B', PBn, [
     PB15: (pb15, 15, [0, 1, 3, 5, 9, 12]),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC0: (pc0, 0, [10, 12, 14]),
     PC1: (pc1, 1, [0, 5, 6, 11]),
@@ -1166,7 +1166,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC15: (pc15, 15, []),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD0: (pd0, 0, [9, 12]),
     PD1: (pd1, 1, [9, 12]),
@@ -1186,7 +1186,7 @@ gpio!(GPIOD, gpiod, PD, 'D', PDn, [
     PD15: (pd15, 15, [2, 12]),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE0: (pe0, 0, [2, 8, 12, 13]),
     PE1: (pe1, 1, [8, 12, 13]),
@@ -1206,7 +1206,7 @@ gpio!(GPIOE, gpioe, PE, 'E', PEn, [
     PE15: (pe15, 15, [1, 12, 14]),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF0: (pf0, 0, [4, 12]),
     PF1: (pf1, 1, [4, 12]),
@@ -1226,7 +1226,7 @@ gpio!(GPIOF, gpiof, PF, 'F', PFn, [
     PF15: (pf15, 15, [12]),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG0: (pg0, 0, [12]),
     PG1: (pg1, 1, [12]),
@@ -1246,7 +1246,7 @@ gpio!(GPIOG, gpiog, PG, 'G', PGn, [
     PG15: (pg15, 15, [8, 12, 13]),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH0: (ph0, 0, []),
     PH1: (ph1, 1, []),
@@ -1266,7 +1266,7 @@ gpio!(GPIOH, gpioh, PH, 'H', PHn, [
     PH15: (ph15, 15, [3, 12, 13, 14]),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI0: (pi0, 0, [2, 5, 12, 13, 14]),
     PI1: (pi1, 1, [5, 12, 13, 14]),
@@ -1286,7 +1286,7 @@ gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI15: (pi15, 15, [9, 14]),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOJ, gpioj, PJ, 'J', PJn, [
     PJ0: (pj0, 0, [9, 14]),
     PJ1: (pj1, 1, [14]),
@@ -1300,7 +1300,7 @@ gpio!(GPIOJ, gpioj, PJ, 'J', PJn, [
     PJ15: (pj15, 15, [14]),
 ]);
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(gpio_f469)]
 gpio!(GPIOK, gpiok, PK, 'K', PKn, [
     PK3: (pk3, 3, [14]),
     PK4: (pk4, 4, [14]),
@@ -1310,12 +1310,12 @@ gpio!(GPIOK, gpiok, PK, 'K', PKn, [
 ]);
 
 /*#[cfg(any(
-    feature = "gpio-f401",
-    feature = "gpio-f410",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f413",
-    feature = "gpio-f446"
+    gpio_f401,
+    gpio_f410,
+    gpio_f411,
+    gpio_f412,
+    gpio_f413,
+    gpio_f446
 ))]
 gpio!(GPIOI, gpioi, PI, 'I', PIn, [
     PI8: (pi8, 8, []),

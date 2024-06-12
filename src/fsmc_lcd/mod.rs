@@ -71,13 +71,13 @@ pub use self::timing::{AccessMode, Timing};
 use crate::rcc::{Enable, Reset};
 
 // Use the FMC or FSMC, whichever is available, and treat it like an FSMC
-#[cfg(feature = "fmc")]
+#[cfg(pac_fmc)]
 use crate::pac::fmc as fsmc;
-#[cfg(feature = "fsmc")]
+#[cfg(pac_fsmc)]
 use crate::pac::fsmc;
-#[cfg(feature = "fmc")]
+#[cfg(pac_fmc)]
 use crate::pac::FMC as FSMC;
-#[cfg(feature = "fsmc")]
+#[cfg(pac_fsmc)]
 use crate::pac::FSMC;
 
 /// A sub-bank of bank 1, with its own chip select output

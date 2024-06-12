@@ -263,34 +263,34 @@ macro_rules! make_timer {
     };
 }
 
-#[cfg(all(feature = "tim2", feature = "rtic-tim2"))]
+#[cfg(all(pac_tim2, feature = "rtic-tim2"))]
 make_timer!(tim2, TIM2, u32, TIMER2_OVERFLOWS, TIMER2_TQ);
 
-#[cfg(all(feature = "tim3", feature = "rtic-tim3"))]
+#[cfg(all(pac_tim3, feature = "rtic-tim3"))]
 make_timer!(tim3, TIM3, u16, TIMER3_OVERFLOWS, TIMER3_TQ);
 
-#[cfg(all(feature = "tim4", feature = "rtic-tim4"))]
+#[cfg(all(pac_tim4, feature = "rtic-tim4"))]
 make_timer!(tim4, TIM4, u16, TIMER4_OVERFLOWS, TIMER4_TQ);
 
-#[cfg(all(feature = "tim5", feature = "rtic-tim5"))]
+#[cfg(all(pac_tim5, feature = "rtic-tim5"))]
 make_timer!(tim5, TIM5, u16, TIMER5_OVERFLOWS, TIMER5_TQ);
 
 pub trait Irq {
     const IRQ: pac::Interrupt;
 }
-#[cfg(feature = "tim2")]
+#[cfg(pac_tim2)]
 impl Irq for pac::TIM2 {
     const IRQ: pac::Interrupt = pac::Interrupt::TIM2;
 }
-#[cfg(feature = "tim3")]
+#[cfg(pac_tim3)]
 impl Irq for pac::TIM3 {
     const IRQ: pac::Interrupt = pac::Interrupt::TIM3;
 }
-#[cfg(feature = "tim4")]
+#[cfg(pac_tim4)]
 impl Irq for pac::TIM4 {
     const IRQ: pac::Interrupt = pac::Interrupt::TIM4;
 }
-#[cfg(feature = "tim5")]
+#[cfg(pac_tim5)]
 impl Irq for pac::TIM5 {
     const IRQ: pac::Interrupt = pac::Interrupt::TIM5;
 }
