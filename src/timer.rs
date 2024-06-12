@@ -73,7 +73,6 @@ pub enum Channel {
 }
 
 pub use crate::gpio::alt::TimCPin as CPin;
-pub use crate::gpio::alt::TimNCPin as NCPin;
 
 /// Channel wrapper
 pub struct Ch<const C: u8, const COMP: bool>;

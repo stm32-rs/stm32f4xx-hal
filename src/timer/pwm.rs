@@ -37,8 +37,8 @@
 //! and change their polarity with `set_polarity` and `set_complementary_polarity`.
 
 use super::{
-    compute_arr_presc, Advanced, CPin, Channel, FTimer, IdleState, Instance, NCPin, Ocm, Polarity,
-    Timer, WithPwm,
+    compute_arr_presc, Advanced, CPin, Channel, FTimer, IdleState, Instance, Ocm, Polarity, Timer,
+    WithPwm,
 };
 pub use super::{Ch, C1, C2, C3, C4};
 use crate::gpio::{OpenDrain, PushPull};
@@ -47,96 +47,147 @@ use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use fugit::{HertzU32 as Hertz, TimerDurationU32};
 
-pub type Channel1<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C1, COMP, PushPull>;
-pub type Channel2<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C2, COMP, PushPull>;
-pub type Channel3<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C3, COMP, PushPull>;
-pub type Channel4<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C4, COMP, PushPull>;
-pub type Channel1OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C1, COMP, OpenDrain>;
-pub type Channel2OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C2, COMP, OpenDrain>;
-pub type Channel3OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C3, COMP, OpenDrain>;
-pub type Channel4OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C4, COMP, OpenDrain>;
+pub type Channel1<TIM> = ChannelBuilder<TIM, C1, PushPull>;
+pub type Channel2<TIM> = ChannelBuilder<TIM, C2, PushPull>;
+pub type Channel3<TIM> = ChannelBuilder<TIM, C3, PushPull>;
+pub type Channel4<TIM> = ChannelBuilder<TIM, C4, PushPull>;
+pub type Channel1OD<TIM> = ChannelBuilder<TIM, C1, OpenDrain>;
+pub type Channel2OD<TIM> = ChannelBuilder<TIM, C2, OpenDrain>;
+pub type Channel3OD<TIM> = ChannelBuilder<TIM, C3, OpenDrain>;
+pub type Channel4OD<TIM> = ChannelBuilder<TIM, C4, OpenDrain>;
 
-pub struct ChannelBuilder<TIM, const C: u8, const COMP: bool = false, Otype = PushPull> {
-    pub(super) _tim: PhantomData<(TIM, Otype)>,
+pub enum Lines<P> {
+    None,
+    One(P),
+    Two(P, P),
+    Three(P, P, P),
+    Four(P, P, P, P),
 }
 
-impl<TIM, Otype, const C: u8> ChannelBuilder<TIM, C, false, Otype>
+impl<P> Lines<P> {
+    pub fn new(pin: P) -> Self {
+        Self::One(pin)
+    }
+    pub fn add(self, pin: P) -> Self {
+        match self {
+            Self::None => Self::One(pin),
+            Self::One(p) => Self::Two(p, pin),
+            Self::Two(p1, p2) => Self::Three(p1, p2, pin),
+            Self::Three(p1, p2, p3) => Self::Four(p1, p2, p3, pin),
+            Self::Four(_, _, _, _) => unreachable!(),
+        }
+    }
+}
+
+pub struct ChannelBuilder<TIM, const C: u8, Otype = PushPull>
 where
     TIM: CPin<C>,
 {
+    lines: Lines<TIM::Ch<Otype>>,
+    comp_lines: Lines<TIM::ChN<Otype>>,
+}
+
+impl<TIM, Otype, const C: u8> ChannelBuilder<TIM, C, Otype>
+where
+    TIM: CPin<C>,
+{
+    pub fn has_complementary(&self) -> bool {
+        matches!(self.comp_lines, Lines::None)
+    }
+
     pub fn new(pin: impl Into<TIM::Ch<Otype>>) -> Self {
-        let _pin = pin.into();
-        Self { _tim: PhantomData }
+        Self {
+            lines: Lines::new(pin.into()),
+            comp_lines: Lines::None,
+        }
     }
-}
-impl<TIM, Otype, const C: u8, const COMP: bool> ChannelBuilder<TIM, C, COMP, Otype>
-where
-    TIM: CPin<C>,
-{
+
+    pub fn new_complementary(pin: impl Into<TIM::ChN<Otype>>) -> Self {
+        Self {
+            lines: Lines::None,
+            comp_lines: Lines::new(pin.into()),
+        }
+    }
+
     pub fn with(self, pin: impl Into<TIM::Ch<Otype>>) -> Self {
-        let _pin = pin.into();
-        self
+        Self {
+            lines: self.lines.add(pin.into()),
+            ..self
+        }
     }
-}
-impl<TIM, Otype, const C: u8, const COMP: bool> ChannelBuilder<TIM, C, COMP, Otype>
-where
-    TIM: NCPin<C>,
-{
-    pub fn with_complementary(
-        self,
-        pin: impl Into<TIM::ChN<Otype>>,
-    ) -> ChannelBuilder<TIM, C, true, Otype> {
-        let _pin = pin.into();
-        ChannelBuilder { _tim: PhantomData }
+
+    pub fn with_complementary(self, pin: impl Into<TIM::ChN<Otype>>) -> Self {
+        Self {
+            comp_lines: self.comp_lines.add(pin.into()),
+            ..self
+        }
     }
 }
 
-impl<TIM, Otype, const C: u8, const COMP: bool> sealed::Split
-    for ChannelBuilder<TIM, C, COMP, Otype>
+impl<TIM, Otype, const C: u8> sealed::Split for ChannelBuilder<TIM, C, Otype>
+where
+    TIM: CPin<C>,
 {
-    type Channels = PwmChannel<TIM, C, COMP>;
-    fn split() -> Self::Channels {
-        PwmChannel::new()
+    type Channels = PwmChannel<TIM, C>;
+    fn split(self) -> Self::Channels {
+        PwmChannel::new(self.has_complementary())
     }
 }
 
 mod sealed {
     pub trait Split {
         type Channels;
-        fn split() -> Self::Channels;
+        fn split(self) -> Self::Channels;
     }
     macro_rules! split {
-        ($($T:ident),+) => {
+        ($($T:ident: $i:tt),+) => {
             impl<$($T),+> Split for ($($T),+)
             where
                 $($T: Split,)+
             {
                 type Channels = ($($T::Channels),+);
-                fn split() -> Self::Channels {
-                    ($($T::split()),+)
+                fn split(self) -> Self::Channels {
+                    ($(self.$i.split()),+)
                 }
             }
         };
     }
-    split!(T1, T2);
-    split!(T1, T2, T3);
-    split!(T1, T2, T3, T4);
+    split!(T1: 0, T2: 1);
+    split!(T1: 0, T2: 1, T3: 2);
+    split!(T1: 0, T2: 1, T3: 2, T4: 3);
 }
+#[allow(non_snake_case)]
 pub trait Pins<TIM>: sealed::Split {
-    const C1: bool = false;
-    const C2: bool = false;
-    const C3: bool = false;
-    const C4: bool = false;
-    const NC1: bool = false;
-    const NC2: bool = false;
-    const NC3: bool = false;
-    const NC4: bool = false;
+    fn C1(&self) -> bool {
+        false
+    }
+    fn C2(&self) -> bool {
+        false
+    }
+    fn C3(&self) -> bool {
+        false
+    }
+    fn C4(&self) -> bool {
+        false
+    }
+    fn NC1(&self) -> bool {
+        false
+    }
+    fn NC2(&self) -> bool {
+        false
+    }
+    fn NC3(&self) -> bool {
+        false
+    }
+    fn NC4(&self) -> bool {
+        false
+    }
 
-    fn check_used(c: Channel) -> Channel {
-        if (c == Channel::C1 && Self::C1)
-            || (c == Channel::C2 && Self::C2)
-            || (c == Channel::C3 && Self::C3)
-            || (c == Channel::C4 && Self::C4)
+    fn check_used(&self, c: Channel) -> Channel {
+        if (c == Channel::C1 && self.C1())
+            || (c == Channel::C2 && self.C2())
+            || (c == Channel::C3 && self.C3())
+            || (c == Channel::C4 && self.C4())
         {
             c
         } else {
@@ -144,11 +195,11 @@ pub trait Pins<TIM>: sealed::Split {
         }
     }
 
-    fn check_complementary_used(c: Channel) -> Channel {
-        if (c == Channel::C1 && Self::NC1)
-            || (c == Channel::C2 && Self::NC2)
-            || (c == Channel::C3 && Self::NC3)
-            || (c == Channel::C4 && Self::NC4)
+    fn check_complementary_used(&self, c: Channel) -> Channel {
+        if (c == Channel::C1 && self.NC1())
+            || (c == Channel::C2 && self.NC2())
+            || (c == Channel::C3 && self.NC3())
+            || (c == Channel::C4 && self.NC4())
         {
             c
         } else {
@@ -158,42 +209,73 @@ pub trait Pins<TIM>: sealed::Split {
 }
 
 macro_rules! pins_impl {
-    ( $( $(($Otype:ident, $ENCHX:ident, $COMP:ident)),+; )+ ) => {
+    ( $( $(($Otype:ident, $ENCHX:ident, $COMP:ident, $i:tt)),+; )+ ) => {
         $(
             #[allow(unused_parens)]
-            impl<TIM, $($Otype, const $COMP: bool,)+> Pins<TIM> for ($(ChannelBuilder<TIM, $ENCHX, $COMP, $Otype>),+) {
+            impl<TIM, $($Otype,)+> Pins<TIM> for ($(ChannelBuilder<TIM, $ENCHX, $Otype>),+)
+            where
                 $(
-                    const $ENCHX: bool = true;
-                    const $COMP: bool = $COMP;
+                    TIM: CPin<$ENCHX>,
+                )+
+            {
+                $(
+                    fn $ENCHX(&self) -> bool {
+                        true
+                    }
+                    fn $COMP(&self) -> bool {
+                        self.$i.has_complementary()
+                    }
                 )+
             }
         )+
     };
 }
 
+macro_rules! pins_impl1 {
+    ( $( ($Otype:ident, $ENCHX:ident, $COMP:ident); )+ ) => {
+        $(
+            #[allow(unused_parens)]
+            impl<TIM, $Otype> Pins<TIM> for ChannelBuilder<TIM, $ENCHX, $Otype>
+            where
+                TIM: CPin<$ENCHX>,
+            {
+                fn $ENCHX(&self) -> bool {
+                    true
+                }
+                fn $COMP(&self) -> bool {
+                    self.has_complementary()
+                }
+            }
+        )+
+    };
+}
+
 pins_impl!(
-    (O1, C1, NC1), (O2, C2, NC2), (O3, C3, NC3), (O4, C4, NC4);
+    (O1, C1, NC1, 0), (O2, C2, NC2, 1), (O3, C3, NC3, 2), (O4, C4, NC4, 3);
 
-                   (O2, C2, NC2), (O3, C3, NC3), (O4, C4, NC4);
-    (O1, C1, NC1),                (O3, C3, NC3), (O4, C4, NC4);
-    (O1, C1, NC1), (O2, C2, NC2),                (O4, C4, NC4);
-    (O1, C1, NC1), (O2, C2, NC2), (O3, C3, NC3);
+                      (O2, C2, NC2, 0), (O3, C3, NC3, 1), (O4, C4, NC4, 2);
+    (O1, C1, NC1, 0),                   (O3, C3, NC3, 1), (O4, C4, NC4, 2);
+    (O1, C1, NC1, 0), (O2, C2, NC2, 1),                   (O4, C4, NC4, 2);
+    (O1, C1, NC1, 0), (O2, C2, NC2, 1), (O3, C3, NC3, 2);
 
-                                  (O3, C3, NC3), (O4, C4, NC4);
-                   (O2, C2, NC2),                (O4, C4, NC4);
-                   (O2, C2, NC2), (O3, C3, NC3);
-    (O1, C1, NC1),                               (O4, C4, NC4);
-    (O1, C1, NC1),                (O3, C3, NC3);
-    (O1, C1, NC1), (O2, C2, NC2);
-
-    (O1, C1, NC1);
-                   (O2, C2, NC2);
-                                  (O3, C3, NC3);
-                                                 (O4, C4, NC4);
+                                        (O3, C3, NC3, 0), (O4, C4, NC4, 1);
+                      (O2, C2, NC2, 0),                   (O4, C4, NC4, 1);
+                      (O2, C2, NC2, 0), (O3, C3, NC3, 1);
+    (O1, C1, NC1, 0),                                     (O4, C4, NC4, 1);
+    (O1, C1, NC1, 0),                   (O3, C3, NC3, 1);
+    (O1, C1, NC1, 0), (O2, C2, NC2, 1);
 );
 
-pub struct PwmChannel<TIM, const C: u8, const COMP: bool = false> {
+pins_impl1!(
+    (O1, C1, NC1);
+    (O2, C2, NC2);
+    (O3, C3, NC3);
+    (O4, C4, NC4);
+);
+
+pub struct PwmChannel<TIM, const C: u8> {
     pub(super) _tim: PhantomData<TIM>,
+    comp: bool,
 }
 
 pub trait PwmExt
@@ -250,15 +332,16 @@ where
     }
 }
 
-impl<TIM, const C: u8, const COMP: bool> PwmChannel<TIM, C, COMP> {
-    pub(crate) fn new() -> Self {
+impl<TIM, const C: u8> PwmChannel<TIM, C> {
+    pub(crate) fn new(comp: bool) -> Self {
         Self {
             _tim: core::marker::PhantomData,
+            comp,
         }
     }
 }
 
-impl<TIM: Instance + WithPwm, const C: u8, const COMP: bool> PwmChannel<TIM, C, COMP> {
+impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
     /// Disable PWM channel
     #[inline]
     pub fn disable(&mut self) {
@@ -300,21 +383,27 @@ impl<TIM: Instance + WithPwm, const C: u8, const COMP: bool> PwmChannel<TIM, C, 
     /// Set complementary PWM channel polarity
     #[inline]
     pub fn set_complementary_polarity(&mut self, p: Polarity) {
-        TIM::set_nchannel_polarity(C, p);
+        if self.comp {
+            TIM::set_nchannel_polarity(C, p);
+        }
     }
 }
 
-impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
+impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C> {
     /// Disable complementary PWM channel
     #[inline]
     pub fn disable_complementary(&mut self) {
-        TIM::enable_nchannel(C, false);
+        if self.comp {
+            TIM::enable_nchannel(C, false);
+        }
     }
 
     /// Enable complementary PWM channel
     #[inline]
     pub fn enable_complementary(&mut self) {
-        TIM::enable_nchannel(C, true);
+        if self.comp {
+            TIM::enable_nchannel(C, true);
+        }
     }
 
     /// Set PWM channel idle state
@@ -326,7 +415,9 @@ impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
     /// Set complementary PWM channel idle state
     #[inline]
     pub fn set_complementary_idle_state(&mut self, s: IdleState) {
-        TIM::idle_state(C, true, s);
+        if self.comp {
+            TIM::idle_state(C, true, s);
+        }
     }
 }
 
@@ -336,7 +427,7 @@ where
     PINS: Pins<TIM>,
 {
     timer: Timer<TIM>,
-    _pins: PhantomData<PINS>,
+    pins: PINS,
 }
 
 impl<TIM, PINS> PwmHz<TIM, PINS>
@@ -351,7 +442,7 @@ where
     }
 
     pub fn split(self) -> PINS::Channels {
-        PINS::split()
+        self.pins.split()
     }
 }
 
@@ -377,23 +468,23 @@ where
 }
 
 impl<TIM: Instance + WithPwm> Timer<TIM> {
-    pub fn pwm_hz<PINS>(mut self, _pins: PINS, freq: Hertz) -> PwmHz<TIM, PINS>
+    pub fn pwm_hz<PINS>(mut self, pins: PINS, freq: Hertz) -> PwmHz<TIM, PINS>
     where
         PINS: Pins<TIM>,
     {
-        if PINS::C1 {
+        if pins.C1() {
             self.tim
                 .preload_output_channel_in_mode(Channel::C1, Ocm::PwmMode1);
         }
-        if PINS::C2 && TIM::CH_NUMBER > 1 {
+        if pins.C2() && TIM::CH_NUMBER > 1 {
             self.tim
                 .preload_output_channel_in_mode(Channel::C2, Ocm::PwmMode1);
         }
-        if PINS::C3 && TIM::CH_NUMBER > 2 {
+        if pins.C3() && TIM::CH_NUMBER > 2 {
             self.tim
                 .preload_output_channel_in_mode(Channel::C3, Ocm::PwmMode1);
         }
-        if PINS::C4 && TIM::CH_NUMBER > 3 {
+        if pins.C4() && TIM::CH_NUMBER > 3 {
             self.tim
                 .preload_output_channel_in_mode(Channel::C4, Ocm::PwmMode1);
         }
@@ -412,10 +503,7 @@ impl<TIM: Instance + WithPwm> Timer<TIM> {
 
         self.tim.start_pwm();
 
-        PwmHz {
-            timer: self,
-            _pins: PhantomData,
-        }
+        PwmHz { timer: self, pins }
     }
 }
 
@@ -427,31 +515,31 @@ where
     /// Enable PWM output of the timer on channel `channel`
     #[inline]
     pub fn enable(&mut self, channel: Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, true)
+        TIM::enable_channel(self.pins.check_used(channel) as u8, true)
     }
 
     /// Disable PWM output of the timer on channel `channel`
     #[inline]
     pub fn disable(&mut self, channel: Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, false)
+        TIM::enable_channel(self.pins.check_used(channel) as u8, false)
     }
 
     /// Set the polarity of the active state for the primary PWM output of the timer on channel `channel`
     #[inline]
     pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
+        TIM::set_channel_polarity(self.pins.check_used(channel) as u8, p);
     }
 
     /// Get the current duty cycle of the timer on channel `channel`
     #[inline]
     pub fn get_duty(&self, channel: Channel) -> u16 {
-        TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
+        TIM::read_cc_value(self.pins.check_used(channel) as u8) as u16
     }
 
     /// Set the duty cycle of the timer on channel `channel`
     #[inline]
     pub fn set_duty(&mut self, channel: Channel, duty: u16) {
-        TIM::set_cc_value(PINS::check_used(channel) as u8, duty as u32)
+        TIM::set_cc_value(self.pins.check_used(channel) as u8, duty as u32)
     }
 
     /// Get the maximum duty cycle value of the timer
@@ -484,7 +572,7 @@ where
     /// Set the polarity of the active state for the complementary PWM output of the advanced timer on channel `channel`
     #[inline]
     pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_nchannel_polarity(PINS::check_complementary_used(channel) as u8, p);
+        TIM::set_nchannel_polarity(self.pins.check_complementary_used(channel) as u8, p);
     }
 }
 
@@ -496,13 +584,13 @@ where
     /// Enable complementary PWM output of the timer on channel `channel`
     #[inline]
     pub fn enable_complementary(&mut self, channel: Channel) {
-        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
+        TIM::enable_nchannel(self.pins.check_complementary_used(channel) as u8, true)
     }
 
     /// Disable complementary PWM output of the timer on channel `channel`
     #[inline]
     pub fn disable_complementary(&mut self, channel: Channel) {
-        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
+        TIM::enable_nchannel(self.pins.check_complementary_used(channel) as u8, false)
     }
 
     /// Set number DTS ticks during that the primary and complementary PWM pins are simultaneously forced to their inactive states
@@ -540,13 +628,13 @@ where
     /// Set the pin idle state
     #[inline]
     pub fn set_idle_state(&mut self, channel: Channel, s: IdleState) {
-        TIM::idle_state(PINS::check_used(channel) as u8, false, s);
+        TIM::idle_state(self.pins.check_used(channel) as u8, false, s);
     }
 
     /// Set the complementary pin idle state
     #[inline]
     pub fn set_complementary_idle_state(&mut self, channel: Channel, s: IdleState) {
-        TIM::idle_state(PINS::check_complementary_used(channel) as u8, true, s);
+        TIM::idle_state(self.pins.check_complementary_used(channel) as u8, true, s);
     }
 }
 
@@ -556,7 +644,7 @@ where
     PINS: Pins<TIM>,
 {
     timer: FTimer<TIM, FREQ>,
-    _pins: PhantomData<PINS>,
+    pins: PINS,
 }
 
 impl<TIM, PINS, const FREQ: u32> Pwm<TIM, PINS, FREQ>
@@ -565,7 +653,7 @@ where
     PINS: Pins<TIM>,
 {
     pub fn split(self) -> PINS::Channels {
-        PINS::split()
+        self.pins.split()
     }
 
     pub fn release(mut self) -> FTimer<TIM, FREQ> {
@@ -597,23 +685,23 @@ where
 }
 
 impl<TIM: Instance + WithPwm, const FREQ: u32> FTimer<TIM, FREQ> {
-    pub fn pwm<PINS>(mut self, _pins: PINS, time: TimerDurationU32<FREQ>) -> Pwm<TIM, PINS, FREQ>
+    pub fn pwm<PINS>(mut self, pins: PINS, time: TimerDurationU32<FREQ>) -> Pwm<TIM, PINS, FREQ>
     where
         PINS: Pins<TIM>,
     {
-        if PINS::C1 {
+        if pins.C1() {
             self.tim
                 .preload_output_channel_in_mode(Channel::C1, Ocm::PwmMode1);
         }
-        if PINS::C2 && TIM::CH_NUMBER > 1 {
+        if pins.C2() && TIM::CH_NUMBER > 1 {
             self.tim
                 .preload_output_channel_in_mode(Channel::C2, Ocm::PwmMode1);
         }
-        if PINS::C3 && TIM::CH_NUMBER > 2 {
+        if pins.C3() && TIM::CH_NUMBER > 2 {
             self.tim
                 .preload_output_channel_in_mode(Channel::C3, Ocm::PwmMode1);
         }
-        if PINS::C4 && TIM::CH_NUMBER > 3 {
+        if pins.C4() && TIM::CH_NUMBER > 3 {
             self.tim
                 .preload_output_channel_in_mode(Channel::C4, Ocm::PwmMode1);
         }
@@ -630,10 +718,7 @@ impl<TIM: Instance + WithPwm, const FREQ: u32> FTimer<TIM, FREQ> {
 
         self.tim.start_pwm();
 
-        Pwm {
-            timer: self,
-            _pins: PhantomData,
-        }
+        Pwm { timer: self, pins }
     }
 }
 
@@ -645,42 +730,42 @@ where
     /// Enable PWM output of the timer on channel `channel`
     #[inline]
     pub fn enable(&mut self, channel: Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, true)
+        TIM::enable_channel(self.pins.check_used(channel) as u8, true)
     }
 
     /// Disable PWM output of the timer on channel `channel`
     #[inline]
     pub fn disable(&mut self, channel: Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, false)
+        TIM::enable_channel(self.pins.check_used(channel) as u8, false)
     }
 
     /// Set the polarity of the active state for the primary PWM output of the timer on channel `channel`
     #[inline]
     pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
+        TIM::set_channel_polarity(self.pins.check_used(channel) as u8, p);
     }
 
     /// Get the current duty cycle of the timer on channel `channel`
     #[inline]
     pub fn get_duty(&self, channel: Channel) -> u16 {
-        TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
+        TIM::read_cc_value(self.pins.check_used(channel) as u8) as u16
     }
     /// Get the current duty cycle of the timer on channel `channel` and convert to a duration
     #[inline]
     pub fn get_duty_time(&self, channel: Channel) -> TimerDurationU32<FREQ> {
-        TimerDurationU32::from_ticks(TIM::read_cc_value(PINS::check_used(channel) as u8))
+        TimerDurationU32::from_ticks(TIM::read_cc_value(self.pins.check_used(channel) as u8))
     }
 
     /// Set the duty cycle of the timer on channel `channel`
     #[inline]
     pub fn set_duty(&mut self, channel: Channel, duty: u16) {
-        TIM::set_cc_value(PINS::check_used(channel) as u8, duty.into())
+        TIM::set_cc_value(self.pins.check_used(channel) as u8, duty.into())
     }
 
     /// Set the duty cycle of the timer on channel `channel` from a duration
     #[inline]
     pub fn set_duty_time(&mut self, channel: Channel, duty: TimerDurationU32<FREQ>) {
-        TIM::set_cc_value(PINS::check_used(channel) as u8, duty.ticks())
+        TIM::set_cc_value(self.pins.check_used(channel) as u8, duty.ticks())
     }
 
     /// Get the maximum duty cycle value of the timer
@@ -704,7 +789,7 @@ where
     /// Set the polarity of the active state for the complementary PWM output of the advanced timer on channel `channel`
     #[inline]
     pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
+        TIM::set_channel_polarity(self.pins.check_complementary_used(channel) as u8, p);
     }
 }
 
@@ -716,13 +801,13 @@ where
     /// Enable complementary PWM output of the timer on channel `channel`
     #[inline]
     pub fn enable_complementary(&mut self, channel: Channel) {
-        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
+        TIM::enable_nchannel(self.pins.check_complementary_used(channel) as u8, true)
     }
 
     /// Disable complementary PWM output of the timer on channel `channel`
     #[inline]
     pub fn disable_complementary(&mut self, channel: Channel) {
-        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
+        TIM::enable_nchannel(self.pins.check_complementary_used(channel) as u8, false)
     }
 
     /// Set number DTS ticks during that the primary and complementary PWM pins are simultaneously forced to their inactive states
@@ -760,13 +845,13 @@ where
     /// Set the pin idle state
     #[inline]
     pub fn set_idle_state(&mut self, channel: Channel, s: IdleState) {
-        TIM::idle_state(PINS::check_used(channel) as u8, false, s);
+        TIM::idle_state(self.pins.check_used(channel) as u8, false, s);
     }
 
     /// Set the complementary pin idle state
     #[inline]
     pub fn set_complementary_idle_state(&mut self, channel: Channel, s: IdleState) {
-        TIM::idle_state(PINS::check_complementary_used(channel) as u8, true, s);
+        TIM::idle_state(self.pins.check_complementary_used(channel) as u8, true, s);
     }
 }
 

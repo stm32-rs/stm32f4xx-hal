@@ -408,16 +408,17 @@ pub trait SpiCommon {
     type Sck;
 }
 
-// Timer pins
-
-/// Input capture / Output compare channel `C`
+/// Timer pins
 pub trait TimCPin<const C: u8> {
+    /// Input capture / Output compare channel `C`
     type Ch<Otype>;
+    /// Complementary output compare channel `C`
+    type ChN<Otype>;
 }
 
-/// Complementary output channel `C`
-pub trait TimNCPin<const C: u8> {
-    type ChN<Otype>;
+#[non_exhaustive]
+pub struct NoCh<Otype = super::PushPull> {
+    _mode: core::marker::PhantomData<Otype>,
 }
 
 /// Break input
