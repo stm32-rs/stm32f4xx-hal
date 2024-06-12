@@ -1,4 +1,11 @@
-use crate::pacext::uart::{Cr3W, SrR, UartRB};
+cfg_select! {
+    feature = "f4" => {
+        use crate::pacext::uart::{Cr3W, SrR, UartRB};
+    }
+    feature = "f7" => {
+        use crate::pacext::uart::UartRB;
+    }
+}
 
 use super::{config, config::IrdaMode, CFlag, Error, Event, Flag, RxEvent, TxEvent};
 use enumflags2::BitFlags;
@@ -9,40 +16,80 @@ pub trait RBExt: UartRB {
     fn set_stopbits(&self, bits: config::StopBits);
 
     fn read_u16(&self) -> nb::Result<u16, Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = self.sr().read();
+        cfg_select! {
+            feature = "uart_v2" => {
+                let sr = self.sr().read();
 
-        if sr.pe().bit_is_set()
-            || sr.fe().bit_is_set()
-            || sr.nf().bit_is_set()
-            || sr.ore().bit_is_set()
-        {
-            // Any error requires the dr to be read to clear
-            self.dr().read();
-            // Check for any errors
-            let err = if sr.pe().bit_is_set() {
-                Error::Parity
-            } else if sr.fe().bit_is_set() {
-                Error::FrameFormat
-            } else if sr.nf().bit_is_set() {
-                Error::Noise
-            } else {
-                Error::Overrun
-            };
-            Err(err.into())
-        } else if sr.rxne().bit_is_set() {
-            // Check if a byte is available
-            // Read the received byte
-            Ok(self.dr().read().dr().bits())
-        } else {
-            Err(nb::Error::WouldBlock)
+                if sr.pe().bit_is_set()
+                    || sr.fe().bit_is_set()
+                    || sr.nf().bit_is_set()
+                    || sr.ore().bit_is_set()
+                {
+                    // Any error requires the dr to be read to clear
+                    self.dr().read();
+                    // Check for any errors
+                    let err = if sr.pe().bit_is_set() {
+                        Error::Parity
+                    } else if sr.fe().bit_is_set() {
+                        Error::FrameFormat
+                    } else if sr.nf().bit_is_set() {
+                        Error::Noise
+                    } else {
+                        Error::Overrun
+                    };
+                    Err(err.into())
+                } else if sr.rxne().bit_is_set() {
+                    // Check if a byte is available
+                    // Read the received byte
+                    Ok(self.dr().read().dr().bits())
+                } else {
+                    Err(nb::Error::WouldBlock)
+                }
+            }
+            feature = "uart_v3" => {
+                let sr = self.isr().read();
+                if sr.pe().bit_is_set()
+                    || sr.fe().bit_is_set()
+                    || sr.nf().bit_is_set()
+                    || sr.ore().bit_is_set()
+                {
+                    let icr = self.icr();
+                    let err = if sr.pe().bit_is_set() {
+                        icr.write(|w| w.pecf().clear());
+                        Error::Parity
+                    } else if sr.fe().bit_is_set() {
+                        icr.write(|w| w.fecf().clear());
+                        Error::FrameFormat
+                    } else if sr.nf().bit_is_set() {
+                        icr.write(|w| w.ncf().clear());
+                        Error::Noise
+                    } else {
+                        icr.write(|w| w.orecf().clear());
+                        Error::Overrun
+                    };
+                    Err(err.into())
+                } else if sr.rxne().bit_is_set() {
+                    return Ok(self.rdr().read().rdr().bits());
+                } else {
+                    Err(nb::Error::WouldBlock)
+                }
+            }
         }
     }
 
     fn write_u16(&self, word: u16) -> nb::Result<(), Error> {
-        if self.sr().read().txe().bit_is_set() {
+        // NOTE(unsafe) atomic read with no side effects
+        let sr = cfg_select! {
+            feature = "uart_v2" => { self.sr().read() }
+            feature = "uart_v3" => { self.isr().read() }
+        };
+
+        if sr.txe().bit_is_set() {
             // NOTE(unsafe) atomic write to stateless register
-            self.dr().write(|w| w.dr().set(word));
+            cfg_select! {
+                feature = "uart_v2" => { self.dr().write(|w| w.dr().set(word)); }
+                feature = "uart_v3" => { self.tdr().write(|w| w.tdr().set(word)); }
+            }
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -62,7 +109,13 @@ pub trait RBExt: UartRB {
     }
 
     fn flush(&self) -> nb::Result<(), Error> {
-        if self.sr().read().tc().bit_is_set() {
+        // NOTE(unsafe) atomic read with no side effects
+        let sr = cfg_select! {
+            feature = "uart_v2" => { self.sr().read() }
+            feature = "uart_v3" => { self.isr().read() }
+        };
+
+        if sr.tc().bit_is_set() {
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -105,7 +158,11 @@ pub trait RBExt: UartRB {
     // ISR
     #[inline(always)]
     fn flags(&self) -> BitFlags<Flag> {
-        BitFlags::from_bits_truncate(self.sr().read().bits())
+        let sr = cfg_select! {
+            feature = "uart_v2" => { self.sr().read() }
+            feature = "uart_v3" => { self.isr().read() }
+        };
+        BitFlags::from_bits_truncate(sr.bits())
     }
 
     #[inline(always)]
@@ -122,26 +179,64 @@ pub trait RBExt: UartRB {
     }
     #[inline(always)]
     fn clear_flags(&self, flags: BitFlags<CFlag>) {
-        self.sr().write(|w| unsafe { w.bits(!flags.bits()) });
+        cfg_select! {
+            feature = "uart_v2" => {
+                self.sr().write(|w| unsafe { w.bits(!flags.bits()) });
+            }
+            feature = "uart_v3" => {
+                self.icr().write(|w| unsafe { w.bits(flags.bits()) });
+            }
+        }
     }
     fn clear_idle_interrupt(&self) {
-        let _ = self.sr().read();
-        let _ = self.dr().read();
+        cfg_select! {
+            feature = "uart_v2" => {
+                let _ = self.sr().read();
+                let _ = self.dr().read();
+            }
+            feature = "uart_v3" => {
+                self.icr().write(|w| w.idlecf().clear_bit_by_one());
+            }
+        }
     }
     fn check_and_clear_error_flags(&self) -> Result<(), Error> {
-        let sr = self.sr().read();
-        let _ = self.dr().read();
+        cfg_select! {
+            feature = "uart_v2" => {
+                let sr = self.sr().read();
+                let _ = self.dr().read();
 
-        if sr.ore().bit_is_set() {
-            Err(Error::Overrun)
-        } else if sr.nf().bit_is_set() {
-            Err(Error::Noise)
-        } else if sr.fe().bit_is_set() {
-            Err(Error::FrameFormat)
-        } else if sr.pe().bit_is_set() {
-            Err(Error::Parity)
-        } else {
-            Ok(())
+                if sr.ore().bit_is_set() {
+                    Err(Error::Overrun)
+                } else if sr.nf().bit_is_set() {
+                    Err(Error::Noise)
+                } else if sr.fe().bit_is_set() {
+                    Err(Error::FrameFormat)
+                } else if sr.pe().bit_is_set() {
+                    Err(Error::Parity)
+                } else {
+                    Ok(())
+                }
+            }
+            feature = "uart_v3" => {
+                let sr = self.isr().read();
+                let icr = self.icr();
+
+                if sr.pe().bit_is_set() {
+                    icr.write(|w| w.pecf().clear());
+                    Err(Error::Parity)
+                } else if sr.fe().bit_is_set() {
+                    icr.write(|w| w.fecf().clear());
+                    Err(Error::FrameFormat)
+                } else if sr.nf().bit_is_set() {
+                    icr.write(|w| w.ncf().clear());
+                    Err(Error::Noise)
+                } else if sr.ore().bit_is_set() {
+                    icr.write(|w| w.orecf().clear());
+                    Err(Error::Overrun)
+                } else {
+                    Ok(())
+                }
+            }
         }
     }
     fn enable_error_interrupt_generation(&self) {
@@ -200,13 +295,19 @@ pub trait RBExt: UartRB {
     // PeriAddress for transfer data
     #[inline(always)]
     fn tx_peri_address(&self) -> u32 {
-        self.dr().as_ptr() as u32
+        cfg_select! {
+            feature = "uart_v2" => { self.dr().as_ptr() as u32 }
+            feature = "uart_v3" => { self.tdr().as_ptr() as u32 }
+        }
     }
 
     // PeriAddress for receive data
     #[inline(always)]
     fn rx_peri_address(&self) -> u32 {
-        self.dr().as_ptr() as u32
+        cfg_select! {
+            feature = "uart_v2" => { self.dr().as_ptr() as u32 }
+            feature = "uart_v3" => { self.rdr().as_ptr() as u32 }
+        }
     }
 
     fn enable_dma(&self, dc: config::DmaConfig) {
@@ -263,6 +364,7 @@ impl RBExt for crate::pac::usart1::RegisterBlock {
     }
 }
 
+#[cfg(feature = "f4")]
 #[cfg(feature = "uart4")]
 impl RBExt for crate::pac::uart4::RegisterBlock {
     const IRDA: bool = false;

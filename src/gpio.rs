@@ -605,8 +605,16 @@ macro_rules! gpio {
     }
 }
 
-mod f4;
-pub use f4::*;
+cfg_select! {
+    feature = "f4" => {
+        mod f4;
+        pub use f4::*;
+    }
+    feature = "f7" => {
+        mod f7;
+        pub use f7::*;
+    }
+}
 
 const fn gpiox<const P: char>() -> *const crate::pac::gpioa::RegisterBlock {
     match P {
