@@ -8,8 +8,6 @@ use fugit::RateExtU32;
 
 mod pll;
 
-mod enable;
-
 impl RccExt for RCC {
     fn constrain(self) -> Rcc {
         Rcc {
