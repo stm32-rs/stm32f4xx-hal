@@ -374,7 +374,7 @@ gpio-f446 = [
     "otg-hs",
     "sai1",
     "sai2",
-    #"sdio",
+    "sdio",
     "spi3",
     "spi4",
     "spdifrx",
