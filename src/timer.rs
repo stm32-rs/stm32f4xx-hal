@@ -474,9 +474,7 @@ macro_rules! hal {
             }
             #[inline(always)]
             fn write_count(&mut self, value:Self::Width) {
-                //TODO: remove "unsafe" when possible
-                #[allow(unused_unsafe)]
-                self.cnt().write(|w|unsafe{w.cnt().bits(value)});
+                self.cnt().write(|w| unsafe { w.cnt().bits(value) });
             }
             #[inline(always)]
             fn start_one_pulse(&mut self) {
@@ -517,7 +515,6 @@ macro_rules! hal {
                 fn set_cc_value(c: u8, value: u32) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
-                        #[allow(unused_unsafe)]
                         tim.ccr(c as usize).write(|w| unsafe { w.bits(value) })
                     }
                 }

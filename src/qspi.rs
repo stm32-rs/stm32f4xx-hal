@@ -381,14 +381,11 @@ impl<BANK: QspiPins> Qspi<BANK> {
         while self.qspi.sr().read().busy().bit_is_set() {}
 
         self.qspi.cr().modify(|_, w| unsafe {
-            w.prescaler()
-                .bits(config.clock_prescaler)
-                .sshift()
-                .bit(config.sample_shift == SampleShift::HalfACycle)
-                .fsel()
-                .bit(BANK::FSEL)
-                .dfm()
-                .bit(BANK::DFM)
+            w.prescaler().bits(config.clock_prescaler);
+            w.sshift()
+                .bit(config.sample_shift == SampleShift::HalfACycle);
+            w.fsel().bit(BANK::FSEL);
+            w.dfm().bit(BANK::DFM)
         });
         while self.is_busy() {}
 

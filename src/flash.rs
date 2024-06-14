@@ -2,6 +2,7 @@ use embedded_storage::nor_flash::{
     ErrorType, MultiwriteNorFlash, NorFlash, NorFlashError, NorFlashErrorKind, ReadNorFlash,
 };
 
+use crate::pac::flash::cr::PSIZE;
 use crate::pac::FLASH;
 use crate::signature::FlashSize;
 use core::{ptr, slice};
@@ -101,8 +102,6 @@ impl FlashExt for FLASH {
     }
 }
 
-const PSIZE_X8: u8 = 0b00;
-
 /// Read-only flash
 ///
 /// # Examples
@@ -196,13 +195,14 @@ impl UnlockedFlash<'_> {
     pub fn erase(&mut self, sector: u8) -> Result<(), Error> {
         let snb = if sector < 12 { sector } else { sector + 4 };
 
-        #[rustfmt::skip]
-        self.flash.cr().modify(|_, w| unsafe {
+        self.flash.cr().modify(|_, w| {
             // start
             w.strt().set_bit();
-            w.psize().bits(PSIZE_X8);
+            w.psize().variant(PSIZE::Psize8);
             // sector number
-            w.snb().bits(snb);
+            unsafe {
+                w.snb().bits(snb);
+            }
             // sectore erase
             w.ser().set_bit();
             // no programming
@@ -224,10 +224,8 @@ impl UnlockedFlash<'_> {
             bytes_written = 0;
             let amount = 16 - (offset % 16);
 
-            #[rustfmt::skip]
-            #[allow(unused_unsafe)]
-            self.flash.cr().modify(|_, w| unsafe {
-                w.psize().bits(PSIZE_X8);
+            self.flash.cr().modify(|_, w| {
+                w.psize().variant(PSIZE::Psize8);
                 // no sector erase
                 w.ser().clear_bit();
                 // programming
@@ -265,7 +263,6 @@ impl UnlockedFlash<'_> {
 const UNLOCK_KEY1: u32 = 0x45670123;
 const UNLOCK_KEY2: u32 = 0xCDEF89AB;
 
-#[allow(unused_unsafe)]
 fn unlock(flash: &FLASH) {
     flash.keyr().write(|w| unsafe { w.key().bits(UNLOCK_KEY1) });
     flash.keyr().write(|w| unsafe { w.key().bits(UNLOCK_KEY2) });
