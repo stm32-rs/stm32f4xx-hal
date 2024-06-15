@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
+ - `steal` UART peripheral on `Rx::new`
 
 [#566]: https://github.com/stm32-rs/stm32f4xx-hal/pull/566
 [#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
