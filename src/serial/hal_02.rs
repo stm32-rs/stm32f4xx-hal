@@ -1,5 +1,4 @@
 mod nb {
-    use core::ops::Deref;
 
     use super::super::{Error, Instance, RegisterBlockImpl, Rx, Serial, Tx};
     use embedded_hal_02::serial::{Read, Write};
@@ -19,7 +18,7 @@ mod nb {
         type Error = Error;
 
         fn read(&mut self) -> nb::Result<u8, Self::Error> {
-            unsafe { (*USART::ptr()).read_u8() }
+            self.usart.read_u8()
         }
     }
 
@@ -32,7 +31,7 @@ mod nb {
         type Error = Error;
 
         fn read(&mut self) -> nb::Result<u16, Self::Error> {
-            unsafe { (*USART::ptr()).read_u16() }
+            self.usart.read_u16()
         }
     }
 
@@ -51,10 +50,7 @@ mod nb {
         }
     }
 
-    impl<USART: Instance> Write<u8> for Tx<USART, u8>
-    where
-        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
-    {
+    impl<USART: Instance> Write<u8> for Tx<USART, u8> {
         type Error = Error;
 
         fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
@@ -70,10 +66,7 @@ mod nb {
     /// If the UART/USART was configured with `WordLength::DataBits9`, the 9 least significant bits will
     /// be transmitted and the other 7 bits will be ignored. Otherwise, the 8 least significant bits
     /// will be transmitted and the other 8 bits will be ignored.
-    impl<USART: Instance> Write<u16> for Tx<USART, u16>
-    where
-        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
-    {
+    impl<USART: Instance> Write<u16> for Tx<USART, u16> {
         type Error = Error;
 
         fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
@@ -92,10 +85,7 @@ mod blocking {
     use super::super::{Error, Instance, RegisterBlockImpl, Serial, Tx};
     use embedded_hal_02::blocking::serial::Write;
 
-    impl<USART: Instance> Write<u8> for Tx<USART, u8>
-    where
-        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
-    {
+    impl<USART: Instance> Write<u8> for Tx<USART, u8> {
         type Error = Error;
 
         fn bwrite_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {

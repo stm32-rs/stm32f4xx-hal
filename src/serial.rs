@@ -183,7 +183,8 @@ pub struct Serial<USART: CommonPins, WORD = u8> {
 
 /// Serial receiver containing RX pin
 pub struct Rx<USART: CommonPins, WORD = u8> {
-    _word: PhantomData<(USART, WORD)>,
+    _word: PhantomData<WORD>,
+    usart: USART,
     pin: USART::Rx<PushPull>,
 }
 
@@ -279,6 +280,10 @@ macro_rules! halUsart {
             fn peri_address() -> u32 {
                 unsafe { (*(<$USART>::ptr() as *const Self::RegisterBlock)).peri_address() }
             }
+
+            unsafe fn steal() -> Self {
+                Self::steal()
+            }
         }
     };
 }
@@ -293,13 +298,13 @@ halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
 
 impl<UART: CommonPins> Rx<UART, u8> {
     pub(crate) fn with_u16_data(self) -> Rx<UART, u16> {
-        Rx::new(self.pin)
+        Rx::new(self.usart, self.pin)
     }
 }
 
 impl<UART: CommonPins> Rx<UART, u16> {
     pub(crate) fn with_u8_data(self) -> Rx<UART, u8> {
-        Rx::new(self.pin)
+        Rx::new(self.usart, self.pin)
     }
 }
 
@@ -316,9 +321,10 @@ impl<UART: CommonPins> Tx<UART, u16> {
 }
 
 impl<UART: CommonPins, WORD> Rx<UART, WORD> {
-    pub(crate) fn new(pin: UART::Rx<PushPull>) -> Self {
+    pub(crate) fn new(usart: UART, pin: UART::Rx<PushPull>) -> Self {
         Self {
             _word: PhantomData,
+            usart,
             pin,
         }
     }
