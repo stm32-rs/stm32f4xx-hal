@@ -352,7 +352,6 @@ impl<P: SdioPeripheral> Sdio<P> {
         self.sdio.dlen().write(|w| w.datalength().set(length_bytes));
         // Transfer
         self.sdio.dctrl().write(|w| {
-            #[allow(unused_unsafe)]
             unsafe {
                 w.dblocksize().bits(block_size);
             } // 2^n bytes block size

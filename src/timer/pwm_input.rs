@@ -75,7 +75,6 @@ macro_rules! hal {
             /// 1. When a new cycle is started: the duty cycle will be `1.00`
             /// 2. When the period is captured. the duty cycle will be an observable value.
             /// See the pwm input example for an suitable interrupt handler.
-            #[allow(unused_unsafe)] //for some chips the operations are considered safe.
             pub fn pwm_input(
                 mut self,
                 best_guess: Hertz,
