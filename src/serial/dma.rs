@@ -1,4 +1,4 @@
-use core::{marker::PhantomData, mem::transmute, ops::Deref};
+use core::{marker::PhantomData, mem::transmute};
 
 use super::{Instance, RegisterBlockImpl, Serial};
 use crate::dma::{
@@ -67,12 +67,7 @@ pub trait SerialHandleIT {
     fn handle_error_interrupt(&mut self);
 }
 
-impl<Serial_> Serial<Serial_>
-where
-    Serial_: Instance,
-    Serial_: Deref<Target = <Serial_ as Instance>::RegisterBlock>,
-    <Serial_ as Instance>::RegisterBlock: RegisterBlockImpl,
-{
+impl<Serial_: Instance> Serial<Serial_> {
     /// Converts blocking [Serial] to non-blocking [SerialDma] that use `tx_stream` and `rx_stream` to send/receive data
     pub fn use_dma<TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8>(
         self,
@@ -152,10 +147,7 @@ where
 ///
 /// The struct can be also used to send/receive bytes in blocking mode with methods:
 /// [`write`](Self::write()), [`read`](Self::read()), [`write_read`](Self::write_read()).
-pub struct SerialDma<Serial_, TX_TRANSFER, RX_TRANSFER>
-where
-    Serial_: Instance,
-{
+pub struct SerialDma<Serial_: Instance, TX_TRANSFER, RX_TRANSFER> {
     hal_serial: Serial<Serial_>,
     callback: Option<SerialCompleteCallback>,
     tx: TX_TRANSFER,
@@ -338,11 +330,8 @@ where
 }
 
 /// Common implementation
-impl<Serial_, TX_TRANSFER, RX_TRANSFER> SerialDma<Serial_, TX_TRANSFER, RX_TRANSFER>
+impl<Serial_: Instance, TX_TRANSFER, RX_TRANSFER> SerialDma<Serial_, TX_TRANSFER, RX_TRANSFER>
 where
-    Serial_: Instance,
-    Serial_: Deref<Target = <Serial_ as Instance>::RegisterBlock>,
-    <Serial_ as Instance>::RegisterBlock: RegisterBlockImpl,
     TX_TRANSFER: DMATransfer<&'static [u8]>,
     RX_TRANSFER: DMATransfer<&'static mut [u8]>,
 {
@@ -386,13 +375,9 @@ where
     }
 }
 
-impl<Serial_, TX_STREAM, const TX_CH: u8> SerialHandleIT
+impl<Serial_: Instance, TX_STREAM, const TX_CH: u8> SerialHandleIT
     for SerialDma<Serial_, TxDMA<Serial_, TX_STREAM, TX_CH>, NoDMA>
 where
-    Serial_: Instance,
-    Serial_: Deref<Target = <Serial_ as Instance>::RegisterBlock>,
-    <Serial_ as Instance>::RegisterBlock: RegisterBlockImpl,
-
     TX_STREAM: Stream,
     ChannelX<TX_CH>: Channel,
     Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
@@ -428,13 +413,9 @@ where
     }
 }
 
-impl<Serial_, RX_STREAM, const RX_CH: u8> SerialHandleIT
+impl<Serial_: Instance, RX_STREAM, const RX_CH: u8> SerialHandleIT
     for SerialDma<Serial_, NoDMA, RxDMA<Serial_, RX_STREAM, RX_CH>>
 where
-    Serial_: Instance,
-    Serial_: Deref<Target = <Serial_ as Instance>::RegisterBlock>,
-    <Serial_ as Instance>::RegisterBlock: RegisterBlockImpl,
-
     RX_STREAM: Stream,
     ChannelX<RX_CH>: Channel,
     Rx<Serial_>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
@@ -471,13 +452,9 @@ where
 }
 
 /// Only for both TX and RX DMA
-impl<Serial_, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> SerialHandleIT
+impl<Serial_: Instance, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> SerialHandleIT
     for SerialDma<Serial_, TxDMA<Serial_, TX_STREAM, TX_CH>, RxDMA<Serial_, RX_STREAM, RX_CH>>
 where
-    Serial_: Instance,
-    Serial_: Deref<Target = <Serial_ as Instance>::RegisterBlock>,
-    <Serial_ as Instance>::RegisterBlock: RegisterBlockImpl,
-
     TX_STREAM: Stream,
     ChannelX<TX_CH>: Channel,
     Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
@@ -550,13 +527,9 @@ where
 }
 
 // Write DMA implementations for TX only and TX/RX Serial DMA
-impl<Serial_, TX_STREAM, const TX_CH: u8, RX_TRANSFER> SerialWriteDMA
+impl<Serial_: Instance, TX_STREAM, const TX_CH: u8, RX_TRANSFER> SerialWriteDMA
     for SerialDma<Serial_, TxDMA<Serial_, TX_STREAM, TX_CH>, RX_TRANSFER>
 where
-    Serial_: Instance,
-    Serial_: Deref<Target = <Serial_ as Instance>::RegisterBlock>,
-    <Serial_ as Instance>::RegisterBlock: RegisterBlockImpl,
-
     TX_STREAM: Stream,
     ChannelX<TX_CH>: Channel,
     Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
@@ -581,13 +554,9 @@ where
 }
 
 // Read DMA implementations for RX only and TX/RX Serial DMA
-impl<Serial_, TX_TRANSFER, RX_STREAM, const RX_CH: u8> SerialReadDMA
+impl<Serial_: Instance, TX_TRANSFER, RX_STREAM, const RX_CH: u8> SerialReadDMA
     for SerialDma<Serial_, TX_TRANSFER, RxDMA<Serial_, RX_STREAM, RX_CH>>
 where
-    Serial_: Instance,
-    Serial_: Deref<Target = <Serial_ as Instance>::RegisterBlock>,
-    <Serial_ as Instance>::RegisterBlock: RegisterBlockImpl,
-
     RX_STREAM: Stream,
     ChannelX<RX_CH>: Channel,
     Rx<Serial_>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
