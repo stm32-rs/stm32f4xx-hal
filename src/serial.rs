@@ -138,8 +138,13 @@ pub trait Instance:
 {
     #[doc(hidden)]
     #[inline(always)]
-    fn peri_address() -> u32 {
-        unsafe { &*Self::PTR }.peri_address()
+    fn tx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.tx_peri_address()
+    }
+    #[doc(hidden)]
+    #[inline(always)]
+    fn rx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.rx_peri_address()
     }
 }
 
@@ -726,7 +731,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
 unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        self.usart.peri_address()
+        self.usart.rx_peri_address()
     }
 
     type MemSize = u8;
@@ -742,7 +747,7 @@ where
 unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        self.usart.peri_address()
+        self.usart.tx_peri_address()
     }
 
     type MemSize = u8;

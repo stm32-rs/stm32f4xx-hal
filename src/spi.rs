@@ -218,6 +218,16 @@ pub trait Instance:
     + rcc::BusClock
     + gpio::alt::SpiCommon
 {
+    #[doc(hidden)]
+    #[inline(always)]
+    fn rx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.dr().as_ptr() as u32
+    }
+    #[doc(hidden)]
+    #[inline(always)]
+    fn tx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.dr().as_ptr() as u32
+    }
 }
 
 // Implemented by all SPI instances
@@ -959,7 +969,7 @@ impl<SPI: Instance> DmaBuilder<SPI> {
 unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*SPI::PTR).dr().as_ptr() as u32 }
+        SPI::rx_peri_address()
     }
 
     type MemSize = u8;
@@ -973,7 +983,7 @@ unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralTo
 unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*SPI::PTR).dr().as_ptr() as u32 }
+        SPI::tx_peri_address()
     }
 
     type MemSize = u8;
