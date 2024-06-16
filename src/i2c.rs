@@ -74,6 +74,16 @@ pub struct I2c<I2C: Instance> {
 pub trait Instance:
     crate::rcc::Instance + crate::Ptr<RB = i2c1::RegisterBlock> + gpio::alt::I2cCommon
 {
+    #[doc(hidden)]
+    #[inline(always)]
+    fn tx_peri_address() -> u32 {
+        unsafe { (*Self::ptr()).dr().as_ptr() as u32 }
+    }
+    #[doc(hidden)]
+    #[inline(always)]
+    fn rx_peri_address() -> u32 {
+        unsafe { (*Self::ptr()).dr().as_ptr() as u32 }
+    }
 }
 
 // Implemented by all I2C instances

@@ -197,8 +197,15 @@ pub trait RBExt: UartRB {
         });
     }
 
-    // PeriAddress
-    fn peri_address(&self) -> u32 {
+    // PeriAddress for transfer data
+    #[inline(always)]
+    fn tx_peri_address(&self) -> u32 {
+        self.dr().as_ptr() as u32
+    }
+
+    // PeriAddress for receive data
+    #[inline(always)]
+    fn rx_peri_address(&self) -> u32 {
         self.dr().as_ptr() as u32
     }
 

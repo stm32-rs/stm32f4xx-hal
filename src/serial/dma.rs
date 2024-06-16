@@ -594,7 +594,7 @@ where
 {
     #[inline(always)]
     fn address(&self) -> u32 {
-        <Serial_ as Instance>::peri_address()
+        <Serial_ as Instance>::rx_peri_address()
     }
 
     type MemSize = u8;
@@ -606,7 +606,7 @@ where
 {
     #[inline(always)]
     fn address(&self) -> u32 {
-        <Serial_ as Instance>::peri_address()
+        <Serial_ as Instance>::tx_peri_address()
     }
 
     type MemSize = u8;
