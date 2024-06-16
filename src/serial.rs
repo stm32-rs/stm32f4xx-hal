@@ -277,10 +277,6 @@ macro_rules! halUsart {
                 });
             }
 
-            fn peri_address() -> u32 {
-                unsafe { (*(<$USART>::ptr() as *const Self::RegisterBlock)).peri_address() }
-            }
-
             unsafe fn steal() -> Self {
                 Self::steal()
             }
