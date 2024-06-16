@@ -970,14 +970,59 @@ pub mod config {
     }
 }
 
+#[derive(Default)]
+pub(crate) enum TransferState<STREAM, const CHANNEL: u8, PERIPHERAL, DIRECTION, BUF>
+where
+    STREAM: Stream,
+    PERIPHERAL: PeriAddress,
+{
+    #[default]
+    None,
+    Stopped {
+        stream: STREAM,
+        periph: PERIPHERAL,
+    },
+    Running {
+        transfer: Transfer<STREAM, CHANNEL, PERIPHERAL, DIRECTION, BUF>,
+    },
+}
+
+impl<STREAM, const CHANNEL: u8, PERIPHERAL, DIRECTION, BUF>
+    TransferState<STREAM, CHANNEL, PERIPHERAL, DIRECTION, BUF>
+where
+    STREAM: Stream,
+    PERIPHERAL: PeriAddress,
+{
+    pub(crate) fn is_stopped(&self) -> bool {
+        matches!(self, Self::Stopped { .. })
+    }
+    pub(crate) fn is_running(&self) -> bool {
+        matches!(self, Self::Running { .. })
+    }
+    pub(crate) fn periph(&self) -> &PERIPHERAL {
+        match self {
+            Self::Stopped { periph, .. } => periph,
+            Self::Running { transfer } => &transfer.peripheral,
+            Self::None => unreachable!(),
+        }
+    }
+    pub(crate) fn stream(&self) -> &STREAM {
+        match self {
+            Self::Stopped { stream, .. } => stream,
+            Self::Running { transfer } => &transfer.stream,
+            Self::None => unreachable!(),
+        }
+    }
+}
+
 /// DMA Transfer.
 pub struct Transfer<STREAM, const CHANNEL: u8, PERIPHERAL, DIRECTION, BUF>
 where
     STREAM: Stream,
     PERIPHERAL: PeriAddress,
 {
-    stream: STREAM,
-    peripheral: PERIPHERAL,
+    pub(crate) stream: STREAM,
+    pub(crate) peripheral: PERIPHERAL,
     _direction: PhantomData<DIRECTION>,
     buf: Option<BUF>,
     double_buf: Option<BUF>,
@@ -1162,6 +1207,7 @@ where
     BUF: WriteBuffer<Word = <PERIPHERAL as PeriAddress>::MemSize>,
 {
     /// Access the owned peripheral for reading
+    #[inline(always)]
     pub fn peripheral(&self) -> &PERIPHERAL {
         &self.peripheral
     }

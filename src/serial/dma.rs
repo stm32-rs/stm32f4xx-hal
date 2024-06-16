@@ -1,10 +1,10 @@
 use core::{marker::PhantomData, mem::transmute};
 
-use super::{Instance, RegisterBlockImpl, Serial};
+use super::{Instance, RegisterBlockImpl, Rx, Serial, Tx};
 use crate::dma::{
     config::DmaConfig,
     traits::{Channel, DMASet, DmaFlagExt, PeriAddress, Stream, StreamISR},
-    ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer,
+    ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer, TransferState,
 };
 use crate::ReadFlags;
 
@@ -67,27 +67,27 @@ pub trait SerialHandleIT {
     fn handle_error_interrupt(&mut self);
 }
 
-impl<Serial_: Instance> Serial<Serial_> {
+impl<UART: Instance> Serial<UART> {
     /// Converts blocking [Serial] to non-blocking [SerialDma] that use `tx_stream` and `rx_stream` to send/receive data
     pub fn use_dma<TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8>(
         self,
         tx_stream: TX_STREAM,
         rx_stream: RX_STREAM,
-    ) -> SerialDma<Serial_, TxDMA<Serial_, TX_STREAM, TX_CH>, RxDMA<Serial_, RX_STREAM, RX_CH>>
+    ) -> SerialDma<UART, TxDMA<UART, TX_STREAM, TX_CH>, RxDMA<UART, RX_STREAM, RX_CH>>
     where
         TX_STREAM: Stream,
         ChannelX<TX_CH>: Channel,
-        Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
+        Tx<UART>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
 
         RX_STREAM: Stream,
         ChannelX<RX_CH>: Channel,
-        Rx<Serial_>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
+        Rx<UART>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
     {
-        let tx = TxDMA::new(tx_stream);
-        let rx = RxDMA::new(rx_stream);
+        let tx = TxDMA::new(self.tx, tx_stream);
+        let rx = RxDMA::new(self.rx, rx_stream);
 
         SerialDma {
-            hal_serial: self,
+            _uart: PhantomData,
             callback: None,
             tx,
             rx,
@@ -98,17 +98,17 @@ impl<Serial_: Instance> Serial<Serial_> {
     pub fn use_dma_tx<TX_STREAM, const TX_CH: u8>(
         self,
         tx_stream: TX_STREAM,
-    ) -> SerialDma<Serial_, TxDMA<Serial_, TX_STREAM, TX_CH>, NoDMA>
+    ) -> SerialDma<UART, TxDMA<UART, TX_STREAM, TX_CH>, NoDMA>
     where
         TX_STREAM: Stream,
         ChannelX<TX_CH>: Channel,
-        Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
+        Tx<UART>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
     {
-        let tx = TxDMA::new(tx_stream);
+        let tx = TxDMA::new(self.tx, tx_stream);
         let rx = NoDMA;
 
         SerialDma {
-            hal_serial: self,
+            _uart: PhantomData,
             callback: None,
             tx,
             rx,
@@ -119,17 +119,17 @@ impl<Serial_: Instance> Serial<Serial_> {
     pub fn use_dma_rx<RX_STREAM, const RX_CH: u8>(
         self,
         rx_stream: RX_STREAM,
-    ) -> SerialDma<Serial_, NoDMA, RxDMA<Serial_, RX_STREAM, RX_CH>>
+    ) -> SerialDma<UART, NoDMA, RxDMA<UART, RX_STREAM, RX_CH>>
     where
         RX_STREAM: Stream,
         ChannelX<RX_CH>: Channel,
-        Rx<Serial_>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
+        Rx<UART>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
     {
         let tx = NoDMA;
-        let rx = RxDMA::new(rx_stream);
+        let rx = RxDMA::new(self.rx, rx_stream);
 
         SerialDma {
-            hal_serial: self,
+            _uart: PhantomData,
             callback: None,
             tx,
             rx,
@@ -147,8 +147,8 @@ impl<Serial_: Instance> Serial<Serial_> {
 ///
 /// The struct can be also used to send/receive bytes in blocking mode with methods:
 /// [`write`](Self::write()), [`read`](Self::read()), [`write_read`](Self::write_read()).
-pub struct SerialDma<Serial_: Instance, TX_TRANSFER, RX_TRANSFER> {
-    hal_serial: Serial<Serial_>,
+pub struct SerialDma<UART: Instance, TX_TRANSFER, RX_TRANSFER> {
+    _uart: PhantomData<UART>,
     callback: Option<SerialCompleteCallback>,
     tx: TX_TRANSFER,
     rx: RX_TRANSFER,
@@ -193,145 +193,160 @@ impl DMATransfer<&'static mut [u8]> for NoDMA {
 }
 
 /// DMA Transfer holder for Tx operations
-pub struct TxDMA<Serial_, TX_STREAM, const TX_CH: u8>
+pub struct TxDMA<UART, TX_STREAM, const TX_CH: u8>
 where
-    Serial_: Instance,
+    UART: Instance,
     TX_STREAM: Stream,
 {
-    tx: Option<Tx<Serial_>>,
-    tx_stream: Option<TX_STREAM>,
-    tx_transfer: Option<Transfer<TX_STREAM, TX_CH, Tx<Serial_>, MemoryToPeripheral, &'static [u8]>>,
+    state: TransferState<TX_STREAM, TX_CH, Tx<UART>, MemoryToPeripheral, &'static [u8]>,
 }
 
-impl<Serial_, TX_STREAM, const TX_CH: u8> TxDMA<Serial_, TX_STREAM, TX_CH>
+impl<UART, TX_STREAM, const TX_CH: u8> TxDMA<UART, TX_STREAM, TX_CH>
 where
-    Serial_: Instance,
+    UART: Instance,
     TX_STREAM: Stream,
 {
-    fn new(stream: TX_STREAM) -> Self {
-        let tx = Tx {
-            serial: PhantomData,
-        };
-
+    fn new(tx: Tx<UART>, stream: TX_STREAM) -> Self {
         Self {
-            tx: Some(tx),
-            tx_stream: Some(stream),
-            tx_transfer: None,
+            state: TransferState::Stopped { periph: tx, stream },
         }
     }
 }
 
-impl<Serial_, TX_STREAM, const TX_CH: u8> DMATransfer<&'static [u8]>
-    for TxDMA<Serial_, TX_STREAM, TX_CH>
+impl<UART, TX_STREAM, const TX_CH: u8> DMATransfer<&'static [u8]> for TxDMA<UART, TX_STREAM, TX_CH>
 where
-    Serial_: Instance,
+    UART: Instance,
     TX_STREAM: Stream,
     ChannelX<TX_CH>: Channel,
-    Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
+    Tx<UART>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
 {
     fn create_transfer(&mut self, buf: &'static [u8]) {
-        assert!(self.tx.is_some());
-        assert!(self.tx_stream.is_some());
+        if let TransferState::Stopped { periph, stream } = core::mem::take(&mut self.state) {
+            let transfer = Transfer::init_memory_to_peripheral(
+                stream,
+                periph,
+                buf,
+                None,
+                DmaConfig::default()
+                    .memory_increment(true)
+                    .transfer_complete_interrupt(true)
+                    .transfer_error_interrupt(true),
+            );
 
-        let transfer = Transfer::init_memory_to_peripheral(
-            self.tx_stream.take().unwrap(),
-            self.tx.take().unwrap(),
-            buf,
-            None,
-            DmaConfig::default()
-                .memory_increment(true)
-                .transfer_complete_interrupt(true)
-                .transfer_error_interrupt(true),
-        );
-
-        self.tx_transfer = Some(transfer);
+            self.state = TransferState::Running { transfer };
+        } else {
+            panic!("Broken TxDMA")
+        }
     }
 
     fn destroy_transfer(&mut self) {
-        assert!(self.tx_transfer.is_some());
-
-        let (str, tx, ..) = self.tx_transfer.take().unwrap().release();
-        self.tx = Some(tx);
-        self.tx_stream = Some(str);
+        if let TransferState::Running { transfer } = core::mem::take(&mut self.state) {
+            let (stream, tx, ..) = transfer.release();
+            self.state = TransferState::Stopped { periph: tx, stream }
+        } else {
+            panic!("Broken TxDMA")
+        }
     }
 
     fn created(&self) -> bool {
-        self.tx_transfer.is_some()
+        self.state.is_running()
     }
 }
 
 /// DMA Transfer holder for Rx operations
-pub struct RxDMA<Serial_, RX_STREAM, const RX_CH: u8>
+pub struct RxDMA<UART, RX_STREAM, const RX_CH: u8>
 where
-    Serial_: Instance,
+    UART: Instance,
     RX_STREAM: Stream,
 {
-    rx: Option<Rx<Serial_>>,
-    rx_stream: Option<RX_STREAM>,
-    rx_transfer:
-        Option<Transfer<RX_STREAM, RX_CH, Rx<Serial_>, PeripheralToMemory, &'static mut [u8]>>,
+    state: TransferState<RX_STREAM, RX_CH, Rx<UART>, PeripheralToMemory, &'static mut [u8]>,
 }
 
-impl<Serial_, RX_STREAM, const RX_CH: u8> RxDMA<Serial_, RX_STREAM, RX_CH>
+impl<UART, RX_STREAM, const RX_CH: u8> RxDMA<UART, RX_STREAM, RX_CH>
 where
-    Serial_: Instance,
+    UART: Instance,
     RX_STREAM: Stream,
 {
-    fn new(stream: RX_STREAM) -> Self {
-        let tx = Rx {
-            serial: PhantomData,
-        };
-
+    fn new(rx: Rx<UART>, stream: RX_STREAM) -> Self {
         Self {
-            rx: Some(tx),
-            rx_stream: Some(stream),
-            rx_transfer: None,
+            state: TransferState::Stopped { periph: rx, stream },
         }
     }
 }
 
-impl<Serial_, RX_STREAM, const RX_CH: u8> DMATransfer<&'static mut [u8]>
-    for RxDMA<Serial_, RX_STREAM, RX_CH>
+impl<UART, RX_STREAM, const RX_CH: u8> DMATransfer<&'static mut [u8]>
+    for RxDMA<UART, RX_STREAM, RX_CH>
 where
-    Serial_: Instance,
+    UART: Instance,
     RX_STREAM: Stream,
     ChannelX<RX_CH>: Channel,
-    Rx<Serial_>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
+    Rx<UART>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
 {
     fn create_transfer(&mut self, buf: &'static mut [u8]) {
-        assert!(self.rx.is_some());
-        assert!(self.rx_stream.is_some());
+        if let TransferState::Stopped { periph, stream } = core::mem::take(&mut self.state) {
+            let transfer = Transfer::init_peripheral_to_memory(
+                stream,
+                periph,
+                buf,
+                None,
+                DmaConfig::default()
+                    .memory_increment(true)
+                    .transfer_complete_interrupt(true)
+                    .transfer_error_interrupt(true),
+            );
 
-        let transfer = Transfer::init_peripheral_to_memory(
-            self.rx_stream.take().unwrap(),
-            self.rx.take().unwrap(),
-            buf,
-            None,
-            DmaConfig::default()
-                .memory_increment(true)
-                .transfer_complete_interrupt(true)
-                .transfer_error_interrupt(true),
-        );
-
-        self.rx_transfer = Some(transfer);
+            self.state = TransferState::Running { transfer };
+        } else {
+            panic!("Broken RxDMA")
+        }
     }
 
     fn destroy_transfer(&mut self) {
-        assert!(self.rx_transfer.is_some());
-
-        let (str, tx, ..) = self.rx_transfer.take().unwrap().release();
-        self.rx = Some(tx);
-        self.rx_stream = Some(str);
+        if let TransferState::Running { transfer } = core::mem::take(&mut self.state) {
+            let (stream, rx, ..) = transfer.release();
+            self.state = TransferState::Stopped { periph: rx, stream }
+        } else {
+            panic!("Broken RxDMA")
+        }
     }
 
     fn created(&self) -> bool {
-        self.rx_transfer.is_some()
+        self.state.is_running()
+    }
+}
+
+pub trait Periph {
+    type Uart: Instance;
+    fn periph(&self) -> &Self::Uart;
+}
+
+impl<UART: Instance, TX_STREAM, const TX_CH: u8, RX_TRANSFER> Periph
+    for SerialDma<UART, TxDMA<UART, TX_STREAM, TX_CH>, RX_TRANSFER>
+where
+    TX_STREAM: Stream,
+    ChannelX<TX_CH>: Channel,
+{
+    type Uart = UART;
+    fn periph(&self) -> &Self::Uart {
+        &self.tx.state.periph().usart
+    }
+}
+impl<UART: Instance, RX_STREAM, const RX_CH: u8> Periph
+    for SerialDma<UART, NoDMA, RxDMA<UART, RX_STREAM, RX_CH>>
+where
+    RX_STREAM: Stream,
+    ChannelX<RX_CH>: Channel,
+{
+    type Uart = UART;
+    fn periph(&self) -> &Self::Uart {
+        &self.rx.state.periph().usart
     }
 }
 
 /// Common implementation
-impl<Serial_: Instance, TX_TRANSFER, RX_TRANSFER> SerialDma<Serial_, TX_TRANSFER, RX_TRANSFER>
+impl<UART: Instance, TX_TRANSFER, RX_TRANSFER> SerialDma<UART, TX_TRANSFER, RX_TRANSFER>
 where
+    Self: Periph,
     TX_TRANSFER: DMATransfer<&'static [u8]>,
     RX_TRANSFER: DMATransfer<&'static mut [u8]>,
 {
@@ -342,22 +357,19 @@ where
     }
 
     pub fn write(&mut self, bytes: &[u8]) -> Result<(), super::Error> {
-        self.hal_serial.tx.usart.deref().bwrite_all_u8(bytes)
+        self.periph().bwrite_all_u8(bytes)
     }
 
     pub fn read(&mut self, bytes: &mut [u8]) -> Result<(), super::Error> {
-        self.hal_serial.tx.usart.deref().bread_all_u8(bytes)
+        self.periph().bread_all_u8(bytes)
     }
 
     fn enable_error_interrupt_generation(&mut self) {
-        self.hal_serial.tx.usart.enable_error_interrupt_generation();
+        self.periph().enable_error_interrupt_generation();
     }
 
     fn disable_error_interrupt_generation(&mut self) {
-        self.hal_serial
-            .tx
-            .usart
-            .disable_error_interrupt_generation();
+        let res = self.periph().disable_error_interrupt_generation();
     }
 
     fn finish_transfer_with_result(&mut self, result: Result<(), Error>) {
@@ -374,16 +386,15 @@ where
         }
     }
 }
-
-impl<Serial_: Instance, TX_STREAM, const TX_CH: u8> SerialHandleIT
-    for SerialDma<Serial_, TxDMA<Serial_, TX_STREAM, TX_CH>, NoDMA>
+impl<UART: Instance, TX_STREAM, const TX_CH: u8> SerialHandleIT
+    for SerialDma<UART, TxDMA<UART, TX_STREAM, TX_CH>, NoDMA>
 where
     TX_STREAM: Stream,
     ChannelX<TX_CH>: Channel,
-    Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
+    Tx<UART>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
 {
     fn handle_dma_interrupt(&mut self) {
-        if let Some(tx_t) = &mut self.tx.tx_transfer {
+        if let TransferState::Running { transfer: tx_t } = &mut self.tx.state {
             let flags = tx_t.flags();
 
             if flags.is_fifo_error() {
@@ -401,27 +412,22 @@ where
     }
 
     fn handle_error_interrupt(&mut self) {
-        let res = self
-            .hal_serial
-            .tx
-            .usart
-            .deref()
-            .check_and_clear_error_flags();
+        let res = self.tx.state.periph().usart.check_and_clear_error_flags();
         if let Err(e) = res {
             self.finish_transfer_with_result(Err(Error::SerialError(e)));
         }
     }
 }
 
-impl<Serial_: Instance, RX_STREAM, const RX_CH: u8> SerialHandleIT
-    for SerialDma<Serial_, NoDMA, RxDMA<Serial_, RX_STREAM, RX_CH>>
+impl<UART: Instance, RX_STREAM, const RX_CH: u8> SerialHandleIT
+    for SerialDma<UART, NoDMA, RxDMA<UART, RX_STREAM, RX_CH>>
 where
     RX_STREAM: Stream,
     ChannelX<RX_CH>: Channel,
-    Rx<Serial_>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
+    Rx<UART>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
 {
     fn handle_dma_interrupt(&mut self) {
-        if let Some(rx_t) = &mut self.rx.rx_transfer {
+        if let TransferState::Running { transfer: rx_t } = &mut self.rx.state {
             let flags = rx_t.flags();
 
             if flags.is_fifo_error() {
@@ -439,12 +445,7 @@ where
     }
 
     fn handle_error_interrupt(&mut self) {
-        let res = self
-            .hal_serial
-            .tx
-            .usart
-            .deref()
-            .check_and_clear_error_flags();
+        let res = self.rx.state.periph().usart.check_and_clear_error_flags();
         if let Err(e) = res {
             self.finish_transfer_with_result(Err(Error::SerialError(e)));
         }
@@ -452,20 +453,20 @@ where
 }
 
 /// Only for both TX and RX DMA
-impl<Serial_: Instance, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> SerialHandleIT
-    for SerialDma<Serial_, TxDMA<Serial_, TX_STREAM, TX_CH>, RxDMA<Serial_, RX_STREAM, RX_CH>>
+impl<UART: Instance, TX_STREAM, const TX_CH: u8, RX_STREAM, const RX_CH: u8> SerialHandleIT
+    for SerialDma<UART, TxDMA<UART, TX_STREAM, TX_CH>, RxDMA<UART, RX_STREAM, RX_CH>>
 where
     TX_STREAM: Stream,
     ChannelX<TX_CH>: Channel,
-    Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
+    Tx<UART>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
 
     RX_STREAM: Stream,
     ChannelX<RX_CH>: Channel,
-    Rx<Serial_>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
+    Rx<UART>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
 {
     fn handle_dma_interrupt(&mut self) {
         // Handle Transmit
-        if let Some(tx_t) = &mut self.tx.tx_transfer {
+        if let TransferState::Running { transfer: tx_t } = &mut self.tx.state {
             let flags = tx_t.flags();
 
             if flags.is_fifo_error() {
@@ -477,15 +478,13 @@ where
             } else if flags.is_transfer_complete() {
                 tx_t.clear_transfer_complete();
 
-                // If we have prepared Rx Transfer, there are write_read command, generate restart signal and do not disable DMA requests
-                // Indicate that we have read after this transmit
-                let have_read_after = self.rx.rx_transfer.is_some();
-
                 self.tx.destroy_transfer();
 
+                // If we have prepared Rx Transfer, there are write_read command, generate restart signal and do not disable DMA requests
+                // Indicate that we have read after this transmit
                 // If we have prepared Rx Transfer, there are write_read command, generate restart signal
-                if have_read_after {
-                    self.rx.rx_transfer.as_mut().unwrap().start(|_| {});
+                if let TransferState::Running { transfer } = &mut self.rx.state {
+                    transfer.start(|_| {});
                 } else {
                     self.finish_transfer_with_result(Ok(()));
                 }
@@ -496,7 +495,7 @@ where
             return;
         }
 
-        if let Some(rx_t) = &mut self.rx.rx_transfer {
+        if let TransferState::Running { transfer: rx_t } = &mut self.rx.state {
             let flags = rx_t.flags();
 
             if flags.is_fifo_error() {
@@ -514,12 +513,7 @@ where
     }
 
     fn handle_error_interrupt(&mut self) {
-        let res = self
-            .hal_serial
-            .tx
-            .usart
-            .deref()
-            .check_and_clear_error_flags();
+        let res = self.tx.state.periph().usart.check_and_clear_error_flags();
         if let Err(e) = res {
             self.finish_transfer_with_result(Err(Error::SerialError(e)));
         }
@@ -527,12 +521,12 @@ where
 }
 
 // Write DMA implementations for TX only and TX/RX Serial DMA
-impl<Serial_: Instance, TX_STREAM, const TX_CH: u8, RX_TRANSFER> SerialWriteDMA
-    for SerialDma<Serial_, TxDMA<Serial_, TX_STREAM, TX_CH>, RX_TRANSFER>
+impl<UART: Instance, TX_STREAM, const TX_CH: u8, RX_TRANSFER> SerialWriteDMA
+    for SerialDma<UART, TxDMA<UART, TX_STREAM, TX_CH>, RX_TRANSFER>
 where
     TX_STREAM: Stream,
     ChannelX<TX_CH>: Channel,
-    Tx<Serial_>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
+    Tx<UART>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
 
     RX_TRANSFER: DMATransfer<&'static mut [u8]>,
 {
@@ -547,19 +541,22 @@ where
         self.callback = callback;
 
         // Start DMA processing
-        self.tx.tx_transfer.as_mut().unwrap().start(|_| {});
+        if let TransferState::Running { transfer } = &mut self.tx.state {
+            transfer.start(|_| {});
+        }
 
         Ok(())
     }
 }
 
 // Read DMA implementations for RX only and TX/RX Serial DMA
-impl<Serial_: Instance, TX_TRANSFER, RX_STREAM, const RX_CH: u8> SerialReadDMA
-    for SerialDma<Serial_, TX_TRANSFER, RxDMA<Serial_, RX_STREAM, RX_CH>>
+impl<UART: Instance, TX_TRANSFER, RX_STREAM, const RX_CH: u8> SerialReadDMA
+    for SerialDma<UART, TX_TRANSFER, RxDMA<UART, RX_STREAM, RX_CH>>
 where
+    Self: Periph,
     RX_STREAM: Stream,
     ChannelX<RX_CH>: Channel,
-    Rx<Serial_>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
+    Rx<UART>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
 
     TX_TRANSFER: DMATransfer<&'static [u8]>,
 {
@@ -574,54 +571,10 @@ where
         self.callback = callback;
 
         // Start DMA processing
-        self.rx.rx_transfer.as_mut().unwrap().start(|_| {});
+        if let TransferState::Running { transfer } = &mut self.rx.state {
+            transfer.start(|_| {});
+        }
 
         Ok(())
     }
-}
-
-pub struct Tx<Serial_> {
-    serial: PhantomData<Serial_>,
-}
-
-pub struct Rx<Serial_> {
-    serial: PhantomData<Serial_>,
-}
-
-unsafe impl<Serial_> PeriAddress for Rx<Serial_>
-where
-    Serial_: Instance,
-{
-    #[inline(always)]
-    fn address(&self) -> u32 {
-        <Serial_ as Instance>::rx_peri_address()
-    }
-
-    type MemSize = u8;
-}
-
-unsafe impl<Serial_> PeriAddress for Tx<Serial_>
-where
-    Serial_: Instance,
-{
-    #[inline(always)]
-    fn address(&self) -> u32 {
-        <Serial_ as Instance>::tx_peri_address()
-    }
-
-    type MemSize = u8;
-}
-
-unsafe impl<Serial_, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralToMemory>
-    for Rx<Serial_>
-where
-    Serial_: DMASet<STREAM, CHANNEL, PeripheralToMemory>,
-{
-}
-
-unsafe impl<Serial_, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeripheral>
-    for Tx<Serial_>
-where
-    Serial_: DMASet<STREAM, CHANNEL, MemoryToPeripheral>,
-{
 }
