@@ -82,6 +82,16 @@ pub trait Instance:
     + Reset
     + gpio::alt::I2cCommon
 {
+    #[doc(hidden)]
+    #[inline(always)]
+    fn tx_peri_address() -> u32 {
+        unsafe { (*Self::ptr()).dr().as_ptr() as u32 }
+    }
+    #[doc(hidden)]
+    #[inline(always)]
+    fn rx_peri_address() -> u32 {
+        unsafe { (*Self::ptr()).dr().as_ptr() as u32 }
+    }
 }
 
 // Implemented by all I2C instances
