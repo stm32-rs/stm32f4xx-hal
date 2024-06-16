@@ -36,8 +36,13 @@ pub trait Instance:
     fn set_stopbits(&self, bits: config::StopBits);
     #[doc(hidden)]
     #[inline(always)]
-    fn peri_address() -> u32 {
-        unsafe { &*Self::ptr() }.peri_address()
+    fn tx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.tx_peri_address()
+    }
+    #[doc(hidden)]
+    #[inline(always)]
+    fn rx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.rx_peri_address()
     }
 }
 
@@ -143,8 +148,11 @@ pub trait RegisterBlockImpl: crate::Sealed {
         self.listen_event(Some(Event::TxEmpty.into()), None)
     }
 
-    // PeriAddress
-    fn peri_address(&self) -> u32;
+    // PeriAddress for transfer data
+    fn tx_peri_address(&self) -> u32;
+
+    // PeriAddress for receive data
+    fn rx_peri_address(&self) -> u32;
 
     fn enable_dma(&self, dc: config::DmaConfig);
 
@@ -260,7 +268,11 @@ macro_rules! uartCommon {
             });
         }
 
-        fn peri_address(&self) -> u32 {
+        fn tx_peri_address(&self) -> u32 {
+            self.dr().as_ptr() as u32
+        }
+
+        fn rx_peri_address(&self) -> u32 {
             self.dr().as_ptr() as u32
         }
 
@@ -636,7 +648,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
 unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        self.usart.peri_address()
+        self.usart.rx_peri_address()
     }
 
     type MemSize = u8;
@@ -652,7 +664,7 @@ where
 unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        self.usart.peri_address()
+        self.usart.tx_peri_address()
     }
 
     type MemSize = u8;
