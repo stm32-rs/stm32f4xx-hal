@@ -5,8 +5,10 @@ pub struct MainPll {
     pub pllsysclk: Option<u32>,
     pub pll48clk: Option<u32>,
     /// "M" divisor, required for the other PLLs on some MCUs.
+    #[allow(unused)]
     pub m: Option<u32>,
     /// "R" output, required for I2S on STM32F410.
+    #[allow(unused)]
     pub plli2sclk: Option<u32>,
 }
 
@@ -222,6 +224,7 @@ impl MainPll {
 pub struct I2sPll {
     pub use_pll: bool,
     /// "M" divisor, required for the other PLLs on some MCUs.
+    #[allow(unused)]
     pub m: Option<u32>,
     /// PLL I2S clock output.
     pub plli2sclk: Option<u32>,
