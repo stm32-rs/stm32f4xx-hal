@@ -4,7 +4,7 @@ use super::{I2c, Instance};
 use crate::dma::{
     config::DmaConfig,
     traits::{Channel, DMASet, DmaFlagExt, PeriAddress, Stream, StreamISR},
-    ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer,
+    ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer, TransferState,
 };
 use crate::ReadFlags;
 
@@ -248,9 +248,7 @@ where
     I2C: Instance,
     TX_STREAM: Stream,
 {
-    tx: Option<Tx<I2C>>,
-    tx_stream: Option<TX_STREAM>,
-    tx_transfer: Option<Transfer<TX_STREAM, TX_CH, Tx<I2C>, MemoryToPeripheral, &'static [u8]>>,
+    state: TransferState<TX_STREAM, TX_CH, Tx<I2C>, MemoryToPeripheral, &'static [u8]>,
 }
 
 impl<I2C, TX_STREAM, const TX_CH: u8> TxDMA<I2C, TX_STREAM, TX_CH>
@@ -259,12 +257,11 @@ where
     TX_STREAM: Stream,
 {
     fn new(stream: TX_STREAM) -> Self {
-        let tx = Tx { i2c: PhantomData };
-
         Self {
-            tx: Some(tx),
-            tx_stream: Some(stream),
-            tx_transfer: None,
+            state: TransferState::Stopped {
+                periph: Tx { i2c: PhantomData },
+                stream,
+            },
         }
     }
 }
@@ -277,33 +274,35 @@ where
     Tx<I2C>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
 {
     fn create_transfer(&mut self, buf: &'static [u8]) {
-        assert!(self.tx.is_some());
-        assert!(self.tx_stream.is_some());
+        if let TransferState::Stopped { periph, stream } = core::mem::take(&mut self.state) {
+            let transfer = Transfer::init_memory_to_peripheral(
+                stream,
+                periph,
+                buf,
+                None,
+                DmaConfig::default()
+                    .memory_increment(true)
+                    .transfer_complete_interrupt(true)
+                    .transfer_error_interrupt(true),
+            );
 
-        let transfer = Transfer::init_memory_to_peripheral(
-            self.tx_stream.take().unwrap(),
-            self.tx.take().unwrap(),
-            buf,
-            None,
-            DmaConfig::default()
-                .memory_increment(true)
-                .transfer_complete_interrupt(true)
-                .transfer_error_interrupt(true),
-        );
-
-        self.tx_transfer = Some(transfer);
+            self.state = TransferState::Running { transfer };
+        } else {
+            panic!("Broken TxDMA")
+        }
     }
 
     fn destroy_transfer(&mut self) {
-        assert!(self.tx_transfer.is_some());
-
-        let (str, tx, ..) = self.tx_transfer.take().unwrap().release();
-        self.tx = Some(tx);
-        self.tx_stream = Some(str);
+        if let TransferState::Running { transfer } = core::mem::take(&mut self.state) {
+            let (stream, tx, ..) = transfer.release();
+            self.state = TransferState::Stopped { periph: tx, stream }
+        } else {
+            panic!("Broken TxDMA")
+        }
     }
 
     fn created(&self) -> bool {
-        self.tx_transfer.is_some()
+        self.state.is_running()
     }
 }
 
@@ -313,9 +312,7 @@ where
     I2C: Instance,
     RX_STREAM: Stream,
 {
-    rx: Option<Rx<I2C>>,
-    rx_stream: Option<RX_STREAM>,
-    rx_transfer: Option<Transfer<RX_STREAM, RX_CH, Rx<I2C>, PeripheralToMemory, &'static mut [u8]>>,
+    state: TransferState<RX_STREAM, RX_CH, Rx<I2C>, PeripheralToMemory, &'static mut [u8]>,
 }
 
 impl<I2C, RX_STREAM, const RX_CH: u8> RxDMA<I2C, RX_STREAM, RX_CH>
@@ -324,12 +321,11 @@ where
     RX_STREAM: Stream,
 {
     fn new(stream: RX_STREAM) -> Self {
-        let tx = Rx { i2c: PhantomData };
-
         Self {
-            rx: Some(tx),
-            rx_stream: Some(stream),
-            rx_transfer: None,
+            state: TransferState::Stopped {
+                periph: Rx { i2c: PhantomData },
+                stream,
+            },
         }
     }
 }
@@ -343,33 +339,35 @@ where
     Rx<I2C>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
 {
     fn create_transfer(&mut self, buf: &'static mut [u8]) {
-        assert!(self.rx.is_some());
-        assert!(self.rx_stream.is_some());
+        if let TransferState::Stopped { periph, stream } = core::mem::take(&mut self.state) {
+            let transfer = Transfer::init_peripheral_to_memory(
+                stream,
+                periph,
+                buf,
+                None,
+                DmaConfig::default()
+                    .memory_increment(true)
+                    .transfer_complete_interrupt(true)
+                    .transfer_error_interrupt(true),
+            );
 
-        let transfer = Transfer::init_peripheral_to_memory(
-            self.rx_stream.take().unwrap(),
-            self.rx.take().unwrap(),
-            buf,
-            None,
-            DmaConfig::default()
-                .memory_increment(true)
-                .transfer_complete_interrupt(true)
-                .transfer_error_interrupt(true),
-        );
-
-        self.rx_transfer = Some(transfer);
+            self.state = TransferState::Running { transfer };
+        } else {
+            panic!("Broken RxDMA")
+        }
     }
 
     fn destroy_transfer(&mut self) {
-        assert!(self.rx_transfer.is_some());
-
-        let (str, tx, ..) = self.rx_transfer.take().unwrap().release();
-        self.rx = Some(tx);
-        self.rx_stream = Some(str);
+        if let TransferState::Running { transfer } = core::mem::take(&mut self.state) {
+            let (stream, rx, ..) = transfer.release();
+            self.state = TransferState::Stopped { periph: rx, stream }
+        } else {
+            panic!("Broken RxDMA")
+        }
     }
 
     fn created(&self) -> bool {
-        self.rx_transfer.is_some()
+        self.state.is_running()
     }
 }
 
@@ -611,7 +609,7 @@ where
     Tx<I2C>: DMASet<TX_STREAM, TX_CH, MemoryToPeripheral>,
 {
     fn handle_dma_interrupt(&mut self) {
-        if let Some(tx_t) = &mut self.tx.tx_transfer {
+        if let TransferState::Running { transfer: tx_t } = &mut self.tx.state {
             let flags = tx_t.flags();
 
             if flags.is_fifo_error() {
@@ -651,7 +649,7 @@ where
     Rx<I2C>: DMASet<RX_STREAM, RX_CH, PeripheralToMemory>,
 {
     fn handle_dma_interrupt(&mut self) {
-        if let Some(rx_t) = &mut self.rx.rx_transfer {
+        if let TransferState::Running { transfer: rx_t } = &mut self.rx.state {
             let flags = rx_t.flags();
 
             if flags.is_fifo_error() {
@@ -696,7 +694,7 @@ where
 {
     fn handle_dma_interrupt(&mut self) {
         // Handle Transmit
-        if let Some(tx_t) = &mut self.tx.tx_transfer {
+        if let TransferState::Running { transfer: tx_t } = &mut self.tx.state {
             let flags = tx_t.flags();
 
             if flags.is_fifo_error() {
@@ -710,7 +708,7 @@ where
 
                 // If we have prepared Rx Transfer, there are write_read command, generate restart signal and do not disable DMA requests
                 // Indicate that we have read after this transmit
-                let have_read_after = self.rx.rx_transfer.is_some();
+                let have_read_after = self.rx.state.is_running();
 
                 self.tx.destroy_transfer();
                 if !have_read_after {
@@ -727,7 +725,9 @@ where
                         self.finish_transfer_with_result(Err(Error::I2CError(e)))
                     }
 
-                    self.rx.rx_transfer.as_mut().unwrap().start(|_| {});
+                    if let TransferState::Running { transfer } = &mut self.rx.state {
+                        transfer.start(|_| {});
+                    }
                 } else {
                     self.send_stop();
                 }
@@ -738,7 +738,7 @@ where
             return;
         }
 
-        if let Some(rx_t) = &mut self.rx.rx_transfer {
+        if let TransferState::Running { transfer: rx_t } = &mut self.rx.state {
             let flags = rx_t.flags();
 
             if flags.is_fifo_error() {
@@ -800,7 +800,9 @@ where
         }
 
         // Start DMA processing
-        self.tx.tx_transfer.as_mut().unwrap().start(|_| {});
+        if let TransferState::Running { transfer } = &mut self.tx.state {
+            transfer.start(|_| {});
+        }
 
         Ok(())
     }
@@ -841,7 +843,9 @@ where
         }
 
         // Start DMA processing
-        self.rx.rx_transfer.as_mut().unwrap().start(|_| {});
+        if let TransferState::Running { transfer } = &mut self.rx.state {
+            transfer.start(|_| {});
+        }
 
         Ok(())
     }
@@ -885,7 +889,9 @@ where
         }
 
         // Start DMA processing
-        self.tx.tx_transfer.as_mut().unwrap().start(|_| {});
+        if let TransferState::Running { transfer } = &mut self.tx.state {
+            transfer.start(|_| {});
+        }
 
         Ok(())
     }

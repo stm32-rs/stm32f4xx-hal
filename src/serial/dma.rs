@@ -3,7 +3,7 @@ use core::{marker::PhantomData, mem::transmute};
 use super::{Instance, RegisterBlockImpl, Rx, Serial, Tx};
 use crate::dma::{
     config::DmaConfig,
-    traits::{Channel, DMASet, DmaFlagExt, PeriAddress, Stream, StreamISR},
+    traits::{Channel, DMASet, DmaFlagExt, Stream, StreamISR},
     ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer, TransferState,
 };
 use crate::ReadFlags;
@@ -369,7 +369,7 @@ where
     }
 
     fn disable_error_interrupt_generation(&mut self) {
-        let res = self.periph().disable_error_interrupt_generation();
+        self.periph().disable_error_interrupt_generation();
     }
 
     fn finish_transfer_with_result(&mut self, result: Result<(), Error>) {
