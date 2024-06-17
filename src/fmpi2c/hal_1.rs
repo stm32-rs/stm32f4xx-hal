@@ -2,19 +2,15 @@ use embedded_hal::i2c::ErrorType;
 
 use super::Instance;
 
-impl<I2C: Instance> ErrorType for super::FMPI2c<I2C> {
+impl<I2C: Instance> ErrorType for super::I2c<I2C> {
     type Error = super::Error;
 }
 
 mod blocking {
-    use super::super::{fmpi2c1, FMPI2c, Instance};
-    use core::ops::Deref;
+    use super::super::{I2c, Instance};
     use embedded_hal::i2c::Operation;
 
-    impl<I2C: Instance> embedded_hal::i2c::I2c for FMPI2c<I2C>
-    where
-        I2C: Deref<Target = fmpi2c1::RegisterBlock>,
-    {
+    impl<I2C: Instance> embedded_hal::i2c::I2c for I2c<I2C> {
         fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
             self.read(addr, buffer)
         }

@@ -1,4 +1,4 @@
-//!  
+//!
 //! Demonstrates use of I2C bus to configure and use FT6x06 touchscreen controller
 //!
 //! Hardware Required: STM32F412G-DISCO board or STM32F413H-DISCO board
@@ -32,7 +32,7 @@ use embedded_graphics_07::{
 };
 
 #[cfg(feature = "stm32f413")]
-use stm32f4xx_hal::fmpi2c::FMPI2c;
+use stm32f4xx_hal::fmpi2c::I2c;
 #[cfg(feature = "stm32f412")]
 use stm32f4xx_hal::i2c::I2c;
 

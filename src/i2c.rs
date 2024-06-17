@@ -159,10 +159,7 @@ impl<I2C: Instance> I2cExt for I2C {
     }
 }
 
-impl<I2C> I2c<I2C>
-where
-    I2C: Instance,
-{
+impl<I2C: Instance> I2c<I2C> {
     pub fn new(
         i2c: I2C,
         pins: (impl Into<I2C::Scl>, impl Into<I2C::Sda>),
