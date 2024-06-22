@@ -1,18 +1,4 @@
-use embedded_hal::i2c::{Error, ErrorKind, ErrorType};
-
-impl Error for super::Error {
-    fn kind(&self) -> ErrorKind {
-        match *self {
-            Self::Overrun => ErrorKind::Overrun,
-            Self::Bus => ErrorKind::Bus,
-            Self::ArbitrationLoss => ErrorKind::ArbitrationLoss,
-            Self::NoAcknowledge(nack) => ErrorKind::NoAcknowledge(nack),
-            Self::Crc | Self::Timeout => ErrorKind::Other,
-        }
-    }
-}
-
-impl<I2C: super::Instance> ErrorType for super::I2c<I2C> {
+impl<I2C: super::Instance> embedded_hal::i2c::ErrorType for super::I2c<I2C> {
     type Error = super::Error;
 }
 

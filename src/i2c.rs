@@ -121,6 +121,19 @@ impl Error {
     }
 }
 
+use embedded_hal::i2c::ErrorKind;
+impl embedded_hal::i2c::Error for Error {
+    fn kind(&self) -> ErrorKind {
+        match *self {
+            Self::Overrun => ErrorKind::Overrun,
+            Self::Bus => ErrorKind::Bus,
+            Self::ArbitrationLoss => ErrorKind::ArbitrationLoss,
+            Self::NoAcknowledge(nack) => ErrorKind::NoAcknowledge(nack),
+            Self::Crc | Self::Timeout => ErrorKind::Other,
+        }
+    }
+}
+
 pub trait Instance:
     crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset + gpio::alt::I2cCommon
 {
@@ -304,38 +317,6 @@ impl<I2C: Instance> I2c<I2C> {
         Ok(sr1)
     }
 
-    /// Set up current address, we're trying to talk to
-    #[inline(always)]
-    fn set_address(&self, addr: Address, read: bool, first_transaction: bool) {
-        match addr {
-            Address::Seven(addr) => {
-                self.i2c.dr().write(|w| unsafe {
-                    w.bits({
-                        let addr = u32::from(addr) << 1;
-                        if read {
-                            addr & 1
-                        } else {
-                            addr
-                        }
-                    })
-                });
-            }
-            Address::Ten(addr) => {
-                let [msbs, lsbs] = addr.to_be_bytes();
-                let msbs = ((msbs & 0b11) << 1) & 0b11110000;
-                let dr = self.i2c.dr();
-                if first_transaction {
-                    dr.write(|w| unsafe { w.bits(u32::from(msbs)) });
-                    dr.write(|w| unsafe { w.bits(u32::from(lsbs)) });
-                }
-                if read {
-                    self.i2c.cr1().modify(|_, w| w.start().set_bit());
-                    dr.write(|w| unsafe { w.bits(u32::from(msbs & 1)) });
-                }
-            }
-        }
-    }
-
     /// Sends START and Address for writing
     #[inline(always)]
     fn prepare_write(&self, addr: Address, first_transaction: bool) -> Result<(), Error> {
@@ -353,17 +334,32 @@ impl<I2C: Instance> I2c<I2C> {
         // Wait until START condition was generated
         while self.check_and_clear_error_flags()?.sb().bit_is_clear() {}
 
-        // Also wait until signalled we're master and everything is waiting for us
-        loop {
-            self.check_and_clear_error_flags()?;
+        if first_transaction {
+            // Also wait until signalled we're master and everything is waiting for us
+            loop {
+                self.check_and_clear_error_flags()?;
 
-            let sr2 = self.i2c.sr2().read();
-            if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
-                break;
+                let sr2 = self.i2c.sr2().read();
+                if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
+                    break;
+                }
             }
         }
 
-        self.set_address(addr, false, first_transaction);
+        match addr {
+            Address::Seven(addr) => {
+                self.i2c
+                    .dr()
+                    .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
+            }
+            Address::Ten(addr) => {
+                let [msbs, lsbs] = addr.to_be_bytes();
+                let msbs = ((msbs & 0b11) << 1) & 0b11110000;
+                let dr = self.i2c.dr();
+                dr.write(|w| unsafe { w.bits(u32::from(msbs)) });
+                dr.write(|w| unsafe { w.bits(u32::from(lsbs)) });
+            }
+        }
 
         // Wait until address was sent
         loop {
@@ -402,13 +398,34 @@ impl<I2C: Instance> I2c<I2C> {
         // Wait until START condition was generated
         while self.i2c.sr1().read().sb().bit_is_clear() {}
 
-        // Also wait until signalled we're master and everything is waiting for us
-        while {
-            let sr2 = self.i2c.sr2().read();
-            sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
-        } {}
+        if first_transaction {
+            // Also wait until signalled we're master and everything is waiting for us
+            while {
+                let sr2 = self.i2c.sr2().read();
+                sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
+            } {}
+        }
 
-        self.set_address(addr, true, first_transaction);
+        match addr {
+            Address::Seven(addr) => {
+                self.i2c
+                    .dr()
+                    .write(|w| unsafe { w.bits((u32::from(addr) << 1) & 1) });
+            }
+            Address::Ten(addr) => {
+                let [msbs, lsbs] = addr.to_be_bytes();
+                let msbs = ((msbs & 0b11) << 1) & 0b11110000;
+                let dr = self.i2c.dr();
+                if first_transaction {
+                    dr.write(|w| unsafe { w.bits(u32::from(msbs)) });
+                    dr.write(|w| unsafe { w.bits(u32::from(lsbs)) });
+                }
+                self.i2c.cr1().modify(|_, w| w.start().set_bit());
+                // Wait until START condition was generated
+                while self.i2c.sr1().read().sb().bit_is_clear() {}
+                dr.write(|w| unsafe { w.bits(u32::from(msbs & 1)) });
+            }
+        }
 
         // Wait until address was sent
         loop {
@@ -710,5 +727,32 @@ macro_rules! transaction_impl {
 }
 use transaction_impl;
 
-type Hal1Operation<'a> = embedded_hal::i2c::Operation<'a>;
-type Hal02Operation<'a> = embedded_hal_02::blocking::i2c::Operation<'a>;
+pub(crate) type Hal1Operation<'a> = embedded_hal::i2c::Operation<'a>;
+pub(crate) type Hal02Operation<'a> = embedded_hal_02::blocking::i2c::Operation<'a>;
+
+impl<I2C: Instance> embedded_hal_02::blocking::i2c::WriteIter for I2c<I2C> {
+    type Error = Error;
+
+    fn write<B>(&mut self, addr: u8, bytes: B) -> Result<(), Self::Error>
+    where
+        B: IntoIterator<Item = u8>,
+    {
+        self.write_iter(addr, bytes)
+    }
+}
+
+impl<I2C: Instance> embedded_hal_02::blocking::i2c::WriteIterRead for I2c<I2C> {
+    type Error = Error;
+
+    fn write_iter_read<B>(
+        &mut self,
+        addr: u8,
+        bytes: B,
+        buffer: &mut [u8],
+    ) -> Result<(), Self::Error>
+    where
+        B: IntoIterator<Item = u8>,
+    {
+        self.write_iter_read(addr, bytes, buffer)
+    }
+}
