@@ -13,6 +13,24 @@ mod hal_1;
 
 pub mod dma;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Address {
+    Seven(u8),
+    Ten(u16),
+}
+
+impl From<u8> for Address {
+    fn from(value: u8) -> Self {
+        Self::Seven(value)
+    }
+}
+
+impl From<u16> for Address {
+    fn from(value: u16) -> Self {
+        Self::Ten(value)
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum DutyCycle {
     Ratio2to1,
@@ -286,9 +304,41 @@ impl<I2C: Instance> I2c<I2C> {
         Ok(sr1)
     }
 
+    /// Set up current address, we're trying to talk to
+    #[inline(always)]
+    fn set_address(&self, addr: Address, read: bool, first_transaction: bool) {
+        match addr {
+            Address::Seven(addr) => {
+                self.i2c.dr().write(|w| unsafe {
+                    w.bits({
+                        let addr = u32::from(addr) << 1;
+                        if read {
+                            addr & 1
+                        } else {
+                            addr
+                        }
+                    })
+                });
+            }
+            Address::Ten(addr) => {
+                let [msbs, lsbs] = addr.to_be_bytes();
+                let msbs = ((msbs & 0b11) << 1) & 0b11110000;
+                let dr = self.i2c.dr();
+                if first_transaction {
+                    dr.write(|w| unsafe { w.bits(u32::from(msbs)) });
+                    dr.write(|w| unsafe { w.bits(u32::from(lsbs)) });
+                }
+                if read {
+                    self.i2c.cr1().modify(|_, w| w.start().set_bit());
+                    dr.write(|w| unsafe { w.bits(u32::from(msbs & 1)) });
+                }
+            }
+        }
+    }
+
     /// Sends START and Address for writing
     #[inline(always)]
-    fn prepare_write(&self, addr: u8) -> Result<(), Error> {
+    fn prepare_write(&self, addr: Address, first_transaction: bool) -> Result<(), Error> {
         // Wait until a previous STOP condition finishes. When the previous
         // STOP was generated inside an ISR (e.g. DMA interrupt handler),
         // the ISR returns without waiting for the STOP condition to finish.
@@ -313,10 +363,7 @@ impl<I2C: Instance> I2c<I2C> {
             }
         }
 
-        // Set up current address, we're trying to talk to
-        self.i2c
-            .dr()
-            .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
+        self.set_address(addr, false, first_transaction);
 
         // Wait until address was sent
         loop {
@@ -338,7 +385,7 @@ impl<I2C: Instance> I2c<I2C> {
     }
 
     /// Sends START and Address for reading
-    fn prepare_read(&self, addr: u8) -> Result<(), Error> {
+    fn prepare_read(&self, addr: Address, first_transaction: bool) -> Result<(), Error> {
         // Wait until a previous STOP condition finishes. When the previous
         // STOP was generated inside an ISR (e.g. DMA interrupt handler),
         // the ISR returns without waiting for the STOP condition to finish.
@@ -361,10 +408,7 @@ impl<I2C: Instance> I2c<I2C> {
             sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
         } {}
 
-        // Set up current address, we're trying to talk to
-        self.i2c
-            .dr()
-            .write(|w| unsafe { w.bits((u32::from(addr) << 1) + 1) });
+        self.set_address(addr, true, first_transaction);
 
         // Wait until address was sent
         loop {
@@ -440,12 +484,22 @@ impl<I2C: Instance> I2c<I2C> {
         Ok(())
     }
 
-    pub fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn read(&mut self, addr: impl Into<Address>, buffer: &mut [u8]) -> Result<(), Error> {
+        self.read_inner(addr.into(), buffer, true)
+    }
+
+    #[inline(always)]
+    fn read_inner(
+        &mut self,
+        addr: Address,
+        buffer: &mut [u8],
+        first_transaction: bool,
+    ) -> Result<(), Error> {
         if buffer.is_empty() {
             return Err(Error::Overrun);
         }
 
-        self.prepare_read(addr)?;
+        self.prepare_read(addr.into(), first_transaction)?;
         self.read_wo_prepare(buffer)
     }
 
@@ -477,8 +531,8 @@ impl<I2C: Instance> I2c<I2C> {
         }
     }
 
-    pub fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
-        self.prepare_write(addr)?;
+    pub fn write(&mut self, addr: impl Into<Address>, bytes: &[u8]) -> Result<(), Error> {
+        self.prepare_write(addr.into(), true)?;
         self.write_wo_prepare(bytes)
     }
 
@@ -500,11 +554,11 @@ impl<I2C: Instance> I2c<I2C> {
         Ok(())
     }
 
-    pub fn write_iter<B>(&mut self, addr: u8, bytes: B) -> Result<(), Error>
+    pub fn write_iter<B>(&mut self, addr: impl Into<Address>, bytes: B) -> Result<(), Error>
     where
         B: IntoIterator<Item = u8>,
     {
-        self.prepare_write(addr)?;
+        self.prepare_write(addr.into(), true)?;
         self.write_bytes(bytes.into_iter())?;
 
         // Send a STOP condition
@@ -521,31 +575,44 @@ impl<I2C: Instance> I2c<I2C> {
         Ok(())
     }
 
-    pub fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
-        self.prepare_write(addr)?;
+    pub fn write_read(
+        &mut self,
+        addr: impl Into<Address>,
+        bytes: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<(), Error> {
+        let addr = addr.into();
+        self.prepare_write(addr, true)?;
         self.write_bytes(bytes.iter().cloned())?;
-        self.read(addr, buffer)
+        self.read_inner(addr, buffer, false)
     }
 
-    pub fn write_iter_read<B>(&mut self, addr: u8, bytes: B, buffer: &mut [u8]) -> Result<(), Error>
+    pub fn write_iter_read<B>(
+        &mut self,
+        addr: impl Into<Address>,
+        bytes: B,
+        buffer: &mut [u8],
+    ) -> Result<(), Error>
     where
         B: IntoIterator<Item = u8>,
     {
-        self.prepare_write(addr)?;
+        let addr = addr.into();
+        self.prepare_write(addr, true)?;
         self.write_bytes(bytes.into_iter())?;
-        self.read(addr, buffer)
+        self.read_inner(addr, buffer, false)
     }
 
     pub fn transaction<'a>(
         &mut self,
-        addr: u8,
+        addr: impl Into<Address>,
         mut ops: impl Iterator<Item = Hal1Operation<'a>>,
     ) -> Result<(), Error> {
+        let addr = addr.into();
         if let Some(mut prev_op) = ops.next() {
             // 1. Generate Start for operation
             match &prev_op {
-                Hal1Operation::Read(_) => self.prepare_read(addr)?,
-                Hal1Operation::Write(_) => self.prepare_write(addr)?,
+                Hal1Operation::Read(_) => self.prepare_read(addr, true)?,
+                Hal1Operation::Write(_) => self.prepare_write(addr, true)?,
             };
 
             for op in ops {
@@ -557,9 +624,11 @@ impl<I2C: Instance> I2c<I2C> {
                 // 3. If operation changes type we must generate new start
                 match (&prev_op, &op) {
                     (Hal1Operation::Read(_), Hal1Operation::Write(_)) => {
-                        self.prepare_write(addr)?
+                        self.prepare_write(addr, false)?
                     }
-                    (Hal1Operation::Write(_), Hal1Operation::Read(_)) => self.prepare_read(addr)?,
+                    (Hal1Operation::Write(_), Hal1Operation::Read(_)) => {
+                        self.prepare_read(addr, false)?
+                    }
                     _ => {} // No changes if operation have not changed
                 }
 
@@ -579,9 +648,10 @@ impl<I2C: Instance> I2c<I2C> {
 
     pub fn transaction_slice(
         &mut self,
-        addr: u8,
+        addr: impl Into<Address>,
         ops_slice: &mut [Hal1Operation<'_>],
     ) -> Result<(), Error> {
+        let addr = addr.into();
         transaction_impl!(self, addr, ops_slice, Hal1Operation);
         // Fallthrough is success
         Ok(())
@@ -589,9 +659,10 @@ impl<I2C: Instance> I2c<I2C> {
 
     fn transaction_slice_hal_02(
         &mut self,
-        addr: u8,
+        addr: impl Into<Address>,
         ops_slice: &mut [Hal02Operation<'_>],
     ) -> Result<(), Error> {
+        let addr = addr.into();
         transaction_impl!(self, addr, ops_slice, Hal02Operation);
         // Fallthrough is success
         Ok(())
@@ -607,8 +678,8 @@ macro_rules! transaction_impl {
         if let Some(mut prev_op) = ops.next() {
             // 1. Generate Start for operation
             match &prev_op {
-                $Operation::Read(_) => i2c.prepare_read(addr)?,
-                $Operation::Write(_) => i2c.prepare_write(addr)?,
+                $Operation::Read(_) => i2c.prepare_read(addr, true)?,
+                $Operation::Write(_) => i2c.prepare_write(addr, true)?,
             };
 
             for op in ops {
@@ -619,8 +690,10 @@ macro_rules! transaction_impl {
                 };
                 // 3. If operation changes type we must generate new start
                 match (&prev_op, &op) {
-                    ($Operation::Read(_), $Operation::Write(_)) => i2c.prepare_write(addr)?,
-                    ($Operation::Write(_), $Operation::Read(_)) => i2c.prepare_read(addr)?,
+                    ($Operation::Read(_), $Operation::Write(_)) => {
+                        i2c.prepare_write(addr, false)?
+                    }
+                    ($Operation::Write(_), $Operation::Read(_)) => i2c.prepare_read(addr, false)?,
                     _ => {} // No changes if operation have not changed
                 }
 
