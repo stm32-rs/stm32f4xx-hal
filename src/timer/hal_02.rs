@@ -11,8 +11,8 @@ use fugit::{ExtU32Ceil, HertzU32 as Hertz, TimerDurationU32};
 use void::Void;
 
 use super::{
-    Channel, Counter, CounterHz, Delay, Error, Instance, Pins, Pwm, PwmChannel, PwmHz, SysCounter,
-    SysCounterHz, SysDelay, WithPwm,
+    CPin, Channel, Counter, CounterHz, Delay, Error, Instance, Pins, Pwm, PwmChannel, PwmHz,
+    SysCounter, SysCounterHz, SysDelay, WithPwm,
 };
 
 impl DelayUs<u32> for SysDelay {
@@ -139,7 +139,10 @@ impl<const FREQ: u32> Cancel for SysCounter<FREQ> {
     }
 }
 
-impl<TIM: Instance + WithPwm, const C: u8> embedded_hal_02::PwmPin for PwmChannel<TIM, C> {
+impl<TIM, const C: u8, Otype> embedded_hal_02::PwmPin for PwmChannel<TIM, C, Otype>
+where
+    TIM: CPin<C> + Instance + WithPwm,
+{
     type Duty = u16;
 
     fn disable(&mut self) {
