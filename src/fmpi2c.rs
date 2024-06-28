@@ -1,12 +1,17 @@
 use core::ops::Deref;
 
 use crate::gpio;
-use crate::i2c::{Address, Error, Hal02Operation, Hal1Operation, NoAcknowledgeSource};
+
 use crate::pac::fmpi2c1 as i2c1;
 use crate::pac::{self, rcc, RCC};
 use crate::rcc::{BusClock, Clocks, Enable, Reset};
 use fugit::{HertzU32 as Hertz, RateExtU32};
 use micromath::F32Ext;
+
+#[path = "i2c/common.rs"]
+mod common;
+pub use common::{Address, Error, NoAcknowledgeSource};
+use common::{Hal02Operation, Hal1Operation};
 
 #[path = "i2c/hal_02.rs"]
 mod hal_02;
