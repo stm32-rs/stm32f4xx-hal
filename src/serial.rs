@@ -183,7 +183,8 @@ pub struct Serial<USART: CommonPins, WORD = u8> {
 
 /// Serial receiver containing RX pin
 pub struct Rx<USART: CommonPins, WORD = u8> {
-    _word: PhantomData<(USART, WORD)>,
+    _word: PhantomData<WORD>,
+    usart: USART,
     pin: USART::Rx<PushPull>,
 }
 
@@ -276,30 +277,42 @@ macro_rules! halUsart {
                 });
             }
 
-            fn peri_address() -> u32 {
-                unsafe { (*(<$USART>::ptr() as *const Self::RegisterBlock)).peri_address() }
+            unsafe fn steal() -> Self {
+                Self::steal()
             }
         }
     };
 }
 pub(crate) use halUsart;
 
+#[cfg(feature = "usart1")]
 halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
+#[cfg(feature = "usart2")]
 halUsart! { pac::USART2, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
-
 #[cfg(feature = "usart3")]
 halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
+#[cfg(feature = "usart4")]
+halUsart! { pac::USART4, Serial4, Rx4, Tx4 }
+#[cfg(feature = "usart5")]
+halUsart! { pac::USART5, Serial5, Rx5, Tx5 }
+#[cfg(feature = "usart6")]
+halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
+#[cfg(feature = "usart7")]
+halUsart! { pac::USART7, Serial7, Rx7, Tx7 }
+#[cfg(feature = "usart8")]
+halUsart! { pac::USART8, Serial8, Rx8, Tx8 }
+#[cfg(feature = "usart10")]
+halUsart! { pac::USART10, Serial10, Rx10, Tx10 }
 
 impl<UART: CommonPins> Rx<UART, u8> {
     pub(crate) fn with_u16_data(self) -> Rx<UART, u16> {
-        Rx::new(self.pin)
+        Rx::new(self.usart, self.pin)
     }
 }
 
 impl<UART: CommonPins> Rx<UART, u16> {
     pub(crate) fn with_u8_data(self) -> Rx<UART, u8> {
-        Rx::new(self.pin)
+        Rx::new(self.usart, self.pin)
     }
 }
 
@@ -316,9 +329,10 @@ impl<UART: CommonPins> Tx<UART, u16> {
 }
 
 impl<UART: CommonPins, WORD> Rx<UART, WORD> {
-    pub(crate) fn new(pin: UART::Rx<PushPull>) -> Self {
+    pub(crate) fn new(usart: UART, pin: UART::Rx<PushPull>) -> Self {
         Self {
             _word: PhantomData,
+            usart,
             pin,
         }
     }

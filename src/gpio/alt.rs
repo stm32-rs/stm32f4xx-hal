@@ -1,5 +1,17 @@
+#[cfg(feature = "f2")]
+mod f2;
+#[cfg(feature = "f2")]
+pub use f2::*;
+
+#[cfg(feature = "f4")]
 mod f4;
+#[cfg(feature = "f4")]
 pub use f4::*;
+
+#[cfg(feature = "f7")]
+mod f7;
+#[cfg(feature = "f7")]
+pub use f7::*;
 
 macro_rules! extipin {
     ($( $(#[$attr:meta])* $PX:ident,)*) => {

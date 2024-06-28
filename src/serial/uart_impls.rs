@@ -1,4 +1,4 @@
-use core::{fmt, ops::Deref};
+use core::fmt;
 
 use enumflags2::BitFlags;
 use nb::block;
@@ -18,11 +18,19 @@ pub(crate) use crate::pac::uart4::RegisterBlock as RegisterBlockUart;
 pub(crate) use crate::pac::usart1::RegisterBlock as RegisterBlockUsart;
 
 #[cfg(feature = "uart4")]
+#[cfg(not(feature = "f7"))]
 impl crate::Sealed for RegisterBlockUart {}
 impl crate::Sealed for RegisterBlockUsart {}
 
 // Implemented by all USART/UART instances
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + CommonPins {
+pub trait Instance:
+    crate::Sealed
+    + rcc::Enable
+    + rcc::Reset
+    + rcc::BusClock
+    + CommonPins
+    + core::ops::Deref<Target = Self::RegisterBlock>
+{
     type RegisterBlock: RegisterBlockImpl;
 
     #[doc(hidden)]
@@ -30,7 +38,17 @@ pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusClock + C
     #[doc(hidden)]
     fn set_stopbits(&self, bits: config::StopBits);
     #[doc(hidden)]
-    fn peri_address() -> u32;
+    #[inline(always)]
+    fn tx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.tx_peri_address()
+    }
+    #[doc(hidden)]
+    #[inline(always)]
+    fn rx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.rx_peri_address()
+    }
+    #[doc(hidden)]
+    unsafe fn steal() -> Self;
 }
 
 pub trait RegisterBlockImpl: crate::Sealed {
@@ -135,17 +153,24 @@ pub trait RegisterBlockImpl: crate::Sealed {
         self.listen_event(Some(Event::TxEmpty.into()), None)
     }
 
-    // PeriAddress
-    fn peri_address(&self) -> u32;
+    // PeriAddress for transfer data
+    fn tx_peri_address(&self) -> u32;
+
+    // PeriAddress for receive data
+    fn rx_peri_address(&self) -> u32;
 }
 
 macro_rules! uartCommon {
     () => {
         fn read_u16(&self) -> nb::Result<u16, Error> {
             // NOTE(unsafe) atomic read with no side effects
+            #[cfg(feature = "uart_v2")]
             let sr = self.sr().read();
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
 
             // Any error requires the dr to be read to clear
+            #[cfg(feature = "uart_v2")]
             if sr.pe().bit_is_set()
                 || sr.fe().bit_is_set()
                 || sr.nf().bit_is_set()
@@ -154,17 +179,30 @@ macro_rules! uartCommon {
                 self.dr().read();
             }
 
+            #[cfg(feature = "uart_v3")]
+            let icr = self.icr();
             Err(if sr.pe().bit_is_set() {
+                #[cfg(feature = "uart_v3")]
+                icr.write(|w| w.pecf().clear());
                 Error::Parity.into()
             } else if sr.fe().bit_is_set() {
+                #[cfg(feature = "uart_v3")]
+                icr.write(|w| w.fecf().clear());
                 Error::FrameFormat.into()
             } else if sr.nf().bit_is_set() {
+                #[cfg(feature = "uart_v3")]
+                icr.write(|w| w.ncf().clear());
                 Error::Noise.into()
             } else if sr.ore().bit_is_set() {
+                #[cfg(feature = "uart_v3")]
+                icr.write(|w| w.orecf().clear());
                 Error::Overrun.into()
             } else if sr.rxne().bit_is_set() {
                 // NOTE(unsafe) atomic read from stateless register
+                #[cfg(feature = "uart_v2")]
                 return Ok(self.dr().read().dr().bits());
+                #[cfg(feature = "uart_v3")]
+                return Ok(self.rdr().read().rdr().bits());
             } else {
                 nb::Error::WouldBlock
             })
@@ -172,11 +210,17 @@ macro_rules! uartCommon {
 
         fn write_u16(&self, word: u16) -> nb::Result<(), Error> {
             // NOTE(unsafe) atomic read with no side effects
+            #[cfg(feature = "uart_v2")]
             let sr = self.sr().read();
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
 
             if sr.txe().bit_is_set() {
                 // NOTE(unsafe) atomic write to stateless register
+                #[cfg(feature = "uart_v2")]
                 self.dr().write(|w| w.dr().set(word));
+                #[cfg(feature = "uart_v3")]
+                self.tdr().write(|w| w.tdr().set(word));
                 Ok(())
             } else {
                 Err(nb::Error::WouldBlock)
@@ -185,7 +229,10 @@ macro_rules! uartCommon {
 
         fn flush(&self) -> nb::Result<(), Error> {
             // NOTE(unsafe) atomic read with no side effects
+            #[cfg(feature = "uart_v2")]
             let sr = self.sr().read();
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
 
             if sr.tc().bit_is_set() {
                 Ok(())
@@ -195,22 +242,40 @@ macro_rules! uartCommon {
         }
 
         fn flags(&self) -> BitFlags<Flag> {
-            BitFlags::from_bits_truncate(self.sr().read().bits())
+            #[cfg(feature = "uart_v2")]
+            let sr = self.sr().read();
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
+            BitFlags::from_bits_truncate(sr.bits())
         }
 
         fn clear_flags(&self, flags: BitFlags<CFlag>) {
+            #[cfg(feature = "uart_v2")]
             self.sr()
                 .write(|w| unsafe { w.bits(0xffff & !flags.bits()) });
+            #[cfg(feature = "uart_v3")]
+            self.icr().write(|w| unsafe { w.bits(flags.bits()) });
         }
 
         fn clear_idle_interrupt(&self) {
-            let _ = self.sr().read();
-            let _ = self.dr().read();
+            #[cfg(feature = "uart_v2")]
+            {
+                let _ = self.sr().read();
+                let _ = self.dr().read();
+            }
+            #[cfg(feature = "uart_v3")]
+            self.icr().write(|w| w.idlecf().set_bit());
         }
 
         fn check_and_clear_error_flags(&self) -> Result<(), Error> {
+            #[cfg(feature = "uart_v2")]
             let sr = self.sr().read();
+            #[cfg(feature = "uart_v2")]
             let _ = self.dr().read();
+
+            // TODO: clear flags
+            #[cfg(feature = "uart_v3")]
+            let sr = self.isr().read();
 
             if sr.ore().bit_is_set() {
                 Err(Error::Overrun)
@@ -248,8 +313,22 @@ macro_rules! uartCommon {
             });
         }
 
-        fn peri_address(&self) -> u32 {
+        #[cfg(feature = "uart_v2")]
+        fn rx_peri_address(&self) -> u32 {
             self.dr().as_ptr() as u32
+        }
+        #[cfg(feature = "uart_v2")]
+        fn tx_peri_address(&self) -> u32 {
+            self.dr().as_ptr() as u32
+        }
+
+        #[cfg(feature = "uart_v3")]
+        fn rx_peri_address(&self) -> u32 {
+            self.rdr().as_ptr() as u32
+        }
+        #[cfg(feature = "uart_v3")]
+        fn tx_peri_address(&self) -> u32 {
+            self.tdr().as_ptr() as u32
         }
     };
 }
@@ -336,32 +415,28 @@ where {
             return Err(config::InvalidConfig);
         };
 
-        let register_block = unsafe { &*UART::ptr() };
-        register_block.brr().write(|w| unsafe { w.bits(div) });
+        uart.brr().write(|w| unsafe { w.bits(div) });
 
         // Reset other registers to disable advanced USART features
-        register_block.cr2().reset();
-        register_block.cr3().reset(); // IrDA configuration - see STM32F411xC/E (RM0383) sections:
-                                      // 19.3.12 "IrDA SIR ENDEC block"
-                                      // 19.6.7 "Guard time and prescaler register (USART_GTPR)"
+        uart.cr2().reset();
+        uart.cr3().reset(); // IrDA configuration - see STM32F411xC/E (RM0383) sections:
+                            // 19.3.12 "IrDA SIR ENDEC block"
+                            // 19.6.7 "Guard time and prescaler register (USART_GTPR)"
         if config.irda != IrdaMode::None && config.stopbits != StopBits::STOP1 {
             return Err(config::InvalidConfig);
         }
 
         match config.irda {
             IrdaMode::Normal => unsafe {
-                register_block.gtpr().reset();
-                register_block.cr3().write(|w| w.iren().enabled());
-                register_block.gtpr().write(|w| w.psc().bits(1u8))
+                uart.gtpr().reset();
+                uart.cr3().write(|w| w.iren().enabled());
+                uart.gtpr().write(|w| w.psc().bits(1u8))
             },
             IrdaMode::LowPower => unsafe {
-                register_block.gtpr().reset();
-                register_block
-                    .cr3()
-                    .write(|w| w.iren().enabled().irlp().low_power());
+                uart.gtpr().reset();
+                uart.cr3().write(|w| w.iren().enabled().irlp().low_power());
                 // FIXME
-                register_block
-                    .gtpr()
+                uart.gtpr()
                     .write(|w| w.psc().bits((1843200u32 / pclk_freq) as u8))
             },
             IrdaMode::None => {}
@@ -370,28 +445,36 @@ where {
         // Enable transmission and receiving
         // and configure frame
 
-        register_block.cr1().write(|w| {
+        // M[1:0] are used to set data bits
+        // M[1:0] = 00: 1 Start bit, 8 data bits, n stop bits
+        // M[1:0] = 01: 1 Start bit, 9 data bits, n stop bits
+        // M[1:0] = 10: 1 Start bit, 7 data bits, n stop bits
+        uart.cr1().write(|w| {
             w.ue().set_bit();
             w.over8().bit(over8);
             w.te().set_bit();
             w.re().set_bit();
+            #[cfg(feature = "uart_v2")]
             w.m().bit(config.wordlength == WordLength::DataBits9);
+            #[cfg(feature = "uart_v3")]
+            {
+                w.m0().bit(config.wordlength == WordLength::DataBits9);
+                w.m1().bit(config.wordlength == WordLength::DataBits7);
+            }
             w.pce().bit(config.parity != Parity::ParityNone);
             w.ps().bit(config.parity == Parity::ParityOdd)
         });
 
         match config.dma {
-            DmaConfig::Tx => register_block.cr3().write(|w| w.dmat().enabled()),
-            DmaConfig::Rx => register_block.cr3().write(|w| w.dmar().enabled()),
-            DmaConfig::TxRx => register_block
-                .cr3()
-                .write(|w| w.dmar().enabled().dmat().enabled()),
+            DmaConfig::Tx => uart.cr3().write(|w| w.dmat().enabled()),
+            DmaConfig::Rx => uart.cr3().write(|w| w.dmar().enabled()),
+            DmaConfig::TxRx => uart.cr3().write(|w| w.dmar().enabled().dmat().enabled()),
             DmaConfig::None => {}
         }
 
         let serial = Serial {
             tx: Tx::new(uart, pins.0.into()),
-            rx: Rx::new(pins.1.into()),
+            rx: Rx::new(unsafe { UART::steal() }, pins.1.into()),
         };
         serial.tx.usart.set_stopbits(config.stopbits);
         Ok(serial)
@@ -401,6 +484,7 @@ where {
 }
 
 #[cfg(feature = "uart4")]
+#[cfg(not(feature = "f7"))]
 impl RegisterBlockImpl for RegisterBlockUart {
     fn new<UART: Instance<RegisterBlock = Self>, WORD>(
         uart: UART,
@@ -470,38 +554,45 @@ where {
             return Err(config::InvalidConfig);
         };
 
-        let register_block = unsafe { &*UART::ptr() };
-        register_block.brr().write(|w| unsafe { w.bits(div) });
+        uart.brr().write(|w| unsafe { w.bits(div) });
 
         // Reset other registers to disable advanced USART features
-        register_block.cr2().reset();
-        register_block.cr3().reset();
+        uart.cr2().reset();
+        uart.cr3().reset();
 
         // Enable transmission and receiving
         // and configure frame
 
-        register_block.cr1().write(|w| {
+        // M[1:0] are used to set data bits
+        // M[1:0] = 00: 1 Start bit, 8 data bits, n stop bits
+        // M[1:0] = 01: 1 Start bit, 9 data bits, n stop bits
+        // M[1:0] = 10: 1 Start bit, 7 data bits, n stop bits
+        uart.cr1().write(|w| {
             w.ue().set_bit();
             w.over8().bit(over8);
             w.te().set_bit();
             w.re().set_bit();
+            #[cfg(feature = "uart_v2")]
             w.m().bit(config.wordlength == WordLength::DataBits9);
+            #[cfg(feature = "uart_v3")]
+            {
+                w.m0().bit(config.wordlength == WordLength::DataBits9);
+                w.m1().bit(config.wordlength == WordLength::DataBits7);
+            }
             w.pce().bit(config.parity != Parity::ParityNone);
             w.ps().bit(config.parity == Parity::ParityOdd)
         });
 
         match config.dma {
-            DmaConfig::Tx => register_block.cr3().write(|w| w.dmat().enabled()),
-            DmaConfig::Rx => register_block.cr3().write(|w| w.dmar().enabled()),
-            DmaConfig::TxRx => register_block
-                .cr3()
-                .write(|w| w.dmar().enabled().dmat().enabled()),
+            DmaConfig::Tx => uart.cr3().write(|w| w.dmat().enabled()),
+            DmaConfig::Rx => uart.cr3().write(|w| w.dmar().enabled()),
+            DmaConfig::TxRx => uart.cr3().write(|w| w.dmar().enabled().dmat().enabled()),
             DmaConfig::None => {}
         }
 
         let serial = Serial {
             tx: Tx::new(uart, pins.0.into()),
-            rx: Rx::new(pins.1.into()),
+            rx: Rx::new(unsafe { UART::steal() }, pins.1.into()),
         };
         serial.tx.usart.set_stopbits(config.stopbits);
         Ok(serial)
@@ -530,18 +621,16 @@ where
 
 impl<UART: Instance, WORD> RxISR for Rx<UART, WORD> {
     fn is_idle(&self) -> bool {
-        unsafe { (*UART::ptr()).is_idle() }
+        self.usart.is_idle()
     }
 
     fn is_rx_not_empty(&self) -> bool {
-        unsafe { (*UART::ptr()).is_rx_not_empty() }
+        self.usart.is_rx_not_empty()
     }
 
     /// This clears `Idle`, `Overrun`, `Noise`, `FrameError` and `ParityError` flags
     fn clear_idle_interrupt(&self) {
-        unsafe {
-            (*UART::ptr()).clear_idle_interrupt();
-        }
+        self.usart.clear_idle_interrupt();
     }
 }
 
@@ -554,10 +643,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> TxISR for Tx<UART, WORD>
-where
-    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
-{
+impl<UART: Instance, WORD> TxISR for Tx<UART, WORD> {
     fn is_tx_empty(&self) -> bool {
         self.usart.is_tx_empty()
     }
@@ -565,26 +651,23 @@ where
 
 impl<UART: Instance, WORD> RxListen for Rx<UART, WORD> {
     fn listen(&mut self) {
-        unsafe { (*UART::ptr()).listen_rxne() }
+        self.usart.listen_rxne()
     }
 
     fn unlisten(&mut self) {
-        unsafe { (*UART::ptr()).unlisten_rxne() }
+        self.usart.unlisten_rxne()
     }
 
     fn listen_idle(&mut self) {
-        unsafe { (*UART::ptr()).listen_idle() }
+        self.usart.listen_idle()
     }
 
     fn unlisten_idle(&mut self) {
-        unsafe { (*UART::ptr()).unlisten_idle() }
+        self.usart.unlisten_idle()
     }
 }
 
-impl<UART: Instance, WORD> TxListen for Tx<UART, WORD>
-where
-    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
-{
+impl<UART: Instance, WORD> TxListen for Tx<UART, WORD> {
     fn listen(&mut self) {
         self.usart.listen_txe()
     }
@@ -594,10 +677,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> crate::ClearFlags for Serial<UART, WORD>
-where
-    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
-{
+impl<UART: Instance, WORD> crate::ClearFlags for Serial<UART, WORD> {
     type Flag = CFlag;
 
     #[inline(always)]
@@ -606,10 +686,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> crate::ReadFlags for Serial<UART, WORD>
-where
-    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
-{
+impl<UART: Instance, WORD> crate::ReadFlags for Serial<UART, WORD> {
     type Flag = Flag;
 
     #[inline(always)]
@@ -618,10 +695,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> crate::Listen for Serial<UART, WORD>
-where
-    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
-{
+impl<UART: Instance, WORD> crate::Listen for Serial<UART, WORD> {
     type Event = Event;
 
     #[inline(always)]
@@ -651,10 +725,7 @@ where
     }
 }
 
-impl<UART: Instance> fmt::Write for Tx<UART>
-where
-    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
-{
+impl<UART: Instance> fmt::Write for Tx<UART> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         s.bytes()
             .try_for_each(|c| block!(self.usart.write_u8(c)))
@@ -726,7 +797,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
 unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*UART::ptr()).peri_address() }
+        self.usart.rx_peri_address()
     }
 
     type MemSize = u8;
@@ -739,13 +810,10 @@ where
 {
 }
 
-unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8>
-where
-    UART: Deref<Target = <UART as Instance>::RegisterBlock>,
-{
+unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        self.usart.peri_address()
+        self.usart.tx_peri_address()
     }
 
     type MemSize = u8;
