@@ -204,6 +204,11 @@ pub trait Instance:
 {
     #[doc(hidden)]
     fn ptr() -> *const spi1::RegisterBlock;
+    #[doc(hidden)]
+    #[inline(always)]
+    fn peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.dr().as_ptr() as u32
+    }
 }
 
 // Implemented by all SPI instances
@@ -900,7 +905,7 @@ impl<SPI: Instance> DmaBuilder<SPI> {
 unsafe impl<SPI: Instance> PeriAddress for Rx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*SPI::ptr()).dr().as_ptr() as u32 }
+        SPI::peri_address()
     }
 
     type MemSize = u8;
@@ -914,7 +919,7 @@ unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, PeripheralTo
 unsafe impl<SPI: Instance> PeriAddress for Tx<SPI> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        unsafe { (*SPI::ptr()).dr().as_ptr() as u32 }
+        SPI::peri_address()
     }
 
     type MemSize = u8;
