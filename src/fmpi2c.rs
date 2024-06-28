@@ -123,6 +123,12 @@ pub enum ClockSource<'a> {
     Hsi,
 }
 
+impl<'a> From<&'a Clocks> for ClockSource<'a> {
+    fn from(value: &'a Clocks) -> Self {
+        Self::Apb(value)
+    }
+}
+
 // hddat and vddat are removed because SDADEL is always going to be 0 in this implementation so
 // condition is always met
 struct I2cSpec {
@@ -247,12 +253,32 @@ fn calculate_timing(
     }
 }
 
+pub trait I2cExt: Sized + Instance {
+    fn i2c<'a>(
+        self,
+        pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
+        mode: impl Into<Mode>,
+        clocks: impl Into<ClockSource<'a>>,
+    ) -> I2c<Self>;
+}
+
+impl<I2C: Instance> I2cExt for I2C {
+    fn i2c<'a>(
+        self,
+        pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
+        mode: impl Into<Mode>,
+        clocks: impl Into<ClockSource<'a>>,
+    ) -> I2c<Self> {
+        I2c::new(self, pins, mode, clocks)
+    }
+}
+
 impl<I2C: Instance> I2c<I2C> {
-    pub fn new(
+    pub fn new<'a>(
         i2c: I2C,
         pins: (impl Into<I2C::Scl>, impl Into<I2C::Sda>),
         mode: impl Into<Mode>,
-        clocks: ClockSource<'_>,
+        clocks: impl Into<ClockSource<'a>>,
     ) -> Self {
         unsafe {
             // Enable and reset clock.
@@ -263,7 +289,7 @@ impl<I2C: Instance> I2c<I2C> {
         let pins = (pins.0.into(), pins.1.into());
 
         let i2c = I2c { i2c, pins };
-        i2c.i2c_init(mode, clocks);
+        i2c.i2c_init(mode, clocks.into());
         i2c
     }
 
