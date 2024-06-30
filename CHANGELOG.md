@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - `i2c_scanner` example [#758]
  - Enable `sdio` for stm32f446
  - port LTDC implementation and example from stm32f7xx-hal [#731]
+ - port `stm32-fmc` support and example from stm32f7xx-hal [#759]
  - IrDA mode for USARTs
 
 ### Changed
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
 [#758]: https://github.com/stm32-rs/stm32f4xx-hal/pull/758
+[#759]: https://github.com/stm32-rs/stm32f4xx-hal/pull/759
 
 ## [v0.21.0] - 2024-05-30
 
