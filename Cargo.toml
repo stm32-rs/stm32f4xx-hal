@@ -83,6 +83,9 @@ version = "1.0"
 [dependencies.embedded-hal-nb]
 version = "1.0"
 
+[dependencies.embedded-io]
+version = "0.6.1"
+
 [dependencies.stm32_i2s_v12x]
 version = "0.5.0"
 optional = true
