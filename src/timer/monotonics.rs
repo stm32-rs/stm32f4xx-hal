@@ -139,7 +139,7 @@ macro_rules! __internal_create_stm32_timer_interrupt {
 }
 
 macro_rules! make_timer {
-    ($tim: ident, $timer:ident, $bits:ident, $overflow:ident, $tq:ident$(, doc: ($($doc:tt)*))?) => {
+    ($tim: ident, $timer:ident, $overflow:ident, $tq:ident$(, doc: ($($doc:tt)*))?) => {
         static $overflow: AtomicU64 = AtomicU64::new(0);
         static $tq: TimerQueue<MonoTimerBackend<pac::$timer>> = TimerQueue::new();
 
@@ -164,10 +164,14 @@ macro_rules! make_timer {
                 self.tim.dier().modify(|_, w| w.uie().set_bit());
 
                 // Configure and enable half-period interrupt
-                self.tim
-                    .ccr(2)
-                    .write(|w| w.ccr().set(($bits::MAX - ($bits::MAX >> 1)).into()));
-                self.tim.dier().modify(|_, w| w.cc3ie().set_bit());
+                self.tim.ccr1().write(|w| {
+                    w.ccr().set(
+                        (<pac::$timer as General>::Width::MAX
+                            - (<pac::$timer as General>::Width::MAX >> 1))
+                            .into(),
+                    )
+                });
+                self.tim.dier().modify(|_, w| w.cc1ie().set_bit());
 
                 // Trigger an update event to load the prescaler value to the clock.
                 self.tim.egr().write(|w| w.ug().set_bit());
@@ -206,7 +210,7 @@ macro_rules! make_timer {
             fn now() -> Self::Ticks {
                 calculate_now(
                     || $overflow.load(Ordering::Relaxed),
-                    || Self::tim().cnt().read().bits(),
+                    || Self::tim().cnt().read().cnt().bits(),
                 )
             }
 
@@ -214,15 +218,16 @@ macro_rules! make_timer {
                 let now = Self::now();
 
                 // Since the timer may or may not overflow based on the requested compare val, we check how many ticks are left.
-                // `wrapping_sup` takes care of the u64 integer overflow special case.
-                let val = if instant.wrapping_sub(now) <= ($bits::MAX as u64) {
-                    instant as $bits
-                } else {
-                    // In the past or will overflow
-                    0
-                };
+                // `wrapping_sub` takes care of the u64 integer overflow special case.
+                let val =
+                    if instant.wrapping_sub(now) <= (<pac::$timer as General>::Width::MAX as u64) {
+                        instant as <pac::$timer as General>::Width
+                    } else {
+                        // In the past or will overflow
+                        0
+                    };
 
-                Self::tim().ccr(1).write(|r| r.ccr().set(val.into()));
+                Self::tim().ccr2().write(|r| r.ccr().set(val.into()));
             }
 
             fn clear_compare_flag() {
@@ -249,8 +254,8 @@ macro_rules! make_timer {
                     assert!(prev % 2 == 1, "Monotonic must have missed an interrupt!");
                 }
                 // Half period
-                if Self::tim().sr().read().cc3if().bit_is_set() {
-                    Self::tim().sr().modify(|_, w| w.cc3if().clear_bit());
+                if Self::tim().sr().read().cc1if().bit_is_set() {
+                    Self::tim().sr().modify(|_, w| w.cc1if().clear_bit());
                     let prev = $overflow.fetch_add(1, Ordering::Relaxed);
                     assert!(prev % 2 == 0, "Monotonic must have missed an interrupt!");
                 }
@@ -264,16 +269,16 @@ macro_rules! make_timer {
 }
 
 #[cfg(all(feature = "tim2", feature = "rtic-tim2"))]
-make_timer!(tim2, TIM2, u32, TIMER2_OVERFLOWS, TIMER2_TQ);
+make_timer!(tim2, TIM2, TIMER2_OVERFLOWS, TIMER2_TQ);
 
 #[cfg(all(feature = "tim3", feature = "rtic-tim3"))]
-make_timer!(tim3, TIM3, u16, TIMER3_OVERFLOWS, TIMER3_TQ);
+make_timer!(tim3, TIM3, TIMER3_OVERFLOWS, TIMER3_TQ);
 
 #[cfg(all(feature = "tim4", feature = "rtic-tim4"))]
-make_timer!(tim4, TIM4, u16, TIMER4_OVERFLOWS, TIMER4_TQ);
+make_timer!(tim4, TIM4, TIMER4_OVERFLOWS, TIMER4_TQ);
 
 #[cfg(all(feature = "tim5", feature = "rtic-tim5"))]
-make_timer!(tim5, TIM5, u16, TIMER5_OVERFLOWS, TIMER5_TQ);
+make_timer!(tim5, TIM5, TIMER5_OVERFLOWS, TIMER5_TQ);
 
 pub trait Irq {
     const IRQ: pac::Interrupt;

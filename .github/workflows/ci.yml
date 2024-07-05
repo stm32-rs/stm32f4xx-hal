@@ -46,7 +46,7 @@ jobs:
           - rust: nightly
             mcu: stm32f479
             experimental: true
-            features: usb_fs,sdio-host,can,i2s,fsmc_lcd,rtic2,rtic-tim2
+            features: usb_fs,sdio-host,can,i2s,fsmc_lcd,rtic2,rtic-tim3
 
     steps:
       - uses: actions/checkout@v4

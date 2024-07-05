@@ -679,7 +679,7 @@ required-features = ["tim2", "rtic1"]
 
 [[example]]
 name = "rtic2-tick"
-required-features = ["rtic2", "rtic-tim2"]
+required-features = ["rtic2", "rtic-tim3"]
 
 [[example]]
 name = "rtic-usart-shell"
