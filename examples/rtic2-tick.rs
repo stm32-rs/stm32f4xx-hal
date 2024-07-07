@@ -10,7 +10,7 @@ use stm32f4xx_hal::{
     pac,
     prelude::*,
 };
-type Mono = stm32f4xx_hal::timer::MonoTimerUs<pac::TIM2>;
+type Mono = stm32f4xx_hal::timer::MonoTimerUs<pac::TIM3>;
 
 // Uncomment if use SysTick as monotonic timer
 //use rtic_monotonics::systick::prelude::*;
@@ -35,8 +35,8 @@ mod app {
         let rcc = ctx.device.RCC.constrain();
         let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
 
-        // Create TIM2 monotonic and initialize timer queue
-        ctx.device.TIM2.monotonic_us(&mut ctx.core.NVIC, &clocks);
+        // Create TIM3 monotonic and initialize timer queue
+        ctx.device.TIM3.monotonic_us(&mut ctx.core.NVIC, &clocks);
 
         // Uncomment if use SysTick as monotonic timer
         //Mono::start(ctx.core.SYST, 48_000_000);
