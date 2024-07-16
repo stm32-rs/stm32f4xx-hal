@@ -37,7 +37,10 @@ pub trait Instance:
     #[doc(hidden)]
     fn set_stopbits(&self, bits: config::StopBits);
     #[doc(hidden)]
-    fn peri_address() -> u32;
+    #[inline(always)]
+    fn peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.peri_address()
+    }
     #[doc(hidden)]
     unsafe fn steal() -> Self;
 }
