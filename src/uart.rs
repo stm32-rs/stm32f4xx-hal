@@ -52,8 +52,8 @@ macro_rules! halUart {
                 });
             }
 
-            fn peri_address() -> u32 {
-                unsafe { (*Self::ptr()).peri_address() }
+            unsafe fn steal() -> Self {
+                Self::steal()
             }
         }
     };
