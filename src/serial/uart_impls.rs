@@ -24,16 +24,14 @@ impl crate::Sealed for RegisterBlockUsart {}
 // Implemented by all USART/UART instances
 pub trait Instance:
     crate::Sealed
+    + crate::Ptr<RB: RegisterBlockImpl>
+    + crate::Steal
+    + core::ops::Deref<Target = Self::RB>
     + rcc::Enable
     + rcc::Reset
     + rcc::BusClock
     + CommonPins
-    + core::ops::Deref<Target = Self::RegisterBlock>
 {
-    type RegisterBlock: RegisterBlockImpl;
-
-    #[doc(hidden)]
-    fn ptr() -> *const Self::RegisterBlock;
     #[doc(hidden)]
     fn set_stopbits(&self, bits: config::StopBits);
     #[doc(hidden)]
@@ -41,13 +39,11 @@ pub trait Instance:
     fn peri_address() -> u32 {
         unsafe { &*Self::ptr() }.peri_address()
     }
-    #[doc(hidden)]
-    unsafe fn steal() -> Self;
 }
 
 pub trait RegisterBlockImpl: crate::Sealed {
     #[allow(clippy::new_ret_no_self)]
-    fn new<UART: Instance<RegisterBlock = Self>, WORD>(
+    fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
         pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
         config: impl Into<config::Config>,
@@ -267,7 +263,7 @@ macro_rules! uartCommon {
 }
 
 impl RegisterBlockImpl for RegisterBlockUsart {
-    fn new<UART: Instance<RegisterBlock = Self>, WORD>(
+    fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
         pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
         config: impl Into<config::Config>,
@@ -408,7 +404,7 @@ where {
 
 #[cfg(feature = "uart4")]
 impl RegisterBlockImpl for RegisterBlockUart {
-    fn new<UART: Instance<RegisterBlock = Self>, WORD>(
+    fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
         pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
         config: impl Into<config::Config>,

@@ -16,7 +16,7 @@
 
 use crate::pac;
 
-use crate::serial::uart_impls::{RegisterBlockImpl, RegisterBlockUart};
+use crate::serial::uart_impls::RegisterBlockUart;
 
 pub use crate::serial::{config, Error, Event, Instance, NoRx, NoTx, Rx, RxISR, Serial, Tx, TxISR};
 pub use config::Config;
@@ -28,12 +28,6 @@ macro_rules! halUart {
         pub type $Rx<WORD = u8> = Rx<$UART, WORD>;
 
         impl Instance for $UART {
-            type RegisterBlock = RegisterBlockUart;
-
-            fn ptr() -> *const RegisterBlockUart {
-                <$UART>::ptr() as *const _
-            }
-
             fn set_stopbits(&self, bits: config::StopBits) {
                 use crate::pac::uart4::cr2::STOP;
                 use config::StopBits;
@@ -51,7 +45,17 @@ macro_rules! halUart {
                     })
                 });
             }
+        }
 
+        impl crate::Ptr for $UART {
+            type RB = RegisterBlockUart;
+
+            fn ptr() -> *const Self::RB {
+                Self::ptr()
+            }
+        }
+
+        impl crate::Steal for $UART {
             unsafe fn steal() -> Self {
                 Self::steal()
             }

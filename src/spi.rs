@@ -196,14 +196,13 @@ impl<SPI: Instance, const BIDI: bool, W> DerefMut for SpiSlave<SPI, BIDI, W> {
 // Implemented by all SPI instances
 pub trait Instance:
     crate::Sealed
-    + Deref<Target = spi1::RegisterBlock>
+    + crate::Ptr<RB = spi1::RegisterBlock>
+    + Deref<Target = Self::RB>
     + rcc::Enable
     + rcc::Reset
     + rcc::BusClock
     + gpio::alt::SpiCommon
 {
-    #[doc(hidden)]
-    fn ptr() -> *const spi1::RegisterBlock;
 }
 
 // Implemented by all SPI instances
@@ -212,9 +211,12 @@ macro_rules! spi {
         pub type $Spi<const BIDI: bool = false, W = u8> = Spi<$SPI, BIDI, W>;
         pub type $SpiSlave<const BIDI: bool = false, W = u8> = SpiSlave<$SPI, BIDI, W>;
 
-        impl Instance for $SPI {
-            fn ptr() -> *const spi1::RegisterBlock {
-                <$SPI>::ptr() as *const _
+        impl Instance for $SPI {}
+
+        impl crate::Ptr for $SPI {
+            type RB = spi1::RegisterBlock;
+            fn ptr() -> *const Self::RB {
+                Self::ptr()
             }
         }
     };

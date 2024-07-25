@@ -198,3 +198,12 @@ pub trait Listen {
         self.unlisten(BitFlags::ALL)
     }
 }
+
+pub trait Ptr {
+    type RB;
+    fn ptr() -> *const Self::RB;
+}
+
+pub trait Steal {
+    unsafe fn steal() -> Self;
+}

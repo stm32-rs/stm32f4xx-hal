@@ -104,10 +104,13 @@ impl Error {
 }
 
 pub trait Instance:
-    crate::Sealed + Deref<Target = i2c1::RegisterBlock> + Enable + Reset + gpio::alt::I2cCommon
+    crate::Sealed
+    + crate::Ptr<RB = i2c1::RegisterBlock>
+    + Deref<Target = Self::RB>
+    + Enable
+    + Reset
+    + gpio::alt::I2cCommon
 {
-    #[doc(hidden)]
-    fn ptr() -> *const i2c1::RegisterBlock;
 }
 
 // Implemented by all I2C instances
@@ -115,9 +118,12 @@ macro_rules! i2c {
     ($I2C:ty: $I2c:ident) => {
         pub type $I2c = I2c<$I2C>;
 
-        impl Instance for $I2C {
-            fn ptr() -> *const i2c1::RegisterBlock {
-                <$I2C>::ptr() as *const _
+        impl Instance for $I2C {}
+
+        impl crate::Ptr for $I2C {
+            type RB = i2c1::RegisterBlock;
+            fn ptr() -> *const Self::RB {
+                Self::ptr()
             }
         }
     };
