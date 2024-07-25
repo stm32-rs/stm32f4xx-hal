@@ -268,14 +268,21 @@ macro_rules! uartCommon {
 pub trait RBFlowControlImpl {
     fn enable_rts(&self, state: bool);
     fn enable_cts(&self, state: bool);
+    fn listen_cts(&self, state: bool);
 }
 
 impl RBFlowControlImpl for RegisterBlockUsart {
+    #[inline(always)]
     fn enable_rts(&self, state: bool) {
         self.cr3().modify(|_, w| w.rtse().bit(state));
     }
+    #[inline(always)]
     fn enable_cts(&self, state: bool) {
         self.cr3().modify(|_, w| w.ctse().bit(state));
+    }
+    #[inline(always)]
+    fn listen_cts(&self, state: bool) {
+        self.cr3().modify(|_, w| w.ctsie().bit(state))
     }
 }
 
@@ -545,7 +552,7 @@ where {
 
 impl<UART: Instance + SerialFlowControl, WORD> Serial<UART, WORD>
 where
-    UART::RegisterBlock: RBFlowControlImpl,
+    UART::RB: RBFlowControlImpl,
 {
     pub fn with_rts(self, rts: impl Into<UART::Rts>) -> Self {
         self.rx.usart.enable_rts(true);
@@ -568,6 +575,12 @@ where
     }
     pub fn disable_clear_to_send(&mut self) {
         self.tx.usart.enable_cts(false);
+    }
+    pub fn listen_clear_to_send(&mut self) {
+        self.tx.usart.listen_cts(true)
+    }
+    pub fn unlisten_clear_to_send(&mut self) {
+        self.tx.usart.listen_cts(false)
     }
 }
 

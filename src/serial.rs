@@ -111,6 +111,8 @@ pub enum CFlag {
     TransmissionComplete = 1 << 6,
     /// LIN break detection flag
     LinBreak = 1 << 8,
+    /// Clear to send flag
+    Cts = 1 << 9,
 }
 
 pub mod config;

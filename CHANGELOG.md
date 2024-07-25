@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
- - Serial flow control enable
+ - Serial flow control enable [#775]
  - `i2c_scanner` example [#758]
  - Enable `sdio` for stm32f446
  - port LTDC implementation and example from stm32f7xx-hal [#731]
@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
 [#758]: https://github.com/stm32-rs/stm32f4xx-hal/pull/758
 [#773]: https://github.com/stm32-rs/stm32f4xx-hal/pull/773
+
+[#775]: https://github.com/stm32-rs/stm32f4xx-hal/pull/775
 
 ## [v0.21.0] - 2024-05-30
 
