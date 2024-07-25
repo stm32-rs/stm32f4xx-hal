@@ -355,12 +355,7 @@ pub struct FLT<T, const F: u8> {
 impl<T, const F: u8> crate::Sealed for FLT<T, F> {}
 
 #[cfg(feature = "sai")]
-pub struct SAICH<T, const C: u8> {
-    _per: PhantomData<T>,
-}
-
-#[cfg(feature = "sai")]
-impl<T, const C: u8> crate::Sealed for SAICH<T, C> {}
+pub use crate::sai::SAICH;
 
 dma_map!(
     (Stream0<DMA2>:0, MemoryToMemory<u8>, [MemoryToMemory<u8> | MemoryToMemory<u16> | MemoryToMemory<u32>]),

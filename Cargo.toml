@@ -694,6 +694,10 @@ name = "rtic-usb-cdc-echo"
 required-features = ["stm32f411", "rtic1", "otg-fs", "usb_fs"] # stm32f411
 
 [[example]]
+name = "sai-duplex"
+required-features = ["stm32f429"]
+
+[[example]]
 name = "sd"
 required-features = ["gpiod", "sdio", "sdio-host"] # stm32f405
 

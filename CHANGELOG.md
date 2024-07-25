@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Enable `sdio` for stm32f446
  - port LTDC implementation and example from stm32f7xx-hal [#731]
  - IrDA mode for USARTs
+ - initial `SAI` support [#248]
  - initial `embedded-io` support [#725]
 
 ### Changed
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
  - `steal` UART peripheral on `Rx::new`
 
+[#248]: https://github.com/stm32-rs/stm32f4xx-hal/pull/248
 [#566]: https://github.com/stm32-rs/stm32f4xx-hal/pull/566
 [#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731

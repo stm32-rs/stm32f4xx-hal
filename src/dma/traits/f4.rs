@@ -475,37 +475,18 @@ mod sai1 {
     use pac::SAI1;
 
     dma_map!(
-        (Stream1<DMA2>:0, SAICH<SAI1, 0>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_A
-        (Stream3<DMA2>:0, SAICH<SAI1, 0>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_A
-        (Stream4<DMA2>:1, SAICH<SAI1, 1>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_B
-        (Stream5<DMA2>:0, SAICH<SAI1, 1>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_B:DMA_CHANNEL_0
+        (Stream1<DMA2>:0, SAICH<SAI1, false>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_A
+        (Stream3<DMA2>:0, SAICH<SAI1, false>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_A
+        (Stream4<DMA2>:1, SAICH<SAI1, true>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_B
+        (Stream5<DMA2>:0, SAICH<SAI1, true>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_B:DMA_CHANNEL_0
     );
-
-    unsafe impl<const C: u8> PeriAddress for SAICH<SAI1, C> {
-        #[inline(always)]
-        fn address(&self) -> u32 {
-            unsafe { (*SAI1::ptr()).ch(C as usize).dr().as_ptr() as u32 }
-        }
-
-        type MemSize = u32;
-    }
 }
 #[cfg(feature = "sai2")]
 dma_map!(
-    (Stream4<DMA2>:3, SAICH<pac::SAI2, 0>, [MemoryToPeripheral | PeripheralToMemory]), //SAI2_A
-    (Stream6<DMA2>:3, SAICH<pac::SAI2, 1>, [MemoryToPeripheral | PeripheralToMemory]), //SAI2_B
-    (Stream7<DMA2>:0, SAICH<pac::SAI2, 1>, [MemoryToPeripheral | PeripheralToMemory]), //SAI2_B:DMA_CHANNEL_0
+    (Stream4<DMA2>:3, SAICH<pac::SAI2, false>, [MemoryToPeripheral | PeripheralToMemory]), //SAI2_A
+    (Stream6<DMA2>:3, SAICH<pac::SAI2, true>, [MemoryToPeripheral | PeripheralToMemory]), //SAI2_B
+    (Stream7<DMA2>:0, SAICH<pac::SAI2, true>, [MemoryToPeripheral | PeripheralToMemory]), //SAI2_B:DMA_CHANNEL_0
 );
-
-#[cfg(feature = "sai2")]
-unsafe impl<const C: u8> PeriAddress for SAICH<pac::SAI2, C> {
-    #[inline(always)]
-    fn address(&self) -> u32 {
-        unsafe { (*pac::SAI2::ptr()).ch(C as usize).dr().as_ptr() as u32 }
-    }
-
-    type MemSize = u32;
-}
 
 #[cfg(feature = "spi6")]
 dma_map!(

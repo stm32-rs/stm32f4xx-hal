@@ -2502,7 +2502,7 @@ pub mod sai1 {
             PF9<7>,
         ],
 
-        <MclkA, PushPull> for [
+        <MclkA, PushPull> for no:NoPin, [
             #[cfg(feature = "gpio-f413")]
             PA15<10>,
 
@@ -2516,7 +2516,7 @@ pub mod sai1 {
             PG7<6>,
         ],
 
-        <MclkB, PushPull> for [
+        <MclkB, PushPull> for no:NoPin, [
             #[cfg(feature = "gpio-f446")]
             PC0<6>,
 
@@ -2611,19 +2611,18 @@ pub mod sai1 {
     use crate::pac::SAI;
     #[cfg(any(feature = "stm32f427", feature = "stm32f437", feature = "gpio-f446"))]
     use crate::pac::SAI1 as SAI;
-    pub struct ChannelA;
-    pub struct ChannelB;
+    pub use crate::sai::{SAI1A, SAI1B};
     impl SaiChannels for SAI {
-        type A = ChannelA;
-        type B = ChannelB;
+        type A = SAI1A;
+        type B = SAI1B;
     }
-    impl SaiChannel for ChannelA {
+    impl SaiChannel for SAI1A {
         type Fs = FsA;
         type Mclk = MclkA;
         type Sck = SckA;
         type Sd = SdA;
     }
-    impl SaiChannel for ChannelB {
+    impl SaiChannel for SAI1B {
         type Fs = FsB;
         type Mclk = MclkB;
         type Sck = SckB;
@@ -2686,19 +2685,18 @@ pub mod sai2 {
     }
 
     use crate::pac::SAI2 as SAI;
-    pub struct ChannelA;
-    pub struct ChannelB;
+    pub use crate::sai::{SAI2A, SAI2B};
     impl SaiChannels for SAI {
-        type A = ChannelA;
-        type B = ChannelB;
+        type A = SAI2A;
+        type B = SAI2B;
     }
-    impl SaiChannel for ChannelA {
+    impl SaiChannel for SAI2A {
         type Fs = FsA;
         type Mclk = MclkA;
         type Sck = SckA;
         type Sd = SdA;
     }
-    impl SaiChannel for ChannelB {
+    impl SaiChannel for SAI2B {
         type Fs = FsB;
         type Mclk = MclkB;
         type Sck = SckB;

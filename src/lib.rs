@@ -117,6 +117,8 @@ pub mod qei;
 pub mod qspi;
 pub mod rcc;
 pub mod rtc;
+#[cfg(feature = "sai")]
+pub mod sai;
 #[cfg(all(feature = "sdio-host", feature = "sdio"))]
 pub mod sdio;
 pub mod serial;
