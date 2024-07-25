@@ -195,6 +195,12 @@ pub struct Tx<USART: CommonPins, WORD = u8> {
     pin: USART::Tx<PushPull>,
 }
 
+pub struct HalfDuplex<USART: CommonPins, WORD = u8> {
+    _word: PhantomData<WORD>,
+    usart: USART,
+    pin: USART::Tx<PushPull>,
+}
+
 pub trait SerialExt: Sized + Instance {
     fn serial<WORD>(
         self,
@@ -202,6 +208,13 @@ pub trait SerialExt: Sized + Instance {
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig>;
+
+    fn half_duplex<WORD>(
+        self,
+        tx_pin: impl Into<Self::Tx<PushPull>>,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<HalfDuplex<Self, WORD>, config::InvalidConfig>;
 
     fn tx<WORD>(
         self,
@@ -241,6 +254,17 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig> {
         <USART as crate::Ptr>::RB::new(usart, pins, config, clocks)
+    }
+}
+
+impl<USART: Instance, WORD> HalfDuplex<USART, WORD> {
+    pub fn new(
+        usart: USART,
+        tx_pin: impl Into<USART::Tx<PushPull>>,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Self, config::InvalidConfig> {
+        <USART as crate::Ptr>::RB::half_duplex(usart, tx_pin, config, clocks)
     }
 }
 
