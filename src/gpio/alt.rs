@@ -335,10 +335,10 @@ pub trait SerialSync {
     type Ck;
 }
 /// Hardware flow control (RS232)
-pub trait SerialRs232 {
-    /// Receive
+pub trait SerialFlowControl {
+    /// "Clear To Send" blocks the data transmission at the end of the current transfer when high
     type Cts;
-    /// Transmit
+    /// "Request to send" indicates that the USART is ready to receive a data (when low)
     type Rts;
 }
 
