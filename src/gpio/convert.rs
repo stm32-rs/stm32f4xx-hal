@@ -1,4 +1,5 @@
 use super::*;
+use crate::pac::gpioa::{moder::MODER0 as Mode, otyper::OT0 as OutputType};
 
 impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Turns pin alternate configuration pin into open drain
@@ -110,36 +111,27 @@ impl<const P: char, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
 
 macro_rules! change_mode {
     ($block:expr, $N:ident) => {
-        let offset = 2 * $N;
         unsafe {
             if MODE::OTYPER != M::OTYPER {
                 if let Some(otyper) = M::OTYPER {
-                    $block
-                        .otyper()
-                        .modify(|r, w| w.bits(r.bits() & !(0b1 << $N) | (otyper << $N)));
+                    $block.otyper().modify(|_, w| w.ot($N).variant(otyper));
                 }
             }
 
             if MODE::AFR != M::AFR {
                 if let Some(afr) = M::AFR {
                     if $N < 8 {
-                        let offset2 = 4 * { $N };
-                        $block.afrl().modify(|r, w| {
-                            w.bits((r.bits() & !(0b1111 << offset2)) | (afr << offset2))
-                        });
+                        $block.afrl().modify(|_, w| w.afr($N).bits(afr));
                     } else {
-                        let offset2 = 4 * { $N - 8 };
-                        $block.afrh().modify(|r, w| {
-                            w.bits((r.bits() & !(0b1111 << offset2)) | (afr << offset2))
-                        });
+                        $block.afrh().modify(|_, w| w.afr($N - 8).bits(afr));
                     }
                 }
             }
 
             if MODE::MODER != M::MODER {
-                $block
-                    .moder()
-                    .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (M::MODER << offset)));
+                if let Some(mode) = M::MODER {
+                    $block.moder().modify(|_, w| w.moder($N).variant(mode));
+                }
             }
         }
     };
@@ -300,43 +292,43 @@ pub trait PinMode: crate::Sealed {
     // They are not part of public API.
 
     #[doc(hidden)]
-    const MODER: u32 = u32::MAX;
+    const MODER: Option<Mode> = None;
     #[doc(hidden)]
-    const OTYPER: Option<u32> = None;
+    const OTYPER: Option<OutputType> = None;
     #[doc(hidden)]
-    const AFR: Option<u32> = None;
+    const AFR: Option<u8> = None;
 }
 
 impl crate::Sealed for Input {}
 impl PinMode for Input {
-    const MODER: u32 = 0b00;
+    const MODER: Option<Mode> = Some(Mode::Input);
 }
 
 impl crate::Sealed for Analog {}
 impl PinMode for Analog {
-    const MODER: u32 = 0b11;
+    const MODER: Option<Mode> = Some(Mode::Analog);
 }
 
 impl<Otype> crate::Sealed for Output<Otype> {}
 impl PinMode for Output<OpenDrain> {
-    const MODER: u32 = 0b01;
-    const OTYPER: Option<u32> = Some(0b1);
+    const MODER: Option<Mode> = Some(Mode::Output);
+    const OTYPER: Option<OutputType> = Some(OutputType::OpenDrain);
 }
 
 impl PinMode for Output<PushPull> {
-    const MODER: u32 = 0b01;
-    const OTYPER: Option<u32> = Some(0b0);
+    const MODER: Option<Mode> = Some(Mode::Output);
+    const OTYPER: Option<OutputType> = Some(OutputType::PushPull);
 }
 
 impl<const A: u8, Otype> crate::Sealed for Alternate<A, Otype> {}
 impl<const A: u8> PinMode for Alternate<A, OpenDrain> {
-    const MODER: u32 = 0b10;
-    const OTYPER: Option<u32> = Some(0b1);
-    const AFR: Option<u32> = Some(A as _);
+    const MODER: Option<Mode> = Some(Mode::Alternate);
+    const OTYPER: Option<OutputType> = Some(OutputType::OpenDrain);
+    const AFR: Option<u8> = Some(A);
 }
 
 impl<const A: u8> PinMode for Alternate<A, PushPull> {
-    const MODER: u32 = 0b10;
-    const OTYPER: Option<u32> = Some(0b0);
-    const AFR: Option<u32> = Some(A as _);
+    const MODER: Option<Mode> = Some(Mode::Alternate);
+    const OTYPER: Option<OutputType> = Some(OutputType::PushPull);
+    const AFR: Option<u8> = Some(A);
 }

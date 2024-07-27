@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Bump MSRV to 1.62
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
+ - use GPIO pac fields instead of raw write
  - RTIC2 monotonics fix: CC1 instead of CC3
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
  - Clean SPI write impls
