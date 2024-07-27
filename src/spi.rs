@@ -797,6 +797,26 @@ impl<SPI: Instance> Inner<SPI> {
             nb::Error::WouldBlock
         })
     }
+
+    fn spi_write<const BIDI: bool, W: FrameSize>(
+        &mut self,
+        words: impl IntoIterator<Item = W>,
+    ) -> Result<(), Error> {
+        if BIDI {
+            self.bidi_output();
+            for word in words.into_iter() {
+                nb::block!(self.check_send(word))?;
+            }
+        } else {
+            for word in words.into_iter() {
+                nb::block!(self.check_send(word))?;
+                nb::block!(self.check_read::<W>())?;
+            }
+        }
+
+        Ok(())
+    }
+
     fn listen_event(&mut self, disable: Option<BitFlags<Event>>, enable: Option<BitFlags<Event>>) {
         self.spi.cr2().modify(|r, w| unsafe {
             w.bits({
@@ -985,35 +1005,11 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 
     pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
-        if BIDI {
-            self.bidi_output();
-            for word in words {
-                nb::block!(self.check_send(*word))?;
-            }
-        } else {
-            for word in words {
-                nb::block!(self.check_send(*word))?;
-                nb::block!(self.check_read::<W>())?;
-            }
-        }
-
-        Ok(())
+        self.spi_write::<BIDI, W>(words.iter().copied())
     }
 
     pub fn write_iter(&mut self, words: impl IntoIterator<Item = W>) -> Result<(), Error> {
-        if BIDI {
-            self.bidi_output();
-            for word in words.into_iter() {
-                nb::block!(self.check_send(word))?;
-            }
-        } else {
-            for word in words.into_iter() {
-                nb::block!(self.check_send(word))?;
-                nb::block!(self.check_read::<W>())?;
-            }
-        }
-
-        Ok(())
+        self.spi_write::<BIDI, W>(words)
     }
 
     pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
@@ -1093,19 +1089,7 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     }
 
     pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
-        if BIDI {
-            self.bidi_output();
-            for word in words {
-                nb::block!(self.check_send(*word))?;
-            }
-        } else {
-            for word in words {
-                nb::block!(self.check_send(*word))?;
-                nb::block!(self.check_read::<W>())?;
-            }
-        }
-
-        Ok(())
+        self.spi_write::<BIDI, W>(words.iter().copied())
     }
 
     pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
