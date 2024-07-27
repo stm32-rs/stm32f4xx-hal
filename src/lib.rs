@@ -200,10 +200,25 @@ pub trait Listen {
 }
 
 pub trait Ptr {
+    /// RegisterBlock structure
     type RB;
+    /// Return the pointer to the register block
     fn ptr() -> *const Self::RB;
 }
 
 pub trait Steal {
+    /// Steal an instance of this peripheral
+    ///
+    /// # Safety
+    ///
+    /// Ensure that the new instance of the peripheral cannot be used in a way
+    /// that may race with any existing instances, for example by only
+    /// accessing read-only or write-only registers, or by consuming the
+    /// original peripheral and using critical sections to coordinate
+    /// access between multiple new instances.
+    ///
+    /// Additionally the HAL may rely on only one
+    /// peripheral instance existing to ensure memory safety; ensure
+    /// no stolen instances are passed to such software.
     unsafe fn steal() -> Self;
 }

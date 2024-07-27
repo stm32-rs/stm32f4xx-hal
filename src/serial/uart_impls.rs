@@ -650,28 +650,6 @@ impl<UART: Instance> SerialExt for UART {
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
         Serial::new(self, pins, config, clocks)
     }
-    fn tx<WORD>(
-        self,
-        tx_pin: impl Into<Self::Tx<PushPull>>,
-        config: impl Into<config::Config>,
-        clocks: &Clocks,
-    ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
-    where
-        NoPin: Into<Self::Rx<PushPull>>,
-    {
-        Serial::tx(self, tx_pin, config, clocks)
-    }
-    fn rx<WORD>(
-        self,
-        rx_pin: impl Into<Self::Rx<PushPull>>,
-        config: impl Into<config::Config>,
-        clocks: &Clocks,
-    ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
-    where
-        NoPin: Into<Self::Tx<PushPull>>,
-    {
-        Serial::rx(self, rx_pin, config, clocks)
-    }
 }
 
 impl<UART: Instance, WORD> Serial<UART, WORD> {
