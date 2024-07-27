@@ -210,7 +210,11 @@ pub trait SerialExt: Sized + Instance {
         clocks: &Clocks,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
     where
-        NoPin: Into<Self::Rx<PushPull>>;
+        NoPin: Into<Self::Rx<PushPull>>,
+    {
+        self.serial((tx_pin, NoPin::new()), config, clocks)
+            .map(|s| s.split().0)
+    }
 
     fn rx<WORD>(
         self,
@@ -219,7 +223,11 @@ pub trait SerialExt: Sized + Instance {
         clocks: &Clocks,
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
     where
-        NoPin: Into<Self::Tx<PushPull>>;
+        NoPin: Into<Self::Tx<PushPull>>,
+    {
+        self.serial((NoPin::new(), rx_pin), config, clocks)
+            .map(|s| s.split().1)
+    }
 }
 
 impl<USART: Instance, WORD> Serial<USART, WORD> {
@@ -231,10 +239,7 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         ),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Self, config::InvalidConfig>
-    where
-        <USART as crate::Ptr>::RB: uart_impls::RegisterBlockImpl,
-    {
+    ) -> Result<Self, config::InvalidConfig> {
         <USART as crate::Ptr>::RB::new(usart, pins, config, clocks)
     }
 }

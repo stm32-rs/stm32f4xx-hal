@@ -89,8 +89,6 @@ mod nb {
 }
 
 mod io {
-    use core::ops::Deref;
-
     use super::super::{Error, Instance, RegisterBlockImpl, Rx, Serial, Tx};
     use embedded_io::Write;
 
@@ -113,11 +111,7 @@ mod io {
         type Error = Error;
     }
 
-    impl<USART: Instance> Write for Tx<USART, u8>
-    where
-        <USART as crate::Ptr>::RB: RegisterBlockImpl,
-        USART: Deref<Target = <USART as crate::Ptr>::RB>,
-    {
+    impl<USART: Instance> Write for Tx<USART, u8> {
         fn write(&mut self, bytes: &[u8]) -> Result<usize, Self::Error> {
             let mut i = 0;
             for byte in bytes.iter() {
