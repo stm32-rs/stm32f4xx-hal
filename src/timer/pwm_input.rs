@@ -9,6 +9,7 @@ use fugit::HertzU32 as Hertz;
 /// This peripheral will emit an interrupt on CC2 events, which occurs at two times in this mode:
 /// 1. When a new cycle is started: the duty cycle will be `1.00`
 /// 2. When the period is captured. the duty cycle will be an observable value.
+///
 /// An example interrupt handler is provided:
 /// ```
 /// use stm32f4xx_hal::{pac::TIM8, pwm_input::PwmInput};
@@ -74,6 +75,7 @@ macro_rules! hal {
             /// This device will emit an interrupt on CC1, which occurs at two times in this mode:
             /// 1. When a new cycle is started: the duty cycle will be `1.00`
             /// 2. When the period is captured. the duty cycle will be an observable value.
+            ///
             /// See the pwm input example for an suitable interrupt handler.
             pub fn pwm_input(
                 mut self,

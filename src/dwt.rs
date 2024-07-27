@@ -69,21 +69,21 @@ impl Delay {
     /// Delay ticks
     /// NOTE DCB and DWT need to be set up for this to work, so it is private
     fn delay_ticks(mut start: u32, ticks: u64) {
-        if ticks < (core::u32::MAX / 2) as u64 {
+        if ticks < (u32::MAX / 2) as u64 {
             // Simple delay
             let ticks = ticks as u32;
             while (DWT::cycle_count().wrapping_sub(start)) < ticks {}
-        } else if ticks <= core::u32::MAX as u64 {
+        } else if ticks <= u32::MAX as u64 {
             // Try to avoid race conditions by limiting delay to u32::MAX / 2
             let mut ticks = ticks as u32;
-            ticks -= core::u32::MAX / 2;
-            while (DWT::cycle_count().wrapping_sub(start)) < core::u32::MAX / 2 {}
-            start -= core::u32::MAX / 2;
+            ticks -= u32::MAX / 2;
+            while (DWT::cycle_count().wrapping_sub(start)) < u32::MAX / 2 {}
+            start -= u32::MAX / 2;
             while (DWT::cycle_count().wrapping_sub(start)) < ticks {}
         } else {
             // Delay for ticks, then delay for rest * u32::MAX
             let mut rest = (ticks >> 32) as u32;
-            let ticks = (ticks & core::u32::MAX as u64) as u32;
+            let ticks = (ticks & u32::MAX as u64) as u32;
             loop {
                 while (DWT::cycle_count().wrapping_sub(start)) < ticks {}
                 if rest == 0 {

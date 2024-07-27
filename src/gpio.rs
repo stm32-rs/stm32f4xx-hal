@@ -27,14 +27,14 @@
 //! - **Dynamic**: Pin mode is selected at runtime. See changing configurations for more details
 //! - Input
 //!     - **PullUp**: Input connected to high with a weak pull up resistor. Will be high when nothing
-//!     is connected
+//!       is connected
 //!     - **PullDown**: Input connected to high with a weak pull up resistor. Will be low when nothing
-//!     is connected
+//!       is connected
 //!     - **Floating**: Input not pulled to high or low. Will be undefined when nothing is connected
 //! - Output
 //!     - **PushPull**: Output which either drives the pin high or low
 //!     - **OpenDrain**: Output which leaves the gate floating, or pulls it do ground in drain
-//!     mode. Can be used as an input in the `open` configuration
+//!       mode. Can be used as an input in the `open` configuration
 //!
 //! ## Changing modes
 //! The simplest way to change the pin mode is to use the `into_<mode>` functions. These return a
