@@ -115,8 +115,8 @@ mod io {
 
     impl<USART: Instance> Write for Tx<USART, u8>
     where
-        <USART as Instance>::RegisterBlock: RegisterBlockImpl,
-        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
+        <USART as crate::Ptr>::RB: RegisterBlockImpl,
+        USART: Deref<Target = <USART as crate::Ptr>::RB>,
     {
         fn write(&mut self, bytes: &[u8]) -> Result<usize, Self::Error> {
             let mut i = 0;

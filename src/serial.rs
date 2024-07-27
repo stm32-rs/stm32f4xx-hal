@@ -233,9 +233,9 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         clocks: &Clocks,
     ) -> Result<Self, config::InvalidConfig>
     where
-        <USART as Instance>::RegisterBlock: uart_impls::RegisterBlockImpl,
+        <USART as crate::Ptr>::RB: uart_impls::RegisterBlockImpl,
     {
-        <USART as Instance>::RegisterBlock::new(usart, pins, config, clocks)
+        <USART as crate::Ptr>::RB::new(usart, pins, config, clocks)
     }
 }
 
@@ -257,12 +257,6 @@ macro_rules! halUsart {
         pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
 
         impl Instance for $USART {
-            type RegisterBlock = crate::serial::uart_impls::RegisterBlockUsart;
-
-            fn ptr() -> *const crate::serial::uart_impls::RegisterBlockUsart {
-                <$USART>::ptr() as *const _
-            }
-
             fn set_stopbits(&self, bits: config::StopBits) {
                 use crate::pac::usart1::cr2::STOP;
                 use config::StopBits;
@@ -276,7 +270,17 @@ macro_rules! halUsart {
                     })
                 });
             }
+        }
 
+        impl crate::Ptr for $USART {
+            type RB = crate::serial::uart_impls::RegisterBlockUsart;
+
+            fn ptr() -> *const Self::RB {
+                Self::ptr()
+            }
+        }
+
+        impl crate::Steal for $USART {
             unsafe fn steal() -> Self {
                 Self::steal()
             }

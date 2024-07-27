@@ -211,12 +211,14 @@ pub struct Receive;
 pub struct Transmit;
 
 pub trait Instance:
-    crate::Sealed + Deref<Target = sai::RegisterBlock> + rcc::Enable + rcc::Reset + rcc::BusClock
+    crate::Sealed
+    + crate::Ptr<RB = sai::RegisterBlock>
+    + crate::Steal
+    + Deref<Target = Self::RB>
+    + rcc::Enable
+    + rcc::Reset
+    + rcc::BusClock
 {
-    #[doc(hidden)]
-    fn ptr() -> *const sai::RegisterBlock;
-    #[doc(hidden)]
-    unsafe fn steal() -> Self;
 }
 
 impl<SAI: Instance, const C: bool> SAICH<SAI, C> {
@@ -234,12 +236,19 @@ macro_rules! sai_impl {
     ($SAI:ty, $sai:ident, $SAIA:ident, $SAIB:ident) => {
         pub type $SAIA = SAIA<$SAI>;
         pub type $SAIB = SAIB<$SAI>;
-        impl Instance for $SAI {
-            fn ptr() -> *const sai::RegisterBlock {
-                <$SAI>::ptr()
+
+        impl Instance for $SAI {}
+
+        impl crate::Ptr for $SAI {
+            type RB = sai::RegisterBlock;
+            fn ptr() -> *const Self::RB {
+                Self::ptr()
             }
+        }
+
+        impl crate::Steal for $SAI {
             unsafe fn steal() -> Self {
-                <$SAI>::steal()
+                Self::steal()
             }
         }
     };

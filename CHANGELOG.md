@@ -23,14 +23,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - RTIC2 monotonics fix: CC1 instead of CC3
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
  - Clean SPI write impls
+ - move `ptr()` to `Ptr` trait [#773]
  - `steal` UART peripheral on `Rx::new`
 
 [#248]: https://github.com/stm32-rs/stm32f4xx-hal/pull/248
 [#566]: https://github.com/stm32-rs/stm32f4xx-hal/pull/566
 [#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
+[#725]: https://github.com/stm32-rs/stm32f4xx-hal/pull/725
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
 [#758]: https://github.com/stm32-rs/stm32f4xx-hal/pull/758
-[#725]: https://github.com/stm32-rs/stm32f4xx-hal/pull/725
+[#773]: https://github.com/stm32-rs/stm32f4xx-hal/pull/773
 
 ## [v0.21.0] - 2024-05-30
 

@@ -114,7 +114,7 @@ mod blocking {
 
     impl<USART: Instance> Write<u16> for Tx<USART, u16>
     where
-        USART: Deref<Target = <USART as Instance>::RegisterBlock>,
+        USART: Deref<Target = <USART as crate::Ptr>::RB>,
     {
         type Error = Error;
 

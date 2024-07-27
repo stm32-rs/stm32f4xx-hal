@@ -10,19 +10,27 @@ mod hal_02;
 mod hal_1;
 
 pub trait Instance:
-    crate::Sealed + Deref<Target = fmpi2c1::RegisterBlock> + Enable + Reset + gpio::alt::I2cCommon
+    crate::Sealed
+    + crate::Ptr<RB = fmpi2c1::RegisterBlock>
+    + Deref<Target = Self::RB>
+    + Enable
+    + Reset
+    + gpio::alt::I2cCommon
 {
-    #[doc(hidden)]
-    fn ptr() -> *const fmpi2c1::RegisterBlock;
     fn clock_hsi(rcc: &crate::pac::rcc::RegisterBlock);
 }
 
 impl Instance for FMPI2C1 {
-    fn ptr() -> *const fmpi2c1::RegisterBlock {
-        FMPI2C1::ptr() as *const _
-    }
     fn clock_hsi(rcc: &crate::pac::rcc::RegisterBlock) {
         rcc.dckcfgr2().modify(|_, w| w.fmpi2c1sel().hsi());
+    }
+}
+
+impl crate::Ptr for FMPI2C1 {
+    type RB = fmpi2c1::RegisterBlock;
+    #[inline(always)]
+    fn ptr() -> *const Self::RB {
+        Self::ptr()
     }
 }
 
