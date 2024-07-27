@@ -945,166 +945,93 @@ unsafe impl<SPI, STREAM, const CHANNEL: u8> DMASet<STREAM, CHANNEL, MemoryToPeri
 {
 }
 
-impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
-    pub fn read_nonblocking(&mut self) -> nb::Result<W, Error> {
-        if BIDI {
-            self.bidi_input();
-        }
-        self.check_read()
-    }
-
-    pub fn write_nonblocking(&mut self, byte: W) -> nb::Result<(), Error> {
-        if BIDI {
-            self.bidi_output();
-        }
-        self.check_send(byte)
-    }
-
-    pub fn transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Error> {
-        for word in words {
-            nb::block!(self.write_nonblocking(*word))?;
-            *word = nb::block!(self.read_nonblocking())?;
-        }
-
-        Ok(())
-    }
-
-    pub fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Error> {
-        if data.len() == buff.len() {
-            for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
-                nb::block!(self.write_nonblocking(d))?;
-                *b = nb::block!(self.read_nonblocking())?;
-            }
-        } else {
-            let mut iter_r = buff.iter_mut();
-            let mut iter_w = data.iter().cloned();
-            loop {
-                match (iter_r.next(), iter_w.next()) {
-                    (Some(r), Some(w)) => {
-                        nb::block!(self.write_nonblocking(w))?;
-                        *r = nb::block!(self.read_nonblocking())?;
-                    }
-                    (Some(r), None) => {
-                        nb::block!(self.write_nonblocking(W::default()))?;
-                        *r = nb::block!(self.read_nonblocking())?;
-                    }
-                    (None, Some(w)) => {
-                        nb::block!(self.write_nonblocking(w))?;
-                        let _ = nb::block!(self.read_nonblocking())?;
-                    }
-                    (None, None) => break,
+macro_rules! spi_transfer {
+    ($Spi: ident) => {
+        impl<SPI: Instance, const BIDI: bool, W: FrameSize> $Spi<SPI, BIDI, W> {
+            pub fn read_nonblocking(&mut self) -> nb::Result<W, Error> {
+                if BIDI {
+                    self.bidi_input();
                 }
+                self.check_read()
+            }
+
+            pub fn write_nonblocking(&mut self, byte: W) -> nb::Result<(), Error> {
+                if BIDI {
+                    self.bidi_output();
+                }
+                self.check_send(byte)
+            }
+
+            pub fn transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Error> {
+                for word in words {
+                    nb::block!(self.write_nonblocking(*word))?;
+                    *word = nb::block!(self.read_nonblocking())?;
+                }
+
+                Ok(())
+            }
+
+            pub fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Error> {
+                if data.len() == buff.len() {
+                    for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
+                        nb::block!(self.write_nonblocking(d))?;
+                        *b = nb::block!(self.read_nonblocking())?;
+                    }
+                } else {
+                    let mut iter_r = buff.iter_mut();
+                    let mut iter_w = data.iter().cloned();
+                    loop {
+                        match (iter_r.next(), iter_w.next()) {
+                            (Some(r), Some(w)) => {
+                                nb::block!(self.write_nonblocking(w))?;
+                                *r = nb::block!(self.read_nonblocking())?;
+                            }
+                            (Some(r), None) => {
+                                nb::block!(self.write_nonblocking(W::default()))?;
+                                *r = nb::block!(self.read_nonblocking())?;
+                            }
+                            (None, Some(w)) => {
+                                nb::block!(self.write_nonblocking(w))?;
+                                let _ = nb::block!(self.read_nonblocking())?;
+                            }
+                            (None, None) => break,
+                        }
+                    }
+                }
+
+                Ok(())
+            }
+
+            pub fn flush(&mut self) -> Result<(), Error> {
+                Ok(())
+            }
+
+            pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
+                self.spi_write::<BIDI, W>(words.iter().copied())
+            }
+
+            pub fn write_iter(&mut self, words: impl IntoIterator<Item = W>) -> Result<(), Error> {
+                self.spi_write::<BIDI, W>(words)
+            }
+
+            pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
+                if BIDI {
+                    self.bidi_input();
+                    for word in words {
+                        *word = nb::block!(self.check_read())?;
+                    }
+                } else {
+                    for word in words {
+                        nb::block!(self.check_send(W::default()))?;
+                        *word = nb::block!(self.check_read())?;
+                    }
+                }
+
+                Ok(())
             }
         }
-
-        Ok(())
-    }
-
-    pub fn flush(&mut self) -> Result<(), Error> {
-        Ok(())
-    }
-
-    pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
-        self.spi_write::<BIDI, W>(words.iter().copied())
-    }
-
-    pub fn write_iter(&mut self, words: impl IntoIterator<Item = W>) -> Result<(), Error> {
-        self.spi_write::<BIDI, W>(words)
-    }
-
-    pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
-        if BIDI {
-            self.bidi_input();
-            for word in words {
-                *word = nb::block!(self.check_read())?;
-            }
-        } else {
-            for word in words {
-                nb::block!(self.check_send(W::default()))?;
-                *word = nb::block!(self.check_read())?;
-            }
-        }
-
-        Ok(())
-    }
+    };
 }
 
-impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
-    pub fn read_nonblocking(&mut self) -> nb::Result<W, Error> {
-        if BIDI {
-            self.bidi_input();
-        }
-        self.check_read()
-    }
-
-    pub fn write_nonblocking(&mut self, byte: W) -> nb::Result<(), Error> {
-        if BIDI {
-            self.bidi_output();
-        }
-        self.check_send(byte)
-    }
-
-    pub fn transfer_in_place(&mut self, words: &mut [W]) -> Result<(), Error> {
-        for word in words {
-            nb::block!(self.write_nonblocking(*word))?;
-            *word = nb::block!(self.read_nonblocking())?;
-        }
-
-        Ok(())
-    }
-
-    pub fn transfer(&mut self, buff: &mut [W], data: &[W]) -> Result<(), Error> {
-        if data.len() == buff.len() {
-            for (d, b) in data.iter().cloned().zip(buff.iter_mut()) {
-                nb::block!(self.write_nonblocking(d))?;
-                *b = nb::block!(self.read_nonblocking())?;
-            }
-        } else {
-            let mut iter_r = buff.iter_mut();
-            let mut iter_w = data.iter().cloned();
-            loop {
-                match (iter_r.next(), iter_w.next()) {
-                    (Some(r), Some(w)) => {
-                        nb::block!(self.write_nonblocking(w))?;
-                        *r = nb::block!(self.read_nonblocking())?;
-                    }
-                    (Some(r), None) => {
-                        nb::block!(self.write_nonblocking(W::default()))?;
-                        *r = nb::block!(self.read_nonblocking())?;
-                    }
-                    (None, Some(w)) => {
-                        nb::block!(self.write_nonblocking(w))?;
-                        let _ = nb::block!(self.read_nonblocking())?;
-                    }
-                    (None, None) => break,
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn flush(&mut self) -> Result<(), Error> {
-        Ok(())
-    }
-
-    pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
-        self.spi_write::<BIDI, W>(words.iter().copied())
-    }
-
-    pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
-        if BIDI {
-            self.bidi_input();
-            for word in words {
-                *word = nb::block!(self.check_read())?;
-            }
-        } else {
-            for word in words {
-                nb::block!(self.check_send(W::default()))?;
-                *word = nb::block!(self.check_read())?;
-            }
-        }
-
-        Ok(())
-    }
-}
+spi_transfer!(Spi);
+spi_transfer!(SpiSlave);
