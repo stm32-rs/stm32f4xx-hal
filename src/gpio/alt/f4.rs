@@ -4047,7 +4047,7 @@ pub mod usart1 {
     impl SerialSync for USART {
         type Ck = Ck;
     }
-    impl SerialRs232 for USART {
+    impl SerialFlowControl for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -4103,7 +4103,7 @@ pub mod usart2 {
     impl SerialSync for USART {
         type Ck = Ck;
     }
-    impl SerialRs232 for USART {
+    impl SerialFlowControl for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -4182,7 +4182,7 @@ pub mod usart3 {
     impl SerialSync for USART {
         type Ck = Ck;
     }
-    impl SerialRs232 for USART {
+    impl SerialFlowControl for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -4293,7 +4293,7 @@ pub mod usart6 {
         feature = "gpio-f446",
         feature = "gpio-f469"
     ))]
-    impl SerialRs232 for USART {
+    impl SerialFlowControl for USART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -4355,7 +4355,7 @@ pub mod uart4 {
         type Tx<Otype> = Tx<Otype>;
     }
     #[cfg(feature = "gpio-f446")]
-    impl SerialRs232 for UART {
+    impl SerialFlowControl for UART {
         type Cts = Cts;
         type Rts = Rts;
     }
@@ -4416,7 +4416,7 @@ pub mod uart5 {
         type Tx<Otype> = Tx<Otype>;
     }
     #[cfg(feature = "gpio-f446")]
-    impl SerialRs232 for UART {
+    impl SerialFlowControl for UART {
         type Cts = Cts;
         type Rts = Rts;
     }

@@ -1318,7 +1318,7 @@ where
     /// # Panics
     ///
     /// * When the FIFO is disabled or double buffering is enabled in `DmaConfig` while initializing
-    /// a memory to memory transfer.
+    ///   a memory to memory transfer.
     pub fn init_memory_to_memory(
         mut stream: STREAM,
         peripheral: PERIPHERAL,

@@ -1,6 +1,6 @@
 [package]
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.62"
 
 authors = ["Daniel Egger <daniel@eggers-club.de>"]
 categories = ["embedded", "hardware-support", "no-std"]

@@ -448,8 +448,8 @@ macro_rules! adc {
                 /// # Arguments
                 /// * `channel` - channel to configure
                 /// * `sequence` - where in the sequence to sample the channel. Also called rank in some STM docs/code
-                /// * `sample_time` - how long to sample for. See datasheet and ref manual to work out how long you need\
-                /// to sample for at a given ADC clock frequency
+                /// * `sample_time` - how long to sample for. See datasheet and ref manual to work out how long you need
+                ///   to sample for at a given ADC clock frequency
                 pub fn configure_channel<CHANNEL>(&mut self, _channel: &CHANNEL, sequence: config::Sequence, sample_time: config::SampleTime)
                 where
                     CHANNEL: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
