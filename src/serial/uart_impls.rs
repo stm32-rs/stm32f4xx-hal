@@ -145,6 +145,10 @@ pub trait RegisterBlockImpl: crate::Sealed {
 
     // PeriAddress
     fn peri_address(&self) -> u32;
+
+    fn enable_dma(&self, dc: config::DmaConfig);
+
+    fn calculate_brr(pclk_freq: u32, baud: u32) -> Result<(bool, u32), config::InvalidConfig>;
 }
 
 macro_rules! uartCommon {
@@ -259,6 +263,67 @@ macro_rules! uartCommon {
         fn peri_address(&self) -> u32 {
             self.dr().as_ptr() as u32
         }
+
+        fn enable_dma(&self, dc: config::DmaConfig) {
+            use config::DmaConfig;
+            match dc {
+                DmaConfig::Tx => self.cr3().write(|w| w.dmat().enabled()),
+                DmaConfig::Rx => self.cr3().write(|w| w.dmar().enabled()),
+                DmaConfig::TxRx => self.cr3().write(|w| w.dmar().enabled().dmat().enabled()),
+                DmaConfig::None => {}
+            }
+        }
+
+        fn calculate_brr(pclk_freq: u32, baud: u32) -> Result<(bool, u32), config::InvalidConfig> {
+            // The frequency to calculate USARTDIV is this:
+            //
+            // (Taken from STM32F411xC/E Reference Manual,
+            // Section 19.3.4, Equation 1)
+            //
+            // 16 bit oversample: OVER8 = 0
+            // 8 bit oversample:  OVER8 = 1
+            //
+            // USARTDIV =          (pclk)
+            //            ------------------------
+            //            8 x (2 - OVER8) x (baud)
+            //
+            // BUT, the USARTDIV has 4 "fractional" bits, which effectively
+            // means that we need to "correct" the equation as follows:
+            //
+            // USARTDIV =      (pclk) * 16
+            //            ------------------------
+            //            8 x (2 - OVER8) x (baud)
+            //
+            // When OVER8 is enabled, we can only use the lowest three
+            // fractional bits, so we'll need to shift those last four bits
+            // right one bit
+
+            // Calculate correct baudrate divisor on the fly
+            if (pclk_freq / 16) >= baud {
+                // We have the ability to oversample to 16 bits, take
+                // advantage of it.
+                //
+                // We also add `baud / 2` to the `pclk_freq` to ensure
+                // rounding of values to the closest scale, rather than the
+                // floored behavior of normal integer division.
+                let div = (pclk_freq + (baud / 2)) / baud;
+                Ok((false, div))
+            } else if (pclk_freq / 8) >= baud {
+                // We are close enough to pclk where we can only
+                // oversample 8.
+                //
+                // See note above regarding `baud` and rounding.
+                let div = ((pclk_freq * 2) + (baud / 2)) / baud;
+
+                // Ensure the the fractional bits (only 3) are
+                // right-aligned.
+                let frac = div & 0xF;
+                let div = (div & !0xF) | (frac >> 1);
+                Ok((true, div))
+            } else {
+                Err(config::InvalidConfig)
+            }
+        }
     };
 }
 
@@ -282,66 +347,11 @@ where {
         let pclk_freq = UART::clock(clocks).raw();
         let baud = config.baudrate.0;
 
-        // The frequency to calculate USARTDIV is this:
-        //
-        // (Taken from STM32F411xC/E Reference Manual,
-        // Section 19.3.4, Equation 1)
-        //
-        // 16 bit oversample: OVER8 = 0
-        // 8 bit oversample:  OVER8 = 1
-        //
-        // USARTDIV =          (pclk)
-        //            ------------------------
-        //            8 x (2 - OVER8) x (baud)
-        //
-        // BUT, the USARTDIV has 4 "fractional" bits, which effectively
-        // means that we need to "correct" the equation as follows:
-        //
-        // USARTDIV =      (pclk) * 16
-        //            ------------------------
-        //            8 x (2 - OVER8) x (baud)
-        //
-        // When OVER8 is enabled, we can only use the lowest three
-        // fractional bits, so we'll need to shift those last four bits
-        // right one bit
-        //
-        // In IrDA Smartcard, LIN, and IrDA modes, OVER8 is always disabled.
-        //
-        // (Taken from STM32F411xC/E Reference Manual,
-        // Section 19.3.4, Equation 2)
-        //
-        // USARTDIV =   pclk
-        //            ---------
-        //            16 x baud
-        //
-        // With reference to the above, OVER8 == 0 when in Smartcard, LIN, and
-        // IrDA modes, so the register value needed for USARTDIV is the same
-        // as for 16 bit oversampling.
-
-        // Calculate correct baudrate divisor on the fly
-        let (over8, div) = if (pclk_freq / 16) >= baud || config.irda != IrdaMode::None {
-            // We have the ability to oversample to 16 bits, take
-            // advantage of it.
-            //
-            // We also add `baud / 2` to the `pclk_freq` to ensure
-            // rounding of values to the closest scale, rather than the
-            // floored behavior of normal integer division.
+        let (over8, div) = if config.irda != IrdaMode::None {
             let div = (pclk_freq + (baud / 2)) / baud;
             (false, div)
-        } else if (pclk_freq / 8) >= baud {
-            // We are close enough to pclk where we can only
-            // oversample 8.
-            //
-            // See note above regarding `baud` and rounding.
-            let div = ((pclk_freq * 2) + (baud / 2)) / baud;
-
-            // Ensure the the fractional bits (only 3) are
-            // right-aligned.
-            let frac = div & 0xF;
-            let div = (div & !0xF) | (frac >> 1);
-            (true, div)
         } else {
-            return Err(config::InvalidConfig);
+            Self::calculate_brr(pclk_freq, baud)?
         };
 
         uart.brr().write(|w| unsafe { w.bits(div) });
@@ -384,12 +394,7 @@ where {
             w.ps().bit(config.parity == Parity::ParityOdd)
         });
 
-        match config.dma {
-            DmaConfig::Tx => uart.cr3().write(|w| w.dmat().enabled()),
-            DmaConfig::Rx => uart.cr3().write(|w| w.dmar().enabled()),
-            DmaConfig::TxRx => uart.cr3().write(|w| w.dmar().enabled().dmat().enabled()),
-            DmaConfig::None => {}
-        }
+        uart.enable_dma(config.dma);
 
         let serial = Serial {
             tx: Tx::new(uart, pins.0.into()),
@@ -423,54 +428,7 @@ where {
         let pclk_freq = UART::clock(clocks).raw();
         let baud = config.baudrate.0;
 
-        // The frequency to calculate USARTDIV is this:
-        //
-        // (Taken from STM32F411xC/E Reference Manual,
-        // Section 19.3.4, Equation 1)
-        //
-        // 16 bit oversample: OVER8 = 0
-        // 8 bit oversample:  OVER8 = 1
-        //
-        // USARTDIV =          (pclk)
-        //            ------------------------
-        //            8 x (2 - OVER8) x (baud)
-        //
-        // BUT, the USARTDIV has 4 "fractional" bits, which effectively
-        // means that we need to "correct" the equation as follows:
-        //
-        // USARTDIV =      (pclk) * 16
-        //            ------------------------
-        //            8 x (2 - OVER8) x (baud)
-        //
-        // When OVER8 is enabled, we can only use the lowest three
-        // fractional bits, so we'll need to shift those last four bits
-        // right one bit
-
-        // Calculate correct baudrate divisor on the fly
-        let (over8, div) = if (pclk_freq / 16) >= baud {
-            // We have the ability to oversample to 16 bits, take
-            // advantage of it.
-            //
-            // We also add `baud / 2` to the `pclk_freq` to ensure
-            // rounding of values to the closest scale, rather than the
-            // floored behavior of normal integer division.
-            let div = (pclk_freq + (baud / 2)) / baud;
-            (false, div)
-        } else if (pclk_freq / 8) >= baud {
-            // We are close enough to pclk where we can only
-            // oversample 8.
-            //
-            // See note above regarding `baud` and rounding.
-            let div = ((pclk_freq * 2) + (baud / 2)) / baud;
-
-            // Ensure the the fractional bits (only 3) are
-            // right-aligned.
-            let frac = div & 0xF;
-            let div = (div & !0xF) | (frac >> 1);
-            (true, div)
-        } else {
-            return Err(config::InvalidConfig);
-        };
+        let (over8, div) = Self::calculate_brr(pclk_freq, baud)?;
 
         uart.brr().write(|w| unsafe { w.bits(div) });
 
@@ -491,12 +449,7 @@ where {
             w.ps().bit(config.parity == Parity::ParityOdd)
         });
 
-        match config.dma {
-            DmaConfig::Tx => uart.cr3().write(|w| w.dmat().enabled()),
-            DmaConfig::Rx => uart.cr3().write(|w| w.dmar().enabled()),
-            DmaConfig::TxRx => uart.cr3().write(|w| w.dmar().enabled().dmat().enabled()),
-            DmaConfig::None => {}
-        }
+        uart.enable_dma(config.dma);
 
         let serial = Serial {
             tx: Tx::new(uart, pins.0.into()),

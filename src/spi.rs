@@ -121,7 +121,7 @@ pub enum CFlag {
 /// Normal mode - RX and TX pins are independent
 #[allow(non_upper_case_globals)]
 pub const TransferModeNormal: bool = false;
-/// BIDI mode - use TX pin as RX then spi receive data
+/// Bidirectional (Half-Duplex) mode - use TX pin as RX then spi receive data
 #[allow(non_upper_case_globals)]
 pub const TransferModeBidi: bool = true;
 
