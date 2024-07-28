@@ -2,54 +2,67 @@ use core::ops::Deref;
 
 use crate::gpio;
 use crate::i2c::{Error, NoAcknowledgeSource};
-use crate::pac::{fmpi2c1, FMPI2C1, RCC};
-use crate::rcc::{Enable, Reset};
+use crate::pac::fmpi2c1 as i2c1;
+use crate::pac::{self, RCC};
+use crate::rcc::{BusClock, Enable, Reset};
 use fugit::{HertzU32 as Hertz, RateExtU32};
+
+// Old names
+pub use I2c as FmpI2c;
+pub use Mode as FmpMode;
 
 mod hal_02;
 mod hal_1;
 
 pub trait Instance:
     crate::Sealed
-    + crate::Ptr<RB = fmpi2c1::RegisterBlock>
+    + crate::Ptr<RB = i2c1::RegisterBlock>
     + Deref<Target = Self::RB>
     + Enable
     + Reset
+    + BusClock
     + gpio::alt::I2cCommon
 {
     fn clock_hsi(rcc: &crate::pac::rcc::RegisterBlock);
 }
 
-impl Instance for FMPI2C1 {
-    fn clock_hsi(rcc: &crate::pac::rcc::RegisterBlock) {
-        rcc.dckcfgr2().modify(|_, w| w.fmpi2c1sel().hsi());
-    }
+macro_rules! i2c {
+    ($I2C:ty, $i2csel:ident, $I2Calias:ident) => {
+        pub type $I2Calias = I2c<$I2C>;
+
+        impl Instance for $I2C {
+            fn clock_hsi(rcc: &crate::pac::rcc::RegisterBlock) {
+                rcc.dckcfgr2().modify(|_, w| w.$i2csel().hsi());
+            }
+        }
+
+        impl crate::Ptr for $I2C {
+            type RB = i2c1::RegisterBlock;
+            #[inline(always)]
+            fn ptr() -> *const Self::RB {
+                Self::ptr()
+            }
+        }
+    };
 }
 
-impl crate::Ptr for FMPI2C1 {
-    type RB = fmpi2c1::RegisterBlock;
-    #[inline(always)]
-    fn ptr() -> *const Self::RB {
-        Self::ptr()
-    }
-}
+#[cfg(feature = "fmpi2c1")]
+i2c!(pac::FMPI2C1, fmpi2c1sel, FMPI2c1);
 
 /// I2C FastMode+ abstraction
-pub struct FMPI2c<I2C: Instance> {
+pub struct I2c<I2C: Instance> {
     i2c: I2C,
     pins: (I2C::Scl, I2C::Sda),
 }
 
-pub type FMPI2c1 = FMPI2c<FMPI2C1>;
-
-#[derive(Debug, PartialEq)]
-pub enum FmpMode {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mode {
     Standard { frequency: Hertz },
     Fast { frequency: Hertz },
     FastPlus { frequency: Hertz },
 }
 
-impl FmpMode {
+impl Mode {
     pub fn standard(frequency: Hertz) -> Self {
         Self::Standard { frequency }
     }
@@ -71,7 +84,7 @@ impl FmpMode {
     }
 }
 
-impl From<Hertz> for FmpMode {
+impl From<Hertz> for Mode {
     fn from(frequency: Hertz) -> Self {
         let k100: Hertz = 100.kHz();
         let k400: Hertz = 400.kHz();
@@ -85,26 +98,39 @@ impl From<Hertz> for FmpMode {
     }
 }
 
-impl<I2C: Instance> FMPI2c<I2C> {
+pub trait I2cExt: Sized + Instance {
+    fn i2c<'a>(
+        self,
+        pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
+        mode: impl Into<Mode>,
+    ) -> I2c<Self>;
+}
+
+impl<I2C: Instance> I2cExt for I2C {
+    fn i2c<'a>(
+        self,
+        pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
+        mode: impl Into<Mode>,
+    ) -> I2c<Self> {
+        I2c::new(self, pins, mode)
+    }
+}
+
+impl<I2C: Instance> I2c<I2C> {
     pub fn new(
         i2c: I2C,
         pins: (impl Into<I2C::Scl>, impl Into<I2C::Sda>),
-        mode: impl Into<FmpMode>,
+        mode: impl Into<Mode>,
     ) -> Self {
         unsafe {
-            // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-            let rcc = &(*RCC::ptr());
-
             // Enable and reset clock.
-            I2C::enable(rcc);
-            I2C::reset(rcc);
-
-            I2C::clock_hsi(rcc);
+            I2C::enable_unchecked();
+            I2C::reset_unchecked();
         }
 
         let pins = (pins.0.into(), pins.1.into());
 
-        let i2c = FMPI2c { i2c, pins };
+        let i2c = I2c { i2c, pins };
         i2c.i2c_init(mode);
         i2c
     }
@@ -114,13 +140,17 @@ impl<I2C: Instance> FMPI2c<I2C> {
     }
 }
 
-impl<I2C: Instance> FMPI2c<I2C> {
-    fn i2c_init<M: Into<FmpMode>>(&self, mode: M) {
+impl<I2C: Instance> I2c<I2C> {
+    fn i2c_init(&self, mode: impl Into<Mode>) {
         let mode = mode.into();
         use core::cmp;
 
         // Make sure the I2C unit is disabled so we can configure it
         self.i2c.cr1().modify(|_, w| w.pe().clear_bit());
+
+        // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
+        let rcc = unsafe { &(*RCC::ptr()) };
+        I2C::clock_hsi(rcc);
 
         // Calculate settings for I2C speed modes
         let presc;
@@ -135,21 +165,21 @@ impl<I2C: Instance> FMPI2c<I2C> {
         // Normal I2C speeds use a different scaling than fast mode below and fast mode+ even more
         // below
         match mode {
-            FmpMode::Standard { frequency } => {
+            Mode::Standard { frequency } => {
                 presc = 3;
                 scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 1, 255) as u8;
                 sclh = scll - 4;
                 sdadel = 2;
                 scldel = 4;
             }
-            FmpMode::Fast { frequency } => {
+            Mode::Fast { frequency } => {
                 presc = 1;
                 scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 1, 255) as u8;
                 sclh = scll - 6;
                 sdadel = 2;
                 scldel = 3;
             }
-            FmpMode::FastPlus { frequency } => {
+            Mode::FastPlus { frequency } => {
                 presc = 0;
                 scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 4, 255) as u8;
                 sclh = scll - 2;
@@ -171,7 +201,8 @@ impl<I2C: Instance> FMPI2c<I2C> {
         self.i2c.cr1().modify(|_, w| w.pe().set_bit());
     }
 
-    fn check_and_clear_error_flags(&self, isr: &fmpi2c1::isr::R) -> Result<(), Error> {
+    #[inline(always)]
+    fn check_and_clear_error_flags(&self, isr: &i2c1::isr::R) -> Result<(), Error> {
         // If we received a NACK, then this is an error
         if isr.nackf().bit_is_set() {
             self.i2c
@@ -183,6 +214,7 @@ impl<I2C: Instance> FMPI2c<I2C> {
         Ok(())
     }
 
+    #[inline(always)]
     fn end_transaction(&self) -> Result<(), Error> {
         // Check and clear flags if they somehow ended up set
         self.check_and_clear_error_flags(&self.i2c.isr().read())

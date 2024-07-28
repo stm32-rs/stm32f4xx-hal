@@ -55,6 +55,8 @@ pub use crate::dma::traits::DmaEventExt as _;
 pub use crate::dma::traits::DmaFlagExt as _;
 pub use crate::dma::traits::Stream as _;
 pub use crate::dma::traits::StreamISR as _;
+#[cfg(feature = "fmpi2c1")]
+pub use crate::fmpi2c::I2cExt as _;
 pub use crate::gpio::outport::OutPort as _;
 pub use crate::gpio::ExtiPin as _stm32f4xx_hal_gpio_ExtiPin;
 pub use crate::gpio::GpioExt as _stm32f4xx_hal_gpio_GpioExt;
