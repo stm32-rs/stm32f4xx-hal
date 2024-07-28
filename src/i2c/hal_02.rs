@@ -4,10 +4,7 @@ mod blocking {
         Operation, Read, Transactional, Write, WriteIter, WriteIterRead, WriteRead,
     };
 
-    impl<I2C> WriteRead for I2c<I2C>
-    where
-        I2C: Instance,
-    {
+    impl<I2C: Instance> WriteRead for I2c<I2C> {
         type Error = Error;
 
         fn write_read(
@@ -20,10 +17,7 @@ mod blocking {
         }
     }
 
-    impl<I2C> WriteIterRead for I2c<I2C>
-    where
-        I2C: Instance,
-    {
+    impl<I2C: Instance> WriteIterRead for I2c<I2C> {
         type Error = Error;
 
         fn write_iter_read<B>(
@@ -39,10 +33,7 @@ mod blocking {
         }
     }
 
-    impl<I2C> Write for I2c<I2C>
-    where
-        I2C: Instance,
-    {
+    impl<I2C: Instance> Write for I2c<I2C> {
         type Error = Error;
 
         fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
@@ -50,10 +41,7 @@ mod blocking {
         }
     }
 
-    impl<I2C> WriteIter for I2c<I2C>
-    where
-        I2C: Instance,
-    {
+    impl<I2C: Instance> WriteIter for I2c<I2C> {
         type Error = Error;
 
         fn write<B>(&mut self, addr: u8, bytes: B) -> Result<(), Self::Error>
@@ -64,10 +52,7 @@ mod blocking {
         }
     }
 
-    impl<I2C> Read for I2c<I2C>
-    where
-        I2C: Instance,
-    {
+    impl<I2C: Instance> Read for I2c<I2C> {
         type Error = Error;
 
         fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
@@ -75,10 +60,7 @@ mod blocking {
         }
     }
 
-    impl<I2C> Transactional for I2c<I2C>
-    where
-        I2C: Instance,
-    {
+    impl<I2C: Instance> Transactional for I2c<I2C> {
         type Error = Error;
 
         fn exec(

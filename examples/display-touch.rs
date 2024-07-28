@@ -32,7 +32,7 @@ use embedded_graphics_07::{
 };
 
 #[cfg(feature = "stm32f413")]
-use stm32f4xx_hal::fmpi2c::FMPI2c;
+use stm32f4xx_hal::fmpi2c::I2c;
 #[cfg(feature = "stm32f412")]
 use stm32f4xx_hal::i2c::I2c;
 
@@ -153,7 +153,7 @@ fn main() -> ! {
     // STM32F413 uses FMPI2C1 type.
     // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f413zh-mcu-stmicroelectronics
     #[cfg(feature = "stm32f413")]
-    let mut i2c = { FMPI2c::new(p.FMPI2C1, (gpioc.pc6, gpioc.pc7), 400.kHz()) };
+    let mut i2c = { I2c::new(p.FMPI2C1, (gpioc.pc6, gpioc.pc7), 400.kHz()) };
 
     #[cfg(feature = "stm32f412")]
     let ts_int = gpiog.pg5.into_pull_down_input();
