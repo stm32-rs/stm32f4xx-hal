@@ -10,7 +10,10 @@ use crate::dma::{
     traits::{DMASet, PeriAddress},
     MemoryToPeripheral, PeripheralToMemory,
 };
-use crate::gpio::{alt::SerialAsync as CommonPins, NoPin, PushPull};
+use crate::gpio::{
+    alt::{SerialAsync as CommonPins, SerialFlowControl},
+    NoPin, PushPull,
+};
 use crate::rcc::{self, Clocks};
 
 #[cfg(feature = "uart4")]
@@ -327,6 +330,27 @@ macro_rules! uartCommon {
     };
 }
 
+pub trait RBFlowControlImpl {
+    fn enable_rts(&self, state: bool);
+    fn enable_cts(&self, state: bool);
+    fn listen_cts(&self, state: bool);
+}
+
+impl RBFlowControlImpl for RegisterBlockUsart {
+    #[inline(always)]
+    fn enable_rts(&self, state: bool) {
+        self.cr3().modify(|_, w| w.rtse().bit(state));
+    }
+    #[inline(always)]
+    fn enable_cts(&self, state: bool) {
+        self.cr3().modify(|_, w| w.ctse().bit(state));
+    }
+    #[inline(always)]
+    fn listen_cts(&self, state: bool) {
+        self.cr3().modify(|_, w| w.ctsie().bit(state))
+    }
+}
+
 impl RegisterBlockImpl for RegisterBlockUsart {
     fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
@@ -408,6 +432,23 @@ where {
 }
 
 #[cfg(feature = "uart4")]
+#[cfg(not(any(
+    feature = "gpio-f413",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469"
+)))]
+impl RBFlowControlImpl for RegisterBlockUart {
+    fn enable_rts(&self, state: bool) {
+        self.cr3().modify(|_, w| w.rtse().bit(state));
+    }
+    fn enable_cts(&self, state: bool) {
+        self.cr3().modify(|_, w| w.ctse().bit(state));
+    }
+}
+
+#[cfg(feature = "uart4")]
 impl RegisterBlockImpl for RegisterBlockUart {
     fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
@@ -460,6 +501,40 @@ where {
     }
 
     uartCommon! {}
+}
+
+impl<UART: Instance + SerialFlowControl, WORD> Serial<UART, WORD>
+where
+    UART::RB: RBFlowControlImpl,
+{
+    pub fn with_rts(self, rts: impl Into<UART::Rts>) -> Self {
+        self.rx.usart.enable_rts(true);
+        let _rts = rts.into();
+        self
+    }
+    pub fn with_cts(self, cts: impl Into<UART::Cts>) -> Self {
+        self.tx.usart.enable_cts(true);
+        let _cts = cts.into();
+        self
+    }
+    pub fn enable_request_to_send(&mut self) {
+        self.rx.usart.enable_rts(true);
+    }
+    pub fn disable_request_to_send(&mut self) {
+        self.rx.usart.enable_rts(false);
+    }
+    pub fn enable_clear_to_send(&mut self) {
+        self.tx.usart.enable_cts(true);
+    }
+    pub fn disable_clear_to_send(&mut self) {
+        self.tx.usart.enable_cts(false);
+    }
+    pub fn listen_clear_to_send(&mut self) {
+        self.tx.usart.listen_cts(true)
+    }
+    pub fn unlisten_clear_to_send(&mut self) {
+        self.tx.usart.listen_cts(false)
+    }
 }
 
 impl<UART: Instance, WORD> RxISR for Serial<UART, WORD>
