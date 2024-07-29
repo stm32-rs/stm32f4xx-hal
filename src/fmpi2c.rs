@@ -1,18 +1,25 @@
 use core::ops::Deref;
 
 use crate::gpio;
-use crate::i2c::{Error, NoAcknowledgeSource};
+
 use crate::pac::fmpi2c1 as i2c1;
 use crate::pac::{self, rcc, RCC};
 use crate::rcc::{BusClock, Clocks, Enable, Reset};
 use fugit::{HertzU32 as Hertz, RateExtU32};
 use micromath::F32Ext;
 
+#[path = "i2c/common.rs"]
+mod common;
+pub use common::{Address, Error, NoAcknowledgeSource};
+use common::{Hal02Operation, Hal1Operation};
+
 // Old names
 pub use I2c as FmpI2c;
 pub use Mode as FmpMode;
 
+#[path = "i2c/hal_02.rs"]
 mod hal_02;
+#[path = "i2c/hal_1.rs"]
 mod hal_1;
 
 type I2cSel = rcc::dckcfgr2::FMPI2C1SEL;
@@ -403,6 +410,83 @@ impl<I2C: Instance> I2c<I2C> {
         Ok(())
     }
 
+    /// Sends START and Address for writing
+    #[inline(always)]
+    fn prepare_write(&self, addr: Address, datalen: usize) -> Result<(), Error> {
+        // Set up current slave address for writing and disable autoending
+        self.i2c.cr2().modify(|_, w| {
+            match addr {
+                Address::Seven(addr) => {
+                    w.add10().clear_bit();
+                    w.sadd().set(u16::from(addr) << 1);
+                }
+                Address::Ten(addr) => {
+                    w.add10().set_bit();
+                    w.sadd().set(addr);
+                }
+            }
+            w.nbytes().set(datalen as u8);
+            w.rd_wrn().clear_bit();
+            w.autoend().clear_bit()
+        });
+
+        // Send a START condition
+        self.i2c.cr2().modify(|_, w| w.start().set_bit());
+
+        // Wait until address was sent
+        while {
+            let isr = self.i2c.isr().read();
+            self.check_and_clear_error_flags(&isr)
+                .map_err(Error::nack_addr)?;
+            isr.txis().bit_is_clear() && isr.tc().bit_is_clear()
+        } {}
+
+        Ok(())
+    }
+
+    /// Sends START and Address for reading
+    fn prepare_read(
+        &self,
+        addr: Address,
+        buflen: usize,
+        first_transaction: bool,
+    ) -> Result<(), Error> {
+        // Set up current address for reading
+        self.i2c.cr2().modify(|_, w| {
+            match addr {
+                Address::Seven(addr) => {
+                    w.add10().clear_bit();
+                    w.sadd().set(u16::from(addr) << 1);
+                }
+                Address::Ten(addr) => {
+                    w.add10().set_bit();
+                    w.head10r().bit(!first_transaction);
+                    w.sadd().set(addr);
+                }
+            }
+            w.nbytes().set(buflen as u8);
+            w.rd_wrn().set_bit()
+        });
+
+        // Send a START condition
+        self.i2c.cr2().modify(|_, w| w.start().set_bit());
+
+        // Send the autoend after setting the start to get a restart
+        self.i2c.cr2().modify(|_, w| w.autoend().set_bit());
+
+        Ok(())
+    }
+
+    fn write_bytes(&mut self, bytes: impl Iterator<Item = u8>) -> Result<(), Error> {
+        // Send bytes
+        for c in bytes {
+            self.send_byte(c)?;
+        }
+
+        // Fallthrough is success
+        Ok(())
+    }
+
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
         while {
@@ -432,72 +516,38 @@ impl<I2C: Instance> I2c<I2C> {
         Ok(value)
     }
 
-    pub fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Error> {
-        // Set up current address for reading
-        self.i2c.cr2().modify(|_, w| {
-            w.sadd().set(u16::from(addr) << 1);
-            w.nbytes().set(buffer.len() as u8);
-            w.rd_wrn().set_bit()
-        });
-
-        // Send a START condition
-        self.i2c.cr2().modify(|_, w| w.start().set_bit());
-
-        // Send the autoend after setting the start to get a restart
-        self.i2c.cr2().modify(|_, w| w.autoend().set_bit());
-
-        // Now read in all bytes
-        for c in buffer.iter_mut() {
+    fn read_bytes(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        // Receive bytes into buffer
+        for c in buffer {
             *c = self.recv_byte()?;
         }
 
-        self.end_transaction()
+        Ok(())
     }
 
-    pub fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
-        // Set up current slave address for writing and enable autoending
-        self.i2c.cr2().modify(|_, w| {
-            w.sadd().set(u16::from(addr) << 1);
-            w.nbytes().set(bytes.len() as u8);
-            w.rd_wrn().clear_bit();
-            w.autoend().set_bit()
-        });
-
-        // Send a START condition
-        self.i2c.cr2().modify(|_, w| w.start().set_bit());
-
-        // Send out all individual bytes
-        for c in bytes {
-            self.send_byte(*c)?;
-        }
+    pub fn read(&mut self, addr: impl Into<Address>, buffer: &mut [u8]) -> Result<(), Error> {
+        self.prepare_read(addr.into(), buffer.len(), true)?;
+        self.read_bytes(buffer)?;
 
         self.end_transaction()
     }
 
-    pub fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
-        // Set up current slave address for writing and disable autoending
-        self.i2c.cr2().modify(|_, w| {
-            w.sadd().set(u16::from(addr) << 1);
-            w.nbytes().set(bytes.len() as u8);
-            w.rd_wrn().clear_bit();
-            w.autoend().clear_bit()
-        });
+    pub fn write(&mut self, addr: impl Into<Address>, bytes: &[u8]) -> Result<(), Error> {
+        self.prepare_write(addr.into(), bytes.len())?;
+        self.write_bytes(bytes.iter().cloned())?;
 
-        // Send a START condition
-        self.i2c.cr2().modify(|_, w| w.start().set_bit());
+        self.end_transaction()
+    }
 
-        // Wait until the transmit buffer is empty and there hasn't been any error condition
-        while {
-            let isr = self.i2c.isr().read();
-            self.check_and_clear_error_flags(&isr)
-                .map_err(Error::nack_addr)?;
-            isr.txis().bit_is_clear() && isr.tc().bit_is_clear()
-        } {}
-
-        // Send out all individual bytes
-        for c in bytes {
-            self.send_byte(*c)?;
-        }
+    pub fn write_read(
+        &mut self,
+        addr: impl Into<Address>,
+        bytes: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<(), Error> {
+        let addr = addr.into();
+        self.prepare_write(addr, bytes.len())?;
+        self.write_bytes(bytes.iter().cloned())?;
 
         // Wait until data was sent
         while {
@@ -507,24 +557,122 @@ impl<I2C: Instance> I2c<I2C> {
             isr.tc().bit_is_clear()
         } {}
 
-        // Set up current address for reading
-        self.i2c.cr2().modify(|_, w| {
-            w.sadd().set(u16::from(addr) << 1);
-            w.nbytes().set(buffer.len() as u8);
-            w.rd_wrn().set_bit()
-        });
+        self.read(addr, buffer)
+    }
 
-        // Send another START condition
-        self.i2c.cr2().modify(|_, w| w.start().set_bit());
+    pub fn transaction<'a>(
+        &mut self,
+        addr: impl Into<Address>,
+        mut ops: impl Iterator<Item = Hal1Operation<'a>>,
+    ) -> Result<(), Error> {
+        let addr = addr.into();
+        if let Some(mut prev_op) = ops.next() {
+            // 1. Generate Start for operation
+            match &prev_op {
+                Hal1Operation::Read(buf) => self.prepare_read(addr, buf.len(), true)?,
+                Hal1Operation::Write(data) => self.prepare_write(addr, data.len())?,
+            };
 
-        // Send the autoend after setting the start to get a restart
-        self.i2c.cr2().modify(|_, w| w.autoend().set_bit());
+            for op in ops {
+                // 2. Execute previous operations.
+                match &mut prev_op {
+                    Hal1Operation::Read(rb) => self.read_bytes(rb)?,
+                    Hal1Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
+                };
+                // 3. If operation changes type we must generate new start
+                match (&prev_op, &op) {
+                    (Hal1Operation::Read(_), Hal1Operation::Write(data)) => {
+                        self.prepare_write(addr, data.len())?
+                    }
+                    (Hal1Operation::Write(_), Hal1Operation::Read(buf)) => {
+                        self.prepare_read(addr, buf.len(), false)?
+                    }
+                    _ => {} // No changes if operation have not changed
+                }
 
-        // Now read in all bytes
-        for c in buffer.iter_mut() {
-            *c = self.recv_byte()?;
+                prev_op = op;
+            }
+
+            // 4. Now, prev_op is last command use methods variations that will generate stop
+            match prev_op {
+                Hal1Operation::Read(rb) => self.read_bytes(rb)?,
+                Hal1Operation::Write(wb) => self.write_bytes(wb.iter().cloned())?,
+            };
+
+            self.end_transaction()?;
         }
 
-        self.end_transaction()
+        // Fallthrough is success
+        Ok(())
+    }
+
+    pub fn transaction_slice(
+        &mut self,
+        addr: impl Into<Address>,
+        ops_slice: &mut [Hal1Operation<'_>],
+    ) -> Result<(), Error> {
+        let addr = addr.into();
+        transaction_impl!(self, addr, ops_slice, Hal1Operation);
+        // Fallthrough is success
+        Ok(())
+    }
+
+    fn transaction_slice_hal_02(
+        &mut self,
+        addr: impl Into<Address>,
+        ops_slice: &mut [Hal02Operation<'_>],
+    ) -> Result<(), Error> {
+        let addr = addr.into();
+        transaction_impl!(self, addr, ops_slice, Hal02Operation);
+        // Fallthrough is success
+        Ok(())
     }
 }
+
+macro_rules! transaction_impl {
+    ($self:ident, $addr:ident, $ops_slice:ident, $Operation:ident) => {
+        let i2c = $self;
+        let addr = $addr;
+        let mut ops = $ops_slice.iter_mut();
+
+        if let Some(mut prev_op) = ops.next() {
+            // 1. Generate Start for operation
+            match &prev_op {
+                $Operation::Read(buf) => i2c.prepare_read(addr, buf.len(), true)?,
+                $Operation::Write(data) => i2c.prepare_write(addr, data.len())?,
+            };
+
+            for op in ops {
+                // 2. Execute previous operations.
+                match &mut prev_op {
+                    $Operation::Read(rb) => i2c.read_bytes(rb)?,
+                    $Operation::Write(wb) => i2c.write_bytes(wb.iter().cloned())?,
+                };
+                // 3. If operation changes type we must generate new start
+                match (&prev_op, &op) {
+                    ($Operation::Read(_), $Operation::Write(data)) => {
+                        i2c.prepare_write(addr, data.len())?
+                    }
+                    ($Operation::Write(_), $Operation::Read(buf)) => {
+                        i2c.prepare_read(addr, buf.len(), false)?
+                    }
+                    _ => {} // No changes if operation have not changed
+                }
+
+                prev_op = op;
+            }
+
+            // 4. Now, prev_op is last command use methods variations that will generate stop
+            match prev_op {
+                $Operation::Read(rb) => i2c.read_bytes(rb)?,
+                $Operation::Write(wb) => i2c.write_bytes(wb.iter().cloned())?,
+            };
+
+            i2c.end_transaction()?;
+        }
+    };
+}
+use transaction_impl;
+
+// Note: implementation is from f0xx-hal
+// TODO: check error handling. See https://github.com/stm32-rs/stm32f0xx-hal/pull/95/files
