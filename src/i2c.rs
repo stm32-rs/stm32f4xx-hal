@@ -655,3 +655,30 @@ macro_rules! transaction_impl {
     };
 }
 use transaction_impl;
+
+impl<I2C: Instance> embedded_hal_02::blocking::i2c::WriteIter for I2c<I2C> {
+    type Error = Error;
+
+    fn write<B>(&mut self, addr: u8, bytes: B) -> Result<(), Self::Error>
+    where
+        B: IntoIterator<Item = u8>,
+    {
+        self.write_iter(addr, bytes)
+    }
+}
+
+impl<I2C: Instance> embedded_hal_02::blocking::i2c::WriteIterRead for I2c<I2C> {
+    type Error = Error;
+
+    fn write_iter_read<B>(
+        &mut self,
+        addr: u8,
+        bytes: B,
+        buffer: &mut [u8],
+    ) -> Result<(), Self::Error>
+    where
+        B: IntoIterator<Item = u8>,
+    {
+        self.write_iter_read(addr, bytes, buffer)
+    }
+}
