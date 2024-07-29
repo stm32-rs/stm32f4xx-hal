@@ -255,7 +255,7 @@ impl<I2C: Instance> I2c<I2C> {
 
     /// Sends START and Address for writing
     #[inline(always)]
-    fn prepare_write(&self, addr: Address) -> Result<(), Error> {
+    fn prepare_write(&self, addr: Address, first_transaction: bool) -> Result<(), Error> {
         // Wait until a previous STOP condition finishes. When the previous
         // STOP was generated inside an ISR (e.g. DMA interrupt handler),
         // the ISR returns without waiting for the STOP condition to finish.
@@ -270,17 +270,18 @@ impl<I2C: Instance> I2c<I2C> {
         // Wait until START condition was generated
         while self.check_and_clear_error_flags()?.sb().bit_is_clear() {}
 
-        // Also wait until signalled we're master and everything is waiting for us
-        loop {
-            self.check_and_clear_error_flags()?;
+        if first_transaction {
+            // Also wait until signalled we're master and everything is waiting for us
+            loop {
+                self.check_and_clear_error_flags()?;
 
-            let sr2 = self.i2c.sr2().read();
-            if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
-                break;
+                let sr2 = self.i2c.sr2().read();
+                if !(sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()) {
+                    break;
+                }
             }
         }
 
-        // Set up current address, we're trying to talk to
         match addr {
             Address::Seven(addr) => {
                 self.i2c
@@ -333,13 +334,14 @@ impl<I2C: Instance> I2c<I2C> {
         // Wait until START condition was generated
         while self.i2c.sr1().read().sb().bit_is_clear() {}
 
-        // Also wait until signalled we're master and everything is waiting for us
-        while {
-            let sr2 = self.i2c.sr2().read();
-            sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
-        } {}
+        if first_transaction {
+            // Also wait until signalled we're master and everything is waiting for us
+            while {
+                let sr2 = self.i2c.sr2().read();
+                sr2.msl().bit_is_clear() && sr2.busy().bit_is_clear()
+            } {}
+        }
 
-        // Set up current address, we're trying to talk to
         match addr {
             Address::Seven(addr) => {
                 self.i2c
@@ -483,7 +485,7 @@ impl<I2C: Instance> I2c<I2C> {
     }
 
     pub fn write(&mut self, addr: impl Into<Address>, bytes: &[u8]) -> Result<(), Error> {
-        self.prepare_write(addr.into())?;
+        self.prepare_write(addr.into(), true)?;
         self.write_wo_prepare(bytes)
     }
 
@@ -509,7 +511,7 @@ impl<I2C: Instance> I2c<I2C> {
     where
         B: IntoIterator<Item = u8>,
     {
-        self.prepare_write(addr.into())?;
+        self.prepare_write(addr.into(), true)?;
         self.write_bytes(bytes.into_iter())?;
 
         // Send a STOP condition
@@ -533,7 +535,7 @@ impl<I2C: Instance> I2c<I2C> {
         buffer: &mut [u8],
     ) -> Result<(), Error> {
         let addr = addr.into();
-        self.prepare_write(addr)?;
+        self.prepare_write(addr, true)?;
         self.write_bytes(bytes.iter().cloned())?;
         self.read_inner(addr, buffer, false)
     }
@@ -548,7 +550,7 @@ impl<I2C: Instance> I2c<I2C> {
         B: IntoIterator<Item = u8>,
     {
         let addr = addr.into();
-        self.prepare_write(addr)?;
+        self.prepare_write(addr, true)?;
         self.write_bytes(bytes.into_iter())?;
         self.read_inner(addr, buffer, false)
     }
@@ -563,7 +565,7 @@ impl<I2C: Instance> I2c<I2C> {
             // 1. Generate Start for operation
             match &prev_op {
                 Hal1Operation::Read(_) => self.prepare_read(addr, true)?,
-                Hal1Operation::Write(_) => self.prepare_write(addr)?,
+                Hal1Operation::Write(_) => self.prepare_write(addr, true)?,
             };
 
             for op in ops {
@@ -575,7 +577,7 @@ impl<I2C: Instance> I2c<I2C> {
                 // 3. If operation changes type we must generate new start
                 match (&prev_op, &op) {
                     (Hal1Operation::Read(_), Hal1Operation::Write(_)) => {
-                        self.prepare_write(addr)?
+                        self.prepare_write(addr, false)?
                     }
                     (Hal1Operation::Write(_), Hal1Operation::Read(_)) => {
                         self.prepare_read(addr, false)?
@@ -630,7 +632,7 @@ macro_rules! transaction_impl {
             // 1. Generate Start for operation
             match &prev_op {
                 $Operation::Read(_) => i2c.prepare_read(addr, true)?,
-                $Operation::Write(_) => i2c.prepare_write(addr)?,
+                $Operation::Write(_) => i2c.prepare_write(addr, true)?,
             };
 
             for op in ops {
@@ -641,7 +643,9 @@ macro_rules! transaction_impl {
                 };
                 // 3. If operation changes type we must generate new start
                 match (&prev_op, &op) {
-                    ($Operation::Read(_), $Operation::Write(_)) => i2c.prepare_write(addr)?,
+                    ($Operation::Read(_), $Operation::Write(_)) => {
+                        i2c.prepare_write(addr, false)?
+                    }
                     ($Operation::Write(_), $Operation::Read(_)) => i2c.prepare_read(addr, false)?,
                     _ => {} // No changes if operation have not changed
                 }
