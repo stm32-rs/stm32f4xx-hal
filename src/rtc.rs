@@ -7,7 +7,6 @@ use crate::pac::rtc::{dr, tr};
 use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
 use core::fmt;
-use core::marker::PhantomData;
 use fugit::RateExtU32;
 use time::{Date, PrimitiveDateTime, Time, Weekday};
 
@@ -67,27 +66,33 @@ pub struct Lse;
 /// RTC clock source LSI oscillator clock (type state)
 pub struct Lsi;
 
-pub trait FrequencySource {
-    fn frequency() -> fugit::Hertz<u32>;
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ClockSource {
+    Lse(LSEClockMode),
+    Lsi,
 }
 
-impl FrequencySource for Lse {
-    fn frequency() -> fugit::Hertz<u32> {
-        32_768u32.Hz()
+impl From<LSEClockMode> for ClockSource {
+    fn from(value: LSEClockMode) -> Self {
+        Self::Lse(value)
     }
 }
 
-impl FrequencySource for Lsi {
-    fn frequency() -> fugit::Hertz<u32> {
-        32_000u32.Hz()
+impl ClockSource {
+    pub fn frequency(self) -> fugit::Hertz<u32> {
+        match self {
+            Self::Lse(_) => 32_768_u32.Hz(),
+            Self::Lsi => 32.kHz(),
+        }
     }
 }
 
 /// Real Time Clock peripheral
-pub struct Rtc<CS: FrequencySource = Lse> {
+pub struct Rtc {
     /// RTC Peripheral register
     pub regs: RTC,
-    _clock_source: PhantomData<CS>,
+    clock_source: ClockSource,
 }
 
 #[cfg(feature = "defmt")]
@@ -114,31 +119,30 @@ pub enum LSEClockMode {
     Bypass,
 }
 
-impl Rtc<Lse> {
+impl Rtc {
     /// Create and enable a new RTC with external crystal or ceramic resonator and default prescalers.
     pub fn new(regs: RTC, pwr: &mut PWR) -> Self {
         Self::with_config(regs, pwr, LSEClockMode::Oscillator, 255, 127)
     }
-
     /// Create and enable a new RTC, and configure its clock source and prescalers.
     ///
-    /// From AN3371, Table 3, when using the LSE,
-    /// set `prediv_s` to 255, and `prediv_a` to 127 to get a calendar clock of 1Hz.
+    /// From AN3371, Table 3,
+    /// set `prediv_s` to 255 (249 for LSI), and `prediv_a` to 127 to get a calendar clock of 1Hz.
     pub fn with_config(
         regs: RTC,
         pwr: &mut PWR,
-        mode: LSEClockMode,
+        clock_source: impl Into<ClockSource>,
         prediv_s: u16,
         prediv_a: u8,
     ) -> Self {
         let mut result = Self {
             regs,
-            _clock_source: PhantomData,
+            clock_source: clock_source.into(),
         };
 
         // Steps:
         // Enable PWR and DBP
-        // Enable LSE (if needed)
+        // Enable LSE/LSI (if needed)
         // Enable RTC Clock
         // Disable Write Protect
         // Enter Init
@@ -151,12 +155,24 @@ impl Rtc<Lse> {
             let rcc = &(*RCC::ptr());
             // As per the sample code, unlock comes first. (Enable PWR and DBP)
             result.unlock(rcc, pwr);
-            // If necessary, enable the LSE.
-            if rcc.bdcr().read().lserdy().bit_is_clear() {
-                result.enable_lse(rcc, mode);
+            match result.clock_source {
+                ClockSource::Lse(mode) => {
+                    // If necessary, enable the LSE.
+                    if rcc.bdcr().read().lserdy().bit_is_clear() {
+                        result.enable_lse(rcc, mode);
+                    }
+                    // Set clock source to LSE.
+                    rcc.bdcr().modify(|_, w| w.rtcsel().lse());
+                }
+                ClockSource::Lsi => {
+                    // If necessary, enable the LSE.
+                    if rcc.csr().read().lsirdy().bit_is_clear() {
+                        result.enable_lsi(rcc);
+                    }
+                    // Set clock source to LSI.
+                    rcc.bdcr().modify(|_, w| w.rtcsel().lsi());
+                }
             }
-            // Set clock source to LSE.
-            rcc.bdcr().modify(|_, w| w.rtcsel().lse());
             result.enable(rcc);
         }
 
@@ -191,12 +207,10 @@ impl Rtc<Lse> {
             while rcc.bdcr().read().lserdy().bit_is_clear() {}
         }
     }
-}
 
-impl Rtc<Lsi> {
     /// Create and enable a new RTC with internal crystal and default prescalers.
     pub fn new_lsi(regs: RTC, pwr: &mut PWR) -> Self {
-        Self::lsi_with_config(regs, pwr, 249, 127)
+        Self::with_config(regs, pwr, ClockSource::Lsi, 249, 127)
     }
 
     /// Create and enable a new RTC, and configure its clock source and prescalers.
@@ -204,46 +218,7 @@ impl Rtc<Lsi> {
     /// From AN3371, Table 3, when using the LSI,
     /// set `prediv_s` to 249, and `prediv_a` to 127 to get a calendar clock of 1Hz.
     pub fn lsi_with_config(regs: RTC, pwr: &mut PWR, prediv_s: u16, prediv_a: u8) -> Self {
-        let mut result = Self {
-            regs,
-            _clock_source: PhantomData,
-        };
-
-        // Steps:
-        // Enable PWR and DBP
-        // Enable LSI (if needed)
-        // Enable RTC Clock
-        // Disable Write Protect
-        // Enter Init
-        // Configure 24 hour format
-        // Set prescalers
-        // Exit Init
-        // Enable write protect
-
-        unsafe {
-            let rcc = &(*RCC::ptr());
-            // As per the sample code, unlock comes first. (Enable PWR and DBP)
-            result.unlock(rcc, pwr);
-            // If necessary, enable the LSE.
-            if rcc.csr().read().lsirdy().bit_is_clear() {
-                result.enable_lsi(rcc);
-            }
-            // Set clock source to LSI.
-            rcc.bdcr().modify(|_, w| w.rtcsel().lsi());
-            result.enable(rcc);
-        }
-
-        result.modify(true, |regs| {
-            // Set 24 Hour
-            regs.cr().modify(|_, w| w.fmt().clear_bit());
-            // Set prescalers
-            regs.prer().modify(|_, w| {
-                w.prediv_s().set(prediv_s);
-                w.prediv_a().set(prediv_a)
-            })
-        });
-
-        result
+        Self::with_config(regs, pwr, ClockSource::Lsi, prediv_s, prediv_a)
     }
 
     fn enable_lsi(&mut self, rcc: &RegisterBlock) {
@@ -253,9 +228,7 @@ impl Rtc<Lsi> {
         rcc.csr().modify(|_, w| w.lsion().on());
         while rcc.csr().read().lsirdy().is_not_ready() {}
     }
-}
 
-impl<CS: FrequencySource> Rtc<CS> {
     fn unlock(&mut self, rcc: &RegisterBlock, pwr: &mut PWR) {
         // Enable the backup interface
         // Set APB1 - Bit 28 (PWREN)
@@ -543,6 +516,7 @@ impl<CS: FrequencySource> Rtc<CS> {
     ///
     /// Panics if interval is greater than 2¹⁷-1 seconds.
     pub fn enable_wakeup(&mut self, interval: fugit::MicrosDurationU64) {
+        let clock_source = self.clock_source;
         self.modify(false, |regs| {
             regs.cr().modify(|_, w| w.wute().clear_bit());
             regs.isr().modify(|_, w| w.wutf().clear_bit());
@@ -551,7 +525,7 @@ impl<CS: FrequencySource> Rtc<CS> {
             use crate::pac::rtc::cr::WUCKSEL;
             if interval < fugit::MicrosDurationU64::secs(32) {
                 // Use RTCCLK as the wakeup timer clock source
-                let frequency: fugit::Hertz<u64> = (CS::frequency() / 2).into();
+                let frequency: fugit::Hertz<u64> = (clock_source.frequency() / 2).into();
                 let freq_duration: fugit::MicrosDurationU64 = frequency.into_duration();
                 let ticks_per_interval = interval / freq_duration;
 
