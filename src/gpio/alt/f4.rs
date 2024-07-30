@@ -633,9 +633,12 @@ pub mod eth {
     }
 }
 
+#[cfg(any(feature = "fmc", feature = "fsmc"))]
+pub use fmc as fsmc;
+
 /// Pins available on all STM32F4 models that have an FSMC/FMC
 #[cfg(any(feature = "fmc", feature = "fsmc"))]
-pub mod fsmc {
+pub mod fmc {
     use super::*;
 
     pub use Ne1 as ChipSelect1;
@@ -2611,18 +2614,18 @@ pub mod sai1 {
     use crate::pac::SAI;
     #[cfg(any(feature = "stm32f427", feature = "stm32f437", feature = "gpio-f446"))]
     use crate::pac::SAI1 as SAI;
-    pub use crate::sai::{SAI1A, SAI1B};
+    use crate::sai::SAICH;
     impl SaiChannels for SAI {
-        type A = SAI1A;
-        type B = SAI1B;
+        type A = SAICH<SAI, false>;
+        type B = SAICH<SAI, true>;
     }
-    impl SaiChannel for SAI1A {
+    impl SaiChannel for SAICH<SAI, false> {
         type Fs = FsA;
         type Mclk = MclkA;
         type Sck = SckA;
         type Sd = SdA;
     }
-    impl SaiChannel for SAI1B {
+    impl SaiChannel for SAICH<SAI, true> {
         type Fs = FsB;
         type Mclk = MclkB;
         type Sck = SckB;
@@ -2685,18 +2688,18 @@ pub mod sai2 {
     }
 
     use crate::pac::SAI2 as SAI;
-    pub use crate::sai::{SAI2A, SAI2B};
+    use crate::sai::SAICH;
     impl SaiChannels for SAI {
-        type A = SAI2A;
-        type B = SAI2B;
+        type A = SAICH<SAI, false>;
+        type B = SAICH<SAI, true>;
     }
-    impl SaiChannel for SAI2A {
+    impl SaiChannel for SAICH<SAI, false> {
         type Fs = FsA;
         type Mclk = MclkA;
         type Sck = SckA;
         type Sd = SdA;
     }
-    impl SaiChannel for SAI2B {
+    impl SaiChannel for SAICH<SAI, true> {
         type Fs = FsB;
         type Mclk = MclkB;
         type Sck = SckB;

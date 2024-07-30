@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
  - I2C 10-bit address support for I2c [#772] [#783]
+ - FMPI2c APB timings [#770]
  - `i2c_scanner` example [#758]
  - Enable `sdio` for stm32f446
  - port LTDC implementation and example from stm32f7xx-hal [#731]
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
  - use GPIO pac fields instead of raw write
  - RTIC2 monotonics fix: CC1 instead of CC3
+ - Fefactor FMPI2c `embedded-hal` implementations
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
  - Clean SPI write impls
  - move `ptr()` to `Ptr` trait [#773]
@@ -34,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#725]: https://github.com/stm32-rs/stm32f4xx-hal/pull/725
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
 [#758]: https://github.com/stm32-rs/stm32f4xx-hal/pull/758
+[#770]: https://github.com/stm32-rs/stm32f4xx-hal/pull/770
 [#772]: https://github.com/stm32-rs/stm32f4xx-hal/pull/772
 [#773]: https://github.com/stm32-rs/stm32f4xx-hal/pull/773
 [#783]: https://github.com/stm32-rs/stm32f4xx-hal/pull/783

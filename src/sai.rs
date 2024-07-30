@@ -22,7 +22,6 @@
 use core::ops::Deref;
 
 use crate::gpio::alt::SaiChannel;
-use crate::pac::RCC;
 #[cfg(feature = "sai2")]
 use crate::pac::SAI2;
 #[cfg(any(
@@ -32,7 +31,12 @@ use crate::pac::SAI2;
     feature = "stm32f439"
 ))]
 use crate::pac::{sai, SAI as SAI1};
-#[cfg(any(feature = "stm32f427", feature = "stm32f437", feature = "stm32f446"))]
+#[cfg(any(
+    feature = "f7",
+    feature = "stm32f427",
+    feature = "stm32f437",
+    feature = "stm32f446"
+))]
 use crate::pac::{sai1 as sai, SAI1};
 use crate::rcc;
 use crate::time::Hertz;
@@ -539,9 +543,10 @@ where
     where
         Self: Sized,
     {
-        let rcc = unsafe { &*RCC::ptr() };
-        SAI::enable(rcc);
-        SAI::reset(rcc);
+        unsafe {
+            SAI::enable_unchecked();
+            SAI::reset_unchecked();
+        }
         (
             SubBlock {
                 channel: SAIA::new(self),
@@ -565,9 +570,10 @@ where
     where
         Self: Sized,
     {
-        let rcc = unsafe { &*RCC::ptr() };
-        SAI::enable(rcc);
-        SAI::reset(rcc);
+        unsafe {
+            SAI::enable_unchecked();
+            SAI::reset_unchecked();
+        }
         (
             SubBlock {
                 channel: SAIA::new(self),
@@ -591,9 +597,10 @@ where
     where
         Self: Sized,
     {
-        let rcc = unsafe { &*RCC::ptr() };
-        SAI::enable(rcc);
-        SAI::reset(rcc);
+        unsafe {
+            SAI::enable_unchecked();
+            SAI::reset_unchecked();
+        }
         (
             SubBlock {
                 channel: SAIA::new(self),

@@ -30,6 +30,7 @@ use crate::pac;
 use crate::gpio::NoPin;
 use crate::rcc::Clocks;
 
+#[cfg(feature = "dma")]
 pub mod dma;
 
 /// Serial error kind
@@ -294,12 +295,25 @@ macro_rules! halUsart {
 }
 pub(crate) use halUsart;
 
+#[cfg(feature = "usart1")]
 halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
+#[cfg(feature = "usart2")]
 halUsart! { pac::USART2, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
-
 #[cfg(feature = "usart3")]
+#[cfg(not(feature = "l4"))]
 halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
+#[cfg(feature = "usart4")]
+halUsart! { pac::USART4, Serial4, Rx4, Tx4 }
+#[cfg(feature = "usart5")]
+halUsart! { pac::USART5, Serial5, Rx5, Tx5 }
+#[cfg(feature = "usart6")]
+halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
+#[cfg(feature = "usart7")]
+halUsart! { pac::USART7, Serial7, Rx7, Tx7 }
+#[cfg(feature = "usart8")]
+halUsart! { pac::USART8, Serial8, Rx8, Tx8 }
+#[cfg(feature = "usart10")]
+halUsart! { pac::USART10, Serial10, Rx10, Tx10 }
 
 impl<UART: CommonPins> Rx<UART, u8> {
     pub(crate) fn with_u16_data(self) -> Rx<UART, u16> {

@@ -15,6 +15,7 @@ mod hal_1;
 pub use common::{Address, Error, NoAcknowledgeSource};
 use common::{Hal02Operation, Hal1Operation};
 
+#[cfg(feature = "dma")]
 pub mod dma;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -82,6 +83,16 @@ pub trait Instance:
     + Reset
     + gpio::alt::I2cCommon
 {
+    #[doc(hidden)]
+    #[inline(always)]
+    fn tx_peri_address() -> u32 {
+        unsafe { (*Self::ptr()).dr().as_ptr() as u32 }
+    }
+    #[doc(hidden)]
+    #[inline(always)]
+    fn rx_peri_address() -> u32 {
+        unsafe { (*Self::ptr()).dr().as_ptr() as u32 }
+    }
 }
 
 // Implemented by all I2C instances
@@ -101,10 +112,16 @@ macro_rules! i2c {
 }
 
 i2c! { pac::I2C1: I2c1 }
+#[cfg(feature = "i2c2")]
 i2c! { pac::I2C2: I2c2 }
-
 #[cfg(feature = "i2c3")]
 i2c! { pac::I2C3: I2c3 }
+#[cfg(feature = "i2c4")]
+i2c! { pac::I2C4: I2c4 }
+#[cfg(feature = "i2c5")]
+i2c! { pac::I2C5: I2c5 }
+#[cfg(feature = "i2c6")]
+i2c! { pac::I2C6: I2c6 }
 
 pub trait I2cExt: Sized + Instance {
     fn i2c(
@@ -658,3 +675,30 @@ macro_rules! transaction_impl {
     };
 }
 use transaction_impl;
+
+impl<I2C: Instance> embedded_hal_02::blocking::i2c::WriteIter for I2c<I2C> {
+    type Error = Error;
+
+    fn write<B>(&mut self, addr: u8, bytes: B) -> Result<(), Self::Error>
+    where
+        B: IntoIterator<Item = u8>,
+    {
+        self.write_iter(addr, bytes)
+    }
+}
+
+impl<I2C: Instance> embedded_hal_02::blocking::i2c::WriteIterRead for I2c<I2C> {
+    type Error = Error;
+
+    fn write_iter_read<B>(
+        &mut self,
+        addr: u8,
+        bytes: B,
+        buffer: &mut [u8],
+    ) -> Result<(), Self::Error>
+    where
+        B: IntoIterator<Item = u8>,
+    {
+        self.write_iter_read(addr, bytes, buffer)
+    }
+}

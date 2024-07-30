@@ -23,7 +23,12 @@ impl<T: Iterator> IteratorExt for T {
 fn main() {
     let _chip_name = match env::vars()
         .map(|(a, _)| a)
-        .filter(|x| x.starts_with("CARGO_FEATURE_STM32F4"))
+        .filter(|x| {
+            x.starts_with("CARGO_FEATURE_STM32F3")
+                || x.starts_with("CARGO_FEATURE_STM32F4")
+                || x.starts_with("CARGO_FEATURE_STM32F7")
+                || x.starts_with("CARGO_FEATURE_STM32L4")
+        })
         .get_one()
     {
         Ok(x) => x,
