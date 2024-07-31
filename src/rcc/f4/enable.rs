@@ -362,3 +362,7 @@ bus! {
 bus! {
     DMA2D => (AHB1, 23),
 }
+#[cfg(feature = "dsihost")]
+bus! {
+    DSI => (APB2, 27),
+}

@@ -56,6 +56,7 @@ single model.
 * `usb_fs` or `usb_hs` — USB OTG FS/HS peripheral support. See [synopsys-usb-otg](https://crates.io/crates/synopsys-usb-otg).
 * `fsmc_lcd` — LCD support via FMC/FSMC peripheral. See [display-interface](https://crates.io/crates/display-interface).
 * `sdio-host` — SDIO peripheral support. See [sdio-host](https://crates.io/crates/sdio-host).
+* `dsihost` — DSI host support. See [embedded-display-controller](https://crates.io/crates/embedded-display-controller).
 
 Collaboration on this crate is highly welcome as are pull requests!
 

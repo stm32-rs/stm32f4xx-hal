@@ -35,7 +35,7 @@ impl<T: 'static + SupportedWord> Stm32F7DiscoDisplay<T> {
         let controller = DisplayController::new(
             ltdc,
             dma2d,
-            pins,
+            Some(pins),
             PixelFormat::RGB565,
             DISCO_SCREEN_CONFIG,
             Some(25.MHz()),

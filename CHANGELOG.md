@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+ - Port `dsihost` implementation from stm32h7xx-hal [#786]
  - I2C 10-bit address support for I2c [#772] [#783]
  - `i2c_scanner` example [#758]
  - Enable `sdio` for stm32f446
