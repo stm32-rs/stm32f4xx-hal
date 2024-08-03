@@ -67,7 +67,7 @@ pub type NoMosi = NoPin;
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u32)]
+#[repr(u16)]
 pub enum Event {
     /// An error occurred.
     ///
@@ -90,7 +90,7 @@ pub enum Event {
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u32)]
+#[repr(u16)]
 pub enum Flag {
     /// Receive buffer not empty
     RxNotEmpty = 1 << 0,
@@ -127,14 +127,30 @@ pub const TransferModeBidi: bool = true;
 
 pub trait FrameSize: Copy + Default {
     const DFF: bool;
+    #[doc(hidden)]
+    fn read_data(spi: &spi1::RegisterBlock) -> Self;
+    #[doc(hidden)]
+    fn write_data(self, spi: &spi1::RegisterBlock);
 }
 
 impl FrameSize for u8 {
     const DFF: bool = false;
+    fn read_data(spi: &spi1::RegisterBlock) -> Self {
+        spi.dr8().read().dr().bits()
+    }
+    fn write_data(self, spi: &spi1::RegisterBlock) {
+        spi.dr8().write(|w| w.dr().set(self))
+    }
 }
 
 impl FrameSize for u16 {
     const DFF: bool = true;
+    fn read_data(spi: &spi1::RegisterBlock) -> Self {
+        spi.dr().read().dr().bits()
+    }
+    fn write_data(self, spi: &spi1::RegisterBlock) {
+        spi.dr().write(|w| w.dr().set(self))
+    }
 }
 
 /// The bit format to send the data in
@@ -747,16 +763,11 @@ impl<SPI: Instance> Inner<SPI> {
     }
 
     fn read_data_reg<W: FrameSize>(&mut self) -> W {
-        // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
-        // reading a half-word)
-        unsafe { (*(self.spi.dr() as *const pac::spi1::DR).cast::<vcell::VolatileCell<W>>()).get() }
+        W::read_data(&self.spi)
     }
 
     fn write_data_reg<W: FrameSize>(&mut self, data: W) {
-        // NOTE(write_volatile) see note above
-        unsafe {
-            (*(self.spi.dr() as *const pac::spi1::DR).cast::<vcell::VolatileCell<W>>()).set(data)
-        }
+        data.write_data(&self.spi)
     }
 
     #[inline(always)]
