@@ -39,6 +39,7 @@ synopsys-usb-otg = { version = "0.4.0", features = [
 sdio-host = { version = "0.9.0", optional = true }
 embedded-dma = "0.2.0"
 embedded-display-controller = { version = "^0.2.0", optional = true }
+otm8009a = "0.1"
 bare-metal = { version = "1" }
 void = { default-features = false, version = "1.0.2" }
 display-interface = { version = "0.5.0", optional = true }
@@ -604,6 +605,10 @@ required-features = [
     "fsmc",
     "fsmc_lcd",
 ] # stm32f413
+
+[[example]]
+name = "f469disco-lcd-test"
+required-features = ["stm32f469", "defmt"]
 
 [[example]]
 name = "hd44780"

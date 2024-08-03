@@ -555,6 +555,18 @@ impl DsiHost {
     pub fn enable_bus_turn_around(&mut self) {
         self.dsi.pcr().modify(|_, w| w.btae().set_bit()); // Enable bus turn around
     }
+
+    pub fn enable_color_test(&mut self) {
+        self.dsi
+            .vmcr()
+            .modify(|_, w| w.pge().set_bit().pgm().clear_bit());
+    }
+
+    pub fn enable_ber_test(&mut self) {
+        self.dsi
+            .vmcr()
+            .modify(|_, w| w.pge().set_bit().pgm().set_bit());
+    }
 }
 
 impl DsiRefreshHandle {

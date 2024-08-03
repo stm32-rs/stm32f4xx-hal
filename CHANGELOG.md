@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+ - Add `f469disc-lcd-test` with color/BER test pattern LCD output [#789]
 
 ### Added
 
