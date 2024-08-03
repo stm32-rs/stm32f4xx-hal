@@ -763,6 +763,6 @@ required-features = ["otg-fs", "usb_fs"] # stm32f401
 name = "ws2812-spi"
 required-features = []
 
-[[example]]
-name = "fmc-sdram"
-required-features = ["stm32f469", "stm32-fmc"]
+#[[example]]
+#name = "fmc-sdram"
+#required-features = ["stm32f469", "stm32-fmc"]
