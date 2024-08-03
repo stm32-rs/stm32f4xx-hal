@@ -57,6 +57,8 @@ embedded-hal-async = { version = "1.0", optional = true }
 rtic = { version = "2.0.1", features = ["thumbv7-backend"], optional = true }
 atomic-polyfill = { version = "1.0.3", optional = true }
 
+stm32-fmc = { version = "0.3.0", optional = true }
+
 enumflags2 = "0.7.8"
 embedded-storage = "0.3"
 document-features = "0.2"
@@ -760,3 +762,7 @@ required-features = ["otg-fs", "usb_fs"] # stm32f401
 [[example]]
 name = "ws2812-spi"
 required-features = []
+
+#[[example]]
+#name = "fmc-sdram"
+#required-features = ["stm32f469", "stm32-fmc"]

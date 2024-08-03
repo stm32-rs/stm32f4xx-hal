@@ -28,7 +28,7 @@ def main():
 
     crate_info = cargo_meta["packages"][0]
 
-    features = ["{},usb_fs,can,i2s,fsmc_lcd,rtic1,defmt".format(x)
+    features = ["{},usb_fs,can,i2s,fsmc_lcd,rtic1,defmt,stm32-fmc".format(x)
             for x in crate_info["features"].keys()
             if x.startswith("stm32f4")]
 
@@ -36,7 +36,7 @@ def main():
         cargo_cmd = ['cargo', 'build', '--release']
     else:
         cargo_cmd = ['cargo', 'check']
-    
+
     if '--examples' in sys.argv:
         cargo_cmd += ['--examples']
 
@@ -47,4 +47,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

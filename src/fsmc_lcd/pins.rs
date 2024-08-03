@@ -17,7 +17,7 @@
 
 use core::marker::PhantomData;
 
-use crate::gpio::alt::fsmc as alt;
+use crate::gpio::alt::fmc as alt;
 
 use super::sealed;
 use super::{Lcd, SubBank1, Word};
