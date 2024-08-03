@@ -105,6 +105,8 @@ pub mod otg_hs;
 pub mod rng;
 
 pub mod dma;
+#[cfg(feature = "dsihost")]
+pub mod dsi;
 pub mod dwt;
 pub mod flash;
 #[cfg(all(feature = "fsmc_lcd", any(feature = "fmc", feature = "fsmc")))]

@@ -210,7 +210,7 @@ impl<T: 'static + SupportedWord> DisplayController<T> {
     pub fn new(
         ltdc: LTDC,
         dma2d: DMA2D,
-        _pins: LtdcPins,
+        _pins: Option<LtdcPins>,
         pixel_format: PixelFormat,
         config: DisplayConfig,
         hse: Option<Hertz>,
