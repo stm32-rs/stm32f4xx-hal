@@ -6,11 +6,8 @@
 
 use panic_probe as _;
 
-use stm32f469i_disc as board;
-
-use crate::board::hal::gpio::alt::fmc as alt;
-use crate::board::hal::{fmc::FmcExt, pac, prelude::*};
 use core::{mem, slice};
+use stm32f4xx_hal::{fmc::FmcExt, gpio::alt::fmc as alt, pac, prelude::*};
 
 use cortex_m::peripheral::Peripherals;
 
@@ -101,26 +98,25 @@ fn main() -> ! {
         let mut pattern = XorShift32::new(seed);
 
         // write our pattern
-        for addr in 0..len_words {
+        for (addr, res) in ram.iter_mut().enumerate().take(len_words) {
             let val = pattern.next();
 
             if (addr & 0x1ffff) == 0 {
                 rprintln!("Write: {:X} <- {:X}\r", (ram_ptr as usize) + addr, val);
             }
 
-            ram[addr] = val;
+            *res = val;
         }
 
         // read back pattern
         pattern = XorShift32::new(seed);
-        for addr in 0..len_words {
+        for (addr, &res) in ram.iter().enumerate().take(len_words) {
             let val = pattern.next();
 
             if (addr & 0x1ffff) == 0 {
                 rprintln!("Read:  {:X} -> {:X}\r", (ram_ptr as usize) + addr, val);
             }
 
-            let res: u32 = ram[addr];
             if res != val {
                 rprintln!(
                     "Error: {:X} -> {:X} != {:X}\r",
@@ -134,5 +130,7 @@ fn main() -> ! {
 
         rprintln!("Done!\r");
     }
-    loop {}
+    loop {
+        continue;
+    }
 }
