@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - RTC: `ClockSource` enum instead of generic [#785]
  - Bump MSRV to 1.62 [#778]
+ - Move PWM pins connecting after PWM inialization [#791]
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
  - use GPIO pac fields instead of raw write [#777]
  - RTIC2 monotonics fix: CC1 instead of CC3 [#771]
@@ -51,6 +52,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#778]: https://github.com/stm32-rs/stm32f4xx-hal/pull/778
 [#783]: https://github.com/stm32-rs/stm32f4xx-hal/pull/783
 [#785]: https://github.com/stm32-rs/stm32f4xx-hal/pull/785
+[#791]: https://github.com/stm32-rs/stm32f4xx-hal/pull/791
 [#796]: https://github.com/stm32-rs/stm32f4xx-hal/pull/796
 
 ## [v0.21.0] - 2024-05-30

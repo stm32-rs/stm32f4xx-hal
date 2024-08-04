@@ -8,11 +8,7 @@ use panic_halt as _;
 use core::f32::consts::FRAC_PI_2;
 use cortex_m_rt::entry;
 use micromath::F32Ext;
-use stm32f4xx_hal::{
-    pac,
-    prelude::*,
-    timer::{Channel, Channel1, Channel2},
-};
+use stm32f4xx_hal::{pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
@@ -22,11 +18,13 @@ fn main() -> ! {
         let clocks = rcc.cfgr.use_hse(25.MHz()).freeze();
 
         let gpioa = dp.GPIOA.split();
-        let channels = (Channel1::new(gpioa.pa8), Channel2::new(gpioa.pa9));
 
-        let mut pwm = dp.TIM1.pwm_us(channels, 100.micros(), &clocks);
+        let (_, (pwm_c1, pwm_c2, ..)) = dp.TIM1.pwm_us(100.micros(), &clocks);
+        let mut pwm_c1 = pwm_c1.with(gpioa.pa8);
+        let mut pwm_c2 = pwm_c2.with(gpioa.pa9);
+
         let mut counter = dp.TIM2.counter_us(&clocks);
-        let max_duty = pwm.get_max_duty();
+        let max_duty = pwm_c1.get_max_duty();
 
         const N: usize = 50;
         let mut sin_a = [0_u16; N + 1];
@@ -38,24 +36,24 @@ fn main() -> ! {
         }
 
         counter.start(100.micros()).unwrap();
-        pwm.enable(Channel::C1);
-        pwm.enable(Channel::C2);
+        pwm_c1.enable();
+        pwm_c2.enable();
         let mut i = 0;
         loop {
             if i == 0 {
-                pwm.set_duty(Channel::C2, 0);
+                pwm_c2.set_duty(0);
             }
             if i == 2 * N {
-                pwm.set_duty(Channel::C1, 0);
+                pwm_c1.set_duty(0);
             }
             if i < N {
-                pwm.set_duty(Channel::C1, sin_a[i]);
+                pwm_c1.set_duty(sin_a[i]);
             } else if i < 2 * N {
-                pwm.set_duty(Channel::C1, sin_a[2 * N - i]);
+                pwm_c1.set_duty(sin_a[2 * N - i]);
             } else if i < 3 * N {
-                pwm.set_duty(Channel::C2, sin_a[i - 2 * N]);
+                pwm_c2.set_duty(sin_a[i - 2 * N]);
             } else {
-                pwm.set_duty(Channel::C2, sin_a[4 * N - i]);
+                pwm_c2.set_duty(sin_a[4 * N - i]);
             }
             nb::block!(counter.wait()).unwrap();
             i += 1;
