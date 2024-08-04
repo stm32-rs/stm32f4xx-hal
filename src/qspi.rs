@@ -165,21 +165,18 @@ impl QspiConfig {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 #[repr(u8)]
 pub enum QspiMode {
+    #[default]
     SingleChannel = 0b01,
     DualChannel = 0b10,
     QuadChannel = 0b11,
 }
 
-impl Default for QspiMode {
-    fn default() -> Self {
-        QspiMode::SingleChannel
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum AddressSize {
     Addr8Bit = 0b00,
@@ -188,19 +185,22 @@ pub enum AddressSize {
     Addr32Bit = 0b11,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum SampleShift {
     None,
     HalfACycle,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ClockMode {
     Mode0,
     Mode3,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum QspiError {
     Busy,
     Address,

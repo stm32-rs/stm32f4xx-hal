@@ -450,7 +450,7 @@ impl<I2C: Instance> I2c<I2C> {
             return Err(Error::Overrun);
         }
 
-        self.prepare_read(addr.into(), first_transaction)?;
+        self.prepare_read(addr, first_transaction)?;
         self.read_wo_prepare(buffer)
     }
 

@@ -115,6 +115,7 @@ pub struct DsiPllConfig {
 }
 
 impl DsiPllConfig {
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn manual(ndiv: u8, idf: u8, odf: u8, eckdiv: u8) -> Self {
         DsiPllConfig {
             ndiv,
@@ -399,11 +400,10 @@ impl DsiHost {
             .modify(|_, w| w.dep().clear_bit().vsp().clear_bit().hsp().clear_bit());
 
         // Color coding for the host
-        let lpe = match dsi_config.color_coding_host {
-            ColorCoding::EighteenBitsConfig1 => true,
-            ColorCoding::EighteenBitsConfig2 => true,
-            _ => false,
-        };
+        let lpe = matches!(
+            dsi_config.color_coding_host,
+            ColorCoding::EighteenBitsConfig1 | ColorCoding::EighteenBitsConfig2
+        );
         dsi.lcolcr().modify(|_, w| unsafe {
             w.lpe()
                 .bit(lpe) // loosely packed: 18bits
