@@ -6,10 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
- - Add `f469disc-lcd-test` with color/BER test pattern LCD output [#789]
 
 ### Added
 
+ - Add `f469disc-lcd-test` with color/BER test pattern LCD output [#789]
  - Port `dsihost` implementation from stm32h7xx-hal [#786]
  - I2C 10-bit address support for I2c [#772] [#783]
  - `i2c_scanner` example [#758]
@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
  - Bump MSRV to 1.62
+ - Move PWM pins connecting after PWM inialization
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
  - use GPIO pac fields instead of raw write
  - RTIC2 monotonics fix: CC1 instead of CC3

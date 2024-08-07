@@ -6,11 +6,7 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
-use stm32f4xx_hal::{
-    pac,
-    prelude::*,
-    timer::{Channel1, Channel2, Timer},
-};
+use stm32f4xx_hal::{pac, prelude::*, timer::Timer};
 
 #[entry]
 fn main() -> ! {
@@ -22,10 +18,10 @@ fn main() -> ! {
         let gpioa = dp.GPIOA.split();
         let gpioc = dp.GPIOC.split();
 
-        let channels = (Channel1::new(gpioa.pa8), Channel2::new(gpioa.pa9));
         // configure tim1 as a PWM output of known frequency.
-        let pwm = Timer::new(dp.TIM1, &clocks).pwm_hz(channels, 501.Hz());
-        let (mut ch1, _ch2) = pwm.split();
+        let (_, (ch1, ch2, ..)) = Timer::new(dp.TIM1, &clocks).pwm_hz(501.Hz());
+        let mut ch1 = ch1.with(gpioa.pa8);
+        let mut _ch2 = ch2.with(gpioa.pa9);
         let max_duty = ch1.get_max_duty();
         ch1.set_duty(max_duty / 2);
         ch1.enable();
