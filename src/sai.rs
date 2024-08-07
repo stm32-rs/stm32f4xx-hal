@@ -22,7 +22,6 @@
 use core::ops::Deref;
 
 use crate::gpio::alt::SaiChannel;
-use crate::pac::RCC;
 #[cfg(feature = "sai2")]
 use crate::pac::SAI2;
 #[cfg(any(
@@ -539,9 +538,10 @@ where
     where
         Self: Sized,
     {
-        let rcc = unsafe { &*RCC::ptr() };
-        SAI::enable(rcc);
-        SAI::reset(rcc);
+        unsafe {
+            SAI::enable_unchecked();
+            SAI::reset_unchecked();
+        }
         (
             SubBlock {
                 channel: SAIA::new(self),
@@ -565,9 +565,10 @@ where
     where
         Self: Sized,
     {
-        let rcc = unsafe { &*RCC::ptr() };
-        SAI::enable(rcc);
-        SAI::reset(rcc);
+        unsafe {
+            SAI::enable_unchecked();
+            SAI::reset_unchecked();
+        }
         (
             SubBlock {
                 channel: SAIA::new(self),
@@ -591,9 +592,10 @@ where
     where
         Self: Sized,
     {
-        let rcc = unsafe { &*RCC::ptr() };
-        SAI::enable(rcc);
-        SAI::reset(rcc);
+        unsafe {
+            SAI::enable_unchecked();
+            SAI::reset_unchecked();
+        }
         (
             SubBlock {
                 channel: SAIA::new(self),
