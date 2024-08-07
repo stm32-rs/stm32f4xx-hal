@@ -99,7 +99,7 @@ impl From<Hertz> for Mode {
 }
 
 pub trait I2cExt: Sized + Instance {
-    fn i2c<'a>(
+    fn i2c(
         self,
         pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
@@ -107,7 +107,7 @@ pub trait I2cExt: Sized + Instance {
 }
 
 impl<I2C: Instance> I2cExt for I2C {
-    fn i2c<'a>(
+    fn i2c(
         self,
         pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
