@@ -344,7 +344,7 @@ impl<I2C: Instance> I2c<I2C> {
             Address::Seven(addr) => {
                 self.i2c
                     .dr()
-                    .write(|w| unsafe { w.bits((u32::from(addr) << 1) & 1) });
+                    .write(|w| unsafe { w.bits((u32::from(addr) << 1) | 1) });
             }
             Address::Ten(addr) => {
                 let [msbs, lsbs] = addr.to_be_bytes();
@@ -357,7 +357,7 @@ impl<I2C: Instance> I2c<I2C> {
                 self.i2c.cr1().modify(|_, w| w.start().set_bit());
                 // Wait until START condition was generated
                 while self.i2c.sr1().read().sb().bit_is_clear() {}
-                dr.write(|w| unsafe { w.bits(u32::from(msbs & 1)) });
+                dr.write(|w| unsafe { w.bits(u32::from(msbs | 1)) });
             }
         }
 
