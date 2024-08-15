@@ -348,7 +348,7 @@ impl<I2C: Instance> I2c<I2C> {
             }
             Address::Ten(addr) => {
                 let [msbs, lsbs] = addr.to_be_bytes();
-                let msbs = ((msbs & 0b11) << 1) & 0b11110000;
+                let msbs = ((msbs & 0b11) << 1) | 0b11110000;
                 let dr = self.i2c.dr();
                 if first_transaction {
                     dr.write(|w| unsafe { w.bits(u32::from(msbs)) });
