@@ -282,15 +282,10 @@ i2s!(pac::SPI2, I2s2, i2s2);
 #[cfg(feature = "spi3")]
 i2s!(pac::SPI3, I2s3, i2s3);
 
-#[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f413"))]
+#[cfg(feature = "spi4")]
 i2s!(pac::SPI4, I2s4, i2s4);
 
-#[cfg(any(
-    feature = "gpio-f410",
-    feature = "gpio-f411",
-    feature = "gpio-f412",
-    feature = "gpio-f413"
-))]
+#[cfg(feature = "spi5")]
 i2s!(pac::SPI5, I2s5, i2s5);
 
 /// A wrapper around a SPI and a I2SEXT object and pins for full duplex I2S operation
