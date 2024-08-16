@@ -222,14 +222,11 @@ impl RccExt for RCC {
                 sysclk: None,
                 pll48clk: false,
                 i2s_ckin: None,
-                #[cfg(any(
-                    feature = "gpio-f401",
-                    feature = "gpio-f410",
-                    feature = "gpio-f411",
-                    feature = "gpio-f417",
-                    feature = "gpio-f427",
-                    feature = "gpio-f469",
-                ))]
+                #[cfg(not(any(
+                    feature = "gpio-f412",
+                    feature = "gpio-f413",
+                    feature = "gpio-f446"
+                )))]
                 i2s_clk: None,
                 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
                 i2s_apb1_clk: None,
@@ -323,14 +320,7 @@ pub struct CFGR {
     pll48clk: bool,
 
     i2s_ckin: Option<u32>,
-    #[cfg(any(
-        feature = "gpio-f401",
-        feature = "gpio-f410",
-        feature = "gpio-f411",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f469",
-    ))]
+    #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
     i2s_clk: Option<u32>,
     #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
     i2s_apb1_clk: Option<u32>,
@@ -399,14 +389,7 @@ impl CFGR {
     }
 
     /// Selects an I2S clock frequency and enables the I2S clock.
-    #[cfg(any(
-        feature = "gpio-f401",
-        feature = "gpio-f410",
-        feature = "gpio-f411",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f469",
-    ))]
+    #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
     pub fn i2s_clk(mut self, freq: Hertz) -> Self {
         self.i2s_clk = Some(freq.raw());
         self
