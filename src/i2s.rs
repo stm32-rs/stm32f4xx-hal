@@ -38,7 +38,46 @@ pub trait DualInstance: Instance + gpio::alt::I2sExtPin {
 
 /// Trait to get I2s frequency at SPI peripheral input.
 pub trait I2sFreq {
-    fn i2s_freq(clocks: &Clocks) -> Hertz;
+    fn try_i2s_freq(clocks: &Clocks) -> Option<Hertz>;
+    fn i2s_freq(clocks: &Clocks) -> Hertz {
+        Self::try_i2s_freq(clocks).expect("I2S clock input for SPI not enabled")
+    }
+}
+
+impl<T> I2sFreq for T
+where
+    T: rcc::RccBus,
+    T::Bus: I2sFreq,
+{
+    fn try_i2s_freq(clocks: &Clocks) -> Option<Hertz> {
+        T::Bus::try_i2s_freq(clocks)
+    }
+}
+
+impl I2sFreq for rcc::APB1 {
+    fn try_i2s_freq(clocks: &Clocks) -> Option<Hertz> {
+        #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+        {
+            clocks.i2s_clk()
+        }
+        #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+        {
+            clocks.i2s_apb1_clk()
+        }
+    }
+}
+
+impl I2sFreq for rcc::APB2 {
+    fn try_i2s_freq(clocks: &Clocks) -> Option<Hertz> {
+        #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+        {
+            clocks.i2s_clk()
+        }
+        #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+        {
+            clocks.i2s_apb2_clk()
+        }
+    }
 }
 
 /// Trait to build an [`I2s`] object from SPI peripheral, pins and clocks
@@ -186,21 +225,11 @@ impl<I: Instance> I2s<I> {
 /// $SPI: The fully-capitalized name of the SPI peripheral from pac module (example: SPI1)
 /// $I2s: The CamelCase I2S alias name for hal I2s wrapper (example: I2s1).
 /// $i2s: module containing the Ws pin definition. (example: i2s1).
-/// $clock: The name of the Clocks function that returns the frequency of the I2S clock input
-/// to this SPI peripheral (i2s_cl, i2s_apb1_clk, or i2s2_apb_clk)
 macro_rules! i2s {
-    ($SPI:ty, $I2s:ident, $i2s:ident, $clock:ident) => {
+    ($SPI:ty, $I2s:ident, $i2s:ident) => {
         pub type $I2s = I2s<$SPI>;
 
         impl Instance for $SPI {}
-
-        impl I2sFreq for $SPI {
-            fn i2s_freq(clocks: &Clocks) -> Hertz {
-                clocks
-                    .$clock()
-                    .expect("I2S clock input for SPI not enabled")
-            }
-        }
 
         #[cfg(feature = "i2s")]
         impl stm32_i2s_v12x::WsPin for gpio::alt::$i2s::Ws {
@@ -239,42 +268,25 @@ macro_rules! i2s {
     };
 }
 
-// Actually define the SPI instances that can be used for I2S
-// Each one has to be split into two declarations because the F412, F413, F423, and F446
-// have two different I2S clocks while other models have only one.
-
-#[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
-i2s!(pac::SPI1, I2s1, i2s1, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
-i2s!(pac::SPI1, I2s1, i2s1, i2s_apb2_clk);
-
-// All STM32F4 models support SPI2/I2S2
-#[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
-i2s!(pac::SPI2, I2s2, i2s2, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
-i2s!(pac::SPI2, I2s2, i2s2, i2s_apb1_clk);
-
-// All STM32F4 models except STM32F410 support SPI3/I2S3
 #[cfg(any(
-    feature = "gpio-f401",
+    feature = "gpio-f410",
     feature = "gpio-f411",
-    feature = "gpio-f417",
-    feature = "gpio-f427",
-    feature = "gpio-f469",
+    feature = "gpio-f412",
+    feature = "gpio-f413",
+    feature = "gpio-f446"
 ))]
-i2s!(pac::SPI3, I2s3, i2s3, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
-i2s!(pac::SPI3, I2s3, i2s3, i2s_apb1_clk);
+i2s!(pac::SPI1, I2s1, i2s1);
 
-#[cfg(feature = "gpio-f411")]
-i2s!(pac::SPI4, I2s4, i2s4, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
-i2s!(pac::SPI4, I2s4, i2s4, i2s_apb2_clk);
+i2s!(pac::SPI2, I2s2, i2s2);
 
-#[cfg(any(feature = "gpio-f410", feature = "gpio-f411"))]
-i2s!(pac::SPI5, I2s5, i2s5, i2s_clk);
-#[cfg(any(feature = "gpio-f412", feature = "gpio-f413"))]
-i2s!(pac::SPI5, I2s5, i2s5, i2s_apb2_clk);
+#[cfg(feature = "spi3")]
+i2s!(pac::SPI3, I2s3, i2s3);
+
+#[cfg(feature = "spi4")]
+i2s!(pac::SPI4, I2s4, i2s4);
+
+#[cfg(feature = "spi5")]
+i2s!(pac::SPI5, I2s5, i2s5);
 
 /// A wrapper around a SPI and a I2SEXT object and pins for full duplex I2S operation
 #[allow(clippy::type_complexity)]

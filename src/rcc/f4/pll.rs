@@ -290,29 +290,24 @@ impl I2sPll {
         )
     }
 
-    #[cfg(not(any(
-        feature = "gpio-f411",
-        feature = "gpio-f412",
-        feature = "gpio-f413",
-        feature = "gpio-f446",
-    )))]
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
         // "M" may have been written before, but the value is identical.
+        #[cfg(any(
+            feature = "gpio-f401",
+            feature = "gpio-f417",
+            feature = "gpio-f427",
+            feature = "gpio-f469",
+        ))]
         rcc.pllcfgr()
             .modify(|_, w| unsafe { w.pllm().bits(config.m) });
-        rcc.plli2scfgr()
-            .modify(|_, w| unsafe { w.plli2sn().bits(config.n).plli2sr().bits(config.outdiv) });
-    }
-    #[cfg(any(
-        feature = "gpio-f411",
-        feature = "gpio-f412",
-        feature = "gpio-f413",
-        feature = "gpio-f446",
-    ))]
-    fn apply_config(config: SingleOutputPll) {
-        let rcc = unsafe { &*RCC::ptr() };
         rcc.plli2scfgr().modify(|_, w| unsafe {
+            #[cfg(any(
+                feature = "gpio-f411",
+                feature = "gpio-f412",
+                feature = "gpio-f413",
+                feature = "gpio-f446",
+            ))]
             w.plli2sm().bits(config.m);
             w.plli2sn().bits(config.n);
             w.plli2sr().bits(config.outdiv)
@@ -320,14 +315,16 @@ impl I2sPll {
     }
 }
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+#[cfg(feature = "sai")]
+#[cfg(not(feature = "gpio-f413"))]
 pub struct SaiPll {
     pub use_pll: bool,
     /// SAI clock (PLL output divided by the SAI clock divider).
     pub sai_clk: Option<u32>,
 }
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+#[cfg(feature = "sai")]
+#[cfg(not(feature = "gpio-f413"))]
 impl SaiPll {
     pub fn unused() -> SaiPll {
         SaiPll {
@@ -393,23 +390,16 @@ impl SaiPll {
         )
     }
 
-    #[cfg(not(feature = "gpio-f446"))]
     fn apply_config(config: SingleOutputPll, saidiv: u32) {
         let rcc = unsafe { &*RCC::ptr() };
         rcc.dckcfgr()
             .modify(|_, w| w.pllsaidivq().set(saidiv as u8 - 1));
         // "M" may have been written before, but the value is identical.
+        #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
         rcc.pllcfgr()
             .modify(|_, w| unsafe { w.pllm().bits(config.m) });
-        rcc.pllsaicfgr()
-            .modify(|_, w| unsafe { w.pllsain().bits(config.n).pllsaiq().bits(config.outdiv) });
-    }
-    #[cfg(feature = "gpio-f446")]
-    fn apply_config(config: SingleOutputPll, saidiv: u32) {
-        let rcc = unsafe { &*RCC::ptr() };
-        rcc.dckcfgr()
-            .modify(|_, w| w.pllsaidivq().set(saidiv as u8 - 1));
         rcc.pllsaicfgr().modify(|_, w| unsafe {
+            #[cfg(feature = "gpio-f446")]
             w.pllsaim().bits(config.m);
             w.pllsain().bits(config.n);
             w.pllsaiq().bits(config.outdiv)
