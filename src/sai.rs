@@ -297,7 +297,7 @@ pub trait Channel: ChannelClocks {
     // TODO: SAIB is on Channel 0, Stream 5 and Channel 1, Stream 4.
 }
 
-#[cfg(any(feature = "gpio-f413", feature = "gpio-f427", feature = "gpio-f469"))]
+#[cfg(not(feature = "sai2"))]
 impl<SAI, const C: bool> ChannelClocks for SAICH<SAI, C> {
     fn get_clk_frequency(clocks: &rcc::Clocks) -> Option<Hertz> {
         if C {
@@ -308,7 +308,7 @@ impl<SAI, const C: bool> ChannelClocks for SAICH<SAI, C> {
     }
 }
 
-#[cfg(feature = "gpio-f446")]
+#[cfg(feature = "sai2")]
 impl<const C: bool> ChannelClocks for SAICH<SAI1, C> {
     fn get_clk_frequency(clocks: &rcc::Clocks) -> Option<Hertz> {
         clocks.sai1_clk()
@@ -316,7 +316,6 @@ impl<const C: bool> ChannelClocks for SAICH<SAI1, C> {
 }
 
 #[cfg(feature = "sai2")]
-#[cfg(feature = "gpio-f446")]
 impl<const C: bool> ChannelClocks for SAICH<SAI2, C> {
     fn get_clk_frequency(clocks: &rcc::Clocks) -> Option<Hertz> {
         clocks.sai2_clk()

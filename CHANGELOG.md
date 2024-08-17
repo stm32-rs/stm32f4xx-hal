@@ -6,32 +6,32 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
- - Add `f469disc-lcd-test` with color/BER test pattern LCD output [#789]
 
 ### Added
 
+ - Add `f469disc-lcd-test` with color/BER test pattern LCD output [#789]
  - Port `dsihost` implementation from stm32h7xx-hal [#786]
  - I2C 10-bit address support for I2c [#772] [#783]
  - `i2c_scanner` example [#758]
- - Enable `sdio` for stm32f446
+ - Enable `sdio` for stm32f446 [#764]
  - port LTDC implementation and example from stm32f7xx-hal [#731]
  - port `stm32-fmc` support and example from stm32f7xx-hal [#759]
- - IrDA mode for USARTs
+ - IrDA mode for USARTs [#761]
  - initial `SAI` support [#248]
  - initial `embedded-io` support [#725]
 
 ### Changed
 
- - RTC: `ClockSource` enum instead of generic
- - Bump MSRV to 1.62
+ - RTC: `ClockSource` enum instead of generic [#785]
+ - Bump MSRV to 1.62 [#778]
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
- - use GPIO pac fields instead of raw write
- - RTIC2 monotonics fix: CC1 instead of CC3
+ - use GPIO pac fields instead of raw write [#777]
+ - RTIC2 monotonics fix: CC1 instead of CC3 [#771]
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
- - Clean SPI write impls
+ - Clean SPI write impls [#774]
  - move `ptr()` to `Ptr` trait [#773]
- - make `I2sFreq` trait similar to `BusClock`
- - `steal` UART peripheral on `Rx::new`
+ - make `I2sFreq` trait similar to `BusClock` [#796]
+ - `steal` UART peripheral on `Rx::new` [#768]
 
 [#248]: https://github.com/stm32-rs/stm32f4xx-hal/pull/248
 [#566]: https://github.com/stm32-rs/stm32f4xx-hal/pull/566
@@ -39,10 +39,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#725]: https://github.com/stm32-rs/stm32f4xx-hal/pull/725
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
 [#758]: https://github.com/stm32-rs/stm32f4xx-hal/pull/758
+[#759]: https://github.com/stm32-rs/stm32f4xx-hal/pull/759
+[#761]: https://github.com/stm32-rs/stm32f4xx-hal/pull/761
+[#764]: https://github.com/stm32-rs/stm32f4xx-hal/pull/764
+[#768]: https://github.com/stm32-rs/stm32f4xx-hal/pull/768
+[#771]: https://github.com/stm32-rs/stm32f4xx-hal/pull/771
 [#772]: https://github.com/stm32-rs/stm32f4xx-hal/pull/772
 [#773]: https://github.com/stm32-rs/stm32f4xx-hal/pull/773
+[#774]: https://github.com/stm32-rs/stm32f4xx-hal/pull/774
+[#777]: https://github.com/stm32-rs/stm32f4xx-hal/pull/777
+[#778]: https://github.com/stm32-rs/stm32f4xx-hal/pull/778
 [#783]: https://github.com/stm32-rs/stm32f4xx-hal/pull/783
-[#759]: https://github.com/stm32-rs/stm32f4xx-hal/pull/759
+[#785]: https://github.com/stm32-rs/stm32f4xx-hal/pull/785
+[#796]: https://github.com/stm32-rs/stm32f4xx-hal/pull/796
 
 ## [v0.21.0] - 2024-05-30
 
