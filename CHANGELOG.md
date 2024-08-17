@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+ - RTC: `ClockSource` enum instead of generic
  - Bump MSRV to 1.62
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
  - use GPIO pac fields instead of raw write
