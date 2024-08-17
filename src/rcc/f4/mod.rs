@@ -869,9 +869,9 @@ impl CFGR {
             #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
             i2s_clk: plls.i2s.i2s_clk.map(Hertz::from_raw),
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
-            i2s_apb1_clk: plls.i2s.i2s_apb1_clk.map(Hertz::from_raw),
+            i2s_apb1_clk: plls.i2s.apb1.i2s_clk.map(Hertz::from_raw),
             #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
-            i2s_apb2_clk: plls.i2s.i2s_apb2_clk.map(Hertz::from_raw),
+            i2s_apb2_clk: plls.i2s.apb2.i2s_clk.map(Hertz::from_raw),
 
             #[cfg(feature = "sai")]
             #[cfg(not(feature = "sai2"))]
@@ -929,50 +929,52 @@ struct I2sClocks {
 }
 
 impl I2sClocks {
-    #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
     fn real(&self, pll_i2s_clk: Option<u32>, i2s_ckin: Option<u32>) -> RealI2sClocks {
-        RealI2sClocks {
-            i2s_apb1_ext: self.i2s_apb1_ext,
-            i2s_apb2_ext: self.i2s_apb2_ext,
-            i2s_apb1_clk: if self.i2s_apb1_ext {
-                i2s_ckin
-            } else {
-                pll_i2s_clk
+        #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+        let clk = RealI2sClocks {
+            apb1: RealI2sClock {
+                i2s_ext: self.i2s_apb1_ext,
+                i2s_clk: if self.i2s_apb1_ext {
+                    i2s_ckin
+                } else {
+                    pll_i2s_clk
+                },
             },
-            i2s_apb2_clk: if self.i2s_apb2_ext {
-                i2s_ckin
-            } else {
-                pll_i2s_clk
+            apb2: RealI2sClock {
+                i2s_ext: self.i2s_apb2_ext,
+                i2s_clk: if self.i2s_apb2_ext {
+                    i2s_ckin
+                } else {
+                    pll_i2s_clk
+                },
             },
-        }
-    }
-
-    #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
-    fn real(&self, pll_i2s_clk: Option<u32>, i2s_ckin: Option<u32>) -> RealI2sClocks {
-        RealI2sClocks {
+        };
+        #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+        let clk = RealI2sClocks {
             i2s_ext: self.i2s_ext,
             i2s_clk: if self.i2s_ext { i2s_ckin } else { pll_i2s_clk },
-        }
+        };
+        clk
     }
+}
+
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+struct RealI2sClock {
+    i2s_ext: bool,
+    i2s_clk: Option<u32>,
 }
 
 #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct RealI2sClocks {
-    i2s_apb1_ext: bool,
-    i2s_apb2_ext: bool,
-    i2s_apb1_clk: Option<u32>,
-    i2s_apb2_clk: Option<u32>,
+    apb1: RealI2sClock,
+    apb2: RealI2sClock,
 }
 
 #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-struct RealI2sClocks {
-    i2s_ext: bool,
-    i2s_clk: Option<u32>,
-}
+use RealI2sClock as RealI2sClocks;
 
 impl RealI2sClocks {
     fn config_clocksel(&self) {
@@ -1001,12 +1003,12 @@ impl RealI2sClocks {
         });
         #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
         rcc.dckcfgr().modify(|_, w| {
-            if self.i2s_apb1_ext {
+            if self.apb1.i2s_ext {
                 w.i2s1src().i2s_ckin()
             } else {
                 w.i2s1src().plli2sr()
             };
-            if self.i2s_apb2_ext {
+            if self.apb2.i2s_ext {
                 w.i2s2src().i2s_ckin()
             } else {
                 w.i2s2src().plli2sr()
