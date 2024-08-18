@@ -126,20 +126,17 @@ impl PllSetup {
         // All PLLs are completely independent.
         let main_pll = MainPll::fast_setup(pllsrcclk, cfgr.hse.is_some(), pllsysclk, cfgr.pll48clk);
 
-        #[cfg(any(feature = "gpio-f411", feature = "gpio-f412", feature = "gpio-f446"))]
+        #[cfg(not(feature = "rcc_shared_m"))]
         let i2s_pll = I2sPll::setup(pllsrcclk, i2s_clocks.pll_i2s_clk);
-        #[cfg(any(
-            feature = "gpio-f401",
-            feature = "gpio-f417",
-            feature = "gpio-f427",
-            feature = "gpio-f469",
-        ))]
+        #[cfg(feature = "rcc_shared_m")]
         // We have separate PLLs, but they share the "M" divider.
         let i2s_pll = I2sPll::setup_shared_m(pllsrcclk, main_pll.m(), i2s_clocks.pll_i2s_clk);
 
-        #[cfg(any(feature = "gpio-f446"))]
+        #[cfg(feature = "sai")]
+        #[cfg(not(feature = "rcc_shared_m"))]
         let sai_pll = SaiPll::setup(pllsrcclk, sai_clocks.pll_sai_clk);
-        #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+        #[cfg(feature = "sai")]
+        #[cfg(feature = "rcc_shared_m")]
         let sai_pll = SaiPll::setup_shared_m(
             pllsrcclk,
             main_pll.m().or(i2s_pll.m()),
@@ -391,7 +388,7 @@ impl MainPll {
         }
         let div = crate::min_u32(crate::max_u32(div, min_div), max_div);
         let output = vco_out / div;
-        let error = (output as i32 - target as i32).abs() as u32;
+        let error = (output as i32 - target as i32).unsigned_abs();
         Some((div, output, error))
     }
 }
@@ -447,12 +444,7 @@ impl I2sPll {
         pll
     }
 
-    #[cfg(any(
-        feature = "gpio-f401",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-        feature = "gpio-f469",
-    ))]
+    #[cfg(feature = "rcc_shared_m")]
     fn setup_shared_m(pllsrcclk: u32, m: Option<u32>, plli2sclk: Option<u32>) -> Self {
         // "m" is None if the main PLL is not in use.
         let Some(m) = m else {
@@ -483,21 +475,11 @@ impl I2sPll {
     fn apply_config(config: SingleOutputPll) {
         let rcc = unsafe { &*RCC::ptr() };
         // "M" may have been written before, but the value is identical.
-        #[cfg(any(
-            feature = "gpio-f401",
-            feature = "gpio-f417",
-            feature = "gpio-f427",
-            feature = "gpio-f469",
-        ))]
+        #[cfg(feature = "rcc_shared_m")]
         rcc.pllcfgr()
             .modify(|_, w| unsafe { w.pllm().bits(config.m) });
         rcc.plli2scfgr().modify(|_, w| unsafe {
-            #[cfg(any(
-                feature = "gpio-f411",
-                feature = "gpio-f412",
-                feature = "gpio-f413",
-                feature = "gpio-f446",
-            ))]
+            #[cfg(not(feature = "rcc_shared_m"))]
             w.plli2sm().bits(config.m);
             w.plli2sn().bits(config.n);
             w.plli2sr().bits(config.outdiv)
@@ -547,7 +529,7 @@ impl SaiPll {
         pll
     }
 
-    #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+    #[cfg(feature = "rcc_shared_m")]
     fn setup_shared_m(pllsrcclk: u32, m: Option<u32>, sai_clk: Option<u32>) -> Self {
         // "m" is None if both other PLLs are not in use.
         let Some(m) = m else {
@@ -592,11 +574,11 @@ impl SaiPll {
         rcc.dckcfgr()
             .modify(|_, w| w.pllsaidivq().set(saidiv as u8 - 1));
         // "M" may have been written before, but the value is identical.
-        #[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+        #[cfg(feature = "rcc_shared_m")]
         rcc.pllcfgr()
             .modify(|_, w| unsafe { w.pllm().bits(config.m) });
         rcc.pllsaicfgr().modify(|_, w| unsafe {
-            #[cfg(feature = "gpio-f446")]
+            #[cfg(not(feature = "rcc_shared_m"))]
             w.pllsaim().bits(config.m);
             w.pllsain().bits(config.n);
             w.pllsaiq().bits(config.outdiv)

@@ -56,11 +56,11 @@ where
 
 impl I2sFreq for rcc::APB1 {
     fn try_i2s_freq(clocks: &Clocks) -> Option<Hertz> {
-        #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+        #[cfg(not(feature = "rcc_i2s_apb"))]
         {
             clocks.i2s_clk()
         }
-        #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+        #[cfg(feature = "rcc_i2s_apb")]
         {
             clocks.i2s_apb1_clk()
         }
@@ -69,11 +69,11 @@ impl I2sFreq for rcc::APB1 {
 
 impl I2sFreq for rcc::APB2 {
     fn try_i2s_freq(clocks: &Clocks) -> Option<Hertz> {
-        #[cfg(not(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446")))]
+        #[cfg(not(feature = "rcc_i2s_apb"))]
         {
             clocks.i2s_clk()
         }
-        #[cfg(any(feature = "gpio-f412", feature = "gpio-f413", feature = "gpio-f446"))]
+        #[cfg(feature = "rcc_i2s_apb")]
         {
             clocks.i2s_apb2_clk()
         }

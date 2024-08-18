@@ -167,6 +167,7 @@ gpio-f401 = [
     "tim9",
     "tim10",
     "tim11",
+    "rcc_shared_m"
 ]
 gpio-f410 = [
     "dac",
@@ -230,6 +231,7 @@ gpio-f412 = [
     "tim13",
     "tim14",
     "usart3",
+    "rcc_i2s_apb",
 ]
 gpio-f413 = [
     "gpiod",
@@ -275,6 +277,7 @@ gpio-f413 = [
     "uart8",
     "uart9",
     "uart10",
+    "rcc_i2s_apb",
 ]
 gpio-f417 = [
     "gpiod",
@@ -313,6 +316,7 @@ gpio-f417 = [
     "usart3",
     "uart4",
     "uart5",
+    "rcc_shared_m"
 ]
 gpio-f427 = [
     "gpiod",
@@ -360,6 +364,7 @@ gpio-f427 = [
     "uart5",
     "uart7",
     "uart8",
+    "rcc_shared_m"
 ]
 gpio-f446 = [
     "gpiod",
@@ -401,6 +406,7 @@ gpio-f446 = [
     "usart3",
     "uart4",
     "uart5",
+    "rcc_i2s_apb",
 ]
 gpio-f469 = [
     "gpiod",
@@ -451,6 +457,7 @@ gpio-f469 = [
     "uart5",
     "uart7",
     "uart8",
+    "rcc_shared_m"
 ]
 
 ## Support monotonic timers and other stuff that can be used by [RTICv1 framework](https://crates.io/crates/cortex-m-rtic)
@@ -490,8 +497,12 @@ fsmc_lcd = ["dep:display-interface", "dep:display-interface-04"]
 ## SDIO peripheral support. See [sdio-host](https://crates.io/crates/sdio-host)
 sdio-host = ["dep:sdio-host"]
 
+# Next features are for internal use only!!!
+
 dfsdm = []
 sai = []
+rcc_shared_m = []
+rcc_i2s_apb = []
 
 adc2 = []
 adc3 = []
