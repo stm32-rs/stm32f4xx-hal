@@ -340,7 +340,7 @@ impl MainPll {
         }
     }
 
-    fn best_divider(
+    const fn best_divider(
         vco_out: u32,
         min: u32,
         target: u32,
@@ -349,7 +349,7 @@ impl MainPll {
         max_div: u32,
     ) -> Option<(u32, u32, u32)> {
         let div = (vco_out + target / 2) / target;
-        let min_div = u32::max(
+        let min_div = max_u32(
             min_div,
             if max != 0 {
                 (vco_out + max - 1) / max
@@ -357,14 +357,32 @@ impl MainPll {
                 0
             },
         );
-        let max_div = u32::min(max_div, if min != 0 { vco_out / min } else { u32::MAX });
+        let max_div = min_u32(max_div, if min != 0 { vco_out / min } else { u32::MAX });
         if min_div > max_div {
             return None;
         }
-        let div = u32::min(u32::max(div, min_div), max_div);
+        let div = min_u32(max_u32(div, min_div), max_div);
         let output = vco_out / div;
         let error = (output as i32 - target as i32).abs() as u32;
         Some((div, output, error))
+    }
+}
+
+#[cfg(feature = "gpio-f410")]
+const fn max_u32(first: u32, second: u32) -> u32 {
+    if second > first {
+        second
+    } else {
+        first
+    }
+}
+
+#[cfg(feature = "gpio-f410")]
+const fn min_u32(first: u32, second: u32) -> u32 {
+    if second < first {
+        second
+    } else {
+        first
     }
 }
 
