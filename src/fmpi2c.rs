@@ -143,7 +143,6 @@ impl<I2C: Instance> I2c<I2C> {
 impl<I2C: Instance> I2c<I2C> {
     fn i2c_init(&self, mode: impl Into<Mode>) {
         let mode = mode.into();
-        use core::cmp;
 
         // Make sure the I2C unit is disabled so we can configure it
         self.i2c.cr1().modify(|_, w| w.pe().clear_bit());
@@ -167,21 +166,21 @@ impl<I2C: Instance> I2c<I2C> {
         match mode {
             Mode::Standard { frequency } => {
                 presc = 3;
-                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 1, 255) as u8;
+                scll = crate::max_u32((((FREQ >> presc) >> 1) / frequency.raw()) - 1, 255) as u8;
                 sclh = scll - 4;
                 sdadel = 2;
                 scldel = 4;
             }
             Mode::Fast { frequency } => {
                 presc = 1;
-                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 1, 255) as u8;
+                scll = crate::max_u32((((FREQ >> presc) >> 1) / frequency.raw()) - 1, 255) as u8;
                 sclh = scll - 6;
                 sdadel = 2;
                 scldel = 3;
             }
             Mode::FastPlus { frequency } => {
                 presc = 0;
-                scll = cmp::max((((FREQ >> presc) >> 1) / frequency.raw()) - 4, 255) as u8;
+                scll = crate::max_u32((((FREQ >> presc) >> 1) / frequency.raw()) - 4, 255) as u8;
                 sclh = scll - 2;
                 sdadel = 0;
                 scldel = 2;

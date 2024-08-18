@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
  - Clean SPI write impls [#774]
  - move `ptr()` to `Ptr` trait [#773]
- - make `I2sFreq` trait similar to `BusClock` [#796]
+ - make `I2sFreq` trait similar to `BusClock`, refactor `rcc::Pll` [#796] [#798]
  - `steal` UART peripheral on `Rx::new` [#768]
 
 [#248]: https://github.com/stm32-rs/stm32f4xx-hal/pull/248
@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#783]: https://github.com/stm32-rs/stm32f4xx-hal/pull/783
 [#785]: https://github.com/stm32-rs/stm32f4xx-hal/pull/785
 [#796]: https://github.com/stm32-rs/stm32f4xx-hal/pull/796
+[#798]: https://github.com/stm32-rs/stm32f4xx-hal/pull/798
 
 ## [v0.21.0] - 2024-05-30
 
