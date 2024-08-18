@@ -558,7 +558,7 @@ impl CFGR {
         let sysclk = self.sysclk.unwrap_or(pllsrcclk);
         let sysclk_on_pll = sysclk != pllsrcclk;
 
-        let plls = self.pll_setup(pllsrcclk, sysclk_on_pll.then_some(sysclk));
+        let plls = pll::PllSetup::from_cfgr(&self, pllsrcclk, sysclk_on_pll.then_some(sysclk));
         let sysclk = if sysclk_on_pll {
             plls.pllsysclk.unwrap()
         } else {
@@ -586,7 +586,7 @@ impl CFGR {
 
         let pclk1 = self
             .pclk1
-            .unwrap_or_else(|| core::cmp::min(PCLK1_MAX, hclk));
+            .unwrap_or_else(|| crate::min_u32(PCLK1_MAX, hclk));
         let (ppre1_bits, ppre1) = match (hclk + pclk1 - 1) / pclk1 {
             0 => unreachable!(),
             1 => (0b000, 1u8),
@@ -603,7 +603,7 @@ impl CFGR {
 
         let pclk2 = self
             .pclk2
-            .unwrap_or_else(|| core::cmp::min(PCLK2_MAX, hclk));
+            .unwrap_or_else(|| crate::min_u32(PCLK2_MAX, hclk));
         let (ppre2_bits, ppre2) = match (hclk + pclk2 - 1) / pclk2 {
             0 => unreachable!(),
             1 => (0b000, 1u8),

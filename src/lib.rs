@@ -227,3 +227,20 @@ pub trait Steal {
     /// no stolen instances are passed to such software.
     unsafe fn steal() -> Self;
 }
+
+#[allow(unused)]
+const fn max_u32(first: u32, second: u32) -> u32 {
+    if second > first {
+        second
+    } else {
+        first
+    }
+}
+
+const fn min_u32(first: u32, second: u32) -> u32 {
+    if second < first {
+        second
+    } else {
+        first
+    }
+}
