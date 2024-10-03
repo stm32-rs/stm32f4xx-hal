@@ -145,8 +145,8 @@ pub struct OpenDrain;
 /// Output mode (type state)
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct Output<MODE = PushPull> {
-    _mode: PhantomData<MODE>,
+pub struct Output<Otype = PushPull> {
+    _mode: PhantomData<Otype>,
 }
 
 /// Push pull output (type state)

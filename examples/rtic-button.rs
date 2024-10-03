@@ -8,7 +8,7 @@ use panic_halt as _;
 #[rtic::app(device = stm32f4xx_hal::pac, peripherals = true)]
 mod app {
     use stm32f4xx_hal::{
-        gpio::{gpioa::PA0, gpioc::PC13, Edge, Input, Output, PushPull},
+        gpio::{gpioa::PA0, gpioc::PC13, Edge, Input, Output, PinState, Pull},
         prelude::*,
     };
     const SYSFREQ: u32 = 100_000_000;
@@ -20,7 +20,7 @@ mod app {
     #[local]
     struct Local {
         button: PA0<Input>,
-        led: PC13<Output<PushPull>>,
+        led: PC13<Output>,
     }
 
     #[init]
@@ -34,12 +34,14 @@ mod app {
         let gpioa = ctx.device.GPIOA.split();
         let gpioc = ctx.device.GPIOC.split();
         // button
-        let mut button = gpioa.pa0.into_pull_up_input();
+        let mut button = Input::new(gpioa.pa0, Pull::Up);
+        // or
+        //let mut button = gpioa.pa0.into_pull_up_input();
         button.make_interrupt_source(&mut syscfg);
         button.enable_interrupt(&mut ctx.device.EXTI);
         button.trigger_on_edge(&mut ctx.device.EXTI, Edge::Falling);
         // led
-        let led = gpioc.pc13.into_push_pull_output();
+        let led = Output::new(gpioc.pc13, PinState::Low);
 
         (
             Shared {
