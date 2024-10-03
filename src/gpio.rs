@@ -63,7 +63,7 @@ pub use convert::PinMode;
 mod partially_erased;
 pub use partially_erased::{PEPin, PartiallyErasedPin};
 mod erased;
-pub use erased::{EPin, ErasedPin};
+pub use erased::{AnyPin, ErasedPin};
 mod exti;
 pub use exti::ExtiPin;
 mod dynamic;

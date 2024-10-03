@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+ - `AnyPin` alias for `ErasedPin`
  - `new` constructors for `Input`, `Output`, `Analog`
  - Add `f469disc-lcd-test` with color/BER test pattern LCD output [#789]
  - Port `dsihost` implementation from stm32h7xx-hal [#786]
