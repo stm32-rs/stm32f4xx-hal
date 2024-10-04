@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.22.0] - 2024-10-04
+
 ### Added
 
- - `AnyPin` alias for `ErasedPin`
- - `new` constructors for `Input`, `Output`, `Analog`
+ - `AnyPin` alias for `ErasedPin` [#802]
+ - `new` constructors for `Input`, `Output`, `Analog` [#802]
  - Add `f469disc-lcd-test` with color/BER test pattern LCD output [#789]
  - Port `dsihost` implementation from stm32h7xx-hal [#786]
  - I2C 10-bit address support for I2c [#772] [#783]
@@ -57,6 +59,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#791]: https://github.com/stm32-rs/stm32f4xx-hal/pull/791
 [#796]: https://github.com/stm32-rs/stm32f4xx-hal/pull/796
 [#798]: https://github.com/stm32-rs/stm32f4xx-hal/pull/798
+[#802]: https://github.com/stm32-rs/stm32f4xx-hal/pull/802
 
 ## [v0.21.0] - 2024-05-30
 
@@ -1077,7 +1080,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.22.0...HEAD
+[v0.22.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.21.0...v0.22.0
 [v0.21.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.20.0...v0.21.0
 [v0.20.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.19.0...v0.20.0
 [v0.19.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.18.0...v0.19.0
