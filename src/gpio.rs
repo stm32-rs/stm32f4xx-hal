@@ -63,7 +63,7 @@ pub use convert::PinMode;
 mod partially_erased;
 pub use partially_erased::{PEPin, PartiallyErasedPin};
 mod erased;
-pub use erased::{EPin, ErasedPin};
+pub use erased::{AnyPin, ErasedPin};
 mod exti;
 pub use exti::ExtiPin;
 mod dynamic;
@@ -145,8 +145,8 @@ pub struct OpenDrain;
 /// Output mode (type state)
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct Output<MODE = PushPull> {
-    _mode: PhantomData<MODE>,
+pub struct Output<Otype = PushPull> {
+    _mode: PhantomData<Otype>,
 }
 
 /// Push pull output (type state)

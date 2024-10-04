@@ -1,6 +1,34 @@
 use super::*;
 use crate::pac::gpioa::{moder::MODER0 as Mode, otyper::OT0 as OutputType};
 
+impl Input {
+    pub fn new<const P: char, const N: u8, MODE: PinMode>(
+        pin: Pin<P, N, MODE>,
+        pull: Pull,
+    ) -> Pin<P, N, Self> {
+        pin.into_mode().internal_resistor(pull)
+    }
+}
+
+impl<Otype> Output<Otype> {
+    pub fn new<const P: char, const N: u8, MODE: PinMode>(
+        mut pin: Pin<P, N, MODE>,
+        state: PinState,
+    ) -> Pin<P, N, Self>
+    where
+        Self: PinMode,
+    {
+        pin._set_state(state);
+        pin.into_mode()
+    }
+}
+
+impl Analog {
+    pub fn new<const P: char, const N: u8, MODE: PinMode>(pin: Pin<P, N, MODE>) -> Pin<P, N, Self> {
+        pin.into_mode()
+    }
+}
+
 impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
     /// Turns pin alternate configuration pin into open drain
     pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {

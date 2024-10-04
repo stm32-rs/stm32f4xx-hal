@@ -1,6 +1,6 @@
 use super::*;
 
-pub use ErasedPin as EPin;
+pub use ErasedPin as AnyPin;
 
 /// Fully erased pin
 ///
