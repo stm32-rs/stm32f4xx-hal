@@ -37,8 +37,8 @@
 
 use super::sealed::Split;
 use super::{
-    compute_arr_presc, Advanced, CPin, FTimer, IdleState, Instance, NCPin, Ocm, Polarity, Timer,
-    WithPwm,
+    compute_arr_presc, Advanced, CPin, CenterAlignedMode, FTimer, IdleState, Instance, NCPin, Ocm,
+    Polarity, Timer, WithPwm,
 };
 pub use super::{Ch, C1, C2, C3, C4};
 use crate::gpio::{OpenDrain, PushPull};
@@ -493,6 +493,14 @@ macro_rules! impl_advanced {
         #[inline]
         pub fn get_dead_time_bits(&self) -> u8 {
             TIM::read_dtg_value()
+        }
+
+        /// Sets the alignment mode
+        #[inline]
+        pub fn set_cms(&mut self, mode: CenterAlignedMode) {
+            self.tim.enable_counter(false);
+            TIM::set_cms(mode);
+            self.tim.enable_counter(true);
         }
     };
 }

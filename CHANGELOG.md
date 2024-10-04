@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - IrDA mode for USARTs [#761]
  - initial `SAI` support [#248]
  - initial `embedded-io` support [#725]
+ - add `.set_cms()` and `CenterAlignedMode` enum for PWM. [#697]
 
 ### Changed
 
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 [#248]: https://github.com/stm32-rs/stm32f4xx-hal/pull/248
 [#566]: https://github.com/stm32-rs/stm32f4xx-hal/pull/566
+[#697]: https://github.com/stm32-rs/stm32f4xx-hal/pull/697
 [#706]: https://github.com/stm32-rs/stm32f4xx-hal/pull/706
 [#725]: https://github.com/stm32-rs/stm32f4xx-hal/pull/725
 [#731]: https://github.com/stm32-rs/stm32f4xx-hal/pull/731
