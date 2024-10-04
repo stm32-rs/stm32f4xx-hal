@@ -6,7 +6,7 @@
 use core::convert::Infallible;
 use embedded_hal::delay::DelayNs;
 
-use super::{Delay, Instance, PwmChannel, SysDelay, WithPwm};
+use super::{CPin, Delay, ErasedChannel, Instance, PwmChannel, SysDelay, WithPwm};
 use fugit::ExtU32Ceil;
 
 impl DelayNs for SysDelay {
@@ -33,11 +33,29 @@ impl<TIM: Instance, const FREQ: u32> DelayNs for Delay<TIM, FREQ> {
     }
 }
 
-impl<TIM: Instance + WithPwm, const C: u8> embedded_hal::pwm::ErrorType for PwmChannel<TIM, C> {
+impl<TIM: Instance + WithPwm + CPin<C>, const C: u8, const COMP: bool, Otype>
+    embedded_hal::pwm::ErrorType for PwmChannel<TIM, C, COMP, Otype>
+{
     type Error = Infallible;
 }
 
-impl<TIM: Instance + WithPwm, const C: u8> embedded_hal::pwm::SetDutyCycle for PwmChannel<TIM, C> {
+impl<TIM: Instance + WithPwm + CPin<C>, const C: u8, const COMP: bool, Otype>
+    embedded_hal::pwm::SetDutyCycle for PwmChannel<TIM, C, COMP, Otype>
+{
+    fn max_duty_cycle(&self) -> u16 {
+        self.get_max_duty()
+    }
+    fn set_duty_cycle(&mut self, duty: u16) -> Result<(), Self::Error> {
+        self.set_duty(duty);
+        Ok(())
+    }
+}
+
+impl<TIM: Instance + WithPwm> embedded_hal::pwm::ErrorType for ErasedChannel<TIM> {
+    type Error = Infallible;
+}
+
+impl<TIM: Instance + WithPwm> embedded_hal::pwm::SetDutyCycle for ErasedChannel<TIM> {
     fn max_duty_cycle(&self) -> u16 {
         self.get_max_duty()
     }

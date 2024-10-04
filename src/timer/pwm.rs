@@ -7,397 +7,85 @@
 //!
 //! Second one is based on [`Timer`] with dynamic internally calculated prescaler and require [`fugit::Hertz`] to set period.
 //!
-//! You can [`split`](Pwm::split) any of those structures on independent `PwmChannel`s if you need that implement [`embedded_hal_02::PwmPin`]
-//! but can't change PWM period.
-//!
+//! The main way to run PWM is calling [`FTimer::pwm`] with initial `period`/`frequency` corresponding PWM period.
+//! This returns [`PwmManager`] and a tuple of all [`PwmChannel`]s supported by timer.
 //! Also there is [`PwmExt`] trait implemented on `pac::TIMx` to simplify creating new structure.
 //!
-//! You need to pass one or tuple of channels with pins you plan to use and initial `time`/`frequency` corresponding PWM period.
-//! Pins can be collected with [`ChannelBuilder`]s in sequence corresponding to the channel number. Smaller channel number first.
-//! Each channel group can contain 1 or several main pins and 0, 1 or several complementary pins.
-//! Start constructing channel with `new(first_main_pin)`.
-//! Then use `.with(other_main_pin)` and `.with_complementary(other_complementary_pin)` accordingly
-//! to add advanced pins on same channel.
-//!
-//! For example:
-//! ```rust
-//! let channels = (
-//!     Channel1::new(gpioa.pa8),
-//!     Channel2::new(gpioa.pa9), // use Channel2OD` for `OpenDrain` pin
-//! );
-//! ```
-//! or
 //! ```rust,ignore
-//! let channels = Channel1::new(gpioa.pa8).with_complementary(gpioa.pa7); // (CH1, CHN1)
+//! let (pwm_manager, (pwm_ch1, pwm_ch2, ..)) = dp.TIM1.pwm_us(100.micros(), &clocks);
 //! ```
 //!
-//! where `CHx` and `CHx_n` are main pins of PWM channel `x` and `CHNx` are complementary pins of PWM channel `x`.
-//!
-//! After creating structures you can dynamically enable main or complementary channels with `enable` and `enable_complementary`
+//! Each `PwmChannel` implements [`embedded_hal::pwm::SetDutyCycle`].
+//! They are disabled.
+//! To enable `PwmChannel` you need to pass one or more regular pins allowed by channel
+//! using `with` or `with_open_drain`.
+//! Also you can pass complementary pins by `.with_complementary(other_complementary_pin)`.
+//! After connecting pins you can dynamically enable main or complementary channels with `enable` and `enable_complementary`
 //! and change their polarity with `set_polarity` and `set_complementary_polarity`.
+//!
+//! ```rust,ignore
+//! let mut pwm_c1 = pwm_c1.with(gpioa.pa8).with_complementary(gpioa.pa7);
+//! pwm_c1.enable();
+//! pwm_c1.enable_complementary();
+//! ```
+//!
+//! By default `PwmChannel` contains information about connected pins to be possible to `release` them.
+//! But you can `erase` this information to constuct [`ErasedChannel`] which can be collected to array.
+//! Note that this operation is irreversible.
+//!
+//! `PwmManager` allows you to change PWM `period`/`frequency` and also has methods for advanced PWM control.
 
+use super::sealed::Split;
 use super::{
-    compute_arr_presc, Advanced, CPin, Channel, FTimer, IdleState, Instance, NCPin, Ocm, Polarity,
-    Timer, WithPwm,
+    compute_arr_presc, Advanced, CPin, FTimer, IdleState, Instance, NCPin, Ocm, Polarity, Timer,
+    WithPwm,
 };
 pub use super::{Ch, C1, C2, C3, C4};
 use crate::gpio::{OpenDrain, PushPull};
 use crate::rcc::Clocks;
-use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use fugit::{HertzU32 as Hertz, TimerDurationU32};
 
-pub type Channel1<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C1, COMP, PushPull>;
-pub type Channel2<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C2, COMP, PushPull>;
-pub type Channel3<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C3, COMP, PushPull>;
-pub type Channel4<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C4, COMP, PushPull>;
-pub type Channel1OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C1, COMP, OpenDrain>;
-pub type Channel2OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C2, COMP, OpenDrain>;
-pub type Channel3OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C3, COMP, OpenDrain>;
-pub type Channel4OD<TIM, const COMP: bool = false> = ChannelBuilder<TIM, C4, COMP, OpenDrain>;
-
-pub struct ChannelBuilder<TIM, const C: u8, const COMP: bool = false, Otype = PushPull> {
-    pub(super) _tim: PhantomData<(TIM, Otype)>,
-}
-
-impl<TIM, Otype, const C: u8> ChannelBuilder<TIM, C, false, Otype>
-where
-    TIM: CPin<C>,
-{
-    pub fn new(pin: impl Into<TIM::Ch<Otype>>) -> Self {
-        let _pin = pin.into();
-        Self { _tim: PhantomData }
-    }
-}
-impl<TIM, Otype, const C: u8, const COMP: bool> ChannelBuilder<TIM, C, COMP, Otype>
-where
-    TIM: CPin<C>,
-{
-    pub fn with(self, pin: impl Into<TIM::Ch<Otype>>) -> Self {
-        let _pin = pin.into();
-        self
-    }
-}
-impl<TIM, Otype, const C: u8, const COMP: bool> ChannelBuilder<TIM, C, COMP, Otype>
-where
-    TIM: NCPin<C>,
-{
-    pub fn with_complementary(
-        self,
-        pin: impl Into<TIM::ChN<Otype>>,
-    ) -> ChannelBuilder<TIM, C, true, Otype> {
-        let _pin = pin.into();
-        ChannelBuilder { _tim: PhantomData }
-    }
-}
-
-impl<TIM, Otype, const C: u8, const COMP: bool> sealed::Split
-    for ChannelBuilder<TIM, C, COMP, Otype>
-{
-    type Channels = PwmChannel<TIM, C, COMP>;
-    fn split() -> Self::Channels {
-        PwmChannel::new()
-    }
-}
-
-mod sealed {
-    pub trait Split {
-        type Channels;
-        fn split() -> Self::Channels;
-    }
-    macro_rules! split {
-        ($($T:ident),+) => {
-            impl<$($T),+> Split for ($($T),+)
-            where
-                $($T: Split,)+
-            {
-                type Channels = ($($T::Channels),+);
-                fn split() -> Self::Channels {
-                    ($($T::split()),+)
-                }
-            }
-        };
-    }
-    split!(T1, T2);
-    split!(T1, T2, T3);
-    split!(T1, T2, T3, T4);
-}
-pub trait Pins<TIM>: sealed::Split {
-    const C1: bool = false;
-    const C2: bool = false;
-    const C3: bool = false;
-    const C4: bool = false;
-    const NC1: bool = false;
-    const NC2: bool = false;
-    const NC3: bool = false;
-    const NC4: bool = false;
-
-    fn check_used(c: Channel) -> Channel {
-        if (c == Channel::C1 && Self::C1)
-            || (c == Channel::C2 && Self::C2)
-            || (c == Channel::C3 && Self::C3)
-            || (c == Channel::C4 && Self::C4)
-        {
-            c
-        } else {
-            panic!("Unused channel")
-        }
-    }
-
-    fn check_complementary_used(c: Channel) -> Channel {
-        if (c == Channel::C1 && Self::NC1)
-            || (c == Channel::C2 && Self::NC2)
-            || (c == Channel::C3 && Self::NC3)
-            || (c == Channel::C4 && Self::NC4)
-        {
-            c
-        } else {
-            panic!("Unused channel")
-        }
-    }
-}
-
-macro_rules! pins_impl {
-    ( $( $(($Otype:ident, $ENCHX:ident, $COMP:ident)),+; )+ ) => {
-        $(
-            #[allow(unused_parens)]
-            impl<TIM, $($Otype, const $COMP: bool,)+> Pins<TIM> for ($(ChannelBuilder<TIM, $ENCHX, $COMP, $Otype>),+) {
-                $(
-                    const $ENCHX: bool = true;
-                    const $COMP: bool = $COMP;
-                )+
-            }
-        )+
-    };
-}
-
-pins_impl!(
-    (O1, C1, NC1), (O2, C2, NC2), (O3, C3, NC3), (O4, C4, NC4);
-
-                   (O2, C2, NC2), (O3, C3, NC3), (O4, C4, NC4);
-    (O1, C1, NC1),                (O3, C3, NC3), (O4, C4, NC4);
-    (O1, C1, NC1), (O2, C2, NC2),                (O4, C4, NC4);
-    (O1, C1, NC1), (O2, C2, NC2), (O3, C3, NC3);
-
-                                  (O3, C3, NC3), (O4, C4, NC4);
-                   (O2, C2, NC2),                (O4, C4, NC4);
-                   (O2, C2, NC2), (O3, C3, NC3);
-    (O1, C1, NC1),                               (O4, C4, NC4);
-    (O1, C1, NC1),                (O3, C3, NC3);
-    (O1, C1, NC1), (O2, C2, NC2);
-
-    (O1, C1, NC1);
-                   (O2, C2, NC2);
-                                  (O3, C3, NC3);
-                                                 (O4, C4, NC4);
-);
-
-pub struct PwmChannel<TIM, const C: u8, const COMP: bool = false> {
-    pub(super) _tim: PhantomData<TIM>,
-}
-
 pub trait PwmExt
 where
-    Self: Sized + Instance + WithPwm,
+    Self: Sized + Instance + WithPwm + Split,
 {
-    fn pwm<PINS, const FREQ: u32>(
+    fn pwm<const FREQ: u32>(
         self,
-        pins: PINS,
         time: TimerDurationU32<FREQ>,
         clocks: &Clocks,
-    ) -> Pwm<Self, PINS, FREQ>
-    where
-        PINS: Pins<Self>;
+    ) -> (PwmManager<Self, FREQ>, Self::Channels);
 
-    fn pwm_hz<PINS>(self, pins: PINS, freq: Hertz, clocks: &Clocks) -> PwmHz<Self, PINS>
-    where
-        PINS: Pins<Self>;
+    fn pwm_hz(self, freq: Hertz, clocks: &Clocks) -> (PwmHzManager<Self>, Self::Channels);
 
-    fn pwm_us<PINS>(
+    fn pwm_us(
         self,
-        pins: PINS,
         time: TimerDurationU32<1_000_000>,
         clocks: &Clocks,
-    ) -> Pwm<Self, PINS, 1_000_000>
-    where
-        PINS: Pins<Self>,
-    {
-        self.pwm::<_, 1_000_000>(pins, time, clocks)
+    ) -> (PwmManager<Self, 1_000_000>, Self::Channels) {
+        self.pwm::<1_000_000>(time, clocks)
     }
 }
 
 impl<TIM> PwmExt for TIM
 where
-    Self: Sized + Instance + WithPwm,
+    Self: Sized + Instance + WithPwm + Split,
 {
-    fn pwm<PINS, const FREQ: u32>(
+    fn pwm<const FREQ: u32>(
         self,
-        pins: PINS,
         time: TimerDurationU32<FREQ>,
         clocks: &Clocks,
-    ) -> Pwm<TIM, PINS, FREQ>
-    where
-        PINS: Pins<Self>,
-    {
-        FTimer::<Self, FREQ>::new(self, clocks).pwm(pins, time)
+    ) -> (PwmManager<Self, FREQ>, Self::Channels) {
+        FTimer::<Self, FREQ>::new(self, clocks).pwm(time)
     }
 
-    fn pwm_hz<PINS>(self, pins: PINS, time: Hertz, clocks: &Clocks) -> PwmHz<TIM, PINS>
-    where
-        PINS: Pins<Self>,
-    {
-        Timer::new(self, clocks).pwm_hz(pins, time)
+    fn pwm_hz(self, time: Hertz, clocks: &Clocks) -> (PwmHzManager<Self>, Self::Channels) {
+        Timer::new(self, clocks).pwm_hz(time)
     }
 }
 
-impl<TIM, const C: u8, const COMP: bool> PwmChannel<TIM, C, COMP> {
-    pub(crate) fn new() -> Self {
-        Self {
-            _tim: core::marker::PhantomData,
-        }
-    }
-}
-
-impl<TIM: Instance + WithPwm, const C: u8, const COMP: bool> PwmChannel<TIM, C, COMP> {
-    /// Disable PWM channel
-    #[inline]
-    pub fn disable(&mut self) {
-        TIM::enable_channel(C, false);
-    }
-
-    /// Enable PWM channel
-    #[inline]
-    pub fn enable(&mut self) {
-        TIM::enable_channel(C, true);
-    }
-
-    /// Set PWM channel polarity
-    #[inline]
-    pub fn set_polarity(&mut self, p: Polarity) {
-        TIM::set_channel_polarity(C, p);
-    }
-
-    /// Get PWM channel duty cycle
-    #[inline]
-    pub fn get_duty(&self) -> u16 {
-        TIM::read_cc_value(C) as u16
-    }
-
-    /// Get the maximum duty cycle value of the PWM channel
-    ///
-    /// If `0` returned means max_duty is 2^16
-    #[inline]
-    pub fn get_max_duty(&self) -> u16 {
-        (TIM::read_auto_reload() as u16).wrapping_add(1)
-    }
-
-    /// Set PWM channel duty cycle
-    #[inline]
-    pub fn set_duty(&mut self, duty: u16) {
-        TIM::set_cc_value(C, duty as u32)
-    }
-
-    /// Set complementary PWM channel polarity
-    #[inline]
-    pub fn set_complementary_polarity(&mut self, p: Polarity) {
-        TIM::set_nchannel_polarity(C, p);
-    }
-}
-
-impl<TIM: Instance + WithPwm + Advanced, const C: u8> PwmChannel<TIM, C, true> {
-    /// Disable complementary PWM channel
-    #[inline]
-    pub fn disable_complementary(&mut self) {
-        TIM::enable_nchannel(C, false);
-    }
-
-    /// Enable complementary PWM channel
-    #[inline]
-    pub fn enable_complementary(&mut self) {
-        TIM::enable_nchannel(C, true);
-    }
-
-    /// Set PWM channel idle state
-    #[inline]
-    pub fn set_idle_state(&mut self, s: IdleState) {
-        TIM::idle_state(C, false, s);
-    }
-
-    /// Set complementary PWM channel idle state
-    #[inline]
-    pub fn set_complementary_idle_state(&mut self, s: IdleState) {
-        TIM::idle_state(C, true, s);
-    }
-}
-
-pub struct PwmHz<TIM, PINS>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    timer: Timer<TIM>,
-    _pins: PhantomData<PINS>,
-}
-
-impl<TIM, PINS> PwmHz<TIM, PINS>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    pub fn release(mut self) -> Timer<TIM> {
-        // stop timer
-        self.tim.cr1_reset();
-        self.timer
-    }
-
-    pub fn split(self) -> PINS::Channels {
-        PINS::split()
-    }
-}
-
-impl<TIM, PINS> Deref for PwmHz<TIM, PINS>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    type Target = Timer<TIM>;
-    fn deref(&self) -> &Self::Target {
-        &self.timer
-    }
-}
-
-impl<TIM, PINS> DerefMut for PwmHz<TIM, PINS>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.timer
-    }
-}
-
-impl<TIM: Instance + WithPwm> Timer<TIM> {
-    pub fn pwm_hz<PINS>(mut self, _pins: PINS, freq: Hertz) -> PwmHz<TIM, PINS>
-    where
-        PINS: Pins<TIM>,
-    {
-        if PINS::C1 {
-            self.tim
-                .preload_output_channel_in_mode(Channel::C1, Ocm::PwmMode1);
-        }
-        if PINS::C2 && TIM::CH_NUMBER > 1 {
-            self.tim
-                .preload_output_channel_in_mode(Channel::C2, Ocm::PwmMode1);
-        }
-        if PINS::C3 && TIM::CH_NUMBER > 2 {
-            self.tim
-                .preload_output_channel_in_mode(Channel::C3, Ocm::PwmMode1);
-        }
-        if PINS::C4 && TIM::CH_NUMBER > 3 {
-            self.tim
-                .preload_output_channel_in_mode(Channel::C4, Ocm::PwmMode1);
-        }
-
+impl<TIM: Instance + WithPwm + Split> Timer<TIM> {
+    pub fn pwm_hz(mut self, freq: Hertz) -> (PwmHzManager<TIM>, TIM::Channels) {
         // The reference manual is a bit ambiguous about when enabling this bit is really
         // necessary, but since we MUST enable the preload for the output channels then we
         // might as well enable for the auto-reload too
@@ -412,48 +100,339 @@ impl<TIM: Instance + WithPwm> Timer<TIM> {
 
         self.tim.start_pwm();
 
-        PwmHz {
-            timer: self,
-            _pins: PhantomData,
+        (PwmHzManager { timer: self }, TIM::split())
+    }
+}
+
+impl<TIM: Instance + WithPwm + Split, const FREQ: u32> FTimer<TIM, FREQ> {
+    pub fn pwm(mut self, time: TimerDurationU32<FREQ>) -> (PwmManager<TIM, FREQ>, TIM::Channels) {
+        // The reference manual is a bit ambiguous about when enabling this bit is really
+        // necessary, but since we MUST enable the preload for the output channels then we
+        // might as well enable for the auto-reload too
+        self.tim.enable_preload(true);
+
+        self.tim.set_auto_reload(time.ticks() - 1).unwrap();
+
+        // Trigger update event to load the registers
+        self.tim.trigger_update();
+
+        self.tim.start_pwm();
+
+        (PwmManager { timer: self }, TIM::split())
+    }
+}
+
+pub struct PwmChannelDisabled<TIM, const C: u8> {
+    pub(super) tim: TIM,
+}
+
+impl<TIM: crate::Steal, const C: u8> PwmChannelDisabled<TIM, C> {
+    pub(crate) fn new() -> Self {
+        Self {
+            tim: unsafe { TIM::steal() },
+        }
+    }
+}
+impl<TIM: Instance + WithPwm + crate::Steal, const C: u8> PwmChannelDisabled<TIM, C>
+where
+    TIM: CPin<C>,
+{
+    pub fn with(
+        mut self,
+        pin: impl Into<TIM::Ch<PushPull>>,
+    ) -> PwmChannel<TIM, C, false, PushPull> {
+        self.tim.preload_output_channel_in_mode(C, Ocm::PwmMode1);
+        PwmChannel {
+            tim: self.tim,
+            lines: Lines::One(pin.into()),
+        }
+    }
+    pub fn with_open_drain(
+        mut self,
+        pin: impl Into<TIM::Ch<OpenDrain>>,
+    ) -> PwmChannel<TIM, C, false, OpenDrain> {
+        self.tim.preload_output_channel_in_mode(C, Ocm::PwmMode1);
+        PwmChannel {
+            tim: self.tim,
+            lines: Lines::One(pin.into()),
         }
     }
 }
 
-impl<TIM, PINS> PwmHz<TIM, PINS>
+#[derive(Debug)]
+pub enum Lines<P> {
+    One(P),
+    Two(P, P),
+    Three(P, P, P),
+    Four(P, P, P, P),
+}
+impl<P> Lines<P> {
+    pub fn and(self, pin: P) -> Self {
+        match self {
+            Self::One(p) => Self::Two(p, pin),
+            Self::Two(p1, p2) => Self::Three(p1, p2, pin),
+            Self::Three(p1, p2, p3) => Self::Four(p1, p2, p3, pin),
+            Self::Four(_, _, _, _) => unreachable!(),
+        }
+    }
+}
+
+pub struct PwmChannel<TIM: CPin<C>, const C: u8, const COMP: bool = false, Otype = PushPull> {
+    pub(super) tim: TIM,
+    lines: Lines<TIM::Ch<Otype>>,
+    // TODO: add complementary pins
+}
+
+impl<TIM: Instance + WithPwm + CPin<C>, const C: u8, const COMP: bool, Otype>
+    PwmChannel<TIM, C, COMP, Otype>
+{
+    pub const fn channel(&self) -> u8 {
+        C
+    }
+    pub fn release(mut self) -> (PwmChannelDisabled<TIM, C>, Lines<TIM::Ch<Otype>>) {
+        self.tim.freeze_output_channel(C);
+        (PwmChannelDisabled { tim: self.tim }, self.lines)
+    }
+    pub fn erase(self) -> ErasedChannel<TIM> {
+        ErasedChannel {
+            _tim: self.tim,
+            channel: C,
+        }
+    }
+}
+impl<TIM: Instance + CPin<C>, const C: u8, const COMP: bool, Otype>
+    PwmChannel<TIM, C, COMP, Otype>
+{
+    pub fn with(self, pin: impl Into<TIM::Ch<Otype>>) -> Self {
+        Self {
+            tim: self.tim,
+            lines: self.lines.and(pin.into()),
+        }
+    }
+}
+impl<TIM: Instance + CPin<C> + NCPin<C>, const C: u8, const COMP: bool, Otype>
+    PwmChannel<TIM, C, COMP, Otype>
+{
+    pub fn with_complementary(
+        self,
+        pin: impl Into<TIM::ChN<Otype>>,
+    ) -> PwmChannel<TIM, C, true, Otype> {
+        let _pin = pin.into();
+        PwmChannel {
+            tim: self.tim,
+            lines: self.lines,
+        }
+    }
+}
+
+pub struct ErasedChannel<TIM> {
+    _tim: TIM,
+    channel: u8,
+}
+
+impl<TIM> ErasedChannel<TIM> {
+    pub const fn channel(&self) -> u8 {
+        self.channel
+    }
+}
+
+macro_rules! ch_impl {
+    () => {
+        /// Disable PWM channel
+        #[inline]
+        pub fn disable(&mut self) {
+            TIM::enable_channel(self.channel(), false);
+        }
+
+        /// Enable PWM channel
+        #[inline]
+        pub fn enable(&mut self) {
+            TIM::enable_channel(self.channel(), true);
+        }
+
+        /// Get PWM channel duty cycle
+        #[inline]
+        pub fn get_duty(&self) -> u16 {
+            TIM::read_cc_value(self.channel()) as u16
+        }
+
+        /// Get the maximum duty cycle value of the PWM channel
+        ///
+        /// If `0` returned means max_duty is 2^16
+        #[inline]
+        pub fn get_max_duty(&self) -> u16 {
+            (TIM::read_auto_reload() as u16).wrapping_add(1)
+        }
+
+        /// Set PWM channel duty cycle
+        #[inline]
+        pub fn set_duty(&mut self, duty: u16) {
+            TIM::set_cc_value(self.channel(), duty as u32)
+        }
+
+        /// Set PWM channel polarity
+        #[inline]
+        pub fn set_polarity(&mut self, p: Polarity) {
+            TIM::set_channel_polarity(self.channel(), p);
+        }
+
+        /// Set complementary PWM channel polarity
+        #[inline]
+        pub fn set_complementary_polarity(&mut self, p: Polarity) {
+            TIM::set_nchannel_polarity(self.channel(), p);
+        }
+    };
+}
+
+macro_rules! chN_impl {
+    () => {
+        /// Disable complementary PWM channel
+        #[inline]
+        pub fn disable_complementary(&mut self) {
+            TIM::enable_nchannel(self.channel(), false);
+        }
+
+        /// Enable complementary PWM channel
+        #[inline]
+        pub fn enable_complementary(&mut self) {
+            TIM::enable_nchannel(self.channel(), true);
+        }
+
+        /// Set PWM channel idle state
+        #[inline]
+        pub fn set_idle_state(&mut self, s: IdleState) {
+            TIM::idle_state(self.channel(), false, s);
+        }
+
+        /// Set complementary PWM channel idle state
+        #[inline]
+        pub fn set_complementary_idle_state(&mut self, s: IdleState) {
+            TIM::idle_state(self.channel(), true, s);
+        }
+    };
+}
+
+impl<TIM: Instance + WithPwm + CPin<C>, const C: u8, const COMP: bool, Otype>
+    PwmChannel<TIM, C, COMP, Otype>
+{
+    ch_impl!();
+}
+
+impl<TIM: Instance + WithPwm + Advanced + CPin<C>, const C: u8, Otype>
+    PwmChannel<TIM, C, true, Otype>
+{
+    chN_impl!();
+}
+
+impl<TIM: Instance + WithPwm> ErasedChannel<TIM> {
+    ch_impl!();
+}
+
+impl<TIM: Instance + WithPwm + Advanced> ErasedChannel<TIM> {
+    chN_impl!();
+}
+
+pub struct PwmManager<TIM, const FREQ: u32>
 where
     TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
 {
-    /// Enable PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn enable(&mut self, channel: Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, true)
+    pub(super) timer: FTimer<TIM, FREQ>,
+}
+
+impl<TIM, const FREQ: u32> PwmManager<TIM, FREQ>
+where
+    TIM: Instance + WithPwm + Split,
+{
+    pub fn release(mut self, _channels: TIM::Channels) -> FTimer<TIM, FREQ> {
+        // stop counter
+        self.tim.cr1_reset();
+        self.timer
+    }
+}
+
+impl<TIM, const FREQ: u32> Deref for PwmManager<TIM, FREQ>
+where
+    TIM: Instance + WithPwm,
+{
+    type Target = FTimer<TIM, FREQ>;
+    fn deref(&self) -> &Self::Target {
+        &self.timer
+    }
+}
+
+impl<TIM, const FREQ: u32> DerefMut for PwmManager<TIM, FREQ>
+where
+    TIM: Instance + WithPwm,
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.timer
+    }
+}
+
+pub struct PwmHzManager<TIM>
+where
+    TIM: Instance + WithPwm,
+{
+    pub(super) timer: Timer<TIM>,
+}
+
+impl<TIM> PwmHzManager<TIM>
+where
+    TIM: Instance + WithPwm + Split,
+{
+    pub fn release(mut self, _channels: TIM::Channels) -> Timer<TIM> {
+        // stop timer
+        self.tim.cr1_reset();
+        self.timer
+    }
+}
+
+impl<TIM> Deref for PwmHzManager<TIM>
+where
+    TIM: Instance + WithPwm,
+{
+    type Target = Timer<TIM>;
+    fn deref(&self) -> &Self::Target {
+        &self.timer
+    }
+}
+
+impl<TIM> DerefMut for PwmHzManager<TIM>
+where
+    TIM: Instance + WithPwm,
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.timer
+    }
+}
+
+impl<TIM, const FREQ: u32> PwmManager<TIM, FREQ>
+where
+    TIM: Instance + WithPwm,
+{
+    /// Get the maximum duty cycle value of the timer
+    ///
+    /// If `0` returned means max_duty is 2^16
+    pub fn get_max_duty(&self) -> u16 {
+        (TIM::read_auto_reload() as u16).wrapping_add(1)
     }
 
-    /// Disable PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn disable(&mut self, channel: Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, false)
+    /// Get the PWM frequency of the timer as a duration
+    pub fn get_period(&self) -> TimerDurationU32<FREQ> {
+        TimerDurationU32::from_ticks(TIM::read_auto_reload() + 1)
     }
 
-    /// Set the polarity of the active state for the primary PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
+    /// Set the PWM frequency for the timer from a duration
+    pub fn set_period(&mut self, period: TimerDurationU32<FREQ>) {
+        self.tim.set_auto_reload(period.ticks() - 1).unwrap();
+        self.tim.cnt_reset();
     }
+}
 
-    /// Get the current duty cycle of the timer on channel `channel`
-    #[inline]
-    pub fn get_duty(&self, channel: Channel) -> u16 {
-        TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
-    }
-
-    /// Set the duty cycle of the timer on channel `channel`
-    #[inline]
-    pub fn set_duty(&mut self, channel: Channel, duty: u16) {
-        TIM::set_cc_value(PINS::check_used(channel) as u8, duty as u32)
-    }
-
+impl<TIM> PwmHzManager<TIM>
+where
+    TIM: Instance + WithPwm,
+{
     /// Get the maximum duty cycle value of the timer
     ///
     /// If `0` returned means max_duty is 2^16
@@ -480,294 +459,56 @@ where
         self.tim.set_auto_reload(arr).unwrap();
         self.tim.cnt_reset();
     }
-
-    /// Set the polarity of the active state for the complementary PWM output of the advanced timer on channel `channel`
-    #[inline]
-    pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_nchannel_polarity(PINS::check_complementary_used(channel) as u8, p);
-    }
 }
 
-impl<TIM, PINS> PwmHz<TIM, PINS>
+macro_rules! impl_advanced {
+    () => {
+        /// Set number DTS ticks during that the primary and complementary PWM pins are simultaneously forced to their inactive states
+        /// ( see [`Polarity`] setting ) when changing PWM state. This duration when both channels are in an 'off' state  is called 'dead time'.
+        ///
+        /// This is necessary in applications like motor control or power converters to prevent the destruction of the switching elements by
+        /// short circuit in the moment of switching.
+        #[inline]
+        pub fn set_dead_time(&mut self, dts_ticks: u16) {
+            let bits = pack_ceil_dead_time(dts_ticks);
+            TIM::set_dtg_value(bits);
+        }
+
+        /// Set raw dead time (DTG) bits
+        ///
+        /// The dead time generation is nonlinear and constrained by the DTS tick duration. DTG register configuration and calculation of
+        /// the actual resulting dead time is described in the application note RM0368 from ST Microelectronics
+        #[inline]
+        pub fn set_dead_time_bits(&mut self, bits: u8) {
+            TIM::set_dtg_value(bits);
+        }
+
+        /// Return dead time for complementary pins in the unit of DTS ticks
+        #[inline]
+        pub fn get_dead_time(&self) -> u16 {
+            unpack_dead_time(TIM::read_dtg_value())
+        }
+
+        /// Get raw dead time (DTG) bits
+        #[inline]
+        pub fn get_dead_time_bits(&self) -> u8 {
+            TIM::read_dtg_value()
+        }
+    };
+}
+
+impl<TIM, const FREQ: u32> PwmManager<TIM, FREQ>
 where
     TIM: Instance + WithPwm + Advanced,
-    PINS: Pins<TIM>,
 {
-    /// Enable complementary PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn enable_complementary(&mut self, channel: Channel) {
-        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
-    }
-
-    /// Disable complementary PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn disable_complementary(&mut self, channel: Channel) {
-        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
-    }
-
-    /// Set number DTS ticks during that the primary and complementary PWM pins are simultaneously forced to their inactive states
-    /// ( see [`Polarity`] setting ) when changing PWM state. This duration when both channels are in an 'off' state  is called 'dead time'.
-    ///
-    /// This is necessary in applications like motor control or power converters to prevent the destruction of the switching elements by
-    /// short circuit in the moment of switching.
-    #[inline]
-    pub fn set_dead_time(&mut self, dts_ticks: u16) {
-        let bits = pack_ceil_dead_time(dts_ticks);
-        TIM::set_dtg_value(bits);
-    }
-
-    /// Set raw dead time (DTG) bits
-    ///
-    /// The dead time generation is nonlinear and constrained by the DTS tick duration. DTG register configuration and calculation of
-    /// the actual resulting dead time is described in the application note RM0368 from ST Microelectronics
-    #[inline]
-    pub fn set_dead_time_bits(&mut self, bits: u8) {
-        TIM::set_dtg_value(bits);
-    }
-
-    /// Return dead time for complementary pins in the unit of DTS ticks
-    #[inline]
-    pub fn get_dead_time(&self) -> u16 {
-        unpack_dead_time(TIM::read_dtg_value())
-    }
-
-    /// Get raw dead time (DTG) bits
-    #[inline]
-    pub fn get_dead_time_bits(&self) -> u8 {
-        TIM::read_dtg_value()
-    }
-
-    /// Set the pin idle state
-    #[inline]
-    pub fn set_idle_state(&mut self, channel: Channel, s: IdleState) {
-        TIM::idle_state(PINS::check_used(channel) as u8, false, s);
-    }
-
-    /// Set the complementary pin idle state
-    #[inline]
-    pub fn set_complementary_idle_state(&mut self, channel: Channel, s: IdleState) {
-        TIM::idle_state(PINS::check_complementary_used(channel) as u8, true, s);
-    }
+    impl_advanced!();
 }
 
-pub struct Pwm<TIM, PINS, const FREQ: u32>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    timer: FTimer<TIM, FREQ>,
-    _pins: PhantomData<PINS>,
-}
-
-impl<TIM, PINS, const FREQ: u32> Pwm<TIM, PINS, FREQ>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    pub fn split(self) -> PINS::Channels {
-        PINS::split()
-    }
-
-    pub fn release(mut self) -> FTimer<TIM, FREQ> {
-        // stop counter
-        self.tim.cr1_reset();
-        self.timer
-    }
-}
-
-impl<TIM, PINS, const FREQ: u32> Deref for Pwm<TIM, PINS, FREQ>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    type Target = FTimer<TIM, FREQ>;
-    fn deref(&self) -> &Self::Target {
-        &self.timer
-    }
-}
-
-impl<TIM, PINS, const FREQ: u32> DerefMut for Pwm<TIM, PINS, FREQ>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.timer
-    }
-}
-
-impl<TIM: Instance + WithPwm, const FREQ: u32> FTimer<TIM, FREQ> {
-    pub fn pwm<PINS>(mut self, _pins: PINS, time: TimerDurationU32<FREQ>) -> Pwm<TIM, PINS, FREQ>
-    where
-        PINS: Pins<TIM>,
-    {
-        if PINS::C1 {
-            self.tim
-                .preload_output_channel_in_mode(Channel::C1, Ocm::PwmMode1);
-        }
-        if PINS::C2 && TIM::CH_NUMBER > 1 {
-            self.tim
-                .preload_output_channel_in_mode(Channel::C2, Ocm::PwmMode1);
-        }
-        if PINS::C3 && TIM::CH_NUMBER > 2 {
-            self.tim
-                .preload_output_channel_in_mode(Channel::C3, Ocm::PwmMode1);
-        }
-        if PINS::C4 && TIM::CH_NUMBER > 3 {
-            self.tim
-                .preload_output_channel_in_mode(Channel::C4, Ocm::PwmMode1);
-        }
-
-        // The reference manual is a bit ambiguous about when enabling this bit is really
-        // necessary, but since we MUST enable the preload for the output channels then we
-        // might as well enable for the auto-reload too
-        self.tim.enable_preload(true);
-
-        self.tim.set_auto_reload(time.ticks() - 1).unwrap();
-
-        // Trigger update event to load the registers
-        self.tim.trigger_update();
-
-        self.tim.start_pwm();
-
-        Pwm {
-            timer: self,
-            _pins: PhantomData,
-        }
-    }
-}
-
-impl<TIM, PINS, const FREQ: u32> Pwm<TIM, PINS, FREQ>
-where
-    TIM: Instance + WithPwm,
-    PINS: Pins<TIM>,
-{
-    /// Enable PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn enable(&mut self, channel: Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, true)
-    }
-
-    /// Disable PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn disable(&mut self, channel: Channel) {
-        TIM::enable_channel(PINS::check_used(channel) as u8, false)
-    }
-
-    /// Set the polarity of the active state for the primary PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn set_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_used(channel) as u8, p);
-    }
-
-    /// Get the current duty cycle of the timer on channel `channel`
-    #[inline]
-    pub fn get_duty(&self, channel: Channel) -> u16 {
-        TIM::read_cc_value(PINS::check_used(channel) as u8) as u16
-    }
-    /// Get the current duty cycle of the timer on channel `channel` and convert to a duration
-    #[inline]
-    pub fn get_duty_time(&self, channel: Channel) -> TimerDurationU32<FREQ> {
-        TimerDurationU32::from_ticks(TIM::read_cc_value(PINS::check_used(channel) as u8))
-    }
-
-    /// Set the duty cycle of the timer on channel `channel`
-    #[inline]
-    pub fn set_duty(&mut self, channel: Channel, duty: u16) {
-        TIM::set_cc_value(PINS::check_used(channel) as u8, duty.into())
-    }
-
-    /// Set the duty cycle of the timer on channel `channel` from a duration
-    #[inline]
-    pub fn set_duty_time(&mut self, channel: Channel, duty: TimerDurationU32<FREQ>) {
-        TIM::set_cc_value(PINS::check_used(channel) as u8, duty.ticks())
-    }
-
-    /// Get the maximum duty cycle value of the timer
-    ///
-    /// If `0` returned means max_duty is 2^16
-    pub fn get_max_duty(&self) -> u16 {
-        (TIM::read_auto_reload() as u16).wrapping_add(1)
-    }
-
-    /// Get the PWM frequency of the timer as a duration
-    pub fn get_period(&self) -> TimerDurationU32<FREQ> {
-        TimerDurationU32::from_ticks(TIM::read_auto_reload() + 1)
-    }
-
-    /// Set the PWM frequency for the timer from a duration
-    pub fn set_period(&mut self, period: TimerDurationU32<FREQ>) {
-        self.tim.set_auto_reload(period.ticks() - 1).unwrap();
-        self.tim.cnt_reset();
-    }
-
-    /// Set the polarity of the active state for the complementary PWM output of the advanced timer on channel `channel`
-    #[inline]
-    pub fn set_complementary_polarity(&mut self, channel: Channel, p: Polarity) {
-        TIM::set_channel_polarity(PINS::check_complementary_used(channel) as u8, p);
-    }
-}
-
-impl<TIM, PINS, const FREQ: u32> Pwm<TIM, PINS, FREQ>
+impl<TIM> PwmHzManager<TIM>
 where
     TIM: Instance + WithPwm + Advanced,
-    PINS: Pins<TIM>,
 {
-    /// Enable complementary PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn enable_complementary(&mut self, channel: Channel) {
-        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, true)
-    }
-
-    /// Disable complementary PWM output of the timer on channel `channel`
-    #[inline]
-    pub fn disable_complementary(&mut self, channel: Channel) {
-        TIM::enable_nchannel(PINS::check_complementary_used(channel) as u8, false)
-    }
-
-    /// Set number DTS ticks during that the primary and complementary PWM pins are simultaneously forced to their inactive states
-    /// ( see [`Polarity`] setting ) when changing PWM state. This duration when both channels are in an 'off' state  is called 'dead time'.
-    ///
-    /// This is necessary in applications like motor control or power converters to prevent the destruction of the switching elements by
-    /// short circuit in the moment of switching.
-    #[inline]
-    pub fn set_dead_time(&mut self, dts_ticks: u16) {
-        let bits = pack_ceil_dead_time(dts_ticks);
-        TIM::set_dtg_value(bits);
-    }
-
-    /// Set raw dead time (DTG) bits
-    ///
-    /// The dead time generation is nonlinear and constrained by the DTS tick duration. DTG register configuration and calculation of
-    /// the actual resulting dead time is described in the application note RM0368 from ST Microelectronics
-    #[inline]
-    pub fn set_dead_time_bits(&mut self, bits: u8) {
-        TIM::set_dtg_value(bits);
-    }
-
-    /// Return dead time for complementary pins in the unit of DTS ticks
-    #[inline]
-    pub fn get_dead_time(&self) -> u16 {
-        unpack_dead_time(TIM::read_dtg_value())
-    }
-
-    /// Get raw dead time (DTG) bits
-    #[inline]
-    pub fn get_dead_time_bits(&self) -> u8 {
-        TIM::read_dtg_value()
-    }
-
-    /// Set the pin idle state
-    #[inline]
-    pub fn set_idle_state(&mut self, channel: Channel, s: IdleState) {
-        TIM::idle_state(PINS::check_used(channel) as u8, false, s);
-    }
-
-    /// Set the complementary pin idle state
-    #[inline]
-    pub fn set_complementary_idle_state(&mut self, channel: Channel, s: IdleState) {
-        TIM::idle_state(PINS::check_complementary_used(channel) as u8, true, s);
-    }
+    impl_advanced!();
 }
 
 /// Convert number dead time ticks to raw DTG register bits.
