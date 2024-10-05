@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Fix pac `defmt` feature
+
 ## [v0.22.0] - 2024-10-04
 
 ### Added
