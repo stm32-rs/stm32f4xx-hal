@@ -68,7 +68,7 @@ micromath = { version = "2.1.0", optional = true }
 [dependencies.stm32f4]
 package = "stm32f4-staging"
 version = "0.16.1"
-features = ["defmt", "atomics"]
+features = ["atomics"]
 
 [dependencies.time]
 version = "0.3.14"
@@ -478,7 +478,7 @@ rtic-tim4 = []
 rtic-tim5 = []
 
 ## Implementation of `defmt::Format` for public enums and structures. See [defmt](https://crates.io/crates/defmt)
-defmt = ["dep:defmt", "fugit/defmt", "nb/defmt-0-3"]
+defmt = ["dep:defmt", "stm32f4/defmt", "fugit/defmt", "nb/defmt-0-3"]
 
 ## bxCAN peripheral support. See [bxcan](https://crates.io/crates/bxcan)
 can = ["dep:bxcan"]
