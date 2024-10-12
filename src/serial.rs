@@ -29,7 +29,6 @@ use crate::gpio::{self, PushPull};
 
 use crate::pac;
 
-use crate::gpio::NoPin;
 use crate::rcc::{self, Clocks};
 
 pub mod dma;
@@ -123,11 +122,6 @@ pub mod config;
 
 pub use config::Config;
 
-/// A filler type for when the Tx pin is unnecessary
-pub use gpio::NoPin as NoTx;
-/// A filler type for when the Rx pin is unnecessary
-pub use gpio::NoPin as NoRx;
-
 pub use gpio::alt::SerialAsync as CommonPins;
 
 // Implemented by all USART/UART instances
@@ -209,14 +203,14 @@ pub struct Serial<USART: CommonPins, WORD = u8> {
 pub struct Rx<USART: CommonPins, WORD = u8> {
     _word: PhantomData<WORD>,
     usart: USART,
-    pin: USART::Rx<PushPull>,
+    pin: Option<USART::Rx<PushPull>>,
 }
 
 /// Serial transmitter containing TX pin
 pub struct Tx<USART: CommonPins, WORD = u8> {
     _word: PhantomData<WORD>,
     usart: USART,
-    pin: USART::Tx<PushPull>,
+    pin: Option<USART::Tx<PushPull>>,
 }
 
 pub trait SerialExt: Sized + Instance {
@@ -232,26 +226,14 @@ pub trait SerialExt: Sized + Instance {
         tx_pin: impl Into<Self::Tx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
-    where
-        NoPin: Into<Self::Rx<PushPull>>,
-    {
-        self.serial((tx_pin, NoPin::new()), config, clocks)
-            .map(|s| s.split().0)
-    }
+    ) -> Result<Tx<Self, WORD>, config::InvalidConfig>;
 
     fn rx<WORD>(
         self,
         rx_pin: impl Into<Self::Rx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
-    where
-        NoPin: Into<Self::Tx<PushPull>>,
-    {
-        self.serial((NoPin::new(), rx_pin), config, clocks)
-            .map(|s| s.split().1)
-    }
+    ) -> Result<Rx<Self, WORD>, config::InvalidConfig>;
 }
 
 impl<USART: Instance, WORD> Serial<USART, WORD> {
@@ -260,6 +242,17 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         pins: (
             impl Into<USART::Tx<PushPull>>,
             impl Into<USART::Rx<PushPull>>,
+        ),
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Self, config::InvalidConfig> {
+        Self::_new(uart, (Some(pins.0), Some(pins.1)), config, clocks)
+    }
+    fn _new(
+        uart: USART,
+        pins: (
+            Option<impl Into<USART::Tx<PushPull>>>,
+            Option<impl Into<USART::Rx<PushPull>>>,
         ),
         config: impl Into<config::Config>,
         clocks: &Clocks,
@@ -317,8 +310,8 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         uart.enable_dma(config.dma);
 
         let serial = Serial {
-            tx: Tx::new(uart, pins.0.into()),
-            rx: Rx::new(unsafe { USART::steal() }, pins.1.into()),
+            tx: Tx::new(uart, pins.0.map(Into::into)),
+            rx: Rx::new(unsafe { USART::steal() }, pins.1.map(Into::into)),
         };
         serial.tx.usart.set_stopbits(config.stopbits);
         Ok(serial)
@@ -382,7 +375,12 @@ impl<UART: CommonPins, WORD> Serial<UART, WORD> {
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn release(self) -> (UART, (UART::Tx<PushPull>, UART::Rx<PushPull>)) {
+    pub fn release(
+        self,
+    ) -> (
+        UART,
+        (Option<UART::Tx<PushPull>>, Option<UART::Rx<PushPull>>),
+    ) {
         (self.tx.usart, (self.tx.pin, self.rx.pin))
     }
 }
@@ -454,7 +452,7 @@ impl<UART: CommonPins> Tx<UART, u16> {
 }
 
 impl<UART: CommonPins, WORD> Rx<UART, WORD> {
-    pub(crate) fn new(usart: UART, pin: UART::Rx<PushPull>) -> Self {
+    pub(crate) fn new(usart: UART, pin: Option<UART::Rx<PushPull>>) -> Self {
         Self {
             _word: PhantomData,
             usart,
@@ -468,7 +466,7 @@ impl<UART: CommonPins, WORD> Rx<UART, WORD> {
 }
 
 impl<UART: CommonPins, WORD> Tx<UART, WORD> {
-    pub(crate) fn new(usart: UART, pin: UART::Tx<PushPull>) -> Self {
+    pub(crate) fn new(usart: UART, pin: Option<UART::Tx<PushPull>>) -> Self {
         Self {
             _word: PhantomData,
             usart,
@@ -674,6 +672,22 @@ impl<UART: Instance> SerialExt for UART {
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
         Serial::new(self, pins, config, clocks)
     }
+    fn tx<WORD>(
+        self,
+        tx_pin: impl Into<Self::Tx<PushPull>>,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Tx<Self, WORD>, config::InvalidConfig> {
+        Serial::tx(self, tx_pin, config, clocks)
+    }
+    fn rx<WORD>(
+        self,
+        rx_pin: impl Into<Self::Rx<PushPull>>,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Rx<Self, WORD>, config::InvalidConfig> {
+        Serial::rx(self, rx_pin, config, clocks)
+    }
 }
 
 impl<UART: Instance, WORD> Serial<UART, WORD> {
@@ -682,11 +696,14 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         tx_pin: impl Into<UART::Tx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Tx<UART, WORD>, config::InvalidConfig>
-    where
-        NoPin: Into<UART::Rx<PushPull>>,
-    {
-        Self::new(usart, (tx_pin, NoPin::new()), config, clocks).map(|s| s.split().0)
+    ) -> Result<Tx<UART, WORD>, config::InvalidConfig> {
+        Self::_new(
+            usart,
+            (Some(tx_pin), None::<UART::Rx<PushPull>>),
+            config,
+            clocks,
+        )
+        .map(|s| s.split().0)
     }
 }
 
@@ -696,11 +713,14 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         rx_pin: impl Into<UART::Rx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Rx<UART, WORD>, config::InvalidConfig>
-    where
-        NoPin: Into<UART::Tx<PushPull>>,
-    {
-        Self::new(usart, (NoPin::new(), rx_pin), config, clocks).map(|s| s.split().1)
+    ) -> Result<Rx<UART, WORD>, config::InvalidConfig> {
+        Self::_new(
+            usart,
+            (None::<UART::Tx<PushPull>>, Some(rx_pin)),
+            config,
+            clocks,
+        )
+        .map(|s| s.split().1)
     }
 }
 

@@ -111,7 +111,7 @@ fn main() -> ! {
 
     let spi = Spi::new(
         dp.SPI4,
-        (sck, miso, mosi),
+        (Some(sck), Some(miso), Some(mosi)),
         Mode {
             polarity: Polarity::IdleLow,
             phase: Phase::CaptureOnFirstTransition,

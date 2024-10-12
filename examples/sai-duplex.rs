@@ -43,7 +43,7 @@ fn main() -> ! {
         num_slots: 2,
     };
     let tx = saia.master_tx(
-        (gpioe.pe2, gpioe.pe4, gpioe.pe5, gpioe.pe6),
+        (Some(gpioe.pe2), gpioe.pe4, gpioe.pe5, gpioe.pe6),
         protocol,
         48.kHz(),
         &clocks,

@@ -1,7 +1,7 @@
 //! # Controller Area Network (CAN) Interface
 //!
 
-use crate::gpio::{self, NoPin};
+use crate::gpio;
 use crate::pac;
 use crate::rcc;
 
@@ -39,13 +39,9 @@ mod can3 {
 pub trait CanExt: Sized + Instance {
     fn can(self, pins: (impl Into<Self::Tx>, impl Into<Self::Rx>)) -> Can<Self>;
 
-    fn tx(self, tx_pin: impl Into<Self::Tx>) -> Can<Self>
-    where
-        NoPin: Into<Self::Rx>;
+    fn tx(self, tx_pin: impl Into<Self::Tx>) -> Can<Self>;
 
-    fn rx(self, rx_pin: impl Into<Self::Rx>) -> Can<Self>
-    where
-        NoPin: Into<Self::Tx>;
+    fn rx(self, rx_pin: impl Into<Self::Rx>) -> Can<Self>;
 }
 
 impl<CAN: Instance> CanExt for CAN {
@@ -53,17 +49,11 @@ impl<CAN: Instance> CanExt for CAN {
         Can::new(self, pins)
     }
 
-    fn tx(self, tx_pin: impl Into<Self::Tx>) -> Can<Self>
-    where
-        NoPin: Into<Self::Rx>,
-    {
+    fn tx(self, tx_pin: impl Into<Self::Tx>) -> Can<Self> {
         Can::tx(self, tx_pin)
     }
 
-    fn rx(self, rx_pin: impl Into<Self::Rx>) -> Can<Self>
-    where
-        NoPin: Into<Self::Tx>,
-    {
+    fn rx(self, rx_pin: impl Into<Self::Rx>) -> Can<Self> {
         Can::rx(self, rx_pin)
     }
 }
@@ -71,42 +61,35 @@ impl<CAN: Instance> CanExt for CAN {
 /// Interface to the CAN peripheral.
 pub struct Can<CAN: Instance> {
     can: CAN,
-    pins: (CAN::Tx, CAN::Rx),
+    pins: (Option<CAN::Tx>, Option<CAN::Rx>),
 }
 
 impl<CAN: Instance> Can<CAN> {
     /// Creates a CAN interface.
     pub fn new(can: CAN, pins: (impl Into<CAN::Tx>, impl Into<CAN::Rx>)) -> Self {
+        Self::_new(can, (Some(pins.0.into()), Some(pins.1.into())))
+    }
+    fn _new(can: CAN, pins: (Option<CAN::Tx>, Option<CAN::Rx>)) -> Self {
         unsafe {
             CAN::enable_unchecked();
             CAN::reset_unchecked();
         }
 
-        let pins = (pins.0.into(), pins.1.into());
-
         Can { can, pins }
     }
 
-    pub fn release(self) -> (CAN, (CAN::Tx, CAN::Rx)) {
+    pub fn release(self) -> (CAN, (Option<CAN::Tx>, Option<CAN::Rx>)) {
         (self.can, self.pins)
     }
 }
 
 impl<CAN: Instance> Can<CAN> {
-    pub fn tx(usart: CAN, tx_pin: impl Into<CAN::Tx>) -> Self
-    where
-        NoPin: Into<CAN::Rx>,
-    {
-        Self::new(usart, (tx_pin, NoPin::new()))
+    pub fn tx(usart: CAN, tx_pin: impl Into<CAN::Tx>) -> Self {
+        Self::_new(usart, (Some(tx_pin.into()), None))
     }
-}
 
-impl<CAN: Instance> Can<CAN> {
-    pub fn rx(usart: CAN, rx_pin: impl Into<CAN::Rx>) -> Self
-    where
-        NoPin: Into<CAN::Tx>,
-    {
-        Self::new(usart, (NoPin::new(), rx_pin))
+    pub fn rx(usart: CAN, rx_pin: impl Into<CAN::Rx>) -> Self {
+        Self::_new(usart, (None, Some(rx_pin.into())))
     }
 }
 

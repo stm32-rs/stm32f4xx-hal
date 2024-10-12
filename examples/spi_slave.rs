@@ -29,8 +29,10 @@ fn main() -> ! {
     let mosi = gpioa.pa7.internal_resistor(Pull::Down);
 
     // clock speed is determined by the master
-    let nss = gpioa.pa4.internal_resistor(Pull::Up).into();
-    let mut spi = p.SPI1.spi_slave((sck, miso, mosi, Some(nss)), MODE);
+    let nss = gpioa.pa4.internal_resistor(Pull::Up);
+    let mut spi = p
+        .SPI1
+        .spi_slave((Some(sck), Some(miso), Some(mosi), Some(nss)), MODE);
     // alternativelly you could use software `chip select`
     // let mut spi = SpiSlave::new(p.SPI1, (sck, miso, mosi, None), MODE);
     // spi.set_internal_nss(false);

@@ -3,7 +3,7 @@ use core::ops::{Deref, DerefMut};
 
 use crate::dma::traits::{DMASet, PeriAddress};
 use crate::dma::{MemoryToPeripheral, PeripheralToMemory};
-use crate::gpio::{self, NoPin};
+use crate::gpio;
 use crate::pac;
 
 /// Clock polarity
@@ -55,13 +55,6 @@ pub enum Error {
     /// CRC error
     Crc,
 }
-
-/// A filler type for when the SCK pin is unnecessary
-pub type NoSck = NoPin;
-/// A filler type for when the Miso pin is unnecessary
-pub type NoMiso = NoPin;
-/// A filler type for when the Mosi pin is unnecessary
-pub type NoMosi = NoPin;
 
 /// SPI interrupt events
 #[enumflags2::bitflags]
@@ -171,7 +164,7 @@ pub struct Inner<SPI: Instance> {
 #[derive(Debug)]
 pub struct Spi<SPI: Instance, const BIDI: bool = false, W = u8> {
     inner: Inner<SPI>,
-    pins: (SPI::Sck, SPI::Miso, SPI::Mosi),
+    pins: (Option<SPI::Sck>, Option<SPI::Miso>, Option<SPI::Mosi>),
     _operation: PhantomData<W>,
 }
 
@@ -192,7 +185,12 @@ impl<SPI: Instance, const BIDI: bool, W> DerefMut for Spi<SPI, BIDI, W> {
 #[derive(Debug)]
 pub struct SpiSlave<SPI: Instance, const BIDI: bool = false, W = u8> {
     inner: Inner<SPI>,
-    pins: (SPI::Sck, SPI::Miso, SPI::Mosi, Option<SPI::Nss>),
+    pins: (
+        Option<SPI::Sck>,
+        Option<SPI::Miso>,
+        Option<SPI::Mosi>,
+        Option<SPI::Nss>,
+    ),
     _operation: PhantomData<W>,
 }
 
@@ -246,13 +244,18 @@ spi! { pac::SPI5: Spi5, SpiSlave5 }
 #[cfg(feature = "spi6")]
 spi! { pac::SPI6: Spi6, SpiSlave6 }
 
+#[allow(non_upper_case_globals)]
 pub trait SpiExt: Sized + Instance {
+    const NoSck: Option<Self::Sck> = None;
+    const NoMiso: Option<Self::Miso> = None;
+    const NoMosi: Option<Self::Mosi> = None;
+    const NoNss: Option<Self::Nss> = None;
     fn spi(
         self,
         pins: (
-            impl Into<Self::Sck>,
-            impl Into<Self::Miso>,
-            impl Into<Self::Mosi>,
+            Option<impl Into<Self::Sck>>,
+            Option<impl Into<Self::Miso>>,
+            Option<impl Into<Self::Mosi>>,
         ),
         mode: impl Into<Mode>,
         freq: Hertz,
@@ -261,21 +264,19 @@ pub trait SpiExt: Sized + Instance {
 
     fn spi_bidi(
         self,
-        pins: (impl Into<Self::Sck>, impl Into<Self::Mosi>),
+        pins: (Option<impl Into<Self::Sck>>, Option<impl Into<Self::Mosi>>),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, true, u8>
-    where
-        NoPin: Into<Self::Miso>;
+    ) -> Spi<Self, true, u8>;
 
     fn spi_slave(
         self,
         pins: (
-            impl Into<Self::Sck>,
-            impl Into<Self::Miso>,
-            impl Into<Self::Mosi>,
-            Option<Self::Nss>,
+            Option<impl Into<Self::Sck>>,
+            Option<impl Into<Self::Miso>>,
+            Option<impl Into<Self::Mosi>>,
+            Option<impl Into<Self::Nss>>,
         ),
         mode: impl Into<Mode>,
     ) -> SpiSlave<Self, false, u8>;
@@ -283,14 +284,12 @@ pub trait SpiExt: Sized + Instance {
     fn spi_bidi_slave(
         self,
         pins: (
-            impl Into<Self::Sck>,
-            impl Into<Self::Miso>,
-            Option<Self::Nss>,
+            Option<impl Into<Self::Sck>>,
+            Option<impl Into<Self::Miso>>,
+            Option<impl Into<Self::Nss>>,
         ),
         mode: impl Into<Mode>,
-    ) -> SpiSlave<Self, true, u8>
-    where
-        NoPin: Into<Self::Mosi>;
+    ) -> SpiSlave<Self, true, u8>;
 }
 
 impl<SPI: Instance> SpiExt for SPI {
@@ -302,9 +301,9 @@ impl<SPI: Instance> SpiExt for SPI {
     fn spi(
         self,
         pins: (
-            impl Into<Self::Sck>,
-            impl Into<Self::Miso>,
-            impl Into<Self::Mosi>,
+            Option<impl Into<Self::Sck>>,
+            Option<impl Into<Self::Miso>>,
+            Option<impl Into<Self::Mosi>>,
         ),
         mode: impl Into<Mode>,
         freq: Hertz,
@@ -319,14 +318,11 @@ impl<SPI: Instance> SpiExt for SPI {
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     fn spi_bidi(
         self,
-        pins: (impl Into<Self::Sck>, impl Into<Self::Mosi>),
+        pins: (Option<impl Into<Self::Sck>>, Option<impl Into<Self::Mosi>>),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, true, u8>
-    where
-        NoPin: Into<Self::Miso>,
-    {
+    ) -> Spi<Self, true, u8> {
         Spi::new_bidi(self, pins, mode, freq, clocks)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
@@ -337,10 +333,10 @@ impl<SPI: Instance> SpiExt for SPI {
     fn spi_slave(
         self,
         pins: (
-            impl Into<Self::Sck>,
-            impl Into<Self::Miso>,
-            impl Into<Self::Mosi>,
-            Option<Self::Nss>,
+            Option<impl Into<Self::Sck>>,
+            Option<impl Into<Self::Miso>>,
+            Option<impl Into<Self::Mosi>>,
+            Option<impl Into<Self::Nss>>,
         ),
         mode: impl Into<Mode>,
     ) -> SpiSlave<Self, false, u8> {
@@ -354,15 +350,12 @@ impl<SPI: Instance> SpiExt for SPI {
     fn spi_bidi_slave(
         self,
         pins: (
-            impl Into<Self::Sck>,
-            impl Into<Self::Miso>,
-            Option<Self::Nss>,
+            Option<impl Into<Self::Sck>>,
+            Option<impl Into<Self::Miso>>,
+            Option<impl Into<Self::Nss>>,
         ),
         mode: impl Into<Mode>,
-    ) -> SpiSlave<Self, true, u8>
-    where
-        NoPin: Into<Self::Mosi>,
-    {
+    ) -> SpiSlave<Self, true, u8> {
         SpiSlave::new_bidi(self, pins, mode)
     }
 }
@@ -472,9 +465,9 @@ impl<SPI: Instance> Spi<SPI, false, u8> {
     pub fn new(
         spi: SPI,
         pins: (
-            impl Into<SPI::Sck>,
-            impl Into<SPI::Miso>,
-            impl Into<SPI::Mosi>,
+            Option<impl Into<SPI::Sck>>,
+            Option<impl Into<SPI::Miso>>,
+            Option<impl Into<SPI::Mosi>>,
         ),
         mode: impl Into<Mode>,
         freq: Hertz,
@@ -485,7 +478,7 @@ impl<SPI: Instance> Spi<SPI, false, u8> {
             SPI::reset_unchecked();
         }
 
-        let pins = (pins.0.into(), pins.1.into(), pins.2.into());
+        let pins = (pins.0, pins.1, pins.2);
 
         Self::_new(spi, pins)
             .pre_init(mode.into(), freq, SPI::clock(clocks))
@@ -501,20 +494,17 @@ impl<SPI: Instance> Spi<SPI, true, u8> {
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_bidi(
         spi: SPI,
-        pins: (impl Into<SPI::Sck>, impl Into<SPI::Mosi>),
+        pins: (Option<impl Into<SPI::Sck>>, Option<impl Into<SPI::Mosi>>),
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Self
-    where
-        NoPin: Into<SPI::Miso>,
-    {
+    ) -> Self {
         unsafe {
             SPI::enable_unchecked();
             SPI::reset_unchecked();
         }
 
-        let pins = (pins.0.into(), NoPin::new().into(), pins.1.into());
+        let pins = (pins.0, SPI::NoMiso, pins.1);
 
         Self::_new(spi, pins)
             .pre_init(mode.into(), freq, SPI::clock(clocks))
@@ -531,10 +521,10 @@ impl<SPI: Instance> SpiSlave<SPI, false, u8> {
     pub fn new(
         spi: SPI,
         pins: (
-            impl Into<SPI::Sck>,
-            impl Into<SPI::Miso>,
-            impl Into<SPI::Mosi>,
-            Option<SPI::Nss>,
+            Option<impl Into<SPI::Sck>>,
+            Option<impl Into<SPI::Miso>>,
+            Option<impl Into<SPI::Mosi>>,
+            Option<impl Into<SPI::Nss>>,
         ),
         mode: impl Into<Mode>,
     ) -> Self {
@@ -543,7 +533,7 @@ impl<SPI: Instance> SpiSlave<SPI, false, u8> {
             SPI::reset_unchecked();
         }
 
-        let pins = (pins.0.into(), pins.1.into(), pins.2.into(), pins.3);
+        let pins = (pins.0, pins.1, pins.2, pins.3);
 
         Self::_new(spi, pins).pre_init(mode.into()).init()
     }
@@ -557,18 +547,19 @@ impl<SPI: Instance> SpiSlave<SPI, true, u8> {
     /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
     pub fn new_bidi(
         spi: SPI,
-        pins: (impl Into<SPI::Sck>, impl Into<SPI::Miso>, Option<SPI::Nss>),
+        pins: (
+            Option<impl Into<SPI::Sck>>,
+            Option<impl Into<SPI::Miso>>,
+            Option<impl Into<SPI::Nss>>,
+        ),
         mode: impl Into<Mode>,
-    ) -> Self
-    where
-        NoPin: Into<SPI::Mosi>,
-    {
+    ) -> Self {
         unsafe {
             SPI::enable_unchecked();
             SPI::reset_unchecked();
         }
 
-        let pins = (pins.0.into(), pins.1.into(), NoPin::new().into(), pins.2);
+        let pins = (pins.0, pins.1, SPI::NoMosi, pins.2);
 
         Self::_new(spi, pins).pre_init(mode.into()).init()
     }
@@ -576,23 +567,49 @@ impl<SPI: Instance> SpiSlave<SPI, true, u8> {
 
 impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
     #[allow(clippy::type_complexity)]
-    pub fn release(self) -> (SPI, (SPI::Sck, SPI::Miso, SPI::Mosi)) {
+    pub fn release(
+        self,
+    ) -> (
+        SPI,
+        (Option<SPI::Sck>, Option<SPI::Miso>, Option<SPI::Mosi>),
+    ) {
         (self.inner.spi, self.pins)
     }
 }
 
 impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
     #[allow(clippy::type_complexity)]
-    pub fn release(self) -> (SPI, (SPI::Sck, SPI::Miso, SPI::Mosi, Option<SPI::Nss>)) {
+    pub fn release(
+        self,
+    ) -> (
+        SPI,
+        (
+            Option<SPI::Sck>,
+            Option<SPI::Miso>,
+            Option<SPI::Mosi>,
+            Option<SPI::Nss>,
+        ),
+    ) {
         (self.inner.spi, self.pins)
     }
 }
 
 impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
-    fn _new(spi: SPI, pins: (SPI::Sck, SPI::Miso, SPI::Mosi)) -> Self {
+    fn _new(
+        spi: SPI,
+        pins: (
+            Option<impl Into<SPI::Sck>>,
+            Option<impl Into<SPI::Miso>>,
+            Option<impl Into<SPI::Mosi>>,
+        ),
+    ) -> Self {
         Self {
             inner: Inner::new(spi),
-            pins,
+            pins: (
+                pins.0.map(Into::into),
+                pins.1.map(Into::into),
+                pins.2.map(Into::into),
+            ),
             _operation: PhantomData,
         }
     }
@@ -606,10 +623,23 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
 }
 
 impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
-    fn _new(spi: SPI, pins: (SPI::Sck, SPI::Miso, SPI::Mosi, Option<SPI::Nss>)) -> Self {
+    fn _new(
+        spi: SPI,
+        pins: (
+            Option<impl Into<SPI::Sck>>,
+            Option<impl Into<SPI::Miso>>,
+            Option<impl Into<SPI::Mosi>>,
+            Option<impl Into<SPI::Nss>>,
+        ),
+    ) -> Self {
         Self {
             inner: Inner::new(spi),
-            pins,
+            pins: (
+                pins.0.map(Into::into),
+                pins.1.map(Into::into),
+                pins.2.map(Into::into),
+                pins.3.map(Into::into),
+            ),
             _operation: PhantomData,
         }
     }

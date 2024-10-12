@@ -165,11 +165,11 @@ mod app {
 
         // I2S pins: (WS, CK, MCLK, SD) for I2S2
         let i2s2_pins = (
-            gpiob.pb12, //WS
-            gpiob.pb13, //CK
-            gpioc.pc6,  //MCK
-            gpiob.pb15, //SD
-            gpiob.pb14, //ExtSD
+            gpiob.pb12,      //WS
+            gpiob.pb13,      //CK
+            Some(gpioc.pc6), //MCK
+            gpiob.pb15,      //SD
+            gpiob.pb14,      //ExtSD
         );
         let i2s2 = DualI2s::new(device.SPI2, device.I2S2EXT, i2s2_pins, &clocks);
         let i2s2_config = DualI2sDriverConfig::new_master()
