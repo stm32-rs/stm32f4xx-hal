@@ -88,13 +88,13 @@ fn main() -> ! {
     //cs - pe4
     //dc - pe3
 
-    let sck = gpioe.pe2;
-    let miso = gpioe.pe5;
-    let mosi = gpioe.pe6;
+    let sck = gpioe.pe2.into();
+    let miso = gpioe.pe5.into();
+    let mosi = gpioe.pe6.into();
 
     let spi = Spi::new(
         dp.SPI4,
-        (sck, miso, mosi),
+        (Some(sck), Some(miso), Some(mosi)),
         Mode {
             polarity: Polarity::IdleLow,
             phase: Phase::CaptureOnFirstTransition,

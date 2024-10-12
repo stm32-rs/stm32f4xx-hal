@@ -142,20 +142,20 @@ pub struct Asynchronous;
 pub struct AsyncMaster<Ch: SaiChannel> {
     // TODO: Remove attribute when destroy function is implemented.
     #[allow(unused)]
-    pins: (Ch::Mclk, Ch::Fs, Ch::Sck, Ch::Sd),
+    pins: (Option<Ch::Mclk>, Ch::Fs, Ch::Sck, Ch::Sd),
 }
 
 impl<Ch: SaiChannel> AsyncMaster<Ch> {
     fn new(
         pins: (
-            impl Into<Ch::Mclk>,
+            Option<Ch::Mclk>,
             impl Into<Ch::Fs>,
             impl Into<Ch::Sck>,
             impl Into<Ch::Sd>,
         ),
     ) -> Self {
         Self {
-            pins: (pins.0.into(), pins.1.into(), pins.2.into(), pins.3.into()),
+            pins: (pins.0, pins.1.into(), pins.2.into(), pins.3.into()),
         }
     }
 }
@@ -164,20 +164,20 @@ impl<Ch: SaiChannel> AsyncMaster<Ch> {
 pub struct AsyncSlave<Ch: SaiChannel> {
     // TODO: Remove attribute when destroy function is implemented.
     #[allow(unused)]
-    pins: (Ch::Mclk, Ch::Fs, Ch::Sck, Ch::Sd),
+    pins: (Option<Ch::Mclk>, Ch::Fs, Ch::Sck, Ch::Sd),
 }
 
 impl<Ch: SaiChannel> AsyncSlave<Ch> {
     fn new(
         pins: (
-            impl Into<Ch::Mclk>,
+            Option<Ch::Mclk>,
             impl Into<Ch::Fs>,
             impl Into<Ch::Sck>,
             impl Into<Ch::Sd>,
         ),
     ) -> Self {
         Self {
-            pins: (pins.0.into(), pins.1.into(), pins.2.into(), pins.3.into()),
+            pins: (pins.0, pins.1.into(), pins.2.into(), pins.3.into()),
         }
     }
 }
@@ -622,7 +622,7 @@ where
     pub fn master_rx(
         self,
         pins: (
-            impl Into<Ch::Mclk>,
+            Option<Ch::Mclk>,
             impl Into<Ch::Fs>,
             impl Into<Ch::Sck>,
             impl Into<Ch::Sd>,
@@ -646,7 +646,7 @@ where
     pub fn master_tx(
         self,
         pins: (
-            impl Into<Ch::Mclk>,
+            Option<Ch::Mclk>,
             impl Into<Ch::Fs>,
             impl Into<Ch::Sck>,
             impl Into<Ch::Sd>,
@@ -670,7 +670,7 @@ where
     pub fn slave_rx(
         self,
         pins: (
-            impl Into<Ch::Mclk>,
+            Option<Ch::Mclk>,
             impl Into<Ch::Fs>,
             impl Into<Ch::Sck>,
             impl Into<Ch::Sd>,
@@ -691,7 +691,7 @@ where
     pub fn slave_tx(
         self,
         pins: (
-            impl Into<Ch::Mclk>,
+            Option<Ch::Mclk>,
             impl Into<Ch::Fs>,
             impl Into<Ch::Sck>,
             impl Into<Ch::Sd>,

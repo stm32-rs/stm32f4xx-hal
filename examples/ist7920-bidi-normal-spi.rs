@@ -28,8 +28,8 @@ fn main() -> ! {
     let mut led = gpioa.pa5.into_push_pull_output();
     led.set_low();
 
-    let sck = gpiob.pb3.into_alternate();
-    let mosi = gpiob.pb5;
+    let sck = gpiob.pb3.into_alternate().into();
+    let mosi = gpiob.pb5.into();
 
     let dc = gpiob.pb4.into_push_pull_output();
     let mut res = gpiob.pb10.into_push_pull_output();
@@ -45,7 +45,9 @@ fn main() -> ! {
     // Change spi transfer mode to Bidi for more efficient operations.
     // let spi = Spi::new(dp.SPI1, (sck, miso, mosi), mode, 8.MHz(), &clocks).to_bidi_transfer_mode();
     // or
-    let spi = dp.SPI1.spi_bidi((sck, mosi), mode, 8.MHz(), &clocks);
+    let spi = dp
+        .SPI1
+        .spi_bidi((Some(sck), Some(mosi)), mode, 8.MHz(), &clocks);
 
     let iface = SPIInterface::new(spi, dc, cs);
 
