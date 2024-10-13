@@ -12,7 +12,8 @@ use stm32f4xx_hal::{
 };
 type Mono = stm32f4xx_hal::timer::MonoTimerUs<pac::TIM3>;
 
-// Uncomment if use SysTick as monotonic timer
+// To use SysTick as monotonic timer, uncomment the lines below
+// *and* remove the Mono type alias above
 //use rtic_monotonics::systick::prelude::*;
 //systick_monotonic!(Mono, 1000);
 
