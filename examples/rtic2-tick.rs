@@ -2,6 +2,11 @@
 #![no_std]
 #![feature(type_alias_impl_trait)]
 
+//Add this to Cargo.toml if you want to use SysTick as monotonic timer
+//[dependencies.rtic-monotonics]
+//version = "2.0"
+//features = ["cortex-m-systick"]
+
 use defmt_rtt as _;
 use panic_probe as _;
 use rtic_time::Monotonic;
@@ -60,8 +65,3 @@ mod app {
         }
     }
 }
-
-//Add this to Cargo.toml if use SysTick as monotonic timer
-//[dependencies.rtic-monotonics]
-//version = "2.0"
-//features = ["cortex-m-systick"]
