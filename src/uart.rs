@@ -18,7 +18,7 @@ use crate::pac;
 
 use crate::serial::uart_impls::RegisterBlockUart;
 
-pub use crate::serial::{config, Error, Event, Instance, NoRx, NoTx, Rx, RxISR, Serial, Tx, TxISR};
+pub use crate::serial::{config, Error, Event, Instance, Rx, RxISR, Serial, Tx, TxISR};
 pub use config::Config;
 
 macro_rules! halUart {

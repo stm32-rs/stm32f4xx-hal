@@ -48,15 +48,22 @@ fn main() -> ! {
             .pb15
             .into_alternate()
             .speed(Speed::VeryHigh)
-            .internal_pull_up(true);
-        let pb13 = gpiob.pb13.into_alternate().speed(Speed::VeryHigh);
+            .internal_pull_up(true)
+            .into();
+        let pb13 = gpiob.pb13.into_alternate().speed(Speed::VeryHigh).into();
 
         let mode = Mode {
             polarity: Polarity::IdleLow,
             phase: Phase::CaptureOnFirstTransition,
         };
 
-        let spi2 = Spi::new(dp.SPI2, (pb13, NoMiso::new(), pb15), mode, 3.MHz(), &clocks);
+        let spi2 = Spi::new(
+            dp.SPI2,
+            (Some(pb13), None, Some(pb15)),
+            mode,
+            3.MHz(),
+            &clocks,
+        );
 
         let buffer = cortex_m::singleton!(: [u8; ARRAY_SIZE] = [1; ARRAY_SIZE]).unwrap();
 

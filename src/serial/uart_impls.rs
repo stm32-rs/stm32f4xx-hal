@@ -10,7 +10,7 @@ use crate::dma::{
     traits::{DMASet, PeriAddress},
     MemoryToPeripheral, PeripheralToMemory,
 };
-use crate::gpio::{alt::SerialAsync as CommonPins, NoPin, PushPull};
+use crate::gpio::{alt::SerialAsync as CommonPins, PushPull};
 use crate::rcc::{self, Clocks};
 
 #[cfg(feature = "uart4")]
@@ -45,7 +45,7 @@ pub trait RegisterBlockImpl: crate::Sealed {
     #[allow(clippy::new_ret_no_self)]
     fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
-        pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
+        pins: (Option<UART::Tx<PushPull>>, Option<UART::Rx<PushPull>>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Serial<UART, WORD>, config::InvalidConfig>;
@@ -330,7 +330,7 @@ macro_rules! uartCommon {
 impl RegisterBlockImpl for RegisterBlockUsart {
     fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
-        pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
+        pins: (Option<UART::Tx<PushPull>>, Option<UART::Rx<PushPull>>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Serial<UART, WORD>, config::InvalidConfig>
@@ -397,8 +397,8 @@ where {
         uart.enable_dma(config.dma);
 
         let serial = Serial {
-            tx: Tx::new(uart, pins.0.into()),
-            rx: Rx::new(unsafe { UART::steal() }, pins.1.into()),
+            tx: Tx::new(uart, pins.0),
+            rx: Rx::new(unsafe { UART::steal() }, pins.1),
         };
         serial.tx.usart.set_stopbits(config.stopbits);
         Ok(serial)
@@ -411,7 +411,7 @@ where {
 impl RegisterBlockImpl for RegisterBlockUart {
     fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
         uart: UART,
-        pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<PushPull>>),
+        pins: (Option<UART::Tx<PushPull>>, Option<UART::Rx<PushPull>>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Serial<UART, WORD>, config::InvalidConfig>
@@ -452,8 +452,8 @@ where {
         uart.enable_dma(config.dma);
 
         let serial = Serial {
-            tx: Tx::new(uart, pins.0.into()),
-            rx: Rx::new(unsafe { UART::steal() }, pins.1.into()),
+            tx: Tx::new(uart, pins.0),
+            rx: Rx::new(unsafe { UART::steal() }, pins.1),
         };
         serial.tx.usart.set_stopbits(config.stopbits);
         Ok(serial)
@@ -603,6 +603,26 @@ impl<UART: Instance> SerialExt for UART {
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
         Serial::new(self, pins, config, clocks)
     }
+
+    fn tx<WORD>(
+        self,
+        tx_pin: impl Into<Self::Tx<PushPull>>,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Tx<Self, WORD>, config::InvalidConfig> {
+        <UART as crate::Ptr>::RB::new(self, (Some(tx_pin.into()), None), config, clocks)
+            .map(|s| s.split().0)
+    }
+
+    fn rx<WORD>(
+        self,
+        rx_pin: impl Into<Self::Rx<PushPull>>,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<Rx<Self, WORD>, config::InvalidConfig> {
+        <UART as crate::Ptr>::RB::new(self, (None, Some(rx_pin.into())), config, clocks)
+            .map(|s| s.split().1)
+    }
 }
 
 impl<UART: Instance, WORD> Serial<UART, WORD> {
@@ -611,11 +631,9 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         tx_pin: impl Into<UART::Tx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Tx<UART, WORD>, config::InvalidConfig>
-    where
-        NoPin: Into<UART::Rx<PushPull>>,
-    {
-        Self::new(usart, (tx_pin, NoPin::new()), config, clocks).map(|s| s.split().0)
+    ) -> Result<Tx<UART, WORD>, config::InvalidConfig> {
+        <UART as crate::Ptr>::RB::new(usart, (Some(tx_pin.into()), None), config, clocks)
+            .map(|s| s.split().0)
     }
 }
 
@@ -625,11 +643,9 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         rx_pin: impl Into<UART::Rx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-    ) -> Result<Rx<UART, WORD>, config::InvalidConfig>
-    where
-        NoPin: Into<UART::Tx<PushPull>>,
-    {
-        Self::new(usart, (NoPin::new(), rx_pin), config, clocks).map(|s| s.split().1)
+    ) -> Result<Rx<UART, WORD>, config::InvalidConfig> {
+        <UART as crate::Ptr>::RB::new(usart, (None, Some(rx_pin.into())), config, clocks)
+            .map(|s| s.split().1)
     }
 }
 
