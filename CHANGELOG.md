@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Use `stm32f4-staging` until `stm32f4` is released [#706]
  - use GPIO pac fields instead of raw write [#777]
  - RTIC2 monotonics fix: CC1 instead of CC3 [#771]
+ - Fefactor FMPI2c `embedded-hal` implementations [#784]
  - Allow different lengths of buffers in hal_1 SpiBus impl [#566]
  - Clean SPI write impls [#774]
  - move `ptr()` to `Ptr` trait [#773]
@@ -59,6 +60,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#777]: https://github.com/stm32-rs/stm32f4xx-hal/pull/777
 [#778]: https://github.com/stm32-rs/stm32f4xx-hal/pull/778
 [#783]: https://github.com/stm32-rs/stm32f4xx-hal/pull/783
+[#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
 [#785]: https://github.com/stm32-rs/stm32f4xx-hal/pull/785
 [#791]: https://github.com/stm32-rs/stm32f4xx-hal/pull/791
 [#796]: https://github.com/stm32-rs/stm32f4xx-hal/pull/796
