@@ -84,7 +84,7 @@ fn main() -> ! {
         cortex_m::interrupt::free(|cs| *G_TRANSFER.borrow(cs).borrow_mut() = Some(transfer));
         // Enable interrupt
         unsafe {
-            cortex_m::peripheral::NVIC::unmask(pac::Interrupt::DMA2_STREAM4);
+            cortex_m::peripheral::NVIC::unmask(pac::Interrupt::DMA1_STREAM4);
         }
     }
 
@@ -94,7 +94,7 @@ fn main() -> ! {
 }
 
 #[interrupt]
-fn DMA2_STREAM4() {
+fn DMA1_STREAM4() {
     static mut TRANSFER: Option<SpiDma> = None;
 
     let transfer = TRANSFER.get_or_insert_with(|| {
