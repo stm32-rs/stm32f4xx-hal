@@ -68,16 +68,16 @@ mod app {
 
         let gpiob = gpiob.split();
 
-        let sck = gpiob.pb3.into_alternate();
-        let miso = gpiob.pb4.into_alternate();
-        let mosi = gpiob.pb5;
+        let sck = gpiob.pb3.into_alternate().into();
+        let miso = gpiob.pb4.into_alternate().into();
+        let mosi = gpiob.pb5.into();
 
         let mode = Mode {
             polarity: Polarity::IdleLow,
             phase: Phase::CaptureOnFirstTransition,
         };
 
-        let mut spi3 = SpiSlave::new(spi, (sck, miso, mosi, None), mode);
+        let mut spi3 = SpiSlave::new(spi, (Some(sck), Some(miso), Some(mosi), None), mode);
         spi3.set_internal_nss(false);
 
         let (tx, rx) = spi3.use_dma().txrx();
