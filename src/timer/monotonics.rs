@@ -178,7 +178,10 @@ macro_rules! make_timer {
 
                 // The above line raises an update event which will indicate that the timer is already finished.
                 // Since this is not the case, it should be cleared.
-                self.tim.sr().modify(|_, w| w.uif().clear_bit());
+                self.tim.sr().write(|w| {
+                    unsafe { w.bits(!0) };
+                    w.uif().clear_bit()
+                });
 
                 $tq.initialize(MonoTimerBackend::<pac::$timer> { _tim: PhantomData });
                 $overflow.store(0, Ordering::SeqCst);
@@ -231,7 +234,10 @@ macro_rules! make_timer {
             }
 
             fn clear_compare_flag() {
-                Self::tim().sr().modify(|_, w| w.cc2if().clear_bit());
+                Self::tim().sr().write(|w| {
+                    unsafe { w.bits(!0) };
+                    w.cc2if().clear_bit()
+                });
             }
 
             fn pend_interrupt() {
@@ -249,13 +255,19 @@ macro_rules! make_timer {
             fn on_interrupt() {
                 // Full period
                 if Self::tim().sr().read().uif().bit_is_set() {
-                    Self::tim().sr().modify(|_, w| w.uif().clear_bit());
+                    Self::tim().sr().write(|w| {
+                        unsafe { w.bits(!0) };
+                        w.uif().clear_bit()
+                    });
                     let prev = $overflow.fetch_add(1, Ordering::Relaxed);
                     assert!(prev % 2 == 1, "Monotonic must have missed an interrupt!");
                 }
                 // Half period
                 if Self::tim().sr().read().cc1if().bit_is_set() {
-                    Self::tim().sr().modify(|_, w| w.cc1if().clear_bit());
+                    Self::tim().sr().write(|w| {
+                        unsafe { w.bits(!0) };
+                        w.cc1if().clear_bit()
+                    });
                     let prev = $overflow.fetch_add(1, Ordering::Relaxed);
                     assert!(prev % 2 == 0, "Monotonic must have missed an interrupt!");
                 }
