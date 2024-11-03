@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.22.1] - 2024-11-03
+
  - Fix pac `defmt` feature
  - Fix timer interrupt status clear
 
@@ -1085,7 +1087,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for stm32f407 and stm32f429.
 
-[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.22.1...HEAD
+[v0.22.1]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.22.0...v0.22.1
 [v0.22.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.21.0...v0.22.0
 [v0.21.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.20.0...v0.21.0
 [v0.20.0]: https://github.com/stm32-rs/stm32f4xx-hal/compare/v0.19.0...v0.20.0
