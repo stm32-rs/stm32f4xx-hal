@@ -139,7 +139,7 @@ impl FrameSize for u8 {
         spi.dr8().read().dr().bits()
     }
     fn write_data(self, spi: &spi1::RegisterBlock) {
-        spi.dr8().write(|w| w.dr().set(self))
+        spi.dr8().write(|w| w.dr().set(self));
     }
 }
 
@@ -149,7 +149,7 @@ impl FrameSize for u16 {
         spi.dr().read().dr().bits()
     }
     fn write_data(self, spi: &spi1::RegisterBlock) {
-        spi.dr().write(|w| w.dr().set(self))
+        spi.dr().write(|w| w.dr().set(self));
     }
 }
 
@@ -868,7 +868,7 @@ impl<SPI: Instance> crate::ClearFlags for Inner<SPI> {
         if flags.into().contains(CFlag::CrcError) {
             self.spi
                 .sr()
-                .write(|w| unsafe { w.bits(0xffff).crcerr().clear_bit() })
+                .write(|w| unsafe { w.bits(0xffff).crcerr().clear_bit() });
         }
     }
 }

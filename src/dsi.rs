@@ -387,7 +387,7 @@ impl DsiHost {
                     .modify(|_, w| unsafe { w.cmdsize().bits(display_config.active_width) });
 
                 // Tearing effect acknowledge request
-                dsi.cmcr().modify(|_, w| w.teare().set_bit())
+                dsi.cmcr().modify(|_, w| w.teare().set_bit());
             }
         }
 

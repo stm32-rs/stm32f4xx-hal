@@ -436,7 +436,7 @@ macro_rules! hal {
             }
             #[inline(always)]
             unsafe fn set_auto_reload_unchecked(&mut self, arr: u32) {
-                self.arr().write(|w| w.bits(arr))
+                self.arr().write(|w| w.bits(arr));
             }
             #[inline(always)]
             fn set_auto_reload(&mut self, arr: u32) -> Result<(), Error> {
@@ -551,7 +551,7 @@ macro_rules! hal {
                 fn set_cc_value(c: u8, value: u32) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
-                        tim.ccr(c as usize).write(|w| unsafe { w.bits(value) })
+                        tim.ccr(c as usize).write(|w| unsafe { w.bits(value) });
                     }
                 }
 

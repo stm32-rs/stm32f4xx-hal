@@ -302,7 +302,7 @@ fn configure_bcr1<WORD: Word>(bcr: &fsmc::BCR1) {
         w.muxen().disabled();
         // Enable this memory bank
         w.mbken().enabled()
-    })
+    });
 }
 
 /// Configures an SRAM/NOR-Flash chip-select control register for LCD interface use
@@ -354,7 +354,7 @@ fn configure_bcr(bcr: &fsmc::BCR) {
             // Enable this memory bank
             .mbken()
             .enabled()
-    })
+    });
 }
 
 /// Configures a read timing register
@@ -370,7 +370,7 @@ fn configure_btr(btr: &fsmc::BTR, read_timing: &Timing) {
             .bits(read_timing.address_hold)
             .addset()
             .bits(read_timing.address_setup)
-    })
+    });
 }
 /// Configures a write timing register
 fn configure_bwtr(bwtr: &fsmc::BWTR, write_timing: &Timing) {
@@ -385,7 +385,7 @@ fn configure_bwtr(bwtr: &fsmc::BWTR, write_timing: &Timing) {
             .bits(write_timing.address_hold)
             .addset()
             .bits(write_timing.address_setup)
-    })
+    });
 }
 
 /// An interface to an LCD controller using one sub-bank
