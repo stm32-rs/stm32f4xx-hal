@@ -95,12 +95,13 @@ optional = true
 [dev-dependencies]
 defmt = "0.3.4"
 defmt-rtt = "0.4.0"
-panic-probe = { version = "0.3.0", features = ["print-defmt"] }
+panic-probe = { version = "0.3.0" }
 panic-semihosting = "0.6.0"
 cortex-m-semihosting = "0.5.0"
 heapless = "0.8"
 panic-halt = "0.2.0"
 ssd1306 = "0.8.4"
+embedded-hal-bus = "0.2"
 embedded-graphics = "0.8.1"
 embedded-graphics-07 = { package = "embedded-graphics", version = "0.7.1" }
 usb-device = "0.3.1"
@@ -113,6 +114,7 @@ display-interface-spi = "0.4.1"
 ist7920 = "0.1.1"
 smart-leds = "0.3.0"
 ws2812-spi = { version = "0.4.0", features = [] }
+w25q-spi = { git = "https://github.com/Fedeparma74/w25q-spi" }
 hd44780-driver = "0.4.0"
 display-interface = "0.5"
 display-interface-04 = { package = "display-interface", version = "0.4.1" }
@@ -167,7 +169,7 @@ gpio-f401 = [
     "tim9",
     "tim10",
     "tim11",
-    "rcc_shared_m"
+    "rcc_shared_m",
 ]
 gpio-f410 = [
     "dac",
@@ -316,7 +318,7 @@ gpio-f417 = [
     "usart3",
     "uart4",
     "uart5",
-    "rcc_shared_m"
+    "rcc_shared_m",
 ]
 gpio-f427 = [
     "gpiod",
@@ -364,7 +366,7 @@ gpio-f427 = [
     "uart5",
     "uart7",
     "uart8",
-    "rcc_shared_m"
+    "rcc_shared_m",
 ]
 gpio-f446 = [
     "gpiod",
@@ -457,7 +459,7 @@ gpio-f469 = [
     "uart5",
     "uart7",
     "uart8",
-    "rcc_shared_m"
+    "rcc_shared_m",
 ]
 
 ## Support monotonic timers and other stuff that can be used by [RTICv1 framework](https://crates.io/crates/cortex-m-rtic)
