@@ -183,7 +183,7 @@ impl Rtc {
             regs.prer().modify(|_, w| {
                 w.prediv_s().set(prediv_s);
                 w.prediv_a().set(prediv_a)
-            })
+            });
         });
 
         result
@@ -261,7 +261,7 @@ impl Rtc {
             regs.prer().modify(|_, w| {
                 w.prediv_s().set(prediv_s);
                 w.prediv_a().set(prediv_a)
-            })
+            });
         });
     }
 
@@ -311,7 +311,7 @@ impl Rtc {
                 w.st().set(st);
                 w.su().set(su);
                 w.pm().clear_bit()
-            })
+            });
         });
 
         Ok(())
@@ -324,7 +324,7 @@ impl Rtc {
         }
         let (st, su) = bcd2_encode(seconds.into())?;
         self.modify(true, |regs| {
-            regs.tr().modify(|_, w| w.st().set(st).su().set(su))
+            regs.tr().modify(|_, w| w.st().set(st).su().set(su));
         });
 
         Ok(())
@@ -337,7 +337,7 @@ impl Rtc {
         }
         let (mnt, mnu) = bcd2_encode(minutes.into())?;
         self.modify(true, |regs| {
-            regs.tr().modify(|_, w| w.mnt().set(mnt).mnu().set(mnu))
+            regs.tr().modify(|_, w| w.mnt().set(mnt).mnu().set(mnu));
         });
 
         Ok(())
@@ -351,7 +351,7 @@ impl Rtc {
         let (ht, hu) = bcd2_encode(hours.into())?;
 
         self.modify(true, |regs| {
-            regs.tr().modify(|_, w| w.ht().set(ht).hu().set(hu))
+            regs.tr().modify(|_, w| w.ht().set(ht).hu().set(hu));
         });
 
         Ok(())
@@ -363,7 +363,7 @@ impl Rtc {
             return Err(Error::InvalidInputData);
         }
         self.modify(true, |regs| {
-            regs.dr().modify(|_, w| unsafe { w.wdu().bits(weekday) })
+            regs.dr().modify(|_, w| unsafe { w.wdu().bits(weekday) });
         });
 
         Ok(())
@@ -376,7 +376,7 @@ impl Rtc {
         }
         let (dt, du) = bcd2_encode(day as u32)?;
         self.modify(true, |regs| {
-            regs.dr().modify(|_, w| w.dt().set(dt).du().set(du))
+            regs.dr().modify(|_, w| w.dt().set(dt).du().set(du));
         });
 
         Ok(())
@@ -389,7 +389,7 @@ impl Rtc {
         }
         let (mt, mu) = bcd2_encode(month as u32)?;
         self.modify(true, |regs| {
-            regs.dr().modify(|_, w| w.mt().bit(mt > 0).mu().set(mu))
+            regs.dr().modify(|_, w| w.mt().bit(mt > 0).mu().set(mu));
         });
 
         Ok(())
@@ -405,7 +405,7 @@ impl Rtc {
         }
         let (yt, yu) = bcd2_encode(year as u32 - 1970)?;
         self.modify(true, |regs| {
-            regs.dr().modify(|_, w| w.yt().set(yt).yu().set(yu))
+            regs.dr().modify(|_, w| w.yt().set(yt).yu().set(yu));
         });
 
         Ok(())
@@ -434,7 +434,7 @@ impl Rtc {
                 w.yt().set(yt);
                 w.yu().set(yu);
                 unsafe { w.wdu().bits(wdu) }
-            })
+            });
         });
 
         Ok(())
@@ -476,7 +476,7 @@ impl Rtc {
                 w.st().set(st);
                 w.su().set(su);
                 w.pm().clear_bit()
-            })
+            });
         });
 
         Ok(())

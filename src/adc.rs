@@ -484,7 +484,7 @@ macro_rules! adc {
                         config::Sequence::Fourteen => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq14().bits(channel) }),
                         config::Sequence::Fifteen  => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq15().bits(channel) }),
                         config::Sequence::Sixteen  => self.adc_reg.sqr1().modify(|_, w| unsafe {w.sq16().bits(channel) }),
-                    }
+                    };
 
                     fn replace_bits(mut v: u32, offset: u32, width: u32, value: u32) -> u32 {
                         let mask = !(((1 << width) -1) << (offset * width));
@@ -500,7 +500,7 @@ macro_rules! adc {
                         0..=9   => self.adc_reg.smpr2().modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch, 3, st)) }),
                         10..=18 => self.adc_reg.smpr1().modify(|r, w| unsafe { w.bits(replace_bits(r.bits(), ch-10, 3, st)) }),
                         _ => unimplemented!(),
-                    }
+                    };
                 }
 
                 /// Returns the current sample stored in the ADC data register

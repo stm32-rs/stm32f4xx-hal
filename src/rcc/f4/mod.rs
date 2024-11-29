@@ -526,7 +526,7 @@ impl CFGR {
                 w.prften().set_bit();
                 w.icen().set_bit();
                 w.dcen().set_bit()
-            })
+            });
         }
     }
 

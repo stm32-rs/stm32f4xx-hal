@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Bump `stm32f4-staging`
+
 ## [v0.22.1] - 2024-11-03
 
  - Fix pac `defmt` feature

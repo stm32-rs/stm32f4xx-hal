@@ -267,9 +267,15 @@ macro_rules! uartCommon {
         fn enable_dma(&self, dc: config::DmaConfig) {
             use config::DmaConfig;
             match dc {
-                DmaConfig::Tx => self.cr3().write(|w| w.dmat().enabled()),
-                DmaConfig::Rx => self.cr3().write(|w| w.dmar().enabled()),
-                DmaConfig::TxRx => self.cr3().write(|w| w.dmar().enabled().dmat().enabled()),
+                DmaConfig::Tx => {
+                    self.cr3().write(|w| w.dmat().enabled());
+                }
+                DmaConfig::Rx => {
+                    self.cr3().write(|w| w.dmar().enabled());
+                }
+                DmaConfig::TxRx => {
+                    self.cr3().write(|w| w.dmar().enabled().dmat().enabled());
+                }
                 DmaConfig::None => {}
             }
         }
@@ -369,14 +375,14 @@ where {
             IrdaMode::Normal => unsafe {
                 uart.gtpr().reset();
                 uart.cr3().write(|w| w.iren().enabled());
-                uart.gtpr().write(|w| w.psc().bits(1u8))
+                uart.gtpr().write(|w| w.psc().bits(1u8));
             },
             IrdaMode::LowPower => unsafe {
                 uart.gtpr().reset();
                 uart.cr3().write(|w| w.iren().enabled().irlp().low_power());
                 // FIXME
                 uart.gtpr()
-                    .write(|w| w.psc().bits((1843200u32 / pclk_freq) as u8))
+                    .write(|w| w.psc().bits((1843200u32 / pclk_freq) as u8));
             },
             IrdaMode::None => {}
         }
