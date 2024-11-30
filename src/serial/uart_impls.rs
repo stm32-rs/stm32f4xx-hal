@@ -4,7 +4,8 @@ use enumflags2::BitFlags;
 use nb::block;
 
 use super::{
-    config, CFlag, Error, Event, Flag, Rx, RxISR, RxListen, Serial, SerialExt, Tx, TxISR, TxListen,
+    config, CFlag, Error, Event, Flag, HalfDuplex, Rx, RxISR, RxListen, Serial, SerialExt, Tx,
+    TxISR, TxListen,
 };
 use crate::dma::{
     traits::{DMASet, PeriAddress},
@@ -49,6 +50,13 @@ pub trait RegisterBlockImpl: crate::Sealed {
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Serial<UART, WORD>, config::InvalidConfig>;
+
+    fn half_duplex<UART: Instance + crate::Ptr<RB = Self>, WORD>(
+        uart: UART,
+        pins: impl Into<UART::Tx<PushPull>>,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<HalfDuplex<UART, WORD>, config::InvalidConfig>;
 
     fn read_u16(&self) -> nb::Result<u16, Error>;
     fn write_u16(&self, word: u16) -> nb::Result<(), Error>;
@@ -153,6 +161,55 @@ pub trait RegisterBlockImpl: crate::Sealed {
 
 macro_rules! uartCommon {
     () => {
+        fn half_duplex<UART: Instance + crate::Ptr<RB = Self>, WORD>(
+            uart: UART,
+            tx_pin: impl Into<UART::Tx<PushPull>>,
+            config: impl Into<config::Config>,
+            clocks: &Clocks,
+        ) -> Result<HalfDuplex<UART, WORD>, config::InvalidConfig> {
+            use self::config::*;
+
+            let config = config.into();
+            unsafe {
+                // Enable clock.
+                UART::enable_unchecked();
+                UART::reset_unchecked();
+            }
+
+            let pclk_freq = UART::clock(clocks).raw();
+            let baud = config.baudrate.0;
+
+            let (over8, div) = Self::calculate_brr(pclk_freq, baud)?;
+
+            uart.brr().write(|w| unsafe { w.bits(div) });
+
+            // Reset other registers to disable advanced USART features
+            uart.cr2().reset();
+
+            uart.cr3().write(|w| w.hdsel().half_duplex());
+
+            // Enable transmission and receiving
+            // and configure frame
+
+            uart.cr1().write(|w| {
+                w.ue().set_bit();
+                w.over8().bit(over8);
+                w.te().set_bit();
+                w.re().set_bit();
+                w.m().bit(config.wordlength == WordLength::DataBits9);
+                w.pce().bit(config.parity != Parity::ParityNone);
+                w.ps().bit(config.parity == Parity::ParityOdd)
+            });
+
+            let serial = HalfDuplex {
+                _word: core::marker::PhantomData,
+                usart: uart,
+                pin: tx_pin.into(),
+            };
+            serial.usart.set_stopbits(config.stopbits);
+            Ok(serial)
+        }
+
         fn read_u16(&self) -> nb::Result<u16, Error> {
             // NOTE(unsafe) atomic read with no side effects
             let sr = self.sr().read();
@@ -583,6 +640,65 @@ impl<UART: Instance, WORD> crate::Listen for Serial<UART, WORD> {
     }
 }
 
+impl<UART: Instance, WORD> RxISR for HalfDuplex<UART, WORD> {
+    fn is_idle(&self) -> bool {
+        self.usart.is_idle()
+    }
+
+    fn is_rx_not_empty(&self) -> bool {
+        self.usart.is_rx_not_empty()
+    }
+
+    /// This clears `Idle`, `Overrun`, `Noise`, `FrameError` and `ParityError` flags
+    fn clear_idle_interrupt(&self) {
+        self.usart.clear_idle_interrupt();
+    }
+}
+
+impl<UART: Instance, WORD> TxISR for HalfDuplex<UART, WORD> {
+    fn is_tx_empty(&self) -> bool {
+        self.usart.is_tx_empty()
+    }
+}
+
+impl<UART: Instance, WORD> crate::ClearFlags for HalfDuplex<UART, WORD> {
+    type Flag = CFlag;
+
+    #[inline(always)]
+    fn clear_flags(&mut self, flags: impl Into<BitFlags<Self::Flag>>) {
+        self.usart.clear_flags(flags.into())
+    }
+}
+
+impl<UART: Instance, WORD> crate::ReadFlags for HalfDuplex<UART, WORD> {
+    type Flag = Flag;
+
+    #[inline(always)]
+    fn flags(&self) -> BitFlags<Self::Flag> {
+        self.usart.flags()
+    }
+}
+
+impl<UART: Instance, WORD> crate::Listen for HalfDuplex<UART, WORD> {
+    type Event = Event;
+
+    #[inline(always)]
+    fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.usart.listen_event(None, Some(event.into()));
+    }
+
+    #[inline(always)]
+    fn listen_only(&mut self, event: impl Into<BitFlags<Self::Event>>) {
+        self.usart
+            .listen_event(Some(BitFlags::ALL), Some(event.into()));
+    }
+
+    #[inline(always)]
+    fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
+        self.usart.listen_event(Some(event.into()), None);
+    }
+}
+
 impl<UART: Instance> fmt::Write for Serial<UART>
 where
     Tx<UART>: fmt::Write,
@@ -608,6 +724,15 @@ impl<UART: Instance> SerialExt for UART {
         clocks: &Clocks,
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
         Serial::new(self, pins, config, clocks)
+    }
+
+    fn half_duplex<WORD>(
+        self,
+        tx_pin: impl Into<Self::Tx<PushPull>>,
+        config: impl Into<config::Config>,
+        clocks: &Clocks,
+    ) -> Result<HalfDuplex<Self, WORD>, config::InvalidConfig> {
+        HalfDuplex::new(self, tx_pin, config, clocks)
     }
 }
 
