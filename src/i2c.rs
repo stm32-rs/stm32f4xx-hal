@@ -264,6 +264,8 @@ impl<I2C: Instance> I2c<I2C> {
         // to start a new transaction.
         while self.i2c.cr1().read().stop().bit_is_set() {}
 
+        // Clear all pending error bits
+        self.i2c.sr1().write(|w| unsafe { w.bits(0) });
         // Send a START condition
         self.i2c.cr1().modify(|_, w| w.start().set_bit());
 
@@ -325,6 +327,8 @@ impl<I2C: Instance> I2c<I2C> {
         // to start a new transaction.
         while self.i2c.cr1().read().stop().bit_is_set() {}
 
+        // Clear all pending error bits
+        self.i2c.sr1().write(|w| unsafe { w.bits(0) });
         // Send a START condition and set ACK bit
         self.i2c
             .cr1()
