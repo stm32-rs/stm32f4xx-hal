@@ -220,34 +220,34 @@ impl<I2C: Instance> I2c<I2C> {
         let sr1 = self.i2c.sr1().read();
 
         if sr1.timeout().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.timeout().clear_bit());
+            self.i2c.sr1().write(|w| w.timeout().clear_bit());
             return Err(Error::Timeout);
         }
 
         if sr1.pecerr().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.pecerr().clear_bit());
+            self.i2c.sr1().write(|w| w.pecerr().clear_bit());
             return Err(Error::Crc);
         }
 
         if sr1.ovr().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.ovr().clear_bit());
+            self.i2c.sr1().write(|w| w.ovr().clear_bit());
             return Err(Error::Overrun);
         }
 
         if sr1.af().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.af().clear_bit());
+            self.i2c.sr1().write(|w| w.af().clear_bit());
             return Err(Error::NoAcknowledge(NoAcknowledgeSource::Unknown));
         }
 
         if sr1.arlo().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.arlo().clear_bit());
+            self.i2c.sr1().write(|w| w.arlo().clear_bit());
             return Err(Error::ArbitrationLoss);
         }
 
         // The errata indicates that BERR may be incorrectly detected. It recommends ignoring and
         // clearing the BERR bit instead.
         if sr1.berr().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.berr().clear_bit());
+            self.i2c.sr1().write(|w| w.berr().clear_bit());
         }
 
         Ok(sr1)
