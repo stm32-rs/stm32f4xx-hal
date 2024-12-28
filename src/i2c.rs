@@ -220,34 +220,34 @@ impl<I2C: Instance> I2c<I2C> {
         let sr1 = self.i2c.sr1().read();
 
         if sr1.timeout().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.timeout().clear_bit());
+            self.i2c.sr1().write(|w| w.timeout().clear_bit());
             return Err(Error::Timeout);
         }
 
         if sr1.pecerr().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.pecerr().clear_bit());
+            self.i2c.sr1().write(|w| w.pecerr().clear_bit());
             return Err(Error::Crc);
         }
 
         if sr1.ovr().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.ovr().clear_bit());
+            self.i2c.sr1().write(|w| w.ovr().clear_bit());
             return Err(Error::Overrun);
         }
 
         if sr1.af().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.af().clear_bit());
+            self.i2c.sr1().write(|w| w.af().clear_bit());
             return Err(Error::NoAcknowledge(NoAcknowledgeSource::Unknown));
         }
 
         if sr1.arlo().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.arlo().clear_bit());
+            self.i2c.sr1().write(|w| w.arlo().clear_bit());
             return Err(Error::ArbitrationLoss);
         }
 
         // The errata indicates that BERR may be incorrectly detected. It recommends ignoring and
         // clearing the BERR bit instead.
         if sr1.berr().bit_is_set() {
-            self.i2c.sr1().modify(|_, w| w.berr().clear_bit());
+            self.i2c.sr1().write(|w| w.berr().clear_bit());
         }
 
         Ok(sr1)
@@ -264,6 +264,8 @@ impl<I2C: Instance> I2c<I2C> {
         // to start a new transaction.
         while self.i2c.cr1().read().stop().bit_is_set() {}
 
+        // Clear all pending error bits
+        self.i2c.sr1().write(|w| unsafe { w.bits(0) });
         // Send a START condition
         self.i2c.cr1().modify(|_, w| w.start().set_bit());
 
@@ -325,6 +327,8 @@ impl<I2C: Instance> I2c<I2C> {
         // to start a new transaction.
         while self.i2c.cr1().read().stop().bit_is_set() {}
 
+        // Clear all pending error bits
+        self.i2c.sr1().write(|w| unsafe { w.bits(0) });
         // Send a START condition and set ACK bit
         self.i2c
             .cr1()
