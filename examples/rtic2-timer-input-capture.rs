@@ -43,7 +43,7 @@ mod app {
 
         // It is necessary to connect pins PA0 and PA5 through a resistor of 1 kΩ - 10 kΩ
 
-        // Configuration of TIM2 in input capture mode
+        // Configuration of TIM5 in input capture mode
         let (mut tim5, (ch1, ..)) = Timer::new(dp.TIM5, &clocks).capture_compare_hz(48000.kHz());
         let mut ch1 = ch1.with(gpioa.pa0);
         tim5.listen(Event::C1);
