@@ -264,7 +264,11 @@ where
         );
 
         self.tim.set_prescaler(psc as u16 - 1);
-        self.tim.set_auto_reload(1 << 16).unwrap();
+        self.tim.set_auto_reload(TIM::max_auto_reload()).unwrap();
         self.tim.cnt_reset();
+    }
+
+    pub fn get_max_auto_reload(&mut self) -> u32 {
+        TIM::max_auto_reload()
     }
 }

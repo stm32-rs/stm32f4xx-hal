@@ -58,15 +58,15 @@ mod app {
 
     #[task(binds = TIM5, local = [tim5, ch1, prev_capture: u32 = 0], priority = 3)]
     fn tim5_interrupt(cx: tim5_interrupt::Context) {
-        let timer_clock = cx.local.tim5.get_timer_clock();
-
         if cx.local.tim5.flags().contains(Flag::C1) {
+            let timer_clock = cx.local.tim5.get_timer_clock();
+            let max_auto_reload = cx.local.tim5.get_max_auto_reload();
             let current_capture = cx.local.ch1.get_capture();
 
             let delta = if current_capture >= *cx.local.prev_capture {
                 current_capture - *cx.local.prev_capture
             } else {
-                (u32::MAX - *cx.local.prev_capture) + current_capture
+                (max_auto_reload - *cx.local.prev_capture) + current_capture
             };
 
             let freq = timer_clock as f32 / delta as f32;
