@@ -1,5 +1,5 @@
 use super::sealed::{Split, SplitCc};
-use super::{CPin, Ccm, Instance, Polarity, Timer, WithCc};
+use super::{CPin, CcMode, Instance, Polarity, Timer, WithCc, CapturePrescaler, CaptureFilter};
 pub use super::{Ch, C1, C2, C3, C4};
 use crate::gpio::PushPull;
 use crate::rcc::Clocks;
@@ -83,7 +83,7 @@ where
         mut self,
         pin: impl Into<TIM::Ch<PushPull>>,
     ) -> CcChannel<TIM, C, false, PushPull> {
-        self.tim.preload_capture_compare(C, Ccm::InputCapture);
+        self.tim.preload_capture_compare(C, CcMode::InputCapture);
         CcChannel {
             tim: self.tim,
             lines: CaptureLines::One(pin.into()),
@@ -140,6 +140,14 @@ impl<TIM: Instance + WithCc + CPin<C>, const C: u8, const COMP: bool, Otype>
             _tim: self.tim,
             channel: C,
         }
+    }
+
+    pub fn set_prescaler(&mut self, psc: CapturePrescaler) {
+        self.tim.prescaler_capture(C, psc);
+    }
+
+    pub fn set_filter(&mut self, filter: CaptureFilter) {
+        self.tim.filter_capture(C, filter);
     }
 }
 impl<TIM: Instance + CPin<C>, const C: u8, const COMP: bool, Otype>

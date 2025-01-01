@@ -315,13 +315,63 @@ pub enum Ocm {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
-pub enum Ccm {
+pub enum CcMode {
     // Todo Output compare (not tested)
     // OutputCompare = 0,
     InputCapture = 1,
     InvChannelInputCapture = 2,
     TriggerInputCapture = 3,
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+pub enum CapturePrescaler {
+    No = 0,
+    Two = 1,
+    Four = 2,
+    Eight = 3,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+/// Enum representing the input capture filter settings.
+pub enum CaptureFilter {
+    /// No filter, sampling frequency = fDTS, N = 1
+    NoFilter,
+    /// Sampling frequency = fCK_INT, N = 2
+    FckIntN2,
+    /// Sampling frequency = fCK_INT, N = 4
+    FckIntN4,
+    /// Sampling frequency = fCK_INT, N = 8
+    FckIntN8,
+    /// Sampling frequency = fDTS/2, N = 6
+    FdtsDiv2N6,
+    /// Sampling frequency = fDTS/2, N = 8
+    FdtsDiv2N8,
+    /// Sampling frequency = fDTS/4, N = 6
+    FdtsDiv4N6,
+    /// Sampling frequency = fDTS/4, N = 8
+    FdtsDiv4N8,
+    /// Sampling frequency = fDTS/8, N = 6
+    FdtsDiv8N6,
+    /// Sampling frequency = fDTS/8, N = 8
+    FdtsDiv8N8,
+    /// Sampling frequency = fDTS/16, N = 5
+    FdtsDiv16N5,
+    /// Sampling frequency = fDTS/16, N = 6
+    FdtsDiv16N6,
+    /// Sampling frequency = fDTS/16, N = 8
+    FdtsDiv16N8,
+    /// Sampling frequency = fDTS/32, N = 5
+    FdtsDiv32N5,
+    /// Sampling frequency = fDTS/32, N = 6
+    FdtsDiv32N6,
+    /// Sampling frequency = fDTS/32, N = 8
+    FdtsDiv32N8,
+}
+
 
 // Center-aligned mode selection
 pub use pac::tim1::cr1::CMS as CenterAlignedMode;
@@ -337,7 +387,7 @@ pub type CCR4<T> = CCR<T, 3>;
 pub struct DMAR<T>(T);
 
 mod sealed {
-    use super::{BitFlags, Ccm, CenterAlignedMode, Event, Flag, IdleState, Ocm, Polarity};
+    use super::{BitFlags, CaptureFilter, CapturePrescaler, CcMode, CenterAlignedMode, Event, Flag, IdleState, Ocm, Polarity};
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
@@ -399,7 +449,9 @@ mod sealed {
     }
 
     pub trait WithCc: WithCcCommon {
-        fn preload_capture_compare(&mut self, c: u8, mode: Ccm);
+        fn preload_capture_compare(&mut self, c: u8, mode: CcMode);
+        fn prescaler_capture(&mut self, c: u8, psc: CapturePrescaler);
+        fn filter_capture(&mut self, c: u8, filter: CaptureFilter);
         fn start_capture_compare(&mut self);
     }
 
@@ -814,14 +866,14 @@ macro_rules! with_pwm {
 }
 
 macro_rules! with_cc {
-    ($TIM:ty: [$($Cx:literal, $ccmrx_output:ident, $ccxs:ident;)+] $(, $aoe:ident)?) => {
+    ($TIM:ty: [$($Cx:literal, $ccmrx_input:ident, $ccxs:ident, $icx_psc:ident, $icxf:ident;)+] $(, $aoe:ident)?) => {
         impl WithCc for $TIM {
             #[inline(always)]
-            fn preload_capture_compare(&mut self, c: u8, mode: Ccm) {
+            fn preload_capture_compare(&mut self, c: u8, mode: CcMode) {
                 match c {
                     $(
                         $Cx => {
-                            self.$ccmrx_output()
+                            self.$ccmrx_input()
                             .modify(|_, w| unsafe { w.$ccxs().bits(mode as _) } );
                         }
                     )+
@@ -829,6 +881,34 @@ macro_rules! with_cc {
                     _ => {},
                 }
             }
+
+            #[inline(always)]
+            fn prescaler_capture(&mut self, c: u8, psc: CapturePrescaler) {
+                match c {
+                    $(
+                        $Cx => {
+                            self.$ccmrx_input()
+                            .modify(|_, w| unsafe { w.$icx_psc().bits(psc as _) } );
+                        }
+                    )+
+                    #[allow(unreachable_patterns)]
+                    _ => {},
+                }
+            }
+
+            fn filter_capture(&mut self, c: u8, filter: CaptureFilter) {
+                match c {
+                    $(
+                        $Cx => {
+                            self.$ccmrx_input()
+                            .modify(|_, w| unsafe { w.$icxf().bits(filter as _) } );
+                        }
+                    )+
+                    #[allow(unreachable_patterns)]
+                    _ => {},
+                }
+            }
+            
 
             #[inline(always)]
             fn start_capture_compare(&mut self) {
@@ -839,21 +919,21 @@ macro_rules! with_cc {
     };
     ($TIM:ty: 1) => {
         with_cc!($TIM: [
-            0, ccmr1_output, cc1s;
+            0, ccmr1_input, cc1s, ic1psc, ic1f;
         ]);
     };
     ($TIM:ty: 2) => {
         with_cc!($TIM: [
-            0, ccmr1_output, cc1s;
-            1, ccmr1_output, cc2s;
+            0, ccmr1_input, cc1s, ic1psc, ic1f;
+            1, ccmr1_input, cc2s, ic2psc, ic2f;
         ]);
     };
     ($TIM:ty: 4 $(, $aoe:ident)?) => {
         with_cc!($TIM: [
-            0, ccmr1_output, cc1s;
-            1, ccmr1_output, cc2s;
-            2, ccmr2_output, cc3s;
-            3, ccmr2_output, cc4s;
+            0, ccmr1_input, cc1s, ic1psc, ic1f;
+            1, ccmr1_input, cc2s, ic2psc, ic2f;
+            2, ccmr2_input, cc3s, ic3psc, ic3f;
+            3, ccmr2_input, cc4s, ic4psc, ic4f;
         ] $(, $aoe)?);
     };
 }
