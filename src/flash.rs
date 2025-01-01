@@ -50,7 +50,7 @@ pub trait FlashExt {
     }
     /// Unlock flash for erasing/programming until this method's
     /// result is dropped
-    fn unlocked(&mut self) -> UnlockedFlash;
+    fn unlocked(&mut self) -> UnlockedFlash<'_>;
     // Returns true if flash is in dual bank organization
     fn dual_bank(&self) -> bool;
     /// Returns flash memory sector of a given offset. Returns none if offset is out of range.

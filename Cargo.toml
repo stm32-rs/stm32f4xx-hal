@@ -781,3 +781,7 @@ required-features = []
 [[example]]
 name = "fmc-sdram"
 required-features = ["stm32f469", "stm32-fmc"]
+
+[[example]]
+name = "rtic2-timer-input-capture"
+required-features = ["rtic2"]

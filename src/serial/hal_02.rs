@@ -1,6 +1,7 @@
 mod nb {
-
-    use super::super::{Error, Instance, RegisterBlockImpl, Rx, Serial, Tx};
+    #[allow(unused)]
+    use super::super::RegisterBlockImpl;
+    use super::super::{Error, Instance, Rx, Serial, Tx};
     use embedded_hal_02::serial::{Read, Write};
 
     impl<USART: Instance, WORD> Read<WORD> for Serial<USART, WORD>
@@ -82,7 +83,9 @@ mod nb {
 mod blocking {
     use core::ops::Deref;
 
-    use super::super::{Error, Instance, RegisterBlockImpl, Serial, Tx};
+    #[allow(unused)]
+    use super::super::RegisterBlockImpl;
+    use super::super::{Error, Instance, Serial, Tx};
     use embedded_hal_02::blocking::serial::Write;
 
     impl<USART: Instance> Write<u8> for Tx<USART, u8> {
