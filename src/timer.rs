@@ -26,6 +26,10 @@ pub use pwm::*;
 pub mod pwm_input;
 #[cfg(not(feature = "gpio-f410"))]
 pub use pwm_input::PwmInput;
+#[cfg(not(feature = "gpio-f410"))]
+pub mod capture_compare;
+#[cfg(not(feature = "gpio-f410"))]
+pub use capture_compare::*;
 #[cfg(feature = "rtic1")]
 pub mod monotonic;
 #[cfg(feature = "rtic1")]
@@ -87,6 +91,7 @@ pub const C4: u8 = 3;
 pub enum Polarity {
     ActiveHigh,
     ActiveLow,
+    ActiveBoth,
 }
 
 /// Output Idle state
@@ -306,6 +311,18 @@ pub enum Ocm {
     PwmMode2 = 7,
 }
 
+/// Capture/Compare mode
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+pub enum Ccm {
+    // Todo Output compare (not tested)
+    // OutputCompare = 0,
+    InputCapture = 1,
+    InvChannelInputCapture = 2,
+    TriggerInputCapture = 3,
+}
+
 // Center-aligned mode selection
 pub use pac::tim1::cr1::CMS as CenterAlignedMode;
 
@@ -320,7 +337,7 @@ pub type CCR4<T> = CCR<T, 3>;
 pub struct DMAR<T>(T);
 
 mod sealed {
-    use super::{BitFlags, CenterAlignedMode, Event, Flag, IdleState, Ocm, Polarity};
+    use super::{BitFlags, Ccm, CenterAlignedMode, Event, Flag, IdleState, Ocm, Polarity};
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
@@ -359,6 +376,14 @@ mod sealed {
         fn set_nchannel_polarity(channel: u8, p: Polarity);
     }
 
+    pub trait WithCcCommon: General {
+        const CC_CH_NUMBER: u8;
+        const CC_COMP_CH_NUMBER: u8;
+        fn read_cc_value(channel: u8) -> u32;
+        fn enable_channel(channel: u8, b: bool);
+        fn set_channel_polarity(channel: u8, p: Polarity);
+    }
+
     pub trait Advanced: WithPwmCommon {
         fn enable_nchannel(channel: u8, b: bool);
         fn set_dtg_value(value: u8);
@@ -373,6 +398,11 @@ mod sealed {
         fn start_pwm(&mut self);
     }
 
+    pub trait WithCc: WithCcCommon {
+        fn preload_capture_compare(&mut self, c: u8, mode: Ccm);
+        fn start_capture_compare(&mut self);
+    }
+
     pub trait MasterTimer: General {
         type Mms;
         fn master_mode(&mut self, mode: Self::Mms);
@@ -382,15 +412,23 @@ mod sealed {
         type Channels;
         fn split() -> Self::Channels;
     }
+
+    pub trait SplitCc {
+        type CcChannels;
+        fn split_cc() -> Self::CcChannels;
+    }
 }
-pub(crate) use sealed::{Advanced, General, MasterTimer, WithPwm, WithPwmCommon};
+pub(crate) use sealed::{
+    Advanced, General, MasterTimer, WithCc, WithCcCommon, WithPwm,
+    WithPwmCommon,
+};
 
 pub trait Instance:
     crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock + General
 {
 }
 
-use sealed::Split;
+use sealed::{Split, SplitCc};
 macro_rules! split {
     ($TIM:ty: 1) => {
         split!($TIM, C1);
@@ -406,6 +444,26 @@ macro_rules! split {
             type Channels = ($(PwmChannelDisabled<$TIM, $C>,)+);
             fn split() -> Self::Channels {
                 ($(PwmChannelDisabled::<_, $C>::new(),)+)
+            }
+        }
+    };
+}
+
+macro_rules! split_cc {
+    ($TIM:ty: 1) => {
+        split_cc!($TIM, C1);
+    };
+    ($TIM:ty: 2) => {
+        split_cc!($TIM, C1, C2);
+    };
+    ($TIM:ty: 4) => {
+        split_cc!($TIM, C1, C2, C3, C4);
+    };
+    ($TIM:ty, $($C:ident),+) => {
+        impl SplitCc for $TIM {
+            type CcChannels = ($(CcChannelDisabled<$TIM, $C>,)+);
+            fn split_cc() -> Self::CcChannels {
+                ($(CcChannelDisabled::<_, $C>::new(),)+)
             }
         }
     };
@@ -580,6 +638,50 @@ macro_rules! hal {
                 }
             }
 
+            impl WithCcCommon for $TIM {
+                const CC_CH_NUMBER: u8 = $cnum;
+                const CC_COMP_CH_NUMBER: u8 = $cnum;
+                #[inline(always)]
+                fn read_cc_value(c: u8) -> u32 {
+                    let tim = unsafe { &*<$TIM>::ptr() };
+                    if c < Self::CC_CH_NUMBER {
+                        tim.ccr(c as usize).read().bits()
+                    } else {
+                        0
+                    }
+                }
+
+                #[inline(always)]
+                fn enable_channel(c: u8, b: bool) {
+                    let tim = unsafe { &*<$TIM>::ptr() };
+                    if c < Self::CC_CH_NUMBER {
+                        unsafe { bb::write(tim.ccer(), c*4, b); }
+                    }
+                }
+
+                #[inline(always)]
+                fn set_channel_polarity(c: u8, p: Polarity) {
+                    let tim = unsafe { &*<$TIM>::ptr() };
+                    if c < Self::CC_CH_NUMBER {
+                        match p {
+                            Polarity::ActiveLow => {
+                                unsafe { bb::write(tim.ccer(), c*4 + 3, false); }
+                                unsafe { bb::write(tim.ccer(), c*4 + 1, true); }
+                            }
+                            Polarity::ActiveHigh => {
+                                unsafe { bb::write(tim.ccer(), c*4 + 3, false); }
+                                unsafe { bb::write(tim.ccer(), c*4 + 1, false); }
+                            }
+                            Polarity::ActiveBoth => {
+                                unsafe { bb::write(tim.ccer(), c*4 + 3, true); }
+                                unsafe { bb::write(tim.ccer(), c*4 + 1, true); }
+                            }
+                        }
+
+                    }
+                }
+            }
+
             $(
                 impl Advanced for $TIM {
                     fn enable_nchannel(c: u8, b: bool) {
@@ -618,7 +720,9 @@ macro_rules! hal {
             )?
 
             with_pwm!($TIM: $cnum $(, $aoe)?);
+            with_cc!($TIM: $cnum $(, $aoe)?);
             split!($TIM: $cnum);
+            split_cc!($TIM: $cnum);
             unsafe impl<const C: u8> PeriAddress for CCR<$TIM, C> {
                 #[inline(always)]
                 fn address(&self) -> u32 {
@@ -705,6 +809,51 @@ macro_rules! with_pwm {
             1, ccmr1_output, oc2pe, oc2m;
             2, ccmr2_output, oc3pe, oc3m;
             3, ccmr2_output, oc4pe, oc4m;
+        ] $(, $aoe)?);
+    };
+}
+
+macro_rules! with_cc {
+    ($TIM:ty: [$($Cx:literal, $ccmrx_output:ident, $ccxs:ident;)+] $(, $aoe:ident)?) => {
+        impl WithCc for $TIM {
+            #[inline(always)]
+            fn preload_capture_compare(&mut self, c: u8, mode: Ccm) {
+                match c {
+                    $(
+                        $Cx => {
+                            self.$ccmrx_output()
+                            .modify(|_, w| unsafe { w.$ccxs().bits(mode as _) } );
+                        }
+                    )+
+                    #[allow(unreachable_patterns)]
+                    _ => {},
+                }
+            }
+
+            #[inline(always)]
+            fn start_capture_compare(&mut self) {
+                // $(let $aoe = self.bdtr().modify(|_, w| w.aoe().set_bit());)?
+                self.cr1().modify(|_, w| w.cen().set_bit());
+            }
+        }
+    };
+    ($TIM:ty: 1) => {
+        with_cc!($TIM: [
+            0, ccmr1_output, cc1s;
+        ]);
+    };
+    ($TIM:ty: 2) => {
+        with_cc!($TIM: [
+            0, ccmr1_output, cc1s;
+            1, ccmr1_output, cc2s;
+        ]);
+    };
+    ($TIM:ty: 4 $(, $aoe:ident)?) => {
+        with_cc!($TIM: [
+            0, ccmr1_output, cc1s;
+            1, ccmr1_output, cc2s;
+            2, ccmr2_output, cc3s;
+            3, ccmr2_output, cc4s;
         ] $(, $aoe)?);
     };
 }
