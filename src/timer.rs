@@ -27,9 +27,9 @@ pub mod pwm_input;
 #[cfg(not(feature = "gpio-f410"))]
 pub use pwm_input::PwmInput;
 #[cfg(not(feature = "gpio-f410"))]
-pub mod capture_compare;
+pub mod capture;
 #[cfg(not(feature = "gpio-f410"))]
-pub use capture_compare::*;
+pub use capture::*;
 #[cfg(feature = "rtic1")]
 pub mod monotonic;
 #[cfg(feature = "rtic1")]
@@ -311,25 +311,32 @@ pub enum Ocm {
     PwmMode2 = 7,
 }
 
-/// Capture/Compare mode
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
-pub enum CcMode {
-    // Todo Output compare (not tested)
-    // OutputCompare = 0,
+/// Capture mode
+/// Enum for configuring the mode of the Capture channels (CC1S, CC2S, CC3S, CC4S).
+/// Defines how each channel is used in Input Capture mode, considering TI1, TI2, TI3, and TI4.
+pub enum CaptureMode {
+    /// Input Capture on the corresponding channel (e.g., CC1 -> TI1, CC2 -> TI2, etc.).
     InputCapture = 1,
+    /// Input Capture on the inverted channel (e.g., CC1 -> TI2, CC2 -> TI1, CC3 -> TI4, CC4 -> TI3).
     InvChannelInputCapture = 2,
-    TriggerInputCapture = 3,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
+/// Enum for configuring the Input Capture prescaler.
+/// Determines how many input events are required for one capture.
 pub enum CapturePrescaler {
+    /// No prescaler (00): Capture every input event.
     No = 0,
+    /// Prescaler 2 (01): Capture every second input event.
     Two = 1,
+    /// Prescaler 4 (10): Capture every fourth input event.
     Four = 2,
+    /// Prescaler 8 (11): Capture every eighth input event.
     Eight = 3,
 }
 
@@ -372,7 +379,6 @@ pub enum CaptureFilter {
     FdtsDiv32N8,
 }
 
-
 // Center-aligned mode selection
 pub use pac::tim1::cr1::CMS as CenterAlignedMode;
 
@@ -387,7 +393,10 @@ pub type CCR4<T> = CCR<T, 3>;
 pub struct DMAR<T>(T);
 
 mod sealed {
-    use super::{BitFlags, CaptureFilter, CapturePrescaler, CcMode, CenterAlignedMode, Event, Flag, IdleState, Ocm, Polarity};
+    use super::{
+        BitFlags, CaptureFilter, CaptureMode, CapturePrescaler, CenterAlignedMode, Event, Flag,
+        IdleState, Ocm, Polarity,
+    };
     pub trait General {
         type Width: Into<u32> + From<u16>;
         fn max_auto_reload() -> u32;
@@ -416,25 +425,19 @@ mod sealed {
         fn cnt_reset(&mut self);
     }
 
-    pub trait WithPwmCommon: General {
+    pub trait WithTimerCommon: General {
         const CH_NUMBER: u8;
         const COMP_CH_NUMBER: u8;
         fn read_cc_value(channel: u8) -> u32;
         fn set_cc_value(channel: u8, value: u32);
         fn enable_channel(channel: u8, b: bool);
-        fn set_channel_polarity(channel: u8, p: Polarity);
-        fn set_nchannel_polarity(channel: u8, p: Polarity);
+        fn set_pwm_channel_polarity(channel: u8, p: Polarity);
+        fn set_pwm_nchannel_polarity(channel: u8, p: Polarity);
+
+        fn set_capture_channel_polarity(channel: u8, p: Polarity);
     }
 
-    pub trait WithCcCommon: General {
-        const CC_CH_NUMBER: u8;
-        const CC_COMP_CH_NUMBER: u8;
-        fn read_cc_value(channel: u8) -> u32;
-        fn enable_channel(channel: u8, b: bool);
-        fn set_channel_polarity(channel: u8, p: Polarity);
-    }
-
-    pub trait Advanced: WithPwmCommon {
+    pub trait Advanced: WithTimerCommon {
         fn enable_nchannel(channel: u8, b: bool);
         fn set_dtg_value(value: u8);
         fn read_dtg_value() -> u8;
@@ -442,17 +445,17 @@ mod sealed {
         fn set_cms(mode: CenterAlignedMode);
     }
 
-    pub trait WithPwm: WithPwmCommon {
+    pub trait WithPwm: WithTimerCommon {
         fn preload_output_channel_in_mode(&mut self, c: u8, mode: Ocm);
         fn freeze_output_channel(&mut self, c: u8);
         fn start_pwm(&mut self);
     }
 
-    pub trait WithCc: WithCcCommon {
-        fn preload_capture_compare(&mut self, c: u8, mode: CcMode);
+    pub trait WithCapture: WithTimerCommon {
+        fn preload_capture(&mut self, c: u8, mode: CaptureMode);
         fn prescaler_capture(&mut self, c: u8, psc: CapturePrescaler);
         fn filter_capture(&mut self, c: u8, filter: CaptureFilter);
-        fn start_capture_compare(&mut self);
+        fn start_capture(&mut self);
     }
 
     pub trait MasterTimer: General {
@@ -465,22 +468,19 @@ mod sealed {
         fn split() -> Self::Channels;
     }
 
-    pub trait SplitCc {
-        type CcChannels;
-        fn split_cc() -> Self::CcChannels;
+    pub trait SplitCapture {
+        type CaptureChannels;
+        fn split_capture() -> Self::CaptureChannels;
     }
 }
-pub(crate) use sealed::{
-    Advanced, General, MasterTimer, WithCc, WithCcCommon, WithPwm,
-    WithPwmCommon,
-};
+pub(crate) use sealed::{Advanced, General, MasterTimer, WithCapture, WithPwm, WithTimerCommon};
 
 pub trait Instance:
     crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock + General
 {
 }
 
-use sealed::{Split, SplitCc};
+use sealed::{Split, SplitCapture};
 macro_rules! split {
     ($TIM:ty: 1) => {
         split!($TIM, C1);
@@ -498,24 +498,10 @@ macro_rules! split {
                 ($(PwmChannelDisabled::<_, $C>::new(),)+)
             }
         }
-    };
-}
-
-macro_rules! split_cc {
-    ($TIM:ty: 1) => {
-        split_cc!($TIM, C1);
-    };
-    ($TIM:ty: 2) => {
-        split_cc!($TIM, C1, C2);
-    };
-    ($TIM:ty: 4) => {
-        split_cc!($TIM, C1, C2, C3, C4);
-    };
-    ($TIM:ty, $($C:ident),+) => {
-        impl SplitCc for $TIM {
-            type CcChannels = ($(CcChannelDisabled<$TIM, $C>,)+);
-            fn split_cc() -> Self::CcChannels {
-                ($(CcChannelDisabled::<_, $C>::new(),)+)
+        impl SplitCapture for $TIM {
+            type CaptureChannels = ($(CaptureChannelDisabled<$TIM, $C>,)+);
+            fn split_capture() -> Self::CaptureChannels {
+                ($(CaptureChannelDisabled::<_, $C>::new(),)+)
             }
         }
     };
@@ -643,7 +629,7 @@ macro_rules! hal {
         $(with_dmar!($TIM, $memsize);)?
 
         $(
-            impl WithPwmCommon for $TIM {
+            impl WithTimerCommon for $TIM {
                 const CH_NUMBER: u8 = $cnum;
                 const COMP_CH_NUMBER: u8 = $cnum;
 
@@ -674,7 +660,7 @@ macro_rules! hal {
                 }
 
                 #[inline(always)]
-                fn set_channel_polarity(c: u8, p: Polarity) {
+                fn set_pwm_channel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
                         unsafe { bb::write(tim.ccer(), c*4 + 1, p == Polarity::ActiveLow); }
@@ -682,39 +668,17 @@ macro_rules! hal {
                 }
 
                 #[inline(always)]
-                fn set_nchannel_polarity(c: u8, p: Polarity) {
+                fn set_pwm_nchannel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::COMP_CH_NUMBER {
                         unsafe { bb::write(tim.ccer(), c*4 + 3, p == Polarity::ActiveLow); }
                     }
                 }
-            }
-
-            impl WithCcCommon for $TIM {
-                const CC_CH_NUMBER: u8 = $cnum;
-                const CC_COMP_CH_NUMBER: u8 = $cnum;
-                #[inline(always)]
-                fn read_cc_value(c: u8) -> u32 {
-                    let tim = unsafe { &*<$TIM>::ptr() };
-                    if c < Self::CC_CH_NUMBER {
-                        tim.ccr(c as usize).read().bits()
-                    } else {
-                        0
-                    }
-                }
 
                 #[inline(always)]
-                fn enable_channel(c: u8, b: bool) {
+                fn set_capture_channel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
-                    if c < Self::CC_CH_NUMBER {
-                        unsafe { bb::write(tim.ccer(), c*4, b); }
-                    }
-                }
-
-                #[inline(always)]
-                fn set_channel_polarity(c: u8, p: Polarity) {
-                    let tim = unsafe { &*<$TIM>::ptr() };
-                    if c < Self::CC_CH_NUMBER {
+                    if c < Self::CH_NUMBER {
                         match p {
                             Polarity::ActiveLow => {
                                 unsafe { bb::write(tim.ccer(), c*4 + 3, false); }
@@ -772,9 +736,8 @@ macro_rules! hal {
             )?
 
             with_pwm!($TIM: $cnum $(, $aoe)?);
-            with_cc!($TIM: $cnum $(, $aoe)?);
+            with_capture!($TIM: $cnum $(, $aoe)?);
             split!($TIM: $cnum);
-            split_cc!($TIM: $cnum);
             unsafe impl<const C: u8> PeriAddress for CCR<$TIM, C> {
                 #[inline(always)]
                 fn address(&self) -> u32 {
@@ -865,11 +828,11 @@ macro_rules! with_pwm {
     };
 }
 
-macro_rules! with_cc {
+macro_rules! with_capture {
     ($TIM:ty: [$($Cx:literal, $ccmrx_input:ident, $ccxs:ident, $icx_psc:ident, $icxf:ident;)+] $(, $aoe:ident)?) => {
-        impl WithCc for $TIM {
+        impl WithCapture for $TIM {
             #[inline(always)]
-            fn preload_capture_compare(&mut self, c: u8, mode: CcMode) {
+            fn preload_capture(&mut self, c: u8, mode: CaptureMode) {
                 match c {
                     $(
                         $Cx => {
@@ -908,28 +871,28 @@ macro_rules! with_cc {
                     _ => {},
                 }
             }
-            
+
 
             #[inline(always)]
-            fn start_capture_compare(&mut self) {
+            fn start_capture(&mut self) {
                 // $(let $aoe = self.bdtr().modify(|_, w| w.aoe().set_bit());)?
                 self.cr1().modify(|_, w| w.cen().set_bit());
             }
         }
     };
     ($TIM:ty: 1) => {
-        with_cc!($TIM: [
+        with_capture!($TIM: [
             0, ccmr1_input, cc1s, ic1psc, ic1f;
         ]);
     };
     ($TIM:ty: 2) => {
-        with_cc!($TIM: [
+        with_capture!($TIM: [
             0, ccmr1_input, cc1s, ic1psc, ic1f;
             1, ccmr1_input, cc2s, ic2psc, ic2f;
         ]);
     };
     ($TIM:ty: 4 $(, $aoe:ident)?) => {
-        with_cc!($TIM: [
+        with_capture!($TIM: [
             0, ccmr1_input, cc1s, ic1psc, ic1f;
             1, ccmr1_input, cc2s, ic2psc, ic2f;
             2, ccmr2_input, cc3s, ic3psc, ic3f;

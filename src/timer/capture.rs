@@ -1,43 +1,60 @@
-use super::sealed::{Split, SplitCc};
-use super::{CPin, CcMode, Instance, Polarity, Timer, WithCc, CapturePrescaler, CaptureFilter};
+//! Provides the core functionality of the Input Capture mode.
+//!
+//! The main way to enable the Input Capture mode is by calling
+//! ```rust,ignore
+//! Timer::new(dp.TIM5, &clocks).capture_hz(24.MHz());
+//! ```
+//! In the `capture_hz` method, the desired timer counter frequency is specified.
+//! For high accuracy, it is recommended to use 32-bit timers (TIM2, TIM5) and to select the highest possible frequency, ideally the maximum frequency equal to the timer's clock frequency.  
+//! This returns a `CaptureHzManager` and a tuple of all `CaptureChannel`s supported by the timer. Additionally, the [`CaptureExt`] trait is implemented for `pac::TIMx` to simplify the creation of a new structure.
+//!
+//! ```rust,ignore
+//! let (cc_manager, (cc_ch1, cc_ch2, ...)) = dp.TIM5.capture_hz(24.MHz(), &clocks);
+//! ```
+//!
+//! To enable a [`CaptureChannel`], you need to pass one or more valid pins supported by the channel using the `with` method.
+//!
+//! [`CaptureHzManager`] also provides additional methods for managing the Input Capture mode, such as `set_prescaler` and `set_filter`.
+
+use super::sealed::{Split, SplitCapture};
+use super::{
+    CPin, CaptureFilter, CaptureMode, CapturePrescaler, Instance, Polarity, Timer, WithCapture,
+};
 pub use super::{Ch, C1, C2, C3, C4};
 use crate::gpio::PushPull;
 use crate::rcc::Clocks;
 use core::ops::{Deref, DerefMut};
 use fugit::HertzU32 as Hertz;
 
-pub trait CcExt
+pub trait CaptureExt
 where
-    Self: Sized + Instance + WithCc + SplitCc,
+    Self: Sized + Instance + WithCapture + SplitCapture,
 {
-    fn capture_compare_hz(
+    fn capture_hz(
         self,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> (CcHzManager<Self>, Self::CcChannels);
+    ) -> (CaptureHzManager<Self>, Self::CaptureChannels);
 }
 
-impl<TIM> CcExt for TIM
+impl<TIM> CaptureExt for TIM
 where
-    Self: Sized + Instance + WithCc + SplitCc,
+    Self: Sized + Instance + WithCapture + SplitCapture,
 {
-    fn capture_compare_hz(
+    fn capture_hz(
         self,
         time: Hertz,
         clocks: &Clocks,
-    ) -> (CcHzManager<Self>, Self::CcChannels) {
-        Timer::new(self, clocks).capture_compare_hz(time)
+    ) -> (CaptureHzManager<Self>, Self::CaptureChannels) {
+        Timer::new(self, clocks).capture_hz(time)
     }
 }
 
-impl<TIM: Instance + WithCc + SplitCc> Timer<TIM> {
+impl<TIM: Instance + WithCapture + SplitCapture> Timer<TIM> {
     // At a timer clock frequency of 100 MHz,
     // the frequency should be in the range from 2000 Hz to the timer clock frequency.
     // It is recommended to use 32-bit timers (TIM2, TIM5).
-    pub fn capture_compare_hz(
-        mut self,
-        freq: Hertz,
-    ) -> (CcHzManager<TIM>, TIM::CcChannels) {
+    pub fn capture_hz(mut self, freq: Hertz) -> (CaptureHzManager<TIM>, TIM::CaptureChannels) {
         // The reference manual is a bit ambiguous about when enabling this bit is really
         // necessary, but since we MUST enable the preload for the output channels then we
         // might as well enable for the auto-reload too
@@ -57,34 +74,33 @@ impl<TIM: Instance + WithCc + SplitCc> Timer<TIM> {
         // Trigger update event to load the registers
         self.tim.trigger_update();
 
-        self.tim.start_capture_compare();
+        self.tim.start_capture();
 
-        (CcHzManager { timer: self }, TIM::split_cc())
+        (CaptureHzManager { timer: self }, TIM::split_capture())
     }
 }
 
-pub struct CcChannelDisabled<TIM, const C: u8> {
+pub struct CaptureChannelDisabled<TIM, const C: u8> {
     pub(super) tim: TIM,
 }
 
-impl<TIM: crate::Steal, const C: u8> CcChannelDisabled<TIM, C> {
+impl<TIM: crate::Steal, const C: u8> CaptureChannelDisabled<TIM, C> {
     pub(crate) fn new() -> Self {
         Self {
             tim: unsafe { TIM::steal() },
         }
     }
 }
-impl<TIM: Instance + WithCc + crate::Steal, const C: u8>
-    CcChannelDisabled<TIM, C>
+impl<TIM: Instance + WithCapture + crate::Steal, const C: u8> CaptureChannelDisabled<TIM, C>
 where
     TIM: CPin<C>,
 {
     pub fn with(
         mut self,
         pin: impl Into<TIM::Ch<PushPull>>,
-    ) -> CcChannel<TIM, C, false, PushPull> {
-        self.tim.preload_capture_compare(C, CcMode::InputCapture);
-        CcChannel {
+    ) -> CaptureChannel<TIM, C, false, PushPull> {
+        self.tim.preload_capture(C, CaptureMode::InputCapture);
+        CaptureChannel {
             tim: self.tim,
             lines: CaptureLines::One(pin.into()),
         }
@@ -109,31 +125,21 @@ impl<P> CaptureLines<P> {
     }
 }
 
-pub struct CcChannel<
-    TIM: CPin<C>,
-    const C: u8,
-    const COMP: bool = false,
-    Otype = PushPull,
-> {
+pub struct CaptureChannel<TIM: CPin<C>, const C: u8, const COMP: bool = false, Otype = PushPull> {
     pub(super) tim: TIM,
     lines: CaptureLines<TIM::Ch<Otype>>,
     // TODO: add complementary pins
 }
 
-impl<TIM: Instance + WithCc + CPin<C>, const C: u8, const COMP: bool, Otype>
-    CcChannel<TIM, C, COMP, Otype>
+impl<TIM: Instance + WithCapture + CPin<C>, const C: u8, const COMP: bool, Otype>
+    CaptureChannel<TIM, C, COMP, Otype>
 {
     pub const fn channel(&self) -> u8 {
         C
     }
-    pub fn release(
-        mut self,
-    ) -> (
-        CcChannelDisabled<TIM, C>,
-        CaptureLines<TIM::Ch<Otype>>,
-    ) {
+    pub fn release(mut self) -> (CaptureChannelDisabled<TIM, C>, CaptureLines<TIM::Ch<Otype>>) {
         self.disable();
-        (CcChannelDisabled { tim: self.tim }, self.lines)
+        (CaptureChannelDisabled { tim: self.tim }, self.lines)
     }
     pub fn erase(self) -> CaptureErasedChannel<TIM> {
         CaptureErasedChannel {
@@ -151,7 +157,7 @@ impl<TIM: Instance + WithCc + CPin<C>, const C: u8, const COMP: bool, Otype>
     }
 }
 impl<TIM: Instance + CPin<C>, const C: u8, const COMP: bool, Otype>
-    CcChannel<TIM, C, COMP, Otype>
+    CaptureChannel<TIM, C, COMP, Otype>
 {
     pub fn with(self, pin: impl Into<TIM::Ch<Otype>>) -> Self {
         Self {
@@ -174,13 +180,13 @@ impl<TIM> CaptureErasedChannel<TIM> {
 
 macro_rules! ch_impl {
     () => {
-        /// Disable input capture/output compare channel
+        /// Disable input capture channel
         #[inline]
         pub fn disable(&mut self) {
             TIM::enable_channel(self.channel(), false);
         }
 
-        /// Enable input capture/output compare channel
+        /// Enable input capture channel
         #[inline]
         pub fn enable(&mut self) {
             TIM::enable_channel(self.channel(), true);
@@ -192,34 +198,34 @@ macro_rules! ch_impl {
             TIM::read_cc_value(self.channel())
         }
 
-        /// Set Input capture/Output compare channel polarity
+        /// Set input capture channel polarity
         #[inline]
         pub fn set_polarity(&mut self, p: Polarity) {
-            TIM::set_channel_polarity(self.channel(), p);
+            TIM::set_capture_channel_polarity(self.channel(), p);
         }
     };
 }
 
-impl<TIM: Instance + WithCc + CPin<C>, const C: u8, const COMP: bool, Otype>
-    CcChannel<TIM, C, COMP, Otype>
+impl<TIM: Instance + WithCapture + CPin<C>, const C: u8, const COMP: bool, Otype>
+    CaptureChannel<TIM, C, COMP, Otype>
 {
     ch_impl!();
 }
 
-impl<TIM: Instance + WithCc> CaptureErasedChannel<TIM> {
+impl<TIM: Instance + WithCapture> CaptureErasedChannel<TIM> {
     ch_impl!();
 }
 
-pub struct CcHzManager<TIM>
+pub struct CaptureHzManager<TIM>
 where
-    TIM: Instance + WithCc,
+    TIM: Instance + WithCapture,
 {
     pub(super) timer: Timer<TIM>,
 }
 
-impl<TIM> CcHzManager<TIM>
+impl<TIM> CaptureHzManager<TIM>
 where
-    TIM: Instance + WithCc + Split,
+    TIM: Instance + WithCapture + Split,
 {
     pub fn release(mut self, _channels: TIM::Channels) -> Timer<TIM> {
         // stop timer
@@ -228,9 +234,9 @@ where
     }
 }
 
-impl<TIM> Deref for CcHzManager<TIM>
+impl<TIM> Deref for CaptureHzManager<TIM>
 where
-    TIM: Instance + WithCc,
+    TIM: Instance + WithCapture,
 {
     type Target = Timer<TIM>;
     fn deref(&self) -> &Self::Target {
@@ -238,18 +244,18 @@ where
     }
 }
 
-impl<TIM> DerefMut for CcHzManager<TIM>
+impl<TIM> DerefMut for CaptureHzManager<TIM>
 where
-    TIM: Instance + WithCc,
+    TIM: Instance + WithCapture,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.timer
     }
 }
 
-impl<TIM> CcHzManager<TIM>
+impl<TIM> CaptureHzManager<TIM>
 where
-    TIM: Instance + WithCc,
+    TIM: Instance + WithCapture,
 {
     /// Get the PWM frequency of the timer in Hertz
     pub fn get_timer_clock(&self) -> u32 {
