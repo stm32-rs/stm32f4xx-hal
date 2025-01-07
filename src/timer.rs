@@ -498,6 +498,7 @@ macro_rules! split {
                 ($(PwmChannelDisabled::<_, $C>::new(),)+)
             }
         }
+        #[cfg(not(feature = "gpio-f410"))]
         impl SplitCapture for $TIM {
             type CaptureChannels = ($(CaptureChannelDisabled<$TIM, $C>,)+);
             fn split_capture() -> Self::CaptureChannels {

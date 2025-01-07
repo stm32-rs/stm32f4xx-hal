@@ -5,7 +5,7 @@
 //! Timer::new(dp.TIM5, &clocks).capture_hz(24.MHz());
 //! ```
 //! In the `capture_hz` method, the desired timer counter frequency is specified.
-//! For high accuracy, it is recommended to use 32-bit timers (TIM2, TIM5) and to select the highest possible frequency, ideally the maximum frequency equal to the timer's clock frequency.  
+//! For high accuracy, it is recommended to use 32-bit timers (TIM2, TIM5) and to select the highest possible frequency, ideally the maximum frequency equal to the timer's clock frequency.
 //! This returns a `CaptureHzManager` and a tuple of all `CaptureChannel`s supported by the timer. Additionally, the [`CaptureExt`] trait is implemented for `pac::TIMx` to simplify the creation of a new structure.
 //!
 //! ```rust,ignore
@@ -102,32 +102,14 @@ where
         self.tim.preload_capture(C, CaptureMode::InputCapture);
         CaptureChannel {
             tim: self.tim,
-            lines: CaptureLines::One(pin.into()),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum CaptureLines<P> {
-    One(P),
-    Two(P, P),
-    Three(P, P, P),
-    Four(P, P, P, P),
-}
-impl<P> CaptureLines<P> {
-    pub fn and(self, pin: P) -> Self {
-        match self {
-            Self::One(p) => Self::Two(p, pin),
-            Self::Two(p1, p2) => Self::Three(p1, p2, pin),
-            Self::Three(p1, p2, p3) => Self::Four(p1, p2, p3, pin),
-            Self::Four(_, _, _, _) => unreachable!(),
+            pin: pin.into(),
         }
     }
 }
 
 pub struct CaptureChannel<TIM: CPin<C>, const C: u8, const COMP: bool = false, Otype = PushPull> {
     pub(super) tim: TIM,
-    lines: CaptureLines<TIM::Ch<Otype>>,
+    pin: TIM::Ch<Otype>,
     // TODO: add complementary pins
 }
 
@@ -137,9 +119,9 @@ impl<TIM: Instance + WithCapture + CPin<C>, const C: u8, const COMP: bool, Otype
     pub const fn channel(&self) -> u8 {
         C
     }
-    pub fn release(mut self) -> (CaptureChannelDisabled<TIM, C>, CaptureLines<TIM::Ch<Otype>>) {
+    pub fn release(mut self) -> (CaptureChannelDisabled<TIM, C>, TIM::Ch<Otype>) {
         self.disable();
-        (CaptureChannelDisabled { tim: self.tim }, self.lines)
+        (CaptureChannelDisabled { tim: self.tim }, self.pin)
     }
     pub fn erase(self) -> CaptureErasedChannel<TIM> {
         CaptureErasedChannel {
@@ -154,16 +136,6 @@ impl<TIM: Instance + WithCapture + CPin<C>, const C: u8, const COMP: bool, Otype
 
     pub fn set_filter(&mut self, filter: CaptureFilter) {
         self.tim.filter_capture(C, filter);
-    }
-}
-impl<TIM: Instance + CPin<C>, const C: u8, const COMP: bool, Otype>
-    CaptureChannel<TIM, C, COMP, Otype>
-{
-    pub fn with(self, pin: impl Into<TIM::Ch<Otype>>) -> Self {
-        Self {
-            tim: self.tim,
-            lines: self.lines.and(pin.into()),
-        }
     }
 }
 
