@@ -66,8 +66,9 @@ document-features = "0.2"
 micromath = { version = "2.1.0", optional = true }
 
 [dependencies.stm32f4]
-package = "stm32f4-staging"
-version = "0.17.0"
+#package = "stm32f4-staging"
+#version = "0.17.0"
+path = "/home/burrbull/stm32-rs/stm32f4"
 features = ["atomics"]
 
 [dependencies.time]
@@ -167,7 +168,7 @@ gpio-f401 = [
     "tim9",
     "tim10",
     "tim11",
-    "rcc_shared_m"
+    "rcc_shared_m",
 ]
 gpio-f410 = [
     "dac",
@@ -316,7 +317,7 @@ gpio-f417 = [
     "usart3",
     "uart4",
     "uart5",
-    "rcc_shared_m"
+    "rcc_shared_m",
 ]
 gpio-f427 = [
     "gpiod",
@@ -335,7 +336,6 @@ gpio-f427 = [
     "dma2d",
     "eth",
     "i2c3",
-    "ltdc",
     "otg-fs",
     "otg-hs",
     "rng",
@@ -364,7 +364,7 @@ gpio-f427 = [
     "uart5",
     "uart7",
     "uart8",
-    "rcc_shared_m"
+    "rcc_shared_m",
 ]
 gpio-f446 = [
     "gpiod",
@@ -457,7 +457,7 @@ gpio-f469 = [
     "uart5",
     "uart7",
     "uart8",
-    "rcc_shared_m"
+    "rcc_shared_m",
 ]
 
 ## Support monotonic timers and other stuff that can be used by [RTICv1 framework](https://crates.io/crates/cortex-m-rtic)

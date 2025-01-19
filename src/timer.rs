@@ -9,7 +9,6 @@ use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 use enumflags2::BitFlags;
 
-use crate::bb;
 use crate::pac;
 
 use crate::dma::traits::PeriAddress;
@@ -559,7 +558,7 @@ macro_rules! hal {
                 fn enable_channel(c: u8, b: bool) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
-                        unsafe { bb::write(tim.ccer(), c*4, b); }
+                        tim.ccer().bb_write(|w| w.cce(c), b);
                     }
                 }
 
@@ -567,7 +566,7 @@ macro_rules! hal {
                 fn set_channel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
-                        unsafe { bb::write(tim.ccer(), c*4 + 1, p == Polarity::ActiveLow); }
+                        tim.ccer().bb_write(|w| w.ccp(c), p == Polarity::ActiveLow);
                     }
                 }
 
@@ -575,7 +574,7 @@ macro_rules! hal {
                 fn set_nchannel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::COMP_CH_NUMBER {
-                        unsafe { bb::write(tim.ccer(), c*4 + 3, p == Polarity::ActiveLow); }
+                        tim.ccer().bb_write(|w| w.ccnp(c), p == Polarity::ActiveLow);
                     }
                 }
             }
@@ -586,7 +585,7 @@ macro_rules! hal {
                         let $aoe = ();
                         let tim = unsafe { &*<$TIM>::ptr() };
                         if c < Self::COMP_CH_NUMBER {
-                            unsafe { bb::write(tim.ccer(), c*4 + 2, b); }
+                            tim.ccer().bb_write(|w| w.ccnp(c), b);
                         }
                     }
                     fn set_dtg_value(value: u8) {
@@ -601,11 +600,11 @@ macro_rules! hal {
                         let tim = unsafe { &*<$TIM>::ptr() };
                         if !comp {
                             if c < Self::CH_NUMBER {
-                                unsafe { bb::write(tim.cr2(), c*2 + 8, s == IdleState::Set); }
+                                tim.cr2().bb_write(|w| w.ois(c), s == IdleState::Set);
                             }
                         } else {
                             if c < Self::COMP_CH_NUMBER {
-                                unsafe { bb::write(tim.cr2(), c*2 + 9, s == IdleState::Set); }
+                                tim.cr2().bb_write(|w| w.oisn(c), s == IdleState::Set);
                             }
                         }
                     }

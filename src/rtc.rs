@@ -2,7 +2,6 @@
 //! For more details, see
 //! [ST AN4759](https:/www.st.com%2Fresource%2Fen%2Fapplication_note%2Fdm00226326-using-the-hardware-realtime-clock-rtc-and-the-tamper-management-unit-tamp-with-stm32-microcontrollers-stmicroelectronics.pdf&usg=AOvVaw3PzvL2TfYtwS32fw-Uv37h)
 
-use crate::bb;
 use crate::pac::rtc::{dr, tr};
 use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
 use crate::rcc::Enable;
@@ -192,20 +191,13 @@ impl Rtc {
     /// Enable the low frequency external oscillator. This is the only mode currently
     /// supported, to avoid exposing the `CR` and `CRS` registers.
     fn enable_lse(&mut self, rcc: &RegisterBlock, mode: LSEClockMode) {
-        unsafe {
-            // Force a reset of the backup domain.
-            self.backup_reset(rcc);
-            // Enable the LSE.
-            // Set BDCR - Bit 0 (LSEON)
-            bb::set(rcc.bdcr(), 0);
-            match mode {
-                // Set BDCR - Bit 2 (LSEBYP)
-                LSEClockMode::Bypass => bb::set(rcc.bdcr(), 2),
-                // Clear BDCR - Bit 2 (LSEBYP)
-                LSEClockMode::Oscillator => bb::clear(rcc.bdcr(), 2),
-            }
-            while rcc.bdcr().read().lserdy().bit_is_clear() {}
-        }
+        // Force a reset of the backup domain.
+        self.backup_reset(rcc);
+        // Enable the LSE.
+        rcc.bdcr().bb_set(|w| w.lseon());
+        rcc.bdcr()
+            .bb_write(|w| w.lsebyp(), mode == LSEClockMode::Bypass);
+        while rcc.bdcr().read().lserdy().bit_is_clear() {}
     }
 
     /// Create and enable a new RTC with internal crystal and default prescalers.
@@ -239,20 +231,13 @@ impl Rtc {
     }
 
     fn backup_reset(&mut self, rcc: &RegisterBlock) {
-        unsafe {
-            // Set BDCR - Bit 16 (BDRST)
-            bb::set(rcc.bdcr(), 16);
-            // Clear BDCR - Bit 16 (BDRST)
-            bb::clear(rcc.bdcr(), 16);
-        }
+        rcc.bdcr().bb_set(|w| w.bdrst());
+        rcc.bdcr().bb_clear(|w| w.bdrst());
     }
 
     fn enable(&mut self, rcc: &RegisterBlock) {
         // Start the actual RTC.
-        // Set BDCR - Bit 15 (RTCEN)
-        unsafe {
-            bb::set(rcc.bdcr(), 15);
-        }
+        rcc.bdcr().bb_set(|w| w.rtcen());
     }
 
     pub fn set_prescalers(&mut self, prediv_s: u16, prediv_a: u8) {
@@ -640,9 +625,15 @@ impl Rtc {
         let (st, su) = bcd2_encode(time.second().into())?;
 
         self.modify(false, |rtc| {
-            unsafe {
-                bb::clear(rtc.cr(), 8 + (alarm as u8));
-                bb::clear(rtc.isr(), 8 + (alarm as u8));
+            match alarm {
+                Alarm::AlarmA => {
+                    rtc.cr().bb_clear(|w| w.alrae());
+                    rtc.isr().bb_clear(|w| w.alraf());
+                }
+                Alarm::AlarmB => {
+                    rtc.cr().bb_clear(|w| w.alrbe());
+                    rtc.isr().bb_clear(|w| w.alrbf());
+                }
             }
             while rtc.isr().read().bits() & (1 << (alarm as u32)) == 0 {}
             let reg = rtc.alrmr(alarm as usize);
@@ -664,8 +655,13 @@ impl Rtc {
             // write the SS value and mask to `rtc.alrmssr[alarm]`
 
             // enable alarm and reenable interrupt if it was enabled
-            unsafe {
-                bb::set(rtc.cr(), 8 + (alarm as u8));
+            match alarm {
+                Alarm::AlarmA => {
+                    rtc.cr().bb_set(|w| w.alrae());
+                }
+                Alarm::AlarmB => {
+                    rtc.cr().bb_set(|w| w.alrbe());
+                }
             }
         });
         Ok(())

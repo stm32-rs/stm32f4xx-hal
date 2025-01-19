@@ -175,7 +175,7 @@ impl DsiHost {
         dsi.wrpcr().modify(|_, w| w.regen().set_bit());
         // Wait for it to be ready
         block_with_timeout(
-            || dsi.wisr().read().rrs() == false,
+            || dsi.wisr().read().rrs().bit_is_clear(),
             DSI_TIMEOUT_MS,
             cycles_1ms,
             Error::RegTimeout,
@@ -201,7 +201,7 @@ impl DsiHost {
         cortex_m::asm::delay(cycles_1ms / 2);
         // Wait for the lock
         block_with_timeout(
-            || dsi.wisr().read().pllls() == false,
+            || dsi.wisr().read().pllls().bit_is_clear(),
             DSI_TIMEOUT_MS,
             cycles_1ms,
             Error::PllTimeout,
@@ -221,7 +221,7 @@ impl DsiHost {
         );
 
         // Configure the number of active data lanes
-        dsi.pcconfr()
+        dsi.pconfr()
             .modify(|_, w| unsafe { w.nl().bits(dsi_config.lane_count as u8) }); // 0b00 - 1 lanes, 0b01 - 2 lanes
 
         // Set TX escape clock division factor
@@ -244,7 +244,7 @@ impl DsiHost {
             / odf;
         let f_pix_khz = f_phy_hz / 1_000 / 8;
         let uix4 = 4_000_000_000 / f_phy_hz;
-        dsi.wpcr1()
+        dsi.wpcr0()
             .modify(|_, w| unsafe { w.uix4().bits(uix4 as u8) });
 
         match dsi_config.interrupts {
@@ -474,12 +474,12 @@ impl DsiHost {
             w.lp2hs_time().bits(phy_timers.dataline_lp2hs)
         });
         self.dsi
-            .pcconfr()
+            .pconfr()
             .modify(|_, w| unsafe { w.sw_time().bits(phy_timers.stop_wait_time) });
     }
 
     pub fn force_rx_low_power(&mut self, force: bool) {
-        self.dsi.wpcr2().modify(|_, w| w.flprxlpm().bit(force));
+        self.dsi.wpcr1().modify(|_, w| w.flprxlpm().bit(force));
     }
 
     fn long_write(&mut self, cmd: u8, buf: &[u8], ghcr_dt: u8) -> Result<(), Error> {
@@ -588,7 +588,7 @@ impl DsiHostCtrlIo for DsiHost {
         // debug!("DSI write: {:x?}", kind);
         // wait for command fifo to be empty
         block_with_timeout(
-            || self.dsi.gpsr().read().cmdfe() == false,
+            || self.dsi.gpsr().read().cmdfe().bit_is_clear(),
             DSI_TIMEOUT_MS,
             self.cycles_1ms,
             Error::FifoTimeout,
