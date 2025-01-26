@@ -11,7 +11,7 @@ use crate::hal::{pac, prelude::*, timer::Timer};
 
 use hal::spi::{Mode, Phase, Polarity};
 
-use display_interface_spi::SPIInterface;
+use display_interface_spi_04::SPIInterface;
 use ist7920::Ist7920;
 
 #[entry]

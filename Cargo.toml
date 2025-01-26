@@ -27,10 +27,10 @@ features = [
 targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]
-defmt = { version = "0.3.5", optional = true }
-bxcan = { version = "0.7", optional = true }
+defmt = { version = "0.3.10", optional = true }
+bxcan = { version = "0.8", optional = true }
 cortex-m = { version = "0.7.7", features = ["critical-section-single-core"] }
-cortex-m-rt = "0.7.3"
+cortex-m-rt = "0.7.5"
 nb = "1.1"
 rand_core = "0.6.4"
 synopsys-usb-otg = { version = "0.4.0", features = [
@@ -54,12 +54,12 @@ cortex-m-rtic = { version = "1.1.4", features = [
 # rtic2
 rtic-time = { version = "2.0", optional = true }
 embedded-hal-async = { version = "1.0", optional = true }
-rtic = { version = "2.0.1", features = ["thumbv7-backend"], optional = true }
+rtic = { version = "2.1.2", features = ["thumbv7-backend"], optional = true }
 atomic-polyfill = { version = "1.0.3", optional = true }
 
-stm32-fmc = { version = "0.3.2", optional = true }
+stm32-fmc = { version = "0.4.0", optional = true }
 
-enumflags2 = "0.7.8"
+enumflags2 = "0.7.11"
 embedded-storage = "0.3"
 document-features = "0.2"
 
@@ -67,11 +67,11 @@ micromath = { version = "2.1.0", optional = true }
 
 [dependencies.stm32f4]
 package = "stm32f4-staging"
-version = "0.17.0"
+version = "0.18.0"
 features = ["atomics"]
 
 [dependencies.time]
-version = "0.3.14"
+version = "0.3.37"
 default-features = false
 
 [dependencies.embedded-hal-02]
@@ -95,21 +95,22 @@ optional = true
 [dev-dependencies]
 defmt = "0.3.4"
 defmt-rtt = "0.4.0"
-panic-probe = { version = "0.3.0", features = ["print-defmt"] }
+panic-probe = { version = "0.3.2", features = ["print-defmt"] }
 panic-semihosting = "0.6.0"
 cortex-m-semihosting = "0.5.0"
 heapless = "0.8"
-panic-halt = "0.2.0"
-ssd1306 = "0.8.4"
+panic-halt = "1.0.0"
+ssd1306 = "0.9.0"
 embedded-graphics = "0.8.1"
 embedded-graphics-07 = { package = "embedded-graphics", version = "0.7.1" }
+embedded-hal-bus = "0.3.0"
 usb-device = "0.3.1"
 usbd-serial = "0.2.0"
 micromath = "2"
 dwt-systick-monotonic = "1.1"
 st7789 = "0.7.0"
-rtt-target = { version = "0.5.0" }
-display-interface-spi = "0.4.1"
+rtt-target = { version = "0.6.1" }
+display-interface-spi-04 = { package = "display-interface-spi", version = "0.4.1" }
 ist7920 = "0.1.1"
 smart-leds = "0.3.0"
 ws2812-spi = { version = "0.4.0", features = [] }
@@ -118,7 +119,7 @@ display-interface = "0.5"
 display-interface-04 = { package = "display-interface", version = "0.4.1" }
 ft6x06 = "0.1.2"
 otm8009a = "0.1"
-ushell = "0.3.5"
+ushell = "0.3.6"
 
 [dev-dependencies.time]
 version = "0.3"
@@ -144,9 +145,9 @@ stm32f412 = ["stm32f4/stm32f412", "gpio-f412"]
 stm32f413 = ["stm32f4/stm32f413", "gpio-f413"]
 stm32f423 = ["stm32f4/stm32f413", "gpio-f413", "aes"]
 stm32f427 = ["stm32f4/stm32f427", "gpio-f427", "fsmc"]
-stm32f429 = ["stm32f4/stm32f429", "gpio-f427", "fmc"]
+stm32f429 = ["stm32f4/stm32f429", "gpio-f427", "fmc", "ltdc"]
 stm32f437 = ["stm32f4/stm32f427", "gpio-f427", "fsmc", "cryp"]
-stm32f439 = ["stm32f4/stm32f429", "gpio-f427", "fmc", "cryp"]
+stm32f439 = ["stm32f4/stm32f429", "gpio-f427", "fmc", "cryp", "ltdc"]
 stm32f446 = ["stm32f4/stm32f446", "gpio-f446"]
 stm32f469 = ["stm32f4/stm32f469", "gpio-f469"]
 stm32f479 = ["stm32f4/stm32f469", "gpio-f469", "cryp"]
@@ -335,7 +336,6 @@ gpio-f427 = [
     "dma2d",
     "eth",
     "i2c3",
-    "ltdc",
     "otg-fs",
     "otg-hs",
     "rng",

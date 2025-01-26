@@ -19,9 +19,12 @@ use crate::hal::{
     timer::{CounterUs, Event, FTimer, Flag, Timer},
 };
 
-use core::cell::{Cell, RefCell};
 use core::fmt::Write;
 use core::ops::DerefMut;
+use core::{
+    cell::{Cell, RefCell},
+    convert::Infallible,
+};
 use cortex_m::interrupt::{free, CriticalSection, Mutex};
 use heapless::String;
 
@@ -34,6 +37,7 @@ use embedded_graphics::{
     primitives::{Circle, Line, PrimitiveStyle, PrimitiveStyleBuilder},
     text::Text,
 };
+use embedded_hal_bus::spi::ExclusiveDevice;
 use micromath::F32Ext;
 
 use ssd1306::{prelude::*, Ssd1306};
@@ -59,6 +63,19 @@ enum StopwatchState {
     Ready,
     Running,
     Stopped,
+}
+
+struct DummyPin;
+impl embedded_hal::digital::ErrorType for DummyPin {
+    type Error = Infallible;
+}
+impl embedded_hal::digital::OutputPin for DummyPin {
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
 }
 
 #[entry]
@@ -117,7 +134,8 @@ fn main() -> ! {
     ss.set_low();
 
     // Set up the display
-    let interface = SPIInterfaceNoCS::new(spi, dc);
+    let spi_device = ExclusiveDevice::new_no_delay(spi, DummyPin).unwrap();
+    let interface = SPIInterface::new(spi_device, dc);
     let mut disp = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
     disp.init().unwrap();

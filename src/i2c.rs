@@ -287,14 +287,14 @@ impl<I2C: Instance> I2c<I2C> {
             Address::Seven(addr) => {
                 self.i2c
                     .dr()
-                    .write(|w| unsafe { w.bits(u32::from(addr) << 1) });
+                    .write(|w| unsafe { w.bits(u16::from(addr) << 1) });
             }
             Address::Ten(addr) => {
                 let [msbs, lsbs] = addr.to_be_bytes();
                 let msbs = ((msbs & 0b11) << 1) & 0b11110000;
                 let dr = self.i2c.dr();
-                dr.write(|w| unsafe { w.bits(u32::from(msbs)) });
-                dr.write(|w| unsafe { w.bits(u32::from(lsbs)) });
+                dr.write(|w| unsafe { w.bits(u16::from(msbs)) });
+                dr.write(|w| unsafe { w.bits(u16::from(lsbs)) });
             }
         }
 
@@ -348,20 +348,20 @@ impl<I2C: Instance> I2c<I2C> {
             Address::Seven(addr) => {
                 self.i2c
                     .dr()
-                    .write(|w| unsafe { w.bits((u32::from(addr) << 1) | 1) });
+                    .write(|w| unsafe { w.bits((u16::from(addr) << 1) | 1) });
             }
             Address::Ten(addr) => {
                 let [msbs, lsbs] = addr.to_be_bytes();
                 let msbs = ((msbs & 0b11) << 1) | 0b11110000;
                 let dr = self.i2c.dr();
                 if first_transaction {
-                    dr.write(|w| unsafe { w.bits(u32::from(msbs)) });
-                    dr.write(|w| unsafe { w.bits(u32::from(lsbs)) });
+                    dr.write(|w| unsafe { w.bits(u16::from(msbs)) });
+                    dr.write(|w| unsafe { w.bits(u16::from(lsbs)) });
                 }
                 self.i2c.cr1().modify(|_, w| w.start().set_bit());
                 // Wait until START condition was generated
                 while self.i2c.sr1().read().sb().bit_is_clear() {}
-                dr.write(|w| unsafe { w.bits(u32::from(msbs | 1)) });
+                dr.write(|w| unsafe { w.bits(u16::from(msbs | 1)) });
             }
         }
 
@@ -401,7 +401,7 @@ impl<I2C: Instance> I2c<I2C> {
         {}
 
         // Push out a byte of data
-        self.i2c.dr().write(|w| unsafe { w.bits(u32::from(byte)) });
+        self.i2c.dr().write(|w| unsafe { w.bits(u16::from(byte)) });
 
         // Wait until byte is transferred
         // Check for any potential error conditions.

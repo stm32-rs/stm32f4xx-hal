@@ -38,7 +38,7 @@ use core::ops::DerefMut;
 use core::sync::atomic::{AtomicBool, Ordering};
 use cortex_m::interrupt::{free, CriticalSection, Mutex};
 use cortex_m_rt::entry;
-use display_interface_04::{DataFormat, DisplayError, WriteOnlyDataCommand};
+use display_interface::{DataFormat, DisplayError, WriteOnlyDataCommand};
 use embedded_graphics::{
     mono_font::{
         ascii::{FONT_6X12, FONT_9X15},
