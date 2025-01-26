@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 - Use `write` instead of `modify` to clear flags
-- Bump `stm32f4-staging`
+- Bump `stm32f4-staging` to 0.18, update other dependencies
 
 ## [v0.22.1] - 2024-11-03
 

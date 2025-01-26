@@ -460,9 +460,9 @@ where
     fn send_address(&mut self, addr: u8, read: bool) -> Result<(), super::Error> {
         let i2c = &self.hal_i2c.i2c;
 
-        let mut to_send_addr = u32::from(addr) << 1;
+        let mut to_send_addr = u16::from(addr) << 1;
         if read {
-            to_send_addr += 1;
+            to_send_addr |= 1;
         }
 
         // Set up current address, we're trying to talk to
