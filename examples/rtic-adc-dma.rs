@@ -72,7 +72,7 @@ mod app {
             .dma(Dma::Continuous)
             .scan(Scan::Enabled);
 
-        let mut adc = Adc::adc1(device.ADC1, true, adc_config);
+        let mut adc = Adc::new(device.ADC1, true, adc_config);
         adc.configure_channel(&Temperature, Sequence::One, SampleTime::Cycles_480);
         adc.configure_channel(&voltage, Sequence::Two, SampleTime::Cycles_480);
         adc.enable_temperature_and_vref();

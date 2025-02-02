@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Unmacro `Adc`
 - Use `write` instead of `modify` to clear flags
 - Bump `stm32f4-staging` to 0.18, update other dependencies
 
