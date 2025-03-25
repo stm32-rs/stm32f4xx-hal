@@ -244,3 +244,123 @@ const fn min_u32(first: u32, second: u32) -> u32 {
         first
     }
 }
+
+pub trait RegSpec {
+    type Spec;
+}
+
+impl<REG: stm32f4::RegisterSpec> RegSpec for stm32f4::Reg<REG> {
+    type Spec = REG;
+}
+
+pub trait ReadReg: RegSpec
+where
+    Self::Spec: stm32f4::Readable,
+{
+    fn read(&self) -> stm32f4::R<Self::Spec>;
+}
+impl<REG> ReadReg for stm32f4::Reg<REG>
+where
+    REG: stm32f4::Readable,
+{
+    fn read(&self) -> stm32f4::R<REG> {
+        self.read()
+    }
+}
+
+pub trait WriteReg: RegSpec
+where
+    Self::Spec: stm32f4::Writable + stm32f4::Resettable,
+{
+    fn reset(&self);
+    fn write<F>(&self, f: F) -> <Self::Spec as stm32f4::RegisterSpec>::Ux
+    where
+        F: FnOnce(&mut stm32f4::W<Self::Spec>) -> &mut stm32f4::W<Self::Spec>;
+    fn from_write<F, T>(&self, f: F) -> T
+    where
+        F: FnOnce(&mut stm32f4::W<Self::Spec>) -> T;
+}
+
+impl<REG> WriteReg for stm32f4::Reg<REG>
+where
+    REG: stm32f4::Writable + stm32f4::Resettable,
+{
+    fn reset(&self) {
+        self.reset()
+    }
+    fn write<F>(&self, f: F) -> REG::Ux
+    where
+        F: FnOnce(&mut stm32f4::W<REG>) -> &mut stm32f4::W<REG>,
+    {
+        self.write(f)
+    }
+    fn from_write<F, T>(&self, f: F) -> T
+    where
+        F: FnOnce(&mut stm32f4::W<REG>) -> T,
+    {
+        self.from_write(f)
+    }
+}
+
+pub trait WriteZeroReg: RegSpec
+where
+    Self::Spec: stm32f4::Writable,
+{
+    unsafe fn write_with_zero<F>(&self, f: F) -> <Self::Spec as stm32f4::RegisterSpec>::Ux
+    where
+        F: FnOnce(&mut stm32f4::W<Self::Spec>) -> &mut stm32f4::W<Self::Spec>;
+    unsafe fn from_write_with_zero<F, T>(&self, f: F) -> T
+    where
+        F: FnOnce(&mut stm32f4::W<Self::Spec>) -> T;
+}
+
+impl<REG> WriteZeroReg for stm32f4::Reg<REG>
+where
+    REG: stm32f4::Writable,
+{
+    unsafe fn write_with_zero<F>(&self, f: F) -> REG::Ux
+    where
+        F: FnOnce(&mut stm32f4::W<REG>) -> &mut stm32f4::W<REG>,
+    {
+        self.write_with_zero(f)
+    }
+    unsafe fn from_write_with_zero<F, T>(&self, f: F) -> T
+    where
+        F: FnOnce(&mut stm32f4::W<REG>) -> T,
+    {
+        self.from_write_with_zero(f)
+    }
+}
+
+pub trait ModifyReg: RegSpec
+where
+    Self::Spec: stm32f4::Readable + stm32f4::Writable,
+{
+    fn modify<F>(&self, f: F) -> <Self::Spec as stm32f4::RegisterSpec>::Ux
+    where
+        for<'w> F: FnOnce(
+            &stm32f4::R<Self::Spec>,
+            &'w mut stm32f4::W<Self::Spec>,
+        ) -> &'w mut stm32f4::W<Self::Spec>;
+    fn from_modify<F, T>(&self, f: F) -> T
+    where
+        for<'w> F: FnOnce(&stm32f4::R<Self::Spec>, &'w mut stm32f4::W<Self::Spec>) -> T;
+}
+
+impl<REG> ModifyReg for stm32f4::Reg<REG>
+where
+    REG: stm32f4::Readable + stm32f4::Writable,
+{
+    fn modify<F>(&self, f: F) -> REG::Ux
+    where
+        for<'w> F: FnOnce(&stm32f4::R<REG>, &'w mut stm32f4::W<REG>) -> &'w mut stm32f4::W<REG>,
+    {
+        self.modify(f)
+    }
+    fn from_modify<F, T>(&self, f: F) -> T
+    where
+        for<'w> F: FnOnce(&stm32f4::R<REG>, &'w mut stm32f4::W<REG>) -> T,
+    {
+        self.from_modify(f)
+    }
+}

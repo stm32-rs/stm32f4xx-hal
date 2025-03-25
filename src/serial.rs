@@ -57,7 +57,7 @@ pub enum Error {
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u32)]
+#[repr(u16)]
 pub enum Event {
     /// IDLE interrupt enable
     Idle = 1 << 4,
@@ -75,7 +75,7 @@ pub enum Event {
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u32)]
+#[repr(u16)]
 pub enum Flag {
     /// Parity error
     ParityError = 1 << 0,
@@ -103,7 +103,7 @@ pub enum Flag {
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u32)]
+#[repr(u16)]
 pub enum CFlag {
     /// Read data register not empty
     RxNotEmpty = 1 << 5,

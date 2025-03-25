@@ -250,10 +250,10 @@ macro_rules! uartCommon {
                 w.bits({
                     let mut bits = r.bits();
                     if let Some(d) = disable {
-                        bits &= !(d.bits() as u32);
+                        bits &= !(d.bits());
                     }
                     if let Some(e) = enable {
-                        bits |= e.bits() as u32;
+                        bits |= e.bits();
                     }
                     bits
                 })
@@ -360,7 +360,7 @@ where {
             Self::calculate_brr(pclk_freq, baud)?
         };
 
-        uart.brr().write(|w| unsafe { w.bits(div) });
+        uart.brr().write(|w| unsafe { w.bits(div as u16) });
 
         // Reset other registers to disable advanced USART features
         uart.cr2().reset();

@@ -127,7 +127,7 @@ pub enum Pull {
     Down = 2,
 }
 
-impl From<Pull> for pac::gpioa::pupdr::PUPDR0 {
+impl From<Pull> for pac::gpioa::pupdr::PULL {
     fn from(value: Pull) -> Self {
         match value {
             Pull::Down => Self::PullDown,
@@ -206,7 +206,7 @@ pub enum Speed {
     VeryHigh = 3,
 }
 
-impl From<Speed> for pac::gpioa::ospeedr::OSPEEDR0 {
+impl From<Speed> for pac::gpioa::ospeedr::OUTPUT_SPEED {
     fn from(value: Speed) -> Self {
         match value {
             Speed::Low => Self::LowSpeed,
