@@ -263,6 +263,7 @@ impl<REG> ReadReg for stm32f4::Reg<REG>
 where
     REG: stm32f4::Readable,
 {
+    #[inline(always)]
     fn read(&self) -> stm32f4::R<REG> {
         self.read()
     }
@@ -285,15 +286,18 @@ impl<REG> WriteReg for stm32f4::Reg<REG>
 where
     REG: stm32f4::Writable + stm32f4::Resettable,
 {
+    #[inline(always)]
     fn reset(&self) {
         self.reset()
     }
+    #[inline(always)]
     fn write<F>(&self, f: F) -> REG::Ux
     where
         F: FnOnce(&mut stm32f4::W<REG>) -> &mut stm32f4::W<REG>,
     {
         self.write(f)
     }
+    #[inline(always)]
     fn from_write<F, T>(&self, f: F) -> T
     where
         F: FnOnce(&mut stm32f4::W<REG>) -> T,
@@ -318,12 +322,14 @@ impl<REG> WriteZeroReg for stm32f4::Reg<REG>
 where
     REG: stm32f4::Writable,
 {
+    #[inline(always)]
     unsafe fn write_with_zero<F>(&self, f: F) -> REG::Ux
     where
         F: FnOnce(&mut stm32f4::W<REG>) -> &mut stm32f4::W<REG>,
     {
         self.write_with_zero(f)
     }
+    #[inline(always)]
     unsafe fn from_write_with_zero<F, T>(&self, f: F) -> T
     where
         F: FnOnce(&mut stm32f4::W<REG>) -> T,
@@ -351,12 +357,14 @@ impl<REG> ModifyReg for stm32f4::Reg<REG>
 where
     REG: stm32f4::Readable + stm32f4::Writable,
 {
+    #[inline(always)]
     fn modify<F>(&self, f: F) -> REG::Ux
     where
         for<'w> F: FnOnce(&stm32f4::R<REG>, &'w mut stm32f4::W<REG>) -> &'w mut stm32f4::W<REG>,
     {
         self.modify(f)
     }
+    #[inline(always)]
     fn from_modify<F, T>(&self, f: F) -> T
     where
         for<'w> F: FnOnce(&stm32f4::R<REG>, &'w mut stm32f4::W<REG>) -> T,
