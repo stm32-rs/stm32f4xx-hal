@@ -41,6 +41,91 @@ pub trait Instance:
     }
 }
 
+pub trait RBExt
+where
+    stm32f4::W<Self::CR2rs>: Cr2WExt<Spec = Self::CR2rs>,
+    stm32f4::R<Self::CR2rs>: Cr2RExt,
+{
+    type CR2rs: stm32f4::RegisterSpec<Ux = u16>
+        + stm32f4::Readable
+        + stm32f4::Writable
+        + stm32f4::Resettable;
+    fn cr1(&self) -> &crate::pac::usart1::CR1;
+    fn cr2(&self) -> &stm32f4::Reg<Self::CR2rs>;
+    fn dr(&self) -> &crate::pac::usart1::DR;
+    fn brr(&self) -> &crate::pac::usart1::BRR;
+}
+
+impl RBExt for RegisterBlockUsart {
+    type CR2rs = crate::pac::usart1::cr2::CR2rs;
+    fn cr1(&self) -> &crate::pac::usart1::CR1 {
+        self.cr1()
+    }
+    fn cr2(&self) -> &stm32f4::Reg<Self::CR2rs> {
+        self.cr2()
+    }
+    fn dr(&self) -> &crate::pac::usart1::DR {
+        self.dr()
+    }
+    fn brr(&self) -> &crate::pac::usart1::BRR {
+        self.brr()
+    }
+}
+
+#[cfg(feature = "uart4")]
+impl RBExt for RegisterBlockUart {
+    type CR2rs = crate::pac::uart4::cr2::CR2rs;
+    fn cr1(&self) -> &crate::pac::usart1::CR1 {
+        self.cr1()
+    }
+    fn cr2(&self) -> &stm32f4::Reg<Self::CR2rs> {
+        self.cr2()
+    }
+    fn dr(&self) -> &crate::pac::usart1::DR {
+        self.dr()
+    }
+    fn brr(&self) -> &crate::pac::usart1::BRR {
+        self.brr()
+    }
+}
+
+pub trait Cr2RExt {
+    fn add(&self) -> crate::pac::usart1::cr2::ADD_R;
+}
+
+impl Cr2RExt for crate::pac::usart1::cr2::R {
+    fn add(&self) -> crate::pac::usart1::cr2::ADD_R {
+        self.add()
+    }
+}
+
+#[cfg(feature = "uart4")]
+impl Cr2RExt for crate::pac::uart4::cr2::R {
+    fn add(&self) -> crate::pac::usart1::cr2::ADD_R {
+        self.add()
+    }
+}
+
+pub trait Cr2WExt {
+    type Spec: stm32f4::Writable;
+    fn add(&mut self) -> crate::pac::usart1::cr2::ADD_W<Self::Spec>;
+}
+
+impl Cr2WExt for crate::pac::usart1::cr2::W {
+    type Spec = crate::pac::usart1::cr2::CR2rs;
+    fn add(&mut self) -> crate::pac::usart1::cr2::ADD_W<Self::Spec> {
+        self.add()
+    }
+}
+
+#[cfg(feature = "uart4")]
+impl Cr2WExt for crate::pac::uart4::cr2::W {
+    type Spec = crate::pac::uart4::cr2::CR2rs;
+    fn add(&mut self) -> crate::pac::usart1::cr2::ADD_W<Self::Spec> {
+        self.add()
+    }
+}
+
 pub trait RegisterBlockImpl: crate::Sealed {
     #[allow(clippy::new_ret_no_self)]
     fn new<UART: Instance + crate::Ptr<RB = Self>, WORD>(
@@ -436,7 +521,7 @@ where {
 
         let (over8, div) = Self::calculate_brr(pclk_freq, baud)?;
 
-        uart.brr().write(|w| unsafe { w.bits(div) });
+        uart.brr().write(|w| unsafe { w.bits(div as u16) });
 
         // Reset other registers to disable advanced USART features
         uart.cr2().reset();
