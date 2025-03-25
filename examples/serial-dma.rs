@@ -18,7 +18,7 @@ use stm32f4xx_hal::{
         self,
         dma::{RxDMA, SerialDma, TxDMA},
     },
-    uart::{config::StopBits, Config, Serial},
+    serial::{config::StopBits, Config, Serial},
 };
 
 /// Global variable for USART2 DMA handle.

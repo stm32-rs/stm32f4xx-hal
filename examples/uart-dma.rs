@@ -11,8 +11,7 @@ use cortex_m_rt::entry;
 use stm32f4xx_hal::dma::config::DmaConfig;
 use stm32f4xx_hal::pac::Interrupt;
 use stm32f4xx_hal::pac::{interrupt, DMA1};
-use stm32f4xx_hal::uart::config::StopBits;
-use stm32f4xx_hal::uart::{Config, Rx, Serial};
+use stm32f4xx_hal::serial::{config::StopBits, Config, Rx, Serial};
 use stm32f4xx_hal::{
     dma::{StreamsTuple, Transfer},
     pac,

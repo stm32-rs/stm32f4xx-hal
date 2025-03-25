@@ -206,7 +206,7 @@ impl<I2C: Instance> I2c<I2C> {
         if isr.nackf().bit_is_set() {
             self.i2c
                 .icr()
-                .write(|w| w.stopcf().set_bit().nackcf().set_bit());
+                .write(|w| w.stopcf().clear_bit_by_one().nackcf().clear_bit_by_one());
             return Err(Error::NoAcknowledge(NoAcknowledgeSource::Unknown));
         }
 

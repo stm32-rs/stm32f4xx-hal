@@ -132,8 +132,6 @@ pub mod spi;
 pub mod syscfg;
 pub mod time;
 pub mod timer;
-#[cfg(feature = "uart4")]
-pub mod uart;
 pub mod watchdog;
 
 mod sealed {

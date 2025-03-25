@@ -1,5 +1,5 @@
 use super::*;
-use crate::pac::gpioa::{moder::MODER0 as Mode, otyper::OT0 as OutputType};
+use crate::pac::gpioa::{moder::MODE as Mode, otyper::OUTPUT_TYPE as OutputType};
 
 impl Input {
     pub fn new<const P: char, const N: u8, MODE: PinMode>(
