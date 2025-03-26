@@ -16,6 +16,7 @@
 
 use core::marker::PhantomData;
 
+pub mod ext;
 mod hal_02;
 mod hal_1;
 
