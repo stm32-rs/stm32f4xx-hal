@@ -80,6 +80,7 @@ pub use stm32f4::stm32f469 as pac;
 #[cfg(feature = "stm32f479")]
 /// Re-export of the [svd2rust](https://crates.io/crates/svd2rust) auto-generated API for the stm32f469 peripherals.
 pub use stm32f4::stm32f469 as pac;
+use stm32f4::Periph;
 
 // Enable use of interrupt macro
 pub use crate::pac::interrupt;
@@ -202,14 +203,23 @@ pub trait Listen {
     }
 }
 
-pub trait Ptr {
+impl<RB, const A: usize> Sealed for Periph<RB, A> {}
+
+pub trait Ptr: Sealed {
     /// RegisterBlock structure
     type RB;
     /// Return the pointer to the register block
     fn ptr() -> *const Self::RB;
 }
 
-pub trait Steal {
+impl<RB, const A: usize> Ptr for Periph<RB, A> {
+    type RB = RB;
+    fn ptr() -> *const Self::RB {
+        Self::ptr()
+    }
+}
+
+pub trait Steal: Sealed {
     /// Steal an instance of this peripheral
     ///
     /// # Safety
@@ -224,6 +234,12 @@ pub trait Steal {
     /// peripheral instance existing to ensure memory safety; ensure
     /// no stolen instances are passed to such software.
     unsafe fn steal() -> Self;
+}
+
+impl<RB, const A: usize> Steal for Periph<RB, A> {
+    unsafe fn steal() -> Self {
+        Self::steal()
+    }
 }
 
 #[allow(unused)]

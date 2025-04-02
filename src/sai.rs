@@ -237,19 +237,6 @@ macro_rules! sai_impl {
         pub type $SAIB = SAIB<$SAI>;
 
         impl Instance for $SAI {}
-
-        impl crate::Ptr for $SAI {
-            type RB = sai::RegisterBlock;
-            fn ptr() -> *const Self::RB {
-                Self::ptr()
-            }
-        }
-
-        impl crate::Steal for $SAI {
-            unsafe fn steal() -> Self {
-                Self::steal()
-            }
-        }
     };
 }
 

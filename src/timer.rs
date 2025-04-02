@@ -420,11 +420,6 @@ macro_rules! hal {
         $(m: $timbase:ident,)?
     ]) => {
         impl Instance for $TIM { }
-        impl crate::Steal for $TIM {
-            unsafe fn steal() -> Self {
-                Self::steal()
-            }
-        }
         pub type $Timer = Timer<$TIM>;
 
         impl General for $TIM {
