@@ -68,7 +68,6 @@ macro_rules! bus_reset {
 macro_rules! bus {
     ($($PER:ident => ($busX:ty, $bit:literal),)+) => {
         $(
-            impl crate::Sealed for crate::pac::$PER {}
             impl RccBus for crate::pac::$PER {
                 type Bus = $busX;
             }
@@ -79,8 +78,6 @@ macro_rules! bus {
     }
 }
 
-#[cfg(feature = "quadspi")]
-impl crate::Sealed for crate::pac::QUADSPI {}
 #[cfg(feature = "quadspi")]
 impl RccBus for crate::pac::QUADSPI {
     type Bus = AHB3;
@@ -147,8 +144,6 @@ bus! {
 }
 
 // TODO: fix absent ahb3lpenr
-#[cfg(feature = "fsmc")]
-impl crate::Sealed for crate::pac::FSMC {}
 #[cfg(feature = "fsmc")]
 impl RccBus for crate::pac::FSMC {
     type Bus = AHB3;
@@ -251,8 +246,6 @@ bus! {
 }
 
 #[cfg(feature = "adc2")]
-impl crate::Sealed for crate::pac::ADC2 {}
-#[cfg(feature = "adc2")]
 impl RccBus for crate::pac::ADC2 {
     type Bus = APB2;
 }
@@ -263,8 +256,6 @@ bus_lpenable!(ADC2 => 9);
 #[cfg(feature = "adc2")]
 bus_reset!(ADC2 => 8);
 
-#[cfg(feature = "adc3")]
-impl crate::Sealed for crate::pac::ADC3 {}
 #[cfg(feature = "adc3")]
 impl RccBus for crate::pac::ADC3 {
     type Bus = APB2;

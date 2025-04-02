@@ -228,13 +228,6 @@ macro_rules! spi {
         pub type $SpiSlave<const BIDI: bool = false, W = u8> = SpiSlave<$SPI, BIDI, W>;
 
         impl Instance for $SPI {}
-
-        impl crate::Ptr for $SPI {
-            type RB = spi1::RegisterBlock;
-            fn ptr() -> *const Self::RB {
-                Self::ptr()
-            }
-        }
     };
 }
 

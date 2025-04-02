@@ -395,20 +395,6 @@ macro_rules! halUsart {
         pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
 
         impl Instance for $USART {}
-
-        impl crate::Ptr for $USART {
-            type RB = crate::pac::usart1::RegisterBlock;
-
-            fn ptr() -> *const Self::RB {
-                Self::ptr()
-            }
-        }
-
-        impl crate::Steal for $USART {
-            unsafe fn steal() -> Self {
-                Self::steal()
-            }
-        }
     };
 }
 pub(crate) use halUsart;
@@ -428,20 +414,6 @@ macro_rules! halUart {
         pub type $Rx<WORD = u8> = Rx<$UART, WORD>;
 
         impl Instance for $UART {}
-
-        impl crate::Ptr for $UART {
-            type RB = crate::pac::uart4::RegisterBlock;
-
-            fn ptr() -> *const Self::RB {
-                Self::ptr()
-            }
-        }
-
-        impl crate::Steal for $UART {
-            unsafe fn steal() -> Self {
-                Self::steal()
-            }
-        }
     };
 }
 

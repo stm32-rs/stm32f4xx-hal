@@ -310,22 +310,6 @@ pub trait Instance:
 impl Instance for DMA1 {}
 impl Instance for DMA2 {}
 
-impl crate::Ptr for DMA1 {
-    type RB = DMARegisterBlock;
-    #[inline(always)]
-    fn ptr() -> *const Self::RB {
-        Self::ptr()
-    }
-}
-
-impl crate::Ptr for DMA2 {
-    type RB = DMARegisterBlock;
-    #[inline(always)]
-    fn ptr() -> *const Self::RB {
-        Self::ptr()
-    }
-}
-
 /// A trait for marker tha represent Channel of a DMA stream.
 pub trait Channel {
     const VALUE: DmaChannel;

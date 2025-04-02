@@ -90,13 +90,6 @@ macro_rules! i2c {
         pub type $I2c = I2c<$I2C>;
 
         impl Instance for $I2C {}
-
-        impl crate::Ptr for $I2C {
-            type RB = i2c1::RegisterBlock;
-            fn ptr() -> *const Self::RB {
-                Self::ptr()
-            }
-        }
     };
 }
 

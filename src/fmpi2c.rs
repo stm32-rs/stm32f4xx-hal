@@ -35,14 +35,6 @@ macro_rules! i2c {
                 rcc.dckcfgr2().modify(|_, w| w.$i2csel().hsi());
             }
         }
-
-        impl crate::Ptr for $I2C {
-            type RB = i2c1::RegisterBlock;
-            #[inline(always)]
-            fn ptr() -> *const Self::RB {
-                Self::ptr()
-            }
-        }
     };
 }
 
