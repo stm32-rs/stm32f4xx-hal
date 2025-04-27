@@ -117,6 +117,8 @@ pub enum CFlag {
     TransmissionComplete = 1 << 6,
     /// LIN break detection flag
     LinBreak = 1 << 8,
+    /// Clear to send flag
+    Cts = 1 << 9,
 }
 
 pub mod config;
@@ -128,7 +130,7 @@ pub use gpio::NoPin as NoTx;
 /// A filler type for when the Rx pin is unnecessary
 pub use gpio::NoPin as NoRx;
 
-pub use gpio::alt::SerialAsync as CommonPins;
+pub use gpio::alt::{SerialAsync as CommonPins, SerialFlowControl};
 
 // Implemented by all USART/UART instances
 pub trait Instance:
@@ -530,6 +532,75 @@ impl<UART: Instance> Serial<UART, u16> {
             tx: self.tx.with_u8_data(),
             rx: self.rx.with_u8_data(),
         }
+    }
+}
+
+pub trait InstanceFC: Instance<RB = pac::usart1::RegisterBlock> + SerialFlowControl {}
+impl InstanceFC for pac::USART1 {}
+impl InstanceFC for pac::USART2 {}
+#[cfg(any(
+    feature = "gpio-f412",
+    feature = "gpio-f413",
+    feature = "gpio-f417",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469"
+))]
+impl InstanceFC for pac::USART6 {}
+
+impl<UART: InstanceFC, WORD> Serial<UART, WORD> {
+    pub fn with_rts(self, rts: impl Into<UART::Rts>) -> Self {
+        self.rx.usart.cr3().modify(|_, w| w.rtse().set_bit());
+        let _rts = rts.into();
+        self
+    }
+    pub fn with_cts(self, cts: impl Into<UART::Cts>) -> Self {
+        self.tx.usart.cr3().modify(|_, w| w.ctse().set_bit());
+        let _cts = cts.into();
+        self
+    }
+}
+impl<UART: InstanceFC, WORD> Serial<UART, WORD> {
+    pub fn enable_request_to_send(&mut self) {
+        self.rx.enable_request_to_send();
+    }
+    pub fn disable_request_to_send(&mut self) {
+        self.rx.disable_request_to_send();
+    }
+    pub fn enable_clear_to_send(&mut self) {
+        self.tx.enable_clear_to_send();
+    }
+    pub fn disable_clear_to_send(&mut self) {
+        self.tx.disable_clear_to_send();
+    }
+    pub fn listen_clear_to_send(&mut self) {
+        self.tx.listen_clear_to_send();
+    }
+    pub fn unlisten_clear_to_send(&mut self) {
+        self.tx.unlisten_clear_to_send();
+    }
+}
+impl<UART: InstanceFC, WORD> Rx<UART, WORD> {
+    pub fn enable_request_to_send(&mut self) {
+        self.usart.cr3().modify(|_, w| w.rtse().set_bit());
+    }
+    pub fn disable_request_to_send(&mut self) {
+        self.usart.cr3().modify(|_, w| w.rtse().clear_bit());
+    }
+}
+impl<UART: InstanceFC, WORD> Tx<UART, WORD> {
+    pub fn enable_clear_to_send(&mut self) {
+        self.usart.cr3().modify(|_, w| w.ctse().set_bit());
+    }
+    pub fn disable_clear_to_send(&mut self) {
+        self.usart.cr3().modify(|_, w| w.ctse().clear_bit());
+    }
+    fn listen_clear_to_send(&mut self) {
+        self.usart.cr3().modify(|_, w| w.ctsie().set_bit());
+    }
+
+    fn unlisten_clear_to_send(&mut self) {
+        self.usart.cr3().modify(|_, w| w.ctsie().clear_bit());
     }
 }
 
