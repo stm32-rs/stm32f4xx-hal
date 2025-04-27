@@ -7,19 +7,26 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-- Implement `Ptr`, `Sealed`, `Steal` for generic `Periph`
-- Unmacro `Adc`
-- Use `write` instead of `modify` to clear flags
-- Bump `stm32f4-staging` to 0.18, update other dependencies
-- `serial` mod refactor
+ - Implement `Ptr`, `Sealed`, `Steal` for generic `Periph` [#834]
+ - Unmacro `Adc` [#832]
+ - Use `write` instead of `modify` to clear flags [#829]
+ - Bump `stm32f4-staging` to 0.18, update other dependencies [#831]
+ - `serial` mod refactor [#833]
+ - FMPI2c APB timings [#770]
  - Fefactor FMPI2c `embedded-hal` implementations [#784]
 
+[#770]: https://github.com/stm32-rs/stm32f4xx-hal/pull/770
 [#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
+[#829]: https://github.com/stm32-rs/stm32f4xx-hal/pull/829
+[#831]: https://github.com/stm32-rs/stm32f4xx-hal/pull/831
+[#832]: https://github.com/stm32-rs/stm32f4xx-hal/pull/832
+[#833]: https://github.com/stm32-rs/stm32f4xx-hal/pull/833
+[#834]: https://github.com/stm32-rs/stm32f4xx-hal/pull/834
 
 ## [v0.22.1] - 2024-11-03
 
- - Fix pac `defmt` feature
- - Fix timer interrupt status clear
+ - Fix pac `defmt` feature [#807]
+ - Fix timer interrupt status clear [#821]
 
 ## [v0.22.0] - 2024-10-04
 
@@ -76,6 +83,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#796]: https://github.com/stm32-rs/stm32f4xx-hal/pull/796
 [#798]: https://github.com/stm32-rs/stm32f4xx-hal/pull/798
 [#802]: https://github.com/stm32-rs/stm32f4xx-hal/pull/802
+[#807]: https://github.com/stm32-rs/stm32f4xx-hal/pull/807
+[#821]: https://github.com/stm32-rs/stm32f4xx-hal/pull/821
 
 ## [v0.21.0] - 2024-05-30
 
