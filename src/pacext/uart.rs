@@ -21,6 +21,8 @@ pub trait UartRB: Sealed {
     fn gtpr(&self) -> &Reg<Self::GTPRrs>;
 }
 
+pub trait Cf: UartRB<SRrs: reg::SrRCf + reg::SrWCf, CR3rs: reg::Cr3RCf + reg::Cr3WCf> {}
+
 wrap_r! {
     pub trait SrR {
         fn pe(&self) -> usart1::sr::PE_R;
@@ -34,11 +36,21 @@ wrap_r! {
         fn lbd(&self) -> usart1::sr::LBD_R;
     }
 }
+wrap_r! {
+    pub trait SrRCf {
+        fn cts(&self) -> usart1::sr::CTS_R;
+    }
+}
 wrap_w! {
     pub trait SrW {
         fn rxne(&mut self) -> usart1::sr::RXNE_W<REG>;
         fn tc(&mut self) -> usart1::sr::TC_W<REG>;
         fn lbd(&mut self) -> usart1::sr::LBD_W<REG>;
+    }
+}
+wrap_w! {
+    pub trait SrWCf {
+        fn cts(&mut self) -> usart1::sr::CTS_W<REG>;
     }
 }
 
@@ -70,6 +82,13 @@ wrap_r! {
         fn onebit(&self) -> usart1::cr3::ONEBIT_R;
     }
 }
+wrap_r! {
+    pub trait Cr3RCf {
+        fn rtse(&self) -> usart1::cr3::RTSE_R;
+        fn ctse(&self) -> usart1::cr3::CTSE_R;
+        fn ctsie(&self) -> usart1::cr3::CTSIE_R;
+    }
+}
 wrap_w! {
     pub trait Cr3W {
         fn eie(&mut self) -> usart1::cr3::EIE_W<REG>;
@@ -79,6 +98,13 @@ wrap_w! {
         fn dmar(&mut self) -> usart1::cr3::DMAR_W<REG>;
         fn dmat(&mut self) -> usart1::cr3::DMAT_W<REG>;
         fn onebit(&mut self) -> usart1::cr3::ONEBIT_W<REG>;
+    }
+}
+wrap_w! {
+    pub trait Cr3WCf {
+        fn rtse(&mut self) -> usart1::cr3::RTSE_W<REG>;
+        fn ctse(&mut self) -> usart1::cr3::CTSE_W<REG>;
+        fn ctsie(&mut self) -> usart1::cr3::CTSIE_W<REG>;
     }
 }
 
@@ -107,10 +133,16 @@ mod reg {
         fn txe(r: &R<Self>) -> usart1::sr::TXE_R;
         fn lbd(r: &R<Self>) -> usart1::sr::LBD_R;
     }
+    pub trait SrRCf: SrR {
+        fn cts(r: &R<Self>) -> usart1::sr::CTS_R;
+    }
     pub trait SrW: RegisterSpec<Ux = u16> + Writable + Resettable + Sized {
         fn rxne(w: &mut W<Self>) -> usart1::sr::RXNE_W<Self>;
         fn tc(w: &mut W<Self>) -> usart1::sr::TC_W<Self>;
         fn lbd(w: &mut W<Self>) -> usart1::sr::LBD_W<Self>;
+    }
+    pub trait SrWCf: SrW {
+        fn cts(w: &mut W<Self>) -> usart1::sr::CTS_W<Self>;
     }
 
     pub trait Cr2R: RegisterSpec<Ux = u16> + Readable + Sized {
@@ -143,6 +175,18 @@ mod reg {
         fn dmar(w: &mut W<Self>) -> usart1::cr3::DMAR_W<Self>;
         fn dmat(w: &mut W<Self>) -> usart1::cr3::DMAT_W<Self>;
         fn onebit(w: &mut W<Self>) -> usart1::cr3::ONEBIT_W<Self>;
+    }
+
+    pub trait Cr3RCf: Cr3R {
+        fn rtse(r: &R<Self>) -> usart1::cr3::RTSE_R;
+        fn ctse(r: &R<Self>) -> usart1::cr3::CTSE_R;
+        fn ctsie(r: &R<Self>) -> usart1::cr3::CTSIE_R;
+    }
+
+    pub trait Cr3WCf: Cr3W {
+        fn rtse(w: &mut W<Self>) -> usart1::cr3::RTSE_W<Self>;
+        fn ctse(w: &mut W<Self>) -> usart1::cr3::CTSE_W<Self>;
+        fn ctsie(w: &mut W<Self>) -> usart1::cr3::CTSIE_W<Self>;
     }
 
     pub trait GtprR: RegisterSpec<Ux = u16> + Readable + Sized {
@@ -247,8 +291,38 @@ macro_rules! impl_ext {
         }
     };
 }
+macro_rules! impl_cf {
+    ($uart:ident) => {
+        impl Cf for $uart::RegisterBlock {}
+        impl reg::SrRCf for $uart::sr::SRrs {
+            impl_read! {
+                cts -> usart1::sr::CTS_R;
+            }
+        }
+        impl reg::SrWCf for $uart::sr::SRrs {
+            impl_write! {
+                cts -> usart1::sr::CTS_W<Self>;
+            }
+        }
+        impl reg::Cr3RCf for $uart::cr3::CR3rs {
+            impl_read! {
+                rtse -> usart1::cr3::RTSE_R;
+                ctse -> usart1::cr3::CTSE_R;
+                ctsie -> usart1::cr3::CTSIE_R;
+            }
+        }
+        impl reg::Cr3WCf for $uart::cr3::CR3rs {
+            impl_write! {
+                rtse -> usart1::cr3::RTSE_W<Self>;
+                ctse -> usart1::cr3::CTSE_W<Self>;
+                ctsie -> usart1::cr3::CTSIE_W<Self>;
+            }
+        }
+    };
+}
 
 impl_ext!(usart1);
+impl_cf!(usart1);
 #[cfg(feature = "uart4")]
 impl_ext!(
     #[cfg(not(feature = "gpio-f446"))]
