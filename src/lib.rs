@@ -7,6 +7,8 @@
 
 use enumflags2::{BitFlag, BitFlags};
 
+pub mod pacext;
+
 pub use embedded_hal as hal;
 pub use embedded_hal_02 as hal_02;
 
