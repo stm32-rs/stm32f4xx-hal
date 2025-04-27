@@ -18,8 +18,7 @@ use core::fmt;
 use core::marker::PhantomData;
 use enumflags2::BitFlags;
 
-pub mod ext;
-use ext::UartExt;
+use crate::pacext::uart::UartRB;
 mod hal_02;
 mod hal_1;
 

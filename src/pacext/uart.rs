@@ -2,12 +2,12 @@
 
 use crate::{sealed, Sealed};
 
+use super::*;
 #[cfg(feature = "uart4")]
 use crate::pac::uart4;
 use crate::pac::usart1;
-use stm32f4::{Readable, Reg, RegisterSpec, Resettable, Writable, R, W};
 
-pub trait UartExt: Sealed {
+pub trait UartRB: Sealed {
     fn cr1(&self) -> &usart1::CR1;
     fn dr(&self) -> &usart1::DR;
     fn brr(&self) -> &usart1::BRR;
@@ -19,43 +19,6 @@ pub trait UartExt: Sealed {
     fn cr3(&self) -> &Reg<Self::CR3rs>;
     type GTPRrs: reg::GtprR + reg::GtprW;
     fn gtpr(&self) -> &Reg<Self::GTPRrs>;
-}
-
-macro_rules! wrap_r {
-    (pub trait $TrR:ident {
-        $(fn $f:ident(&self $(, $n:ident: u8)?) -> $fr:path;)*
-    }) => {
-        pub trait $TrR {
-            $(fn $f(&self $(, $n: u8)?) -> $fr;)*
-        }
-        impl<REG: reg::$TrR> $TrR for R<REG> {
-            $(
-                #[inline(always)]
-                fn $f(&self $(, $n: u8)?) -> $fr {
-                    REG::$f(self $(, $n)?)
-                }
-            )*
-        }
-    };
-}
-
-macro_rules! wrap_w {
-    (pub trait $TrR:ident {
-        $(fn $f:ident(&mut self $(, $n:ident: u8)?) -> $fr:path;)*
-    }) => {
-        pub trait $TrR<REG: reg::$TrR> {
-            $(fn $f(&mut self $(, $n: u8)?) -> $fr;)*
-        }
-
-        impl<REG: reg::$TrR> $TrR<REG> for W<REG> {
-            $(
-                #[inline(always)]
-                fn $f(&mut self $(, $n: u8)?) -> $fr {
-                    REG::$f(self $(, $n)?)
-                }
-            )*
-        }
-    };
 }
 
 wrap_r! {
@@ -190,42 +153,10 @@ mod reg {
     }
 }
 
-macro_rules! impl_reg {
-    ($($r:ident -> &$rty:path;)*) => {
-        $(
-            #[inline(always)]
-            fn $r(&self) -> &$rty {
-                self.$r()
-            }
-        )*
-    };
-}
-
-macro_rules! impl_read {
-    ($($f:ident $(: $n:ident)? -> $fty:path;)*) => {
-        $(
-            #[inline(always)]
-            fn $f(r: &R<Self> $(, $n: u8)?) -> $fty {
-                r.$f($($n)?)
-            }
-        )*
-    };
-}
-macro_rules! impl_write {
-    ($($f:ident $(: $n:ident)? -> $fty:path;)*) => {
-        $(
-            #[inline(always)]
-            fn $f(w: &mut W<Self> $(, $n: u8)?) -> $fty {
-                w.$f($($n)?)
-            }
-        )*
-    };
-}
-
 macro_rules! impl_ext {
     ($(#[$attr:meta])* $uart:ident) => {
         impl Sealed for $uart::RegisterBlock {}
-        impl UartExt for $uart::RegisterBlock {
+        impl UartRB for $uart::RegisterBlock {
             type SRrs = $uart::sr::SRrs;
             type CR2rs = $uart::cr2::CR2rs;
             type CR3rs = $uart::cr3::CR3rs;

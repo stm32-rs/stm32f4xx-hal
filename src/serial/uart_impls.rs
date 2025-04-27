@@ -1,7 +1,9 @@
-use super::{config, config::IrdaMode, ext::*, CFlag, Error, Event, Flag};
+use crate::pacext::uart::{Cr3W, SrR, UartRB};
+
+use super::{config, config::IrdaMode, CFlag, Error, Event, Flag};
 use enumflags2::BitFlags;
 
-pub trait RegisterBlockImpl: UartExt {
+pub trait RegisterBlockImpl: UartRB {
     const IRDA: bool;
     fn configure_irda(&self, irda: IrdaMode, pclk_freq: u32);
     fn set_stopbits(&self, bits: config::StopBits);
