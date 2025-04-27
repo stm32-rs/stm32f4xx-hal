@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Use `write` instead of `modify` to clear flags
 - Bump `stm32f4-staging` to 0.18, update other dependencies
 - `serial` mod refactor
+ - Fefactor FMPI2c `embedded-hal` implementations [#784]
+
+[#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
 
 ## [v0.22.1] - 2024-11-03
 
