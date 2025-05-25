@@ -5,7 +5,7 @@ macro_rules! bus_enable {
     ($PER:ident => $bit:literal) => {
         impl Enable for crate::pac::$PER {
             #[inline(always)]
-            fn enable(rcc: &RccRB) {
+            fn enable(rcc: &mut RCC) {
                 unsafe {
                     bb::set(Self::Bus::enr(rcc), $bit);
                 }
@@ -13,7 +13,7 @@ macro_rules! bus_enable {
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
-            fn disable(rcc: &RccRB) {
+            fn disable(rcc: &mut RCC) {
                 unsafe {
                     bb::clear(Self::Bus::enr(rcc), $bit);
                 }
@@ -30,7 +30,7 @@ macro_rules! bus_lpenable {
     ($PER:ident => $bit:literal) => {
         impl LPEnable for crate::pac::$PER {
             #[inline(always)]
-            fn enable_in_low_power(rcc: &RccRB) {
+            fn enable_in_low_power(rcc: &mut RCC) {
                 unsafe {
                     bb::set(Self::Bus::lpenr(rcc), $bit);
                 }
@@ -38,7 +38,7 @@ macro_rules! bus_lpenable {
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
-            fn disable_in_low_power(rcc: &RccRB) {
+            fn disable_in_low_power(rcc: &mut RCC) {
                 unsafe {
                     bb::clear(Self::Bus::lpenr(rcc), $bit);
                 }
@@ -55,7 +55,7 @@ macro_rules! bus_reset {
     ($PER:ident => $bit:literal) => {
         impl Reset for crate::pac::$PER {
             #[inline(always)]
-            fn reset(rcc: &RccRB) {
+            fn reset(rcc: &mut RCC) {
                 unsafe {
                     bb::set(Self::Bus::rstr(rcc), $bit);
                     bb::clear(Self::Bus::rstr(rcc), $bit);

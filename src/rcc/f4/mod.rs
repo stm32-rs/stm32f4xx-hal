@@ -15,10 +15,10 @@ use crate::pac::rcc::RegisterBlock as RccRB;
 #[allow(clippy::missing_safety_doc)]
 pub trait Enable: RccBus {
     /// Enables peripheral
-    fn enable(rcc: &RccRB);
+    fn enable(rcc: &mut RCC);
 
     /// Disables peripheral
-    fn disable(rcc: &RccRB);
+    fn disable(rcc: &mut RCC);
 
     /// Check if peripheral enabled
     fn is_enabled() -> bool;
@@ -33,16 +33,16 @@ pub trait Enable: RccBus {
     ///
     /// Enables peripheral. Takes access to RCC internally
     unsafe fn enable_unchecked() {
-        let rcc = &*pac::RCC::ptr();
-        Self::enable(rcc);
+        let mut rcc = pac::RCC::steal();
+        Self::enable(&mut rcc);
     }
 
     /// # Safety
     ///
     /// Disables peripheral. Takes access to RCC internally
     unsafe fn disable_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::disable(&*rcc);
+        let mut rcc = pac::RCC::steal();
+        Self::disable(&mut rcc);
     }
 }
 
@@ -50,10 +50,10 @@ pub trait Enable: RccBus {
 #[allow(clippy::missing_safety_doc)]
 pub trait LPEnable: RccBus {
     /// Enables peripheral in low power mode
-    fn enable_in_low_power(rcc: &RccRB);
+    fn enable_in_low_power(rcc: &mut RCC);
 
     /// Disables peripheral in low power mode
-    fn disable_in_low_power(rcc: &RccRB);
+    fn disable_in_low_power(rcc: &mut RCC);
 
     /// Check if peripheral enabled in low power mode
     fn is_enabled_in_low_power() -> bool;
@@ -68,16 +68,16 @@ pub trait LPEnable: RccBus {
     ///
     /// Enables peripheral in low power mode. Takes access to RCC internally
     unsafe fn enable_in_low_power_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::enable_in_low_power(&*rcc);
+        let mut rcc = pac::RCC::steal();
+        Self::enable_in_low_power(&mut rcc);
     }
 
     /// # Safety
     ///
     /// Disables peripheral in low power mode. Takes access to RCC internally
     unsafe fn disable_in_low_power_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::disable_in_low_power(&*rcc);
+        let mut rcc = pac::RCC::steal();
+        Self::disable_in_low_power(&mut rcc);
     }
 }
 
@@ -85,14 +85,14 @@ pub trait LPEnable: RccBus {
 #[allow(clippy::missing_safety_doc)]
 pub trait Reset: RccBus {
     /// Resets peripheral
-    fn reset(rcc: &RccRB);
+    fn reset(rcc: &mut RCC);
 
     /// # Safety
     ///
     /// Resets peripheral. Takes access to RCC internally
     unsafe fn reset_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::reset(&*rcc);
+        let mut rcc = pac::RCC::steal();
+        Self::reset(&mut rcc);
     }
 }
 
