@@ -42,7 +42,35 @@
 mod f4;
 pub use f4::*;
 
+use crate::pac::rcc::{self, RegisterBlock as RccRB};
+use crate::pac::RCC;
+use core::ops::{Deref, DerefMut};
 use fugit::HertzU32 as Hertz;
+
+/// Constrained RCC peripheral
+pub struct Rcc {
+    pub cfgr: CFGR,
+    pub(crate) rb: RCC,
+}
+
+impl Deref for Rcc {
+    type Target = RCC;
+    fn deref(&self) -> &Self::Target {
+        &self.rb
+    }
+}
+
+impl DerefMut for Rcc {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.rb
+    }
+}
+
+/// Extension trait that constrains the `RCC` peripheral
+pub trait RccExt {
+    /// Constrains the `RCC` peripheral so it plays nicely with the other abstractions
+    fn constrain(self) -> Rcc;
+}
 
 /// Bus associated to peripheral
 pub trait RccBus: crate::Sealed {
@@ -79,5 +107,170 @@ where
 {
     fn timer_clock(clocks: &Clocks) -> Hertz {
         T::Bus::timer_clock(clocks)
+    }
+}
+
+/// Enable/disable peripheral
+pub trait Enable: RccBus {
+    /// Enables peripheral
+    fn enable(rcc: &mut RCC);
+
+    /// Disables peripheral
+    fn disable(rcc: &mut RCC);
+
+    /// Check if peripheral enabled
+    fn is_enabled() -> bool;
+
+    /// Check if peripheral disabled
+    #[inline]
+    fn is_disabled() -> bool {
+        !Self::is_enabled()
+    }
+
+    /// # Safety
+    ///
+    /// Enables peripheral. Takes access to RCC internally
+    unsafe fn enable_unchecked() {
+        let mut rcc = RCC::steal();
+        Self::enable(&mut rcc);
+    }
+
+    /// # Safety
+    ///
+    /// Disables peripheral. Takes access to RCC internally
+    unsafe fn disable_unchecked() {
+        let mut rcc = RCC::steal();
+        Self::disable(&mut rcc);
+    }
+}
+
+/// Low power enable/disable peripheral
+pub trait LPEnable: RccBus {
+    /// Enables peripheral in low power mode
+    fn enable_in_low_power(rcc: &mut RCC);
+
+    /// Disables peripheral in low power mode
+    fn disable_in_low_power(rcc: &mut RCC);
+
+    /// Check if peripheral enabled in low power mode
+    fn is_enabled_in_low_power() -> bool;
+
+    /// Check if peripheral disabled in low power mode
+    #[inline]
+    fn is_disabled_in_low_power() -> bool {
+        !Self::is_enabled_in_low_power()
+    }
+
+    /// # Safety
+    ///
+    /// Enables peripheral in low power mode. Takes access to RCC internally
+    unsafe fn enable_in_low_power_unchecked() {
+        let mut rcc = RCC::steal();
+        Self::enable_in_low_power(&mut rcc);
+    }
+
+    /// # Safety
+    ///
+    /// Disables peripheral in low power mode. Takes access to RCC internally
+    unsafe fn disable_in_low_power_unchecked() {
+        let mut rcc = RCC::steal();
+        Self::disable_in_low_power(&mut rcc);
+    }
+}
+
+/// Reset peripheral
+pub trait Reset: RccBus {
+    /// Resets peripheral
+    fn reset(rcc: &mut RCC);
+
+    /// # Safety
+    ///
+    /// Resets peripheral. Takes access to RCC internally
+    unsafe fn reset_unchecked() {
+        let mut rcc = RCC::steal();
+        Self::reset(&mut rcc);
+    }
+}
+
+macro_rules! bus_struct {
+    ($($busX:ident => ($EN:ident, $en:ident, $LPEN:ident, $lpen:ident, $RST:ident, $rst:ident, $doc:literal),)+) => {
+        $(
+            #[doc = $doc]
+            #[non_exhaustive]
+            pub struct $busX;
+
+            impl $busX {
+                pub(crate) fn enr(rcc: &RccRB) -> &rcc::$EN {
+                    rcc.$en()
+                }
+
+                pub(crate) fn lpenr(rcc: &RccRB) -> &rcc::$LPEN {
+                    rcc.$lpen()
+                }
+
+                pub(crate) fn rstr(rcc: &RccRB) -> &rcc::$RST {
+                    rcc.$rst()
+                }
+            }
+        )+
+    };
+}
+use bus_struct;
+
+bus_struct! {
+    APB1 => (APB1ENR, apb1enr, APB1LPENR, apb1lpenr, APB1RSTR, apb1rstr, "Advanced Peripheral Bus 1 (APB1) registers"),
+    APB2 => (APB2ENR, apb2enr, APB2LPENR, apb2lpenr, APB2RSTR, apb2rstr, "Advanced Peripheral Bus 2 (APB2) registers"),
+    AHB1 => (AHB1ENR, ahb1enr, AHB1LPENR, ahb1lpenr, AHB1RSTR, ahb1rstr, "Advanced High-performance Bus 1 (AHB1) registers"),
+}
+#[cfg(not(feature = "gpio-f410"))]
+bus_struct! {
+    AHB2 => (AHB2ENR, ahb2enr, AHB2LPENR, ahb2lpenr, AHB2RSTR, ahb2rstr, "Advanced High-performance Bus 2 (AHB2) registers"),
+}
+#[cfg(any(feature = "fsmc", feature = "fmc"))]
+bus_struct! {
+    AHB3 => (AHB3ENR, ahb3enr, AHB3LPENR, ahb3lpenr, AHB3RSTR, ahb3rstr, "Advanced High-performance Bus 3 (AHB3) registers"),
+}
+
+impl BusClock for AHB1 {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+#[cfg(not(feature = "gpio-f410"))]
+impl BusClock for AHB2 {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+#[cfg(any(feature = "fsmc", feature = "fmc"))]
+impl BusClock for AHB3 {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+impl BusClock for APB1 {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.pclk1
+    }
+}
+
+impl BusClock for APB2 {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.pclk2
+    }
+}
+
+impl BusTimerClock for APB1 {
+    fn timer_clock(clocks: &Clocks) -> Hertz {
+        clocks.timclk1
+    }
+}
+
+impl BusTimerClock for APB2 {
+    fn timer_clock(clocks: &Clocks) -> Hertz {
+        clocks.timclk2
     }
 }

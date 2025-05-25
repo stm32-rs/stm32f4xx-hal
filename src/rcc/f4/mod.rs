@@ -1,7 +1,7 @@
 use crate::pac::rcc::cfgr::{HPRE, SW};
-use crate::pac::{self, rcc, RCC};
+use crate::pac::RCC;
 
-use super::{BusClock, BusTimerClock, RccBus};
+use super::*;
 
 use fugit::HertzU32 as Hertz;
 use fugit::RateExtU32;
@@ -9,204 +9,11 @@ use fugit::RateExtU32;
 mod pll;
 
 mod enable;
-use crate::pac::rcc::RegisterBlock as RccRB;
-
-/// Enable/disable peripheral
-#[allow(clippy::missing_safety_doc)]
-pub trait Enable: RccBus {
-    /// Enables peripheral
-    fn enable(rcc: &RccRB);
-
-    /// Disables peripheral
-    fn disable(rcc: &RccRB);
-
-    /// Check if peripheral enabled
-    fn is_enabled() -> bool;
-
-    /// Check if peripheral disabled
-    #[inline]
-    fn is_disabled() -> bool {
-        !Self::is_enabled()
-    }
-
-    /// # Safety
-    ///
-    /// Enables peripheral. Takes access to RCC internally
-    unsafe fn enable_unchecked() {
-        let rcc = &*pac::RCC::ptr();
-        Self::enable(rcc);
-    }
-
-    /// # Safety
-    ///
-    /// Disables peripheral. Takes access to RCC internally
-    unsafe fn disable_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::disable(&*rcc);
-    }
-}
-
-/// Low power enable/disable peripheral
-#[allow(clippy::missing_safety_doc)]
-pub trait LPEnable: RccBus {
-    /// Enables peripheral in low power mode
-    fn enable_in_low_power(rcc: &RccRB);
-
-    /// Disables peripheral in low power mode
-    fn disable_in_low_power(rcc: &RccRB);
-
-    /// Check if peripheral enabled in low power mode
-    fn is_enabled_in_low_power() -> bool;
-
-    /// Check if peripheral disabled in low power mode
-    #[inline]
-    fn is_disabled_in_low_power() -> bool {
-        !Self::is_enabled_in_low_power()
-    }
-
-    /// # Safety
-    ///
-    /// Enables peripheral in low power mode. Takes access to RCC internally
-    unsafe fn enable_in_low_power_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::enable_in_low_power(&*rcc);
-    }
-
-    /// # Safety
-    ///
-    /// Disables peripheral in low power mode. Takes access to RCC internally
-    unsafe fn disable_in_low_power_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::disable_in_low_power(&*rcc);
-    }
-}
-
-/// Reset peripheral
-#[allow(clippy::missing_safety_doc)]
-pub trait Reset: RccBus {
-    /// Resets peripheral
-    fn reset(rcc: &RccRB);
-
-    /// # Safety
-    ///
-    /// Resets peripheral. Takes access to RCC internally
-    unsafe fn reset_unchecked() {
-        let rcc = pac::RCC::ptr();
-        Self::reset(&*rcc);
-    }
-}
-
-/// Extension trait that constrains the `RCC` peripheral
-pub trait RccExt {
-    /// Constrains the `RCC` peripheral so it plays nicely with the other abstractions
-    fn constrain(self) -> Rcc;
-}
-
-macro_rules! bus_struct {
-    ($( $(#[$attr:meta])* $busX:ident => ($EN:ident, $en:ident, $LPEN:ident, $lpen:ident, $RST:ident, $rst:ident, $doc:literal),)+) => {
-        $(
-            $(#[$attr])*
-            #[doc = $doc]
-            #[non_exhaustive]
-            pub struct $busX;
-
-            $(#[$attr])*
-            impl $busX {
-                pub(crate) fn enr(rcc: &RccRB) -> &rcc::$EN {
-                    rcc.$en()
-                }
-
-                pub(crate) fn lpenr(rcc: &RccRB) -> &rcc::$LPEN {
-                    rcc.$lpen()
-                }
-
-                pub(crate) fn rstr(rcc: &RccRB) -> &rcc::$RST {
-                    rcc.$rst()
-                }
-            }
-        )+
-    };
-}
-
-bus_struct! {
-    APB1 => (APB1ENR, apb1enr, APB1LPENR, apb1lpenr, APB1RSTR, apb1rstr, "Advanced Peripheral Bus 1 (APB1) registers"),
-    APB2 => (APB2ENR, apb2enr, APB2LPENR, apb2lpenr, APB2RSTR, apb2rstr, "Advanced Peripheral Bus 2 (APB2) registers"),
-    AHB1 => (AHB1ENR, ahb1enr, AHB1LPENR, ahb1lpenr, AHB1RSTR, ahb1rstr, "Advanced High-performance Bus 1 (AHB1) registers"),
-    #[cfg(not(feature = "gpio-f410"))]
-    AHB2 => (AHB2ENR, ahb2enr, AHB2LPENR, ahb2lpenr, AHB2RSTR, ahb2rstr, "Advanced High-performance Bus 2 (AHB2) registers"),
-    //#[cfg(any(feature = "fsmc", feature = "fmc"))]
-    //AHB3 => (AHB3ENR, ahb3enr, AHB3LPENR, ahb3lpenr, AHB3RSTR, ahb3rstr, "Advanced High-performance Bus 3 (AHB3) registers"),
-}
-
-/// AMBA High-performance Bus 3 (AHB3) registers
-#[cfg(any(feature = "fsmc", feature = "fmc"))]
-#[non_exhaustive]
-pub struct AHB3;
-
-#[cfg(any(feature = "fsmc", feature = "fmc"))]
-impl AHB3 {
-    #[inline(always)]
-    fn enr(rcc: &RccRB) -> &rcc::AHB3ENR {
-        rcc.ahb3enr()
-    }
-    #[cfg(feature = "fmc")]
-    #[inline(always)]
-    fn lpenr(rcc: &RccRB) -> &rcc::AHB3LPENR {
-        rcc.ahb3lpenr()
-    }
-    #[inline(always)]
-    fn rstr(rcc: &RccRB) -> &rcc::AHB3RSTR {
-        rcc.ahb3rstr()
-    }
-}
-
-impl BusClock for AHB1 {
-    fn clock(clocks: &Clocks) -> Hertz {
-        clocks.hclk
-    }
-}
-
-#[cfg(not(feature = "gpio-f410"))]
-impl BusClock for AHB2 {
-    fn clock(clocks: &Clocks) -> Hertz {
-        clocks.hclk
-    }
-}
-
-#[cfg(any(feature = "fsmc", feature = "fmc"))]
-impl BusClock for AHB3 {
-    fn clock(clocks: &Clocks) -> Hertz {
-        clocks.hclk
-    }
-}
-
-impl BusClock for APB1 {
-    fn clock(clocks: &Clocks) -> Hertz {
-        clocks.pclk1
-    }
-}
-
-impl BusClock for APB2 {
-    fn clock(clocks: &Clocks) -> Hertz {
-        clocks.pclk2
-    }
-}
-
-impl BusTimerClock for APB1 {
-    fn timer_clock(clocks: &Clocks) -> Hertz {
-        clocks.timclk1
-    }
-}
-
-impl BusTimerClock for APB2 {
-    fn timer_clock(clocks: &Clocks) -> Hertz {
-        clocks.timclk2
-    }
-}
 
 impl RccExt for RCC {
     fn constrain(self) -> Rcc {
         Rcc {
+            rb: self,
             cfgr: CFGR {
                 hse: None,
                 hse_bypass: false,
@@ -231,11 +38,6 @@ impl RccExt for RCC {
             },
         }
     }
-}
-
-/// Constrained RCC peripheral
-pub struct Rcc {
-    pub cfgr: CFGR,
 }
 
 /// Built-in high speed clock frequency
@@ -917,31 +719,31 @@ impl RealSaiClocks {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Clocks {
-    hclk: Hertz,
-    pclk1: Hertz,
-    pclk2: Hertz,
-    timclk1: Hertz,
-    timclk2: Hertz,
-    sysclk: Hertz,
-    pll48clk: Option<Hertz>,
+    pub(super) hclk: Hertz,
+    pub(super) pclk1: Hertz,
+    pub(super) pclk2: Hertz,
+    pub(super) timclk1: Hertz,
+    pub(super) timclk2: Hertz,
+    pub(super) sysclk: Hertz,
+    pub(super) pll48clk: Option<Hertz>,
 
     #[cfg(not(feature = "rcc_i2s_apb"))]
-    i2s_clk: Option<Hertz>,
+    pub(super) i2s_clk: Option<Hertz>,
     #[cfg(feature = "rcc_i2s_apb")]
-    i2s_apb1_clk: Option<Hertz>,
+    pub(super) i2s_apb1_clk: Option<Hertz>,
     #[cfg(feature = "rcc_i2s_apb")]
-    i2s_apb2_clk: Option<Hertz>,
+    pub(super) i2s_apb2_clk: Option<Hertz>,
 
     #[cfg(feature = "sai")]
     #[cfg(not(feature = "sai2"))]
-    saia_clk: Option<Hertz>,
+    pub(super) saia_clk: Option<Hertz>,
     #[cfg(feature = "sai")]
     #[cfg(not(feature = "sai2"))]
-    saib_clk: Option<Hertz>,
+    pub(super) saib_clk: Option<Hertz>,
     #[cfg(feature = "sai2")]
-    sai1_clk: Option<Hertz>,
+    pub(super) sai1_clk: Option<Hertz>,
     #[cfg(feature = "sai2")]
-    sai2_clk: Option<Hertz>,
+    pub(super) sai2_clk: Option<Hertz>,
 }
 
 impl Clocks {
