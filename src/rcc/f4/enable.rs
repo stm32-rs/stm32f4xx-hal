@@ -5,7 +5,7 @@ macro_rules! bus_enable {
     ($PER:ident => $bit:literal) => {
         impl Enable for crate::pac::$PER {
             #[inline(always)]
-            fn enable(rcc: &RccRB) {
+            fn enable(rcc: &mut RCC) {
                 unsafe {
                     bb::set(Self::Bus::enr(rcc), $bit);
                 }
@@ -13,14 +13,14 @@ macro_rules! bus_enable {
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
-            fn disable(rcc: &RccRB) {
+            fn disable(rcc: &mut RCC) {
                 unsafe {
                     bb::clear(Self::Bus::enr(rcc), $bit);
                 }
             }
             #[inline(always)]
             fn is_enabled() -> bool {
-                let rcc = pac::RCC::ptr();
+                let rcc = RCC::ptr();
                 (Self::Bus::enr(unsafe { &*rcc }).read().bits() >> $bit) & 0x1 != 0
             }
         }
@@ -30,7 +30,7 @@ macro_rules! bus_lpenable {
     ($PER:ident => $bit:literal) => {
         impl LPEnable for crate::pac::$PER {
             #[inline(always)]
-            fn enable_in_low_power(rcc: &RccRB) {
+            fn enable_in_low_power(rcc: &mut RCC) {
                 unsafe {
                     bb::set(Self::Bus::lpenr(rcc), $bit);
                 }
@@ -38,14 +38,14 @@ macro_rules! bus_lpenable {
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
-            fn disable_in_low_power(rcc: &RccRB) {
+            fn disable_in_low_power(rcc: &mut RCC) {
                 unsafe {
                     bb::clear(Self::Bus::lpenr(rcc), $bit);
                 }
             }
             #[inline(always)]
             fn is_enabled_in_low_power() -> bool {
-                let rcc = pac::RCC::ptr();
+                let rcc = RCC::ptr();
                 (Self::Bus::lpenr(unsafe { &*rcc }).read().bits() >> $bit) & 0x1 != 0
             }
         }
@@ -55,10 +55,11 @@ macro_rules! bus_reset {
     ($PER:ident => $bit:literal) => {
         impl Reset for crate::pac::$PER {
             #[inline(always)]
-            fn reset(rcc: &RccRB) {
+            fn reset(rcc: &mut RCC) {
+                let rstr = Self::Bus::rstr(rcc);
                 unsafe {
-                    bb::set(Self::Bus::rstr(rcc), $bit);
-                    bb::clear(Self::Bus::rstr(rcc), $bit);
+                    bb::set(rstr, $bit);
+                    bb::clear(rstr, $bit);
                 }
             }
         }

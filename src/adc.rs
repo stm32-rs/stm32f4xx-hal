@@ -532,16 +532,15 @@ impl<ADC: Instance> Adc<ADC> {
 
         //Set the sample time for the channel
         let st = sample_time as u8;
-        let ch = channel as u8;
         match channel {
             0..=9 => self
                 .adc_reg
                 .smpr2()
-                .modify(|_, w| unsafe { w.smp(ch).bits(st) }),
+                .modify(|_, w| unsafe { w.smp(channel).bits(st) }),
             10..=18 => self
                 .adc_reg
                 .smpr1()
-                .modify(|_, w| unsafe { w.smp(ch - 10).bits(st) }),
+                .modify(|_, w| unsafe { w.smp(channel - 10).bits(st) }),
             _ => unimplemented!(),
         };
     }
