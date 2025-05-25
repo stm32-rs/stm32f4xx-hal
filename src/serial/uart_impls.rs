@@ -126,8 +126,7 @@ pub trait RegisterBlockImpl: UartRB {
     }
     #[inline(always)]
     fn clear_flags(&self, flags: BitFlags<CFlag>) {
-        self.sr()
-            .write(|w| unsafe { w.bits(0xffff & !flags.bits()) });
+        self.sr().write(|w| unsafe { w.bits(!flags.bits()) });
     }
     fn clear_idle_interrupt(&self) {
         let _ = self.sr().read();

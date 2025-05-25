@@ -1,6 +1,6 @@
 use crate::pac::rcc::cfgr::{HPRE, SW};
 use crate::pac::rcc::RegisterBlock as RccRB;
-use crate::pac::{self, rcc, RCC};
+use crate::pac::{rcc, RCC};
 
 use super::{BusClock, BusTimerClock, RccBus};
 
