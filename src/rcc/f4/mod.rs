@@ -1,4 +1,5 @@
 use crate::pac::rcc::cfgr::{HPRE, SW};
+use crate::pac::rcc::RegisterBlock as RccRB;
 use crate::pac::{self, rcc, RCC};
 
 use super::{BusClock, BusTimerClock, RccBus};
@@ -9,10 +10,8 @@ use fugit::RateExtU32;
 mod pll;
 
 mod enable;
-use crate::pac::rcc::RegisterBlock as RccRB;
 
 /// Enable/disable peripheral
-#[allow(clippy::missing_safety_doc)]
 pub trait Enable: RccBus {
     /// Enables peripheral
     fn enable(rcc: &mut RCC);
@@ -33,7 +32,7 @@ pub trait Enable: RccBus {
     ///
     /// Enables peripheral. Takes access to RCC internally
     unsafe fn enable_unchecked() {
-        let mut rcc = pac::RCC::steal();
+        let mut rcc = RCC::steal();
         Self::enable(&mut rcc);
     }
 
@@ -41,13 +40,12 @@ pub trait Enable: RccBus {
     ///
     /// Disables peripheral. Takes access to RCC internally
     unsafe fn disable_unchecked() {
-        let mut rcc = pac::RCC::steal();
+        let mut rcc = RCC::steal();
         Self::disable(&mut rcc);
     }
 }
 
 /// Low power enable/disable peripheral
-#[allow(clippy::missing_safety_doc)]
 pub trait LPEnable: RccBus {
     /// Enables peripheral in low power mode
     fn enable_in_low_power(rcc: &mut RCC);
@@ -68,7 +66,7 @@ pub trait LPEnable: RccBus {
     ///
     /// Enables peripheral in low power mode. Takes access to RCC internally
     unsafe fn enable_in_low_power_unchecked() {
-        let mut rcc = pac::RCC::steal();
+        let mut rcc = RCC::steal();
         Self::enable_in_low_power(&mut rcc);
     }
 
@@ -76,13 +74,12 @@ pub trait LPEnable: RccBus {
     ///
     /// Disables peripheral in low power mode. Takes access to RCC internally
     unsafe fn disable_in_low_power_unchecked() {
-        let mut rcc = pac::RCC::steal();
+        let mut rcc = RCC::steal();
         Self::disable_in_low_power(&mut rcc);
     }
 }
 
 /// Reset peripheral
-#[allow(clippy::missing_safety_doc)]
 pub trait Reset: RccBus {
     /// Resets peripheral
     fn reset(rcc: &mut RCC);
@@ -91,7 +88,7 @@ pub trait Reset: RccBus {
     ///
     /// Resets peripheral. Takes access to RCC internally
     unsafe fn reset_unchecked() {
-        let mut rcc = pac::RCC::steal();
+        let mut rcc = RCC::steal();
         Self::reset(&mut rcc);
     }
 }
@@ -103,14 +100,12 @@ pub trait RccExt {
 }
 
 macro_rules! bus_struct {
-    ($( $(#[$attr:meta])* $busX:ident => ($EN:ident, $en:ident, $LPEN:ident, $lpen:ident, $RST:ident, $rst:ident, $doc:literal),)+) => {
+    ($($busX:ident => ($EN:ident, $en:ident, $LPEN:ident, $lpen:ident, $RST:ident, $rst:ident, $doc:literal),)+) => {
         $(
-            $(#[$attr])*
             #[doc = $doc]
             #[non_exhaustive]
             pub struct $busX;
 
-            $(#[$attr])*
             impl $busX {
                 pub(crate) fn enr(rcc: &RccRB) -> &rcc::$EN {
                     rcc.$en()
@@ -132,10 +127,12 @@ bus_struct! {
     APB1 => (APB1ENR, apb1enr, APB1LPENR, apb1lpenr, APB1RSTR, apb1rstr, "Advanced Peripheral Bus 1 (APB1) registers"),
     APB2 => (APB2ENR, apb2enr, APB2LPENR, apb2lpenr, APB2RSTR, apb2rstr, "Advanced Peripheral Bus 2 (APB2) registers"),
     AHB1 => (AHB1ENR, ahb1enr, AHB1LPENR, ahb1lpenr, AHB1RSTR, ahb1rstr, "Advanced High-performance Bus 1 (AHB1) registers"),
-    #[cfg(not(feature = "gpio-f410"))]
-    AHB2 => (AHB2ENR, ahb2enr, AHB2LPENR, ahb2lpenr, AHB2RSTR, ahb2rstr, "Advanced High-performance Bus 2 (AHB2) registers"),
     //#[cfg(any(feature = "fsmc", feature = "fmc"))]
     //AHB3 => (AHB3ENR, ahb3enr, AHB3LPENR, ahb3lpenr, AHB3RSTR, ahb3rstr, "Advanced High-performance Bus 3 (AHB3) registers"),
+}
+#[cfg(not(feature = "gpio-f410"))]
+bus_struct! {
+    AHB2 => (AHB2ENR, ahb2enr, AHB2LPENR, ahb2lpenr, AHB2RSTR, ahb2rstr, "Advanced High-performance Bus 2 (AHB2) registers"),
 }
 
 /// AMBA High-performance Bus 3 (AHB3) registers
