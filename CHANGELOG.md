@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Back to `stm32f4`
  - Implement `Ptr`, `Sealed`, `Steal` for generic `Periph` [#834]
  - Unmacro `Adc` [#832]
  - Use `write` instead of `modify` to clear flags [#829]
