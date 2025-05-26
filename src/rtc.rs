@@ -4,7 +4,7 @@
 
 use crate::bb;
 use crate::pac::rtc::{dr, tr};
-use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
+use crate::pac::{self, PWR, RCC, RTC};
 use crate::rcc::Enable;
 use core::fmt;
 use fugit::RateExtU32;
@@ -152,14 +152,14 @@ impl Rtc {
         // Enable write protect
 
         unsafe {
-            let rcc = &(*RCC::ptr());
+            let mut rcc = RCC::steal();
             // As per the sample code, unlock comes first. (Enable PWR and DBP)
-            result.unlock(rcc, pwr);
+            result.unlock(&mut rcc, pwr);
             match result.clock_source {
                 ClockSource::Lse(mode) => {
                     // If necessary, enable the LSE.
                     if rcc.bdcr().read().lserdy().bit_is_clear() {
-                        result.enable_lse(rcc, mode);
+                        result.enable_lse(&mut rcc, mode);
                     }
                     // Set clock source to LSE.
                     rcc.bdcr().modify(|_, w| w.rtcsel().lse());
@@ -167,13 +167,13 @@ impl Rtc {
                 ClockSource::Lsi => {
                     // If necessary, enable the LSE.
                     if rcc.csr().read().lsirdy().bit_is_clear() {
-                        result.enable_lsi(rcc);
+                        result.enable_lsi(&mut rcc);
                     }
                     // Set clock source to LSI.
                     rcc.bdcr().modify(|_, w| w.rtcsel().lsi());
                 }
             }
-            result.enable(rcc);
+            result.enable(&mut rcc);
         }
 
         result.modify(true, |regs| {
@@ -191,7 +191,7 @@ impl Rtc {
 
     /// Enable the low frequency external oscillator. This is the only mode currently
     /// supported, to avoid exposing the `CR` and `CRS` registers.
-    fn enable_lse(&mut self, rcc: &RegisterBlock, mode: LSEClockMode) {
+    fn enable_lse(&mut self, rcc: &mut RCC, mode: LSEClockMode) {
         unsafe {
             // Force a reset of the backup domain.
             self.backup_reset(rcc);
@@ -221,7 +221,7 @@ impl Rtc {
         Self::with_config(regs, pwr, ClockSource::Lsi, prediv_s, prediv_a)
     }
 
-    fn enable_lsi(&mut self, rcc: &RegisterBlock) {
+    fn enable_lsi(&mut self, rcc: &mut RCC) {
         // Force a reset of the backup domain.
         self.backup_reset(rcc);
         // Enable the LSI.
@@ -229,16 +229,20 @@ impl Rtc {
         while rcc.csr().read().lsirdy().is_not_ready() {}
     }
 
-    fn unlock(&mut self, rcc: &RegisterBlock, pwr: &mut PWR) {
+    fn unlock(&mut self, rcc: &mut RCC, pwr: &mut PWR) {
         // Enable the backup interface
         // Set APB1 - Bit 28 (PWREN)
         PWR::enable(rcc);
 
         // Enable access to the backup registers
-        pwr.cr().modify(|_, w| w.dbp().set_bit());
+        #[cfg(feature = "f4")]
+        let cr1 = pwr.cr();
+        #[cfg(feature = "f7")]
+        let cr1 = pwr.cr1();
+        cr1.modify(|_, w| w.dbp().set_bit());
     }
 
-    fn backup_reset(&mut self, rcc: &RegisterBlock) {
+    fn backup_reset(&mut self, rcc: &mut RCC) {
         unsafe {
             // Set BDCR - Bit 16 (BDRST)
             bb::set(rcc.bdcr(), 16);
@@ -247,7 +251,7 @@ impl Rtc {
         }
     }
 
-    fn enable(&mut self, rcc: &RegisterBlock) {
+    fn enable(&mut self, rcc: &mut RCC) {
         // Start the actual RTC.
         // Set BDCR - Bit 15 (RTCEN)
         unsafe {
@@ -680,22 +684,34 @@ impl Rtc {
         self.modify(false, |regs| match event {
             Event::AlarmA => {
                 exti.rtsr().modify(|_, w| w.tr17().enabled());
+                #[cfg(not(feature = "gpio-f72x"))]
                 exti.imr().modify(|_, w| w.mr17().set_bit());
+                #[cfg(feature = "gpio-f72x")]
+                exti.imr().modify(|_, w| w.im17().set_bit());
                 regs.cr().modify(|_, w| w.alraie().set_bit());
             }
             Event::AlarmB => {
                 exti.rtsr().modify(|_, w| w.tr17().enabled());
+                #[cfg(not(feature = "gpio-f72x"))]
                 exti.imr().modify(|_, w| w.mr17().set_bit());
+                #[cfg(feature = "gpio-f72x")]
+                exti.imr().modify(|_, w| w.im17().set_bit());
                 regs.cr().modify(|_, w| w.alrbie().set_bit());
             }
             Event::Wakeup => {
                 exti.rtsr().modify(|_, w| w.tr22().enabled());
+                #[cfg(not(feature = "gpio-f72x"))]
                 exti.imr().modify(|_, w| w.mr22().set_bit());
+                #[cfg(feature = "gpio-f72x")]
+                exti.imr().modify(|_, w| w.im22().set_bit());
                 regs.cr().modify(|_, w| w.wutie().set_bit());
             }
             Event::Timestamp => {
                 exti.rtsr().modify(|_, w| w.tr21().enabled());
+                #[cfg(not(feature = "gpio-f72x"))]
                 exti.imr().modify(|_, w| w.mr21().set_bit());
+                #[cfg(feature = "gpio-f72x")]
+                exti.imr().modify(|_, w| w.im21().set_bit());
                 regs.cr().modify(|_, w| w.tsie().set_bit());
             }
         });
@@ -707,22 +723,34 @@ impl Rtc {
         self.modify(false, |regs| match event {
             Event::AlarmA => {
                 regs.cr().modify(|_, w| w.alraie().clear_bit());
+                #[cfg(not(feature = "gpio-f72x"))]
                 exti.imr().modify(|_, w| w.mr17().clear_bit());
+                #[cfg(feature = "gpio-f72x")]
+                exti.imr().modify(|_, w| w.im17().clear_bit());
                 exti.rtsr().modify(|_, w| w.tr17().disabled());
             }
             Event::AlarmB => {
                 regs.cr().modify(|_, w| w.alrbie().clear_bit());
+                #[cfg(not(feature = "gpio-f72x"))]
                 exti.imr().modify(|_, w| w.mr17().clear_bit());
+                #[cfg(feature = "gpio-f72x")]
+                exti.imr().modify(|_, w| w.im17().clear_bit());
                 exti.rtsr().modify(|_, w| w.tr17().disabled());
             }
             Event::Wakeup => {
                 regs.cr().modify(|_, w| w.wutie().clear_bit());
+                #[cfg(not(feature = "gpio-f72x"))]
                 exti.imr().modify(|_, w| w.mr22().clear_bit());
+                #[cfg(feature = "gpio-f72x")]
+                exti.imr().modify(|_, w| w.im22().clear_bit());
                 exti.rtsr().modify(|_, w| w.tr22().disabled());
             }
             Event::Timestamp => {
                 regs.cr().modify(|_, w| w.tsie().clear_bit());
+                #[cfg(not(feature = "gpio-f72x"))]
                 exti.imr().modify(|_, w| w.mr21().clear_bit());
+                #[cfg(feature = "gpio-f72x")]
+                exti.imr().modify(|_, w| w.im21().clear_bit());
                 exti.rtsr().modify(|_, w| w.tr21().disabled());
             }
         });
