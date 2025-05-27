@@ -104,6 +104,7 @@ pub const PCLK2_MAX: u32 = SYSCLK_MAX / 2;
 /// Maximum APB1 peripheral clock frequency
 pub const PCLK1_MAX: u32 = PCLK2_MAX / 2;
 
+#[derive(Clone, Copy, Debug)]
 pub struct CFGR {
     hse: Option<u32>,
     hse_bypass: bool,
