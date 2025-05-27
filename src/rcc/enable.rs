@@ -1,5 +1,19 @@
 use super::*;
 
+macro_rules! bus {
+    ($($PER:ident => ($busX:ty, $bit:literal, $($en:ident)?, $($lpen:ident)?, $($rst:ident)?),)+) => {
+        $(
+            impl RccBus for crate::pac::$PER {
+                type Bus = $busX;
+            }
+            $(bus_enable!($PER => $bit, $en);)?
+            $(bus_lpenable!($PER => $bit, $lpen);)?
+            $(bus_reset!($PER => $bit, $rst);)?
+        )+
+    }
+}
+use bus;
+
 macro_rules! bus_enable {
     ($PER:ident => $bit:literal, $en:ident) => {
         impl $crate::rcc::Enable for crate::pac::$PER {
