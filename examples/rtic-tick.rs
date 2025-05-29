@@ -11,7 +11,7 @@ mod app {
         gpio::{Output, PC13},
         pac,
         prelude::*,
-        rcc::CFGR,
+        rcc::Config,
         timer::MonoTimer64Us, // Extended 64-bit timer for 16/32-bit TIMs
     };
 
@@ -30,7 +30,7 @@ mod app {
 
     #[init]
     fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        let rcc = ctx.device.RCC.freeze(CFGR::DEFAULT.sysclk(48.MHz()));
+        let rcc = ctx.device.RCC.freeze(Config::DEFAULT.sysclk(48.MHz()));
 
         let gpioc = ctx.device.GPIOC.split();
         let led = gpioc.pc13.into_push_pull_output();

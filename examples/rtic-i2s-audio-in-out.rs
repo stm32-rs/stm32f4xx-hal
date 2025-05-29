@@ -86,7 +86,7 @@ mod app {
     use hal::pac::Interrupt;
     use hal::pac::{EXTI, SPI2, SPI3};
     use hal::prelude::*;
-    use hal::rcc::CFGR;
+    use hal::rcc::Config;
 
     use heapless::spsc::*;
 
@@ -158,7 +158,7 @@ mod app {
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
         let rcc = device.RCC.freeze(
-            CFGR::hse(8u32.MHz())
+            Config::hse(8u32.MHz())
                 .sysclk(96.MHz())
                 .hclk(96.MHz())
                 .pclk1(50.MHz())

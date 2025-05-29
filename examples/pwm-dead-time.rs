@@ -7,7 +7,7 @@
 use panic_halt as _; // panic handler
 
 use cortex_m_rt::entry;
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use hal::{pac, prelude::*, timer::Polarity};
 
@@ -15,7 +15,7 @@ use hal::{pac, prelude::*, timer::Polarity};
 fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock. We want to run at 84MHz for this one.
-        let rcc = dp.RCC.freeze(CFGR::hsi().sysclk(25.MHz()));
+        let rcc = dp.RCC.freeze(Config::hsi().sysclk(25.MHz()));
 
         let gpioa = dp.GPIOA.split();
 

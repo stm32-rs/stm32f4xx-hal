@@ -102,7 +102,7 @@ mod app {
         RightLsb,
     }
 
-    use stm32f4xx_hal::rcc::CFGR;
+    use stm32f4xx_hal::rcc::Config;
     use FrameState::{LeftLsb, LeftMsb, RightLsb, RightMsb};
 
     impl Default for FrameState {
@@ -154,7 +154,7 @@ mod app {
         let gpiob = device.GPIOB.split();
         let gpioc = device.GPIOC.split();
         let rcc = device.RCC.freeze(
-            CFGR::hse(8u32.MHz())
+            Config::hse(8u32.MHz())
                 .sysclk(96.MHz())
                 .hclk(96.MHz())
                 .pclk1(50.MHz())

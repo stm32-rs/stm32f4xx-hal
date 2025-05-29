@@ -5,7 +5,7 @@
 
 use panic_halt as _;
 
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{
     pac,
@@ -24,7 +24,7 @@ fn main() -> ! {
     // Initialize clocks.
     let rcc = p
         .RCC
-        .freeze(CFGR::hse(8.MHz()).saia_clk(172.MHz()).saib_clk(172.MHz()));
+        .freeze(Config::hse(8.MHz()).saia_clk(172.MHz()).saib_clk(172.MHz()));
     // Test that the SAI clock is suitable for 48000KHz audio.
     assert!(rcc.clocks.saia_clk() == Some(172.MHz()));
     assert!(rcc.clocks.saib_clk() == Some(172.MHz()));
@@ -57,7 +57,7 @@ fn main() -> ! {
     // The following code configures the A sub-block of SAI as a master transmitter for PCM-encoded audio.
 
     // Initialize clocks.
-    let rcc = p.RCC.freeze(CFGR::hse(8.MHz()).saia_clk(172.MHz()));
+    let rcc = p.RCC.freeze(Config::hse(8.MHz()).saia_clk(172.MHz()));
     // Test that the SAI clock is suitable for 48000KHz audio.
     assert!(clocks.saia_clk() == Some(172.MHz()));
 

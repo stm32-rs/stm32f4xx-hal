@@ -4,7 +4,7 @@
 #![no_main]
 
 use panic_halt as _;
-use stm32f4xx_hal::rcc::CFGR;
+use stm32f4xx_hal::rcc::Config;
 
 use core::cell::RefCell;
 use cortex_m::interrupt::Mutex;
@@ -33,7 +33,7 @@ fn main() -> ! {
 
     let rcc = dp
         .RCC
-        .freeze(CFGR::hsi().sysclk((168).MHz()).pclk1((8).MHz()));
+        .freeze(Config::hsi().sysclk((168).MHz()).pclk1((8).MHz()));
 
     let gpioa = dp.GPIOA.split();
 

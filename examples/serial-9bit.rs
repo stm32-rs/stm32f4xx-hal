@@ -32,7 +32,7 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc};
 
 use crate::hal::{block, pac, prelude::*, serial::config::Config};
 
@@ -51,7 +51,7 @@ fn main() -> ! {
     let mut led_bit7 = gpiod.pd14.into_push_pull_output();
     let mut led_bit8 = gpiod.pd15.into_push_pull_output();
 
-    let rcc = dp.RCC.freeze(CFGR::hse(8.MHz()));
+    let rcc = dp.RCC.freeze(rcc::Config::hse(8.MHz()));
 
     let mut delay = cp.SYST.delay(&rcc.clocks);
 

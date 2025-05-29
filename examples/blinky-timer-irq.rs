@@ -8,7 +8,7 @@
 
 use panic_halt as _;
 
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{
     gpio::{self, Output, PushPull},
@@ -66,7 +66,7 @@ fn TIM2() {
 fn main() -> ! {
     let dp = Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.freeze(CFGR::hsi().sysclk(16.MHz()).pclk1(8.MHz()));
+    let rcc = dp.RCC.freeze(Config::hsi().sysclk(16.MHz()).pclk1(8.MHz()));
 
     // Configure PA5 pin to blink LED
     let gpioa = dp.GPIOA.split();

@@ -8,7 +8,7 @@
 #![no_main]
 
 use panic_semihosting as _;
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{
     gpio::{Edge, Input, PA0},
@@ -223,7 +223,7 @@ fn main() -> ! {
 
 fn setup_clocks(rcc: pac::RCC) -> Rcc {
     rcc.freeze(
-        CFGR::hsi()
+        Config::hsi()
             .hclk(180.MHz())
             .sysclk(180.MHz())
             .pclk1(45.MHz())

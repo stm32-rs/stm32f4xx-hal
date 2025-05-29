@@ -3,7 +3,7 @@
 #![no_std]
 
 use panic_halt as _;
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use cortex_m_rt::entry;
 use hal::{
@@ -18,7 +18,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().expect("cannot take peripherals");
 
     // Configure APB bus clock to 48 MHz, cause ws2812b requires 3 Mbps SPI
-    let rcc = dp.RCC.freeze(CFGR::hse(25.MHz()).sysclk(48.MHz()));
+    let rcc = dp.RCC.freeze(Config::hse(25.MHz()).sysclk(48.MHz()));
 
     let mut delay = dp.TIM1.delay_us(&rcc.clocks);
     let gpioa = dp.GPIOA.split();

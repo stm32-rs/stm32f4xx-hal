@@ -55,7 +55,7 @@ use stm32f4xx_hal::i2s::I2s;
 use stm32f4xx_hal::nb::block;
 use stm32f4xx_hal::pac::{Peripherals, SPI3};
 use stm32f4xx_hal::prelude::*;
-use stm32f4xx_hal::rcc::CFGR;
+use stm32f4xx_hal::rcc::Config;
 
 const SAMPLE_RATE: u32 = 48_000;
 
@@ -96,9 +96,11 @@ fn main() -> ! {
 
     // The 61440 kHz frequency can be divided to get exactly 48 kHz sample rate even when
     // generating master clock
-    let rcc = dp
-        .RCC
-        .freeze(CFGR::hse(8u32.MHz()).sysclk(96.MHz()).i2s_clk(61440.kHz()));
+    let rcc = dp.RCC.freeze(
+        Config::hse(8u32.MHz())
+            .sysclk(96.MHz())
+            .i2s_clk(61440.kHz()),
+    );
 
     let i2s_pins = (gpioa.pa4, gpioc.pc10, SPI3::NoMck, gpioc.pc12);
     let i2s = I2s::new(dp.SPI3, i2s_pins, &rcc.clocks);

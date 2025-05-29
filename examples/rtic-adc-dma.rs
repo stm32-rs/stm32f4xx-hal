@@ -16,7 +16,7 @@ mod app {
         dma::{config::DmaConfig, PeripheralToMemory, Stream0, StreamsTuple, Transfer},
         pac::{self, ADC1, DMA2},
         prelude::*,
-        rcc::CFGR,
+        rcc::Config,
         signature::{VtempCal110, VtempCal30},
     };
 
@@ -43,7 +43,7 @@ mod app {
         let device: pac::Peripherals = cx.device;
 
         let _rcc = device.RCC.freeze(
-            CFGR::hse(25.MHz())
+            Config::hse(25.MHz())
                 .require_pll48clk()
                 .sysclk(MONO_HZ.Hz())
                 .hclk(MONO_HZ.Hz())

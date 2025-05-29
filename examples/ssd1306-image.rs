@@ -15,7 +15,7 @@
 
 use panic_semihosting as _;
 use stm32f4xx_hal as hal;
-use stm32f4xx_hal::rcc::CFGR;
+use stm32f4xx_hal::rcc::Config;
 
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
@@ -31,7 +31,7 @@ fn main() -> ! {
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the system clock. We want to run at 48MHz for this one.
-        let rcc = dp.RCC.freeze(CFGR::hsi().sysclk(48.MHz()));
+        let rcc = dp.RCC.freeze(Config::hsi().sysclk(48.MHz()));
 
         // Set up I2C - SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F446xC/E datasheet page 60. Pin assignment as per the Nucleo-F446 board.

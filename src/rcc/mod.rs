@@ -72,7 +72,7 @@ pub trait RccExt {
     fn constrain(self) -> Rcc;
 
     /// Constrains the `RCC` peripheral and apply clock configuration
-    fn freeze(self, rcc_cfg: CFGR) -> Rcc;
+    fn freeze(self, rcc_cfg: Config) -> Rcc;
 }
 
 impl RccExt for RCC {
@@ -83,7 +83,7 @@ impl RccExt for RCC {
         }
     }
 
-    fn freeze(self, rcc_cfg: CFGR) -> Rcc {
+    fn freeze(self, rcc_cfg: Config) -> Rcc {
         self.constrain().freeze(rcc_cfg)
     }
 }

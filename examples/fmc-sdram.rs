@@ -7,7 +7,7 @@
 use panic_probe as _;
 
 use core::{mem, slice};
-use stm32f4xx_hal::{fmc::FmcExt, gpio::alt::fmc as alt, pac, prelude::*, rcc::CFGR};
+use stm32f4xx_hal::{fmc::FmcExt, gpio::alt::fmc as alt, pac, prelude::*, rcc::Config};
 
 use cortex_m::peripheral::Peripherals;
 
@@ -49,7 +49,7 @@ impl XorShift32 {
 #[entry]
 fn main() -> ! {
     if let (Some(p), Some(cp)) = (pac::Peripherals::take(), Peripherals::take()) {
-        let rcc = p.RCC.freeze(CFGR::hsi().sysclk(180.MHz()));
+        let rcc = p.RCC.freeze(Config::hsi().sysclk(180.MHz()));
 
         let mut delay = cp.SYST.delay(&rcc.clocks);
 

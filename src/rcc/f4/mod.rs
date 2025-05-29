@@ -75,7 +75,7 @@ pub const PCLK2_MAX: u32 = SYSCLK_MAX / 2;
 pub const PCLK1_MAX: u32 = PCLK2_MAX / 2;
 
 #[derive(Clone, Copy, Debug)]
-pub struct CFGR {
+pub struct Config {
     hse: Option<u32>,
     hse_bypass: bool,
     hclk: Option<u32>,
@@ -99,13 +99,13 @@ pub struct CFGR {
     sai2_clk: Option<u32>,
 }
 
-impl Default for CFGR {
+impl Default for Config {
     fn default() -> Self {
         Self::DEFAULT
     }
 }
 
-impl CFGR {
+impl Config {
     pub const DEFAULT: Self = Self {
         hse: None,
         hse_bypass: false,
@@ -195,7 +195,7 @@ impl CFGR {
 }
 
 #[cfg(not(feature = "rcc_i2s_apb"))]
-impl CFGR {
+impl Config {
     /// Selects an I2S clock frequency and enables the I2S clock.
     pub fn i2s_clk(mut self, freq: Hertz) -> Self {
         self.i2s_clk = Some(freq.raw());
@@ -204,7 +204,7 @@ impl CFGR {
 }
 
 #[cfg(feature = "rcc_i2s_apb")]
-impl CFGR {
+impl Config {
     /// Selects an I2S clock frequency for the first set of I2S instancesand enables the I2S clock.
     pub fn i2s_apb1_clk(mut self, freq: Hertz) -> Self {
         self.i2s_apb1_clk = Some(freq.raw());
@@ -220,7 +220,7 @@ impl CFGR {
 
 #[cfg(feature = "sai")]
 #[cfg(not(feature = "sai2"))]
-impl CFGR {
+impl Config {
     /// Selects a SAIA clock frequency and enables the SAIA clock.
     pub fn saia_clk(mut self, freq: Hertz) -> Self {
         self.sai1_clk = Some(freq.raw());
@@ -235,7 +235,7 @@ impl CFGR {
 }
 
 #[cfg(feature = "sai2")]
-impl CFGR {
+impl Config {
     /// Selects a SAI1 clock frequency and enables the SAI1 clock.
     pub fn sai1_clk(mut self, freq: Hertz) -> Self {
         self.sai1_clk = Some(freq.raw());
@@ -250,7 +250,7 @@ impl CFGR {
 }
 
 #[cfg(feature = "sai")]
-impl CFGR {
+impl Config {
     fn sai_clocks(&self) -> SaiClocks {
         let sai1_ext = self.sai1_clk.is_some() && self.sai1_clk == self.i2s_ckin;
         #[cfg(not(feature = "sai2"))]
@@ -274,7 +274,7 @@ impl CFGR {
     }
 }
 
-impl CFGR {
+impl Config {
     #[cfg(feature = "rcc_i2s_apb")]
     fn i2s_clocks(&self) -> I2sClocks {
         let i2s_apb1_ext = self.i2s_apb1_clk.is_some() && self.i2s_apb1_clk == self.i2s_ckin;
@@ -342,22 +342,22 @@ impl Rcc {
     }
 
     /// Apply clock configuration
-    pub fn freeze(self, rcc_cfg: CFGR) -> Self {
+    pub fn freeze(self, rcc_cfg: Config) -> Self {
         self.freeze_internal(rcc_cfg, false)
     }
 
-    /// Initialises the hardware according to CFGR state returning a Clocks instance.
+    /// Initialises the hardware according to Config state returning a Clocks instance.
     /// Allows overclocking.
     ///
     /// # Safety
     ///
     /// This method does not check if the clocks are bigger or smaller than the officially
     /// recommended.
-    pub unsafe fn freeze_unchecked(self, rcc_cfg: CFGR) -> Self {
+    pub unsafe fn freeze_unchecked(self, rcc_cfg: Config) -> Self {
         self.freeze_internal(rcc_cfg, true)
     }
 
-    fn freeze_internal(self, rcc_cfg: CFGR, unchecked: bool) -> Self {
+    fn freeze_internal(self, rcc_cfg: Config, unchecked: bool) -> Self {
         let rcc = unsafe { &*RCC::ptr() };
 
         let pllsrcclk = rcc_cfg.hse.unwrap_or(HSI);

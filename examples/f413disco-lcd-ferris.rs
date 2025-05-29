@@ -13,7 +13,7 @@
 use panic_halt as _;
 use rtt_target::{self, rtt_init_print, ChannelMode};
 
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{
     fsmc_lcd::{DataPins16, FsmcLcd, LcdPins, Timing},
@@ -705,7 +705,7 @@ fn main() -> ! {
         let gpiog = p.GPIOG.split();
 
         // Configure and lock the clocks at maximum warp
-        let rcc = p.RCC.freeze(CFGR::hsi().sysclk(100.MHz()));
+        let rcc = p.RCC.freeze(Config::hsi().sysclk(100.MHz()));
 
         // Define the pins we need for our 16bit parallel bus
         use stm32f4xx_hal::gpio::alt::fsmc as alt;
