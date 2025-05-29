@@ -17,11 +17,11 @@ static mut EP_MEMORY: [u32; 1024] = [0; 1024];
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let rcc = dp
+    let mut rcc = dp
         .RCC
         .freeze(Config::hse(25.MHz()).sysclk(48.MHz()).require_pll48clk());
 
-    let gpioa = dp.GPIOA.split();
+    let gpioa = dp.GPIOA.split(&mut rcc);
 
     let usb = USB::new(
         (dp.OTG_FS_GLOBAL, dp.OTG_FS_DEVICE, dp.OTG_FS_PWRCLK),

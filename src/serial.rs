@@ -30,7 +30,7 @@ use crate::gpio::{self, PushPull};
 use crate::pac;
 
 use crate::gpio::NoPin;
-use crate::rcc::{self, Clocks};
+use crate::rcc::{self, Rcc};
 
 pub mod dma;
 use crate::dma::{
@@ -224,19 +224,19 @@ pub trait SerialExt: Sized + Instance {
         self,
         pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig>;
 
     fn tx<WORD>(
         self,
         tx_pin: impl Into<Self::Tx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
     where
         NoPin: Into<Self::Rx<PushPull>>,
     {
-        self.serial((tx_pin, NoPin::new()), config, clocks)
+        self.serial((tx_pin, NoPin::new()), config, rcc)
             .map(|s| s.split().0)
     }
 
@@ -244,12 +244,12 @@ pub trait SerialExt: Sized + Instance {
         self,
         rx_pin: impl Into<Self::Rx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
     where
         NoPin: Into<Self::Tx<PushPull>>,
     {
-        self.serial((NoPin::new(), rx_pin), config, clocks)
+        self.serial((NoPin::new(), rx_pin), config, rcc)
             .map(|s| s.split().1)
     }
 }
@@ -262,18 +262,16 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
             impl Into<USART::Rx<PushPull>>,
         ),
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Self, config::InvalidConfig> {
         use self::config::*;
 
         let config = config.into();
-        unsafe {
-            // Enable clock.
-            USART::enable_unchecked();
-            USART::reset_unchecked();
-        }
+        // Enable clock.
+        USART::enable(rcc);
+        USART::reset(rcc);
 
-        let pclk_freq = USART::clock(clocks).raw();
+        let pclk_freq = USART::clock(&rcc.clocks).raw();
         let baud = config.baudrate.0;
 
         if !USART::RB::IRDA && config.irda != IrdaMode::None {
@@ -670,9 +668,9 @@ impl<UART: Instance> SerialExt for UART {
         self,
         pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
-        Serial::new(self, pins, config, clocks)
+        Serial::new(self, pins, config, rcc)
     }
 }
 
@@ -681,12 +679,12 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         usart: UART,
         tx_pin: impl Into<UART::Tx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Tx<UART, WORD>, config::InvalidConfig>
     where
         NoPin: Into<UART::Rx<PushPull>>,
     {
-        Self::new(usart, (tx_pin, NoPin::new()), config, clocks).map(|s| s.split().0)
+        Self::new(usart, (tx_pin, NoPin::new()), config, rcc).map(|s| s.split().0)
     }
 }
 
@@ -695,12 +693,12 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         usart: UART,
         rx_pin: impl Into<UART::Rx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Rx<UART, WORD>, config::InvalidConfig>
     where
         NoPin: Into<UART::Tx<PushPull>>,
     {
-        Self::new(usart, (NoPin::new(), rx_pin), config, clocks).map(|s| s.split().1)
+        Self::new(usart, (NoPin::new(), rx_pin), config, rcc).map(|s| s.split().1)
     }
 }
 

@@ -42,7 +42,7 @@ mod app {
     fn init(cx: init::Context) -> (Shared, Local, init::Monotonics) {
         let device: pac::Peripherals = cx.device;
 
-        let _rcc = device.RCC.freeze(
+        let mut rcc = device.RCC.freeze(
             Config::hse(25.MHz())
                 .require_pll48clk()
                 .sysclk(MONO_HZ.Hz())
@@ -57,10 +57,10 @@ mod app {
 
         let mono = DwtSystick::new(&mut dcb, dwt, systick, MONO_HZ);
 
-        let gpiob = device.GPIOB.split();
+        let gpiob = device.GPIOB.split(&mut rcc);
         let voltage = gpiob.pb1.into_analog();
 
-        let dma = StreamsTuple::new(device.DMA2);
+        let dma = StreamsTuple::new(device.DMA2, &mut rcc);
 
         let config = DmaConfig::default()
             .transfer_complete_interrupt(true)
@@ -71,7 +71,7 @@ mod app {
             .dma(Dma::Continuous)
             .scan(Scan::Enabled);
 
-        let mut adc = Adc::new(device.ADC1, true, adc_config);
+        let mut adc = Adc::new(device.ADC1, true, adc_config, &mut rcc);
         adc.configure_channel(&Temperature, Sequence::One, SampleTime::Cycles_480);
         adc.configure_channel(&voltage, Sequence::Two, SampleTime::Cycles_480);
         adc.enable_temperature_and_vref();

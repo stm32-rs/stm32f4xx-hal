@@ -66,10 +66,10 @@ fn TIM2() {
 fn main() -> ! {
     let dp = Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.freeze(Config::hsi().sysclk(16.MHz()).pclk1(8.MHz()));
+    let mut rcc = dp.RCC.freeze(Config::hsi().sysclk(16.MHz()).pclk1(8.MHz()));
 
     // Configure PA5 pin to blink LED
-    let gpioa = dp.GPIOA.split();
+    let gpioa = dp.GPIOA.split(&mut rcc);
     let mut led = gpioa.pa5.into_push_pull_output();
     led.set_high(); // Turn off
 
@@ -77,7 +77,7 @@ fn main() -> ! {
     cortex_m::interrupt::free(|cs| *G_LED.borrow(cs).borrow_mut() = Some(led));
 
     // Set up a timer expiring after 1s
-    let mut timer = dp.TIM2.counter(&rcc.clocks);
+    let mut timer = dp.TIM2.counter(&mut rcc);
     timer.start(1.secs()).unwrap();
 
     // Generate an interrupt when the timer expires

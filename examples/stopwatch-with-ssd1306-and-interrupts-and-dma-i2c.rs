@@ -160,12 +160,12 @@ impl WriteOnlyDataCommand for DMAI2cInterface {
 #[entry]
 fn main() -> ! {
     if let (Some(mut dp), Some(cp)) = (pac::Peripherals::take(), cortex_m::Peripherals::take()) {
-        let rcc = setup_clocks(dp.RCC);
-        let gpiob = dp.GPIOB.split();
-        let i2c = I2c::new(dp.I2C1, (gpiob.pb8, gpiob.pb9), 400.kHz(), &rcc.clocks);
+        let mut rcc = setup_clocks(dp.RCC);
+        let gpiob = dp.GPIOB.split(&mut rcc);
+        let i2c = I2c::new(dp.I2C1, (gpiob.pb8, gpiob.pb9), 400.kHz(), &mut rcc);
 
         // Then convert it to DMA
-        let streams = StreamsTuple::new(dp.DMA1);
+        let streams = StreamsTuple::new(dp.DMA1, &mut rcc);
         let i2c_dma: I2c1Handle = i2c.use_dma_tx(streams.1);
         free(|cs| {
             I2C1.borrow(cs).replace(Some(i2c_dma));
@@ -178,13 +178,13 @@ fn main() -> ! {
         };
 
         // On my board it is required to manually toggle Reset Pin of display
-        let gpioa = dp.GPIOA.split();
+        let gpioa = dp.GPIOA.split(&mut rcc);
         gpioa.pa8.into_push_pull_output().set_high();
 
-        let mut syscfg = dp.SYSCFG.constrain();
+        let mut syscfg = dp.SYSCFG.constrain(&mut rcc);
 
         // Create a button input with an interrupt
-        let gpioc = dp.GPIOC.split();
+        let gpioc = dp.GPIOC.split(&mut rcc);
         let mut board_btn = gpioc.pc13.into_pull_up_input();
         board_btn.make_interrupt_source(&mut syscfg);
         board_btn.enable_interrupt(&mut dp.EXTI);
@@ -198,7 +198,7 @@ fn main() -> ! {
         disp.flush().unwrap();
 
         // Create a 1ms periodic interrupt from TIM2
-        let mut timer = dp.TIM2.counter(&rcc.clocks);
+        let mut timer = dp.TIM2.counter(&mut rcc);
         timer.start(1.secs()).unwrap();
         timer.listen(Event::Update);
 

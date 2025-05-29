@@ -17,7 +17,7 @@ fn main() -> ! {
     let device = pac::Peripherals::take().unwrap();
     let core = cortex_m::Peripherals::take().unwrap();
 
-    let rcc = device.RCC.freeze(
+    let mut rcc = device.RCC.freeze(
         Config::hse(12.MHz())
             .require_pll48clk()
             .sysclk(168.MHz())
@@ -26,12 +26,12 @@ fn main() -> ! {
             .pclk2(84.MHz()),
     );
 
-    assert!(clocks.is_pll48clk_valid());
+    assert!(rcc.clocks.is_pll48clk_valid());
 
     let mut delay = core.SYST.delay(&rcc.clocks);
 
-    let gpioc = device.GPIOC.split();
-    let gpiod = device.GPIOD.split();
+    let gpioc = device.GPIOC.split(&mut rcc);
+    let gpiod = device.GPIOD.split(&mut rcc);
 
     let d0 = gpioc.pc8.internal_pull_up(true);
     let d1 = gpioc.pc9.internal_pull_up(true);
@@ -39,7 +39,7 @@ fn main() -> ! {
     let d3 = gpioc.pc11.internal_pull_up(true);
     let clk = gpioc.pc12;
     let cmd = gpiod.pd2.internal_pull_up(true);
-    let mut sdio: Sdio<SdCard> = Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3), &clocks);
+    let mut sdio: Sdio<SdCard> = Sdio::new(device.SDIO, (clk, cmd, d0, d1, d2, d3), &mut rcc);
 
     hprintln!("Waiting for card...");
 

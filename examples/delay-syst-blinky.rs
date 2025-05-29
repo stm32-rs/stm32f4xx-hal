@@ -19,12 +19,12 @@ fn main() -> ! {
         pac::Peripherals::take(),
         cortex_m::peripheral::Peripherals::take(),
     ) {
-        // Set up the LED. On the Nucleo-446RE it's connected to pin PA5.
-        let gpioa = dp.GPIOA.split();
-        let mut led = gpioa.pa5.into_push_pull_output();
-
         // Set up the system clock. We want to run at 48MHz for this one.
-        let rcc = dp.RCC.freeze(Config::hsi().sysclk(48.MHz()));
+        let mut rcc = dp.RCC.freeze(Config::hsi().sysclk(48.MHz()));
+
+        // Set up the LED. On the Nucleo-446RE it's connected to pin PA5.
+        let gpioa = dp.GPIOA.split(&mut rcc);
+        let mut led = gpioa.pa5.into_push_pull_output();
 
         // Create a delay abstraction based on SysTick
         let mut delay = cp.SYST.delay(&rcc.clocks);

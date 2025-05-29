@@ -78,19 +78,19 @@ mod usart_shell {
 
     #[init]
     fn init(mut ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        // syscfg
-        let mut syscfg = ctx.device.SYSCFG.constrain();
         // clocks
-        let rcc = ctx
+        let mut rcc = ctx
             .device
             .RCC
             .freeze(rcc::Config::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
+        // syscfg
+        let mut syscfg = ctx.device.SYSCFG.constrain(&mut rcc);
         // monotonic timer
         let mono = DwtSystick::new(&mut ctx.core.DCB, ctx.core.DWT, ctx.core.SYST, SYSFREQ);
         // gpio ports A and C
-        let gpioa = ctx.device.GPIOA.split();
-        let gpiob = ctx.device.GPIOB.split();
-        let gpioc = ctx.device.GPIOC.split();
+        let gpioa = ctx.device.GPIOA.split(&mut rcc);
+        let gpiob = ctx.device.GPIOB.split(&mut rcc);
+        let gpioc = ctx.device.GPIOC.split(&mut rcc);
         // button
         let mut button = gpioa.pa0.into_pull_up_input();
         button.make_interrupt_source(&mut syscfg);
@@ -101,14 +101,14 @@ mod usart_shell {
         // i2c
         let scl = gpiob.pb8;
         let sda = gpiob.pb9;
-        let i2c = I2c::new(ctx.device.I2C1, (scl, sda), 400.kHz(), &rcc.clocks);
+        let i2c = I2c::new(ctx.device.I2C1, (scl, sda), 400.kHz(), &mut rcc);
         // serial
         let pins = (gpioa.pa9, gpioa.pa10);
         let mut serial = Serial::new(
             ctx.device.USART1,
             pins,
             Config::default().baudrate(115_200.bps()).wordlength_8(),
-            &rcc.clocks,
+            &mut rcc,
         )
         .unwrap()
         .with_u8_data();
@@ -123,8 +123,8 @@ mod usart_shell {
             .into_buffered_graphics_mode();
         ldisp.init().unwrap();
 
-        let mut timer = ctx.device.TIM2.counter_hz(&rcc.clocks);
-        //let mut timer = FTimer::new(ctx.device.TIM1, &clocks).counter_hz();
+        let mut timer = ctx.device.TIM2.counter_hz(&mut rcc);
+        //let mut timer = FTimer::new(ctx.device.TIM1, &mut rcc).counter_hz();
         timer.start(FPS.Hz()).unwrap();
         timer.listen(Event::Update);
 

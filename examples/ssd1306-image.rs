@@ -31,21 +31,21 @@ fn main() -> ! {
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the system clock. We want to run at 48MHz for this one.
-        let rcc = dp.RCC.freeze(Config::hsi().sysclk(48.MHz()));
+        let mut rcc = dp.RCC.freeze(Config::hsi().sysclk(48.MHz()));
 
         // Set up I2C - SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F446xC/E datasheet page 60. Pin assignment as per the Nucleo-F446 board.
-        let gpiob = dp.GPIOB.split();
+        let gpiob = dp.GPIOB.split(&mut rcc);
         let scl = gpiob.pb8.internal_pull_up(true);
         let sda = gpiob.pb9.internal_pull_up(true);
-        // let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &rcc.clocks);
+        // let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
         // or
-        let i2c = dp.I2C1.i2c((scl, sda), 400.kHz(), &rcc.clocks);
+        let i2c = dp.I2C1.i2c((scl, sda), 400.kHz(), &mut rcc);
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor
         // and therefore is active LOW. There's even a 100nF capacitor for debouncing - nice for us
         // since otherwise we'd have to debounce in software.
-        let gpioc = dp.GPIOC.split();
+        let gpioc = dp.GPIOC.split(&mut rcc);
         let btn = gpioc.pc13.into_pull_down_input();
 
         // Set up the display

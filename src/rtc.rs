@@ -121,8 +121,8 @@ pub enum LSEClockMode {
 
 impl Rtc {
     /// Create and enable a new RTC with external crystal or ceramic resonator and default prescalers.
-    pub fn new(regs: RTC, pwr: &mut PWR) -> Self {
-        Self::with_config(regs, pwr, LSEClockMode::Oscillator, 255, 127)
+    pub fn new(regs: RTC, rcc: &mut RCC, pwr: &mut PWR) -> Self {
+        Self::with_config(regs, rcc, pwr, LSEClockMode::Oscillator, 255, 127)
     }
     /// Create and enable a new RTC, and configure its clock source and prescalers.
     ///
@@ -130,6 +130,7 @@ impl Rtc {
     /// set `prediv_s` to 255 (249 for LSI), and `prediv_a` to 127 to get a calendar clock of 1Hz.
     pub fn with_config(
         regs: RTC,
+        rcc: &mut RCC,
         pwr: &mut PWR,
         clock_source: impl Into<ClockSource>,
         prediv_s: u16,
@@ -151,30 +152,27 @@ impl Rtc {
         // Exit Init
         // Enable write protect
 
-        unsafe {
-            let mut rcc = RCC::steal();
-            // As per the sample code, unlock comes first. (Enable PWR and DBP)
-            result.unlock(&mut rcc, pwr);
-            match result.clock_source {
-                ClockSource::Lse(mode) => {
-                    // If necessary, enable the LSE.
-                    if rcc.bdcr().read().lserdy().bit_is_clear() {
-                        result.enable_lse(&mut rcc, mode);
-                    }
-                    // Set clock source to LSE.
-                    rcc.bdcr().modify(|_, w| w.rtcsel().lse());
+        // As per the sample code, unlock comes first. (Enable PWR and DBP)
+        result.unlock(rcc, pwr);
+        match result.clock_source {
+            ClockSource::Lse(mode) => {
+                // If necessary, enable the LSE.
+                if rcc.bdcr().read().lserdy().bit_is_clear() {
+                    result.enable_lse(rcc, mode);
                 }
-                ClockSource::Lsi => {
-                    // If necessary, enable the LSE.
-                    if rcc.csr().read().lsirdy().bit_is_clear() {
-                        result.enable_lsi(&mut rcc);
-                    }
-                    // Set clock source to LSI.
-                    rcc.bdcr().modify(|_, w| w.rtcsel().lsi());
-                }
+                // Set clock source to LSE.
+                rcc.bdcr().modify(|_, w| w.rtcsel().lse());
             }
-            result.enable(&mut rcc);
+            ClockSource::Lsi => {
+                // If necessary, enable the LSE.
+                if rcc.csr().read().lsirdy().bit_is_clear() {
+                    result.enable_lsi(rcc);
+                }
+                // Set clock source to LSI.
+                rcc.bdcr().modify(|_, w| w.rtcsel().lsi());
+            }
         }
+        result.enable(rcc);
 
         result.modify(true, |regs| {
             // Set 24 Hour
@@ -209,16 +207,22 @@ impl Rtc {
     }
 
     /// Create and enable a new RTC with internal crystal and default prescalers.
-    pub fn new_lsi(regs: RTC, pwr: &mut PWR) -> Self {
-        Self::with_config(regs, pwr, ClockSource::Lsi, 249, 127)
+    pub fn new_lsi(regs: RTC, rcc: &mut RCC, pwr: &mut PWR) -> Self {
+        Self::with_config(regs, rcc, pwr, ClockSource::Lsi, 249, 127)
     }
 
     /// Create and enable a new RTC, and configure its clock source and prescalers.
     ///
     /// From AN3371, Table 3, when using the LSI,
     /// set `prediv_s` to 249, and `prediv_a` to 127 to get a calendar clock of 1Hz.
-    pub fn lsi_with_config(regs: RTC, pwr: &mut PWR, prediv_s: u16, prediv_a: u8) -> Self {
-        Self::with_config(regs, pwr, ClockSource::Lsi, prediv_s, prediv_a)
+    pub fn lsi_with_config(
+        regs: RTC,
+        rcc: &mut RCC,
+        pwr: &mut PWR,
+        prediv_s: u16,
+        prediv_a: u8,
+    ) -> Self {
+        Self::with_config(regs, rcc, pwr, ClockSource::Lsi, prediv_s, prediv_a)
     }
 
     fn enable_lsi(&mut self, rcc: &mut RCC) {

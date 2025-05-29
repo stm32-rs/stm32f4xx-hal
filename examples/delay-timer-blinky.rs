@@ -19,15 +19,15 @@ fn main() -> ! {
         pac::Peripherals::take(),
         cortex_m::peripheral::Peripherals::take(),
     ) {
+        // Set up the system clock. We want to run at 48MHz for this one.
+        let mut rcc = dp.RCC.freeze(Config::hse(25.MHz()).sysclk(48.MHz()));
+
         // Set up the LED. On the Mini-F4 it's connected to pin PC13.
-        let gpioc = dp.GPIOC.split();
+        let gpioc = dp.GPIOC.split(&mut rcc);
         let mut led = gpioc.pc13.into_push_pull_output();
 
-        // Set up the system clock. We want to run at 48MHz for this one.
-        let rcc = dp.RCC.freeze(Config::hse(25.MHz()).sysclk(48.MHz()));
-
         // Create a delay abstraction based on general-pupose 32-bit timer TIM5
-        let mut delay = dp.TIM5.delay_us(&rcc.clocks);
+        let mut delay = dp.TIM5.delay_us(&mut rcc);
 
         loop {
             // On for 1s, off for 3s.

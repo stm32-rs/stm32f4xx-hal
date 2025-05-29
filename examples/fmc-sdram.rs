@@ -49,17 +49,17 @@ impl XorShift32 {
 #[entry]
 fn main() -> ! {
     if let (Some(p), Some(cp)) = (pac::Peripherals::take(), Peripherals::take()) {
-        let rcc = p.RCC.freeze(Config::hsi().sysclk(180.MHz()));
+        let mut rcc = p.RCC.freeze(Config::hsi().sysclk(180.MHz()));
 
         let mut delay = cp.SYST.delay(&rcc.clocks);
 
-        let gpioc = p.GPIOC.split();
-        let gpiod = p.GPIOD.split();
-        let gpioe = p.GPIOE.split();
-        let gpiof = p.GPIOF.split();
-        let gpiog = p.GPIOG.split();
-        let gpioh = p.GPIOH.split();
-        let gpioi = p.GPIOI.split();
+        let gpioc = p.GPIOC.split(&mut rcc);
+        let gpiod = p.GPIOD.split(&mut rcc);
+        let gpioe = p.GPIOE.split(&mut rcc);
+        let gpiof = p.GPIOF.split(&mut rcc);
+        let gpiog = p.GPIOG.split(&mut rcc);
+        let gpioh = p.GPIOH.split(&mut rcc);
+        let gpioi = p.GPIOI.split(&mut rcc);
 
         #[rustfmt::skip]
         let pins = fmc_pins! {

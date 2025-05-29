@@ -30,14 +30,14 @@ mod app {
 
     #[init]
     fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        let rcc = ctx.device.RCC.freeze(Config::DEFAULT.sysclk(48.MHz()));
+        let mut rcc = ctx.device.RCC.freeze(Config::DEFAULT.sysclk(48.MHz()));
 
-        let gpioc = ctx.device.GPIOC.split();
+        let gpioc = ctx.device.GPIOC.split(&mut rcc);
         let led = gpioc.pc13.into_push_pull_output();
         defmt::info!("Start");
 
-        //let mono = ctx.device.TIM2.monotonic_us(&rcc.clocks);
-        let mono = ctx.device.TIM3.monotonic64_us(&rcc.clocks);
+        //let mono = ctx.device.TIM2.monotonic_us(&mut rcc);
+        let mono = ctx.device.TIM3.monotonic64_us(&mut rcc);
         tick::spawn().ok();
         (Shared {}, Local { led }, init::Monotonics(mono))
     }

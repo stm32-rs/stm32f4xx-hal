@@ -19,9 +19,9 @@ fn main() -> ! {
     rtt_init_print!();
     let dp = pac::Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.constrain();
+    let mut rcc = dp.RCC.constrain();
 
-    let gpiob = dp.GPIOB.split();
+    let gpiob = dp.GPIOB.split(&mut rcc);
 
     // Configure I2C1
     let scl = gpiob.pb8;
@@ -30,7 +30,7 @@ fn main() -> ! {
         dp.I2C1,
         (scl, sda),
         hal::i2c::Mode::standard(100.kHz()),
-        &rcc.clocks,
+        &mut rcc,
     );
 
     rprintln!("Start i2c scanning...");

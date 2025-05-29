@@ -1,4 +1,6 @@
 //! # Quadrature Encoder Interface
+use crate::pac::RCC;
+
 use crate::{
     gpio::PushPull,
     pac, rcc,
@@ -12,6 +14,7 @@ pub trait QeiExt: Sized + Instance {
             impl Into<<Self as CPin<0>>::Ch<PushPull>>,
             impl Into<<Self as CPin<1>>::Ch<PushPull>>,
         ),
+        rcc: &mut RCC,
     ) -> Qei<Self>;
 }
 
@@ -22,8 +25,9 @@ impl<TIM: Instance> QeiExt for TIM {
             impl Into<<Self as CPin<0>>::Ch<PushPull>>,
             impl Into<<Self as CPin<1>>::Ch<PushPull>>,
         ),
+        rcc: &mut RCC,
     ) -> Qei<Self> {
-        Qei::new(self, pins)
+        Qei::new(self, pins, rcc)
     }
 }
 
@@ -44,12 +48,11 @@ impl<TIM: Instance> Qei<TIM> {
             impl Into<<TIM as CPin<0>>::Ch<PushPull>>,
             impl Into<<TIM as CPin<1>>::Ch<PushPull>>,
         ),
+        rcc: &mut RCC,
     ) -> Self {
         // Enable and reset clock.
-        unsafe {
-            TIM::enable_unchecked();
-            TIM::reset_unchecked();
-        }
+        TIM::enable(rcc);
+        TIM::reset(rcc);
 
         let pins = (pins.0.into(), pins.1.into());
         tim.setup_qei();

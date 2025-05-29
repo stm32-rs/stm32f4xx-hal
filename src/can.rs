@@ -2,7 +2,7 @@
 //!
 
 use crate::gpio::{self, NoPin};
-use crate::pac;
+use crate::pac::{self, RCC};
 use crate::rcc;
 
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + gpio::alt::CanCommon {}
@@ -37,34 +37,34 @@ mod can3 {
 }
 
 pub trait CanExt: Sized + Instance {
-    fn can(self, pins: (impl Into<Self::Tx>, impl Into<Self::Rx>)) -> Can<Self>;
+    fn can(self, pins: (impl Into<Self::Tx>, impl Into<Self::Rx>), rcc: &mut RCC) -> Can<Self>;
 
-    fn tx(self, tx_pin: impl Into<Self::Tx>) -> Can<Self>
+    fn tx(self, tx_pin: impl Into<Self::Tx>, rcc: &mut RCC) -> Can<Self>
     where
         NoPin: Into<Self::Rx>;
 
-    fn rx(self, rx_pin: impl Into<Self::Rx>) -> Can<Self>
+    fn rx(self, rx_pin: impl Into<Self::Rx>, rcc: &mut RCC) -> Can<Self>
     where
         NoPin: Into<Self::Tx>;
 }
 
 impl<CAN: Instance> CanExt for CAN {
-    fn can(self, pins: (impl Into<Self::Tx>, impl Into<Self::Rx>)) -> Can<Self> {
-        Can::new(self, pins)
+    fn can(self, pins: (impl Into<Self::Tx>, impl Into<Self::Rx>), rcc: &mut RCC) -> Can<Self> {
+        Can::new(self, pins, rcc)
     }
 
-    fn tx(self, tx_pin: impl Into<Self::Tx>) -> Can<Self>
+    fn tx(self, tx_pin: impl Into<Self::Tx>, rcc: &mut RCC) -> Can<Self>
     where
         NoPin: Into<Self::Rx>,
     {
-        Can::tx(self, tx_pin)
+        Can::tx(self, tx_pin, rcc)
     }
 
-    fn rx(self, rx_pin: impl Into<Self::Rx>) -> Can<Self>
+    fn rx(self, rx_pin: impl Into<Self::Rx>, rcc: &mut RCC) -> Can<Self>
     where
         NoPin: Into<Self::Tx>,
     {
-        Can::rx(self, rx_pin)
+        Can::rx(self, rx_pin, rcc)
     }
 }
 
@@ -76,11 +76,9 @@ pub struct Can<CAN: Instance> {
 
 impl<CAN: Instance> Can<CAN> {
     /// Creates a CAN interface.
-    pub fn new(can: CAN, pins: (impl Into<CAN::Tx>, impl Into<CAN::Rx>)) -> Self {
-        unsafe {
-            CAN::enable_unchecked();
-            CAN::reset_unchecked();
-        }
+    pub fn new(can: CAN, pins: (impl Into<CAN::Tx>, impl Into<CAN::Rx>), rcc: &mut RCC) -> Self {
+        CAN::enable(rcc);
+        CAN::reset(rcc);
 
         let pins = (pins.0.into(), pins.1.into());
 
@@ -93,20 +91,20 @@ impl<CAN: Instance> Can<CAN> {
 }
 
 impl<CAN: Instance> Can<CAN> {
-    pub fn tx(usart: CAN, tx_pin: impl Into<CAN::Tx>) -> Self
+    pub fn tx(usart: CAN, tx_pin: impl Into<CAN::Tx>, rcc: &mut RCC) -> Self
     where
         NoPin: Into<CAN::Rx>,
     {
-        Self::new(usart, (tx_pin, NoPin::new()))
+        Self::new(usart, (tx_pin, NoPin::new()), rcc)
     }
 }
 
 impl<CAN: Instance> Can<CAN> {
-    pub fn rx(usart: CAN, rx_pin: impl Into<CAN::Rx>) -> Self
+    pub fn rx(usart: CAN, rx_pin: impl Into<CAN::Rx>, rcc: &mut RCC) -> Self
     where
         NoPin: Into<CAN::Tx>,
     {
-        Self::new(usart, (NoPin::new(), rx_pin))
+        Self::new(usart, (NoPin::new(), rx_pin), rcc)
     }
 }
 

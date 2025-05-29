@@ -31,11 +31,11 @@ fn main() -> ! {
 
     let dp = pac::Peripherals::take().unwrap();
 
-    let rcc = dp
+    let mut rcc = dp
         .RCC
         .freeze(Config::hsi().sysclk((168).MHz()).pclk1((8).MHz()));
 
-    let gpioa = dp.GPIOA.split();
+    let gpioa = dp.GPIOA.split(&mut rcc);
 
     let usb = USB::new(
         (dp.OTG_FS_GLOBAL, dp.OTG_FS_DEVICE, dp.OTG_FS_PWRCLK),

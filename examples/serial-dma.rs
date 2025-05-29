@@ -41,13 +41,13 @@ static DONE: AtomicBool = AtomicBool::new(false);
 fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
-        let rcc = dp.RCC.constrain();
+        let mut rcc = dp.RCC.constrain();
 
         // Enable DMA1.
-        let dma1 = StreamsTuple::new(dp.DMA1);
+        let dma1 = StreamsTuple::new(dp.DMA1, &mut rcc);
 
         // Enable GPIOA.
-        let gpioa = dp.GPIOA.split();
+        let gpioa = dp.GPIOA.split(&mut rcc);
 
         // Configure USART2.
         let rx_2 = gpioa.pa3.into_alternate();
@@ -60,7 +60,7 @@ fn main() -> ! {
                 .parity_none()
                 .stopbits(StopBits::STOP1)
                 .dma(serial::config::DmaConfig::TxRx),
-            &rcc.clocks,
+            &mut rcc,
         )
         .unwrap();
 

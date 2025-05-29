@@ -24,7 +24,7 @@ use core::cmp;
 use core::mem;
 
 use crate::pac::RNG;
-use crate::rcc::{Clocks, Enable, Reset};
+use crate::rcc::{Enable, Rcc, Reset};
 use core::num::NonZeroU32;
 use core::ops::Shl;
 use embedded_hal_02::blocking::rng;
@@ -76,21 +76,19 @@ pub trait RngExt {
     /// # Panics
     ///
     /// This function will panic if `PLL48_CLK < 1/16 HCLK`.
-    fn constrain(self, clocks: &Clocks) -> Rng;
+    fn constrain(self, rcc: &mut Rcc) -> Rng;
 }
 
 impl RngExt for RNG {
-    fn constrain(self, clocks: &Clocks) -> Rng {
+    fn constrain(self, rcc: &mut Rcc) -> Rng {
         cortex_m::interrupt::free(|_| {
             // enable RNG_CLK (peripheral clock)
-            unsafe {
-                RNG::enable_unchecked();
-                RNG::reset_unchecked();
-            }
+            RNG::enable(rcc);
+            RNG::reset(rcc);
 
             // verify the clock configuration is valid
-            let hclk = clocks.hclk();
-            let rng_clk = clocks.pll48clk().unwrap_or_else(|| 0.Hz());
+            let hclk = rcc.clocks.hclk();
+            let rng_clk = rcc.clocks.pll48clk().unwrap_or_else(|| 0.Hz());
             assert!(rng_clk >= (hclk / 16));
 
             // enable the RNG peripheral
