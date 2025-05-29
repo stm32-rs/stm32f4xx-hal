@@ -21,7 +21,7 @@ mod app {
     use panic_semihosting as _;
     use systick_monotonic::*;
 
-    use stm32f4xx_hal as hal;
+    use stm32f4xx_hal::{self as hal, rcc::CFGR};
 
     const ARRAY_SIZE: usize = 3;
 
@@ -54,9 +54,9 @@ mod app {
 
         let device_peripherals: hal::pac::Peripherals = cx.device;
 
-        let rcc = device_peripherals.RCC;
-        let rcc = rcc.constrain();
-        let _clocks = rcc.cfgr.sysclk(100.MHz()).pclk1(36.MHz()).freeze();
+        let _rcc = device_peripherals
+            .RCC
+            .freeze(CFGR::hsi().sysclk(100.MHz()).pclk1(36.MHz()));
 
         let mono = Systick::new(core.SYST, 100_000_000);
 

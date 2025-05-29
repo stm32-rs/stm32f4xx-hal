@@ -4,7 +4,7 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
-use stm32f4xx_hal as hal;
+use stm32f4xx_hal::{self as hal, rcc::CFGR};
 
 use crate::hal::{pac, prelude::*};
 
@@ -16,19 +16,17 @@ fn main() -> ! {
 
     let gpioa = dp.GPIOA.split();
 
-    let rcc = dp.RCC.constrain();
+    let rcc = dp.RCC.freeze(CFGR::hse(25.MHz()));
 
-    let clocks = rcc.cfgr.use_hse(25.MHz()).freeze();
-
-    let mut delay = dp.TIM1.delay_ms(&clocks);
+    let mut delay = dp.TIM1.delay_ms(&rcc.clocks);
 
     // define RX/TX pins
     let tx_pin = gpioa.pa9;
 
     // configure serial
-    // let mut tx = Serial::tx(dp.USART1, tx_pin, 9600.bps(), &clocks).unwrap();
+    // let mut tx = Serial::tx(dp.USART1, tx_pin, 9600.bps(), &rcc.clocks).unwrap();
     // or
-    let mut tx = dp.USART1.tx(tx_pin, 9600.bps(), &clocks).unwrap();
+    let mut tx = dp.USART1.tx(tx_pin, 9600.bps(), &rcc.clocks).unwrap();
 
     let mut value: u8 = 0;
 

@@ -57,9 +57,8 @@ mod app {
         let dp: hal::pac::Peripherals = cx.device;
 
         let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.freeze();
 
-        let mono = Systick::new(core.SYST, clocks.sysclk().to_Hz());
+        let mono = Systick::new(core.SYST, rcc.clocks.sysclk().to_Hz());
 
         let gpioa = dp.GPIOA.split();
 
@@ -72,7 +71,7 @@ mod app {
                 serial::Config::default()
                     .baudrate(9600.bps())
                     .dma(serial::config::DmaConfig::Rx),
-                &clocks,
+                &rcc.clocks,
             )
             .unwrap();
 

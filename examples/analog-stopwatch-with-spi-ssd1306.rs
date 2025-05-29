@@ -8,13 +8,13 @@
 #![no_main]
 
 use panic_semihosting as _;
-use stm32f4xx_hal as hal;
+use stm32f4xx_hal::{self as hal, rcc::CFGR};
 
 use crate::hal::{
     gpio::{Edge, Input, PA0},
     interrupt, pac,
     prelude::*,
-    rcc::{Clocks, Rcc},
+    rcc::Rcc,
     spi::{Mode, Phase, Polarity, Spi},
     timer::{CounterUs, Event, FTimer, Flag, Timer},
 };
@@ -84,9 +84,7 @@ fn main() -> ! {
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
     dp.RCC.apb2enr().write(|w| w.syscfgen().enabled());
 
-    let rcc = dp.RCC.constrain();
-
-    let clocks = setup_clocks(rcc);
+    let rcc = setup_clocks(dp.RCC);
 
     let mut syscfg = dp.SYSCFG.constrain();
 
@@ -117,7 +115,7 @@ fn main() -> ! {
             phase: Phase::CaptureOnFirstTransition,
         },
         2000.kHz(),
-        &clocks,
+        &rcc.clocks,
     );
 
     // Set up the LEDs. On the stm32f429i-disco they are connected to pin PG13 and PG14.
@@ -127,7 +125,7 @@ fn main() -> ! {
 
     let dc = gpioe.pe3.into_push_pull_output();
     let mut ss = gpioe.pe4.into_push_pull_output();
-    let mut delay = Timer::syst(cp.SYST, &clocks).delay();
+    let mut delay = Timer::syst(cp.SYST, &rcc.clocks).delay();
 
     ss.set_high();
     delay.delay_ms(100);
@@ -142,7 +140,7 @@ fn main() -> ! {
     disp.flush().unwrap();
 
     // Create a 1ms periodic interrupt from TIM2
-    let mut timer = FTimer::new(dp.TIM2, &clocks).counter();
+    let mut timer = FTimer::new(dp.TIM2, &rcc.clocks).counter();
     timer.start(1.secs()).unwrap();
     timer.listen(Event::Update);
 
@@ -223,13 +221,14 @@ fn main() -> ! {
     }
 }
 
-fn setup_clocks(rcc: Rcc) -> Clocks {
-    rcc.cfgr
-        .hclk(180.MHz())
-        .sysclk(180.MHz())
-        .pclk1(45.MHz())
-        .pclk2(90.MHz())
-        .freeze()
+fn setup_clocks(rcc: pac::RCC) -> Rcc {
+    rcc.freeze(
+        CFGR::hsi()
+            .hclk(180.MHz())
+            .sysclk(180.MHz())
+            .pclk1(45.MHz())
+            .pclk2(90.MHz()),
+    )
 }
 
 #[interrupt]

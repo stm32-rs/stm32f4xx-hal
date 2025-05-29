@@ -15,6 +15,7 @@
 
 use panic_semihosting as _;
 use stm32f4xx_hal as hal;
+use stm32f4xx_hal::rcc::CFGR;
 
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
@@ -30,17 +31,16 @@ fn main() -> ! {
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the system clock. We want to run at 48MHz for this one.
-        let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
+        let rcc = dp.RCC.freeze(CFGR::hsi().sysclk(48.MHz()));
 
         // Set up I2C - SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F446xC/E datasheet page 60. Pin assignment as per the Nucleo-F446 board.
         let gpiob = dp.GPIOB.split();
         let scl = gpiob.pb8.internal_pull_up(true);
         let sda = gpiob.pb9.internal_pull_up(true);
-        // let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &clocks);
+        // let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &rcc.clocks);
         // or
-        let i2c = dp.I2C1.i2c((scl, sda), 400.kHz(), &clocks);
+        let i2c = dp.I2C1.i2c((scl, sda), 400.kHz(), &rcc.clocks);
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor
         // and therefore is active LOW. There's even a 100nF capacitor for debouncing - nice for us

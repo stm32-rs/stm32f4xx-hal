@@ -22,7 +22,7 @@ use stm32f4xx_hal::{
     gpio::Speed,
     pac,
     prelude::*,
-    rcc::Rcc,
+    rcc::CFGR,
 };
 
 use embedded_graphics_07::{
@@ -53,10 +53,8 @@ fn main() -> ! {
     let p = pac::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 
-    let rcc: Rcc = p.RCC.constrain();
-
-    let clocks = rcc.cfgr.sysclk(100.MHz()).freeze();
-    let mut delay = cp.SYST.delay(&clocks);
+    let rcc = p.RCC.freeze(CFGR::hsi().sysclk(100.MHz()));
+    let mut delay = cp.SYST.delay(&rcc.clocks);
 
     let gpiob = p.GPIOB.split();
     let gpioc = p.GPIOC.split();
@@ -148,7 +146,7 @@ fn main() -> ! {
     // STM32F412 uses I2c1 type for i2c bus.
     // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f412zg-mcu-stmicroelectronics
     #[cfg(feature = "stm32f412")]
-    let mut i2c = { I2c::new(p.I2C1, (gpiob.pb6, gpiob.pb7), 400.kHz(), &clocks) };
+    let mut i2c = { I2c::new(p.I2C1, (gpiob.pb6, gpiob.pb7), 400.kHz(), &rcc.clocks) };
 
     // STM32F413 uses FMPI2C1 type.
     // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f413zh-mcu-stmicroelectronics

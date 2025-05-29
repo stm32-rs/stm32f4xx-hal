@@ -23,8 +23,6 @@ fn main() -> ! {
     let gpiob = dp.GPIOB.split();
     let rcc = dp.RCC.constrain();
 
-    let clocks = rcc.cfgr.freeze();
-
     let mut led = gpioa.pa5.into_push_pull_output();
     led.set_low();
 
@@ -35,7 +33,7 @@ fn main() -> ! {
     let mut res = gpiob.pb10.into_push_pull_output();
     let cs = gpiob.pb13.into_push_pull_output();
 
-    let mut delay = Timer::syst(cp.SYST, &clocks).delay();
+    let mut delay = Timer::syst(cp.SYST, &rcc.clocks).delay();
 
     let mode = Mode {
         polarity: Polarity::IdleLow,
@@ -43,9 +41,9 @@ fn main() -> ! {
     };
 
     // Change spi transfer mode to Bidi for more efficient operations.
-    // let spi = Spi::new(dp.SPI1, (sck, miso, mosi), mode, 8.MHz(), &clocks).to_bidi_transfer_mode();
+    // let spi = Spi::new(dp.SPI1, (sck, miso, mosi), mode, 8.MHz(), &rcc.clocks).to_bidi_transfer_mode();
     // or
-    let spi = dp.SPI1.spi_bidi((sck, mosi), mode, 8.MHz(), &clocks);
+    let spi = dp.SPI1.spi_bidi((sck, mosi), mode, 8.MHz(), &rcc.clocks);
 
     let iface = SPIInterface::new(spi, dc, cs);
 

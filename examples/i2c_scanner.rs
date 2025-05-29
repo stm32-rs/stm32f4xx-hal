@@ -20,7 +20,6 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.freeze();
 
     let gpiob = dp.GPIOB.split();
 
@@ -31,7 +30,7 @@ fn main() -> ! {
         dp.I2C1,
         (scl, sda),
         hal::i2c::Mode::standard(100.kHz()),
-        &clocks,
+        &rcc.clocks,
     );
 
     rprintln!("Start i2c scanning...");

@@ -28,10 +28,9 @@ fn main() -> ! {
 
     // Set up the system clock.
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.freeze();
 
     // Create a delay abstraction based on SysTick.
-    let mut delay = cp.SYST.delay(&clocks);
+    let mut delay = cp.SYST.delay(&rcc.clocks);
 
     let gpioa = dp.GPIOA.split();
 

@@ -10,36 +10,6 @@ mod pll;
 
 mod enable;
 
-impl RccExt for RCC {
-    fn constrain(self) -> Rcc {
-        Rcc {
-            rb: self,
-            cfgr: CFGR {
-                hse: None,
-                hse_bypass: false,
-                hclk: None,
-                pclk1: None,
-                pclk2: None,
-                sysclk: None,
-                pll48clk: false,
-                i2s_ckin: None,
-
-                #[cfg(not(feature = "rcc_i2s_apb"))]
-                i2s_clk: None,
-                #[cfg(feature = "rcc_i2s_apb")]
-                i2s_apb1_clk: None,
-                #[cfg(feature = "rcc_i2s_apb")]
-                i2s_apb2_clk: None,
-
-                #[cfg(feature = "sai")]
-                sai1_clk: None,
-                #[cfg(feature = "sai")]
-                sai2_clk: None,
-            },
-        }
-    }
-}
-
 /// Built-in high speed clock frequency
 pub const HSI: u32 = 16_000_000; // Hz
 
@@ -129,7 +99,45 @@ pub struct CFGR {
     sai2_clk: Option<u32>,
 }
 
+impl Default for CFGR {
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
+
 impl CFGR {
+    pub const DEFAULT: Self = Self {
+        hse: None,
+        hse_bypass: false,
+        hclk: None,
+        pclk1: None,
+        pclk2: None,
+        sysclk: None,
+        pll48clk: false,
+
+        i2s_ckin: None,
+
+        #[cfg(not(feature = "rcc_i2s_apb"))]
+        i2s_clk: None,
+        #[cfg(feature = "rcc_i2s_apb")]
+        i2s_apb1_clk: None,
+        #[cfg(feature = "rcc_i2s_apb")]
+        i2s_apb2_clk: None,
+
+        #[cfg(feature = "sai")]
+        sai1_clk: None,
+        #[cfg(feature = "sai")]
+        sai2_clk: None,
+    };
+
+    pub fn hsi() -> Self {
+        Self::DEFAULT
+    }
+
+    pub fn hse(freq: Hertz) -> Self {
+        Self::DEFAULT.use_hse(freq)
+    }
+
     /// Uses HSE (external oscillator) instead of HSI (internal RC oscillator) as the clock source.
     /// Will result in a hang if an external oscillator is not connected or it fails to start.
     pub fn use_hse(mut self, freq: Hertz) -> Self {
@@ -302,7 +310,7 @@ impl CFGR {
     }
 }
 
-impl CFGR {
+impl Rcc {
     fn flash_setup(sysclk: u32) {
         use crate::pac::FLASH;
 
@@ -333,10 +341,9 @@ impl CFGR {
         }
     }
 
-    /// Initialises the hardware according to CFGR state returning a Clocks instance.
-    /// Panics if overclocking is attempted.
-    pub fn freeze(self) -> Clocks {
-        self.freeze_internal(false)
+    /// Apply clock configuration
+    pub fn freeze(self, rcc_cfg: CFGR) -> Self {
+        self.freeze_internal(rcc_cfg, false)
     }
 
     /// Initialises the hardware according to CFGR state returning a Clocks instance.
@@ -346,18 +353,18 @@ impl CFGR {
     ///
     /// This method does not check if the clocks are bigger or smaller than the officially
     /// recommended.
-    pub unsafe fn freeze_unchecked(self) -> Clocks {
-        self.freeze_internal(true)
+    pub unsafe fn freeze_unchecked(self, rcc_cfg: CFGR) -> Self {
+        self.freeze_internal(rcc_cfg, true)
     }
 
-    fn freeze_internal(self, unchecked: bool) -> Clocks {
+    fn freeze_internal(self, rcc_cfg: CFGR, unchecked: bool) -> Self {
         let rcc = unsafe { &*RCC::ptr() };
 
-        let pllsrcclk = self.hse.unwrap_or(HSI);
-        let sysclk = self.sysclk.unwrap_or(pllsrcclk);
+        let pllsrcclk = rcc_cfg.hse.unwrap_or(HSI);
+        let sysclk = rcc_cfg.sysclk.unwrap_or(pllsrcclk);
         let sysclk_on_pll = sysclk != pllsrcclk;
 
-        let plls = pll::PllSetup::from_cfgr(&self, pllsrcclk, sysclk_on_pll.then_some(sysclk));
+        let plls = pll::PllSetup::from_cfgr(&rcc_cfg, pllsrcclk, sysclk_on_pll.then_some(sysclk));
         let sysclk = if sysclk_on_pll {
             plls.pllsysclk.unwrap()
         } else {
@@ -366,7 +373,7 @@ impl CFGR {
 
         assert!(unchecked || !sysclk_on_pll || (SYSCLK_MIN..=SYSCLK_MAX).contains(&sysclk));
 
-        let hclk = self.hclk.unwrap_or(sysclk);
+        let hclk = rcc_cfg.hclk.unwrap_or(sysclk);
         let (hpre_bits, hpre_div) = match (sysclk + hclk - 1) / hclk {
             0 => unreachable!(),
             1 => (HPRE::Div1, 1),
@@ -383,7 +390,7 @@ impl CFGR {
         // Calculate real AHB clock
         let hclk = sysclk / hpre_div;
 
-        let pclk1 = self
+        let pclk1 = rcc_cfg
             .pclk1
             .unwrap_or_else(|| crate::min_u32(PCLK1_MAX, hclk));
         let (ppre1_bits, ppre1) = match (hclk + pclk1 - 1) / pclk1 {
@@ -400,7 +407,7 @@ impl CFGR {
 
         assert!(unchecked || pclk1 <= PCLK1_MAX);
 
-        let pclk2 = self
+        let pclk2 = rcc_cfg
             .pclk2
             .unwrap_or_else(|| crate::min_u32(PCLK2_MAX, hclk));
         let (ppre2_bits, ppre2) = match (hclk + pclk2 - 1) / pclk2 {
@@ -419,10 +426,10 @@ impl CFGR {
 
         Self::flash_setup(sysclk);
 
-        if self.hse.is_some() {
+        if rcc_cfg.hse.is_some() {
             // enable HSE and wait for it to be ready
             rcc.cr().modify(|_, w| {
-                if self.hse_bypass {
+                if rcc_cfg.hse_bypass {
                     w.hsebyp().bypassed();
                 }
                 w.hseon().set_bit()
@@ -493,7 +500,7 @@ impl CFGR {
         rcc.cfgr().modify(|_, w| {
             w.sw().variant(if sysclk_on_pll {
                 SW::Pll
-            } else if self.hse.is_some() {
+            } else if rcc_cfg.hse.is_some() {
                 SW::Hse
             } else {
                 SW::Hsi
@@ -534,11 +541,14 @@ impl CFGR {
             sai2_clk: plls.sai.sai2_clk.map(Hertz::from_raw),
         };
 
-        if self.pll48clk {
+        if rcc_cfg.pll48clk {
             assert!(clocks.is_pll48clk_valid());
         }
 
-        clocks
+        Self {
+            rb: self.rb,
+            clocks,
+        }
     }
 }
 
@@ -745,6 +755,38 @@ pub struct Clocks {
     pub(super) sai1_clk: Option<Hertz>,
     #[cfg(feature = "sai2")]
     pub(super) sai2_clk: Option<Hertz>,
+}
+
+impl Default for Clocks {
+    fn default() -> Clocks {
+        let freq = HSI.Hz();
+        Clocks {
+            hclk: freq,
+            pclk1: freq,
+            pclk2: freq,
+            timclk1: freq,
+            timclk2: freq,
+            sysclk: freq,
+            pll48clk: None,
+            #[cfg(not(feature = "rcc_i2s_apb"))]
+            i2s_clk: None,
+            #[cfg(feature = "rcc_i2s_apb")]
+            i2s_apb1_clk: None,
+            #[cfg(feature = "rcc_i2s_apb")]
+            i2s_apb2_clk: None,
+
+            #[cfg(feature = "sai")]
+            #[cfg(not(feature = "sai2"))]
+            saia_clk: None,
+            #[cfg(feature = "sai")]
+            #[cfg(not(feature = "sai2"))]
+            saib_clk: None,
+            #[cfg(feature = "sai2")]
+            sai1_clk: None,
+            #[cfg(feature = "sai2")]
+            sai2_clk: None,
+        }
+    }
 }
 
 impl Clocks {
