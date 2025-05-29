@@ -26,7 +26,7 @@ use rtic::app;
 
 #[app(device = pac, dispatchers = [USART1], peripherals = true)]
 mod app {
-    use stm32f4xx_hal::rcc::CFGR;
+    use stm32f4xx_hal::rcc::Config;
 
     use super::*;
 
@@ -40,7 +40,7 @@ mod app {
 
     #[init]
     fn init(mut ctx: init::Context) -> (Shared, Local) {
-        let rcc = ctx.device.RCC.freeze(CFGR::hsi().sysclk(48.MHz()));
+        let rcc = ctx.device.RCC.freeze(Config::hsi().sysclk(48.MHz()));
 
         // Create TIM3 monotonic and initialize timer queue
         ctx.device

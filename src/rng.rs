@@ -69,7 +69,7 @@ pub trait RngExt {
     /// ClockError (CECS error).
     /// As the `RNG_CLK` always seems to be connected to the `PLL48_CLK` and the
     /// maximum value of `HCLK` is 168MHz, this is always true as long as the `PLL48_CLK` is enabled.
-    /// This can be done with the [require_pll48clk](crate::rcc::CFGR::require_pll48clk) function.
+    /// This can be done with the [require_pll48clk](crate::rcc::Config::require_pll48clk) function.
     ///
     /// See reference manual section 24.4.2 for more details
     ///

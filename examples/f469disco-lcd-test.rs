@@ -14,7 +14,7 @@ use cortex_m_rt::entry;
 use defmt_rtt as _;
 use panic_probe as _;
 
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{
     dsi::{
@@ -55,7 +55,7 @@ fn main() -> ! {
     let hse_freq = 8.MHz();
     let rcc = dp
         .RCC
-        .freeze(CFGR::hse(hse_freq).pclk2(32.MHz()).sysclk(180.MHz()));
+        .freeze(Config::hse(hse_freq).pclk2(32.MHz()).sysclk(180.MHz()));
     let mut delay = cp.SYST.delay(&rcc.clocks);
 
     let gpioh = dp.GPIOH.split();

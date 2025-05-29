@@ -31,7 +31,7 @@ fn main() -> ! {
 
     let mut p = hal::pac::Peripherals::take().unwrap();
 
-    let rcc = p.RCC.constrain();
+    let _rcc = p.RCC.constrain();
     let mut rtc = Rtc::new(p.RTC, &mut p.PWR);
 
     let today = date!(2023 - 05 - 28);

@@ -19,7 +19,7 @@
 #![no_main]
 
 use panic_semihosting as _; // logs messages to the host stderr; requires a debugger
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{
     dma::{Stream1, StreamsTuple},
@@ -321,7 +321,7 @@ fn I2C1_ER() {
 
 fn setup_clocks(rcc: pac::RCC) -> Rcc {
     rcc.freeze(
-        CFGR::hsi()
+        Config::hsi()
             .hclk(48.MHz())
             .sysclk(48.MHz())
             .pclk1(24.MHz())

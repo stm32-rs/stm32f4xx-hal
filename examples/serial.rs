@@ -4,7 +4,7 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
-use stm32f4xx_hal::{self as hal, rcc::CFGR};
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{pac, prelude::*};
 
@@ -16,7 +16,7 @@ fn main() -> ! {
 
     let gpioa = dp.GPIOA.split();
 
-    let rcc = dp.RCC.freeze(CFGR::hse(25.MHz()));
+    let rcc = dp.RCC.freeze(Config::hse(25.MHz()));
 
     let mut delay = dp.TIM1.delay_ms(&rcc.clocks);
 

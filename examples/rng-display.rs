@@ -15,7 +15,7 @@
 #![no_main]
 
 use stm32f4xx_hal as hal;
-use stm32f4xx_hal::rcc::CFGR;
+use stm32f4xx_hal::rcc::Config;
 
 #[cfg(not(debug_assertions))]
 use panic_halt as _;
@@ -59,7 +59,7 @@ fn main() -> ! {
         // here we pick a simple clock configuration that ensures the pll48clk,
         // from which RNG_CLK is derived, is about 48 MHz
         // discovery board has 8 MHz crystal for HSE
-        let rcc = dp.RCC.freeze(CFGR::hse(8.MHz()).sysclk(128.MHz()));
+        let rcc = dp.RCC.freeze(Config::hse(8.MHz()).sysclk(128.MHz()));
 
         let mut delay_source = cp.SYST.delay(&rcc.clocks);
 

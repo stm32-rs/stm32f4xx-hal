@@ -17,7 +17,7 @@ use stm32f4xx_hal::{
     ltdc::{BluePins, GreenPins, Layer, LtdcPins, PixelFormat, RedPins},
     pac,
     prelude::*,
-    rcc::{Rcc, CFGR},
+    rcc::{Config, Rcc},
 };
 
 mod screen;
@@ -68,7 +68,7 @@ fn main() -> ! {
     // HSE osc out in High Z
     gpioh.ph1.into_floating_input();
     let _rcc_hal = rcc_hal.freeze(
-        CFGR::hse(25.MHz())
+        Config::hse(25.MHz())
             .bypass_hse_oscillator()
             .sysclk(216.MHz())
             .hclk(216.MHz()),

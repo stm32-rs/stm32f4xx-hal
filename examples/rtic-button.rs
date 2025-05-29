@@ -10,7 +10,7 @@ mod app {
     use stm32f4xx_hal::{
         gpio::{gpioa::PA0, gpioc::PC13, Edge, Input, Output, PinState, Pull},
         prelude::*,
-        rcc::CFGR,
+        rcc::Config,
     };
     const SYSFREQ: u32 = 100_000_000;
     // Shared resources go here
@@ -32,7 +32,7 @@ mod app {
         let _rcc = ctx
             .device
             .RCC
-            .freeze(CFGR::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
+            .freeze(Config::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
         // gpio ports A and C
         let gpioa = ctx.device.GPIOA.split();
         let gpioc = ctx.device.GPIOC.split();

@@ -10,7 +10,7 @@ mod app {
         otg_fs::{UsbBus, UsbBusType, USB},
         pac,
         prelude::*,
-        rcc::CFGR,
+        rcc::Config,
         timer::MonoTimerUs,
     };
 
@@ -41,7 +41,7 @@ mod app {
         // Setup system clocks
         let rcc = dp
             .RCC
-            .freeze(CFGR::hse(25.MHz()).sysclk(84.MHz()).require_pll48clk());
+            .freeze(Config::hse(25.MHz()).sysclk(84.MHz()).require_pll48clk());
 
         let gpioa = dp.GPIOA.split();
         let gpioc = dp.GPIOC.split();

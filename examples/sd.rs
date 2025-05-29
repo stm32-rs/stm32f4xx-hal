@@ -8,7 +8,7 @@ use panic_semihosting as _;
 use stm32f4xx_hal::{
     pac,
     prelude::*,
-    rcc::CFGR,
+    rcc::Config,
     sdio::{ClockFreq, SdCard, Sdio},
 };
 
@@ -18,7 +18,7 @@ fn main() -> ! {
     let core = cortex_m::Peripherals::take().unwrap();
 
     let rcc = device.RCC.freeze(
-        CFGR::hse(12.MHz())
+        Config::hse(12.MHz())
             .require_pll48clk()
             .sysclk(168.MHz())
             .hclk(168.MHz())

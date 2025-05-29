@@ -13,7 +13,7 @@ mod usart_shell {
         gpio::{gpioa::PA0, gpioc::PC13, Edge, Input, Output, PushPull},
         pac::USART1,
         prelude::*,
-        rcc::CFGR,
+        rcc,
         serial::{self, config::Config, Serial},
     };
 
@@ -56,7 +56,7 @@ mod usart_shell {
         let rcc = ctx
             .device
             .RCC
-            .freeze(CFGR::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
+            .freeze(rcc::Config::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
         // monotonic timer
         let mono = DwtSystick::new(&mut ctx.core.DCB, ctx.core.DWT, ctx.core.SYST, SYSFREQ);
         // gpio ports A and C

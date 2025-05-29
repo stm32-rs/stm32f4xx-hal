@@ -8,13 +8,13 @@ use panic_halt as _;
 use core::f32::consts::FRAC_PI_2;
 use cortex_m_rt::entry;
 use micromath::F32Ext;
-use stm32f4xx_hal::{pac, prelude::*, rcc::CFGR};
+use stm32f4xx_hal::{pac, prelude::*, rcc::Config};
 
 #[entry]
 fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
-        let rcc = dp.RCC.freeze(CFGR::hse(25.MHz()));
+        let rcc = dp.RCC.freeze(Config::hse(25.MHz()));
 
         let gpioa = dp.GPIOA.split();
 

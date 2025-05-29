@@ -22,7 +22,7 @@ use stm32f4xx_hal::{
     gpio::Speed,
     pac,
     prelude::*,
-    rcc::CFGR,
+    rcc::Config,
 };
 
 use embedded_graphics_07::{
@@ -53,7 +53,7 @@ fn main() -> ! {
     let p = pac::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 
-    let rcc = p.RCC.freeze(CFGR::hsi().sysclk(100.MHz()));
+    let rcc = p.RCC.freeze(Config::hsi().sysclk(100.MHz()));
     let mut delay = cp.SYST.delay(&rcc.clocks);
 
     let gpiob = p.GPIOB.split();
