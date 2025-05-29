@@ -16,7 +16,9 @@ use cortex_m_rt::entry;
 fn main() -> ! {
     let p = pac::Peripherals::take().unwrap();
 
-    let gpioc = p.GPIOC.split();
+    let mut rcc = p.RCC.constrain();
+
+    let gpioc = p.GPIOC.split(&mut rcc);
     let mut led = gpioc.pc13.into_push_pull_output();
 
     loop {

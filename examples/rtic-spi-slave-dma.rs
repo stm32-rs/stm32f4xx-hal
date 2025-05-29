@@ -54,19 +54,19 @@ mod app {
 
         let device_peripherals: hal::pac::Peripherals = cx.device;
 
-        let _rcc = device_peripherals
+        let mut rcc = device_peripherals
             .RCC
             .freeze(Config::hsi().sysclk(100.MHz()).pclk1(36.MHz()));
 
         let mono = Systick::new(core.SYST, 100_000_000);
 
-        let gpioc = device_peripherals.GPIOC.split();
+        let gpioc = device_peripherals.GPIOC.split(&mut rcc);
         let mut led = gpioc.pc13.into_push_pull_output();
 
         let gpiob = device_peripherals.GPIOB;
         let spi = device_peripherals.SPI3;
 
-        let gpiob = gpiob.split();
+        let gpiob = gpiob.split(&mut rcc);
 
         let sck = gpiob.pb3.into_alternate();
         let miso = gpiob.pb4.into_alternate();
@@ -77,12 +77,17 @@ mod app {
             phase: Phase::CaptureOnFirstTransition,
         };
 
-        let mut spi3 = SpiSlave::new(spi, (Some(sck), Some(miso), Some(mosi), SPI3::NoNss), mode);
+        let mut spi3 = SpiSlave::new(
+            spi,
+            (Some(sck), Some(miso), Some(mosi), SPI3::NoNss),
+            mode,
+            &mut rcc,
+        );
         spi3.set_internal_nss(false);
 
         let (tx, rx) = spi3.use_dma().txrx();
 
-        let streams = StreamsTuple::new(device_peripherals.DMA1);
+        let streams = StreamsTuple::new(device_peripherals.DMA1, &mut rcc);
         let tx_stream = streams.5;
         let rx_stream = streams.0;
 

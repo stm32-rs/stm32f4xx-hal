@@ -22,16 +22,16 @@ fn main() -> ! {
     // I2S-encoded audio.
 
     // Initialize clocks.
-    let rcc = p
+    let mut rcc = p
         .RCC
         .freeze(Config::hse(8.MHz()).saia_clk(172.MHz()).saib_clk(172.MHz()));
     // Test that the SAI clock is suitable for 48000KHz audio.
     assert!(rcc.clocks.saia_clk() == Some(172.MHz()));
     assert!(rcc.clocks.saib_clk() == Some(172.MHz()));
 
-    let gpioe = p.GPIOE.split();
+    let gpioe = p.GPIOE.split(&mut rcc);
     // SAIB is made synchronous to A.
-    let (saia, saib) = p.SAI.split_sync_b();
+    let (saia, saib) = p.SAI.split_sync_b(&mut rcc);
     let protocol = Protocol {
         sync: Synchronization::I2S,
         word_size: WordSize::Bit16,

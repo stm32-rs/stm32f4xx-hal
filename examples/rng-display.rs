@@ -59,17 +59,17 @@ fn main() -> ! {
         // here we pick a simple clock configuration that ensures the pll48clk,
         // from which RNG_CLK is derived, is about 48 MHz
         // discovery board has 8 MHz crystal for HSE
-        let rcc = dp.RCC.freeze(Config::hse(8.MHz()).sysclk(128.MHz()));
+        let mut rcc = dp.RCC.freeze(Config::hse(8.MHz()).sysclk(128.MHz()));
 
         let mut delay_source = cp.SYST.delay(&rcc.clocks);
 
         // Set up I2C1: SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F407 datasheet. Pin assignment as per the
         // stm32f4-discovery (ST32F407G-DISC1) board.
-        let gpiob = dp.GPIOB.split();
+        let gpiob = dp.GPIOB.split(&mut rcc);
         let scl = gpiob.pb8;
         let sda = gpiob.pb9;
-        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &rcc.clocks);
+        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
 
         // Set up the display
         let interface = I2CDisplayInterface::new(i2c);
@@ -79,7 +79,7 @@ fn main() -> ! {
 
         // enable the RNG peripheral and its clock
         // this will panic if the clock configuration is unsuitable
-        let mut rand_source = dp.RNG.constrain(&rcc.clocks);
+        let mut rand_source = dp.RNG.constrain(&mut rcc);
         let mut format_buf = String::<20>::new();
         loop {
             //display clear

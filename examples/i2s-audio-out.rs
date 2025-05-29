@@ -91,19 +91,19 @@ fn main() -> ! {
     rtt_init_print!();
     let dp = Peripherals::take().unwrap();
 
-    let gpioa = dp.GPIOA.split();
-    let gpioc = dp.GPIOC.split();
-
     // The 61440 kHz frequency can be divided to get exactly 48 kHz sample rate even when
     // generating master clock
-    let rcc = dp.RCC.freeze(
+    let mut rcc = dp.RCC.freeze(
         Config::hse(8u32.MHz())
             .sysclk(96.MHz())
             .i2s_clk(61440.kHz()),
     );
 
+    let gpioa = dp.GPIOA.split(&mut rcc);
+    let gpioc = dp.GPIOC.split(&mut rcc);
+
     let i2s_pins = (gpioa.pa4, gpioc.pc10, SPI3::NoMck, gpioc.pc12);
-    let i2s = I2s::new(dp.SPI3, i2s_pins, &rcc.clocks);
+    let i2s = I2s::new(dp.SPI3, i2s_pins, &mut rcc);
     let i2s_config = I2sTransferConfig::new_master()
         .transmit()
         .standard(Philips)

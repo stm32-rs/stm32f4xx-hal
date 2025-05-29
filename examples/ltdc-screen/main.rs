@@ -35,17 +35,17 @@ fn main() -> ! {
     let perif = pac::Peripherals::take().unwrap();
     let _cp = cortex_m::Peripherals::take().unwrap();
 
-    let rcc_hal: Rcc = perif.RCC.constrain();
+    let mut rcc_hal: Rcc = perif.RCC.constrain();
 
     // Set up pins
-    let _gpioa = perif.GPIOA.split();
-    let _gpiob = perif.GPIOB.split();
-    let gpioe = perif.GPIOE.split();
-    let gpiog = perif.GPIOG.split();
-    let gpioh = perif.GPIOH.split();
-    let gpioi = perif.GPIOI.split();
-    let gpioj = perif.GPIOJ.split();
-    let gpiok = perif.GPIOK.split();
+    let _gpioa = perif.GPIOA.split(&mut rcc_hal);
+    let _gpiob = perif.GPIOB.split(&mut rcc_hal);
+    let gpioe = perif.GPIOE.split(&mut rcc_hal);
+    let gpiog = perif.GPIOG.split(&mut rcc_hal);
+    let gpioh = perif.GPIOH.split(&mut rcc_hal);
+    let gpioi = perif.GPIOI.split(&mut rcc_hal);
+    let gpioj = perif.GPIOJ.split(&mut rcc_hal);
+    let gpiok = perif.GPIOK.split(&mut rcc_hal);
 
     let pins = LtdcPins::new(
         RedPins::new(

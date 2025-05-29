@@ -22,10 +22,10 @@ use stm32f4xx_hal::{pac, prelude::*};
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.constrain();
-    let gpiob = dp.GPIOB.split();
+    let mut rcc = dp.RCC.constrain();
+    let gpiob = dp.GPIOB.split(&mut rcc);
 
-    let mut delay = dp.TIM1.delay_us(&rcc.clocks);
+    let mut delay = dp.TIM1.delay_us(&mut rcc);
 
     let rs = gpiob.pb7.into_push_pull_output();
     let en = gpiob.pb8.into_push_pull_output();

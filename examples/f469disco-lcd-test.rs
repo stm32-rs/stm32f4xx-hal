@@ -53,12 +53,12 @@ fn main() -> ! {
     let cp = CorePeripherals::take().unwrap();
 
     let hse_freq = 8.MHz();
-    let rcc = dp
+    let mut rcc = dp
         .RCC
         .freeze(Config::hse(hse_freq).pclk2(32.MHz()).sysclk(180.MHz()));
     let mut delay = cp.SYST.delay(&rcc.clocks);
 
-    let gpioh = dp.GPIOH.split();
+    let gpioh = dp.GPIOH.split(&mut rcc);
 
     // Reset display
     let mut lcd_reset = gpioh.ph7.into_push_pull_output();
@@ -107,7 +107,7 @@ fn main() -> ! {
         DISPLAY_CONFIGURATION,
         dsi_config,
         dp.DSI,
-        &rcc.clocks,
+        &mut rcc,
     )
     .unwrap();
 

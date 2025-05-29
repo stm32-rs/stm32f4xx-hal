@@ -20,10 +20,10 @@ fn main() -> ! {
     // Take ownership over raw device and convert it into the corresponding HAL struct
     // Freeze the configuration of all the clocks in the system and store the frozen frequencies in
     // `clocks`
-    let rcc = dp.RCC.constrain();
+    let mut rcc = dp.RCC.constrain();
 
     // Acquire the GPIOC peripheral
-    let gpioc = dp.GPIOC.split();
+    let gpioc = dp.GPIOC.split(&mut rcc);
 
     let mut pin = gpioc.pc13.into_dynamic();
     // Configure the syst timer to trigger an update every second

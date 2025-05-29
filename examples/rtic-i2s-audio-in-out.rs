@@ -152,12 +152,8 @@ mod app {
         let (adc_p, process_c) = queue_1.split();
         let (process_p, dac_c) = queue_2.split();
         let device = cx.device;
-        let mut syscfg = device.SYSCFG.constrain();
         let mut exti = device.EXTI;
-        let gpioa = device.GPIOA.split();
-        let gpiob = device.GPIOB.split();
-        let gpioc = device.GPIOC.split();
-        let rcc = device.RCC.freeze(
+        let mut rcc = device.RCC.freeze(
             Config::hse(8u32.MHz())
                 .sysclk(96.MHz())
                 .hclk(96.MHz())
@@ -165,6 +161,10 @@ mod app {
                 .pclk2(100.MHz())
                 .i2s_clk(61440.kHz()),
         );
+        let mut syscfg = device.SYSCFG.constrain(&mut rcc);
+        let gpioa = device.GPIOA.split(&mut rcc);
+        let gpiob = device.GPIOB.split(&mut rcc);
+        let gpioc = device.GPIOC.split(&mut rcc);
 
         // I2S pins: (WS, CK, MCLK, SD) for I2S2
         let i2s2_pins = (
@@ -173,7 +173,7 @@ mod app {
             Some(gpioc.pc6), //MCK
             gpiob.pb15,      //SD
         );
-        let i2s2 = I2s::new(device.SPI2, i2s2_pins, &rcc.clocks);
+        let i2s2 = I2s::new(device.SPI2, i2s2_pins, &mut rcc);
         let i2s2_config = I2sDriverConfig::new_master()
             .receive()
             .standard(Philips)
@@ -187,7 +187,7 @@ mod app {
 
         // I2S3 pins: (WS, CK, NoMck, SD) for I2S3
         let i2s3_pins = (gpioa.pa4, gpioc.pc10, SPI3::NoMck, gpioc.pc12);
-        let i2s3 = I2s::new(device.SPI3, i2s3_pins, &rcc.clocks);
+        let i2s3 = I2s::new(device.SPI3, i2s3_pins, &mut rcc);
         let i2s3_config = i2s2_config.to_slave().transmit();
         let mut i2s3_driver = I2sDriver::new(i2s3, i2s3_config);
         i2s3_driver.set_tx_interrupt(true);

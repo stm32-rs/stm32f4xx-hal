@@ -18,16 +18,16 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().expect("cannot take peripherals");
 
     // Configure APB bus clock to 48 MHz, cause ws2812b requires 3 Mbps SPI
-    let rcc = dp.RCC.freeze(Config::hse(25.MHz()).sysclk(48.MHz()));
+    let mut rcc = dp.RCC.freeze(Config::hse(25.MHz()).sysclk(48.MHz()));
 
-    let mut delay = dp.TIM1.delay_us(&rcc.clocks);
-    let gpioa = dp.GPIOA.split();
+    let mut delay = dp.TIM1.delay_us(&mut rcc);
+    let gpioa = dp.GPIOA.split(&mut rcc);
 
     let spi = dp.SPI1.spi(
         (Some(gpioa.pa5), SPI1::NoMiso, Some(gpioa.pa7)),
         ws2812::MODE,
         3000.kHz(),
-        &rcc.clocks,
+        &mut rcc,
     );
 
     const NUM_LEDS: usize = 20;

@@ -56,7 +56,7 @@
 
 use core::marker::PhantomData;
 
-use crate::pac;
+use crate::pac::{self, RCC};
 pub mod alt;
 mod convert;
 pub use convert::PinMode;
@@ -82,7 +82,7 @@ pub trait GpioExt {
     type Parts;
 
     /// Splits the GPIO block into independent pins and registers
-    fn split(self) -> Self::Parts;
+    fn split(self, rcc: &mut RCC) -> Self::Parts;
 }
 
 /// Id, port and mode for any pin
@@ -558,7 +558,7 @@ macro_rules! gpio {
     ]) => {
         /// GPIO
         pub mod $gpiox {
-            use crate::pac::$GPIOX;
+            use crate::pac::{$GPIOX, RCC};
             use crate::rcc::{Enable, Reset};
 
             /// GPIO parts
@@ -572,12 +572,10 @@ macro_rules! gpio {
             impl super::GpioExt for $GPIOX {
                 type Parts = Parts;
 
-                fn split(self) -> Parts {
-                    unsafe {
-                        // Enable clock.
-                        $GPIOX::enable_unchecked();
-                        $GPIOX::reset_unchecked();
-                    }
+                fn split(self, rcc: &mut RCC) -> Parts {
+                    // Enable clock.
+                    $GPIOX::enable(rcc);
+                    $GPIOX::reset(rcc);
                     Parts {
                         $(
                             $pxi: $PXi::new(),

@@ -14,19 +14,19 @@ use core::fmt::Write; // for pretty formatting of the serial output
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let gpioa = dp.GPIOA.split();
+    let mut rcc = dp.RCC.freeze(Config::hse(25.MHz()));
 
-    let rcc = dp.RCC.freeze(Config::hse(25.MHz()));
+    let gpioa = dp.GPIOA.split(&mut rcc);
 
-    let mut delay = dp.TIM1.delay_ms(&rcc.clocks);
+    let mut delay = dp.TIM1.delay_ms(&mut rcc);
 
     // define RX/TX pins
     let tx_pin = gpioa.pa9;
 
     // configure serial
-    // let mut tx = Serial::tx(dp.USART1, tx_pin, 9600.bps(), &rcc.clocks).unwrap();
+    // let mut tx = Serial::tx(dp.USART1, tx_pin, 9600.bps(), &mut rcc).unwrap();
     // or
-    let mut tx = dp.USART1.tx(tx_pin, 9600.bps(), &rcc.clocks).unwrap();
+    let mut tx = dp.USART1.tx(tx_pin, 9600.bps(), &mut rcc).unwrap();
 
     let mut value: u8 = 0;
 

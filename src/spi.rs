@@ -36,10 +36,9 @@ pub struct Mode {
 mod hal_02;
 mod hal_1;
 
-use crate::pac::spi1;
-use crate::rcc;
+use crate::pac::{spi1, RCC};
+use crate::rcc::{self, Rcc};
 
-use crate::rcc::Clocks;
 use enumflags2::BitFlags;
 use fugit::HertzU32 as Hertz;
 
@@ -259,7 +258,7 @@ pub trait SpiExt: Sized + Instance {
         ),
         mode: impl Into<Mode>,
         freq: Hertz,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Spi<Self, false, u8>;
 
     fn spi_bidi(
@@ -267,7 +266,7 @@ pub trait SpiExt: Sized + Instance {
         pins: (Option<impl Into<Self::Sck>>, Option<impl Into<Self::Mosi>>),
         mode: impl Into<Mode>,
         freq: Hertz,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Spi<Self, true, u8>;
 
     fn spi_slave(
@@ -279,6 +278,7 @@ pub trait SpiExt: Sized + Instance {
             Option<impl Into<Self::Nss>>,
         ),
         mode: impl Into<Mode>,
+        rcc: &mut RCC,
     ) -> SpiSlave<Self, false, u8>;
 
     fn spi_bidi_slave(
@@ -289,6 +289,7 @@ pub trait SpiExt: Sized + Instance {
             Option<impl Into<Self::Nss>>,
         ),
         mode: impl Into<Mode>,
+        rcc: &mut RCC,
     ) -> SpiSlave<Self, true, u8>;
 }
 
@@ -307,9 +308,9 @@ impl<SPI: Instance> SpiExt for SPI {
         ),
         mode: impl Into<Mode>,
         freq: Hertz,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Spi<Self, false, u8> {
-        Spi::new(self, pins, mode, freq, clocks)
+        Spi::new(self, pins, mode, freq, rcc)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master BIDI mode.
     ///
@@ -321,9 +322,9 @@ impl<SPI: Instance> SpiExt for SPI {
         pins: (Option<impl Into<Self::Sck>>, Option<impl Into<Self::Mosi>>),
         mode: impl Into<Mode>,
         freq: Hertz,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Spi<Self, true, u8> {
-        Spi::new_bidi(self, pins, mode, freq, clocks)
+        Spi::new_bidi(self, pins, mode, freq, rcc)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
     ///
@@ -339,8 +340,9 @@ impl<SPI: Instance> SpiExt for SPI {
             Option<impl Into<Self::Nss>>,
         ),
         mode: impl Into<Mode>,
+        rcc: &mut RCC,
     ) -> SpiSlave<Self, false, u8> {
-        SpiSlave::new(self, pins, mode)
+        SpiSlave::new(self, pins, mode, rcc)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave BIDI mode.
     ///
@@ -355,8 +357,9 @@ impl<SPI: Instance> SpiExt for SPI {
             Option<impl Into<Self::Nss>>,
         ),
         mode: impl Into<Mode>,
+        rcc: &mut RCC,
     ) -> SpiSlave<Self, true, u8> {
-        SpiSlave::new_bidi(self, pins, mode)
+        SpiSlave::new_bidi(self, pins, mode, rcc)
     }
 }
 
@@ -471,17 +474,19 @@ impl<SPI: Instance> Spi<SPI, false, u8> {
         ),
         mode: impl Into<Mode>,
         freq: Hertz,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Self {
-        unsafe {
-            SPI::enable_unchecked();
-            SPI::reset_unchecked();
-        }
+        SPI::enable(rcc);
+        SPI::reset(rcc);
 
-        let pins = (pins.0, pins.1, pins.2);
+        let pins = (
+            pins.0.map(Into::into),
+            pins.1.map(Into::into),
+            pins.2.map(Into::into),
+        );
 
         Self::_new(spi, pins)
-            .pre_init(mode.into(), freq, SPI::clock(clocks))
+            .pre_init(mode.into(), freq, SPI::clock(&rcc.clocks))
             .init()
     }
 }
@@ -497,17 +502,15 @@ impl<SPI: Instance> Spi<SPI, true, u8> {
         pins: (Option<impl Into<SPI::Sck>>, Option<impl Into<SPI::Mosi>>),
         mode: impl Into<Mode>,
         freq: Hertz,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Self {
-        unsafe {
-            SPI::enable_unchecked();
-            SPI::reset_unchecked();
-        }
+        SPI::enable(rcc);
+        SPI::reset(rcc);
 
         let pins = (pins.0, SPI::NoMiso, pins.1);
 
         Self::_new(spi, pins)
-            .pre_init(mode.into(), freq, SPI::clock(clocks))
+            .pre_init(mode.into(), freq, SPI::clock(&rcc.clocks))
             .init()
     }
 }
@@ -527,11 +530,10 @@ impl<SPI: Instance> SpiSlave<SPI, false, u8> {
             Option<impl Into<SPI::Nss>>,
         ),
         mode: impl Into<Mode>,
+        rcc: &mut RCC,
     ) -> Self {
-        unsafe {
-            SPI::enable_unchecked();
-            SPI::reset_unchecked();
-        }
+        SPI::enable(rcc);
+        SPI::reset(rcc);
 
         let pins = (pins.0, pins.1, pins.2, pins.3);
 
@@ -553,11 +555,10 @@ impl<SPI: Instance> SpiSlave<SPI, true, u8> {
             Option<impl Into<SPI::Nss>>,
         ),
         mode: impl Into<Mode>,
+        rcc: &mut RCC,
     ) -> Self {
-        unsafe {
-            SPI::enable_unchecked();
-            SPI::reset_unchecked();
-        }
+        SPI::enable(rcc);
+        SPI::reset(rcc);
 
         let pins = (pins.0, pins.1, SPI::NoMosi, pins.2);
 

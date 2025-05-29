@@ -19,9 +19,10 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
 
-    let gpioa = dp.GPIOA.split();
-    let gpiob = dp.GPIOB.split();
-    let rcc = dp.RCC.constrain();
+    let mut rcc = dp.RCC.constrain();
+
+    let gpioa = dp.GPIOA.split(&mut rcc);
+    let gpiob = dp.GPIOB.split(&mut rcc);
 
     let mut led = gpioa.pa5.into_push_pull_output();
     led.set_low();
@@ -41,11 +42,11 @@ fn main() -> ! {
     };
 
     // Change spi transfer mode to Bidi for more efficient operations.
-    // let spi = Spi::new(dp.SPI1, (Some(sck), Some(miso), Some(mosi)), mode, 8.MHz(), &rcc.clocks).to_bidi_transfer_mode();
+    // let spi = Spi::new(dp.SPI1, (Some(sck), Some(miso), Some(mosi)), mode, 8.MHz(), &mut rcc).to_bidi_transfer_mode();
     // or
     let spi = dp
         .SPI1
-        .spi_bidi((Some(sck), Some(mosi)), mode, 8.MHz(), &rcc.clocks);
+        .spi_bidi((Some(sck), Some(mosi)), mode, 8.MHz(), &mut rcc);
 
     let iface = SPIInterface::new(spi, dc, cs);
 

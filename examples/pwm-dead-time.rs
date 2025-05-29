@@ -15,11 +15,11 @@ use hal::{pac, prelude::*, timer::Polarity};
 fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock. We want to run at 84MHz for this one.
-        let rcc = dp.RCC.freeze(Config::hsi().sysclk(25.MHz()));
+        let mut rcc = dp.RCC.freeze(Config::hsi().sysclk(25.MHz()));
 
-        let gpioa = dp.GPIOA.split();
+        let gpioa = dp.GPIOA.split(&mut rcc);
 
-        let (mut pwm_mngr, (pwm_c1, ..)) = dp.TIM1.pwm_hz(20.kHz(), &rcc.clocks);
+        let (mut pwm_mngr, (pwm_c1, ..)) = dp.TIM1.pwm_hz(20.kHz(), &mut rcc);
 
         let mut pwm_c1 = pwm_c1.with(gpioa.pa8).with_complementary(gpioa.pa7);
 

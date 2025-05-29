@@ -23,10 +23,10 @@ use crate::hal::{pac, prelude::*};
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let rcc = dp.RCC.freeze(Config::hsi().sysclk(24.MHz()));
+    let mut rcc = dp.RCC.freeze(Config::hsi().sysclk(24.MHz()));
 
     // Create a timer based on SysTick
-    let mut timer = dp.TIM1.counter_ms(&rcc.clocks);
+    let mut timer = dp.TIM1.counter_ms(&mut rcc);
     timer.start(1.secs()).unwrap();
 
     hprintln!("hello!");

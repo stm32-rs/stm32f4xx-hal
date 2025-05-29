@@ -14,15 +14,15 @@ use stm32f4xx_hal::{pac, prelude::*, rcc::Config};
 fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
-        let rcc = dp.RCC.freeze(Config::hse(25.MHz()));
+        let mut rcc = dp.RCC.freeze(Config::hse(25.MHz()));
 
-        let gpioa = dp.GPIOA.split();
+        let gpioa = dp.GPIOA.split(&mut rcc);
 
-        let (_, (pwm_c1, pwm_c2, ..)) = dp.TIM1.pwm_us(100.micros(), &rcc.clocks);
+        let (_, (pwm_c1, pwm_c2, ..)) = dp.TIM1.pwm_us(100.micros(), &mut rcc);
         let mut pwm_c1 = pwm_c1.with(gpioa.pa8);
         let mut pwm_c2 = pwm_c2.with(gpioa.pa9);
 
-        let mut counter = dp.TIM2.counter_us(&rcc.clocks);
+        let mut counter = dp.TIM2.counter_us(&mut rcc);
         let max_duty = pwm_c1.get_max_duty();
 
         const N: usize = 50;

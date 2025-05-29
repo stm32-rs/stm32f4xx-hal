@@ -26,16 +26,16 @@ mod app {
 
     #[init]
     fn init(mut ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        // syscfg
-        let mut syscfg = ctx.device.SYSCFG.constrain();
         // clocks
-        let _rcc = ctx
+        let mut rcc = ctx
             .device
             .RCC
             .freeze(Config::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
+        // syscfg
+        let mut syscfg = ctx.device.SYSCFG.constrain(&mut rcc);
         // gpio ports A and C
-        let gpioa = ctx.device.GPIOA.split();
-        let gpioc = ctx.device.GPIOC.split();
+        let gpioa = ctx.device.GPIOA.split(&mut rcc);
+        let gpioc = ctx.device.GPIOC.split(&mut rcc);
         // button
         let mut button = Input::new(gpioa.pa0, Pull::Up);
         // or

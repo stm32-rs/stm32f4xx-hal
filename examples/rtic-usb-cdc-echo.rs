@@ -39,15 +39,15 @@ mod app {
         let dp = ctx.device;
 
         // Setup system clocks
-        let rcc = dp
+        let mut rcc = dp
             .RCC
             .freeze(Config::hse(25.MHz()).sysclk(84.MHz()).require_pll48clk());
 
-        let gpioa = dp.GPIOA.split();
-        let gpioc = dp.GPIOC.split();
+        let gpioa = dp.GPIOA.split(&mut rcc);
+        let gpioc = dp.GPIOC.split(&mut rcc);
         let led = gpioc.pc13.into_push_pull_output();
 
-        let mono = dp.TIM2.monotonic_us(&rcc.clocks);
+        let mono = dp.TIM2.monotonic_us(&mut rcc);
         tick::spawn().ok();
 
         // *** Begin USB setup ***
