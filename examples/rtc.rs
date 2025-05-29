@@ -21,10 +21,8 @@ fn main() -> ! {
     let mut p = pac::Peripherals::take().unwrap();
     let rcc = p.RCC.constrain();
 
-    let clocks = rcc.cfgr.freeze();
-
     let mut rtc = Rtc::new(p.RTC, &mut p.PWR);
-    let mut delay = p.TIM5.delay_us(&clocks);
+    let mut delay = p.TIM5.delay_us(&rcc.clocks);
 
     rtc.set_datetime(&PrimitiveDateTime::new(
         date!(2022 - 02 - 07),

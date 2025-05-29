@@ -13,11 +13,10 @@ fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
         let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.freeze();
 
         let gpioa = dp.GPIOA.split();
 
-        let (_, (ch1, ch2, ..)) = dp.TIM1.pwm_us(100.micros(), &clocks);
+        let (_, (ch1, ch2, ..)) = dp.TIM1.pwm_us(100.micros(), &rcc.clocks);
         let mut ch1 = ch1.with(gpioa.pa8);
         let mut _ch2 = ch2.with(gpioa.pa9);
 

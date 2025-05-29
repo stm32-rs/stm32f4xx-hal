@@ -23,9 +23,9 @@ mod usart_shell {
     use stm32f4xx_hal::{
         gpio::{gpioa::PA0, gpioc::PC13, Edge, Input, Output, PushPull},
         i2c::I2c,
-        pac::I2C1,
-        pac::USART1,
+        pac::{I2C1, USART1},
         prelude::*,
+        rcc::CFGR,
         serial::{self, config::Config, Serial},
         timer::Event,
     };
@@ -81,8 +81,10 @@ mod usart_shell {
         // syscfg
         let mut syscfg = ctx.device.SYSCFG.constrain();
         // clocks
-        let rcc = ctx.device.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(SYSFREQ.Hz()).use_hse(25.MHz()).freeze();
+        let rcc = ctx
+            .device
+            .RCC
+            .freeze(CFGR::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
         // monotonic timer
         let mono = DwtSystick::new(&mut ctx.core.DCB, ctx.core.DWT, ctx.core.SYST, SYSFREQ);
         // gpio ports A and C
@@ -99,14 +101,14 @@ mod usart_shell {
         // i2c
         let scl = gpiob.pb8;
         let sda = gpiob.pb9;
-        let i2c = I2c::new(ctx.device.I2C1, (scl, sda), 400.kHz(), &clocks);
+        let i2c = I2c::new(ctx.device.I2C1, (scl, sda), 400.kHz(), &rcc.clocks);
         // serial
         let pins = (gpioa.pa9, gpioa.pa10);
         let mut serial = Serial::new(
             ctx.device.USART1,
             pins,
             Config::default().baudrate(115_200.bps()).wordlength_8(),
-            &clocks,
+            &rcc.clocks,
         )
         .unwrap()
         .with_u8_data();
@@ -121,7 +123,7 @@ mod usart_shell {
             .into_buffered_graphics_mode();
         ldisp.init().unwrap();
 
-        let mut timer = ctx.device.TIM2.counter_hz(&clocks);
+        let mut timer = ctx.device.TIM2.counter_hz(&rcc.clocks);
         //let mut timer = FTimer::new(ctx.device.TIM1, &clocks).counter_hz();
         timer.start(FPS.Hz()).unwrap();
         timer.listen(Event::Update);

@@ -7,6 +7,7 @@ use panic_halt as _;
 
 use cortex_m_rt::entry;
 use stm32f4xx_hal::otg_fs::{UsbBus, USB};
+use stm32f4xx_hal::rcc::CFGR;
 use stm32f4xx_hal::{pac, prelude::*};
 use usb_device::prelude::*;
 
@@ -16,21 +17,16 @@ static mut EP_MEMORY: [u32; 1024] = [0; 1024];
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.constrain();
-
-    let clocks = rcc
-        .cfgr
-        .use_hse(25.MHz())
-        .sysclk(48.MHz())
-        .require_pll48clk()
-        .freeze();
+    let rcc = dp
+        .RCC
+        .freeze(CFGR::hse(25.MHz()).sysclk(48.MHz()).require_pll48clk());
 
     let gpioa = dp.GPIOA.split();
 
     let usb = USB::new(
         (dp.OTG_FS_GLOBAL, dp.OTG_FS_DEVICE, dp.OTG_FS_PWRCLK),
         (gpioa.pa11, gpioa.pa12),
-        &clocks,
+        &rcc.clocks,
     );
 
     let usb_bus = UsbBus::new(usb, unsafe { &mut EP_MEMORY });

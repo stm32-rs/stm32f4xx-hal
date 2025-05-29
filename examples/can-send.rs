@@ -10,18 +10,17 @@ use bxcan::filter::Mask32;
 use bxcan::{Fifo, Frame, StandardId};
 use cortex_m_rt::entry;
 use nb::block;
+use stm32f4xx_hal::rcc::CFGR;
 use stm32f4xx_hal::{pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.constrain();
-
     // To meet CAN clock accuracy requirements an external crystal or ceramic
     // resonator must be used. The blue pill has a 8MHz external crystal.
     // Other boards might have a crystal with another frequency or none at all.
-    rcc.cfgr.use_hse(8.MHz()).freeze();
+    let _rcc = dp.RCC.freeze(CFGR::hse(8.MHz()));
 
     let gpiob = dp.GPIOB.split();
     let mut can1 = {

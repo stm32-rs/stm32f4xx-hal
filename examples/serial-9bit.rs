@@ -32,7 +32,7 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
-use stm32f4xx_hal as hal;
+use stm32f4xx_hal::{self as hal, rcc::CFGR};
 
 use crate::hal::{block, pac, prelude::*, serial::config::Config};
 
@@ -51,11 +51,9 @@ fn main() -> ! {
     let mut led_bit7 = gpiod.pd14.into_push_pull_output();
     let mut led_bit8 = gpiod.pd15.into_push_pull_output();
 
-    let rcc = dp.RCC.constrain();
+    let rcc = dp.RCC.freeze(CFGR::hse(8.MHz()));
 
-    let clocks = rcc.cfgr.use_hse(8.MHz()).freeze();
-
-    let mut delay = cp.SYST.delay(&clocks);
+    let mut delay = cp.SYST.delay(&rcc.clocks);
 
     // define RX/TX pins
     let tx_pin = gpioa.pa2;
@@ -67,7 +65,7 @@ fn main() -> ! {
         .serial(
             (tx_pin, rx_pin),
             Config::default().baudrate(9600.bps()).wordlength_9(),
-            &clocks,
+            &rcc.clocks,
         )
         .unwrap()
         // Make this Serial object use u16s instead of u8s

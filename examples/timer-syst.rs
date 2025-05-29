@@ -16,7 +16,7 @@ use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 
 use hal::timer::Error;
-use stm32f4xx_hal as hal;
+use stm32f4xx_hal::{self as hal, rcc::CFGR};
 
 use crate::hal::{pac, prelude::*};
 
@@ -24,11 +24,10 @@ use crate::hal::{pac, prelude::*};
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::peripheral::Peripherals::take().unwrap();
-    let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.sysclk(24.MHz()).freeze();
+    let rcc = dp.RCC.freeze(CFGR::hsi().sysclk(24.MHz()));
 
     // Create a timer based on SysTick
-    let mut timer = cp.SYST.counter_us(&clocks);
+    let mut timer = cp.SYST.counter_us(&rcc.clocks);
     timer.start(42.millis()).unwrap();
 
     hprintln!("hello!");

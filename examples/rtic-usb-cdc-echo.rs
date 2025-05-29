@@ -10,6 +10,7 @@ mod app {
         otg_fs::{UsbBus, UsbBusType, USB},
         pac,
         prelude::*,
+        rcc::CFGR,
         timer::MonoTimerUs,
     };
 
@@ -37,22 +38,16 @@ mod app {
 
         let dp = ctx.device;
 
-        let rcc = dp.RCC.constrain();
         // Setup system clocks
-        let hse = 25.MHz();
-        let sysclk = 84.MHz();
-        let clocks = rcc
-            .cfgr
-            .use_hse(hse)
-            .sysclk(sysclk)
-            .require_pll48clk()
-            .freeze();
+        let rcc = dp
+            .RCC
+            .freeze(CFGR::hse(25.MHz()).sysclk(84.MHz()).require_pll48clk());
 
         let gpioa = dp.GPIOA.split();
         let gpioc = dp.GPIOC.split();
         let led = gpioc.pc13.into_push_pull_output();
 
-        let mono = dp.TIM2.monotonic_us(&clocks);
+        let mono = dp.TIM2.monotonic_us(&rcc.clocks);
         tick::spawn().ok();
 
         // *** Begin USB setup ***
@@ -62,7 +57,7 @@ mod app {
             usb_pwrclk: dp.OTG_FS_PWRCLK,
             pin_dm: gpioa.pa11.into(),
             pin_dp: gpioa.pa12.into(),
-            hclk: clocks.hclk(),
+            hclk: rcc.clocks.hclk(),
         };
         unsafe {
             USB_BUS.replace(UsbBus::new(usb, &mut EP_MEMORY));

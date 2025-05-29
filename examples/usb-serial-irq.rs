@@ -4,6 +4,7 @@
 #![no_main]
 
 use panic_halt as _;
+use stm32f4xx_hal::rcc::CFGR;
 
 use core::cell::RefCell;
 use cortex_m::interrupt::Mutex;
@@ -30,16 +31,16 @@ fn main() -> ! {
 
     let dp = pac::Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.constrain();
-
-    let clocks = rcc.cfgr.sysclk((168).MHz()).pclk1((8).MHz()).freeze();
+    let rcc = dp
+        .RCC
+        .freeze(CFGR::hsi().sysclk((168).MHz()).pclk1((8).MHz()));
 
     let gpioa = dp.GPIOA.split();
 
     let usb = USB::new(
         (dp.OTG_FS_GLOBAL, dp.OTG_FS_DEVICE, dp.OTG_FS_PWRCLK),
         (gpioa.pa11, gpioa.pa12),
-        &clocks,
+        &rcc.clocks,
     );
 
     *USB_BUS = Some(stm32f4xx_hal::otg_fs::UsbBusType::new(usb, EP_MEMORY));

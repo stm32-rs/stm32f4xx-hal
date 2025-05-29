@@ -42,7 +42,6 @@ fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
         let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.freeze();
 
         // Enable DMA1.
         let dma1 = StreamsTuple::new(dp.DMA1);
@@ -61,7 +60,7 @@ fn main() -> ! {
                 .parity_none()
                 .stopbits(StopBits::STOP1)
                 .dma(serial::config::DmaConfig::TxRx),
-            &clocks,
+            &rcc.clocks,
         )
         .unwrap();
 

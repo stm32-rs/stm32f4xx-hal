@@ -33,17 +33,17 @@ use st7789::ST7789;
 use stm32f4xx_hal::fsmc_lcd::{DataPins16, FsmcLcd, LcdPins, Timing};
 use stm32f4xx_hal::pac::{CorePeripherals, Peripherals};
 use stm32f4xx_hal::prelude::*;
+use stm32f4xx_hal::rcc::CFGR;
 
 #[entry]
 fn main() -> ! {
     let cp = CorePeripherals::take().unwrap();
     let dp = Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.constrain();
     // Make HCLK faster to allow updating the display more quickly
-    let clocks = rcc.cfgr.hclk(100.MHz()).freeze();
+    let rcc = dp.RCC.freeze(CFGR::hsi().hclk(100.MHz()));
 
-    let mut delay = cp.SYST.delay(&clocks);
+    let mut delay = cp.SYST.delay(&rcc.clocks);
 
     let gpiod = dp.GPIOD.split();
     let gpioe = dp.GPIOE.split();

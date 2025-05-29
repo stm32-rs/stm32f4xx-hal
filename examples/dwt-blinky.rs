@@ -11,7 +11,7 @@ use crate::hal::{
 };
 use cortex_m_rt::entry;
 use panic_halt as _;
-use stm32f4xx_hal as hal;
+use stm32f4xx_hal::{self as hal, rcc::CFGR};
 
 #[entry]
 fn main() -> ! {
@@ -25,11 +25,10 @@ fn main() -> ! {
         let mut led2 = gpiog.pg14.into_push_pull_output();
 
         // Set up the system clock. We want to run at 48MHz for this one.
-        let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
+        let rcc = dp.RCC.freeze(CFGR::hsi().sysclk(48.MHz()));
 
         // Create a delay abstraction based on DWT cycle counter
-        let dwt = cp.DWT.constrain(cp.DCB, &clocks);
+        let dwt = cp.DWT.constrain(cp.DCB, &rcc.clocks);
         let mut delay = dwt.delay();
 
         // Create a stopwatch for maximum 9 laps

@@ -19,14 +19,14 @@
 #![no_main]
 
 use panic_semihosting as _; // logs messages to the host stderr; requires a debugger
-use stm32f4xx_hal as hal;
+use stm32f4xx_hal::{self as hal, rcc::CFGR};
 
 use crate::hal::{
     gpio::{Edge, Input, PC13},
     i2c::I2c,
     interrupt, pac,
     prelude::*,
-    rcc::{Clocks, Rcc},
+    rcc::Rcc,
     timer::{CounterUs, Event, Flag, Timer},
 };
 use core::cell::{Cell, RefCell};
@@ -62,10 +62,9 @@ enum StopwatchState {
 #[entry]
 fn main() -> ! {
     if let (Some(mut dp), Some(cp)) = (pac::Peripherals::take(), cortex_m::Peripherals::take()) {
-        let rcc = dp.RCC.constrain();
-        let clocks = setup_clocks(rcc);
+        let rcc = setup_clocks(dp.RCC);
         let gpiob = dp.GPIOB.split();
-        let i2c = I2c::new(dp.I2C1, (gpiob.pb8, gpiob.pb9), 400.kHz(), &clocks);
+        let i2c = I2c::new(dp.I2C1, (gpiob.pb8, gpiob.pb9), 400.kHz(), &rcc.clocks);
 
         let mut syscfg = dp.SYSCFG.constrain();
 
@@ -83,7 +82,7 @@ fn main() -> ! {
         disp.flush().unwrap();
 
         // Create a 1ms periodic interrupt from TIM2
-        let mut timer = dp.TIM2.counter(&clocks);
+        let mut timer = dp.TIM2.counter(&rcc.clocks);
         timer.start(1.secs()).unwrap();
         timer.listen(Event::Update);
 
@@ -101,7 +100,7 @@ fn main() -> ! {
             pac::NVIC::unmask(btn_int_num);
         };
 
-        let mut delay = Timer::syst(cp.SYST, &clocks).delay();
+        let mut delay = Timer::syst(cp.SYST, &rcc.clocks).delay();
 
         loop {
             let elapsed = free(|cs| ELAPSED_MS.borrow(cs).get());
@@ -184,13 +183,14 @@ fn EXTI15_10() {
     });
 }
 
-fn setup_clocks(rcc: Rcc) -> Clocks {
-    rcc.cfgr
-        .hclk(48.MHz())
-        .sysclk(48.MHz())
-        .pclk1(24.MHz())
-        .pclk2(24.MHz())
-        .freeze()
+fn setup_clocks(rcc: pac::RCC) -> Rcc {
+    rcc.freeze(
+        CFGR::hsi()
+            .hclk(48.MHz())
+            .sysclk(48.MHz())
+            .pclk1(24.MHz())
+            .pclk2(24.MHz()),
+    )
 }
 
 fn stopwatch_start(cs: &CriticalSection) {

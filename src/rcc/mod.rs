@@ -49,7 +49,7 @@ use fugit::HertzU32 as Hertz;
 
 /// Constrained RCC peripheral
 pub struct Rcc {
-    pub cfgr: CFGR,
+    pub clocks: Clocks,
     pub(crate) rb: RCC,
 }
 
@@ -70,6 +70,22 @@ impl DerefMut for Rcc {
 pub trait RccExt {
     /// Constrains the `RCC` peripheral so it plays nicely with the other abstractions
     fn constrain(self) -> Rcc;
+
+    /// Constrains the `RCC` peripheral and apply clock configuration
+    fn freeze(self, rcc_cfg: CFGR) -> Rcc;
+}
+
+impl RccExt for RCC {
+    fn constrain(self) -> Rcc {
+        Rcc {
+            rb: self,
+            clocks: Clocks::default(),
+        }
+    }
+
+    fn freeze(self, rcc_cfg: CFGR) -> Rcc {
+        self.constrain().freeze(rcc_cfg)
+    }
 }
 
 /// Bus associated to peripheral
@@ -204,6 +220,7 @@ macro_rules! bus_struct {
                     rcc.$en()
                 }
 
+                #[allow(unused)]
                 pub(crate) fn lpenr(rcc: &RccRB) -> &rcc::$LPEN {
                     rcc.$lpen()
                 }

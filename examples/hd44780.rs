@@ -25,8 +25,7 @@ fn main() -> ! {
     let rcc = dp.RCC.constrain();
     let gpiob = dp.GPIOB.split();
 
-    let clocks = rcc.cfgr.freeze();
-    let mut delay = dp.TIM1.delay_us(&clocks);
+    let mut delay = dp.TIM1.delay_us(&rcc.clocks);
 
     let rs = gpiob.pb7.into_push_pull_output();
     let en = gpiob.pb8.into_push_pull_output();

@@ -8,22 +8,21 @@ use panic_halt as _;
 use core::f32::consts::FRAC_PI_2;
 use cortex_m_rt::entry;
 use micromath::F32Ext;
-use stm32f4xx_hal::{pac, prelude::*};
+use stm32f4xx_hal::{pac, prelude::*, rcc::CFGR};
 
 #[entry]
 fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
-        let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.use_hse(25.MHz()).freeze();
+        let rcc = dp.RCC.freeze(CFGR::hse(25.MHz()));
 
         let gpioa = dp.GPIOA.split();
 
-        let (_, (pwm_c1, pwm_c2, ..)) = dp.TIM1.pwm_us(100.micros(), &clocks);
+        let (_, (pwm_c1, pwm_c2, ..)) = dp.TIM1.pwm_us(100.micros(), &rcc.clocks);
         let mut pwm_c1 = pwm_c1.with(gpioa.pa8);
         let mut pwm_c2 = pwm_c2.with(gpioa.pa9);
 
-        let mut counter = dp.TIM2.counter_us(&clocks);
+        let mut counter = dp.TIM2.counter_us(&rcc.clocks);
         let max_duty = pwm_c1.get_max_duty();
 
         const N: usize = 50;

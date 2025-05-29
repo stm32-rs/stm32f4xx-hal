@@ -16,6 +16,7 @@ mod app {
         dma::{config::DmaConfig, PeripheralToMemory, Stream0, StreamsTuple, Transfer},
         pac::{self, ADC1, DMA2},
         prelude::*,
+        rcc::CFGR,
         signature::{VtempCal110, VtempCal30},
     };
 
@@ -41,16 +42,14 @@ mod app {
     fn init(cx: init::Context) -> (Shared, Local, init::Monotonics) {
         let device: pac::Peripherals = cx.device;
 
-        let rcc = device.RCC.constrain();
-        let _clocks = rcc
-            .cfgr
-            .use_hse(25.MHz())
-            .require_pll48clk()
-            .sysclk(MONO_HZ.Hz())
-            .hclk(MONO_HZ.Hz())
-            .pclk1(42.MHz())
-            .pclk2(84.MHz())
-            .freeze();
+        let _rcc = device.RCC.freeze(
+            CFGR::hse(25.MHz())
+                .require_pll48clk()
+                .sysclk(MONO_HZ.Hz())
+                .hclk(MONO_HZ.Hz())
+                .pclk1(42.MHz())
+                .pclk2(84.MHz()),
+        );
 
         let mut dcb = cx.core.DCB;
         let dwt = cx.core.DWT;

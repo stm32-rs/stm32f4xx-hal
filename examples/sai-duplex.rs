@@ -5,7 +5,7 @@
 
 use panic_halt as _;
 
-use stm32f4xx_hal as hal;
+use stm32f4xx_hal::{self as hal, rcc::CFGR};
 
 use crate::hal::{
     pac,
@@ -22,16 +22,12 @@ fn main() -> ! {
     // I2S-encoded audio.
 
     // Initialize clocks.
-    let rcc = p.RCC.constrain();
-    let clocks = rcc
-        .cfgr
-        .use_hse(8.MHz())
-        .saia_clk(172.MHz())
-        .saib_clk(172.MHz())
-        .freeze();
+    let rcc = p
+        .RCC
+        .freeze(CFGR::hse(8.MHz()).saia_clk(172.MHz()).saib_clk(172.MHz()));
     // Test that the SAI clock is suitable for 48000KHz audio.
-    assert!(clocks.saia_clk() == Some(172.MHz()));
-    assert!(clocks.saib_clk() == Some(172.MHz()));
+    assert!(rcc.clocks.saia_clk() == Some(172.MHz()));
+    assert!(rcc.clocks.saib_clk() == Some(172.MHz()));
 
     let gpioe = p.GPIOE.split();
     // SAIB is made synchronous to A.
@@ -46,7 +42,7 @@ fn main() -> ! {
         (Some(gpioe.pe2), gpioe.pe4, gpioe.pe5, gpioe.pe6),
         protocol,
         48.kHz(),
-        &clocks,
+        &rcc.clocks,
     );
     let rx = saib.slave_rx(gpioe.pe3, protocol);
 
@@ -61,8 +57,7 @@ fn main() -> ! {
     // The following code configures the A sub-block of SAI as a master transmitter for PCM-encoded audio.
 
     // Initialize clocks.
-    let rcc = p.RCC.constrain();
-    let clocks = rcc.cfgr.use_hse(8.MHz()).saia_clk(172.MHz()).freeze();
+    let rcc = p.RCC.freeze(CFGR::hse(8.MHz()).saia_clk(172.MHz()));
     // Test that the SAI clock is suitable for 48000KHz audio.
     assert!(clocks.saia_clk() == Some(172.MHz()));
 

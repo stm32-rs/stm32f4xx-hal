@@ -19,8 +19,7 @@ pub const MODE: Mode = Mode {
 fn main() -> ! {
     let p = pac::Peripherals::take().unwrap();
 
-    let rcc = p.RCC.constrain();
-    let _clocks = rcc.cfgr.freeze();
+    let _rcc = p.RCC.constrain();
 
     let gpioa = p.GPIOA.split();
 
