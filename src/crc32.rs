@@ -7,7 +7,7 @@
 //! It operates word-at-a-time, and takes 4 AHB/HCLK cycles per word
 //! to calculate. This operation stalls the AHB bus for that time.
 
-use crate::pac::CRC;
+use crate::pac::{CRC, RCC};
 use crate::rcc::{Enable, Reset};
 use core::mem::MaybeUninit;
 use core::ptr::copy_nonoverlapping;
@@ -19,12 +19,10 @@ pub struct Crc32 {
 
 impl Crc32 {
     /// Create a new Crc32 HAL peripheral
-    pub fn new(crc: CRC) -> Self {
-        unsafe {
-            // enable CRC clock.
-            CRC::enable_unchecked();
-            CRC::reset_unchecked();
-        }
+    pub fn new(crc: CRC, rcc: &mut RCC) -> Self {
+        // enable CRC clock.
+        CRC::enable(rcc);
+        CRC::reset(rcc);
 
         let mut new = Self { periph: crc };
         new.init();

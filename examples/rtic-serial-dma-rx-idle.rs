@@ -56,12 +56,11 @@ mod app {
         let core = cx.core;
         let dp: hal::pac::Peripherals = cx.device;
 
-        let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.freeze();
+        let mut rcc = dp.RCC.constrain();
 
-        let mono = Systick::new(core.SYST, clocks.sysclk().to_Hz());
+        let mono = Systick::new(core.SYST, rcc.clocks.sysclk().to_Hz());
 
-        let gpioa = dp.GPIOA.split();
+        let gpioa = dp.GPIOA.split(&mut rcc);
 
         // Initialize UART with DMA events
         let rx_pin = gpioa.pa10;
@@ -72,14 +71,14 @@ mod app {
                 serial::Config::default()
                     .baudrate(9600.bps())
                     .dma(serial::config::DmaConfig::Rx),
-                &clocks,
+                &mut rcc,
             )
             .unwrap();
 
         // Listen UART IDLE event, which will be call USART1 interrupt
         rx.listen_idle();
 
-        let dma2 = StreamsTuple::new(dp.DMA2);
+        let dma2 = StreamsTuple::new(dp.DMA2, &mut rcc);
 
         // Note! It is better to use memory pools, such as heapless::pool::Pool. But it not work with embedded_dma yet.
         // See CHANGELOG of unreleased main branch and issue https://github.com/japaric/heapless/pull/362 for details.

@@ -1,4 +1,4 @@
-use super::CFGR;
+use super::Config;
 use crate::pac::RCC;
 
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -22,7 +22,7 @@ pub struct PllSetup {
 impl PllSetup {
     #[cfg(feature = "gpio-f410")]
     #[inline(always)]
-    pub fn from_cfgr(cfgr: &CFGR, pllsrcclk: u32, pllsysclk: Option<u32>) -> Self {
+    pub fn from_cfgr(cfgr: &Config, pllsrcclk: u32, pllsysclk: Option<u32>) -> Self {
         let i2s_clocks = cfgr.i2s_clocks();
 
         let (main_pll, plli2sclk) = if let Some(i2s_clk) = i2s_clocks.pll_i2s_clk {
@@ -53,7 +53,7 @@ impl PllSetup {
 
     #[cfg(feature = "gpio-f413")]
     #[inline(always)]
-    pub fn from_cfgr(cfgr: &CFGR, pllsrcclk: u32, pllsysclk: Option<u32>) -> Self {
+    pub fn from_cfgr(cfgr: &Config, pllsrcclk: u32, pllsysclk: Option<u32>) -> Self {
         let rcc = unsafe { &*RCC::ptr() };
 
         let i2s_clocks = cfgr.i2s_clocks();
@@ -118,7 +118,7 @@ impl PllSetup {
 
     #[cfg(not(any(feature = "gpio-f410", feature = "gpio-f413")))]
     #[inline(always)]
-    pub fn from_cfgr(cfgr: &CFGR, pllsrcclk: u32, pllsysclk: Option<u32>) -> Self {
+    pub fn from_cfgr(cfgr: &Config, pllsrcclk: u32, pllsysclk: Option<u32>) -> Self {
         let i2s_clocks = cfgr.i2s_clocks();
         #[cfg(feature = "sai")]
         let sai_clocks = cfgr.sai_clocks();

@@ -19,12 +19,10 @@ use time::{
 fn main() -> ! {
     rtt_init_print!();
     let mut p = pac::Peripherals::take().unwrap();
-    let rcc = p.RCC.constrain();
+    let mut rcc = p.RCC.constrain();
 
-    let clocks = rcc.cfgr.freeze();
-
-    let mut rtc = Rtc::new(p.RTC, &mut p.PWR);
-    let mut delay = p.TIM5.delay_us(&clocks);
+    let mut rtc = Rtc::new(p.RTC, &mut rcc, &mut p.PWR);
+    let mut delay = p.TIM5.delay_us(&mut rcc);
 
     rtc.set_datetime(&PrimitiveDateTime::new(
         date!(2022 - 02 - 07),

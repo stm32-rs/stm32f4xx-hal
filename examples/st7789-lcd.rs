@@ -33,21 +33,21 @@ use st7789::ST7789;
 use stm32f4xx_hal::fsmc_lcd::{DataPins16, FsmcLcd, LcdPins, Timing};
 use stm32f4xx_hal::pac::{CorePeripherals, Peripherals};
 use stm32f4xx_hal::prelude::*;
+use stm32f4xx_hal::rcc::Config;
 
 #[entry]
 fn main() -> ! {
     let cp = CorePeripherals::take().unwrap();
     let dp = Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.constrain();
     // Make HCLK faster to allow updating the display more quickly
-    let clocks = rcc.cfgr.hclk(100.MHz()).freeze();
+    let mut rcc = dp.RCC.freeze(Config::hsi().hclk(100.MHz()));
 
-    let mut delay = cp.SYST.delay(&clocks);
+    let mut delay = cp.SYST.delay(&rcc.clocks);
 
-    let gpiod = dp.GPIOD.split();
-    let gpioe = dp.GPIOE.split();
-    let gpiof = dp.GPIOF.split();
+    let gpiod = dp.GPIOD.split(&mut rcc);
+    let gpioe = dp.GPIOE.split(&mut rcc);
+    let gpiof = dp.GPIOF.split(&mut rcc);
 
     // Pins connected to the LCD on the 32F412GDISCOVERY board
     use stm32f4xx_hal::gpio::alt::fsmc as alt;
@@ -83,7 +83,7 @@ fn main() -> ! {
     // Bus turnaround time is zero, because no particular interval is required between transactions.
     let write_timing = Timing::default().data(3).address_setup(3).bus_turnaround(0);
 
-    let (_fsmc, interface) = FsmcLcd::new(dp.FSMC, lcd_pins, &read_timing, &write_timing);
+    let (_fsmc, interface) = FsmcLcd::new(dp.FSMC, lcd_pins, &read_timing, &write_timing, &mut rcc);
 
     // The 32F412GDISCOVERY board has an FRD154BP2902-CTP LCD. There is no easily available
     // datasheet, so the behavior of this code is based on the working demonstration C code:

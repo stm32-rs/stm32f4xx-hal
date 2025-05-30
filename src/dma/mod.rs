@@ -18,6 +18,7 @@ use core::{
 use embedded_dma::{ReadBuffer, WriteBuffer};
 use enumflags2::BitFlags;
 
+use crate::pac::RCC;
 use crate::{pac, rcc};
 
 pub mod traits;
@@ -432,11 +433,9 @@ pub struct StreamsTuple<DMA>(
 
 impl<DMA: rcc::Enable + rcc::Reset> StreamsTuple<DMA> {
     /// Splits the DMA peripheral into streams.
-    pub fn new(_regs: DMA) -> Self {
-        unsafe {
-            DMA::enable_unchecked();
-            DMA::reset_unchecked();
-        }
+    pub fn new(_regs: DMA, rcc: &mut RCC) -> Self {
+        DMA::enable(rcc);
+        DMA::reset(rcc);
         Self(
             StreamX::new(),
             StreamX::new(),

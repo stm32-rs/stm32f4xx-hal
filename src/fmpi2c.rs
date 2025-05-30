@@ -3,8 +3,8 @@ use core::ops::Deref;
 use crate::gpio;
 
 use crate::pac::fmpi2c1 as i2c1;
-use crate::pac::{self, rcc, RCC};
-use crate::rcc::{BusClock, Clocks, Enable, Reset};
+use crate::pac::{self, rcc};
+use crate::rcc::{BusClock, Enable, Rcc, Reset};
 use fugit::{HertzU32 as Hertz, RateExtU32};
 use micromath::F32Ext;
 
@@ -102,15 +102,9 @@ impl From<Hertz> for Mode {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ClockSource<'a> {
-    Apb(&'a Clocks),
+pub enum ClockSource {
+    Apb,
     Hsi,
-}
-
-impl<'a> From<&'a Clocks> for ClockSource<'a> {
-    fn from(value: &'a Clocks) -> Self {
-        Self::Apb(value)
-    }
 }
 
 // hddat and vddat are removed because SDADEL is always going to be 0 in this implementation so
@@ -198,7 +192,7 @@ fn calculate_timing(
     let mut presc: u8;
     // if ratio is > (scll+sclh)*presc. that frequancy is not possible to generate. so
     // minimum frequancy possible is generated
-    if product > 8192 as f32 {
+    if product > 8192_f32 {
         // TODO: should we panic or use minimum allowed frequancy
         scl_l = 0x7fu8;
         scl_h = 0x7fu8;
@@ -214,7 +208,7 @@ fn calculate_timing(
             let deviation = product % tmp_presc as f32;
             if min_deviation > deviation {
                 min_deviation = deviation;
-                presc = tmp_presc as u8;
+                presc = tmp_presc;
             }
         }
         // now that we have optimal prescalar value. optimal scl_l and scl_h
@@ -238,42 +232,43 @@ fn calculate_timing(
 }
 
 pub trait I2cExt: Sized + Instance {
-    fn i2c<'a>(
+    fn i2c(
         self,
         pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
-        clocks: impl Into<ClockSource<'a>>,
+        rcc: &mut Rcc,
+        clocks: ClockSource,
     ) -> I2c<Self>;
 }
 
 impl<I2C: Instance> I2cExt for I2C {
-    fn i2c<'a>(
+    fn i2c(
         self,
         pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
-        clocks: impl Into<ClockSource<'a>>,
+        rcc: &mut Rcc,
+        clocks: ClockSource,
     ) -> I2c<Self> {
-        I2c::new(self, pins, mode, clocks)
+        I2c::new(self, pins, mode, rcc, clocks)
     }
 }
 
 impl<I2C: Instance> I2c<I2C> {
-    pub fn new<'a>(
+    pub fn new(
         i2c: I2C,
         pins: (impl Into<I2C::Scl>, impl Into<I2C::Sda>),
         mode: impl Into<Mode>,
-        clocks: impl Into<ClockSource<'a>>,
+        rcc: &mut Rcc,
+        clocks: ClockSource,
     ) -> Self {
-        unsafe {
-            // Enable and reset clock.
-            I2C::enable_unchecked();
-            I2C::reset_unchecked();
-        }
+        // Enable and reset clock.
+        I2C::enable(rcc);
+        I2C::reset(rcc);
 
         let pins = (pins.0.into(), pins.1.into());
 
         let i2c = I2c { i2c, pins };
-        i2c.i2c_init(mode, clocks.into());
+        i2c.i2c_init(mode, rcc, clocks);
         i2c
     }
 
@@ -283,7 +278,7 @@ impl<I2C: Instance> I2c<I2C> {
 }
 
 impl<I2C: Instance> I2c<I2C> {
-    fn i2c_init(&self, mode: impl Into<Mode>, clocks: ClockSource<'_>) {
+    fn i2c_init(&self, mode: impl Into<Mode>, rcc: &mut Rcc, clocks: ClockSource) {
         let mode = mode.into();
 
         // Make sure the I2C unit is disabled so we can configure it
@@ -294,13 +289,9 @@ impl<I2C: Instance> I2c<I2C> {
         let dnf = cr1.dnf().bits();
 
         let i2c_timingr = match clocks {
-            ClockSource::Apb(clocks) => {
-                // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-                unsafe {
-                    let rcc = &(*RCC::ptr());
-                    I2C::set_clock_source(rcc, I2cSel::Apb);
-                }
-                let pclk = I2C::clock(clocks);
+            ClockSource::Apb => {
+                I2C::set_clock_source(rcc, I2cSel::Apb);
+                let pclk = I2C::clock(&rcc.clocks);
                 match mode {
                     Mode::Standard { frequency } => {
                         calculate_timing(I2C_STANDARD_MODE_SPEC, pclk, frequency, an_filter, dnf)
@@ -315,11 +306,7 @@ impl<I2C: Instance> I2c<I2C> {
                 }
             }
             ClockSource::Hsi => {
-                // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-                unsafe {
-                    let rcc = &(*RCC::ptr());
-                    I2C::set_clock_source(rcc, I2cSel::Hsi);
-                }
+                I2C::set_clock_source(rcc, I2cSel::Hsi);
 
                 // We're using the HSI clock to keep things simple so this is going to be always 16 MHz
                 const FREQ: u32 = 16_000_000;
