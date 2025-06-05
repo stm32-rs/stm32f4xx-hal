@@ -133,7 +133,7 @@ use crate::dma::PeripheralToMemory;
 use crate::rcc;
 use crate::{
     gpio::{self, Analog},
-    pac,
+    pac::{self, RCC},
     signature::VrefCal,
     signature::VDDA_CALIB,
 };
@@ -273,17 +273,15 @@ where
     /// Enables the ADC clock, resets the peripheral (optionally), runs calibration and applies the supplied config
     /// # Arguments
     /// * `reset` - should a reset be performed. This is provided because on some devices multiple ADCs share the same common reset
-    pub fn new(adc: ADC, reset: bool, config: config::AdcConfig) -> Adc<ADC> {
-        unsafe {
-            // All ADCs share the same reset interface.
+    pub fn new(adc: ADC, reset: bool, config: config::AdcConfig, rcc: &mut RCC) -> Adc<ADC> {
+        // All ADCs share the same reset interface.
 
-            //Enable the clock
-            ADC::enable_unchecked();
+        //Enable the clock
+        ADC::enable(rcc);
 
-            if reset {
-                //Reset the peripheral(s)
-                ADC::reset_unchecked();
-            }
+        if reset {
+            //Reset the peripheral(s)
+            ADC::reset(rcc);
         }
 
         let mut s = Self {
@@ -532,16 +530,15 @@ impl<ADC: Instance> Adc<ADC> {
 
         //Set the sample time for the channel
         let st = sample_time as u8;
-        let ch = channel as u8;
         match channel {
             0..=9 => self
                 .adc_reg
                 .smpr2()
-                .modify(|_, w| unsafe { w.smp(ch).bits(st) }),
+                .modify(|_, w| unsafe { w.smp(channel).bits(st) }),
             10..=18 => self
                 .adc_reg
                 .smpr1()
-                .modify(|_, w| unsafe { w.smp(ch - 10).bits(st) }),
+                .modify(|_, w| unsafe { w.smp(channel - 10).bits(st) }),
             _ => unimplemented!(),
         };
     }

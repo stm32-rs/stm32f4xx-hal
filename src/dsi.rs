@@ -3,7 +3,7 @@
 //! Interface with MIPI D-PHY
 
 use crate::ltdc::DisplayConfig;
-use crate::rcc::{Clocks, Enable};
+use crate::rcc::{Enable, Rcc};
 use crate::{pac::DSI, time::Hertz};
 use core::cmp::{max, min};
 use embedded_display_controller::dsi::{DsiHostCtrlIo, DsiReadCommand, DsiWriteCommand};
@@ -159,17 +159,15 @@ impl DsiHost {
         display_config: DisplayConfig,
         dsi_config: DsiConfig,
         dsi: DSI,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<DsiHost, Error> {
-        unsafe {
-            DSI::enable_unchecked();
-        }
+        DSI::enable(rcc);
 
         // Bring DSI peripheral out of reset
         dsi.cr().modify(|_, w| w.en().set_bit());
 
         //RCC_D1CCIPR: DSI clock from PHY is selected as DSI byte lane clock (default after reset)
-        let cycles_1ms = clocks.sysclk().raw() / 1_000;
+        let cycles_1ms = rcc.clocks.sysclk().raw() / 1_000;
 
         // Enable regulator
         dsi.wrpcr().modify(|_, w| w.regen().set_bit());

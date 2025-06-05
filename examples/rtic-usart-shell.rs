@@ -13,6 +13,7 @@ mod usart_shell {
         gpio::{gpioa::PA0, gpioc::PC13, Edge, Input, Output, PushPull},
         pac::USART1,
         prelude::*,
+        rcc,
         serial::{self, config::Config, Serial},
     };
 
@@ -49,16 +50,18 @@ mod usart_shell {
 
     #[init]
     fn init(mut ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        // syscfg
-        let mut syscfg = ctx.device.SYSCFG.constrain();
         // clocks
-        let rcc = ctx.device.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(SYSFREQ.Hz()).use_hse(25.MHz()).freeze();
+        let mut rcc = ctx
+            .device
+            .RCC
+            .freeze(rcc::Config::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
+        // syscfg
+        let mut syscfg = ctx.device.SYSCFG.constrain(&mut rcc);
         // monotonic timer
         let mono = DwtSystick::new(&mut ctx.core.DCB, ctx.core.DWT, ctx.core.SYST, SYSFREQ);
         // gpio ports A and C
-        let gpioa = ctx.device.GPIOA.split();
-        let gpioc = ctx.device.GPIOC.split();
+        let gpioa = ctx.device.GPIOA.split(&mut rcc);
+        let gpioc = ctx.device.GPIOC.split(&mut rcc);
         // button
         let mut button = gpioa.pa0.into_pull_up_input();
         button.make_interrupt_source(&mut syscfg);
@@ -72,7 +75,7 @@ mod usart_shell {
             ctx.device.USART1,
             pins,
             Config::default().baudrate(115_200.bps()).wordlength_8(),
-            &clocks,
+            &mut rcc,
         )
         .unwrap()
         .with_u8_data();

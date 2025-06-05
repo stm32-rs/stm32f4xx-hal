@@ -49,7 +49,7 @@
 //! 1. Create an `LcdPins` object containing the pins used to communicate with the LCD
 //!
 //! 2. Create default `Timing` objects for the write and read timing
-//!     
+//!
 //!     a. (Optional) Adjust the timing to make read and write operations faster, within the limits
 //!        of the wiring and LCD controller
 //!
@@ -68,6 +68,7 @@ use core::marker::PhantomData;
 pub use self::pins::{AddressPins, ChipSelectPins, DataPins, DataPins16, DataPins8, LcdPins, Pins};
 pub use self::timing::{AccessMode, Timing};
 
+use crate::pac::RCC;
 use crate::rcc::{Enable, Reset};
 
 // Use the FMC or FSMC, whichever is available, and treat it like an FSMC
@@ -216,13 +217,12 @@ where
         pins: PINS,
         read_timing: &Timing,
         write_timing: &Timing,
+        rcc: &mut RCC,
     ) -> (Self, PINS::Lcds) {
         use self::sealed::Conjure;
-        unsafe {
-            // Enable the FSMC/FMC peripheral
-            FSMC::enable_unchecked();
-            FSMC::reset_unchecked();
-        }
+        // Enable the FSMC/FMC peripheral
+        FSMC::enable(rcc);
+        FSMC::reset(rcc);
 
         // Configure memory type and basic interface settings
         // The reference manuals are sometimes unclear on the distinction between banks
@@ -256,13 +256,11 @@ where
     /// uses
     ///
     /// This function also resets and disables the FSMC.
-    pub fn release(self, _lcds: PINS::Lcds) -> (FSMC, PINS) {
-        unsafe {
-            // Reset FSMC/FMC
-            FSMC::reset_unchecked();
-            // Disable the FSMC/FMC peripheral
-            FSMC::disable_unchecked();
-        }
+    pub fn release(self, _lcds: PINS::Lcds, rcc: &mut RCC) -> (FSMC, PINS) {
+        // Reset FSMC/FMC
+        FSMC::reset(rcc);
+        // Disable the FSMC/FMC peripheral
+        FSMC::disable(rcc);
 
         (self.fsmc, self.pins)
     }

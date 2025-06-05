@@ -18,18 +18,16 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     // Take ownership over raw device and convert it into the corresponding HAL struct
-    let rcc = dp.RCC.constrain();
-
     // Freeze the configuration of all the clocks in the system and store the frozen frequencies in
     // `clocks`
-    let clocks = rcc.cfgr.freeze();
+    let mut rcc = dp.RCC.constrain();
 
     // Acquire the GPIOC peripheral
-    let gpioc = dp.GPIOC.split();
+    let gpioc = dp.GPIOC.split(&mut rcc);
 
     let mut pin = gpioc.pc13.into_dynamic();
     // Configure the syst timer to trigger an update every second
-    let mut timer = Timer::syst(cp.SYST, &clocks).counter_us();
+    let mut timer = Timer::syst(cp.SYST, &rcc.clocks).counter_us();
     timer.start(1.secs()).unwrap();
 
     // Wait for the timer to trigger an update and change the state of the LED

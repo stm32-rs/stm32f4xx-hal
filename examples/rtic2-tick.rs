@@ -26,6 +26,8 @@ use rtic::app;
 
 #[app(device = pac, dispatchers = [USART1], peripherals = true)]
 mod app {
+    use stm32f4xx_hal::rcc::Config;
+
     use super::*;
 
     #[shared]
@@ -38,16 +40,15 @@ mod app {
 
     #[init]
     fn init(mut ctx: init::Context) -> (Shared, Local) {
-        let rcc = ctx.device.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
+        let mut rcc = ctx.device.RCC.freeze(Config::hsi().sysclk(48.MHz()));
 
         // Create TIM3 monotonic and initialize timer queue
-        ctx.device.TIM3.monotonic_us(&mut ctx.core.NVIC, &clocks);
+        ctx.device.TIM3.monotonic_us(&mut ctx.core.NVIC, &mut rcc);
 
         // Uncomment if use SysTick as monotonic timer
         //Mono::start(ctx.core.SYST, 48_000_000);
 
-        let gpioc = ctx.device.GPIOC.split();
+        let gpioc = ctx.device.GPIOC.split(&mut rcc);
         let led = gpioc.pc13.into_push_pull_output();
         defmt::info!("Start");
 

@@ -7,7 +7,7 @@
 use panic_probe as _;
 
 use core::{mem, slice};
-use stm32f4xx_hal::{fmc::FmcExt, gpio::alt::fmc as alt, pac, prelude::*};
+use stm32f4xx_hal::{fmc::FmcExt, gpio::alt::fmc as alt, pac, prelude::*, rcc::Config};
 
 use cortex_m::peripheral::Peripherals;
 
@@ -49,18 +49,17 @@ impl XorShift32 {
 #[entry]
 fn main() -> ! {
     if let (Some(p), Some(cp)) = (pac::Peripherals::take(), Peripherals::take()) {
-        let rcc = p.RCC.constrain();
+        let mut rcc = p.RCC.freeze(Config::hsi().sysclk(180.MHz()));
 
-        let clocks = rcc.cfgr.sysclk(180.MHz()).freeze();
-        let mut delay = cp.SYST.delay(&clocks);
+        let mut delay = cp.SYST.delay(&rcc.clocks);
 
-        let gpioc = p.GPIOC.split();
-        let gpiod = p.GPIOD.split();
-        let gpioe = p.GPIOE.split();
-        let gpiof = p.GPIOF.split();
-        let gpiog = p.GPIOG.split();
-        let gpioh = p.GPIOH.split();
-        let gpioi = p.GPIOI.split();
+        let gpioc = p.GPIOC.split(&mut rcc);
+        let gpiod = p.GPIOD.split(&mut rcc);
+        let gpioe = p.GPIOE.split(&mut rcc);
+        let gpiof = p.GPIOF.split(&mut rcc);
+        let gpiog = p.GPIOG.split(&mut rcc);
+        let gpioh = p.GPIOH.split(&mut rcc);
+        let gpioi = p.GPIOI.split(&mut rcc);
 
         #[rustfmt::skip]
         let pins = fmc_pins! {
@@ -86,7 +85,9 @@ fn main() -> ! {
 
         rprintln!("Initializing SDRAM...\r");
 
-        let mut sdram = p.FMC.sdram(pins, is42s32400f_6::Is42s32400f6 {}, &clocks);
+        let mut sdram = p
+            .FMC
+            .sdram(pins, is42s32400f_6::Is42s32400f6 {}, &rcc.clocks);
         let len_bytes = 16 * 1024 * 1024;
         let len_words = len_bytes / mem::size_of::<u32>();
         let ram_ptr: *mut u32 = sdram.init(&mut delay);

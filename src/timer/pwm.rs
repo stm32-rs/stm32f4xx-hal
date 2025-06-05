@@ -42,7 +42,7 @@ use super::{
 };
 pub use super::{Ch, C1, C2, C3, C4};
 use crate::gpio::{OpenDrain, PushPull};
-use crate::rcc::Clocks;
+use crate::rcc::Rcc;
 use core::ops::{Deref, DerefMut};
 use fugit::{HertzU32 as Hertz, TimerDurationU32};
 
@@ -53,17 +53,17 @@ where
     fn pwm<const FREQ: u32>(
         self,
         time: TimerDurationU32<FREQ>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> (PwmManager<Self, FREQ>, Self::Channels);
 
-    fn pwm_hz(self, freq: Hertz, clocks: &Clocks) -> (PwmHzManager<Self>, Self::Channels);
+    fn pwm_hz(self, freq: Hertz, rcc: &mut Rcc) -> (PwmHzManager<Self>, Self::Channels);
 
     fn pwm_us(
         self,
         time: TimerDurationU32<1_000_000>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> (PwmManager<Self, 1_000_000>, Self::Channels) {
-        self.pwm::<1_000_000>(time, clocks)
+        self.pwm::<1_000_000>(time, rcc)
     }
 }
 
@@ -74,13 +74,13 @@ where
     fn pwm<const FREQ: u32>(
         self,
         time: TimerDurationU32<FREQ>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> (PwmManager<Self, FREQ>, Self::Channels) {
-        FTimer::<Self, FREQ>::new(self, clocks).pwm(time)
+        FTimer::<Self, FREQ>::new(self, rcc).pwm(time)
     }
 
-    fn pwm_hz(self, time: Hertz, clocks: &Clocks) -> (PwmHzManager<Self>, Self::Channels) {
-        Timer::new(self, clocks).pwm_hz(time)
+    fn pwm_hz(self, time: Hertz, rcc: &mut Rcc) -> (PwmHzManager<Self>, Self::Channels) {
+        Timer::new(self, rcc).pwm_hz(time)
     }
 }
 

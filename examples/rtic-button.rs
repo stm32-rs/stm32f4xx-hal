@@ -10,6 +10,7 @@ mod app {
     use stm32f4xx_hal::{
         gpio::{gpioa::PA0, gpioc::PC13, Edge, Input, Output, PinState, Pull},
         prelude::*,
+        rcc::Config,
     };
     const SYSFREQ: u32 = 100_000_000;
     // Shared resources go here
@@ -25,14 +26,16 @@ mod app {
 
     #[init]
     fn init(mut ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        // syscfg
-        let mut syscfg = ctx.device.SYSCFG.constrain();
         // clocks
-        let rcc = ctx.device.RCC.constrain();
-        let _clocks = rcc.cfgr.sysclk(SYSFREQ.Hz()).use_hse(25.MHz()).freeze();
+        let mut rcc = ctx
+            .device
+            .RCC
+            .freeze(Config::hse(25.MHz()).sysclk(SYSFREQ.Hz()));
+        // syscfg
+        let mut syscfg = ctx.device.SYSCFG.constrain(&mut rcc);
         // gpio ports A and C
-        let gpioa = ctx.device.GPIOA.split();
-        let gpioc = ctx.device.GPIOC.split();
+        let gpioa = ctx.device.GPIOA.split(&mut rcc);
+        let gpioc = ctx.device.GPIOC.split(&mut rcc);
         // button
         let mut button = Input::new(gpioa.pa0, Pull::Up);
         // or

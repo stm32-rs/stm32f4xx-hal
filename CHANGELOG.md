@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Implement `embedded_hal::i2c::I2c` for `I2cMasterDma` [#838]
  - Back to `stm32f4`
  - Implement `Ptr`, `Sealed`, `Steal` for generic `Periph` [#834]
+ - Use `&mut RCC` for `PER::enable/reset`
  - Unmacro `Adc` [#832]
  - Use `write` instead of `modify` to clear flags [#829]
  - Bump `stm32f4-staging` to 0.18, update other dependencies [#831]
