@@ -6,6 +6,8 @@ use crate::dma::{
     traits::{Channel, DMASet, DmaFlagExt, PeriAddress, Stream, StreamISR},
     ChannelX, MemoryToPeripheral, PeripheralToMemory, Transfer,
 };
+use crate::hal::i2c;
+use crate::i2c::dma::i2c::{ErrorType, Operation};
 use crate::ReadFlags;
 
 use nb;
@@ -598,6 +600,36 @@ where
         if self.rx.created() {
             self.rx.destroy_transfer();
         }
+    }
+}
+
+impl<I2C, TX_TRANSFER, RX_TRANSFER> ErrorType for I2CMasterDma<I2C, TX_TRANSFER, RX_TRANSFER>
+where
+    I2C: Instance,
+    TX_TRANSFER: DMATransfer<&'static [u8]>,
+    RX_TRANSFER: DMATransfer<&'static mut [u8]>,
+{
+    type Error = super::Error;
+}
+
+impl<I2C, TX_TRANSFER, RX_TRANSFER> i2c::I2c for I2CMasterDma<I2C, TX_TRANSFER, RX_TRANSFER>
+where
+    I2C: Instance,
+    TX_TRANSFER: DMATransfer<&'static [u8]>,
+    RX_TRANSFER: DMATransfer<&'static mut [u8]>,
+{
+    fn transaction(
+        &mut self,
+        addr: u8,
+        operations: &mut [Operation<'_>],
+    ) -> Result<(), Self::Error> {
+        for operation in operations {
+            match operation {
+                Operation::Read(dest) => self.hal_i2c.read(addr, dest),
+                Operation::Write(data) => self.hal_i2c.write(addr, data),
+            }?;
+        }
+        Ok(())
     }
 }
 
