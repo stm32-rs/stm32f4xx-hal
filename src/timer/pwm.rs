@@ -273,13 +273,13 @@ macro_rules! ch_impl {
         /// Set PWM channel polarity
         #[inline]
         pub fn set_polarity(&mut self, p: Polarity) {
-            TIM::set_channel_polarity(self.channel(), p);
+            TIM::set_pwm_channel_polarity(self.channel(), p);
         }
 
         /// Set complementary PWM channel polarity
         #[inline]
         pub fn set_complementary_polarity(&mut self, p: Polarity) {
-            TIM::set_nchannel_polarity(self.channel(), p);
+            TIM::set_pwm_nchannel_polarity(self.channel(), p);
         }
     };
 }
