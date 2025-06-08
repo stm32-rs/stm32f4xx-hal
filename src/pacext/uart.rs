@@ -36,9 +36,9 @@ wrap_r! {
 }
 wrap_w! {
     pub trait SrW {
-        fn rxne(&mut self) -> usart1::sr::RXNE_W<REG>;
-        fn tc(&mut self) -> usart1::sr::TC_W<REG>;
-        fn lbd(&mut self) -> usart1::sr::LBD_W<REG>;
+        fn rxne(&mut self) -> usart1::sr::RXNE_W<'_, REG>;
+        fn tc(&mut self) -> usart1::sr::TC_W<'_, REG>;
+        fn lbd(&mut self) -> usart1::sr::LBD_W<'_, REG>;
     }
 }
 
@@ -52,10 +52,10 @@ wrap_r! {
 }
 wrap_w! {
     pub trait Cr2W {
-        fn add(&mut self) -> usart1::cr2::ADD_W<REG>;
-        fn lbdl(&mut self) -> usart1::cr2::LBDL_W<REG>;
-        fn lbdie(&mut self) -> usart1::cr2::LBDIE_W<REG>;
-        fn linen(&mut self) -> usart1::cr2::LINEN_W<REG>;
+        fn add(&mut self) -> usart1::cr2::ADD_W<'_, REG>;
+        fn lbdl(&mut self) -> usart1::cr2::LBDL_W<'_, REG>;
+        fn lbdie(&mut self) -> usart1::cr2::LBDIE_W<'_, REG>;
+        fn linen(&mut self) -> usart1::cr2::LINEN_W<'_, REG>;
     }
 }
 
@@ -72,13 +72,13 @@ wrap_r! {
 }
 wrap_w! {
     pub trait Cr3W {
-        fn eie(&mut self) -> usart1::cr3::EIE_W<REG>;
-        fn iren(&mut self) -> usart1::cr3::IREN_W<REG>;
-        fn irlp(&mut self) -> usart1::cr3::IRLP_W<REG>;
-        fn hdsel(&mut self) -> usart1::cr3::HDSEL_W<REG>;
-        fn dmar(&mut self) -> usart1::cr3::DMAR_W<REG>;
-        fn dmat(&mut self) -> usart1::cr3::DMAT_W<REG>;
-        fn onebit(&mut self) -> usart1::cr3::ONEBIT_W<REG>;
+        fn eie(&mut self) -> usart1::cr3::EIE_W<'_, REG>;
+        fn iren(&mut self) -> usart1::cr3::IREN_W<'_, REG>;
+        fn irlp(&mut self) -> usart1::cr3::IRLP_W<'_, REG>;
+        fn hdsel(&mut self) -> usart1::cr3::HDSEL_W<'_, REG>;
+        fn dmar(&mut self) -> usart1::cr3::DMAR_W<'_, REG>;
+        fn dmat(&mut self) -> usart1::cr3::DMAT_W<'_, REG>;
+        fn onebit(&mut self) -> usart1::cr3::ONEBIT_W<'_, REG>;
     }
 }
 
@@ -89,7 +89,7 @@ wrap_r! {
 }
 wrap_w! {
     pub trait GtprW {
-        fn psc(&mut self) -> usart1::gtpr::PSC_W<REG>;
+        fn psc(&mut self) -> usart1::gtpr::PSC_W<'_, REG>;
     }
 }
 
@@ -108,9 +108,9 @@ mod reg {
         fn lbd(r: &R<Self>) -> usart1::sr::LBD_R;
     }
     pub trait SrW: RegisterSpec<Ux = u16> + Writable + Resettable + Sized {
-        fn rxne(w: &mut W<Self>) -> usart1::sr::RXNE_W<Self>;
-        fn tc(w: &mut W<Self>) -> usart1::sr::TC_W<Self>;
-        fn lbd(w: &mut W<Self>) -> usart1::sr::LBD_W<Self>;
+        fn rxne(w: &mut W<Self>) -> usart1::sr::RXNE_W<'_, Self>;
+        fn tc(w: &mut W<Self>) -> usart1::sr::TC_W<'_, Self>;
+        fn lbd(w: &mut W<Self>) -> usart1::sr::LBD_W<'_, Self>;
     }
 
     pub trait Cr2R: RegisterSpec<Ux = u16> + Readable + Sized {
@@ -120,10 +120,10 @@ mod reg {
         fn linen(r: &R<Self>) -> usart1::cr2::LINEN_R;
     }
     pub trait Cr2W: RegisterSpec<Ux = u16> + Writable + Resettable + Sized {
-        fn add(w: &mut W<Self>) -> usart1::cr2::ADD_W<Self>;
-        fn lbdl(w: &mut W<Self>) -> usart1::cr2::LBDL_W<Self>;
-        fn lbdie(w: &mut W<Self>) -> usart1::cr2::LBDIE_W<Self>;
-        fn linen(w: &mut W<Self>) -> usart1::cr2::LINEN_W<Self>;
+        fn add(w: &mut W<Self>) -> usart1::cr2::ADD_W<'_, Self>;
+        fn lbdl(w: &mut W<Self>) -> usart1::cr2::LBDL_W<'_, Self>;
+        fn lbdie(w: &mut W<Self>) -> usart1::cr2::LBDIE_W<'_, Self>;
+        fn linen(w: &mut W<Self>) -> usart1::cr2::LINEN_W<'_, Self>;
     }
 
     pub trait Cr3R: RegisterSpec<Ux = u16> + Readable + Sized {
@@ -136,13 +136,13 @@ mod reg {
         fn onebit(r: &R<Self>) -> usart1::cr3::ONEBIT_R;
     }
     pub trait Cr3W: RegisterSpec<Ux = u16> + Writable + Resettable + Sized {
-        fn eie(w: &mut W<Self>) -> usart1::cr3::EIE_W<Self>;
-        fn iren(w: &mut W<Self>) -> usart1::cr3::IREN_W<Self>;
-        fn irlp(w: &mut W<Self>) -> usart1::cr3::IRLP_W<Self>;
-        fn hdsel(w: &mut W<Self>) -> usart1::cr3::HDSEL_W<Self>;
-        fn dmar(w: &mut W<Self>) -> usart1::cr3::DMAR_W<Self>;
-        fn dmat(w: &mut W<Self>) -> usart1::cr3::DMAT_W<Self>;
-        fn onebit(w: &mut W<Self>) -> usart1::cr3::ONEBIT_W<Self>;
+        fn eie(w: &mut W<Self>) -> usart1::cr3::EIE_W<'_, Self>;
+        fn iren(w: &mut W<Self>) -> usart1::cr3::IREN_W<'_, Self>;
+        fn irlp(w: &mut W<Self>) -> usart1::cr3::IRLP_W<'_, Self>;
+        fn hdsel(w: &mut W<Self>) -> usart1::cr3::HDSEL_W<'_, Self>;
+        fn dmar(w: &mut W<Self>) -> usart1::cr3::DMAR_W<'_, Self>;
+        fn dmat(w: &mut W<Self>) -> usart1::cr3::DMAT_W<'_, Self>;
+        fn onebit(w: &mut W<Self>) -> usart1::cr3::ONEBIT_W<'_, Self>;
     }
 
     pub trait GtprR: RegisterSpec<Ux = u16> + Readable + Sized {
@@ -187,9 +187,9 @@ macro_rules! impl_ext {
         }
         impl reg::SrW for $uart::sr::SRrs {
             impl_write! {
-                rxne -> usart1::sr::RXNE_W<Self>;
-                tc -> usart1::sr::TC_W<Self>;
-                lbd -> usart1::sr::LBD_W<Self>;
+                rxne -> usart1::sr::RXNE_W<'_, Self>;
+                tc -> usart1::sr::TC_W<'_, Self>;
+                lbd -> usart1::sr::LBD_W<'_, Self>;
             }
         }
 
@@ -203,10 +203,10 @@ macro_rules! impl_ext {
         }
         impl reg::Cr2W for $uart::cr2::CR2rs {
             impl_write! {
-                add -> usart1::cr2::ADD_W<Self>;
-                lbdl -> usart1::cr2::LBDL_W<Self>;
-                lbdie -> usart1::cr2::LBDIE_W<Self>;
-                linen -> usart1::cr2::LINEN_W<Self>;
+                add -> usart1::cr2::ADD_W<'_, Self>;
+                lbdl -> usart1::cr2::LBDL_W<'_, Self>;
+                lbdie -> usart1::cr2::LBDIE_W<'_, Self>;
+                linen -> usart1::cr2::LINEN_W<'_, Self>;
             }
         }
 
@@ -225,13 +225,13 @@ macro_rules! impl_ext {
         $(#[$attr])*
         impl reg::Cr3W for $uart::cr3::CR3rs {
             impl_write! {
-                eie -> usart1::cr3::EIE_W<Self>;
-                iren -> usart1::cr3::IREN_W<Self>;
-                irlp -> usart1::cr3::IRLP_W<Self>;
-                hdsel -> usart1::cr3::HDSEL_W<Self>;
-                dmar -> usart1::cr3::DMAR_W<Self>;
-                dmat -> usart1::cr3::DMAT_W<Self>;
-                onebit -> usart1::cr3::ONEBIT_W<Self>;
+                eie -> usart1::cr3::EIE_W<'_, Self>;
+                iren -> usart1::cr3::IREN_W<'_, Self>;
+                irlp -> usart1::cr3::IRLP_W<'_, Self>;
+                hdsel -> usart1::cr3::HDSEL_W<'_, Self>;
+                dmar -> usart1::cr3::DMAR_W<'_, Self>;
+                dmat -> usart1::cr3::DMAT_W<'_, Self>;
+                onebit -> usart1::cr3::ONEBIT_W<'_, Self>;
             }
         }
 
@@ -242,7 +242,7 @@ macro_rules! impl_ext {
         }
         impl reg::GtprW for $uart::gtpr::GTPRrs {
             impl_write! {
-                psc -> usart1::gtpr::PSC_W<Self>;
+                psc -> usart1::gtpr::PSC_W<'_, Self>;
             }
         }
     };
