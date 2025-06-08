@@ -66,7 +66,7 @@ impl FlashExt for FLASH {
         FlashSize::get().bytes()
     }
 
-    fn unlocked(&mut self) -> UnlockedFlash {
+    fn unlocked(&mut self) -> UnlockedFlash<'_> {
         unlock(self);
         UnlockedFlash { flash: self }
     }
@@ -138,7 +138,7 @@ impl FlashExt for LockedFlash {
         self.flash.len()
     }
 
-    fn unlocked(&mut self) -> UnlockedFlash {
+    fn unlocked(&mut self) -> UnlockedFlash<'_> {
         self.flash.unlocked()
     }
 

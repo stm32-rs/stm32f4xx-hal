@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Unmacro `Adc` [#832]
  - Use `write` instead of `modify` to clear flags [#829]
  - Bump `stm32f4-staging` to 0.18, update other dependencies [#831]
- - `serial` mod refactor [#833]
+ - `serial` mod refactor [#833] [#839]
  - FMPI2c APB timings [#770]
  - Fefactor FMPI2c `embedded-hal` implementations [#784]
 
@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#833]: https://github.com/stm32-rs/stm32f4xx-hal/pull/833
 [#834]: https://github.com/stm32-rs/stm32f4xx-hal/pull/834
 [#838]: https://github.com/stm32-rs/stm32f4xx-hal/pull/838
+[#839]: https://github.com/stm32-rs/stm32f4xx-hal/pull/839
 
 ## [v0.22.1] - 2024-11-03
 
