@@ -77,7 +77,7 @@ mod app {
             phase: Phase::CaptureOnFirstTransition,
         };
 
-        let mut spi3 = SpiSlave::new(spi, (sck, miso, mosi, None), mode);
+        let mut spi3 = SpiSlave::new(spi, (Some(sck), Some(miso), Some(mosi), SPI3::NoNss), mode);
         spi3.set_internal_nss(false);
 
         let (tx, rx) = spi3.use_dma().txrx();

@@ -13,20 +13,15 @@ use stm32f4xx_hal::pac::interrupt;
 use stm32f4xx_hal::{
     dma::{config, MemoryToPeripheral, Stream4, StreamsTuple, Transfer},
     gpio::Speed,
-    pac,
+    pac::{self, SPI2},
     prelude::*,
     spi::*,
 };
 
 const ARRAY_SIZE: usize = 100;
 
-type SpiDma = Transfer<
-    Stream4<pac::DMA1>,
-    0,
-    Tx<pac::SPI2>,
-    MemoryToPeripheral,
-    &'static mut [u8; ARRAY_SIZE],
->;
+type SpiDma =
+    Transfer<Stream4<pac::DMA1>, 0, Tx<SPI2>, MemoryToPeripheral, &'static mut [u8; ARRAY_SIZE]>;
 
 static G_TRANSFER: Mutex<RefCell<Option<SpiDma>>> = Mutex::new(RefCell::new(None));
 
@@ -56,7 +51,13 @@ fn main() -> ! {
             phase: Phase::CaptureOnFirstTransition,
         };
 
-        let spi2 = Spi::new(dp.SPI2, (pb13, NoMiso::new(), pb15), mode, 3.MHz(), &clocks);
+        let spi2 = Spi::new(
+            dp.SPI2,
+            (Some(pb13), SPI2::NoMiso, Some(pb15)),
+            mode,
+            3.MHz(),
+            &clocks,
+        );
 
         let buffer = cortex_m::singleton!(: [u8; ARRAY_SIZE] = [1; ARRAY_SIZE]).unwrap();
 

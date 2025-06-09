@@ -50,11 +50,10 @@ use cortex_m_rt::entry;
 
 use rtt_target::{rprintln, rtt_init_print};
 
-use stm32f4xx_hal::gpio::NoPin;
 use stm32f4xx_hal::i2s::stm32_i2s_v12x::transfer::*;
 use stm32f4xx_hal::i2s::I2s;
 use stm32f4xx_hal::nb::block;
-use stm32f4xx_hal::pac::Peripherals;
+use stm32f4xx_hal::pac::{Peripherals, SPI3};
 use stm32f4xx_hal::prelude::*;
 
 const SAMPLE_RATE: u32 = 48_000;
@@ -104,7 +103,7 @@ fn main() -> ! {
         .i2s_clk(61440.kHz())
         .freeze();
 
-    let i2s_pins = (gpioa.pa4, gpioc.pc10, NoPin::new(), gpioc.pc12);
+    let i2s_pins = (gpioa.pa4, gpioc.pc10, SPI3::NoMck, gpioc.pc12);
     let i2s = I2s::new(dp.SPI3, i2s_pins, &clocks);
     let i2s_config = I2sTransferConfig::new_master()
         .transmit()

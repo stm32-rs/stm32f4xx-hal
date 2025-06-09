@@ -65,17 +65,13 @@ macro_rules! extipin {
 use extipin;
 
 macro_rules! pin {
-    ( $($(#[$docs:meta])* <$name:ident, $Otype:ident> for $(no: $NoPin:ident,)? [$(
+    ( $($(#[$docs:meta])* <$name:ident, $Otype:ident> for [$(
         $(#[$attr:meta])* $PX:ident<$A:literal $(, Speed::$Speed:ident)?>,
     )*],)*) => {
         $(
             #[derive(Debug)]
             $(#[$docs])*
             pub enum $name {
-                $(
-                    None($NoPin<$Otype>),
-                )?
-
                 $(
                     $(#[$attr])*
                     $PX(gpio::$PX<$crate::gpio::Alternate<$A, $Otype>>),
@@ -129,14 +125,6 @@ macro_rules! pin {
             }
 
             $(
-                impl From<$NoPin<$Otype>> for $name {
-                    fn from(p: $NoPin<$Otype>) -> Self {
-                        Self::None(p)
-                    }
-                }
-            )?
-
-            $(
                 $(#[$attr])*
                 impl<MODE> From<gpio::$PX<MODE>> for $name
                 where
@@ -175,17 +163,13 @@ macro_rules! pin {
         )*
     };
 
-    ( $($(#[$docs:meta])* <$name:ident> default:$DefaultOtype:ident for $(no: $NoPin:ident,)? [$(
+    ( $($(#[$docs:meta])* <$name:ident> default:$DefaultOtype:ident for [$(
             $(#[$attr:meta])* $PX:ident<$A:literal>,
     )*],)*) => {
         $(
             #[derive(Debug)]
             $(#[$docs])*
             pub enum $name<Otype = $DefaultOtype> {
-                $(
-                    None($NoPin<Otype>),
-                )?
-
                 $(
                     $(#[$attr])*
                     $PX(gpio::$PX<$crate::gpio::Alternate<$A, Otype>>),
@@ -237,14 +221,6 @@ macro_rules! pin {
             impl<Otype> $crate::gpio::ExtiPin for $name<Otype> {
                 extipin! { $( $(#[$attr])* $PX, )* }
             }
-
-            $(
-                impl<Otype> From<$NoPin<Otype>> for $name<Otype> {
-                    fn from(p: $NoPin<Otype>) -> Self {
-                        Self::None(p)
-                    }
-                }
-            )?
 
             $(
                 $(#[$attr])*
@@ -387,6 +363,8 @@ pub trait SaiChannels {
 }
 #[cfg(feature = "sai1")]
 pub trait SaiChannel {
+    #[allow(non_upper_case_globals)]
+    const NoMclk: Option<Self::Mclk> = None;
     type Fs;
     type Mclk;
     type Sck;

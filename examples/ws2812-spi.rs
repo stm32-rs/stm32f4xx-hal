@@ -6,7 +6,10 @@ use panic_halt as _;
 use stm32f4xx_hal as hal;
 
 use cortex_m_rt::entry;
-use hal::{gpio::NoPin, pac, prelude::*};
+use hal::{
+    pac::{self, SPI1},
+    prelude::*,
+};
 use smart_leds::{brightness, hsv::RGB8, SmartLedsWrite};
 use ws2812_spi as ws2812;
 
@@ -22,7 +25,7 @@ fn main() -> ! {
     let gpioa = dp.GPIOA.split();
 
     let spi = dp.SPI1.spi(
-        (gpioa.pa5, NoPin::new(), gpioa.pa7),
+        (Some(gpioa.pa5), SPI1::NoMiso, Some(gpioa.pa7)),
         ws2812::MODE,
         3000.kHz(),
         &clocks,

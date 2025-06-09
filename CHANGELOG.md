@@ -16,9 +16,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - `serial` mod refactor [#833] [#839]
  - FMPI2c APB timings [#770]
  - Fefactor FMPI2c `embedded-hal` implementations [#784]
+ - remove `NoPin`, use `Option` instead [#813]
 
 [#770]: https://github.com/stm32-rs/stm32f4xx-hal/pull/770
 [#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
+[#813]: https://github.com/stm32-rs/stm32f4xx-hal/pull/813
 [#829]: https://github.com/stm32-rs/stm32f4xx-hal/pull/829
 [#831]: https://github.com/stm32-rs/stm32f4xx-hal/pull/831
 [#832]: https://github.com/stm32-rs/stm32f4xx-hal/pull/832

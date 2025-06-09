@@ -76,16 +76,6 @@ pub use embedded_hal_02::digital::v2::PinState;
 
 use core::fmt;
 
-/// A filler pin type
-#[derive(Debug, Default)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct NoPin<Otype = PushPull>(PhantomData<Otype>);
-impl<Otype> NoPin<Otype> {
-    pub fn new() -> Self {
-        Self(PhantomData)
-    }
-}
-
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
     /// The parts to split the GPIO into

@@ -6,7 +6,7 @@
 //! these chips because their `I2S2EXT` and `I2S3EXT` peripherals are missing from their package
 //! access crate.
 
-use crate::gpio::{self, NoPin, PinSpeed, Speed};
+use crate::gpio::{self, PinSpeed, Speed};
 use crate::pac;
 #[allow(unused)]
 use crate::rcc::{self, Clocks, Reset};
@@ -20,9 +20,6 @@ pub extern crate stm32_i2s_v12x;
 // NSS -> WS (the current SPI code doesn't define NSS pins)
 // SCK -> CK
 // The master clock output is separate.
-
-/// A placeholder for when the MCLK pin is not needed
-pub type NoMasterClock = NoPin;
 
 /// Trait for SPI peripheral with i2s capability.
 pub trait Instance:
@@ -82,12 +79,14 @@ impl I2sFreq for rcc::APB2 {
 
 /// Trait to build an [`I2s`] object from SPI peripheral, pins and clocks
 pub trait I2sExt: Sized + Instance {
+    #[allow(non_upper_case_globals)]
+    const NoMck: Option<Self::Mck> = None;
     fn i2s(
         self,
         pins: (
             impl Into<Self::Ws>,
             impl Into<Self::Ck>,
-            impl Into<Self::Mck>,
+            Option<impl Into<Self::Mck>>,
             impl Into<Self::Sd>,
         ),
         clocks: &Clocks,
@@ -100,7 +99,7 @@ impl<SPI: Instance> I2sExt for SPI {
         pins: (
             impl Into<Self::Ws>,
             impl Into<Self::Ck>,
-            impl Into<Self::Mck>,
+            Option<impl Into<Self::Mck>>,
             impl Into<Self::Sd>,
         ),
         clocks: &Clocks,
@@ -117,7 +116,7 @@ pub trait DualI2sExt: Sized + DualInstance {
         pins: (
             impl Into<Self::Ws>,
             impl Into<Self::Ck>,
-            impl Into<Self::Mck>,
+            Option<impl Into<Self::Mck>>,
             impl Into<Self::Sd>,
             impl Into<Self::ExtSd>,
         ),
@@ -132,7 +131,7 @@ impl<SPI: DualInstance> DualI2sExt for SPI {
         pins: (
             impl Into<Self::Ws>,
             impl Into<Self::Ck>,
-            impl Into<Self::Mck>,
+            Option<impl Into<Self::Mck>>,
             impl Into<Self::Sd>,
             impl Into<Self::ExtSd>,
         ),
@@ -145,7 +144,7 @@ impl<SPI: DualInstance> DualI2sExt for SPI {
 /// An I2s wrapper around an SPI object and pins
 pub struct I2s<I: Instance> {
     spi: I,
-    pins: (I::Ws, I::Ck, I::Mck, I::Sd),
+    pins: (I::Ws, I::Ck, Option<I::Mck>, I::Sd),
     /// Frequency of clock input to this peripheral from the I2S PLL or related source
     input_clock: Hertz,
 }
@@ -169,7 +168,7 @@ impl<SPI: Instance> I2s<SPI> {
         pins: (
             impl Into<SPI::Ws>,
             impl Into<SPI::Ck>,
-            impl Into<SPI::Mck>,
+            Option<impl Into<SPI::Mck>>,
             impl Into<SPI::Sd>,
         ),
         clocks: &Clocks,
@@ -185,7 +184,7 @@ impl<SPI: Instance> I2s<SPI> {
             pins.0.into(),
             // Workaround for corrupted last bit of data issue, see stm32f411 errata
             pins.1.into().speed(Speed::VeryHigh),
-            pins.2.into(),
+            pins.2.map(Into::into),
             pins.3.into(),
         );
 
@@ -197,7 +196,7 @@ impl<SPI: Instance> I2s<SPI> {
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn release(self) -> (SPI, (SPI::Ws, SPI::Ck, SPI::Mck, SPI::Sd)) {
+    pub fn release(self) -> (SPI, (SPI::Ws, SPI::Ck, Option<SPI::Mck>, SPI::Sd)) {
         (self.spi, self.pins)
     }
 }
@@ -293,7 +292,7 @@ i2s!(pac::SPI5, I2s5, i2s5);
 pub struct DualI2s<I: DualInstance> {
     spi: I,
     i2s_ext: I::I2sExtPeripheral,
-    pins: (I::Ws, I::Ck, I::Mck, I::Sd, I::ExtSd),
+    pins: (I::Ws, I::Ck, Option<I::Mck>, I::Sd, I::ExtSd),
     /// Frequency of clock input to this peripheral from the I2S PLL or related source
     input_clock: Hertz,
 }
@@ -316,7 +315,7 @@ impl<SPI: DualInstance> DualI2s<SPI> {
         pins: (
             impl Into<SPI::Ws>,
             impl Into<SPI::Ck>,
-            impl Into<SPI::Mck>,
+            Option<impl Into<SPI::Mck>>,
             impl Into<SPI::Sd>,
             impl Into<SPI::ExtSd>,
         ),
@@ -334,7 +333,7 @@ impl<SPI: DualInstance> DualI2s<SPI> {
             pins.0.into(),
             // Workaround for corrupted last bit of data issue, see stm32f411 errata
             pins.1.into().speed(Speed::VeryHigh),
-            pins.2.into(),
+            pins.2.map(Into::into),
             pins.3.into(),
             pins.4.into(),
         );
@@ -353,7 +352,7 @@ impl<SPI: DualInstance> DualI2s<SPI> {
     ) -> (
         SPI,
         SPI::I2sExtPeripheral,
-        (SPI::Ws, SPI::Ck, SPI::Mck, SPI::Sd, SPI::ExtSd),
+        (SPI::Ws, SPI::Ck, Option<SPI::Mck>, SPI::Sd, SPI::ExtSd),
     ) {
         (self.spi, self.i2s_ext, self.pins)
     }

@@ -80,7 +80,7 @@ mod app {
 
     use super::hal;
 
-    use hal::gpio::{Edge, NoPin};
+    use hal::gpio::Edge;
     use hal::i2s::stm32_i2s_v12x::driver::*;
     use hal::i2s::I2s;
     use hal::pac::Interrupt;
@@ -169,10 +169,10 @@ mod app {
 
         // I2S pins: (WS, CK, MCLK, SD) for I2S2
         let i2s2_pins = (
-            gpiob.pb12, //WS
-            gpiob.pb13, //CK
-            gpioc.pc6,  //MCK
-            gpiob.pb15, //SD
+            gpiob.pb12,      //WS
+            gpiob.pb13,      //CK
+            Some(gpioc.pc6), //MCK
+            gpiob.pb15,      //SD
         );
         let i2s2 = I2s::new(device.SPI2, i2s2_pins, &clocks);
         let i2s2_config = I2sDriverConfig::new_master()
@@ -186,8 +186,8 @@ mod app {
         i2s2_driver.set_rx_interrupt(true);
         i2s2_driver.set_error_interrupt(true);
 
-        // I2S3 pins: (WS, CK, NoPin, SD) for I2S3
-        let i2s3_pins = (gpioa.pa4, gpioc.pc10, NoPin::new(), gpioc.pc12);
+        // I2S3 pins: (WS, CK, NoMck, SD) for I2S3
+        let i2s3_pins = (gpioa.pa4, gpioc.pc10, SPI3::NoMck, gpioc.pc12);
         let i2s3 = I2s::new(device.SPI3, i2s3_pins, &clocks);
         let i2s3_config = i2s2_config.to_slave().transmit();
         let mut i2s3_driver = I2sDriver::new(i2s3, i2s3_config);
