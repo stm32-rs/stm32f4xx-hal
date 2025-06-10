@@ -102,6 +102,7 @@ mod app {
         RightLsb,
     }
 
+    use stm32f4xx_hal::rcc::Config;
     use FrameState::{LeftLsb, LeftMsb, RightLsb, RightMsb};
 
     impl Default for FrameState {
@@ -148,20 +149,18 @@ mod app {
         let (adc_p, process_c) = queue_1.split();
         let (process_p, dac_c) = queue_2.split();
         let device = cx.device;
-        let mut syscfg = device.SYSCFG.constrain();
         let mut exti = device.EXTI;
-        let gpiob = device.GPIOB.split();
-        let gpioc = device.GPIOC.split();
-        let rcc = device.RCC.constrain();
-        let clocks = rcc
-            .cfgr
-            .use_hse(8u32.MHz())
-            .sysclk(96.MHz())
-            .hclk(96.MHz())
-            .pclk1(50.MHz())
-            .pclk2(100.MHz())
-            .i2s_clk(61440.kHz())
-            .freeze();
+        let mut rcc = device.RCC.freeze(
+            Config::hse(8u32.MHz())
+                .sysclk(96.MHz())
+                .hclk(96.MHz())
+                .pclk1(50.MHz())
+                .pclk2(100.MHz())
+                .i2s_clk(61440.kHz()),
+        );
+        let mut syscfg = device.SYSCFG.constrain(&mut rcc);
+        let gpiob = device.GPIOB.split(&mut rcc);
+        let gpioc = device.GPIOC.split(&mut rcc);
 
         // I2S pins: (WS, CK, MCLK, SD) for I2S2
         let i2s2_pins = (
@@ -171,7 +170,7 @@ mod app {
             gpiob.pb15,      //SD
             gpiob.pb14,      //ExtSD
         );
-        let i2s2 = DualI2s::new(device.SPI2, device.I2S2EXT, i2s2_pins, &clocks);
+        let i2s2 = DualI2s::new(device.SPI2, device.I2S2EXT, i2s2_pins, &mut rcc);
         let i2s2_config = DualI2sDriverConfig::new_master()
             .direction(Receive, Transmit)
             .standard(Philips)

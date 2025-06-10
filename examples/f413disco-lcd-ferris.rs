@@ -13,7 +13,7 @@
 use panic_halt as _;
 use rtt_target::{self, rtt_init_print, ChannelMode};
 
-use stm32f4xx_hal as hal;
+use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{
     fsmc_lcd::{DataPins16, FsmcLcd, LcdPins, Timing},
@@ -697,16 +697,15 @@ fn main() -> ! {
     rtt_init_print!(ChannelMode::NoBlockTrim);
 
     if let (Some(p), Some(cp)) = (Peripherals::take(), CorePeripherals::take()) {
-        // Split all the GPIO blocks we need
-        let gpiob = p.GPIOB.split();
-        let gpiod = p.GPIOD.split();
-        let gpioe = p.GPIOE.split();
-        let gpiof = p.GPIOF.split();
-        let gpiog = p.GPIOG.split();
-
         // Configure and lock the clocks at maximum warp
-        let rcc = p.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(100.MHz()).freeze();
+        let mut rcc = p.RCC.freeze(Config::hsi().sysclk(100.MHz()));
+
+        // Split all the GPIO blocks we need
+        let gpiob = p.GPIOB.split(&mut rcc);
+        let gpiod = p.GPIOD.split(&mut rcc);
+        let gpioe = p.GPIOE.split(&mut rcc);
+        let gpiof = p.GPIOF.split(&mut rcc);
+        let gpiog = p.GPIOG.split(&mut rcc);
 
         // Define the pins we need for our 16bit parallel bus
         use stm32f4xx_hal::gpio::alt::fsmc as alt;
@@ -729,14 +728,15 @@ fn main() -> ! {
         let mut _te = gpiob.pb14.into_floating_input();
 
         // Get delay provider
-        let mut delay = cp.SYST.delay(&clocks);
+        let mut delay = cp.SYST.delay(&rcc.clocks);
 
         // Set up timing
         let write_timing = Timing::default().data(3).address_setup(3).bus_turnaround(0);
         let read_timing = Timing::default().data(8).address_setup(8).bus_turnaround(0);
 
         // Initialise FSMC memory provider
-        let (_fsmc, interface) = FsmcLcd::new(p.FSMC, lcd_pins, &read_timing, &write_timing);
+        let (_fsmc, interface) =
+            FsmcLcd::new(p.FSMC, lcd_pins, &read_timing, &write_timing, &mut rcc);
 
         // Pass display-interface instance ST7789 driver to setup a new display
         let mut disp = ST7789::new(

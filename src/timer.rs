@@ -13,6 +13,7 @@ use crate::bb;
 use crate::pac;
 
 use crate::dma::traits::PeriAddress;
+use crate::rcc::Rcc;
 use crate::rcc::{self, Clocks};
 use fugit::HertzU32 as Hertz;
 
@@ -170,51 +171,51 @@ pub enum Error {
 
 pub trait TimerExt: Sized {
     /// Non-blocking [Counter] with custom fixed precision
-    fn counter<const FREQ: u32>(self, clocks: &Clocks) -> Counter<Self, FREQ>;
+    fn counter<const FREQ: u32>(self, rcc: &mut Rcc) -> Counter<Self, FREQ>;
     /// Non-blocking [Counter] with fixed precision of 1 ms (1 kHz sampling)
     ///
     /// Can wait from 2 ms to 65 sec for 16-bit timer and from 2 ms to 49 days for 32-bit timer.
     ///
     /// NOTE: don't use this if your system frequency more than 65 MHz
-    fn counter_ms(self, clocks: &Clocks) -> CounterMs<Self> {
-        self.counter::<1_000>(clocks)
+    fn counter_ms(self, rcc: &mut Rcc) -> CounterMs<Self> {
+        self.counter::<1_000>(rcc)
     }
     /// Non-blocking [Counter] with fixed precision of 1 μs (1 MHz sampling)
     ///
     /// Can wait from 2 μs to 65 ms for 16-bit timer and from 2 μs to 71 min for 32-bit timer.
-    fn counter_us(self, clocks: &Clocks) -> CounterUs<Self> {
-        self.counter::<1_000_000>(clocks)
+    fn counter_us(self, rcc: &mut Rcc) -> CounterUs<Self> {
+        self.counter::<1_000_000>(rcc)
     }
     /// Non-blocking [Counter] with dynamic precision which uses `Hertz` as Duration units
-    fn counter_hz(self, clocks: &Clocks) -> CounterHz<Self>;
+    fn counter_hz(self, rcc: &mut Rcc) -> CounterHz<Self>;
 
     /// Blocking [Delay] with custom fixed precision
-    fn delay<const FREQ: u32>(self, clocks: &Clocks) -> Delay<Self, FREQ>;
+    fn delay<const FREQ: u32>(self, rcc: &mut Rcc) -> Delay<Self, FREQ>;
     /// Blocking [Delay] with fixed precision of 1 ms (1 kHz sampling)
     ///
     /// Can wait from 2 ms to 49 days.
     ///
     /// NOTE: don't use this if your system frequency more than 65 MHz
-    fn delay_ms(self, clocks: &Clocks) -> DelayMs<Self> {
-        self.delay::<1_000>(clocks)
+    fn delay_ms(self, rcc: &mut Rcc) -> DelayMs<Self> {
+        self.delay::<1_000>(rcc)
     }
     /// Blocking [Delay] with fixed precision of 1 μs (1 MHz sampling)
     ///
     /// Can wait from 2 μs to 71 min.
-    fn delay_us(self, clocks: &Clocks) -> DelayUs<Self> {
-        self.delay::<1_000_000>(clocks)
+    fn delay_us(self, rcc: &mut Rcc) -> DelayUs<Self> {
+        self.delay::<1_000_000>(rcc)
     }
 }
 
 impl<TIM: Instance> TimerExt for TIM {
-    fn counter<const FREQ: u32>(self, clocks: &Clocks) -> Counter<Self, FREQ> {
-        FTimer::new(self, clocks).counter()
+    fn counter<const FREQ: u32>(self, rcc: &mut Rcc) -> Counter<Self, FREQ> {
+        FTimer::new(self, rcc).counter()
     }
-    fn counter_hz(self, clocks: &Clocks) -> CounterHz<Self> {
-        Timer::new(self, clocks).counter_hz()
+    fn counter_hz(self, rcc: &mut Rcc) -> CounterHz<Self> {
+        Timer::new(self, rcc).counter_hz()
     }
-    fn delay<const FREQ: u32>(self, clocks: &Clocks) -> Delay<Self, FREQ> {
-        FTimer::new(self, clocks).delay()
+    fn delay<const FREQ: u32>(self, rcc: &mut Rcc) -> Delay<Self, FREQ> {
+        FTimer::new(self, rcc).delay()
     }
 }
 
@@ -706,15 +707,13 @@ macro_rules! with_pwm {
 
 impl<TIM: Instance> Timer<TIM> {
     /// Initialize timer
-    pub fn new(tim: TIM, clocks: &Clocks) -> Self {
-        unsafe {
-            // Enable and reset the timer peripheral
-            TIM::enable_unchecked();
-            TIM::reset_unchecked();
-        }
+    pub fn new(tim: TIM, rcc: &mut Rcc) -> Self {
+        // Enable and reset the timer peripheral
+        TIM::enable(rcc);
+        TIM::reset(rcc);
 
         Self {
-            clk: TIM::timer_clock(clocks),
+            clk: TIM::timer_clock(&rcc.clocks),
             tim,
         }
     }
@@ -755,15 +754,13 @@ pub type FTimerMs<TIM> = FTimer<TIM, 1_000>;
 
 impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
     /// Initialize timer
-    pub fn new(tim: TIM, clocks: &Clocks) -> Self {
-        unsafe {
-            // Enable and reset the timer peripheral
-            TIM::enable_unchecked();
-            TIM::reset_unchecked();
-        }
+    pub fn new(tim: TIM, rcc: &mut Rcc) -> Self {
+        // Enable and reset the timer peripheral
+        TIM::enable(rcc);
+        TIM::reset(rcc);
 
         let mut t = Self { tim };
-        t.configure(clocks);
+        t.configure(&rcc.clocks);
         t
     }
 

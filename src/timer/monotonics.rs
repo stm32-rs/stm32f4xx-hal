@@ -1,6 +1,6 @@
 // RTICv2 Monotonic impl
 use super::{FTimer, General};
-use crate::{pac, rcc::Clocks};
+use crate::{pac, rcc::Rcc};
 use atomic_polyfill::{AtomicU64, Ordering};
 use core::marker::PhantomData;
 use rtic_time::timer_queue::TimerQueueBackend;
@@ -32,14 +32,14 @@ pub trait MonoTimerExt: Sized {
     fn monotonic<const FREQ: u32>(
         self,
         nvic: &mut cortex_m::peripheral::NVIC,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> MonoTimer<Self, FREQ>;
     fn monotonic_us(
         self,
         nvic: &mut cortex_m::peripheral::NVIC,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> MonoTimer<Self, 1_000_000> {
-        self.monotonic::<1_000_000>(nvic, clocks)
+        self.monotonic::<1_000_000>(nvic, rcc)
     }
 }
 
@@ -147,9 +147,9 @@ macro_rules! make_timer {
             fn monotonic<const FREQ: u32>(
                 self,
                 nvic: &mut cortex_m::peripheral::NVIC,
-                clocks: &Clocks,
+                rcc: &mut Rcc,
             ) -> MonoTimer<Self, FREQ> {
-                FTimer::new(self, clocks).monotonic(nvic)
+                FTimer::new(self, rcc).monotonic(nvic)
             }
         }
 

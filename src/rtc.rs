@@ -4,7 +4,7 @@
 
 use crate::bb;
 use crate::pac::rtc::{dr, tr};
-use crate::pac::{self, rcc::RegisterBlock, PWR, RCC, RTC};
+use crate::pac::{self, PWR, RCC, RTC};
 use crate::rcc::Enable;
 use core::fmt;
 use fugit::RateExtU32;
@@ -121,8 +121,8 @@ pub enum LSEClockMode {
 
 impl Rtc {
     /// Create and enable a new RTC with external crystal or ceramic resonator and default prescalers.
-    pub fn new(regs: RTC, pwr: &mut PWR) -> Self {
-        Self::with_config(regs, pwr, LSEClockMode::Oscillator, 255, 127)
+    pub fn new(regs: RTC, rcc: &mut RCC, pwr: &mut PWR) -> Self {
+        Self::with_config(regs, rcc, pwr, LSEClockMode::Oscillator, 255, 127)
     }
     /// Create and enable a new RTC, and configure its clock source and prescalers.
     ///
@@ -130,6 +130,7 @@ impl Rtc {
     /// set `prediv_s` to 255 (249 for LSI), and `prediv_a` to 127 to get a calendar clock of 1Hz.
     pub fn with_config(
         regs: RTC,
+        rcc: &mut RCC,
         pwr: &mut PWR,
         clock_source: impl Into<ClockSource>,
         prediv_s: u16,
@@ -151,30 +152,27 @@ impl Rtc {
         // Exit Init
         // Enable write protect
 
-        unsafe {
-            let rcc = &(*RCC::ptr());
-            // As per the sample code, unlock comes first. (Enable PWR and DBP)
-            result.unlock(rcc, pwr);
-            match result.clock_source {
-                ClockSource::Lse(mode) => {
-                    // If necessary, enable the LSE.
-                    if rcc.bdcr().read().lserdy().bit_is_clear() {
-                        result.enable_lse(rcc, mode);
-                    }
-                    // Set clock source to LSE.
-                    rcc.bdcr().modify(|_, w| w.rtcsel().lse());
+        // As per the sample code, unlock comes first. (Enable PWR and DBP)
+        result.unlock(rcc, pwr);
+        match result.clock_source {
+            ClockSource::Lse(mode) => {
+                // If necessary, enable the LSE.
+                if rcc.bdcr().read().lserdy().bit_is_clear() {
+                    result.enable_lse(rcc, mode);
                 }
-                ClockSource::Lsi => {
-                    // If necessary, enable the LSE.
-                    if rcc.csr().read().lsirdy().bit_is_clear() {
-                        result.enable_lsi(rcc);
-                    }
-                    // Set clock source to LSI.
-                    rcc.bdcr().modify(|_, w| w.rtcsel().lsi());
-                }
+                // Set clock source to LSE.
+                rcc.bdcr().modify(|_, w| w.rtcsel().lse());
             }
-            result.enable(rcc);
+            ClockSource::Lsi => {
+                // If necessary, enable the LSE.
+                if rcc.csr().read().lsirdy().bit_is_clear() {
+                    result.enable_lsi(rcc);
+                }
+                // Set clock source to LSI.
+                rcc.bdcr().modify(|_, w| w.rtcsel().lsi());
+            }
         }
+        result.enable(rcc);
 
         result.modify(true, |regs| {
             // Set 24 Hour
@@ -191,7 +189,7 @@ impl Rtc {
 
     /// Enable the low frequency external oscillator. This is the only mode currently
     /// supported, to avoid exposing the `CR` and `CRS` registers.
-    fn enable_lse(&mut self, rcc: &RegisterBlock, mode: LSEClockMode) {
+    fn enable_lse(&mut self, rcc: &mut RCC, mode: LSEClockMode) {
         unsafe {
             // Force a reset of the backup domain.
             self.backup_reset(rcc);
@@ -209,19 +207,25 @@ impl Rtc {
     }
 
     /// Create and enable a new RTC with internal crystal and default prescalers.
-    pub fn new_lsi(regs: RTC, pwr: &mut PWR) -> Self {
-        Self::with_config(regs, pwr, ClockSource::Lsi, 249, 127)
+    pub fn new_lsi(regs: RTC, rcc: &mut RCC, pwr: &mut PWR) -> Self {
+        Self::with_config(regs, rcc, pwr, ClockSource::Lsi, 249, 127)
     }
 
     /// Create and enable a new RTC, and configure its clock source and prescalers.
     ///
     /// From AN3371, Table 3, when using the LSI,
     /// set `prediv_s` to 249, and `prediv_a` to 127 to get a calendar clock of 1Hz.
-    pub fn lsi_with_config(regs: RTC, pwr: &mut PWR, prediv_s: u16, prediv_a: u8) -> Self {
-        Self::with_config(regs, pwr, ClockSource::Lsi, prediv_s, prediv_a)
+    pub fn lsi_with_config(
+        regs: RTC,
+        rcc: &mut RCC,
+        pwr: &mut PWR,
+        prediv_s: u16,
+        prediv_a: u8,
+    ) -> Self {
+        Self::with_config(regs, rcc, pwr, ClockSource::Lsi, prediv_s, prediv_a)
     }
 
-    fn enable_lsi(&mut self, rcc: &RegisterBlock) {
+    fn enable_lsi(&mut self, rcc: &mut RCC) {
         // Force a reset of the backup domain.
         self.backup_reset(rcc);
         // Enable the LSI.
@@ -229,7 +233,7 @@ impl Rtc {
         while rcc.csr().read().lsirdy().is_not_ready() {}
     }
 
-    fn unlock(&mut self, rcc: &RegisterBlock, pwr: &mut PWR) {
+    fn unlock(&mut self, rcc: &mut RCC, pwr: &mut PWR) {
         // Enable the backup interface
         // Set APB1 - Bit 28 (PWREN)
         PWR::enable(rcc);
@@ -238,7 +242,7 @@ impl Rtc {
         pwr.cr().modify(|_, w| w.dbp().set_bit());
     }
 
-    fn backup_reset(&mut self, rcc: &RegisterBlock) {
+    fn backup_reset(&mut self, rcc: &mut RCC) {
         unsafe {
             // Set BDCR - Bit 16 (BDRST)
             bb::set(rcc.bdcr(), 16);
@@ -247,7 +251,7 @@ impl Rtc {
         }
     }
 
-    fn enable(&mut self, rcc: &RegisterBlock) {
+    fn enable(&mut self, rcc: &mut RCC) {
         // Start the actual RTC.
         // Set BDCR - Bit 15 (RTCEN)
         unsafe {

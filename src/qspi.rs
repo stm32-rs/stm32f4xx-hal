@@ -12,7 +12,7 @@
 pub use crate::gpio::alt::QuadSpiBank;
 use crate::{
     gpio::{alt::quadspi as alt, PinSpeed, Speed},
-    pac::QUADSPI,
+    pac::{QUADSPI, RCC},
     rcc::Enable,
 };
 pub use alt::{Bank1, Bank2};
@@ -221,8 +221,9 @@ impl Qspi<Bank1> {
             impl Into<alt::Clk>,
         ),
         config: QspiConfig,
+        rcc: &mut RCC,
     ) -> Self {
-        Self::new(qspi, pins, config)
+        Self::new(qspi, pins, config, rcc)
     }
 }
 
@@ -239,8 +240,9 @@ impl Qspi<Bank2> {
             impl Into<alt::Clk>,
         ),
         config: QspiConfig,
+        rcc: &mut RCC,
     ) -> Self {
-        Self::new(qspi, pins, config)
+        Self::new(qspi, pins, config, rcc)
     }
 }
 
@@ -270,11 +272,10 @@ where
             impl Into<alt::Clk>,
         ),
         config: QspiConfig,
+        rcc: &mut RCC,
     ) -> Self {
         // Enable quad SPI in the clocks.
-        unsafe {
-            QUADSPI::enable_unchecked();
-        }
+        QUADSPI::enable(rcc);
 
         let pins = (
             pins.0.into().speed(Speed::VeryHigh),
@@ -320,11 +321,10 @@ impl Qspi<DualFlash> {
             impl Into<alt::Clk>,
         ),
         config: QspiConfig,
+        rcc: &mut RCC,
     ) -> Self {
         // Enable quad SPI in the clocks.
-        unsafe {
-            QUADSPI::enable_unchecked();
-        }
+        QUADSPI::enable(rcc);
 
         let pins = (
             pins.0.into().speed(Speed::VeryHigh),

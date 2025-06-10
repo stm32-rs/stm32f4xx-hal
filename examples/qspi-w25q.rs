@@ -8,11 +8,11 @@ use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 use panic_semihosting as _;
 use stm32f4xx_hal as hal;
-use stm32f4xx_hal::gpio::GpioExt;
 use stm32f4xx_hal::qspi::{
     FlashSize, MemoryMapped, Qspi, QspiConfig, QspiError, QspiMemoryMappedConfig, QspiMode,
     QspiPins, QspiReadCommand, QspiWriteCommand,
 };
+use stm32f4xx_hal::{gpio::GpioExt, rcc::RccExt};
 
 pub struct W25Q<PINS: QspiPins> {
     qspi: Qspi<PINS>,
@@ -147,10 +147,13 @@ where
 #[entry]
 fn main() -> ! {
     if let Some(dp) = stm32f4xx_hal::pac::Peripherals::take() {
-        let gpioa = dp.GPIOA.split();
-        let gpiob = dp.GPIOB.split();
-        let gpiod = dp.GPIOD.split();
-        let gpioe = dp.GPIOE.split();
+        // Set up the system clock.
+        let mut rcc = dp.RCC.constrain();
+
+        let gpioa = dp.GPIOA.split(&mut rcc);
+        let gpiob = dp.GPIOB.split(&mut rcc);
+        let gpiod = dp.GPIOD.split(&mut rcc);
+        let gpioe = dp.GPIOE.split(&mut rcc);
 
         let qspi = Qspi::bank1(
             dp.QUADSPI,
@@ -162,6 +165,7 @@ fn main() -> ! {
                 .flash_size(FlashSize::from_megabytes(16))
                 .clock_prescaler(0)
                 .sample_shift(hal::qspi::SampleShift::HalfACycle),
+            &mut rcc,
         );
 
         let mut flash = W25Q::new(qspi).unwrap();

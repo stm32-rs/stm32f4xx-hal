@@ -2,7 +2,7 @@
 
 use crate::gpio::alt::sdio as alt;
 use crate::pac::{self, SDIO};
-use crate::rcc::{Clocks, Enable, Reset};
+use crate::rcc::{Enable, Rcc, Reset};
 #[allow(unused_imports)]
 use fugit::HertzU32 as Hertz;
 pub use sdio_host::{
@@ -167,12 +167,10 @@ pub struct Emmc {
 
 impl<P: SdioPeripheral> Sdio<P> {
     /// Create and enable the Sdio device
-    pub fn new<PINS: Pins>(sdio: SDIO, pins: PINS, clocks: &Clocks) -> Self {
-        unsafe {
-            // Enable and reset the sdio peripheral, it's the same bit position for both registers
-            SDIO::enable_unchecked();
-            SDIO::reset_unchecked();
-        }
+    pub fn new<PINS: Pins>(sdio: SDIO, pins: PINS, rcc: &mut Rcc) -> Self {
+        // Enable and reset the sdio peripheral, it's the same bit position for both registers
+        SDIO::enable(rcc);
+        SDIO::reset(rcc);
 
         // Configure clock
         sdio.clkcr().write(|w| {
@@ -196,7 +194,7 @@ impl<P: SdioPeripheral> Sdio<P> {
             sdio,
             bw: PINS::BUSWIDTH,
             card: None,
-            clock: clocks.sysclk(),
+            clock: rcc.clocks.sysclk(),
         };
 
         // Make sure card is powered off

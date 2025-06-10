@@ -1,6 +1,6 @@
 // RTICv1 Monotonic impl for the 32-bit timers
 use super::{Channel, Event, FTimer, Flag, General, Instance, WithPwm};
-use crate::rcc::Clocks;
+use crate::rcc::Rcc;
 use crate::ReadFlags;
 use core::ops::{Deref, DerefMut};
 pub use fugit::{self, ExtU32};
@@ -35,9 +35,9 @@ impl<TIM: Instance, const FREQ: u32> MonoTimer<TIM, FREQ> {
 }
 
 pub trait MonoTimerExt: Sized {
-    fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> MonoTimer<Self, FREQ>;
-    fn monotonic_us(self, clocks: &Clocks) -> MonoTimer<Self, 1_000_000> {
-        self.monotonic::<1_000_000>(clocks)
+    fn monotonic<const FREQ: u32>(self, rcc: &mut Rcc) -> MonoTimer<Self, FREQ>;
+    fn monotonic_us(self, rcc: &mut Rcc) -> MonoTimer<Self, 1_000_000> {
+        self.monotonic::<1_000_000>(rcc)
     }
 }
 
@@ -45,15 +45,15 @@ impl<TIM> MonoTimerExt for TIM
 where
     Self: Instance + General<Width = u32> + WithPwm,
 {
-    fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> MonoTimer<Self, FREQ> {
-        FTimer::new(self, clocks).monotonic()
+    fn monotonic<const FREQ: u32>(self, rcc: &mut Rcc) -> MonoTimer<Self, FREQ> {
+        FTimer::new(self, rcc).monotonic()
     }
 }
 
 pub trait MonoTimer64Ext: Sized {
-    fn monotonic64<const FREQ: u32>(self, clocks: &Clocks) -> MonoTimer64<Self, FREQ>;
-    fn monotonic64_us(self, clocks: &Clocks) -> MonoTimer64<Self, 1_000_000> {
-        self.monotonic64::<1_000_000>(clocks)
+    fn monotonic64<const FREQ: u32>(self, rcc: &mut Rcc) -> MonoTimer64<Self, FREQ>;
+    fn monotonic64_us(self, rcc: &mut Rcc) -> MonoTimer64<Self, 1_000_000> {
+        self.monotonic64::<1_000_000>(rcc)
     }
 }
 
@@ -61,21 +61,21 @@ impl<TIM> MonoTimer64Ext for TIM
 where
     Self: Instance + General + WithPwm,
 {
-    fn monotonic64<const FREQ: u32>(self, clocks: &Clocks) -> MonoTimer64<Self, FREQ> {
-        FTimer::new(self, clocks).monotonic64()
+    fn monotonic64<const FREQ: u32>(self, rcc: &mut Rcc) -> MonoTimer64<Self, FREQ> {
+        FTimer::new(self, rcc).monotonic64()
     }
 }
 
 pub trait SysMonoTimerExt: Sized {
-    fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> Systick<FREQ>;
-    fn monotonic_us(self, clocks: &Clocks) -> Systick<1_000_000> {
-        self.monotonic::<1_000_000>(clocks)
+    fn monotonic<const FREQ: u32>(self, rcc: &mut Rcc) -> Systick<FREQ>;
+    fn monotonic_us(self, rcc: &mut Rcc) -> Systick<1_000_000> {
+        self.monotonic::<1_000_000>(rcc)
     }
 }
 
 impl SysMonoTimerExt for cortex_m::peripheral::SYST {
-    fn monotonic<const FREQ: u32>(self, clocks: &Clocks) -> Systick<FREQ> {
-        Systick::new(self, clocks.hclk().raw())
+    fn monotonic<const FREQ: u32>(self, rcc: &mut Rcc) -> Systick<FREQ> {
+        Systick::new(self, rcc.clocks.hclk().raw())
     }
 }
 

@@ -10,27 +10,26 @@ use bxcan::filter::Mask32;
 use bxcan::{Fifo, Frame, StandardId};
 use cortex_m_rt::entry;
 use nb::block;
+use stm32f4xx_hal::rcc::Config;
 use stm32f4xx_hal::{pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let rcc = dp.RCC.constrain();
-
     // To meet CAN clock accuracy requirements an external crystal or ceramic
     // resonator must be used. The blue pill has a 8MHz external crystal.
     // Other boards might have a crystal with another frequency or none at all.
-    rcc.cfgr.use_hse(8.MHz()).freeze();
+    let mut rcc = dp.RCC.freeze(Config::hse(8.MHz()));
 
-    let gpiob = dp.GPIOB.split();
+    let gpiob = dp.GPIOB.split(&mut rcc);
     let mut can1 = {
         let rx = gpiob.pb8;
         let tx = gpiob.pb9;
 
         // let can = Can::new(dp.CAN1, (tx, rx));
         // or
-        let can = dp.CAN1.can((tx, rx));
+        let can = dp.CAN1.can((tx, rx), &mut rcc);
 
         bxcan::Can::builder(can)
             // APB1 (PCLK1): 8MHz, Bit rate: 500kBit/s, Sample Point 87.5%
@@ -47,7 +46,7 @@ fn main() -> ! {
         let tx = gpiob.pb13;
         let rx = gpiob.pb12;
 
-        let can = dp.CAN2.can((tx, rx));
+        let can = dp.CAN2.can((tx, rx), &mut rcc);
 
         let can2 = bxcan::Can::builder(can)
             // APB1 (PCLK1): 8MHz, Bit rate: 500kBit/s, Sample Point 87.5%

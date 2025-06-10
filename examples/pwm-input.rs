@@ -12,14 +12,13 @@ use stm32f4xx_hal::{pac, prelude::*, timer::Timer};
 fn main() -> ! {
     if let Some(dp) = pac::Peripherals::take() {
         // Set up the system clock.
-        let rcc = dp.RCC.constrain();
-        let clocks = rcc.cfgr.freeze();
+        let mut rcc = dp.RCC.constrain();
 
-        let gpioa = dp.GPIOA.split();
-        let gpioc = dp.GPIOC.split();
+        let gpioa = dp.GPIOA.split(&mut rcc);
+        let gpioc = dp.GPIOC.split(&mut rcc);
 
         // configure tim1 as a PWM output of known frequency.
-        let (_, (ch1, ch2, ..)) = Timer::new(dp.TIM1, &clocks).pwm_hz(501.Hz());
+        let (_, (ch1, ch2, ..)) = Timer::new(dp.TIM1, &mut rcc).pwm_hz(501.Hz());
         let mut ch1 = ch1.with(gpioa.pa8);
         let mut _ch2 = ch2.with(gpioa.pa9);
         let max_duty = ch1.get_max_duty();
@@ -30,7 +29,7 @@ fn main() -> ! {
         let pwm_reader_ch1 = gpioc.pc6;
 
         // configure tim8 as a PWM input, using the best-guess frequency of the input signal.
-        let monitor = Timer::new(dp.TIM8, &clocks).pwm_input(500.Hz(), pwm_reader_ch1);
+        let monitor = Timer::new(dp.TIM8, &mut rcc).pwm_input(500.Hz(), pwm_reader_ch1);
 
         // NOTE: this value may only be accurately observed at the CC2 interrupt.
         let _duty = monitor.get_duty_cycle();

@@ -29,7 +29,7 @@ use crate::gpio::{self, PushPull};
 
 use crate::pac;
 
-use crate::rcc::{self, Clocks};
+use crate::rcc::{self, Rcc};
 
 pub mod dma;
 use crate::dma::{
@@ -218,21 +218,21 @@ pub trait SerialExt: Sized + Instance {
         self,
         pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig>;
 
     fn tx<WORD>(
         self,
         tx_pin: impl Into<Self::Tx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>;
 
     fn rx<WORD>(
         self,
         rx_pin: impl Into<Self::Rx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig>;
 }
 
@@ -244,9 +244,9 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
             impl Into<USART::Rx<PushPull>>,
         ),
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Self, config::InvalidConfig> {
-        Self::_new(uart, (Some(pins.0), Some(pins.1)), config, clocks)
+        Self::_new(uart, (Some(pins.0), Some(pins.1)), config, rcc)
     }
     fn _new(
         uart: USART,
@@ -255,18 +255,16 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
             Option<impl Into<USART::Rx<PushPull>>>,
         ),
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Self, config::InvalidConfig> {
         use self::config::*;
 
         let config = config.into();
-        unsafe {
-            // Enable clock.
-            USART::enable_unchecked();
-            USART::reset_unchecked();
-        }
+        // Enable clock.
+        USART::enable(rcc);
+        USART::reset(rcc);
 
-        let pclk_freq = USART::clock(clocks).raw();
+        let pclk_freq = USART::clock(&rcc.clocks).raw();
         let baud = config.baudrate.0;
 
         if !USART::RB::IRDA && config.irda != IrdaMode::None {
@@ -668,25 +666,25 @@ impl<UART: Instance> SerialExt for UART {
         self,
         pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
-        Serial::new(self, pins, config, clocks)
+        Serial::new(self, pins, config, rcc)
     }
     fn tx<WORD>(
         self,
         tx_pin: impl Into<Self::Tx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig> {
-        Serial::tx(self, tx_pin, config, clocks)
+        Serial::tx(self, tx_pin, config, rcc)
     }
     fn rx<WORD>(
         self,
         rx_pin: impl Into<Self::Rx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig> {
-        Serial::rx(self, rx_pin, config, clocks)
+        Serial::rx(self, rx_pin, config, rcc)
     }
 }
 
@@ -695,13 +693,13 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         usart: UART,
         tx_pin: impl Into<UART::Tx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Tx<UART, WORD>, config::InvalidConfig> {
         Self::_new(
             usart,
             (Some(tx_pin), None::<UART::Rx<PushPull>>),
             config,
-            clocks,
+            rcc,
         )
         .map(|s| s.split().0)
     }
@@ -712,13 +710,13 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         usart: UART,
         rx_pin: impl Into<UART::Rx<PushPull>>,
         config: impl Into<config::Config>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Result<Rx<UART, WORD>, config::InvalidConfig> {
         Self::_new(
             usart,
             (None::<UART::Tx<PushPull>>, Some(rx_pin)),
             config,
-            clocks,
+            rcc,
         )
         .map(|s| s.split().1)
     }

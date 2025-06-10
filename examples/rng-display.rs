@@ -15,6 +15,7 @@
 #![no_main]
 
 use stm32f4xx_hal as hal;
+use stm32f4xx_hal::rcc::Config;
 
 #[cfg(not(debug_assertions))]
 use panic_halt as _;
@@ -53,27 +54,22 @@ fn main() -> ! {
         cortex_m::peripheral::Peripherals::take(),
     ) {
         // Set up the system clock.
-        let rcc = dp.RCC.constrain();
-
         // Clock configuration is critical for RNG to work properly; otherwise
         // RNG_SR CECS bit will constantly report an error (if RNG_CLK < HCLK/16)
         // here we pick a simple clock configuration that ensures the pll48clk,
         // from which RNG_CLK is derived, is about 48 MHz
-        let clocks = rcc
-            .cfgr
-            .use_hse(8.MHz()) //discovery board has 8 MHz crystal for HSE
-            .sysclk(128.MHz())
-            .freeze();
+        // discovery board has 8 MHz crystal for HSE
+        let mut rcc = dp.RCC.freeze(Config::hse(8.MHz()).sysclk(128.MHz()));
 
-        let mut delay_source = cp.SYST.delay(&clocks);
+        let mut delay_source = cp.SYST.delay(&rcc.clocks);
 
         // Set up I2C1: SCL is PB8 and SDA is PB9; they are set to Alternate Function 4
         // as per the STM32F407 datasheet. Pin assignment as per the
         // stm32f4-discovery (ST32F407G-DISC1) board.
-        let gpiob = dp.GPIOB.split();
+        let gpiob = dp.GPIOB.split(&mut rcc);
         let scl = gpiob.pb8;
         let sda = gpiob.pb9;
-        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &clocks);
+        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
 
         // Set up the display
         let interface = I2CDisplayInterface::new(i2c);
@@ -83,7 +79,7 @@ fn main() -> ! {
 
         // enable the RNG peripheral and its clock
         // this will panic if the clock configuration is unsuitable
-        let mut rand_source = dp.RNG.constrain(&clocks);
+        let mut rand_source = dp.RNG.constrain(&mut rcc);
         let mut format_buf = String::<20>::new();
         loop {
             //display clear

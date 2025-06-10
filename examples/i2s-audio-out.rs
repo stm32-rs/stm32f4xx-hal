@@ -55,6 +55,7 @@ use stm32f4xx_hal::i2s::I2s;
 use stm32f4xx_hal::nb::block;
 use stm32f4xx_hal::pac::{Peripherals, SPI3};
 use stm32f4xx_hal::prelude::*;
+use stm32f4xx_hal::rcc::Config;
 
 const SAMPLE_RATE: u32 = 48_000;
 
@@ -90,21 +91,19 @@ fn main() -> ! {
     rtt_init_print!();
     let dp = Peripherals::take().unwrap();
 
-    let gpioa = dp.GPIOA.split();
-    let gpioc = dp.GPIOC.split();
-
-    let rcc = dp.RCC.constrain();
     // The 61440 kHz frequency can be divided to get exactly 48 kHz sample rate even when
     // generating master clock
-    let clocks = rcc
-        .cfgr
-        .use_hse(8u32.MHz())
-        .sysclk(96.MHz())
-        .i2s_clk(61440.kHz())
-        .freeze();
+    let mut rcc = dp.RCC.freeze(
+        Config::hse(8u32.MHz())
+            .sysclk(96.MHz())
+            .i2s_clk(61440.kHz()),
+    );
+
+    let gpioa = dp.GPIOA.split(&mut rcc);
+    let gpioc = dp.GPIOC.split(&mut rcc);
 
     let i2s_pins = (gpioa.pa4, gpioc.pc10, SPI3::NoMck, gpioc.pc12);
-    let i2s = I2s::new(dp.SPI3, i2s_pins, &clocks);
+    let i2s = I2s::new(dp.SPI3, i2s_pins, &mut rcc);
     let i2s_config = I2sTransferConfig::new_master()
         .transmit()
         .standard(Philips)

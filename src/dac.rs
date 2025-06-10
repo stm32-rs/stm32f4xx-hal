@@ -6,7 +6,7 @@
 
 use crate::{
     gpio::{Analog, PA4, PA5},
-    pac::DAC,
+    pac::{DAC, RCC},
     rcc::{Enable, Reset},
 };
 
@@ -49,17 +49,15 @@ impl Pins<DAC> for (PA4<Analog>, PA5<Analog>) {
     }
 }
 
-pub fn dac<PINS>(_dac: DAC, _pins: PINS) -> PINS::Output
+pub fn dac<PINS>(_dac: DAC, _pins: PINS, rcc: &mut RCC) -> PINS::Output
 where
     PINS: Pins<DAC>,
 {
-    unsafe {
-        // Enable and reset clock.
-        DAC::enable_unchecked();
-        DAC::reset_unchecked();
+    // Enable and reset clock.
+    DAC::enable(rcc);
+    DAC::reset(rcc);
 
-        PINS::init()
-    }
+    PINS::init()
 }
 
 macro_rules! dac {
@@ -86,17 +84,17 @@ macro_rules! dac {
 }
 
 pub trait DacExt {
-    fn constrain<PINS>(self, pins: PINS) -> PINS::Output
+    fn constrain<PINS>(self, pins: PINS, rcc: &mut RCC) -> PINS::Output
     where
         PINS: Pins<DAC>;
 }
 
 impl DacExt for DAC {
-    fn constrain<PINS>(self, pins: PINS) -> PINS::Output
+    fn constrain<PINS>(self, pins: PINS, rcc: &mut RCC) -> PINS::Output
     where
         PINS: Pins<DAC>,
     {
-        dac(self, pins)
+        dac(self, pins, rcc)
     }
 }
 

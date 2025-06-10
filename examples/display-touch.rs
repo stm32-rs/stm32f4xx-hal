@@ -22,7 +22,7 @@ use stm32f4xx_hal::{
     gpio::Speed,
     pac,
     prelude::*,
-    rcc::Rcc,
+    rcc::Config,
 };
 
 use embedded_graphics_07::{
@@ -53,17 +53,15 @@ fn main() -> ! {
     let p = pac::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 
-    let rcc: Rcc = p.RCC.constrain();
+    let mut rcc = p.RCC.freeze(Config::hsi().sysclk(100.MHz()));
+    let mut delay = cp.SYST.delay(&rcc.clocks);
 
-    let clocks = rcc.cfgr.sysclk(100.MHz()).freeze();
-    let mut delay = cp.SYST.delay(&clocks);
-
-    let gpiob = p.GPIOB.split();
-    let gpioc = p.GPIOC.split();
-    let gpiod = p.GPIOD.split();
-    let gpioe = p.GPIOE.split();
-    let gpiof = p.GPIOF.split();
-    let gpiog = p.GPIOG.split();
+    let gpiob = p.GPIOB.split(&mut rcc);
+    let gpioc = p.GPIOC.split(&mut rcc);
+    let gpiod = p.GPIOD.split(&mut rcc);
+    let gpioe = p.GPIOE.split(&mut rcc);
+    let gpiof = p.GPIOF.split(&mut rcc);
+    let gpiog = p.GPIOG.split(&mut rcc);
 
     // Pins connected to the LCD on the board
     use stm32f4xx_hal::gpio::alt::fsmc as alt;
@@ -122,7 +120,7 @@ fn main() -> ! {
     let read_timing = Timing::default().data(8).address_setup(8).bus_turnaround(0);
 
     // Initialise FSMC memory provider
-    let (_fsmc, interface) = FsmcLcd::new(p.FSMC, lcd_pins, &read_timing, &write_timing);
+    let (_fsmc, interface) = FsmcLcd::new(p.FSMC, lcd_pins, &read_timing, &write_timing, &mut rcc);
 
     // Pass display-interface instance ST7789 driver to setup a new display
     let mut disp = ST7789::new(
@@ -148,7 +146,7 @@ fn main() -> ! {
     // STM32F412 uses I2c1 type for i2c bus.
     // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f412zg-mcu-stmicroelectronics
     #[cfg(feature = "stm32f412")]
-    let mut i2c = { I2c::new(p.I2C1, (gpiob.pb6, gpiob.pb7), 400.kHz(), &clocks) };
+    let mut i2c = { I2c::new(p.I2C1, (gpiob.pb6, gpiob.pb7), 400.kHz(), &mut rcc) };
 
     // STM32F413 uses FMPI2C1 type.
     // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f413zh-mcu-stmicroelectronics

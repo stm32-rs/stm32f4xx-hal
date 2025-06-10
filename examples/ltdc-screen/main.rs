@@ -17,7 +17,7 @@ use stm32f4xx_hal::{
     ltdc::{BluePins, GreenPins, Layer, LtdcPins, PixelFormat, RedPins},
     pac,
     prelude::*,
-    rcc::Rcc,
+    rcc::{Config, Rcc},
 };
 
 mod screen;
@@ -35,17 +35,17 @@ fn main() -> ! {
     let perif = pac::Peripherals::take().unwrap();
     let _cp = cortex_m::Peripherals::take().unwrap();
 
-    let rcc_hal: Rcc = perif.RCC.constrain();
+    let mut rcc_hal: Rcc = perif.RCC.constrain();
 
     // Set up pins
-    let _gpioa = perif.GPIOA.split();
-    let _gpiob = perif.GPIOB.split();
-    let gpioe = perif.GPIOE.split();
-    let gpiog = perif.GPIOG.split();
-    let gpioh = perif.GPIOH.split();
-    let gpioi = perif.GPIOI.split();
-    let gpioj = perif.GPIOJ.split();
-    let gpiok = perif.GPIOK.split();
+    let _gpioa = perif.GPIOA.split(&mut rcc_hal);
+    let _gpiob = perif.GPIOB.split(&mut rcc_hal);
+    let gpioe = perif.GPIOE.split(&mut rcc_hal);
+    let gpiog = perif.GPIOG.split(&mut rcc_hal);
+    let gpioh = perif.GPIOH.split(&mut rcc_hal);
+    let gpioi = perif.GPIOI.split(&mut rcc_hal);
+    let gpioj = perif.GPIOJ.split(&mut rcc_hal);
+    let gpiok = perif.GPIOK.split(&mut rcc_hal);
 
     let pins = LtdcPins::new(
         RedPins::new(
@@ -67,13 +67,12 @@ fn main() -> ! {
 
     // HSE osc out in High Z
     gpioh.ph1.into_floating_input();
-    let _clocks = rcc_hal
-        .cfgr
-        .use_hse(25.MHz())
-        .bypass_hse_oscillator()
-        .sysclk(216.MHz())
-        .hclk(216.MHz())
-        .freeze();
+    let _rcc_hal = rcc_hal.freeze(
+        Config::hse(25.MHz())
+            .bypass_hse_oscillator()
+            .sysclk(216.MHz())
+            .hclk(216.MHz()),
+    );
 
     // LCD enable: set it low first to avoid LCD bleed while setting up timings
     let mut disp_on = gpioi.pi12.into_push_pull_output();

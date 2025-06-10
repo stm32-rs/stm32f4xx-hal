@@ -9,7 +9,7 @@
 use crate::gpio::{self, PinSpeed, Speed};
 use crate::pac;
 #[allow(unused)]
-use crate::rcc::{self, Clocks, Reset};
+use crate::rcc::{self, Clocks, Rcc, Reset};
 use fugit::HertzU32 as Hertz;
 
 #[cfg(feature = "i2s")]
@@ -89,7 +89,7 @@ pub trait I2sExt: Sized + Instance {
             Option<impl Into<Self::Mck>>,
             impl Into<Self::Sd>,
         ),
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> I2s<Self>;
 }
 
@@ -102,9 +102,9 @@ impl<SPI: Instance> I2sExt for SPI {
             Option<impl Into<Self::Mck>>,
             impl Into<Self::Sd>,
         ),
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> I2s<Self> {
-        I2s::new(self, pins, clocks)
+        I2s::new(self, pins, rcc)
     }
 }
 
@@ -120,7 +120,7 @@ pub trait DualI2sExt: Sized + DualInstance {
             impl Into<Self::Sd>,
             impl Into<Self::ExtSd>,
         ),
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> DualI2s<Self>;
 }
 
@@ -135,9 +135,9 @@ impl<SPI: DualInstance> DualI2sExt for SPI {
             impl Into<Self::Sd>,
             impl Into<Self::ExtSd>,
         ),
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> DualI2s<Self> {
-        DualI2s::new(self, i2s_ext, pins, clocks)
+        DualI2s::new(self, i2s_ext, pins, rcc)
     }
 }
 
@@ -171,14 +171,12 @@ impl<SPI: Instance> I2s<SPI> {
             Option<impl Into<SPI::Mck>>,
             impl Into<SPI::Sd>,
         ),
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Self {
-        let input_clock = SPI::i2s_freq(clocks);
-        unsafe {
-            // Enable clock, enable reset, clear, reset
-            SPI::enable_unchecked();
-            SPI::reset_unchecked();
-        }
+        let input_clock = SPI::i2s_freq(&rcc.clocks);
+        // Enable clock, enable reset, clear, reset
+        SPI::enable(rcc);
+        SPI::reset(rcc);
 
         let pins = (
             pins.0.into(),
@@ -319,15 +317,13 @@ impl<SPI: DualInstance> DualI2s<SPI> {
             impl Into<SPI::Sd>,
             impl Into<SPI::ExtSd>,
         ),
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Self {
-        let input_clock = SPI::i2s_freq(clocks);
-        unsafe {
-            // Enable clock, enable reset, clear, reset
-            // Note: this also affect the I2SEXT peripheral
-            SPI::enable_unchecked();
-            SPI::reset_unchecked();
-        }
+        let input_clock = SPI::i2s_freq(&rcc.clocks);
+        // Enable clock, enable reset, clear, reset
+        // Note: this also affect the I2SEXT peripheral
+        SPI::enable(rcc);
+        SPI::reset(rcc);
 
         let pins = (
             pins.0.into(),

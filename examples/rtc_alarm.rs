@@ -31,9 +31,8 @@ fn main() -> ! {
 
     let mut p = hal::pac::Peripherals::take().unwrap();
 
-    let rcc = p.RCC.constrain();
-    let _clocks = rcc.cfgr.freeze();
-    let mut rtc = Rtc::new(p.RTC, &mut p.PWR);
+    let mut rcc = p.RCC.constrain();
+    let mut rtc = Rtc::new(p.RTC, &mut rcc, &mut p.PWR);
 
     let today = date!(2023 - 05 - 28);
     rtc.set_datetime(&PrimitiveDateTime::new(today, time!(21:57:32)))

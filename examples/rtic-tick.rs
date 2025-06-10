@@ -11,7 +11,7 @@ mod app {
         gpio::{Output, PC13},
         pac,
         prelude::*,
-        //timer::MonoTimerUs, // Easy monotonic timer for 32-bit TIMs only
+        rcc::Config,
         timer::MonoTimer64Us, // Extended 64-bit timer for 16/32-bit TIMs
     };
 
@@ -30,15 +30,14 @@ mod app {
 
     #[init]
     fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        let rcc = ctx.device.RCC.constrain();
-        let clocks = rcc.cfgr.sysclk(48.MHz()).freeze();
+        let mut rcc = ctx.device.RCC.freeze(Config::DEFAULT.sysclk(48.MHz()));
 
-        let gpioc = ctx.device.GPIOC.split();
+        let gpioc = ctx.device.GPIOC.split(&mut rcc);
         let led = gpioc.pc13.into_push_pull_output();
         defmt::info!("Start");
 
-        //let mono = ctx.device.TIM2.monotonic_us(&clocks);
-        let mono = ctx.device.TIM3.monotonic64_us(&clocks);
+        //let mono = ctx.device.TIM2.monotonic_us(&mut rcc);
+        let mono = ctx.device.TIM3.monotonic64_us(&mut rcc);
         tick::spawn().ok();
         (Shared {}, Local { led }, init::Monotonics(mono))
     }

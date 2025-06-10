@@ -5,7 +5,7 @@ use crate::rcc::{Enable, Reset};
 
 use crate::gpio;
 
-use crate::rcc::Clocks;
+use crate::rcc::Rcc;
 use fugit::{HertzU32 as Hertz, RateExtU32};
 
 mod common;
@@ -104,7 +104,7 @@ pub trait I2cExt: Sized + Instance {
         self,
         pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> I2c<Self>;
 }
 
@@ -113,9 +113,9 @@ impl<I2C: Instance> I2cExt for I2C {
         self,
         pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> I2c<Self> {
-        I2c::new(self, pins, mode, clocks)
+        I2c::new(self, pins, mode, rcc)
     }
 }
 
@@ -124,18 +124,16 @@ impl<I2C: Instance> I2c<I2C> {
         i2c: I2C,
         pins: (impl Into<I2C::Scl>, impl Into<I2C::Sda>),
         mode: impl Into<Mode>,
-        clocks: &Clocks,
+        rcc: &mut Rcc,
     ) -> Self {
-        unsafe {
-            // Enable and reset clock.
-            I2C::enable_unchecked();
-            I2C::reset_unchecked();
-        }
+        // Enable and reset clock.
+        I2C::enable(rcc);
+        I2C::reset(rcc);
 
         let pins = (pins.0.into(), pins.1.into());
 
         let i2c = I2c { i2c, pins };
-        i2c.i2c_init(mode, clocks.pclk1());
+        i2c.i2c_init(mode, rcc.clocks.pclk1());
         i2c
     }
 

@@ -22,6 +22,7 @@
 use core::ops::Deref;
 
 use crate::gpio::alt::SaiChannel;
+use crate::pac::RCC;
 #[cfg(feature = "sai2")]
 use crate::pac::SAI2;
 #[cfg(any(
@@ -486,6 +487,7 @@ where
     /// Splits the SAI instance into two asynchronous sub-blocks.
     fn split(
         self,
+        rcc: &mut RCC,
     ) -> (
         SubBlock<SAIA<Self>, Asynchronous>,
         SubBlock<SAIB<Self>, Asynchronous>,
@@ -497,6 +499,7 @@ where
     /// block.
     fn split_sync_a(
         self,
+        rcc: &mut RCC,
     ) -> (
         SubBlock<SAIA<Self>, Synchronous>,
         SubBlock<SAIB<Self>, Asynchronous>,
@@ -508,6 +511,7 @@ where
     /// block.
     fn split_sync_b(
         self,
+        rcc: &mut RCC,
     ) -> (
         SubBlock<SAIA<Self>, Asynchronous>,
         SubBlock<SAIB<Self>, Synchronous>,
@@ -527,6 +531,7 @@ where
 {
     fn split(
         self,
+        rcc: &mut RCC,
     ) -> (
         SubBlock<SAIA<Self>, Asynchronous>,
         SubBlock<SAIB<Self>, Asynchronous>,
@@ -534,10 +539,8 @@ where
     where
         Self: Sized,
     {
-        unsafe {
-            SAI::enable_unchecked();
-            SAI::reset_unchecked();
-        }
+        SAI::enable(rcc);
+        SAI::reset(rcc);
         (
             SubBlock {
                 channel: SAIA::new(self),
@@ -554,6 +557,7 @@ where
 
     fn split_sync_a(
         self,
+        rcc: &mut RCC,
     ) -> (
         SubBlock<SAIA<Self>, Synchronous>,
         SubBlock<SAIB<Self>, Asynchronous>,
@@ -561,10 +565,8 @@ where
     where
         Self: Sized,
     {
-        unsafe {
-            SAI::enable_unchecked();
-            SAI::reset_unchecked();
-        }
+        SAI::enable(rcc);
+        SAI::reset(rcc);
         (
             SubBlock {
                 channel: SAIA::new(self),
@@ -581,6 +583,7 @@ where
 
     fn split_sync_b(
         self,
+        rcc: &mut RCC,
     ) -> (
         SubBlock<SAIA<Self>, Asynchronous>,
         SubBlock<SAIB<Self>, Synchronous>,
@@ -588,10 +591,8 @@ where
     where
         Self: Sized,
     {
-        unsafe {
-            SAI::enable_unchecked();
-            SAI::reset_unchecked();
-        }
+        SAI::enable(rcc);
+        SAI::reset(rcc);
         (
             SubBlock {
                 channel: SAIA::new(self),
