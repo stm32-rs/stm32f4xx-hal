@@ -210,15 +210,18 @@ impl<RB, const A: usize> Sealed for Periph<RB, A> {}
 pub trait Ptr: Sealed {
     /// RegisterBlock structure
     type RB;
+    /// Pointer to the register block
+    const PTR: *const Self::RB;
     /// Return the pointer to the register block
-    fn ptr() -> *const Self::RB;
+    #[inline(always)]
+    fn ptr() -> *const Self::RB {
+        Self::PTR
+    }
 }
 
 impl<RB, const A: usize> Ptr for Periph<RB, A> {
     type RB = RB;
-    fn ptr() -> *const Self::RB {
-        Self::ptr()
-    }
+    const PTR: *const Self::RB = Self::PTR;
 }
 
 pub trait Steal: Sealed {
@@ -239,6 +242,7 @@ pub trait Steal: Sealed {
 }
 
 impl<RB, const A: usize> Steal for Periph<RB, A> {
+    #[inline(always)]
     unsafe fn steal() -> Self {
         Self::steal()
     }
