@@ -139,7 +139,7 @@ pub trait Instance:
     #[doc(hidden)]
     #[inline(always)]
     fn peri_address() -> u32 {
-        unsafe { &*Self::ptr() }.peri_address()
+        unsafe { &*Self::PTR }.peri_address()
     }
 }
 
