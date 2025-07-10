@@ -401,8 +401,8 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     ///
     /// This is useful when you want to collect the pins into an array where you
     /// need all the elements to have the same type
-    pub fn erase(self) -> ErasedPin<MODE> {
-        ErasedPin::new(P as u8 - b'A', N)
+    pub fn erase(self) -> AnyPin<MODE> {
+        AnyPin::new(P as u8 - b'A', N)
     }
 }
 
@@ -415,7 +415,7 @@ impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for PartiallyErased
     }
 }
 
-impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for ErasedPin<MODE> {
+impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for AnyPin<MODE> {
     /// Pin-to-erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].

@@ -1,7 +1,7 @@
 use core::convert::Infallible;
 
 use super::{
-    dynamic::PinModeError, marker, DynamicPin, ErasedPin, Input, OpenDrain, Output,
+    dynamic::PinModeError, marker, AnyPin, DynamicPin, Input, OpenDrain, Output,
     PartiallyErasedPin, Pin, PinMode, PinState,
 };
 
@@ -107,7 +107,7 @@ where
 
 // Implementations for `ErasedPin`
 
-impl<MODE> OutputPin for ErasedPin<Output<MODE>> {
+impl<MODE> OutputPin for AnyPin<Output<MODE>> {
     type Error = core::convert::Infallible;
 
     #[inline(always)]
@@ -123,7 +123,7 @@ impl<MODE> OutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl<MODE> StatefulOutputPin for ErasedPin<Output<MODE>> {
+impl<MODE> StatefulOutputPin for AnyPin<Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self.is_set_high())
@@ -135,7 +135,7 @@ impl<MODE> StatefulOutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
+impl<MODE> ToggleableOutputPin for AnyPin<Output<MODE>> {
     type Error = Infallible;
 
     #[inline(always)]
@@ -145,7 +145,7 @@ impl<MODE> ToggleableOutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl<MODE> InputPin for ErasedPin<MODE>
+impl<MODE> InputPin for AnyPin<MODE>
 where
     MODE: marker::Readable,
 {
