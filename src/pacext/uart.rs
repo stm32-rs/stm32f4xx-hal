@@ -149,7 +149,7 @@ mod reg {
         fn psc(r: &R<Self>) -> usart1::gtpr::PSC_R;
     }
     pub trait GtprW: RegisterSpec<Ux = u16> + Writable + Resettable + Sized {
-        fn psc(w: &mut W<Self>) -> usart1::gtpr::PSC_W<Self>;
+        fn psc(w: &mut W<Self>) -> usart1::gtpr::PSC_W<'_, Self>;
     }
 }
 

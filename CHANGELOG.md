@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Use `write` instead of `modify` to clear flags [#829]
  - Bump `stm32f4-staging` to 0.18, update other dependencies [#831]
  - `serial` mod refactor [#833] [#839]
+ - Add "capture" support for timers [#830]
  - FMPI2c APB timings [#770]
  - Fefactor FMPI2c `embedded-hal` implementations [#784]
  - remove `NoPin`, use `Option` instead [#813]
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
 [#813]: https://github.com/stm32-rs/stm32f4xx-hal/pull/813
 [#829]: https://github.com/stm32-rs/stm32f4xx-hal/pull/829
+[#830]: https://github.com/stm32-rs/stm32f4xx-hal/pull/830
 [#831]: https://github.com/stm32-rs/stm32f4xx-hal/pull/831
 [#832]: https://github.com/stm32-rs/stm32f4xx-hal/pull/832
 [#833]: https://github.com/stm32-rs/stm32f4xx-hal/pull/833
