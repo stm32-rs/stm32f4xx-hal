@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Implement `embedded_hal::i2c::I2c` for `I2cMasterDma` [#838]
  - Back to `stm32f4`
  - Implement `Ptr`, `Sealed`, `Steal` for generic `Periph` [#834]
+ - Rename `ErasedPin` to `AnyPin` [#841]
  - Use `&mut RCC` for `PER::enable/reset`
  - Unmacro `Adc` [#832]
  - Use `write` instead of `modify` to clear flags [#829]
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - FMPI2c APB timings [#770]
  - Fefactor FMPI2c `embedded-hal` implementations [#784]
  - remove `NoPin`, use `Option` instead [#813]
+ - Make `DynPin` be generic over `Pin` and `AnyPin`
 
 [#770]: https://github.com/stm32-rs/stm32f4xx-hal/pull/770
 [#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
@@ -31,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#834]: https://github.com/stm32-rs/stm32f4xx-hal/pull/834
 [#838]: https://github.com/stm32-rs/stm32f4xx-hal/pull/838
 [#839]: https://github.com/stm32-rs/stm32f4xx-hal/pull/839
+[#841]: https://github.com/stm32-rs/stm32f4xx-hal/pull/841
 
 ## [v0.22.1] - 2024-11-03
 

@@ -63,91 +63,44 @@ impl<const P: char, MODE> PinExt for PartiallyErasedPin<P, MODE> {
     }
 }
 
+impl<const P: char, MODE> PartiallyErasedPin<P, MODE> {
+    #[inline(always)]
+    pub(crate) fn block(&self) -> *const crate::pac::gpioa::RegisterBlock {
+        gpiox::<P>()
+    }
+    state_inner!();
+}
+
 impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
-    /// Drives the pin high
-    #[inline(always)]
-    pub fn set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            (*gpiox::<P>()).bsrr().write(|w| w.bits(1 << self.i));
-        }
-    }
-
-    /// Drives the pin low
-    #[inline(always)]
-    pub fn set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            (*gpiox::<P>()).bsrr().write(|w| w.bits(1 << (self.i + 16)));
-        }
-    }
-
-    /// Is the pin in drive high or low mode?
-    #[inline(always)]
-    pub fn get_state(&self) -> PinState {
-        if self.is_set_low() {
-            PinState::Low
-        } else {
-            PinState::High
-        }
-    }
-
-    /// Drives the pin high or low depending on the provided value
-    #[inline(always)]
-    pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
-    }
-
-    /// Is the pin in drive high mode?
-    #[inline(always)]
-    pub fn is_set_high(&self) -> bool {
-        !self.is_set_low()
-    }
-
-    /// Is the pin in drive low mode?
-    #[inline(always)]
-    pub fn is_set_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*gpiox::<P>()).odr().read().bits() & (1 << self.i) == 0 }
-    }
-
-    /// Toggle pin output
-    #[inline(always)]
-    pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
-    }
+    state_output!();
 }
 
 impl<const P: char, MODE> PartiallyErasedPin<P, MODE>
 where
     MODE: marker::Readable,
 {
-    /// Is the input pin high?
-    #[inline(always)]
-    pub fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    /// Is the input pin low?
-    #[inline(always)]
-    pub fn is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*gpiox::<P>()).idr().read().bits() & (1 << self.i) == 0 }
-    }
+    state_input!();
 }
 
-impl<const P: char, MODE> From<PartiallyErasedPin<P, MODE>> for ErasedPin<MODE> {
+impl<const P: char, MODE> PartiallyErasedPin<P, MODE>
+where
+    MODE: marker::OutputSpeed,
+{
+    speed!();
+}
+
+impl<const P: char, MODE> PartiallyErasedPin<P, MODE>
+where
+    MODE: marker::Active,
+{
+    internal_resistor!();
+}
+
+impl<const P: char, MODE> From<PartiallyErasedPin<P, MODE>> for AnyPin<MODE> {
     /// Partially erased pin-to-erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
     fn from(p: PartiallyErasedPin<P, MODE>) -> Self {
-        ErasedPin::new(P as u8 - b'A', p.i)
+        AnyPin::new(P as u8 - b'A', p.i)
     }
 }

@@ -1,17 +1,17 @@
 use super::*;
 
-pub use ErasedPin as AnyPin;
+pub use AnyPin as ErasedPin;
 
 /// Fully erased pin
 ///
 /// `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
-pub struct ErasedPin<MODE> {
+pub struct AnyPin<MODE> {
     // Bits 0-3: Pin, Bits 4-7: Port
     pin_port: u8,
     _mode: PhantomData<MODE>,
 }
 
-impl<MODE> fmt::Debug for ErasedPin<MODE> {
+impl<MODE> fmt::Debug for AnyPin<MODE> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_fmt(format_args!(
             "P({}{})<{}>",
@@ -23,7 +23,7 @@ impl<MODE> fmt::Debug for ErasedPin<MODE> {
 }
 
 #[cfg(feature = "defmt")]
-impl<MODE> defmt::Format for ErasedPin<MODE> {
+impl<MODE> defmt::Format for AnyPin<MODE> {
     fn format(&self, f: defmt::Formatter) {
         defmt::write!(
             f,
@@ -35,7 +35,7 @@ impl<MODE> defmt::Format for ErasedPin<MODE> {
     }
 }
 
-impl<MODE> PinExt for ErasedPin<MODE> {
+impl<MODE> PinExt for AnyPin<MODE> {
     type Mode = MODE;
 
     #[inline(always)]
@@ -48,7 +48,7 @@ impl<MODE> PinExt for ErasedPin<MODE> {
     }
 }
 
-impl<MODE> ErasedPin<MODE> {
+impl<MODE> AnyPin<MODE> {
     pub(crate) fn from_pin_port(pin_port: u8) -> Self {
         Self {
             pin_port,
@@ -73,7 +73,7 @@ impl<MODE> ErasedPin<MODE> {
     }
 
     #[inline]
-    pub(crate) fn block(&self) -> &crate::pac::gpioa::RegisterBlock {
+    pub(crate) fn block(&self) -> *const crate::pac::gpioa::RegisterBlock {
         // This function uses pointer arithmetic instead of branching to be more efficient
 
         // The logic relies on the following assumptions:
@@ -86,87 +86,33 @@ impl<MODE> ErasedPin<MODE> {
         const GPIO_REGISTER_OFFSET: usize = 0x0400;
 
         let offset = GPIO_REGISTER_OFFSET * self.port_id() as usize;
-        let block_ptr =
-            (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::pac::gpioa::RegisterBlock;
-
-        unsafe { &*block_ptr }
+        (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::pac::gpioa::RegisterBlock
     }
+
+    state_inner!();
 }
 
-impl<MODE> ErasedPin<Output<MODE>> {
-    /// Drives the pin high
-    #[inline(always)]
-    pub fn set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe { self.block().bsrr().write(|w| w.bits(1 << self.pin_id())) };
-    }
-
-    /// Drives the pin low
-    #[inline(always)]
-    pub fn set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            self.block()
-                .bsrr()
-                .write(|w| w.bits(1 << (self.pin_id() + 16)))
-        };
-    }
-
-    /// Is the pin in drive high or low mode?
-    #[inline(always)]
-    pub fn get_state(&self) -> PinState {
-        if self.is_set_low() {
-            PinState::Low
-        } else {
-            PinState::High
-        }
-    }
-
-    /// Drives the pin high or low depending on the provided value
-    #[inline(always)]
-    pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
-    }
-
-    /// Is the pin in drive high mode?
-    #[inline(always)]
-    pub fn is_set_high(&self) -> bool {
-        !self.is_set_low()
-    }
-
-    /// Is the pin in drive low mode?
-    #[inline(always)]
-    pub fn is_set_low(&self) -> bool {
-        self.block().odr().read().bits() & (1 << self.pin_id()) == 0
-    }
-
-    /// Toggle pin output
-    #[inline(always)]
-    pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
-    }
+impl<MODE> AnyPin<Output<MODE>> {
+    state_output!();
 }
 
-impl<MODE> ErasedPin<MODE>
+impl<MODE> AnyPin<MODE>
 where
     MODE: marker::Readable,
 {
-    /// Is the input pin high?
-    #[inline(always)]
-    pub fn is_high(&self) -> bool {
-        !self.is_low()
-    }
+    state_input!();
+}
 
-    /// Is the input pin low?
-    #[inline(always)]
-    pub fn is_low(&self) -> bool {
-        self.block().idr().read().bits() & (1 << self.pin_id()) == 0
-    }
+impl<MODE> AnyPin<MODE>
+where
+    MODE: marker::OutputSpeed,
+{
+    speed!();
+}
+
+impl<MODE> AnyPin<MODE>
+where
+    MODE: marker::Active,
+{
+    internal_resistor!();
 }
