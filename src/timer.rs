@@ -685,16 +685,22 @@ macro_rules! hal {
                     if c < Self::CH_NUMBER {
                         match p {
                             CapturePolarity::ActiveLow => {
-                                unsafe { bb::write(tim.ccer(), c*4 + 3, false); }
-                                unsafe { bb::write(tim.ccer(), c*4 + 1, true); }
+                                tim.ccer().modify(|_, w| {
+                                    w.ccnp(c).clear_bit();
+                                    w.ccp(c).set_bit()
+                                });
                             }
                             CapturePolarity::ActiveHigh => {
-                                unsafe { bb::write(tim.ccer(), c*4 + 3, false); }
-                                unsafe { bb::write(tim.ccer(), c*4 + 1, false); }
+                                tim.ccer().modify(|_, w| {
+                                    w.ccnp(c).clear_bit();
+                                    w.ccp(c).clear_bit()
+                                });
                             }
                             CapturePolarity::ActiveBoth => {
-                                unsafe { bb::write(tim.ccer(), c*4 + 3, true); }
-                                unsafe { bb::write(tim.ccer(), c*4 + 1, true); }
+                                tim.ccer().modify(|_, w| {
+                                    w.ccnp(c).set_bit();
+                                    w.ccp(c).set_bit()
+                                });
                             }
                         }
 
