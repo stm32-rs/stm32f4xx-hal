@@ -41,6 +41,7 @@ use super::{
     Polarity, Timer, WithPwm,
 };
 pub use super::{Ch, C1, C2, C3, C4};
+use crate::dma::traits::DMASet;
 use crate::gpio::{OpenDrain, PushPull};
 use crate::rcc::Rcc;
 use core::ops::{Deref, DerefMut};
@@ -181,6 +182,14 @@ pub struct PwmChannel<TIM: CPin<C>, const C: u8, const COMP: bool = false, Otype
     pub(super) tim: TIM,
     lines: Lines<TIM::Ch<Otype>>,
     // TODO: add complementary pins
+}
+
+unsafe impl<TIM, const C: u8, const COMP: bool, Otype, STREAM, const CHANNEL: u8, DIRECTION>
+    DMASet<STREAM, CHANNEL, DIRECTION> for PwmChannel<TIM, C, COMP, Otype>
+where
+    TIM: CPin<C>,
+    super::CCR<TIM, C>: DMASet<STREAM, CHANNEL, DIRECTION>,
+{
 }
 
 impl<TIM: Instance + WithPwm + CPin<C>, const C: u8, const COMP: bool, Otype>
@@ -337,6 +346,14 @@ where
     TIM: Instance + WithPwm,
 {
     pub(super) timer: FTimer<TIM, FREQ>,
+}
+
+unsafe impl<TIM, const FREQ: u32, STREAM, const CHANNEL: u8, DIRECTION>
+    DMASet<STREAM, CHANNEL, DIRECTION> for PwmManager<TIM, FREQ>
+where
+    TIM: Instance + WithPwm,
+    super::DMAR<TIM>: DMASet<STREAM, CHANNEL, DIRECTION>,
+{
 }
 
 impl<TIM, const FREQ: u32> PwmManager<TIM, FREQ>

@@ -755,6 +755,14 @@ macro_rules! hal {
 
                 type MemSize = $bits;
             }
+            unsafe impl<const C: u8, const COMP: bool, Otype> PeriAddress for PwmChannel<$TIM, C, COMP, Otype> where $TIM: CPin<C> {
+                #[inline(always)]
+                fn address(&self) -> u32 {
+                    self.tim.ccr(C as usize).as_ptr() as u32
+                }
+
+                type MemSize = $bits;
+            }
         )?
 
         $(impl MasterTimer for $TIM {
@@ -773,6 +781,14 @@ macro_rules! with_dmar {
             #[inline(always)]
             fn address(&self) -> u32 {
                 self.0.dmar().as_ptr() as u32
+            }
+
+            type MemSize = $memsize;
+        }
+        unsafe impl<const FREQ: u32> PeriAddress for PwmManager<$TIM, FREQ> {
+            #[inline(always)]
+            fn address(&self) -> u32 {
+                self.tim.dmar().as_ptr() as u32
             }
 
             type MemSize = $memsize;
