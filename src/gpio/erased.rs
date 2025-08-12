@@ -73,7 +73,7 @@ impl<MODE> AnyPin<MODE> {
     }
 
     #[inline]
-    pub(crate) fn block(&self) -> &crate::pac::gpioa::RegisterBlock {
+    pub(crate) fn block(&self) -> *const crate::pac::gpioa::RegisterBlock {
         // This function uses pointer arithmetic instead of branching to be more efficient
 
         // The logic relies on the following assumptions:
@@ -86,81 +86,33 @@ impl<MODE> AnyPin<MODE> {
         const GPIO_REGISTER_OFFSET: usize = 0x0400;
 
         let offset = GPIO_REGISTER_OFFSET * self.port_id() as usize;
-        let block_ptr =
-            (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::pac::gpioa::RegisterBlock;
-
-        unsafe { &*block_ptr }
+        (crate::pac::GPIOA::ptr() as usize + offset) as *const crate::pac::gpioa::RegisterBlock
     }
+
+    state_inner!();
 }
 
 impl<MODE> AnyPin<Output<MODE>> {
-    /// Drives the pin high
-    #[inline(always)]
-    pub fn set_high(&mut self) {
-        self.block().bsrr().write(|w| w.bs(self.pin_id()).set_bit());
-    }
-
-    /// Drives the pin low
-    #[inline(always)]
-    pub fn set_low(&mut self) {
-        self.block().bsrr().write(|w| w.br(self.pin_id()).set_bit());
-    }
-
-    /// Is the pin in drive high or low mode?
-    #[inline(always)]
-    pub fn get_state(&self) -> PinState {
-        if self.is_set_low() {
-            PinState::Low
-        } else {
-            PinState::High
-        }
-    }
-
-    /// Drives the pin high or low depending on the provided value
-    #[inline(always)]
-    pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
-    }
-
-    /// Is the pin in drive high mode?
-    #[inline(always)]
-    pub fn is_set_high(&self) -> bool {
-        !self.is_set_low()
-    }
-
-    /// Is the pin in drive low mode?
-    #[inline(always)]
-    pub fn is_set_low(&self) -> bool {
-        self.block().odr().read().odr(self.pin_id()).bit_is_clear()
-    }
-
-    /// Toggle pin output
-    #[inline(always)]
-    pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
-    }
+    state_output!();
 }
 
 impl<MODE> AnyPin<MODE>
 where
     MODE: marker::Readable,
 {
-    /// Is the input pin high?
-    #[inline(always)]
-    pub fn is_high(&self) -> bool {
-        !self.is_low()
-    }
+    state_input!();
+}
 
-    /// Is the input pin low?
-    #[inline(always)]
-    pub fn is_low(&self) -> bool {
-        self.block().idr().read().idr(self.pin_id()).bit_is_clear()
-    }
+impl<MODE> AnyPin<MODE>
+where
+    MODE: marker::OutputSpeed,
+{
+    speed!();
+}
+
+impl<MODE> AnyPin<MODE>
+where
+    MODE: marker::Active,
+{
+    internal_resistor!();
 }

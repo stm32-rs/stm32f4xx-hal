@@ -1,6 +1,8 @@
 use core::convert::Infallible;
 
-use super::{dynamic::PinModeError, marker, AnyPin, DynamicPin, Output, PartiallyErasedPin, Pin};
+use crate::gpio::DynamicPin;
+
+use super::{dynamic::PinModeError, marker, AnyPin, Output, PartiallyErasedPin, Pin};
 
 use embedded_hal::digital::{ErrorType, InputPin, OutputPin, StatefulOutputPin};
 

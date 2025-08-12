@@ -1,27 +1,55 @@
+use core::ops::{Deref, DerefMut};
+
 use super::*;
 use embedded_hal::digital::ErrorKind;
 
+pub type DynamicPin<const P: char, const N: u8> = DynPin<Pin<P, N, Unknown>>;
+pub type DynamicAnyPin = DynPin<AnyPin<Unknown>>;
+
 /// Pin type with dynamic mode
-///
-/// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
-/// - `N` is pin number: from `0` to `15`.
-pub struct DynamicPin<const P: char, const N: u8> {
+pub struct DynPin<PIN> {
+    pin: PIN,
     /// Current pin mode
     pub(crate) mode: Dynamic,
 }
 
 /// Tracks the current pin state for dynamic pins
 pub enum Dynamic {
-    /// Floating input mode
-    InputFloating,
-    /// Pull-up input mode
-    InputPullUp,
-    /// Pull-down input mode
-    InputPullDown,
+    /// Input mode
+    Input,
     /// Push-pull output mode
     OutputPushPull,
     /// Open-drain output mode
     OutputOpenDrain,
+}
+
+pub trait DynamicMode {
+    const MODE: Dynamic;
+}
+
+impl DynamicMode for Input {
+    const MODE: Dynamic = Dynamic::Input;
+}
+
+impl DynamicMode for Output {
+    const MODE: Dynamic = Dynamic::OutputPushPull;
+}
+
+impl DynamicMode for Output<OpenDrain> {
+    const MODE: Dynamic = Dynamic::OutputOpenDrain;
+}
+
+impl<PIN> Deref for DynPin<PIN> {
+    type Target = PIN;
+    fn deref(&self) -> &Self::Target {
+        &self.pin
+    }
+}
+
+impl<PIN> DerefMut for DynPin<PIN> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.pin
+    }
 }
 
 /// Error for [DynamicPin]
@@ -42,8 +70,8 @@ impl Dynamic {
     pub fn is_input(&self) -> bool {
         use Dynamic::*;
         match self {
-            InputFloating | InputPullUp | InputPullDown | OutputOpenDrain => true,
             OutputPushPull => false,
+            Input | OutputOpenDrain => true,
         }
     }
 
@@ -51,104 +79,150 @@ impl Dynamic {
     pub fn is_output(&self) -> bool {
         use Dynamic::*;
         match self {
-            InputFloating | InputPullUp | InputPullDown => false,
+            Input => false,
             OutputPushPull | OutputOpenDrain => true,
         }
     }
 }
 
 // For conversion simplify
-struct Unknown;
+#[non_exhaustive]
+pub struct Unknown;
 
 impl crate::Sealed for Unknown {}
 impl PinMode for Unknown {}
+impl marker::Interruptible for Unknown {}
+impl marker::OutputSpeed for Unknown {}
+impl marker::Active for Unknown {}
+
+impl<const P: char, const N: u8, MODE: DynamicMode> Pin<P, N, MODE> {
+    /// Configures the pin as a pin that can change between input
+    /// and output without changing the type
+    pub fn into_dynamic(self) -> DynPin<Pin<P, N, Unknown>> {
+        DynPin::new(Pin::new(), MODE::MODE)
+    }
+}
+
+impl<const P: char, MODE: DynamicMode> PartiallyErasedPin<P, MODE> {
+    /// Configures the pin as a pin that can change between input
+    /// and output without changing the type
+    pub fn into_dynamic(self) -> DynPin<PartiallyErasedPin<P, Unknown>> {
+        DynPin::new(PartiallyErasedPin::new(self.i), MODE::MODE)
+    }
+}
+
+impl<MODE: DynamicMode> AnyPin<MODE> {
+    /// Configures the pin as a pin that can change between input
+    /// and output without changing the type
+    pub fn into_dynamic(self) -> DynPin<AnyPin<Unknown>> {
+        DynPin::new(AnyPin::from_pin_port(self.into_pin_port()), MODE::MODE)
+    }
+}
+
+impl<PIN> DynPin<PIN> {
+    pub(super) const fn new(pin: PIN, mode: Dynamic) -> Self {
+        Self { pin, mode }
+    }
+}
+
+macro_rules! impldyn {
+    () => {
+        pub fn set_mode<MODE: PinMode + DynamicMode>(&mut self) {
+            self.pin.mode::<MODE>();
+            self.mode = MODE::MODE
+        }
+
+        /// Switch pin into input
+        #[inline]
+        pub fn make_input(&mut self) {
+            self.set_mode::<Input>();
+        }
+
+        /// Switch pin into pull-up input
+        #[inline]
+        pub fn make_pull_up_input(&mut self) {
+            self.set_mode::<Input>();
+            self.set_internal_resistor(Pull::Up);
+        }
+        /// Switch pin into pull-down input
+        #[inline]
+        pub fn make_pull_down_input(&mut self) {
+            self.set_mode::<Input>();
+            self.set_internal_resistor(Pull::Down);
+        }
+        /// Switch pin into floating input
+        #[inline]
+        pub fn make_floating_input(&mut self) {
+            self.set_mode::<Input>();
+            self.set_internal_resistor(Pull::None);
+        }
+        /// Switch pin into push-pull output
+        #[inline]
+        pub fn make_push_pull_output(&mut self) {
+            self.set_mode::<Output>();
+        }
+        /// Switch pin into push-pull output with required voltage state
+        #[inline]
+        pub fn make_push_pull_output_in_state(&mut self, state: PinState) {
+            self.pin._set_state(state);
+            self.set_mode::<Output>();
+        }
+        /// Switch pin into open-drain output
+        #[inline]
+        pub fn make_open_drain_output(&mut self) {
+            self.set_mode::<Output<OpenDrain>>();
+        }
+        /// Switch pin into open-drain output with required voltage state
+        #[inline]
+        pub fn make_open_drain_output_in_state(&mut self, state: PinState) {
+            self.pin._set_state(state);
+            self.set_mode::<Output<OpenDrain>>();
+        }
+
+        pub fn set_state(&mut self, state: PinState) -> Result<(), PinModeError> {
+            if self.mode.is_output() {
+                self.pin._set_state(state);
+                Ok(())
+            } else {
+                Err(PinModeError::IncorrectMode)
+            }
+        }
+
+        /// Drives the pin high
+        #[inline(always)]
+        pub fn set_high(&mut self) -> Result<(), PinModeError> {
+            self.set_state(PinState::High)
+        }
+
+        /// Drives the pin low
+        #[inline(always)]
+        pub fn set_low(&mut self) -> Result<(), PinModeError> {
+            self.set_state(PinState::Low)
+        }
+
+        /// Is the input pin high?
+        #[inline(always)]
+        pub fn is_high(&self) -> Result<bool, PinModeError> {
+            self.is_low().map(|b| !b)
+        }
+
+        /// Is the input pin low?
+        pub fn is_low(&self) -> Result<bool, PinModeError> {
+            if self.mode.is_input() {
+                Ok(self.pin._is_low())
+            } else {
+                Err(PinModeError::IncorrectMode)
+            }
+        }
+    };
+}
 
 impl<const P: char, const N: u8> DynamicPin<P, N> {
-    pub(super) const fn new(mode: Dynamic) -> Self {
-        Self { mode }
-    }
-
-    /// Switch pin into pull-up input
-    #[inline]
-    pub fn make_pull_up_input(&mut self) {
-        // NOTE(unsafe), we have a mutable reference to the current pin
-        Pin::<P, N, Unknown>::new().into_pull_up_input();
-        self.mode = Dynamic::InputPullUp;
-    }
-    /// Switch pin into pull-down input
-    #[inline]
-    pub fn make_pull_down_input(&mut self) {
-        // NOTE(unsafe), we have a mutable reference to the current pin
-        Pin::<P, N, Unknown>::new().into_pull_down_input();
-        self.mode = Dynamic::InputPullDown;
-    }
-    /// Switch pin into floating input
-    #[inline]
-    pub fn make_floating_input(&mut self) {
-        // NOTE(unsafe), we have a mutable reference to the current pin
-        Pin::<P, N, Unknown>::new().into_floating_input();
-        self.mode = Dynamic::InputFloating;
-    }
-    /// Switch pin into push-pull output
-    #[inline]
-    pub fn make_push_pull_output(&mut self) {
-        // NOTE(unsafe), we have a mutable reference to the current pin
-        Pin::<P, N, Unknown>::new().into_push_pull_output();
-        self.mode = Dynamic::OutputPushPull;
-    }
-    /// Switch pin into push-pull output with required voltage state
-    #[inline]
-    pub fn make_push_pull_output_in_state(&mut self, state: PinState) {
-        // NOTE(unsafe), we have a mutable reference to the current pin
-        Pin::<P, N, Unknown>::new().into_push_pull_output_in_state(state);
-        self.mode = Dynamic::OutputPushPull;
-    }
-    /// Switch pin into open-drain output
-    #[inline]
-    pub fn make_open_drain_output(&mut self) {
-        // NOTE(unsafe), we have a mutable reference to the current pin
-        Pin::<P, N, Unknown>::new().into_open_drain_output();
-        self.mode = Dynamic::OutputOpenDrain;
-    }
-    /// Switch pin into open-drain output with required voltage state
-    #[inline]
-    pub fn make_open_drain_output_in_state(&mut self, state: PinState) {
-        // NOTE(unsafe), we have a mutable reference to the current pin
-        Pin::<P, N, Unknown>::new().into_open_drain_output_in_state(state);
-        self.mode = Dynamic::OutputOpenDrain;
-    }
-
-    /// Drives the pin high
-    pub fn set_high(&mut self) -> Result<(), PinModeError> {
-        if self.mode.is_output() {
-            Pin::<P, N, Unknown>::new()._set_state(PinState::High);
-            Ok(())
-        } else {
-            Err(PinModeError::IncorrectMode)
-        }
-    }
-
-    /// Drives the pin low
-    pub fn set_low(&mut self) -> Result<(), PinModeError> {
-        if self.mode.is_output() {
-            Pin::<P, N, Unknown>::new()._set_state(PinState::Low);
-            Ok(())
-        } else {
-            Err(PinModeError::IncorrectMode)
-        }
-    }
-
-    /// Is the input pin high?
-    pub fn is_high(&self) -> Result<bool, PinModeError> {
-        self.is_low().map(|b| !b)
-    }
-
-    /// Is the input pin low?
-    pub fn is_low(&self) -> Result<bool, PinModeError> {
-        if self.mode.is_input() {
-            Ok(Pin::<P, N, Unknown>::new()._is_low())
-        } else {
-            Err(PinModeError::IncorrectMode)
-        }
-    }
+    impldyn!();
+}
+impl<const P: char> DynPin<PartiallyErasedPin<P, Unknown>> {
+    impldyn!();
+}
+impl DynamicAnyPin {
+    impldyn!();
 }

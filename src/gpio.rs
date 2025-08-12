@@ -67,7 +67,7 @@ pub use erased::{AnyPin, ErasedPin};
 mod exti;
 pub use exti::ExtiPin;
 mod dynamic;
-pub use dynamic::{Dynamic, DynamicPin};
+pub use dynamic::*;
 mod hal_02;
 mod hal_1;
 pub mod outport;
@@ -324,22 +324,29 @@ where
     }
 }
 
+macro_rules! speed {
+    () => {
+        /// Set pin speed
+        pub fn set_speed(&mut self, speed: Speed) {
+            unsafe { &*self.block() }
+                .ospeedr()
+                .modify(|_, w| w.ospeedr(self.pin_id()).variant(speed.into()));
+        }
+
+        /// Set pin speed
+        pub fn speed(mut self, speed: Speed) -> Self {
+            self.set_speed(speed);
+            self
+        }
+    };
+}
+use speed;
+
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
 where
     MODE: marker::OutputSpeed,
 {
-    /// Set pin speed
-    pub fn set_speed(&mut self, speed: Speed) {
-        unsafe { &(*gpiox::<P>()) }
-            .ospeedr()
-            .modify(|_, w| w.ospeedr(N).variant(speed.into()));
-    }
-
-    /// Set pin speed
-    pub fn speed(mut self, speed: Speed) -> Self {
-        self.set_speed(speed);
-        self
-    }
+    speed!();
 }
 
 impl<const P: char, const N: u8, MODE> PinPull for Pin<P, N, MODE>
@@ -352,40 +359,47 @@ where
     }
 }
 
+macro_rules! internal_resistor {
+    () => {
+        /// Set the internal pull-up and pull-down resistor
+        pub fn set_internal_resistor(&mut self, resistor: Pull) {
+            unsafe { &*self.block() }
+                .pupdr()
+                .modify(|_, w| w.pupdr(self.pin_id()).variant(resistor.into()));
+        }
+
+        /// Set the internal pull-up and pull-down resistor
+        pub fn internal_resistor(mut self, resistor: Pull) -> Self {
+            self.set_internal_resistor(resistor);
+            self
+        }
+
+        /// Enables / disables the internal pull up
+        pub fn internal_pull_up(self, on: bool) -> Self {
+            if on {
+                self.internal_resistor(Pull::Up)
+            } else {
+                self.internal_resistor(Pull::None)
+            }
+        }
+
+        /// Enables / disables the internal pull down
+        pub fn internal_pull_down(self, on: bool) -> Self {
+            if on {
+                self.internal_resistor(Pull::Down)
+            } else {
+                self.internal_resistor(Pull::None)
+            }
+        }
+    };
+}
+use internal_resistor;
+
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
 where
     MODE: marker::Active,
 {
-    /// Set the internal pull-up and pull-down resistor
-    pub fn set_internal_resistor(&mut self, resistor: Pull) {
-        unsafe { &(*gpiox::<P>()) }
-            .pupdr()
-            .modify(|_, w| w.pupdr(N).variant(resistor.into()));
-    }
-
-    /// Set the internal pull-up and pull-down resistor
-    pub fn internal_resistor(mut self, resistor: Pull) -> Self {
-        self.set_internal_resistor(resistor);
-        self
-    }
-
-    /// Enables / disables the internal pull up
-    pub fn internal_pull_up(self, on: bool) -> Self {
-        if on {
-            self.internal_resistor(Pull::Up)
-        } else {
-            self.internal_resistor(Pull::None)
-        }
-    }
-
-    /// Enables / disables the internal pull down
-    pub fn internal_pull_down(self, on: bool) -> Self {
-        if on {
-            self.internal_resistor(Pull::Down)
-        } else {
-            self.internal_resistor(Pull::None)
-        }
-    }
+    internal_resistor!();
 }
 
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
@@ -424,97 +438,132 @@ impl<const P: char, const N: u8, MODE> From<Pin<P, N, MODE>> for AnyPin<MODE> {
     }
 }
 
-impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
-    /// Set the output of the pin regardless of its mode.
-    /// Primarily used to set the output value of the pin
-    /// before changing its mode to an output to avoid
-    /// a short spike of an incorrect value
-    #[inline(always)]
-    fn _set_state(&mut self, state: PinState) {
-        match state {
-            PinState::High => self._set_high(),
-            PinState::Low => self._set_low(),
+macro_rules! state_inner {
+    () => {
+        /// Set the output of the pin regardless of its mode.
+        /// Primarily used to set the output value of the pin
+        /// before changing its mode to an output to avoid
+        /// a short spike of an incorrect value
+        #[inline(always)]
+        pub(crate) fn _set_state(&mut self, state: PinState) {
+            match state {
+                PinState::High => self._set_high(),
+                PinState::Low => self._set_low(),
+            }
         }
-    }
+        #[inline(always)]
+        pub(crate) fn _set_high(&mut self) {
+            // NOTE(unsafe) atomic write to a stateless register
+            let gpio = unsafe { &*self.block() };
+            gpio.bsrr().write(|w| w.bs(self.pin_id()).set_bit());
+        }
+        #[inline(always)]
+        pub(crate) fn _set_low(&mut self) {
+            // NOTE(unsafe) atomic write to a stateless register
+            let gpio = unsafe { &*self.block() };
+            gpio.bsrr().write(|w| w.br(self.pin_id()).set_bit());
+        }
+        #[inline(always)]
+        pub(crate) fn _is_set_low(&self) -> bool {
+            // NOTE(unsafe) atomic read with no side effects
+            let gpio = unsafe { &*self.block() };
+            gpio.odr().read().odr(self.pin_id()).bit_is_clear()
+        }
+        #[inline(always)]
+        pub(crate) fn _is_low(&self) -> bool {
+            // NOTE(unsafe) atomic read with no side effects
+            let gpio = unsafe { &*self.block() };
+            gpio.idr().read().idr(self.pin_id()).bit_is_clear()
+        }
+    };
+}
+use state_inner;
+
+macro_rules! state_output {
+    () => {
+        /// Drives the pin high
+        #[inline(always)]
+        pub fn set_high(&mut self) {
+            self._set_high()
+        }
+
+        /// Drives the pin low
+        #[inline(always)]
+        pub fn set_low(&mut self) {
+            self._set_low()
+        }
+
+        /// Is the pin in drive high or low mode?
+        #[inline(always)]
+        pub fn get_state(&self) -> PinState {
+            if self.is_set_low() {
+                PinState::Low
+            } else {
+                PinState::High
+            }
+        }
+
+        /// Drives the pin high or low depending on the provided value
+        #[inline(always)]
+        pub fn set_state(&mut self, state: PinState) {
+            match state {
+                PinState::Low => self.set_low(),
+                PinState::High => self.set_high(),
+            }
+        }
+
+        /// Is the pin in drive high mode?
+        #[inline(always)]
+        pub fn is_set_high(&self) -> bool {
+            !self.is_set_low()
+        }
+
+        /// Is the pin in drive low mode?
+        #[inline(always)]
+        pub fn is_set_low(&self) -> bool {
+            self._is_set_low()
+        }
+
+        /// Toggle pin output
+        #[inline(always)]
+        pub fn toggle(&mut self) {
+            if self.is_set_low() {
+                self.set_high()
+            } else {
+                self.set_low()
+            }
+        }
+    };
+}
+use state_output;
+
+macro_rules! state_input {
+    () => {
+        /// Is the input pin high?
+        #[inline(always)]
+        pub fn is_high(&self) -> bool {
+            !self.is_low()
+        }
+
+        /// Is the input pin low?
+        #[inline(always)]
+        pub fn is_low(&self) -> bool {
+            self._is_low()
+        }
+    };
+}
+use state_input;
+
+impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     #[inline(always)]
-    fn _set_high(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        let gpio = unsafe { &(*gpiox::<P>()) };
-        gpio.bsrr().write(|w| w.bs(N).set_bit());
+    pub(crate) fn block(&self) -> *const crate::pac::gpioa::RegisterBlock {
+        gpiox::<P>()
     }
-    #[inline(always)]
-    fn _set_low(&mut self) {
-        // NOTE(unsafe) atomic write to a stateless register
-        let gpio = unsafe { &(*gpiox::<P>()) };
-        gpio.bsrr().write(|w| w.br(N).set_bit());
-    }
-    #[inline(always)]
-    fn _is_set_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        let gpio = unsafe { &(*gpiox::<P>()) };
-        gpio.odr().read().odr(N).bit_is_clear()
-    }
-    #[inline(always)]
-    fn _is_low(&self) -> bool {
-        // NOTE(unsafe) atomic read with no side effects
-        let gpio = unsafe { &(*gpiox::<P>()) };
-        gpio.idr().read().idr(N).bit_is_clear()
-    }
+    state_inner!();
 }
 
 impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
-    /// Drives the pin high
-    #[inline(always)]
-    pub fn set_high(&mut self) {
-        self._set_high()
-    }
-
-    /// Drives the pin low
-    #[inline(always)]
-    pub fn set_low(&mut self) {
-        self._set_low()
-    }
-
-    /// Is the pin in drive high or low mode?
-    #[inline(always)]
-    pub fn get_state(&self) -> PinState {
-        if self.is_set_low() {
-            PinState::Low
-        } else {
-            PinState::High
-        }
-    }
-
-    /// Drives the pin high or low depending on the provided value
-    #[inline(always)]
-    pub fn set_state(&mut self, state: PinState) {
-        match state {
-            PinState::Low => self.set_low(),
-            PinState::High => self.set_high(),
-        }
-    }
-
-    /// Is the pin in drive high mode?
-    #[inline(always)]
-    pub fn is_set_high(&self) -> bool {
-        !self.is_set_low()
-    }
-
-    /// Is the pin in drive low mode?
-    #[inline(always)]
-    pub fn is_set_low(&self) -> bool {
-        self._is_set_low()
-    }
-
-    /// Toggle pin output
-    #[inline(always)]
-    pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
-    }
+    state_output!();
 }
 
 pub trait ReadPin {
@@ -539,17 +588,7 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE>
 where
     MODE: marker::Readable,
 {
-    /// Is the input pin high?
-    #[inline(always)]
-    pub fn is_high(&self) -> bool {
-        !self.is_low()
-    }
-
-    /// Is the input pin low?
-    #[inline(always)]
-    pub fn is_low(&self) -> bool {
-        self._is_low()
-    }
+    state_input!();
 }
 
 macro_rules! gpio {

@@ -112,14 +112,6 @@ impl<const P: char, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
         self.into_mode()
     }
 
-    /// Configures the pin as a pin that can change between input
-    /// and output without changing the type. It starts out
-    /// as a floating input
-    pub fn into_dynamic(self) -> DynamicPin<P, N> {
-        self.into_floating_input();
-        DynamicPin::new(Dynamic::InputFloating)
-    }
-
     /// Puts `self` into mode `M`.
     ///
     /// This violates the type state constraints from `MODE`, so callers must
@@ -171,7 +163,7 @@ impl<MODE: PinMode> AnyPin<MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
         let n = self.pin_id();
-        change_mode!(self.block(), n);
+        change_mode!((*self.block()), n);
     }
 
     #[inline(always)]

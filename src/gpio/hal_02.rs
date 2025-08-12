@@ -1,8 +1,10 @@
 use core::convert::Infallible;
 
+use crate::gpio::DynamicPin;
+
 use super::{
-    dynamic::PinModeError, marker, AnyPin, DynamicPin, Input, OpenDrain, Output,
-    PartiallyErasedPin, Pin, PinMode, PinState,
+    dynamic::PinModeError, marker, AnyPin, Input, OpenDrain, Output, PartiallyErasedPin, Pin,
+    PinMode, PinState,
 };
 
 use embedded_hal_02::digital::v2::{
