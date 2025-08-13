@@ -139,6 +139,20 @@ pub enum Event {
     Trigger = 1 << 6,
     /// Break interrupt enable
     Break = 1 << 7,
+    /// Update DMA request enable
+    UpdateDma = 1 << 8,
+    /// Capture/Compare 1 DMA request enable
+    C1Dma = 1 << 9,
+    /// Capture/Compare 2 DMA request enable
+    C2Dma = 1 << 10,
+    /// Capture/Compare 3 DMA request enable
+    C3Dma = 1 << 11,
+    /// Capture/Compare 4 DMA request enable
+    C4Dma = 1 << 12,
+    /// COM DMA request enable
+    ComDma = 1 << 13,
+    /// Trigger DMA interrupt enable
+    TriggerDma = 1 << 14,
 }
 
 /// TIM status flags
