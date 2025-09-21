@@ -127,7 +127,7 @@ impl Word for u8 {
     const MWID: fsmc::bcr1::MWID = fsmc::bcr1::MWID::Bits8;
 }
 impl Word for u16 {
-    const MWID: fsmc::bcr1::MWID = fsmc::bcr1::MWID::Bits8;
+    const MWID: fsmc::bcr1::MWID = fsmc::bcr1::MWID::Bits16;
 }
 
 impl<PINS, WORD: Word> FsmcLcd<PINS, WORD>
