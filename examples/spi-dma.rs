@@ -9,6 +9,7 @@ use core::cell::RefCell;
 use cortex_m::interrupt::Mutex;
 use cortex_m_rt::entry;
 use embedded_hal_02::spi::{Mode, Phase, Polarity};
+use static_cell::ConstStaticCell;
 use stm32f4xx_hal::pac::interrupt;
 use stm32f4xx_hal::{
     dma::{config, MemoryToPeripheral, Stream4, StreamsTuple, Transfer},
@@ -105,12 +106,11 @@ fn DMA1_STREAM4() {
     // Its important to clear fifo errors as the transfer is paused until it is cleared
     transfer.clear_flags(DmaFlag::FifoError | DmaFlag::TransferComplete);
     if flags.is_transfer_complete() {
-        unsafe {
-            static mut BUFFER: [u8; ARRAY_SIZE] = [0; ARRAY_SIZE];
-            for (i, b) in BUFFER.iter_mut().enumerate() {
-                *b = (i + 1) as u8;
-            }
-            transfer.next_transfer(&mut BUFFER).unwrap();
+        static BUFFER: ConstStaticCell<[u8; ARRAY_SIZE]> = ConstStaticCell::new([0; ARRAY_SIZE]);
+        let buffer = BUFFER.take();
+        for (i, b) in buffer.iter_mut().enumerate() {
+            *b = (i + 1) as u8;
         }
+        transfer.next_transfer(buffer).unwrap();
     }
 }

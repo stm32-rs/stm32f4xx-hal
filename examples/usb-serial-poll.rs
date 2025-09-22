@@ -6,12 +6,14 @@
 use panic_halt as _;
 
 use cortex_m_rt::entry;
+use static_cell::ConstStaticCell;
 use stm32f4xx_hal::otg_fs::{UsbBus, USB};
 use stm32f4xx_hal::rcc::Config;
 use stm32f4xx_hal::{pac, prelude::*};
 use usb_device::prelude::*;
 
-static mut EP_MEMORY: [u32; 1024] = [0; 1024];
+// Statically allocate memory for a `u32`.
+static EP_MEMORY: ConstStaticCell<[u32; 1024]> = ConstStaticCell::new([0; 1024]);
 
 #[entry]
 fn main() -> ! {
@@ -29,7 +31,7 @@ fn main() -> ! {
         &rcc.clocks,
     );
 
-    let usb_bus = UsbBus::new(usb, unsafe { &mut EP_MEMORY });
+    let usb_bus = UsbBus::new(usb, EP_MEMORY.take());
 
     let mut serial = usbd_serial::SerialPort::new(&usb_bus);
 

@@ -8,6 +8,7 @@ use stm32f4xx_hal::dma::{DmaFlag, PeripheralToMemory, Stream1};
 use core::cell::RefCell;
 use cortex_m::interrupt::Mutex;
 use cortex_m_rt::entry;
+use static_cell::ConstStaticCell;
 use stm32f4xx_hal::dma::config::DmaConfig;
 use stm32f4xx_hal::pac::Interrupt;
 use stm32f4xx_hal::pac::{interrupt, DMA1};
@@ -74,7 +75,8 @@ pub static G_UART3_TX: Mutex<RefCell<Option<serial::Tx<pac::USART3>>>> =
     Mutex::new(RefCell::new(None));
 
 // dma buffer
-pub static mut RX_UART3_BUFFER: [u8; UART_BUFFER_SIZE] = [0; UART_BUFFER_SIZE];
+pub static RX_UART3_BUFFER: ConstStaticCell<[u8; UART_BUFFER_SIZE]> =
+    ConstStaticCell::new([0; UART_BUFFER_SIZE]);
 
 // a wrapper function that reads out of the uart ring buffer
 pub fn uart3_read_until(eol: u8) -> Option<[u8; UART_BUFFER_SIZE]> {
@@ -208,16 +210,14 @@ fn USART3() {
             if transfer.is_idle() {
                 // Calc received bytes count
                 let bytes_count = UART_BUFFER_SIZE - transfer.number_of_transfers() as usize;
-                unsafe {
-                    let mut buffer = [0; UART_BUFFER_SIZE];
-                    match transfer.next_transfer(&mut RX_UART3_BUFFER) {
-                        Ok((b, _)) => buffer = *b,
-                        Err(_err) => {}
-                    }
-                    if let Some(ring_buffer) = G_UART3_BUFFER.borrow(cs).borrow_mut().as_mut() {
-                        for i in 0..bytes_count {
-                            ring_buffer.push(buffer[i]);
-                        }
+                let mut buffer = [0; UART_BUFFER_SIZE];
+                match transfer.next_transfer(RX_UART3_BUFFER.take()) {
+                    Ok((b, _)) => buffer = *b,
+                    Err(_err) => {}
+                }
+                if let Some(ring_buffer) = G_UART3_BUFFER.borrow(cs).borrow_mut().as_mut() {
+                    for i in 0..bytes_count {
+                        ring_buffer.push(buffer[i]);
                     }
                 }
             }

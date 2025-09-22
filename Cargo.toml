@@ -11,7 +11,7 @@ license = "0BSD"
 name = "stm32f4xx-hal"
 readme = "README.md"
 repository = "https://github.com/stm32-rs/stm32f4xx-hal"
-version = "0.22.1"
+version = "0.23.0"
 
 [package.metadata.docs.rs]
 features = [
@@ -27,12 +27,13 @@ features = [
 targets = ["thumbv7em-none-eabihf"]
 
 [dependencies]
-defmt = { version = "0.3.10", optional = true }
+defmt = { version = "1.0.1", optional = true }
 bxcan = { version = "0.8", optional = true }
 cortex-m = { version = "0.7.7", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7.5"
 nb = "1.1"
-rand_core = "0.6.4"
+rand_core_06 = { package = "rand_core", version = "0.6.4" }
+rand_core = "0.9.3"
 synopsys-usb-otg = { version = "0.4.0", features = [
     "cortex-m",
 ], optional = true }
@@ -52,14 +53,14 @@ cortex-m-rtic = { version = "1.1.4", features = [
     "test-critical-section",
 ], optional = true }
 # rtic2
-rtic-time = { version = "2.0", optional = true }
+rtic-time = { version = "2.0.1", optional = true }
 embedded-hal-async = { version = "1.0", optional = true }
-rtic = { version = "2.1.2", features = ["thumbv7-backend"], optional = true }
+rtic = { version = "2.2", features = ["thumbv7-backend"], optional = true }
 atomic-polyfill = { version = "1.0.3", optional = true }
 
 stm32-fmc = { version = "0.4.0", optional = true }
 
-enumflags2 = "0.7.11"
+enumflags2 = "0.7.12"
 embedded-storage = "0.3"
 document-features = "0.2"
 
@@ -70,7 +71,7 @@ version = "0.16.0"
 features = ["atomics"]
 
 [dependencies.time]
-version = "0.3.37"
+version = "0.3.44"
 default-features = false
 
 [dependencies.embedded-hal-02]
@@ -92,27 +93,28 @@ version = "0.5.0"
 optional = true
 
 [dev-dependencies]
-defmt = "0.3.4"
-defmt-rtt = "0.4.0"
-panic-probe = { version = "0.3.2", features = ["print-defmt"] }
+static_cell = "2.1.1"
+defmt = "1.0.1"
+defmt-rtt = "1.0"
+panic-probe = { version = "1.0", features = ["print-defmt"] }
 panic-semihosting = "0.6.0"
 cortex-m-semihosting = "0.5.0"
-heapless = "0.8"
+heapless = "0.9.1"
 panic-halt = "1.0.0"
-ssd1306 = "0.9.0"
+ssd1306 = "0.10.0"
 embedded-graphics = "0.8.1"
 embedded-graphics-07 = { package = "embedded-graphics", version = "0.7.1" }
 embedded-hal-bus = "0.3.0"
 usb-device = "0.3.1"
 usbd-serial = "0.2.0"
-micromath = "2"
+micromath = "2.1"
 dwt-systick-monotonic = "1.1"
 st7789 = "0.7.0"
 rtt-target = { version = "0.6.1" }
 display-interface-spi-04 = { package = "display-interface-spi", version = "0.4.1" }
 ist7920 = "0.1.1"
-smart-leds = "0.3.0"
-ws2812-spi = { version = "0.4.0", features = [] }
+smart-leds = "0.4.0"
+ws2812-spi = { version = "0.5.1", features = [] }
 hd44780-driver = "0.4.0"
 display-interface = "0.5"
 display-interface-04 = { package = "display-interface", version = "0.4.1" }

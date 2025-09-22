@@ -18,6 +18,7 @@ pub struct W25Q<PINS: QspiPins> {
     qspi: Qspi<PINS>,
 }
 
+#[allow(unused)]
 pub struct DeviceId(u8);
 
 impl<PINS> W25Q<PINS>
