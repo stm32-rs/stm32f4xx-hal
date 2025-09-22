@@ -68,18 +68,18 @@ impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     pub fn set_high(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            (*gpiox::<P>()).bsrr().write(|w| w.bits(1 << self.i));
-        }
+        unsafe { &*gpiox::<P>() }
+            .bsrr()
+            .write(|w| w.bs(self.i).set_bit());
     }
 
     /// Drives the pin low
     #[inline(always)]
     pub fn set_low(&mut self) {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe {
-            (*gpiox::<P>()).bsrr().write(|w| w.bits(1 << (self.i + 16)));
-        }
+        unsafe { &*gpiox::<P>() }
+            .bsrr()
+            .write(|w| w.br(self.i).set_bit());
     }
 
     /// Is the pin in drive high or low mode?
@@ -111,7 +111,11 @@ impl<const P: char, MODE> PartiallyErasedPin<P, Output<MODE>> {
     #[inline(always)]
     pub fn is_set_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*gpiox::<P>()).odr().read().bits() & (1 << self.i) == 0 }
+        unsafe { &*gpiox::<P>() }
+            .odr()
+            .read()
+            .odr(self.i)
+            .bit_is_clear()
     }
 
     /// Toggle pin output
@@ -139,15 +143,19 @@ where
     #[inline(always)]
     pub fn is_low(&self) -> bool {
         // NOTE(unsafe) atomic read with no side effects
-        unsafe { (*gpiox::<P>()).idr().read().bits() & (1 << self.i) == 0 }
+        unsafe { &*gpiox::<P>() }
+            .idr()
+            .read()
+            .idr(self.i)
+            .bit_is_clear()
     }
 }
 
-impl<const P: char, MODE> From<PartiallyErasedPin<P, MODE>> for ErasedPin<MODE> {
+impl<const P: char, MODE> From<PartiallyErasedPin<P, MODE>> for AnyPin<MODE> {
     /// Partially erased pin-to-erased pin conversion using the [`From`] trait.
     ///
     /// Note that [`From`] is the reciprocal of [`Into`].
     fn from(p: PartiallyErasedPin<P, MODE>) -> Self {
-        ErasedPin::new(P as u8 - b'A', p.i)
+        AnyPin::new(P as u8 - b'A', p.i)
     }
 }

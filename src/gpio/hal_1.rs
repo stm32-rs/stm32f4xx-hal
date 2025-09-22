@@ -1,8 +1,6 @@
 use core::convert::Infallible;
 
-use super::{
-    dynamic::PinModeError, marker, DynamicPin, ErasedPin, Output, PartiallyErasedPin, Pin,
-};
+use super::{dynamic::PinModeError, marker, AnyPin, DynamicPin, Output, PartiallyErasedPin, Pin};
 
 use embedded_hal::digital::{ErrorType, InputPin, OutputPin, StatefulOutputPin};
 
@@ -53,11 +51,11 @@ where
 }
 
 // Implementations for `ErasedPin`
-impl<MODE> ErrorType for ErasedPin<MODE> {
+impl<MODE> ErrorType for AnyPin<MODE> {
     type Error = core::convert::Infallible;
 }
 
-impl<MODE> OutputPin for ErasedPin<Output<MODE>> {
+impl<MODE> OutputPin for AnyPin<Output<MODE>> {
     #[inline(always)]
     fn set_high(&mut self) -> Result<(), Self::Error> {
         self.set_high();
@@ -71,7 +69,7 @@ impl<MODE> OutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl<MODE> StatefulOutputPin for ErasedPin<Output<MODE>> {
+impl<MODE> StatefulOutputPin for AnyPin<Output<MODE>> {
     #[inline(always)]
     fn is_set_high(&mut self) -> Result<bool, Self::Error> {
         Ok(Self::is_set_high(self))
@@ -83,7 +81,7 @@ impl<MODE> StatefulOutputPin for ErasedPin<Output<MODE>> {
     }
 }
 
-impl<MODE> InputPin for ErasedPin<MODE>
+impl<MODE> InputPin for AnyPin<MODE>
 where
     MODE: marker::Readable,
 {

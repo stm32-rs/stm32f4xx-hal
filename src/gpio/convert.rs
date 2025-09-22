@@ -166,8 +166,8 @@ macro_rules! change_mode {
 }
 use change_mode;
 
-use super::ErasedPin;
-impl<MODE: PinMode> ErasedPin<MODE> {
+use super::AnyPin;
+impl<MODE: PinMode> AnyPin<MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
         let n = self.pin_id();
@@ -176,9 +176,9 @@ impl<MODE: PinMode> ErasedPin<MODE> {
 
     #[inline(always)]
     /// Converts pin into specified mode
-    pub fn into_mode<M: PinMode>(mut self) -> ErasedPin<M> {
+    pub fn into_mode<M: PinMode>(mut self) -> AnyPin<M> {
         self.mode::<M>();
-        ErasedPin::from_pin_port(self.into_pin_port())
+        AnyPin::from_pin_port(self.into_pin_port())
     }
 }
 
