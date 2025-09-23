@@ -89,15 +89,15 @@ You also need to add some dependencies to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-embedded-hal = "0.2"
+embedded-hal = "1.0"
 nb = "1"
 cortex-m = "0.7"
 cortex-m-rt = "0.7"
 # Panic behaviour, see https://crates.io/keywords/panic-impl for alternatives
-panic-halt = "0.2"
+panic-halt = "1.0"
 
 [dependencies.stm32f4xx-hal]
-version = "0.22.1"
+version = "0.23.0"
 features = ["stm32f407"] # replace the model of your microcontroller here
                          # and add other required features
 ```

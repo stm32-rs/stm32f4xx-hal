@@ -10,7 +10,7 @@ use hal::{
     pac::{self, SPI1},
     prelude::*,
 };
-use smart_leds::{brightness, hsv::RGB8, SmartLedsWrite};
+use smart_leds::{brightness, SmartLedsWrite, RGB8};
 use ws2812_spi as ws2812;
 
 #[entry]

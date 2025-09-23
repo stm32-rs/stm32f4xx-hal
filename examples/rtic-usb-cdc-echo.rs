@@ -5,6 +5,7 @@ use panic_halt as _;
 
 #[rtic::app(device = stm32f4xx_hal::pac, peripherals = true, dispatchers = [USART1])]
 mod app {
+    use static_cell::{ConstStaticCell, StaticCell};
     use stm32f4xx_hal::{
         gpio::{Output, PC13},
         otg_fs::{UsbBus, UsbBusType, USB},
@@ -33,8 +34,9 @@ mod app {
 
     #[init]
     fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
-        static mut EP_MEMORY: [u32; 1024] = [0; 1024];
-        static mut USB_BUS: Option<usb_device::bus::UsbBusAllocator<UsbBusType>> = None;
+        static EP_MEMORY: ConstStaticCell<[u32; 1024]> = ConstStaticCell::new([0; 1024]);
+        static USB_BUS: StaticCell<usb_device::bus::UsbBusAllocator<UsbBusType>> =
+            StaticCell::new();
 
         let dp = ctx.device;
 
@@ -59,22 +61,17 @@ mod app {
             pin_dp: gpioa.pa12.into(),
             hclk: rcc.clocks.hclk(),
         };
-        unsafe {
-            USB_BUS.replace(UsbBus::new(usb, &mut EP_MEMORY));
-        }
+        let usb_bus = USB_BUS.init(UsbBus::new(usb, EP_MEMORY.take()));
 
-        let usb_serial = usbd_serial::SerialPort::new(unsafe { USB_BUS.as_ref().unwrap() });
-        let usb_dev = UsbDeviceBuilder::new(
-            unsafe { USB_BUS.as_ref().unwrap() },
-            UsbVidPid(0x16c0, 0x27dd),
-        )
-        .device_class(usbd_serial::USB_CLASS_CDC)
-        .strings(&[StringDescriptors::default()
-            .manufacturer("Fake Company")
-            .product("Product")
-            .serial_number("TEST")])
-        .unwrap()
-        .build();
+        let usb_serial = usbd_serial::SerialPort::new(usb_bus);
+        let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x27dd))
+            .device_class(usbd_serial::USB_CLASS_CDC)
+            .strings(&[StringDescriptors::default()
+                .manufacturer("Fake Company")
+                .product("Product")
+                .serial_number("TEST")])
+            .unwrap()
+            .build();
 
         (
             Shared {

@@ -161,6 +161,7 @@ pub struct Inner<SPI: Instance> {
 
 /// Spi in Master mode
 #[derive(Debug)]
+#[allow(clippy::type_complexity)]
 pub struct Spi<SPI: Instance, const BIDI: bool = false, W = u8> {
     inner: Inner<SPI>,
     pins: (Option<SPI::Sck>, Option<SPI::Miso>, Option<SPI::Mosi>),
@@ -182,6 +183,7 @@ impl<SPI: Instance, const BIDI: bool, W> DerefMut for Spi<SPI, BIDI, W> {
 
 /// Spi in Slave mode
 #[derive(Debug)]
+#[allow(clippy::type_complexity)]
 pub struct SpiSlave<SPI: Instance, const BIDI: bool = false, W = u8> {
     inner: Inner<SPI>,
     pins: (

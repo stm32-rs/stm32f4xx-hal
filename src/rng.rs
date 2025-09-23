@@ -29,7 +29,6 @@ use core::num::NonZeroU32;
 use core::ops::Shl;
 use embedded_hal_02::blocking::rng;
 use fugit::RateExtU32;
-use rand_core::RngCore;
 
 /// Random number generator specific errors
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -43,10 +42,10 @@ pub enum ErrorKind {
     SeedError = 4,
 }
 
-impl From<ErrorKind> for rand_core::Error {
-    fn from(err: ErrorKind) -> rand_core::Error {
-        let err_code = NonZeroU32::new(rand_core::Error::CUSTOM_START + err as u32).unwrap();
-        rand_core::Error::from(err_code)
+impl From<ErrorKind> for rand_core_06::Error {
+    fn from(err: ErrorKind) -> rand_core_06::Error {
+        let err_code = NonZeroU32::new(rand_core_06::Error::CUSTOM_START + err as u32).unwrap();
+        rand_core_06::Error::from(err_code)
     }
 }
 
@@ -135,6 +134,19 @@ impl Rng {
         }
     }
 
+    fn try_fill_bytes(&mut self, buffer: &mut [u8]) -> Result<(), ErrorKind> {
+        const BATCH_SIZE: usize = 4 / mem::size_of::<u8>();
+        let mut i = 0_usize;
+        while i < buffer.len() {
+            let random_word = self.next_random_word()?;
+            let bytes = random_word.to_ne_bytes();
+            let n = cmp::min(BATCH_SIZE, buffer.len() - i);
+            buffer[i..i + n].copy_from_slice(&bytes[..n]);
+            i += n;
+        }
+        Ok(())
+    }
+
     /// Releases ownership of the [`RNG`] peripheral object
     /// (after which `self` can't be used anymore).
     pub fn release(self) -> RNG {
@@ -143,14 +155,31 @@ impl Rng {
 }
 
 impl rng::Read for Rng {
-    type Error = rand_core::Error;
+    type Error = rand_core_06::Error;
 
     fn read(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.try_fill_bytes(buffer)
+        self.try_fill_bytes(buffer)?;
+        Ok(())
     }
 }
 
-impl RngCore for Rng {
+impl rand_core::RngCore for Rng {
+    fn next_u32(&mut self) -> u32 {
+        self.next_random_word().unwrap()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        let w1 = self.next_u32();
+        let w2 = self.next_u32();
+        (w1 as u64).shl(32) | (w2 as u64)
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        self.try_fill_bytes(dest).unwrap()
+    }
+}
+
+impl rand_core_06::RngCore for Rng {
     fn next_u32(&mut self) -> u32 {
         self.next_random_word().unwrap()
     }
@@ -166,16 +195,8 @@ impl RngCore for Rng {
     }
 
     /// Fills buffer with random values, or returns an error
-    fn try_fill_bytes(&mut self, buffer: &mut [u8]) -> Result<(), rand_core::Error> {
-        const BATCH_SIZE: usize = 4 / mem::size_of::<u8>();
-        let mut i = 0_usize;
-        while i < buffer.len() {
-            let random_word = self.next_random_word()?;
-            let bytes = random_word.to_ne_bytes();
-            let n = cmp::min(BATCH_SIZE, buffer.len() - i);
-            buffer[i..i + n].copy_from_slice(&bytes[..n]);
-            i += n;
-        }
+    fn try_fill_bytes(&mut self, buffer: &mut [u8]) -> Result<(), rand_core_06::Error> {
+        self.try_fill_bytes(buffer)?;
         Ok(())
     }
 }

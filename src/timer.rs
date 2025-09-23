@@ -459,6 +459,7 @@ mod sealed {
         fn start_pwm(&mut self);
     }
 
+    #[allow(unused)]
     pub trait WithCapture: WithChannel {
         fn preload_capture(&mut self, c: u8, mode: CaptureMode);
         fn prescaler_capture(&mut self, c: u8, psc: CapturePrescaler);
@@ -476,6 +477,7 @@ mod sealed {
         fn split() -> Self::Channels;
     }
 
+    #[allow(unused)]
     pub trait SplitCapture {
         type CaptureChannels;
         fn split_capture() -> Self::CaptureChannels;
@@ -488,6 +490,7 @@ pub trait Instance:
 {
 }
 
+#[allow(unused)]
 use sealed::{Split, SplitCapture};
 macro_rules! split {
     ($TIM:ty: 1) => {

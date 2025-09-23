@@ -124,10 +124,10 @@ mod app {
     #[local]
     struct Local {
         logs_chan: rtt_target::UpChannel,
-        adc_p: Producer<'static, (i32, i32), 2>,
-        process_c: Consumer<'static, (i32, i32), 2>,
-        process_p: Producer<'static, (i32, i32), 2>,
-        dac_c: Consumer<'static, (i32, i32), 2>,
+        adc_p: Producer<'static, (i32, i32)>,
+        process_c: Consumer<'static, (i32, i32)>,
+        process_p: Producer<'static, (i32, i32)>,
+        dac_c: Consumer<'static, (i32, i32)>,
     }
 
     #[init(local = [queue_1: Queue<(i32,i32), 2> = Queue::new(),queue_2: Queue<(i32,i32), 2> = Queue::new()])]

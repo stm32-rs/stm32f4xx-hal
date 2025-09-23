@@ -13,6 +13,7 @@ use embedded_graphics::{
     text::Text,
 };
 
+use static_cell::ConstStaticCell;
 use stm32f4xx_hal::{
     ltdc::{BluePins, GreenPins, Layer, LtdcPins, PixelFormat, RedPins},
     pac,
@@ -28,7 +29,8 @@ const HEIGHT: u16 = 272;
 
 // Graphics framebuffer
 const FB_GRAPHICS_SIZE: usize = (WIDTH as usize) * (HEIGHT as usize);
-static mut FB_LAYER1: [u16; FB_GRAPHICS_SIZE] = [0; FB_GRAPHICS_SIZE];
+static FB_LAYER1: ConstStaticCell<[u16; FB_GRAPHICS_SIZE]> =
+    ConstStaticCell::new([0; FB_GRAPHICS_SIZE]);
 
 #[entry]
 fn main() -> ! {
@@ -85,7 +87,7 @@ fn main() -> ! {
     let mut display = screen::Stm32F7DiscoDisplay::new(perif.LTDC, perif.DMA2D, pins);
     display
         .controller
-        .config_layer(Layer::L1, unsafe { &mut FB_LAYER1 }, PixelFormat::RGB565);
+        .config_layer(Layer::L1, FB_LAYER1.take(), PixelFormat::RGB565);
 
     display.controller.enable_layer(Layer::L1);
     display.controller.reload();
