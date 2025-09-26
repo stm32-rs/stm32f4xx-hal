@@ -8,8 +8,6 @@ use fugit::RateExtU32;
 
 mod pll;
 
-mod enable;
-
 /// Built-in high speed clock frequency
 pub const HSI: u32 = 16_000_000; // Hz
 
@@ -358,7 +356,7 @@ impl Rcc {
     }
 
     fn freeze_internal(self, rcc_cfg: Config, unchecked: bool) -> Self {
-        let rcc = unsafe { &*RCC::ptr() };
+        let rcc = &self.rb;
 
         let pllsrcclk = rcc_cfg.hse.unwrap_or(HSI);
         let sysclk = rcc_cfg.sysclk.unwrap_or(pllsrcclk);

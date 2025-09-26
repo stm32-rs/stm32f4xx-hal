@@ -33,7 +33,7 @@ use embedded_graphics::{
 
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
-use hal::{i2c::I2c, pac, prelude::*};
+use hal::{pac, prelude::*};
 use rand_core::RngCore;
 
 use core::fmt::Write;
@@ -69,7 +69,7 @@ fn main() -> ! {
         let gpiob = dp.GPIOB.split(&mut rcc);
         let scl = gpiob.pb8;
         let sda = gpiob.pb9;
-        let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
+        let i2c = dp.I2C1.i2c((scl, sda), 400.kHz(), &mut rcc);
 
         // Set up the display
         let interface = I2CDisplayInterface::new(i2c);

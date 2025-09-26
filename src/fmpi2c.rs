@@ -1,8 +1,10 @@
 use core::ops::Deref;
 
 use crate::gpio;
-
+#[cfg(feature = "fmpi2c1")]
 use crate::pac::fmpi2c1 as i2c1;
+#[cfg(feature = "i2c_v2")]
+use crate::pac::i2c1;
 use crate::pac::{self, rcc};
 use crate::rcc::{BusClock, Enable, Rcc, Reset};
 use fugit::{HertzU32 as Hertz, RateExtU32};
@@ -22,7 +24,10 @@ mod hal_02;
 #[path = "i2c/hal_1.rs"]
 mod hal_1;
 
+#[cfg(feature = "fmpi2c1")]
 type I2cSel = rcc::dckcfgr2::FMPI2C1SEL;
+#[cfg(feature = "i2c_v2")]
+type I2cSel = rcc::dckcfgr2::I2C1SEL;
 
 pub trait Instance:
     crate::Sealed
@@ -50,6 +55,17 @@ macro_rules! i2c {
 
 #[cfg(feature = "fmpi2c1")]
 i2c!(pac::FMPI2C1, fmpi2c1sel, FMPI2c1);
+#[cfg(feature = "i2c_v2")]
+i2c!(pac::I2C1, i2c1sel, I2c1);
+#[cfg(feature = "i2c_v2")]
+#[cfg(feature = "i2c2")]
+i2c!(pac::I2C2, i2c2sel, I2c2);
+#[cfg(feature = "i2c_v2")]
+#[cfg(feature = "i2c3")]
+i2c!(pac::I2C3, i2c3sel, I2c3);
+#[cfg(feature = "i2c_v2")]
+#[cfg(feature = "i2c4")]
+i2c!(pac::I2C4, i2c4sel, I2c4);
 
 /// I2C FastMode+ abstraction
 pub struct I2c<I2C: Instance> {
@@ -237,7 +253,12 @@ pub trait I2cExt: Sized + Instance {
         pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
         rcc: &mut Rcc,
-        clocks: ClockSource,
+    ) -> I2c<Self>;
+    fn i2c_hsi(
+        self,
+        pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
+        mode: impl Into<Mode>,
+        rcc: &mut Rcc,
     ) -> I2c<Self>;
 }
 
@@ -247,9 +268,16 @@ impl<I2C: Instance> I2cExt for I2C {
         pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
         mode: impl Into<Mode>,
         rcc: &mut Rcc,
-        clocks: ClockSource,
     ) -> I2c<Self> {
-        I2c::new(self, pins, mode, rcc, clocks)
+        I2c::new(self, pins, mode, rcc, ClockSource::Apb)
+    }
+    fn i2c_hsi(
+        self,
+        pins: (impl Into<Self::Scl>, impl Into<Self::Sda>),
+        mode: impl Into<Mode>,
+        rcc: &mut Rcc,
+    ) -> I2c<Self> {
+        I2c::new(self, pins, mode, rcc, ClockSource::Hsi)
     }
 }
 

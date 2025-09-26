@@ -40,7 +40,13 @@ fn main() -> ! {
         let sda = gpiob.pb9.internal_pull_up(true);
         // let i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
         // or
-        let i2c = dp.I2C1.i2c((scl, sda), 400.kHz(), &mut rcc);
+        let i2c = dp.I2C1.i2c(
+            (scl, sda),
+            400.kHz(),
+            &mut rcc,
+            #[cfg(feature = "i2c_v2")]
+            hal::i2c::ClockSource::Apb,
+        );
 
         // There's a button on PC13. On the Nucleo board, it's pulled up by a 4.7kOhm resistor
         // and therefore is active LOW. There's even a 100nF capacitor for debouncing - nice for us

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
  - Implement `embedded_hal::i2c::I2c` for `I2cMasterDma` [#838]
  - Back to `stm32f4`
+ - Integrate STM32F7 support
  - Implement `Ptr`, `Sealed`, `Steal` for generic `Periph` [#834]
  - Rename `ErasedPin` to `AnyPin` [#841]
  - Use `&mut RCC` for `PER::enable/reset`
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Fefactor FMPI2c `embedded-hal` implementations [#784]
  - remove `NoPin`, use `Option` instead [#813]
 
+[#667]: https://github.com/stm32-rs/stm32f4xx-hal/pull/667
 [#770]: https://github.com/stm32-rs/stm32f4xx-hal/pull/770
 [#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
 [#813]: https://github.com/stm32-rs/stm32f4xx-hal/pull/813
