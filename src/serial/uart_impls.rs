@@ -12,36 +12,38 @@ pub trait RegisterBlockImpl: UartRB {
         // NOTE(unsafe) atomic read with no side effects
         let sr = self.sr().read();
 
-        // Any error requires the dr to be read to clear
-        if sr.pe().bit_is_set()
-            || sr.fe().bit_is_set()
-            || sr.nf().bit_is_set()
-            || sr.ore().bit_is_set()
-        {
-            self.dr().read();
-        }
-
-        Err(if sr.pe().bit_is_set() {
-            Error::Parity.into()
+        // Check for any errors
+        let err = if sr.pe().bit_is_set() {
+            Some(Error::Parity)
         } else if sr.fe().bit_is_set() {
-            Error::FrameFormat.into()
+            Some(Error::FrameFormat)
         } else if sr.nf().bit_is_set() {
-            Error::Noise.into()
+            Some(Error::Noise)
         } else if sr.ore().bit_is_set() {
-            Error::Overrun.into()
-        } else if sr.rxne().bit_is_set() {
-            // NOTE(unsafe) atomic read from stateless register
-            return Ok(self.dr().read().dr().bits());
+            Some(Error::Overrun)
         } else {
-            nb::Error::WouldBlock
-        })
+            None
+        };
+
+        if let Some(err) = err {
+            // Some error occurred. In order to clear that error flag, you have to
+            // do a read from the sr register followed by a read from the dr register.
+            let _ = self.sr().read();
+            let _ = self.dr().read();
+            Err(err.into())
+        } else {
+            // Check if a byte is available
+            if sr.rxne().bit_is_set() {
+                // Read the received byte
+                Ok(self.dr().read().dr().bits())
+            } else {
+                Err(nb::Error::WouldBlock)
+            }
+        }
     }
 
     fn write_u16(&self, word: u16) -> nb::Result<(), Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = self.sr().read();
-
-        if sr.txe().bit_is_set() {
+        if self.sr().read().txe().bit_is_set() {
             // NOTE(unsafe) atomic write to stateless register
             self.dr().write(|w| w.dr().set(word));
             Ok(())
@@ -63,10 +65,7 @@ pub trait RegisterBlockImpl: UartRB {
     }
 
     fn flush(&self) -> nb::Result<(), Error> {
-        // NOTE(unsafe) atomic read with no side effects
-        let sr = self.sr().read();
-
-        if sr.tc().bit_is_set() {
+        if self.sr().read().tc().bit_is_set() {
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -272,4 +271,146 @@ impl RegisterBlockImpl for crate::pac::uart4::RegisterBlock {
         });
     }
     fn configure_irda(&self, _irda: IrdaMode, _pclk_freq: u32) {}
+}
+
+impl<USART: super::Instance> super::Tx<USART> {
+    /// Writes 9-bit words to the UART/USART
+    ///
+    /// If the UART/USART was configured with `WordLength::Bits9`, the 9 least significant bits will
+    /// be transmitted and the other 7 bits will be ignored. Otherwise, the 8 least significant bits
+    /// will be transmitted and the other 8 bits will be ignored.
+    #[inline(always)]
+    pub fn write_u16(&mut self, word: u16) -> nb::Result<(), Error> {
+        self.usart.write_u16(word)
+    }
+    #[inline(always)]
+    pub fn write_u8(&mut self, word: u8) -> nb::Result<(), Error> {
+        self.usart.write_u8(word)
+    }
+    #[inline(always)]
+    pub fn write(&mut self, word: u8) -> nb::Result<(), Error> {
+        self.usart.write_u8(word)
+    }
+    #[inline(always)]
+    pub fn bwrite_all_u16(&mut self, buffer: &[u16]) -> Result<(), Error> {
+        self.usart.bwrite_all_u16(buffer)
+    }
+    #[inline(always)]
+    pub fn bwrite_all_u8(&mut self, buffer: &[u8]) -> Result<(), Error> {
+        self.usart.bwrite_all_u8(buffer)
+    }
+    #[inline(always)]
+    pub fn bwrite_all(&mut self, buffer: &[u8]) -> Result<(), Error> {
+        self.usart.bwrite_all_u8(buffer)
+    }
+    #[inline(always)]
+    pub fn flush(&mut self) -> nb::Result<(), Error> {
+        self.usart.flush()
+    }
+    #[inline(always)]
+    pub fn bflush(&mut self) -> Result<(), Error> {
+        self.usart.bflush()
+    }
+}
+
+impl<USART: super::Instance> super::Rx<USART> {
+    /// Reads 9-bit words from the UART/USART
+    ///
+    /// If the UART/USART was configured with `WordLength::Bits9`, the returned value will contain
+    /// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
+    /// 8 received data bits and all other bits set to zero.
+    #[inline(always)]
+    pub fn read_u16(&mut self) -> nb::Result<u16, Error> {
+        self.usart.read_u16()
+    }
+    #[inline(always)]
+    pub fn read_u8(&mut self) -> nb::Result<u8, Error> {
+        self.usart.read_u8()
+    }
+    #[inline(always)]
+    pub fn read(&mut self) -> nb::Result<u8, Error> {
+        self.usart.read_u8()
+    }
+    #[inline(always)]
+    pub fn bread_all_u8(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.usart.bread_all_u8(buffer)
+    }
+    #[inline(always)]
+    pub fn bread_all(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.usart.bread_all_u8(buffer)
+    }
+    #[inline(always)]
+    pub fn bread_all_u16(&mut self, buffer: &mut [u16]) -> Result<(), Error> {
+        self.usart.bread_all_u16(buffer)
+    }
+}
+
+impl<USART: super::Instance> super::Serial<USART> {
+    /// Writes 9-bit words to the UART/USART
+    ///
+    /// If the UART/USART was configured with `WordLength::Bits9`, the 9 least significant bits will
+    /// be transmitted and the other 7 bits will be ignored. Otherwise, the 8 least significant bits
+    /// will be transmitted and the other 8 bits will be ignored.
+    #[inline(always)]
+    pub fn write_u16(&mut self, word: u16) -> nb::Result<(), Error> {
+        self.tx.write_u16(word)
+    }
+    #[inline(always)]
+    pub fn write_u8(&mut self, word: u8) -> nb::Result<(), Error> {
+        self.tx.write_u8(word)
+    }
+    #[inline(always)]
+    pub fn write(&mut self, word: u8) -> nb::Result<(), Error> {
+        self.tx.write_u8(word)
+    }
+    #[inline(always)]
+    pub fn bwrite_all_u16(&mut self, buffer: &[u16]) -> Result<(), Error> {
+        self.tx.bwrite_all_u16(buffer)
+    }
+    #[inline(always)]
+    pub fn bwrite_all_u8(&mut self, buffer: &[u8]) -> Result<(), Error> {
+        self.tx.bwrite_all_u8(buffer)
+    }
+    #[inline(always)]
+    pub fn bwrite_all(&mut self, buffer: &[u8]) -> Result<(), Error> {
+        self.tx.bwrite_all_u8(buffer)
+    }
+    #[inline(always)]
+    pub fn flush(&mut self) -> nb::Result<(), Error> {
+        self.tx.flush()
+    }
+    #[inline(always)]
+    pub fn bflush(&mut self) -> Result<(), Error> {
+        self.tx.bflush()
+    }
+
+    /// Reads 9-bit words from the UART/USART
+    ///
+    /// If the UART/USART was configured with `WordLength::Bits9`, the returned value will contain
+    /// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
+    /// 8 received data bits and all other bits set to zero.
+    #[inline(always)]
+    pub fn read_u16(&mut self) -> nb::Result<u16, Error> {
+        self.rx.read_u16()
+    }
+    #[inline(always)]
+    pub fn read_u8(&mut self) -> nb::Result<u8, Error> {
+        self.rx.read_u8()
+    }
+    #[inline(always)]
+    pub fn read(&mut self) -> nb::Result<u8, Error> {
+        self.rx.read_u8()
+    }
+    #[inline(always)]
+    pub fn bread_all_u8(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.rx.bread_all_u8(buffer)
+    }
+    #[inline(always)]
+    pub fn bread_all(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.rx.bread_all_u8(buffer)
+    }
+    #[inline(always)]
+    pub fn bread_all_u16(&mut self, buffer: &mut [u16]) -> Result<(), Error> {
+        self.rx.bread_all_u16(buffer)
+    }
 }

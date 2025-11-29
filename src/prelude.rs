@@ -38,12 +38,8 @@
 //! ```
 pub use embedded_hal::delay::DelayNs as _;
 pub use embedded_hal_02::adc::OneShot as _embedded_hal_adc_OneShot;
-pub use embedded_hal_02::blocking::serial::Write as _embedded_hal_blocking_serial_Write;
-pub use embedded_hal_02::Capture as _embedded_hal_Capture;
 pub use embedded_hal_02::Pwm as _embedded_hal_Pwm;
 pub use embedded_hal_02::Qei as _embedded_hal_Qei;
-pub use embedded_hal_nb::serial::Read as _embedded_hal_serial_nb_Read;
-pub use embedded_hal_nb::serial::Write as _embedded_hal_serial_nb_Write;
 pub use fugit::ExtU32 as _fugit_ExtU32;
 pub use fugit::RateExtU32 as _fugit_RateExtU32;
 
