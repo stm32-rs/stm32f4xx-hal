@@ -76,10 +76,8 @@ pub use crate::serial::dma::SerialHandleIT as _stm32f4xx_hal_serial_dma_SerialHa
 pub use crate::serial::dma::SerialReadDMA as _stm32f4xx_hal_serial_dma_SerialReadDMA;
 pub use crate::serial::dma::SerialWriteDMA as _stm32f4xx_hal_serial_dma_SerialWriteDMA;
 pub use crate::serial::RxISR as _stm32f4xx_hal_serial_RxISR;
-pub use crate::serial::RxListen as _stm32f4xx_hal_serial_RxListen;
 pub use crate::serial::SerialExt as _stm32f4xx_hal_serial_SerialExt;
 pub use crate::serial::TxISR as _stm32f4xx_hal_serial_TxISR;
-pub use crate::serial::TxListen as _stm32f4xx_hal_serial_TxListen;
 pub use crate::spi::SpiExt as _stm32f4xx_hal_spi_SpiExt;
 pub use crate::syscfg::SysCfgExt as _stm32f4xx_hal_syscfg_SysCfgExt;
 pub use crate::time::U32Ext as _stm32f4xx_hal_time_U32Ext;

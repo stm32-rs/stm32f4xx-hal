@@ -992,29 +992,27 @@ pub(crate) const fn compute_arr_presc(freq: u32, clock: u32) -> (u16, u32) {
 
 impl<TIM: Instance> crate::Listen for Timer<TIM> {
     type Event = Event;
-    fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_event(None, Some(event.into()));
-    }
-    fn listen_only(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim
-            .listen_event(Some(BitFlags::ALL), Some(event.into()));
-    }
-    fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_event(Some(event.into()), None);
+
+    #[inline(always)]
+    fn listen_event(
+        &mut self,
+        disable: Option<BitFlags<Self::Event>>,
+        enable: Option<BitFlags<Self::Event>>,
+    ) {
+        self.tim.listen_event(disable, enable)
     }
 }
 
 impl<TIM: Instance, const FREQ: u32> crate::Listen for FTimer<TIM, FREQ> {
     type Event = Event;
-    fn listen(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_event(None, Some(event.into()));
-    }
-    fn listen_only(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim
-            .listen_event(Some(BitFlags::ALL), Some(event.into()));
-    }
-    fn unlisten(&mut self, event: impl Into<BitFlags<Event>>) {
-        self.tim.listen_event(Some(event.into()), None);
+
+    #[inline(always)]
+    fn listen_event(
+        &mut self,
+        disable: Option<BitFlags<Self::Event>>,
+        enable: Option<BitFlags<Self::Event>>,
+    ) {
+        self.tim.listen_event(disable, enable)
     }
 }
 
