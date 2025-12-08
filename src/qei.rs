@@ -97,7 +97,7 @@ impl<TIM: Instance> embedded_hal_02::Qei for Qei<TIM> {
     }
 }
 
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + General + CPin<0> + CPin<1> {
+pub trait Instance: rcc::Instance + General + CPin<0> + CPin<1> {
     fn setup_qei(&mut self);
 
     fn read_direction(&self) -> bool;

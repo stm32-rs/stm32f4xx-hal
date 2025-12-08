@@ -88,6 +88,12 @@ impl RccExt for RCC {
     }
 }
 
+/// Common trait for most of peripherals
+pub trait Instance:
+    crate::Ptr + crate::Steal + Enable + Reset + RccBus<Bus: BusClock> + Deref<Target = Self::RB>
+{
+}
+
 /// Bus associated to peripheral
 pub trait RccBus: crate::Sealed {
     /// Bus type;

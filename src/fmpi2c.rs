@@ -1,10 +1,8 @@
-use core::ops::Deref;
-
 use crate::gpio;
 
 use crate::pac::fmpi2c1 as i2c1;
 use crate::pac::{self, rcc};
-use crate::rcc::{BusClock, Enable, Rcc, Reset};
+use crate::rcc::{BusClock, Rcc};
 use fugit::{HertzU32 as Hertz, RateExtU32};
 use micromath::F32Ext;
 
@@ -25,13 +23,7 @@ mod hal_1;
 type I2cSel = rcc::dckcfgr2::FMPI2C1SEL;
 
 pub trait Instance:
-    crate::Sealed
-    + crate::Ptr<RB = i2c1::RegisterBlock>
-    + Deref<Target = Self::RB>
-    + Enable
-    + Reset
-    + BusClock
-    + gpio::alt::I2cCommon
+    crate::rcc::Instance + crate::Ptr<RB = i2c1::RegisterBlock> + gpio::alt::I2cCommon
 {
     fn set_clock_source(rcc: &rcc::RegisterBlock, source: I2cSel);
 }

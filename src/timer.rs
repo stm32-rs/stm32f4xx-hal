@@ -4,6 +4,7 @@
 //! (`AlternateOD`).
 #![allow(non_upper_case_globals)]
 
+use crate::rcc::BusTimerClock;
 use core::convert::TryFrom;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
@@ -485,10 +486,7 @@ mod sealed {
 }
 pub(crate) use sealed::{Advanced, General, MasterTimer, WithCapture, WithChannel, WithPwm};
 
-pub trait Instance:
-    crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock + General
-{
-}
+pub trait Instance: rcc::Instance + rcc::RccBus<Bus: rcc::BusTimerClock> + General {}
 
 #[allow(unused)]
 use sealed::{Split, SplitCapture};

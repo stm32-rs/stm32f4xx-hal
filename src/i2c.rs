@@ -1,7 +1,4 @@
-use core::ops::Deref;
-
 use crate::pac::{self, i2c1};
-use crate::rcc::{Enable, Reset};
 
 use crate::gpio;
 
@@ -75,12 +72,7 @@ pub struct I2c<I2C: Instance> {
 }
 
 pub trait Instance:
-    crate::Sealed
-    + crate::Ptr<RB = i2c1::RegisterBlock>
-    + Deref<Target = Self::RB>
-    + Enable
-    + Reset
-    + gpio::alt::I2cCommon
+    crate::rcc::Instance + crate::Ptr<RB = i2c1::RegisterBlock> + gpio::alt::I2cCommon
 {
 }
 
