@@ -283,7 +283,7 @@ impl<I2C: Instance> I2c<I2C> {
         let i2c_timingr = match clocks {
             ClockSource::Apb => {
                 I2C::set_clock_source(rcc, I2cSel::Apb);
-                let pclk = I2C::clock(&rcc.clocks);
+                let pclk = I2C::Bus::clock(&rcc.clocks);
                 match mode {
                     Mode::Standard { frequency } => {
                         calculate_timing(I2C_STANDARD_MODE_SPEC, pclk, frequency, an_filter, dnf)

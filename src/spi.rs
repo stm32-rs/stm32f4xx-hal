@@ -483,7 +483,7 @@ impl<SPI: Instance> Spi<SPI, false, u8> {
         );
 
         Self::_new(spi, pins)
-            .pre_init(mode.into(), freq, SPI::clock(&rcc.clocks))
+            .pre_init(mode.into(), freq, SPI::Bus::clock(&rcc.clocks))
             .init()
     }
 }
@@ -507,7 +507,7 @@ impl<SPI: Instance> Spi<SPI, true, u8> {
         let pins = (pins.0, SPI::NoMiso, pins.1);
 
         Self::_new(spi, pins)
-            .pre_init(mode.into(), freq, SPI::clock(&rcc.clocks))
+            .pre_init(mode.into(), freq, SPI::Bus::clock(&rcc.clocks))
             .init()
     }
 }

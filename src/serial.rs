@@ -257,7 +257,7 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         USART::enable(rcc);
         USART::reset(rcc);
 
-        let pclk_freq = USART::clock(&rcc.clocks).raw();
+        let pclk_freq = USART::Bus::clock(&rcc.clocks).raw();
         let baud = config.baudrate.0;
 
         if !USART::RB::IRDA && config.irda != IrdaMode::None {
