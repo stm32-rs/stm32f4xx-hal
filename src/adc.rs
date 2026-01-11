@@ -214,6 +214,15 @@ impl Calibrate for Adc<pac::ADC1> {
     }
 }
 
+// Stub implementations for ADC2 and ADC3 to satisfy the 'new' constructor trait bound.
+// These use the default empty calibrate() method from the trait.
+
+#[cfg(feature = "adc2")]
+impl Calibrate for Adc<pac::ADC2> {}
+
+#[cfg(feature = "adc3")]
+impl Calibrate for Adc<pac::ADC3> {}
+
 impl Adc<pac::ADC1> {
     /// Calibrate ADC
     pub fn calibrate(&mut self) {
