@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - FMPI2c APB timings [#770]
  - Fefactor FMPI2c `embedded-hal` implementations [#784]
  - remove `NoPin`, use `Option` instead [#813]
+ - Implement `Calibrate` stub for ADC2 and ADC3 [#859] 
 
 [#770]: https://github.com/stm32-rs/stm32f4xx-hal/pull/770
 [#784]: https://github.com/stm32-rs/stm32f4xx-hal/pull/784
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#838]: https://github.com/stm32-rs/stm32f4xx-hal/pull/838
 [#839]: https://github.com/stm32-rs/stm32f4xx-hal/pull/839
 [#841]: https://github.com/stm32-rs/stm32f4xx-hal/pull/841
+[#859]: https://github.com/stm32-rs/stm32f4xx-hal/pull/859
 
 ## [v0.22.1] - 2024-11-03
 
