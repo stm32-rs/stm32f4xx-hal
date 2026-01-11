@@ -67,9 +67,7 @@ fn main() -> ! {
             Config::default().baudrate(9600.bps()).wordlength_9(),
             &mut rcc,
         )
-        .unwrap()
-        // Make this Serial object use u16s instead of u8s
-        .with_u16_data();
+        .unwrap();
 
     let (mut tx, mut rx) = serial.split();
 
@@ -77,9 +75,9 @@ fn main() -> ! {
 
     loop {
         for value in nine_bit_integers.clone() {
-            block!(tx.write(value)).unwrap();
+            block!(tx.write_u16(value)).unwrap();
             // Receive what we just sent
-            let received: u16 = block!(rx.read()).unwrap();
+            let received: u16 = block!(rx.read_u16()).unwrap();
 
             // Update LEDs to display what was received
             if ((received >> 5) & 1) == 1 {

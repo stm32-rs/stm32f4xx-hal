@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+ - `Serial` implements `Write<WORD>` and `Read<WORD>` for `WORD` simultaneously as `u8` and `u16`
+ - Add inherent impl of `read`/`write` methods on `Serial`
+
 ## [v0.23.0] - 2025-09-22
 
  - Implement `embedded_hal::i2c::I2c` for `I2cMasterDma` [#838]

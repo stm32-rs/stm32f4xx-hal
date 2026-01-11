@@ -15,7 +15,6 @@
 //! implementations for 9-bit words.
 
 use core::fmt;
-use core::marker::PhantomData;
 use enumflags2::BitFlags;
 
 #[allow(unused)]
@@ -195,49 +194,47 @@ pub trait TxListen {
 }
 
 /// Serial abstraction
-pub struct Serial<USART: CommonPins, WORD = u8> {
-    tx: Tx<USART, WORD>,
-    rx: Rx<USART, WORD>,
+pub struct Serial<USART: CommonPins> {
+    tx: Tx<USART>,
+    rx: Rx<USART>,
 }
 
 /// Serial receiver containing RX pin
-pub struct Rx<USART: CommonPins, WORD = u8> {
-    _word: PhantomData<WORD>,
+pub struct Rx<USART: CommonPins> {
     usart: USART,
     pin: Option<USART::Rx<PushPull>>,
 }
 
 /// Serial transmitter containing TX pin
-pub struct Tx<USART: CommonPins, WORD = u8> {
-    _word: PhantomData<WORD>,
+pub struct Tx<USART: CommonPins> {
     usart: USART,
     pin: Option<USART::Tx<PushPull>>,
 }
 
 pub trait SerialExt: Sized + Instance {
-    fn serial<WORD>(
+    fn serial(
         self,
         pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
         config: impl Into<config::Config>,
         rcc: &mut Rcc,
-    ) -> Result<Serial<Self, WORD>, config::InvalidConfig>;
+    ) -> Result<Serial<Self>, config::InvalidConfig>;
 
-    fn tx<WORD>(
+    fn tx(
         self,
         tx_pin: impl Into<Self::Tx<PushPull>>,
         config: impl Into<config::Config>,
         rcc: &mut Rcc,
-    ) -> Result<Tx<Self, WORD>, config::InvalidConfig>;
+    ) -> Result<Tx<Self>, config::InvalidConfig>;
 
-    fn rx<WORD>(
+    fn rx(
         self,
         rx_pin: impl Into<Self::Rx<PushPull>>,
         config: impl Into<config::Config>,
         rcc: &mut Rcc,
-    ) -> Result<Rx<Self, WORD>, config::InvalidConfig>;
+    ) -> Result<Rx<Self>, config::InvalidConfig>;
 }
 
-impl<USART: Instance, WORD> Serial<USART, WORD> {
+impl<USART: Instance> Serial<USART> {
     pub fn new(
         uart: USART,
         pins: (
@@ -368,8 +365,8 @@ fn calculate_brr(pclk_freq: u32, baud: u32) -> Result<(bool, u32), config::Inval
     }
 }
 
-impl<UART: CommonPins, WORD> Serial<UART, WORD> {
-    pub fn split(self) -> (Tx<UART, WORD>, Rx<UART, WORD>) {
+impl<UART: CommonPins> Serial<UART> {
+    pub fn split(self) -> (Tx<UART>, Rx<UART>) {
         (self.tx, self.rx)
     }
 
@@ -386,9 +383,9 @@ impl<UART: CommonPins, WORD> Serial<UART, WORD> {
 
 macro_rules! halUsart {
     ($USART:ty, $Serial:ident, $Rx:ident, $Tx:ident) => {
-        pub type $Serial<WORD = u8> = Serial<$USART, WORD>;
-        pub type $Tx<WORD = u8> = Tx<$USART, WORD>;
-        pub type $Rx<WORD = u8> = Rx<$USART, WORD>;
+        pub type $Serial = Serial<$USART>;
+        pub type $Tx = Tx<$USART>;
+        pub type $Rx = Rx<$USART>;
 
         impl Instance for $USART {}
     };
@@ -405,9 +402,9 @@ halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
 #[cfg(feature = "uart4")]
 macro_rules! halUart {
     ($UART:ty, $Serial:ident, $Rx:ident, $Tx:ident) => {
-        pub type $Serial<WORD = u8> = Serial<$UART, WORD>;
-        pub type $Tx<WORD = u8> = Tx<$UART, WORD>;
-        pub type $Rx<WORD = u8> = Rx<$UART, WORD>;
+        pub type $Serial = Serial<$UART>;
+        pub type $Tx = Tx<$UART>;
+        pub type $Rx = Rx<$UART>;
 
         impl Instance for $UART {}
     };
@@ -426,113 +423,57 @@ halUart! { pac::UART9, Serial9, Rx9, Tx9 }
 #[cfg(feature = "uart10")]
 halUart! { pac::UART10, Serial10, Rx10, Tx10 }
 
-impl<UART: CommonPins> Rx<UART, u8> {
-    pub(crate) fn with_u16_data(self) -> Rx<UART, u16> {
-        Rx::new(self.usart, self.pin)
-    }
-}
-
-impl<UART: CommonPins> Rx<UART, u16> {
-    pub(crate) fn with_u8_data(self) -> Rx<UART, u8> {
-        Rx::new(self.usart, self.pin)
-    }
-}
-
-impl<UART: CommonPins> Tx<UART, u8> {
-    pub(crate) fn with_u16_data(self) -> Tx<UART, u16> {
-        Tx::new(self.usart, self.pin)
-    }
-}
-
-impl<UART: CommonPins> Tx<UART, u16> {
-    pub(crate) fn with_u8_data(self) -> Tx<UART, u8> {
-        Tx::new(self.usart, self.pin)
-    }
-}
-
-impl<UART: CommonPins, WORD> Rx<UART, WORD> {
+impl<UART: CommonPins> Rx<UART> {
     pub(crate) fn new(usart: UART, pin: Option<UART::Rx<PushPull>>) -> Self {
-        Self {
-            _word: PhantomData,
-            usart,
-            pin,
-        }
+        Self { usart, pin }
     }
 
-    pub fn join(self, tx: Tx<UART, WORD>) -> Serial<UART, WORD> {
+    pub fn join(self, tx: Tx<UART>) -> Serial<UART> {
         Serial { tx, rx: self }
     }
 }
 
-impl<UART: CommonPins, WORD> Tx<UART, WORD> {
+impl<UART: CommonPins> Tx<UART> {
     pub(crate) fn new(usart: UART, pin: Option<UART::Tx<PushPull>>) -> Self {
-        Self {
-            _word: PhantomData,
-            usart,
-            pin,
-        }
+        Self { usart, pin }
     }
 
-    pub fn join(self, rx: Rx<UART, WORD>) -> Serial<UART, WORD> {
+    pub fn join(self, rx: Rx<UART>) -> Serial<UART> {
         Serial { tx: self, rx }
     }
 }
 
-impl<UART: Instance, WORD> AsRef<Tx<UART, WORD>> for Serial<UART, WORD> {
+impl<UART: Instance> AsRef<Tx<UART>> for Serial<UART> {
     #[inline(always)]
-    fn as_ref(&self) -> &Tx<UART, WORD> {
+    fn as_ref(&self) -> &Tx<UART> {
         &self.tx
     }
 }
 
-impl<UART: Instance, WORD> AsRef<Rx<UART, WORD>> for Serial<UART, WORD> {
+impl<UART: Instance> AsRef<Rx<UART>> for Serial<UART> {
     #[inline(always)]
-    fn as_ref(&self) -> &Rx<UART, WORD> {
+    fn as_ref(&self) -> &Rx<UART> {
         &self.rx
     }
 }
 
-impl<UART: Instance, WORD> AsMut<Tx<UART, WORD>> for Serial<UART, WORD> {
+impl<UART: Instance> AsMut<Tx<UART>> for Serial<UART> {
     #[inline(always)]
-    fn as_mut(&mut self) -> &mut Tx<UART, WORD> {
+    fn as_mut(&mut self) -> &mut Tx<UART> {
         &mut self.tx
     }
 }
 
-impl<UART: Instance, WORD> AsMut<Rx<UART, WORD>> for Serial<UART, WORD> {
+impl<UART: Instance> AsMut<Rx<UART>> for Serial<UART> {
     #[inline(always)]
-    fn as_mut(&mut self) -> &mut Rx<UART, WORD> {
+    fn as_mut(&mut self) -> &mut Rx<UART> {
         &mut self.rx
     }
 }
 
-impl<UART: Instance> Serial<UART, u8> {
-    /// Converts this Serial into a version that can read and write `u16` values instead of `u8`s
-    ///
-    /// This can be used with a word length of 9 bits.
-    pub fn with_u16_data(self) -> Serial<UART, u16> {
-        Serial {
-            tx: self.tx.with_u16_data(),
-            rx: self.rx.with_u16_data(),
-        }
-    }
-}
-
-impl<UART: Instance> Serial<UART, u16> {
-    /// Converts this Serial into a version that can read and write `u8` values instead of `u16`s
-    ///
-    /// This can be used with a word length of 8 bits.
-    pub fn with_u8_data(self) -> Serial<UART, u8> {
-        Serial {
-            tx: self.tx.with_u8_data(),
-            rx: self.rx.with_u8_data(),
-        }
-    }
-}
-
-impl<UART: Instance, WORD> RxISR for Serial<UART, WORD>
+impl<UART: Instance> RxISR for Serial<UART>
 where
-    Rx<UART, WORD>: RxISR,
+    Rx<UART>: RxISR,
 {
     fn is_idle(&self) -> bool {
         self.rx.is_idle()
@@ -548,7 +489,7 @@ where
     }
 }
 
-impl<UART: Instance, WORD> RxISR for Rx<UART, WORD> {
+impl<UART: Instance> RxISR for Rx<UART> {
     fn is_idle(&self) -> bool {
         self.usart.is_idle()
     }
@@ -563,22 +504,22 @@ impl<UART: Instance, WORD> RxISR for Rx<UART, WORD> {
     }
 }
 
-impl<UART: Instance, WORD> TxISR for Serial<UART, WORD>
+impl<UART: Instance> TxISR for Serial<UART>
 where
-    Tx<UART, WORD>: TxISR,
+    Tx<UART>: TxISR,
 {
     fn is_tx_empty(&self) -> bool {
         self.tx.is_tx_empty()
     }
 }
 
-impl<UART: Instance, WORD> TxISR for Tx<UART, WORD> {
+impl<UART: Instance> TxISR for Tx<UART> {
     fn is_tx_empty(&self) -> bool {
         self.usart.is_tx_empty()
     }
 }
 
-impl<UART: Instance, WORD> RxListen for Rx<UART, WORD> {
+impl<UART: Instance> RxListen for Rx<UART> {
     fn listen(&mut self) {
         self.usart.listen_rxne()
     }
@@ -596,7 +537,7 @@ impl<UART: Instance, WORD> RxListen for Rx<UART, WORD> {
     }
 }
 
-impl<UART: Instance, WORD> TxListen for Tx<UART, WORD> {
+impl<UART: Instance> TxListen for Tx<UART> {
     fn listen(&mut self) {
         self.usart.listen_txe()
     }
@@ -606,7 +547,7 @@ impl<UART: Instance, WORD> TxListen for Tx<UART, WORD> {
     }
 }
 
-impl<UART: Instance, WORD> crate::ClearFlags for Serial<UART, WORD> {
+impl<UART: Instance> crate::ClearFlags for Serial<UART> {
     type Flag = CFlag;
 
     #[inline(always)]
@@ -615,7 +556,7 @@ impl<UART: Instance, WORD> crate::ClearFlags for Serial<UART, WORD> {
     }
 }
 
-impl<UART: Instance, WORD> crate::ReadFlags for Serial<UART, WORD> {
+impl<UART: Instance> crate::ReadFlags for Serial<UART> {
     type Flag = Flag;
 
     #[inline(always)]
@@ -624,7 +565,7 @@ impl<UART: Instance, WORD> crate::ReadFlags for Serial<UART, WORD> {
     }
 }
 
-impl<UART: Instance, WORD> crate::Listen for Serial<UART, WORD> {
+impl<UART: Instance> crate::Listen for Serial<UART> {
     type Event = Event;
 
     #[inline(always)]
@@ -663,39 +604,39 @@ impl<UART: Instance> fmt::Write for Tx<UART> {
 }
 
 impl<UART: Instance> SerialExt for UART {
-    fn serial<WORD>(
+    fn serial(
         self,
         pins: (impl Into<Self::Tx<PushPull>>, impl Into<Self::Rx<PushPull>>),
         config: impl Into<config::Config>,
         rcc: &mut Rcc,
-    ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
+    ) -> Result<Serial<Self>, config::InvalidConfig> {
         Serial::new(self, pins, config, rcc)
     }
-    fn tx<WORD>(
+    fn tx(
         self,
         tx_pin: impl Into<Self::Tx<PushPull>>,
         config: impl Into<config::Config>,
         rcc: &mut Rcc,
-    ) -> Result<Tx<Self, WORD>, config::InvalidConfig> {
+    ) -> Result<Tx<Self>, config::InvalidConfig> {
         Serial::tx(self, tx_pin, config, rcc)
     }
-    fn rx<WORD>(
+    fn rx(
         self,
         rx_pin: impl Into<Self::Rx<PushPull>>,
         config: impl Into<config::Config>,
         rcc: &mut Rcc,
-    ) -> Result<Rx<Self, WORD>, config::InvalidConfig> {
+    ) -> Result<Rx<Self>, config::InvalidConfig> {
         Serial::rx(self, rx_pin, config, rcc)
     }
 }
 
-impl<UART: Instance, WORD> Serial<UART, WORD> {
+impl<UART: Instance> Serial<UART> {
     pub fn tx(
         usart: UART,
         tx_pin: impl Into<UART::Tx<PushPull>>,
         config: impl Into<config::Config>,
         rcc: &mut Rcc,
-    ) -> Result<Tx<UART, WORD>, config::InvalidConfig> {
+    ) -> Result<Tx<UART>, config::InvalidConfig> {
         Self::_new(
             usart,
             (Some(tx_pin), None::<UART::Rx<PushPull>>),
@@ -706,13 +647,13 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
     }
 }
 
-impl<UART: Instance, WORD> Serial<UART, WORD> {
+impl<UART: Instance> Serial<UART> {
     pub fn rx(
         usart: UART,
         rx_pin: impl Into<UART::Rx<PushPull>>,
         config: impl Into<config::Config>,
         rcc: &mut Rcc,
-    ) -> Result<Rx<UART, WORD>, config::InvalidConfig> {
+    ) -> Result<Rx<UART>, config::InvalidConfig> {
         Self::_new(
             usart,
             (None::<UART::Tx<PushPull>>, Some(rx_pin)),
@@ -723,7 +664,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
     }
 }
 
-unsafe impl<UART: Instance> PeriAddress for Rx<UART, u8> {
+unsafe impl<UART: Instance> PeriAddress for Rx<UART> {
     #[inline(always)]
     fn address(&self) -> u32 {
         self.usart.peri_address()
@@ -739,7 +680,7 @@ where
 {
 }
 
-unsafe impl<UART: Instance> PeriAddress for Tx<UART, u8> {
+unsafe impl<UART: Instance> PeriAddress for Tx<UART> {
     #[inline(always)]
     fn address(&self) -> u32 {
         self.usart.peri_address()

@@ -16,26 +16,28 @@ mod nb {
         }
     }
 
-    impl<USART: Instance, WORD> embedded_hal_nb::serial::ErrorType for Serial<USART, WORD> {
+    impl<USART: Instance> embedded_hal_nb::serial::ErrorType for Serial<USART> {
         type Error = Error;
     }
-    impl<USART: Instance, WORD> embedded_hal_nb::serial::ErrorType for Rx<USART, WORD> {
+    impl<USART: Instance> embedded_hal_nb::serial::ErrorType for Rx<USART> {
         type Error = Error;
     }
-    impl<USART: Instance, WORD> embedded_hal_nb::serial::ErrorType for Tx<USART, WORD> {
+    impl<USART: Instance> embedded_hal_nb::serial::ErrorType for Tx<USART> {
         type Error = Error;
     }
 
-    impl<USART: Instance, WORD: Copy> Read<WORD> for Serial<USART, WORD>
+    impl<USART: Instance, WORD: Copy> Read<WORD> for Serial<USART>
     where
-        Rx<USART, WORD>: Read<WORD, Error = Error>,
+        Rx<USART>: Read<WORD, Error = Error>,
     {
+        #[inline(always)]
         fn read(&mut self) -> nb::Result<WORD, Self::Error> {
-            self.rx.read()
+            Read::read(&mut self.rx)
         }
     }
 
-    impl<USART: Instance> Read<u8> for Rx<USART, u8> {
+    impl<USART: Instance> Read<u8> for Rx<USART> {
+        #[inline(always)]
         fn read(&mut self) -> nb::Result<u8, Self::Error> {
             self.usart.read_u8()
         }
@@ -46,29 +48,34 @@ mod nb {
     /// If the UART/USART was configured with `WordLength::DataBits9`, the returned value will contain
     /// 9 received data bits and all other bits set to zero. Otherwise, the returned value will contain
     /// 8 received data bits and all other bits set to zero.
-    impl<USART: Instance> Read<u16> for Rx<USART, u16> {
+    impl<USART: Instance> Read<u16> for Rx<USART> {
+        #[inline(always)]
         fn read(&mut self) -> nb::Result<u16, Self::Error> {
             self.usart.read_u16()
         }
     }
 
-    impl<USART: Instance, WORD: Copy> Write<WORD> for Serial<USART, WORD>
+    impl<USART: Instance, WORD: Copy> Write<WORD> for Serial<USART>
     where
-        Tx<USART, WORD>: Write<WORD, Error = Error>,
+        Tx<USART>: Write<WORD, Error = Error>,
     {
+        #[inline(always)]
         fn flush(&mut self) -> nb::Result<(), Self::Error> {
-            self.tx.flush()
+            Write::flush(&mut self.tx)
         }
 
-        fn write(&mut self, byte: WORD) -> nb::Result<(), Self::Error> {
-            self.tx.write(byte)
+        #[inline(always)]
+        fn write(&mut self, word: WORD) -> nb::Result<(), Self::Error> {
+            Write::write(&mut self.tx, word)
         }
     }
 
-    impl<USART: Instance> Write<u8> for Tx<USART, u8> {
+    impl<USART: Instance> Write<u8> for Tx<USART> {
+        #[inline(always)]
         fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
             self.usart.write_u8(word)
         }
+        #[inline(always)]
         fn flush(&mut self) -> nb::Result<(), Self::Error> {
             self.usart.flush()
         }
@@ -79,11 +86,13 @@ mod nb {
     /// If the UART/USART was configured with `WordLength::DataBits9`, the 9 least significant bits will
     /// be transmitted and the other 7 bits will be ignored. Otherwise, the 8 least significant bits
     /// will be transmitted and the other 8 bits will be ignored.
-    impl<USART: Instance> Write<u16> for Tx<USART, u16> {
+    impl<USART: Instance> Write<u16> for Tx<USART> {
+        #[inline(always)]
         fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
             self.usart.write_u16(word)
         }
 
+        #[inline(always)]
         fn flush(&mut self) -> nb::Result<(), Self::Error> {
             self.usart.flush()
         }
@@ -103,19 +112,19 @@ mod io {
         }
     }
 
-    impl<USART: Instance, WORD> embedded_io::ErrorType for Serial<USART, WORD> {
+    impl<USART: Instance> embedded_io::ErrorType for Serial<USART> {
         type Error = Error;
     }
 
-    impl<USART: Instance, WORD> embedded_io::ErrorType for Tx<USART, WORD> {
+    impl<USART: Instance> embedded_io::ErrorType for Tx<USART> {
         type Error = Error;
     }
 
-    impl<USART: Instance, WORD> embedded_io::ErrorType for Rx<USART, WORD> {
+    impl<USART: Instance> embedded_io::ErrorType for Rx<USART> {
         type Error = Error;
     }
 
-    impl<USART: Instance> Write for Tx<USART, u8> {
+    impl<USART: Instance> Write for Tx<USART> {
         fn write(&mut self, bytes: &[u8]) -> Result<usize, Self::Error> {
             let mut i = 0;
             for byte in bytes.iter() {
@@ -134,22 +143,25 @@ mod io {
             Ok(i)
         }
 
+        #[inline(always)]
         fn flush(&mut self) -> Result<(), Self::Error> {
             self.usart.bflush()?;
             Ok(())
         }
     }
 
-    impl<USART: Instance> Write for Serial<USART, u8>
+    impl<USART: Instance> Write for Serial<USART>
     where
-        Tx<USART, u8>: Write<Error = Error>,
+        Tx<USART>: Write<Error = Error>,
     {
+        #[inline(always)]
         fn write(&mut self, bytes: &[u8]) -> Result<usize, Self::Error> {
-            self.tx.write(bytes)
+            Write::write(&mut self.tx, bytes)
         }
 
+        #[inline(always)]
         fn flush(&mut self) -> Result<(), Self::Error> {
-            self.tx.flush()
+            Write::flush(&mut self.tx)
         }
     }
 }
