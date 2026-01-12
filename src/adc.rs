@@ -138,7 +138,6 @@ use crate::{
     signature::VDDA_CALIB,
 };
 use core::fmt;
-use core::ops::Deref;
 
 pub mod config;
 mod f4;
@@ -153,10 +152,7 @@ pub struct Vbat;
 pub struct Temperature;
 
 /// Marker trait for all ADC peripherals
-pub trait Instance:
-    crate::Sealed + Deref<Target = pac::adc1::RegisterBlock> + rcc::Enable + rcc::Reset
-{
-}
+pub trait Instance: rcc::Instance + crate::Ptr<RB = pac::adc1::RegisterBlock> {}
 
 #[doc(hidden)]
 pub trait Calibrate {

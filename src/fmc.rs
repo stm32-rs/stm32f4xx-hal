@@ -7,7 +7,7 @@
 use stm32_fmc::FmcPeripheral;
 use stm32_fmc::{AddressPinSet, PinsSdram, Sdram, SdramChip, SdramPinSet, SdramTargetBank};
 
-use crate::rcc::{BusClock, Clocks, Enable, Reset};
+use crate::rcc::{BusClock, Clocks, Enable, RccBus, Reset};
 use fugit::HertzU32 as Hertz;
 
 use crate::gpio::alt::fmc as alt;
@@ -60,7 +60,7 @@ impl FmcExt for FMC_PER {
     fn fmc(self, clocks: &Clocks) -> FMC {
         FMC {
             fmc: self,
-            hclk: FMC_PER::clock(clocks),
+            hclk: <FMC_PER as RccBus>::Bus::clock(clocks),
         }
     }
 }

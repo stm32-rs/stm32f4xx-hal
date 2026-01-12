@@ -14,6 +14,7 @@
 //! the embedded-hal read and write traits with `u16` as the word type. You can use these
 //! implementations for 9-bit words.
 
+use crate::rcc::BusClock;
 use core::fmt;
 use core::marker::PhantomData;
 use enumflags2::BitFlags;
@@ -126,16 +127,7 @@ pub use config::Config;
 pub use gpio::alt::SerialAsync as CommonPins;
 
 // Implemented by all USART/UART instances
-pub trait Instance:
-    crate::Sealed
-    + crate::Ptr<RB: RegisterBlockImpl>
-    + crate::Steal
-    + core::ops::Deref<Target = Self::RB>
-    + rcc::Enable
-    + rcc::Reset
-    + rcc::BusClock
-    + CommonPins
-{
+pub trait Instance: rcc::Instance + crate::Ptr<RB: RegisterBlockImpl> + CommonPins {
     #[doc(hidden)]
     #[inline(always)]
     fn peri_address() -> u32 {
@@ -265,7 +257,7 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         USART::enable(rcc);
         USART::reset(rcc);
 
-        let pclk_freq = USART::clock(&rcc.clocks).raw();
+        let pclk_freq = USART::Bus::clock(&rcc.clocks).raw();
         let baud = config.baudrate.0;
 
         if !USART::RB::IRDA && config.irda != IrdaMode::None {
