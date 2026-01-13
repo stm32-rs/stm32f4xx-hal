@@ -159,7 +159,7 @@ fn main() -> ! {
 
         let (tx, mut rx) = uart3.split();
 
-        rx.listen_idle();
+        rx.listen(serial::RxEvent::Idle);
 
         cortex_m::interrupt::free(|cs| *G_UART3_TX.borrow(cs).borrow_mut() = Some(tx));
 

@@ -177,20 +177,35 @@ pub trait Listen {
     /// Enum of bit flags associated with events
     type Event: BitFlag;
 
+    #[doc(hidden)]
+    fn listen_event(
+        &mut self,
+        disable: Option<BitFlags<Self::Event>>,
+        enable: Option<BitFlags<Self::Event>>,
+    );
+
     /// Start listening for `Event`s
     ///
     /// Note, you will also have to enable the appropriate interrupt in the NVIC to start
     /// receiving events.
-    fn listen(&mut self, event: impl Into<BitFlags<Self::Event>>);
+    #[inline(always)]
+    fn listen(&mut self, event: impl Into<BitFlags<Self::Event>>) {
+        self.listen_event(None, Some(event.into()));
+    }
 
     /// Start listening for `Event`s, stop all other
     ///
     /// Note, you will also have to enable the appropriate interrupt in the NVIC to start
     /// receiving events.
-    fn listen_only(&mut self, event: impl Into<BitFlags<Self::Event>>);
+    #[inline(always)]
+    fn listen_only(&mut self, event: impl Into<BitFlags<Self::Event>>) {
+        self.listen_event(Some(BitFlags::ALL), Some(event.into()));
+    }
 
     /// Stop listening for `Event`s
-    fn unlisten(&mut self, event: impl Into<BitFlags<Self::Event>>);
+    fn unlisten(&mut self, event: impl Into<BitFlags<Self::Event>>) {
+        self.listen_event(Some(event.into()), None);
+    }
 
     /// Start listening all `Event`s
     #[inline(always)]

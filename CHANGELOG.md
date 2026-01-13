@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- use `Listen` for `Rx/Tx`
+
 ## [v0.23.0] - 2025-09-22
 
  - Implement `embedded_hal::i2c::I2c` for `I2cMasterDma` [#838]

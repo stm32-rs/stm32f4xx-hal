@@ -875,16 +875,13 @@ impl<SPI: Instance> Inner<SPI> {
 impl<SPI: Instance> crate::Listen for Inner<SPI> {
     type Event = Event;
 
-    fn listen(&mut self, event: impl Into<BitFlags<Self::Event>>) {
-        self.listen_event(None, Some(event.into()));
-    }
-
-    fn listen_only(&mut self, event: impl Into<BitFlags<Self::Event>>) {
-        self.listen_event(Some(BitFlags::ALL), Some(event.into()));
-    }
-
-    fn unlisten(&mut self, event: impl Into<BitFlags<Self::Event>>) {
-        self.listen_event(Some(event.into()), None);
+    #[inline(always)]
+    fn listen_event(
+        &mut self,
+        disable: Option<BitFlags<Self::Event>>,
+        enable: Option<BitFlags<Self::Event>>,
+    ) {
+        self.listen_event(disable, enable)
     }
 }
 

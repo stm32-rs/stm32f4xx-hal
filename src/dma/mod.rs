@@ -456,18 +456,12 @@ where
     type Event = DmaEvent;
 
     #[inline(always)]
-    fn listen(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        self.listen_event(None, Some(interrupts.into()));
-    }
-
-    #[inline(always)]
-    fn listen_only(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        self.listen_event(Some(BitFlags::ALL), Some(interrupts.into()));
-    }
-
-    #[inline(always)]
-    fn unlisten(&mut self, interrupts: impl Into<BitFlags<DmaEvent>>) {
-        self.listen_event(Some(interrupts.into()), None);
+    fn listen_event(
+        &mut self,
+        disable: Option<BitFlags<Self::Event>>,
+        enable: Option<BitFlags<Self::Event>>,
+    ) {
+        self.listen_event(disable, enable)
     }
 }
 
