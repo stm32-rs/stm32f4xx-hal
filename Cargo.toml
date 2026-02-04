@@ -725,6 +725,10 @@ name = "serial"
 required-features = []
 
 [[example]]
+name = "serial-echo-irq"
+required-features = []
+
+[[example]]
 name = "serial-9bit"
 required-features = ["gpiod"] # stm32f411
 
