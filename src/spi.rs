@@ -1,3 +1,4 @@
+use crate::rcc::BusClock;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 
@@ -210,13 +211,7 @@ impl<SPI: Instance, const BIDI: bool, W> DerefMut for SpiSlave<SPI, BIDI, W> {
 
 // Implemented by all SPI instances
 pub trait Instance:
-    crate::Sealed
-    + crate::Ptr<RB = spi1::RegisterBlock>
-    + Deref<Target = Self::RB>
-    + rcc::Enable
-    + rcc::Reset
-    + rcc::BusClock
-    + gpio::alt::SpiCommon
+    rcc::Instance + crate::Ptr<RB = spi1::RegisterBlock> + gpio::alt::SpiCommon
 {
 }
 
@@ -488,7 +483,7 @@ impl<SPI: Instance> Spi<SPI, false, u8> {
         );
 
         Self::_new(spi, pins)
-            .pre_init(mode.into(), freq, SPI::clock(&rcc.clocks))
+            .pre_init(mode.into(), freq, SPI::Bus::clock(&rcc.clocks))
             .init()
     }
 }
@@ -512,7 +507,7 @@ impl<SPI: Instance> Spi<SPI, true, u8> {
         let pins = (pins.0, SPI::NoMiso, pins.1);
 
         Self::_new(spi, pins)
-            .pre_init(mode.into(), freq, SPI::clock(&rcc.clocks))
+            .pre_init(mode.into(), freq, SPI::Bus::clock(&rcc.clocks))
             .init()
     }
 }

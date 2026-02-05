@@ -220,16 +220,7 @@ pub struct Receive;
 /// SAI sub-block which has been configured as a transmitter.
 pub struct Transmit;
 
-pub trait Instance:
-    crate::Sealed
-    + crate::Ptr<RB = sai::RegisterBlock>
-    + crate::Steal
-    + Deref<Target = Self::RB>
-    + rcc::Enable
-    + rcc::Reset
-    + rcc::BusClock
-{
-}
+pub trait Instance: rcc::Instance + crate::Ptr<RB = sai::RegisterBlock> {}
 
 impl<SAI: Instance, const C: bool> SAICH<SAI, C> {
     fn new(sai: SAI) -> Self {

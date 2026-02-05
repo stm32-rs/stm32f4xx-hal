@@ -4,6 +4,7 @@
 //! (`AlternateOD`).
 #![allow(non_upper_case_globals)]
 
+use crate::rcc::BusTimerClock;
 use core::convert::TryFrom;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
@@ -485,10 +486,7 @@ mod sealed {
 }
 pub(crate) use sealed::{Advanced, General, MasterTimer, WithCapture, WithChannel, WithPwm};
 
-pub trait Instance:
-    crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock + General
-{
-}
+pub trait Instance: rcc::Instance + rcc::RccBus<Bus: rcc::BusTimerClock> + General {}
 
 #[allow(unused)]
 use sealed::{Split, SplitCapture};
@@ -901,13 +899,13 @@ impl<TIM: Instance> Timer<TIM> {
         TIM::reset(rcc);
 
         Self {
-            clk: TIM::timer_clock(&rcc.clocks),
+            clk: TIM::Bus::timer_clock(&rcc.clocks),
             tim,
         }
     }
 
     pub fn configure(&mut self, clocks: &Clocks) {
-        self.clk = TIM::timer_clock(clocks);
+        self.clk = TIM::Bus::timer_clock(clocks);
     }
 
     pub fn counter_hz(self) -> CounterHz<TIM> {
@@ -954,7 +952,7 @@ impl<TIM: Instance, const FREQ: u32> FTimer<TIM, FREQ> {
 
     /// Calculate prescaler depending on `Clocks` state
     pub fn configure(&mut self, clocks: &Clocks) {
-        let clk = TIM::timer_clock(clocks);
+        let clk = TIM::Bus::timer_clock(clocks);
         assert!(clk.raw() % FREQ == 0);
         let psc = clk.raw() / FREQ;
         self.tim.set_prescaler(u16::try_from(psc - 1).unwrap());

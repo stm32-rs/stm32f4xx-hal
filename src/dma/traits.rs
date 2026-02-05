@@ -3,7 +3,6 @@ use crate::{
     pac::{self, DMA1, DMA2},
     timer,
 };
-use core::ops::Deref;
 use enumflags2::BitFlags;
 
 pub(crate) mod sealed {
@@ -302,10 +301,7 @@ use address;
 pub type DMARegisterBlock = pac::dma1::RegisterBlock;
 
 /// Trait that represents an instance of a DMA peripheral.
-pub trait Instance:
-    crate::Sealed + crate::Ptr<RB = DMARegisterBlock> + Deref<Target = Self::RB>
-{
-}
+pub trait Instance: rcc::Instance + crate::Ptr<RB = DMARegisterBlock> {}
 
 impl Instance for DMA1 {}
 impl Instance for DMA2 {}
