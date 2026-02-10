@@ -273,7 +273,7 @@ fn main() -> ! {
     defmt::info!("Outputting Color/BER test patterns. Touch to toggle test mode.");
 
     let mut current_pattern_is_color = true;
-    let mut pattern_timer = 0u32;
+    let mut pattern_counter = 0u32;
     let pattern_switch_delay = 500;
     let mut touch_error_throttle = 0u8;
 
@@ -289,8 +289,7 @@ fn main() -> ! {
                         break;
                     }
                     Err(_) => {
-                        touch_error_throttle = touch_error_throttle.wrapping_add(1);
-                        if touch_error_throttle % TOUCH_ERROR_LOG_THROTTLE == 0 {
+                        if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE == 0 {
                             defmt::warn!(
                                 "detect_touch read error (attempt {})",
                                 attempt + 1
@@ -302,8 +301,7 @@ fn main() -> ! {
             }
 
             let Some(num) = detected_touches else {
-                touch_error_throttle = touch_error_throttle.wrapping_add(1);
-                if touch_error_throttle % TOUCH_ERROR_LOG_THROTTLE == 0 {
+                if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE == 0 {
                     defmt::warn!(
                         "detect_touch timed out after {} attempts",
                         TOUCH_MAX_RETRIES
@@ -312,7 +310,7 @@ fn main() -> ! {
                 pattern_loop_housekeeping(
                     &mut dsi_host,
                     &mut current_pattern_is_color,
-                    &mut pattern_timer,
+                    &mut pattern_counter,
                     pattern_switch_delay,
                 );
                 delay.delay_ms(10u32);
@@ -330,8 +328,7 @@ fn main() -> ! {
                             break;
                         }
                         Err(_) => {
-                            touch_error_throttle = touch_error_throttle.wrapping_add(1);
-                            if touch_error_throttle % TOUCH_ERROR_LOG_THROTTLE == 0 {
+                            if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE == 0 {
                                 defmt::warn!(
                                     "get_touch read error (attempt {})",
                                     attempt + 1
@@ -358,8 +355,7 @@ fn main() -> ! {
                         }
                     }
                     None => {
-                        touch_error_throttle = touch_error_throttle.wrapping_add(1);
-                        if touch_error_throttle % TOUCH_ERROR_LOG_THROTTLE == 0 {
+                        if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE == 0 {
                             defmt::warn!(
                                 "get_touch timed out after {} attempts",
                                 TOUCH_MAX_RETRIES
@@ -373,7 +369,7 @@ fn main() -> ! {
         pattern_loop_housekeeping(
             &mut dsi_host,
             &mut current_pattern_is_color,
-            &mut pattern_timer,
+            &mut pattern_counter,
             pattern_switch_delay,
         );
 
@@ -381,15 +377,20 @@ fn main() -> ! {
     }
 }
 
+fn increment_error_throttle(counter: &mut u8) -> u8 {
+    *counter = counter.wrapping_add(1);
+    *counter
+}
+
 fn pattern_loop_housekeeping(
     dsi_host: &mut DsiHost,
     current_pattern_is_color: &mut bool,
-    pattern_timer: &mut u32,
+    pattern_counter: &mut u32,
     pattern_switch_delay: u32,
 ) {
-    *pattern_timer += 1;
-    if *pattern_timer >= pattern_switch_delay {
-        *pattern_timer = 0;
+    *pattern_counter += 1;
+    if *pattern_counter >= pattern_switch_delay {
+        *pattern_counter = 0;
         *current_pattern_is_color = !*current_pattern_is_color;
 
         if *current_pattern_is_color {
