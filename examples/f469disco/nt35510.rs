@@ -40,7 +40,7 @@ impl Nt35510 {
     pub fn probe<D: DelayUs<u32>>(
         &mut self,
         dsi_host: &mut DsiHost,
-        _delay: &mut D,
+        _delay: &mut D, // Unused for this controller; present for API consistency
     ) -> Result<(), Nt35510Error> {
         let mut id1 = [0u8; 1];
         match dsi_host.read(DsiReadCommand::DcsShort { arg: CMD_RDID1 }, &mut id1) {
@@ -61,6 +61,11 @@ impl Nt35510 {
         dsi_host: &mut DsiHost,
         delay: &mut D,
     ) -> Result<(), Nt35510Error> {
+        if self.initialized {
+            defmt::warn!("NT35510 already initialized, skipping re-initialization");
+            return Ok(());
+        }
+        
         self.write_reg(dsi_host, 0xF0, &[0x55, 0xAA, 0x52, 0x08, 0x01])?;
         self.write_reg(dsi_host, 0xB0, &[0x03, 0x03, 0x03])?;
         self.write_reg(dsi_host, 0xB6, &[0x46, 0x46, 0x46])?;

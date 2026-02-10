@@ -62,6 +62,7 @@ compile_error!("features `nt35510-only` and `otm8009a-only` cannot be enabled to
 
 const TOUCH_ERROR_LOG_THROTTLE: u8 = 16;
 const TOUCH_MAX_RETRIES: u8 = 3;
+const FT6X06_I2C_ADDR: u8 = 0x38;
 
 // Display configurations for different controllers
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -168,8 +169,8 @@ fn main() -> ! {
         interrupts: DsiInterrupts::None,
         color_coding_host: ColorCoding::TwentyFourBits,
         color_coding_wrapper: ColorCoding::TwentyFourBits,
-        lp_size: 64,  // NT35510 compatible
-        vlp_size: 64, // NT35510 compatible
+        lp_size: 64,  // Increased for NT35510 compatibility; also works for OTM8009A
+        vlp_size: 64, // Increased for NT35510 compatibility; also works for OTM8009A
     };
 
     defmt::info!("Initializing DSI {:?} {:?}", dsi_config, dsi_pll_config);
@@ -251,7 +252,7 @@ fn main() -> ! {
     let mut i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
 
     let ts_int = gpioc.pc0.into_pull_down_input();
-    let mut touch = match Ft6X06::new(&i2c, 0x38, ts_int) {
+    let mut touch = match Ft6X06::new(&i2c, FT6X06_I2C_ADDR, ts_int) {
         Ok(touch) => Some(touch),
         Err(_) => {
             defmt::warn!("Touch controller unavailable");
