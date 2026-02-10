@@ -141,7 +141,12 @@ use core::fmt;
 use core::ops::Deref;
 
 pub mod config;
+
+#[cfg(feature = "f4")]
 mod f4;
+
+#[cfg(feature = "f7")]
+mod f7;
 
 /// Vref internal signal, used for calibration
 pub struct Vref;

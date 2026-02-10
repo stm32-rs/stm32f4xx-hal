@@ -1,7 +1,15 @@
+#[cfg(feature = "f4")]
 use stm32f4::{Readable, Reg, RegisterSpec, Resettable, Writable, R, W};
 
+#[cfg(feature = "f4")]
+#[path = "./pacext/uart_v2.rs"]
 pub mod uart;
 
+#[cfg(feature = "f7")]
+#[path = "./pacext/uart_v3.rs"]
+pub mod uart;
+
+#[cfg(feature = "f4")]
 macro_rules! wrap_r {
     (pub trait $TrR:ident {
         $(fn $f:ident(&self $(, $n:ident: u8)?) -> $fr:path;)*
@@ -19,8 +27,10 @@ macro_rules! wrap_r {
         }
     };
 }
+#[cfg(feature = "f4")]
 pub(crate) use wrap_r;
 
+#[cfg(feature = "f4")]
 macro_rules! wrap_w {
     (pub trait $TrR:ident {
         $(fn $f:ident(&mut self $(, $n:ident: u8)?) -> $fr:path;)*
@@ -39,6 +49,7 @@ macro_rules! wrap_w {
         }
     };
 }
+#[cfg(feature = "f4")]
 pub(crate) use wrap_w;
 
 macro_rules! impl_reg {
@@ -53,6 +64,7 @@ macro_rules! impl_reg {
 }
 pub(crate) use impl_reg;
 
+#[cfg(feature = "f4")]
 macro_rules! impl_read {
     ($($f:ident $(: $n:ident)? -> $fty:path;)*) => {
         $(
@@ -63,8 +75,10 @@ macro_rules! impl_read {
         )*
     };
 }
+#[cfg(feature = "f4")]
 pub(crate) use impl_read;
 
+#[cfg(feature = "f4")]
 macro_rules! impl_write {
     ($($f:ident $(: $n:ident)? -> $fty:path;)*) => {
         $(
@@ -75,4 +89,5 @@ macro_rules! impl_write {
         )*
     };
 }
+#[cfg(feature = "f4")]
 pub(crate) use impl_write;

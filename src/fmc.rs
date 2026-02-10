@@ -163,7 +163,12 @@ pins! {
     NWE: Nwe;
 }
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f446", feature = "gpio-f469"))]
+#[cfg(any(
+    feature = "f7",
+    feature = "gpio-f427",
+    feature = "gpio-f446",
+    feature = "gpio-f469"
+))]
 pins! {
     BA0: Ba0;
     BA1: Ba1;
@@ -177,7 +182,7 @@ pins! {
     SDNWE: Sdnwe;
 }
 
-#[cfg(any(feature = "gpio-f427", feature = "gpio-f469"))]
+#[cfg(any(feature = "f7", feature = "gpio-f427", feature = "gpio-f469"))]
 pins! {
     D16: D16;
     D17: D17;
@@ -199,7 +204,7 @@ pins! {
     NBL3: Nbl3;
 }
 
-#[cfg(feature = "gpio-f469")]
+#[cfg(any(feature = "f7", feature = "gpio-f469"))]
 pins! {
     INT: Int;
 }
@@ -216,4 +221,8 @@ pins! {
 #[cfg(any(feature = "gpio-f417", feature = "gpio-f427"))]
 pins! {
     NCE: Nce2;
+}
+#[cfg(feature = "f7")]
+pins! {
+    NCE: Nce;
 }

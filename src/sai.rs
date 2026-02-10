@@ -32,7 +32,12 @@ use crate::pac::SAI2;
     feature = "stm32f439"
 ))]
 use crate::pac::{sai, SAI as SAI1};
-#[cfg(any(feature = "stm32f427", feature = "stm32f437", feature = "stm32f446"))]
+#[cfg(any(
+    feature = "f7",
+    feature = "stm32f427",
+    feature = "stm32f437",
+    feature = "stm32f446"
+))]
 use crate::pac::{sai1 as sai, SAI1};
 use crate::rcc;
 use crate::time::Hertz;
@@ -306,6 +311,8 @@ impl<SAI, const C: bool> ChannelClocks for SAICH<SAI, C> {
     }
 }
 
+// TODO: f7
+#[cfg(feature = "f4")]
 #[cfg(feature = "sai2")]
 impl<const C: bool> ChannelClocks for SAICH<SAI1, C> {
     fn get_clk_frequency(clocks: &rcc::Clocks) -> Option<Hertz> {
@@ -313,6 +320,8 @@ impl<const C: bool> ChannelClocks for SAICH<SAI1, C> {
     }
 }
 
+// TODO: f7
+#[cfg(feature = "f4")]
 #[cfg(feature = "sai2")]
 impl<const C: bool> ChannelClocks for SAICH<SAI2, C> {
     fn get_clk_frequency(clocks: &rcc::Clocks) -> Option<Hertz> {
