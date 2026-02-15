@@ -107,15 +107,17 @@ pub const NT35510_DISPLAY_CONFIG: DisplayConfig = DisplayConfig {
 };
 
 // OTM8009A timing (B07 and earlier revisions)
+// Values from STMicroelectronics/stm32-otm8009a otm8009a.h
+// Tested on KoD KM-040TMP-02-0621 WVGA display
 #[cfg(not(feature = "nt35510-only"))]
 pub const OTM8009A_DISPLAY_CONFIG: DisplayConfig = DisplayConfig {
     active_width: WIDTH as _,
     active_height: HEIGHT as _,
-    h_back_porch: 20,
-    h_front_porch: 20,
-    v_back_porch: 10,
-    v_front_porch: 10,
-    h_sync: 1,
+    h_back_porch: 34,
+    h_front_porch: 34,
+    v_back_porch: 15,
+    v_front_porch: 16,
+    h_sync: 2,
     v_sync: 1,
     frame_rate: 60,
     h_sync_pol: true,
