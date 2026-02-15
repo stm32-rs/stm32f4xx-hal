@@ -65,7 +65,7 @@ impl Nt35510 {
             defmt::warn!("NT35510 already initialized, skipping re-initialization");
             return Ok(());
         }
-        
+
         self.write_reg(dsi_host, 0xF0, &[0x55, 0xAA, 0x52, 0x08, 0x01])?;
         self.write_reg(dsi_host, 0xB0, &[0x03, 0x03, 0x03])?;
         self.write_reg(dsi_host, 0xB6, &[0x46, 0x46, 0x46])?;
