@@ -290,11 +290,11 @@ fn main() -> ! {
                         break;
                     }
                     Err(_) => {
-                        if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE == 0 {
-                            defmt::warn!(
-                                "detect_touch read error (attempt {})",
-                                attempt + 1
-                            );
+                        if increment_error_throttle(&mut touch_error_throttle)
+                            % TOUCH_ERROR_LOG_THROTTLE
+                            == 0
+                        {
+                            defmt::warn!("detect_touch read error (attempt {})", attempt + 1);
                         }
                         delay.delay_us(500u32);
                     }
@@ -302,7 +302,9 @@ fn main() -> ! {
             }
 
             let Some(num) = detected_touches else {
-                if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE == 0 {
+                if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE
+                    == 0
+                {
                     defmt::warn!(
                         "detect_touch timed out after {} attempts",
                         TOUCH_MAX_RETRIES
@@ -329,11 +331,11 @@ fn main() -> ! {
                             break;
                         }
                         Err(_) => {
-                            if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE == 0 {
-                                defmt::warn!(
-                                    "get_touch read error (attempt {})",
-                                    attempt + 1
-                                );
+                            if increment_error_throttle(&mut touch_error_throttle)
+                                % TOUCH_ERROR_LOG_THROTTLE
+                                == 0
+                            {
+                                defmt::warn!("get_touch read error (attempt {})", attempt + 1);
                             }
                             delay.delay_us(500u32);
                         }
@@ -356,7 +358,10 @@ fn main() -> ! {
                         }
                     }
                     None => {
-                        if increment_error_throttle(&mut touch_error_throttle) % TOUCH_ERROR_LOG_THROTTLE == 0 {
+                        if increment_error_throttle(&mut touch_error_throttle)
+                            % TOUCH_ERROR_LOG_THROTTLE
+                            == 0
+                        {
                             defmt::warn!(
                                 "get_touch timed out after {} attempts",
                                 TOUCH_MAX_RETRIES
