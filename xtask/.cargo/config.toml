@@ -1,0 +1,8 @@
+# Override the project-wide ARM build target — xtask runs on the host.
+# When running from this directory (cd xtask && cargo run), this overrides
+# the parent's thumbv7em-none-eabihf target.
+#
+# If you are on macOS/Windows, change the target below to match your host,
+# or run: cargo run --target <your-host-triple> -- <args>
+[build]
+target = "x86_64-unknown-linux-gnu"

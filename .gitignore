@@ -1,4 +1,6 @@
 /target/
+/xtask/target/
+/boards/*/target/
 **/*.orig
 **/*.rs.bk
 Cargo.lock

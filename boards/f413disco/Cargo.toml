@@ -1,0 +1,17 @@
+[package]
+name = "f413disco-examples"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+stm32f4xx-hal = { path = "../..", features = ["stm32f413", "fsmc_lcd"] }
+cortex-m = "0.7"
+cortex-m-rt = "0.7"
+panic-halt = "1.0"
+rtt-target = "0.6"
+embedded-graphics = "0.8"
+embedded-graphics-07 = { package = "embedded-graphics", version = "0.7.1" }
+st7789 = "0.7"
+display-interface = "0.5"
+display-interface-04 = { package = "display-interface", version = "0.4.1" }

@@ -1,0 +1,17 @@
+[package]
+name = "f469disco-examples"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+stm32f4xx-hal = { path = "../..", features = ["stm32f469", "stm32-fmc", "defmt", "framebuffer"] }
+cortex-m = "0.7"
+cortex-m-rt = "0.7"
+defmt = "1.0"
+defmt-rtt = "1.0"
+panic-probe = { version = "1.0", features = ["print-defmt"] }
+embedded-graphics = "0.8"
+otm8009a = "0.1"
+stm32-fmc = "0.4"
+ft6x06 = "0.1"

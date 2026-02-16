@@ -1,0 +1,6 @@
+[target.thumbv7em-none-eabihf]
+runner = 'probe-rs run --chip STM32F413ZHTx'
+rustflags = ["-C", "link-arg=-Tlink.x"]
+
+[build]
+target = "thumbv7em-none-eabihf"

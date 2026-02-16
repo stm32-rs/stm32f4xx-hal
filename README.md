@@ -57,6 +57,7 @@ single model.
 * `fsmc_lcd` — LCD support via FMC/FSMC peripheral. See [display-interface](https://crates.io/crates/display-interface).
 * `sdio-host` — SDIO peripheral support. See [sdio-host](https://crates.io/crates/sdio-host).
 * `dsihost` — DSI host support. See [embedded-display-controller](https://crates.io/crates/embedded-display-controller).
+* `framebuffer` — LTDC framebuffer abstraction with `DrawTarget`. See [embedded-graphics-core](https://crates.io/crates/embedded-graphics-core).
 
 Collaboration on this crate is highly welcome as are pull requests!
 
@@ -70,6 +71,57 @@ crate originally started by Jorge Aparicio.
 [stm32f4]: https://crates.io/crates/stm32f4
 [stm32f1xx-hal]: https://github.com/stm32-rs/stm32f1xx-hal
 [embedded-hal]: https://github.com/rust-embedded/embedded-hal
+
+## Board Example Crates
+
+This repository includes structured example crates for STM32 Discovery boards
+in the `boards/` directory:
+
+| Board Crate | MCU | Display | Interface |
+|-------------|-----|---------|-----------|
+| `boards/f469disco` | STM32F469NI | OTM8009A / NT35510 | DSI + LTDC |
+| `boards/f429disco` | STM32F429ZI | ILI9341 | LTDC |
+| `boards/f413disco` | STM32F413ZH | ST7789H2 | FSMC |
+
+### Building Board Examples
+
+```bash
+# F469I-DISCO (DSI display with SDRAM framebuffer)
+cargo build --release -p f469disco-examples --bin lcd-framebuffer
+
+# F413H-DISCO (ST7789 via FSMC parallel bus)
+cargo build --release -p f413disco-examples --bin st7789-fsmc
+
+# F429I-DISCO (LTDC framebuffer)
+cargo build --release -p f429disco-examples --bin ltdc-framebuffer
+```
+
+### Cross-Board Portability
+
+All board examples use `DrawTarget` from embedded-graphics, enabling portable
+drawing code:
+
+```rust
+use embedded_graphics::prelude::*;
+use embedded_graphics::pixelcolor::Rgb565;
+use embedded_graphics::primitives::{Rectangle, PrimitiveStyle};
+
+fn draw_ui<D: DrawTarget<Color = Rgb565>>(display: &mut D) {
+    Rectangle::new(Point::new(10, 10), Size::new(100, 50))
+        .into_styled(PrimitiveStyle::with_fill(Rgb565::RED))
+        .draw(display)
+        .unwrap();
+}
+```
+
+### Build Orchestration
+
+Use the xtask tool to check all board/example combinations:
+
+```bash
+cargo xtask check-all
+cargo xtask run-example --board f469disco --example f469disco-lcd-test
+```
 
 ## Setting up your project
 

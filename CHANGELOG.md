@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+ - Improve STM32F469I-DISCO LCD controller detection (NT35510/OTM8009A), including NT35510 RDID1 validation and probe retries [#842] [#843]
+ - Use runtime autodetection for LCD controller and improve f469 LCD test touch error handling/logging
+
 ## [v0.23.0] - 2025-09-22
 
  - Implement `embedded_hal::i2c::I2c` for `I2cMasterDma` [#838]
@@ -37,6 +40,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#839]: https://github.com/stm32-rs/stm32f4xx-hal/pull/839
 [#841]: https://github.com/stm32-rs/stm32f4xx-hal/pull/841
 [#859]: https://github.com/stm32-rs/stm32f4xx-hal/pull/859
+[#842]: https://github.com/stm32-rs/stm32f4xx-hal/issues/842
+[#843]: https://github.com/stm32-rs/stm32f4xx-hal/pull/843
 
 ## [v0.22.1] - 2024-11-03
 
