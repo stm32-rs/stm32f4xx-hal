@@ -1,9 +1,9 @@
 use crate::pacext::uart::{Cr3W, SrR, UartRB};
 
-use super::{config, config::IrdaMode, CFlag, Error, Event, Flag};
+use super::{config, config::IrdaMode, CFlag, Error, Event, Flag, RxEvent, TxEvent};
 use enumflags2::BitFlags;
 
-pub trait RegisterBlockImpl: UartRB {
+pub trait RBExt: UartRB {
     const IRDA: bool;
     fn configure_irda(&self, irda: IrdaMode, pclk_freq: u32);
     fn set_stopbits(&self, bits: config::StopBits);
@@ -171,29 +171,34 @@ pub trait RegisterBlockImpl: UartRB {
         });
     }
 
-    #[inline(always)]
-    fn listen_rxne(&self) {
-        self.listen_event(None, Some(Event::RxNotEmpty.into()))
+    fn listen_rx(&self, disable: Option<BitFlags<RxEvent>>, enable: Option<BitFlags<RxEvent>>) {
+        self.cr1().modify(|r, w| unsafe {
+            w.bits({
+                let mut bits = r.bits();
+                if let Some(d) = disable {
+                    bits &= !(d.bits());
+                }
+                if let Some(e) = enable {
+                    bits |= e.bits();
+                }
+                bits
+            })
+        });
     }
-    #[inline(always)]
-    fn unlisten_rxne(&self) {
-        self.listen_event(Some(Event::RxNotEmpty.into()), None)
-    }
-    #[inline(always)]
-    fn listen_idle(&self) {
-        self.listen_event(None, Some(Event::Idle.into()))
-    }
-    #[inline(always)]
-    fn unlisten_idle(&self) {
-        self.listen_event(Some(Event::Idle.into()), None)
-    }
-    #[inline(always)]
-    fn listen_txe(&self) {
-        self.listen_event(None, Some(Event::TxEmpty.into()))
-    }
-    #[inline(always)]
-    fn unlisten_txe(&self) {
-        self.listen_event(Some(Event::TxEmpty.into()), None)
+
+    fn listen_tx(&self, disable: Option<BitFlags<TxEvent>>, enable: Option<BitFlags<TxEvent>>) {
+        self.cr1().modify(|r, w| unsafe {
+            w.bits({
+                let mut bits = r.bits();
+                if let Some(d) = disable {
+                    bits &= !(d.bits());
+                }
+                if let Some(e) = enable {
+                    bits |= e.bits();
+                }
+                bits
+            })
+        });
     }
 
     // PeriAddress
@@ -221,7 +226,7 @@ pub trait RegisterBlockImpl: UartRB {
     }
 }
 
-impl RegisterBlockImpl for crate::pac::usart1::RegisterBlock {
+impl RBExt for crate::pac::usart1::RegisterBlock {
     const IRDA: bool = true;
     fn set_stopbits(&self, bits: config::StopBits) {
         use crate::pac::usart1::cr2::STOP;
@@ -256,7 +261,7 @@ impl RegisterBlockImpl for crate::pac::usart1::RegisterBlock {
 }
 
 #[cfg(feature = "uart4")]
-impl RegisterBlockImpl for crate::pac::uart4::RegisterBlock {
+impl RBExt for crate::pac::uart4::RegisterBlock {
     const IRDA: bool = false;
     fn set_stopbits(&self, bits: config::StopBits) {
         use crate::pac::uart4::cr2::STOP;

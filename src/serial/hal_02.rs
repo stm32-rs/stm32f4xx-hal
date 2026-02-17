@@ -1,6 +1,6 @@
 mod nb {
     #[allow(unused)]
-    use super::super::RegisterBlockImpl;
+    use super::super::RBExt;
     use super::super::{Error, Instance, Rx, Serial, Tx};
     use embedded_hal_02::serial::{Read, Write};
 
@@ -84,7 +84,7 @@ mod blocking {
     use core::ops::Deref;
 
     #[allow(unused)]
-    use super::super::RegisterBlockImpl;
+    use super::super::RBExt;
     use super::super::{Error, Instance, Serial, Tx};
     use embedded_hal_02::blocking::serial::Write;
 
