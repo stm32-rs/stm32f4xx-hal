@@ -1,0 +1,23 @@
+on:
+  push:
+    branches: [ staging, trying, master ]
+  pull_request:
+
+name: Examples bloat check
+
+jobs:
+  cargo_bloat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: thumbv7em-none-eabihf
+          override: true
+      - uses: orf/cargo-bloat-action@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          by_function: 1
+          bloat_args: --target=thumbv7em-none-eabihf --release -n 0 --message-format=json --features=stm32f429,rt,usb_fs --example dwt-blinky
