@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
  - Add NT35510 LCD controller support with auto-detection for STM32F469I-DISCO [#843]
+ - Add `LtdcFramebuffer` with `embedded-graphics` DrawTarget support (feature `framebuffer`) [#TBD]
 
 ## [v0.23.0] - 2025-09-22
 
