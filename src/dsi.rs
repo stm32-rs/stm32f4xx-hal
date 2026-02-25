@@ -6,7 +6,7 @@ use crate::ltdc::DisplayConfig;
 use crate::rcc::{Enable, Rcc};
 use crate::{pac::DSI, time::Hertz};
 use core::cmp::{max, min};
-use embedded_display_controller::dsi::{DsiHostCtrlIo, DsiReadCommand, DsiWriteCommand};
+pub use embedded_display_controller::dsi::{DsiHostCtrlIo, DsiReadCommand, DsiWriteCommand};
 
 const DSI_TIMEOUT_MS: usize = 100;
 
@@ -592,18 +592,24 @@ impl DsiHostCtrlIo for DsiHost {
             Error::FifoTimeout,
         )?;
         match kind {
-            DsiWriteCommand::DcsShortP0 { .. } => todo!(),
+            DsiWriteCommand::DcsShortP0 { arg } => {
+                self.ghcr_write(0, arg, kind.discriminant());
+            }
             DsiWriteCommand::DcsShortP1 { arg, data } => {
-                // debug!("{}, short_p1: reg: {reg:02x}, data: {data:02x}", self.write_idx);
-                // self.write_idx += 1;
                 self.ghcr_write(data, arg, kind.discriminant());
             }
             DsiWriteCommand::DcsLongWrite { arg, data } => {
                 self.long_write(arg, data, kind.discriminant())?
             }
-            DsiWriteCommand::GenericShortP0 => todo!(),
-            DsiWriteCommand::GenericShortP1 => todo!(),
-            DsiWriteCommand::GenericShortP2 => todo!(),
+            DsiWriteCommand::GenericShortP0 => {
+                self.ghcr_write(0, 0, kind.discriminant());
+            }
+            DsiWriteCommand::GenericShortP1 => {
+                self.ghcr_write(0, 0, kind.discriminant());
+            }
+            DsiWriteCommand::GenericShortP2 => {
+                self.ghcr_write(0, 0, kind.discriminant());
+            }
             DsiWriteCommand::GenericLongWrite { arg, data } => {
                 self.long_write(arg, data, kind.discriminant())?
             }

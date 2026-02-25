@@ -300,7 +300,7 @@ impl<T: 'static + SupportedWord> DisplayController<T> {
         rcc.cr().modify(|_, w| w.pllsaion().on());
         while rcc.cr().read().pllsairdy().is_not_ready() {}
 
-        // Configure LTDC Timing registers
+        // Configure LTDC Timing registers, polarity, background color, and enable display
         ltdc.sscr().write(|w| {
             w.hsw().set(config.h_sync - 1);
             w.vsh().set(config.v_sync - 1)
@@ -350,6 +350,99 @@ impl<T: 'static + SupportedWord> DisplayController<T> {
             buffer2: None,
             pixel_format,
         }
+    }
+
+    /// Create and configure the DisplayController for use with a DSI host.
+    ///
+    /// Unlike [`Self::new`], this constructor does **not** configure PLLSAI because the
+    /// DSI host PLL provides the pixel clock. It also does not require parallel RGB
+    /// [`LtdcPins`] since the LTDC output is routed internally to the DSI wrapper.
+    ///
+    /// Call [`crate::dsi::DsiHost::init`] **before** this method so that the DSI PLL is
+    /// already running when the LTDC starts.
+    pub fn new_dsi(
+        ltdc: LTDC,
+        dma2d: DMA2D,
+        pixel_format: PixelFormat,
+        config: DisplayConfig,
+    ) -> DisplayController<T> {
+        let total_width: u16 =
+            config.h_sync + config.h_back_porch + config.active_width + config.h_front_porch - 1;
+        let total_height: u16 =
+            config.v_sync + config.v_back_porch + config.active_height + config.v_front_porch - 1;
+
+        // TODO : change it to something safe ...
+        unsafe {
+            // Enable LTDC
+            LTDC::enable_unchecked();
+            // Reset LTDC peripheral
+            LTDC::reset_unchecked();
+
+            // Enable DMA2D
+            DMA2D::enable_unchecked();
+            // Reset DMA2D
+            DMA2D::reset_unchecked();
+        }
+
+        Self::configure_timing_and_enable(&ltdc, &config, total_width, total_height, 0x00000000);
+
+        DisplayController {
+            _ltdc: ltdc,
+            _dma2d: dma2d,
+            config,
+            buffer1: None,
+            buffer2: None,
+            pixel_format,
+        }
+    }
+
+    /// Configure LTDC timing registers, polarity, background color, and enable the display.
+    fn configure_timing_and_enable(
+        ltdc: &LTDC,
+        config: &DisplayConfig,
+        total_width: u16,
+        total_height: u16,
+        background_color: u32,
+    ) {
+        // Configure LTDC Timing registers
+        ltdc.sscr().write(|w| {
+            w.hsw().set(config.h_sync - 1);
+            w.vsh().set(config.v_sync - 1)
+        });
+        ltdc.bpcr().write(|w| {
+            w.ahbp().set(config.h_sync + config.h_back_porch - 1);
+            w.avbp().set(config.v_sync + config.v_back_porch - 1)
+        });
+        ltdc.awcr().write(|w| {
+            w.aaw()
+                .set(config.h_sync + config.h_back_porch + config.active_width - 1);
+            w.aah()
+                .set(config.v_sync + config.v_back_porch + config.active_height - 1)
+        });
+        ltdc.twcr().write(|w| {
+            w.totalw().set(total_width);
+            w.totalh().set(total_height)
+        });
+
+        // Configure LTDC signals polarity
+        ltdc.gcr().write(|w| {
+            w.hspol().bit(config.h_sync_pol);
+            w.vspol().bit(config.v_sync_pol);
+            w.depol().bit(config.no_data_enable_pol);
+            w.pcpol().bit(config.pixel_clock_pol)
+        });
+
+        // Set background color
+        ltdc.bccr().write(|w| unsafe { w.bits(background_color) });
+
+        // Reload ltdc config immediately
+        ltdc.srcr().modify(|_, w| w.imr().set_bit());
+        // Turn display ON
+        ltdc.gcr()
+            .modify(|_, w| w.ltdcen().set_bit().den().set_bit());
+
+        // Reload ltdc config immediately
+        ltdc.srcr().modify(|_, w| w.imr().set_bit());
     }
 
     /// Configure the layer
