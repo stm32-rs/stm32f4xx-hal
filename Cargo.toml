@@ -538,8 +538,6 @@ i2c3 = []
 lptim1 = []
 ltdc = ["dep:micromath"]
 framebuffer = ["dep:embedded-graphics-core"]
-nt35510-only = []
-otm8009a-only = []
 quadspi = []
 otg-fs = []
 otg-hs = []
@@ -629,8 +627,28 @@ required-features = [
 ] # stm32f413
 
 [[example]]
+name = "f469disco-animated-layers"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"]
+
+[[example]]
+name = "f469disco-hello-eg"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"]
+
+[[example]]
+name = "f469disco-image-slider"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"]
+
+[[example]]
 name = "f469disco-lcd-test"
-required-features = ["stm32f469", "defmt"]
+required-features = ["stm32f469", "stm32-fmc", "defmt"]
+
+[[example]]
+name = "f469disco-paint"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"]
+
+[[example]]
+name = "f469disco-slideshow"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"]
 
 [[example]]
 name = "hd44780"

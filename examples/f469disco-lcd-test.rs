@@ -4,23 +4,6 @@
 //! - B08 revision (NT35510 LCD controller) - auto-detected and preferred
 //! - B07 and earlier (OTM8009A LCD controller) - fallback
 //!
-//! Runtime auto-detection is used by default. For fixed hardware you can force one panel with
-//! `nt35510-only` or `otm8009a-only`.
-//!
-//! ## Build variants
-//! ```bash
-//! # Runtime detection (default)
-//! cargo check --example f469disco-lcd-test --features="stm32f469,defmt"
-//!
-//! # Force NT35510 for B08 boards
-//! cargo check --example f469disco-lcd-test --features="stm32f469,defmt,nt35510-only"
-//!
-//! # Force OTM8009A for B07 and earlier boards
-//! cargo check --example f469disco-lcd-test --features="stm32f469,defmt,otm8009a-only"
-//! ```
-//!
-//! The `nt35510-only` and `otm8009a-only` features are mutually exclusive.
-//!
 //! Run as:
 //! cargo run --release --example f469disco-lcd-test --features="stm32f469,defmt"
 
@@ -31,7 +14,6 @@
 extern crate cortex_m;
 extern crate cortex_m_rt as rt;
 
-#[cfg(not(feature = "otm8009a-only"))]
 #[path = "f469disco/nt35510.rs"]
 mod nt35510;
 
@@ -54,11 +36,7 @@ use crate::hal::{
 };
 
 use ft6x06::Ft6X06;
-#[cfg(not(feature = "nt35510-only"))]
 use otm8009a::{Otm8009A, Otm8009AConfig};
-
-#[cfg(all(feature = "nt35510-only", feature = "otm8009a-only"))]
-compile_error!("features `nt35510-only` and `otm8009a-only` cannot be enabled together");
 
 const TOUCH_ERROR_LOG_THROTTLE: u8 = 16;
 const TOUCH_MAX_RETRIES: u8 = 3;
@@ -68,18 +46,14 @@ const FT6X06_I2C_ADDR: u8 = 0x38;
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum LcdController {
-    #[cfg(not(feature = "otm8009a-only"))]
     Nt35510,
-    #[cfg(not(feature = "nt35510-only"))]
     Otm8009a,
 }
 
 impl LcdController {
     fn display_config(self) -> DisplayConfig {
         match self {
-            #[cfg(not(feature = "otm8009a-only"))]
             Self::Nt35510 => NT35510_DISPLAY_CONFIG,
-            #[cfg(not(feature = "nt35510-only"))]
             Self::Otm8009a => OTM8009A_DISPLAY_CONFIG,
         }
     }
@@ -89,7 +63,6 @@ pub const WIDTH: usize = 480;
 pub const HEIGHT: usize = 800;
 
 // NT35510 timing (B08 revision)
-#[cfg(not(feature = "otm8009a-only"))]
 pub const NT35510_DISPLAY_CONFIG: DisplayConfig = DisplayConfig {
     active_width: WIDTH as _,
     active_height: HEIGHT as _,
@@ -109,7 +82,6 @@ pub const NT35510_DISPLAY_CONFIG: DisplayConfig = DisplayConfig {
 // OTM8009A timing (B07 and earlier revisions)
 // Values from STMicroelectronics/stm32-otm8009a otm8009a.h
 // Tested on KoD KM-040TMP-02-0621 WVGA display
-#[cfg(not(feature = "nt35510-only"))]
 pub const OTM8009A_DISPLAY_CONFIG: DisplayConfig = DisplayConfig {
     active_width: WIDTH as _,
     active_height: HEIGHT as _,
@@ -126,10 +98,7 @@ pub const OTM8009A_DISPLAY_CONFIG: DisplayConfig = DisplayConfig {
     pixel_clock_pol: true,
 };
 
-#[cfg(not(feature = "otm8009a-only"))]
 const DSI_PROBE_DISPLAY_CONFIG: DisplayConfig = NT35510_DISPLAY_CONFIG;
-#[cfg(feature = "otm8009a-only")]
-const DSI_PROBE_DISPLAY_CONFIG: DisplayConfig = OTM8009A_DISPLAY_CONFIG;
 
 #[entry]
 fn main() -> ! {
@@ -219,7 +188,6 @@ fn main() -> ! {
 
     // Initialize the detected LCD controller
     match controller {
-        #[cfg(not(feature = "otm8009a-only"))]
         LcdController::Nt35510 => {
             defmt::info!("Initializing NT35510 (B08 revision)");
             let mut nt35510 = nt35510::Nt35510::new();
@@ -227,7 +195,6 @@ fn main() -> ! {
                 defmt::panic!("NT35510 init failed: {:?}", e);
             }
         }
-        #[cfg(not(feature = "nt35510-only"))]
         LcdController::Otm8009a => {
             defmt::info!("Initializing OTM8009A (B07 and earlier revisions)");
             let otm8009a_config = Otm8009AConfig {
@@ -253,7 +220,7 @@ fn main() -> ! {
     let sda = gpiob.pb9;
     let mut i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
 
-    let ts_int = gpioc.pc0.into_pull_down_input();
+    let ts_int = gpioc.pc1.into_pull_down_input();
     let mut touch = match Ft6X06::new(&i2c, FT6X06_I2C_ADDR, ts_int) {
         Ok(touch) => Some(touch),
         Err(_) => {
@@ -409,25 +376,6 @@ fn pattern_loop_housekeeping(
     }
 }
 
-#[cfg(feature = "nt35510-only")]
-fn detect_lcd_controller(
-    _dsi_host: &mut DsiHost,
-    _delay: &mut impl embedded_hal_02::blocking::delay::DelayUs<u32>,
-) -> LcdController {
-    defmt::info!("LCD controller forced via feature: nt35510-only");
-    LcdController::Nt35510
-}
-
-#[cfg(feature = "otm8009a-only")]
-fn detect_lcd_controller(
-    _dsi_host: &mut DsiHost,
-    _delay: &mut impl embedded_hal_02::blocking::delay::DelayUs<u32>,
-) -> LcdController {
-    defmt::info!("LCD controller forced via feature: otm8009a-only");
-    LcdController::Otm8009a
-}
-
-#[cfg(not(any(feature = "nt35510-only", feature = "otm8009a-only")))]
 fn detect_lcd_controller(
     dsi_host: &mut DsiHost,
     delay: &mut impl embedded_hal_02::blocking::delay::DelayUs<u32>,
