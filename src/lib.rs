@@ -119,6 +119,8 @@ pub mod fmc;
 pub mod fsmc_lcd;
 #[cfg(all(feature = "dma2d", feature = "ltdc"))]
 pub mod ltdc;
+#[cfg(all(feature = "dma2d", feature = "ltdc", feature = "dsihost"))]
+pub mod display;
 pub mod prelude;
 pub mod qei;
 #[cfg(feature = "quadspi")]
