@@ -46,6 +46,11 @@ use stm32_fmc::devices::is42s32400f_6;
 const PALETTE_H: i32 = 48;
 const BRUSH_R: i32 = 8;
 
+/// Touch calibration offsets (adjust for your panel if needed)
+/// The FT6X06 on F469I-DISCO may have a physical offset.
+/// Positive values shift touch right/down, negative shifts left/up.
+const TOUCH_X_OFFSET: i32 = 0;
+const TOUCH_Y_OFFSET: i32 = 0;
 const PALETTE: [Rgb565; 8] = [
     Rgb565::BLACK,
     Rgb565::RED,
@@ -177,8 +182,8 @@ fn main() -> ! {
         if num > 0 {
             if let Some(touch) = touch.as_mut() {
                 if let Ok(point) = touch.get_touch(&mut i2c, 1) {
-                    let x = (point.x as i32).clamp(0, WIDTH as i32 - 1);
-                    let y = (point.y as i32).clamp(0, HEIGHT as i32 - 1);
+                    let x = (point.x as i32 + TOUCH_X_OFFSET).clamp(0, WIDTH as i32 - 1);
+                    let y = (point.y as i32 + TOUCH_Y_OFFSET).clamp(0, HEIGHT as i32 - 1);
 
                     if y < PALETTE_H {
                         let idx = (x * 8 / WIDTH as i32).clamp(0, 7);

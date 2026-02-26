@@ -626,9 +626,6 @@ required-features = [
     "fsmc_lcd",
 ] # stm32f413
 
-[[example]]
-name = "f469disco-animated-layers"
-required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"]
 
 [[example]]
 name = "f469disco-hello-eg"
@@ -642,6 +639,13 @@ required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"
 name = "f469disco-lcd-test"
 required-features = ["stm32f469", "stm32-fmc", "defmt"]
 
+[[example]]
+name = "f469disco-paint"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"]
+
+[[example]]
+name = "f469disco-touch-debug"
+required-features = ["stm32f469", "stm32-fmc", "defmt"]
 [[example]]
 name = "f469disco-paint"
 required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost", "defmt"]
