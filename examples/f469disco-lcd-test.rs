@@ -112,6 +112,16 @@ fn main() -> ! {
     let mut delay = cp.SYST.delay(&rcc.clocks);
 
     let gpioh = dp.GPIOH.split(&mut rcc);
+    let gpiob = dp.GPIOB.split(&mut rcc);
+    let _gpioc = dp.GPIOC.split(&mut rcc);
+    let _gpiod = dp.GPIOD.split(&mut rcc);
+    let gpiog = dp.GPIOG.split(&mut rcc);
+    let mut led = gpiog.pg6.into_push_pull_output();
+    led.set_low();
+
+    let scl = gpiob.pb8;
+    let sda = gpiob.pb9;
+    let mut i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
 
     // Reset display
     let mut lcd_reset = gpioh.ph7.into_push_pull_output();
@@ -119,7 +129,6 @@ fn main() -> ! {
     delay.delay_ms(20u32);
     lcd_reset.set_high();
     delay.delay_ms(10u32);
-
     let ltdc_freq = 27_429.kHz();
 
     // Initialize DSI Host with probe-compatible settings.
@@ -168,6 +177,7 @@ fn main() -> ! {
     dsi_host.set_command_mode_transmission_kind(DsiCmdModeTransmissionKind::AllInLowPower);
     dsi_host.start();
     dsi_host.enable_bus_turn_around(); // Must be before read attempts
+    delay.delay_ms(20u32); // Allow panel link to settle after DSI start before probing
 
     let controller = detect_lcd_controller(&mut dsi_host, &mut delay);
     defmt::info!("Detected LCD controller: {:?}", controller);
@@ -213,14 +223,8 @@ fn main() -> ! {
 
     // ========== INITIALIZE TOUCHSCREEN ==========
     defmt::info!("Initializing touchscreen");
-    let gpiob = dp.GPIOB.split(&mut rcc);
-    let gpioc = dp.GPIOC.split(&mut rcc);
 
-    let scl = gpiob.pb8;
-    let sda = gpiob.pb9;
-    let mut i2c = I2c::new(dp.I2C1, (scl, sda), 400.kHz(), &mut rcc);
-
-    let ts_int = gpioc.pc1.into_pull_down_input();
+    let ts_int = _gpioc.pc1.into_pull_down_input();
     let mut touch = match Ft6X06::new(&i2c, FT6X06_I2C_ADDR, ts_int) {
         Ok(touch) => Some(touch),
         Err(_) => {
@@ -383,7 +387,13 @@ fn detect_lcd_controller(
     defmt::info!("Auto-detecting LCD controller...");
 
     const PROBE_RETRIES: u8 = 3;
+    delay.delay_us(20_000u32); // Settle delay before probing
     let mut nt35510 = nt35510::Nt35510::new();
+    let mut mismatch_count = 0u8;
+    let mut first_mismatch_id: Option<u8> = None;
+    let mut consistent_mismatch = true;
+    let mut read_error_count = 0u8;
+
     for attempt in 1..=PROBE_RETRIES {
         match nt35510.probe(dsi_host, delay) {
             Ok(_) => {
@@ -391,12 +401,19 @@ fn detect_lcd_controller(
                 return LcdController::Nt35510;
             }
             Err(nt35510::Nt35510Error::DsiRead) => {
+                read_error_count = read_error_count.saturating_add(1);
                 defmt::warn!("NT35510 probe attempt {} failed: DSI read error", attempt);
             }
             Err(nt35510::Nt35510Error::DsiWrite) => {
                 defmt::warn!("NT35510 probe attempt {} failed: DSI write error", attempt);
             }
             Err(nt35510::Nt35510Error::ProbeMismatch(id)) => {
+                mismatch_count = mismatch_count.saturating_add(1);
+                match first_mismatch_id {
+                    None => first_mismatch_id = Some(id),
+                    Some(first) if first != id => consistent_mismatch = false,
+                    Some(_) => {}
+                }
                 defmt::info!(
                     "NT35510 probe attempt {} mismatch: RDID1=0x{:02x}",
                     attempt,
@@ -408,6 +425,27 @@ fn detect_lcd_controller(
         delay.delay_us(5_000u32);
     }
 
-    defmt::info!("Falling back to OTM8009A (B07 and earlier revisions)");
-    LcdController::Otm8009a
+    // Smart fallback logic (matches f469disco.rs helper module):
+    // - If we got consistent mismatches (panel responded but with non-NT35510 ID),
+    //   fall back to OTM8009A
+    // - If all probes failed with read errors (no panel response), default to
+    //   NT35510 (assume probe failed but B08 panel is present)
+    let fallback_to_otm = mismatch_count >= 2 && consistent_mismatch;
+
+    if fallback_to_otm {
+        let mismatch_id = first_mismatch_id.unwrap_or(0xFF);
+        defmt::info!(
+            "Consistent non-NT35510 probe response (id=0x{:02x}, count={}); falling back to OTM8009A",
+            mismatch_id,
+            mismatch_count
+        );
+        LcdController::Otm8009a
+    } else {
+        defmt::warn!(
+            "Probe inconclusive (mismatch={}, read_err={}); defaulting to NT35510",
+            mismatch_count,
+            read_error_count
+        );
+        LcdController::Nt35510
+    }
 }
