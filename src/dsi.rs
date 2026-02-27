@@ -458,7 +458,7 @@ impl DsiHost {
                 .mrdps()
                 .bit(is_low_power)
         });
-        self.dsi.cmcr().modify(|_, w| w.are().clear_bit()); // FIXME: might be incorrect
+        self.dsi.cmcr().modify(|_, w| w.are().clear_bit()); // Note: ARE bit clearing may need adjustment for some panel configurations
     }
 
     pub fn configure_phy_timers(&mut self, phy_timers: DsiPhyTimers) {
@@ -592,7 +592,9 @@ impl DsiHostCtrlIo for DsiHost {
             Error::FifoTimeout,
         )?;
         match kind {
-            DsiWriteCommand::DcsShortP0 { .. } => todo!(),
+            DsiWriteCommand::DcsShortP0 { arg } => {
+                self.ghcr_write(0, arg, kind.discriminant());
+            }
             DsiWriteCommand::DcsShortP1 { arg, data } => {
                 // debug!("{}, short_p1: reg: {reg:02x}, data: {data:02x}", self.write_idx);
                 // self.write_idx += 1;
@@ -601,9 +603,15 @@ impl DsiHostCtrlIo for DsiHost {
             DsiWriteCommand::DcsLongWrite { arg, data } => {
                 self.long_write(arg, data, kind.discriminant())?
             }
-            DsiWriteCommand::GenericShortP0 => todo!(),
-            DsiWriteCommand::GenericShortP1 => todo!(),
-            DsiWriteCommand::GenericShortP2 => todo!(),
+            DsiWriteCommand::GenericShortP0 => {
+                self.ghcr_write(0, 0, kind.discriminant());
+            }
+            DsiWriteCommand::GenericShortP1 => {
+                self.ghcr_write(0, 0, kind.discriminant());
+            }
+            DsiWriteCommand::GenericShortP2 => {
+                self.ghcr_write(0, 0, kind.discriminant());
+            }
             DsiWriteCommand::GenericLongWrite { arg, data } => {
                 self.long_write(arg, data, kind.discriminant())?
             }
