@@ -12,6 +12,14 @@ use crate::{
 };
 use fugit::HertzU32 as Hertz;
 
+#[cfg(feature = "framebuffer")]
+use embedded_graphics_core::{
+    draw_target::DrawTarget,
+    geometry::{OriginDimensions, Size},
+    pixelcolor::{IntoStorage, Rgb565},
+    Pixel,
+};
+
 /// Display configuration constants
 pub struct DisplayConfig {
     pub active_width: u16,
@@ -352,6 +360,72 @@ impl<T: 'static + SupportedWord> DisplayController<T> {
         }
     }
 
+    /// Create a DisplayController for DSI-driven displays.
+    ///
+    /// Unlike [`new()`](Self::new), this constructor does not configure LTDC pins
+    /// or PLLSAI. On DSI boards the DSI host drives the pixel clock and data
+    /// lines, so LTDC only needs its timing registers set up.
+    pub fn new_dsi(
+        ltdc: LTDC,
+        dma2d: DMA2D,
+        pixel_format: PixelFormat,
+        config: DisplayConfig,
+    ) -> DisplayController<T> {
+        unsafe {
+            LTDC::enable_unchecked();
+            LTDC::reset_unchecked();
+            DMA2D::enable_unchecked();
+            DMA2D::reset_unchecked();
+        }
+
+        let total_width: u16 =
+            config.h_sync + config.h_back_porch + config.active_width + config.h_front_porch - 1;
+        let total_height: u16 =
+            config.v_sync + config.v_back_porch + config.active_height + config.v_front_porch - 1;
+
+        ltdc.sscr().write(|w| {
+            w.hsw().set(config.h_sync - 1);
+            w.vsh().set(config.v_sync - 1)
+        });
+        ltdc.bpcr().write(|w| {
+            w.ahbp().set(config.h_sync + config.h_back_porch - 1);
+            w.avbp().set(config.v_sync + config.v_back_porch - 1)
+        });
+        ltdc.awcr().write(|w| {
+            w.aaw()
+                .set(config.h_sync + config.h_back_porch + config.active_width - 1);
+            w.aah()
+                .set(config.v_sync + config.v_back_porch + config.active_height - 1)
+        });
+        ltdc.twcr().write(|w| {
+            w.totalw().set(total_width);
+            w.totalh().set(total_height)
+        });
+
+        ltdc.gcr().write(|w| {
+            w.hspol().bit(config.h_sync_pol);
+            w.vspol().bit(config.v_sync_pol);
+            w.depol().bit(config.no_data_enable_pol);
+            w.pcpol().bit(config.pixel_clock_pol)
+        });
+
+        ltdc.bccr().write(|w| unsafe { w.bits(0xAAAAAAAA) });
+
+        ltdc.srcr().modify(|_, w| w.imr().set_bit());
+        ltdc.gcr()
+            .modify(|_, w| w.ltdcen().set_bit().den().set_bit());
+        ltdc.srcr().modify(|_, w| w.imr().set_bit());
+
+        DisplayController {
+            _ltdc: ltdc,
+            _dma2d: dma2d,
+            config,
+            buffer1: None,
+            buffer2: None,
+            pixel_format,
+        }
+    }
+
     /// Configure the layer
     ///
     /// Note : the choice is made (for the sake of simplicity) to make the layer
@@ -424,7 +498,7 @@ impl<T: 'static + SupportedWord> DisplayController<T> {
             // PixelFormat::RGB888 => 24, unsupported for now because u24 does not exist
             PixelFormat::RGB565 => 2,
             PixelFormat::ARGB1555 => 2,
-            PixelFormat::ARGB4444 => 16,
+            PixelFormat::ARGB4444 => 2,
             PixelFormat::L8 => 1,
             PixelFormat::AL44 => 1,
             PixelFormat::AL88 => 2,
@@ -487,11 +561,64 @@ impl<T: 'static + SupportedWord> DisplayController<T> {
         })[x + self.config.active_width as usize * y] = color;
     }
 
+    /// Get a mutable reference to the layer's framebuffer.
+    ///
+    /// Returns `None` if the layer has not been configured with [`config_layer()`](Self::config_layer).
+    pub fn layer_buffer_mut(&mut self, layer: Layer) -> Option<&mut [T]> {
+        match layer {
+            Layer::L1 => self.buffer1.as_deref_mut(),
+            Layer::L2 => self.buffer2.as_deref_mut(),
+        }
+    }
+
+    /// Set the global alpha (transparency) for a layer.
+    ///
+    /// `alpha`: 0 = fully transparent, 255 = fully opaque.
+    /// Takes effect after [`reload()`](Self::reload).
+    pub fn set_layer_transparency(&self, layer: Layer, alpha: u8) {
+        self._ltdc
+            .layer(layer as usize)
+            .cacr()
+            .write(|w| w.consta().set(alpha));
+        self.reload_on_vblank();
+    }
+
+    /// Change the framebuffer address for a layer.
+    ///
+    /// This can be used for double-buffering by swapping between two
+    /// pre-allocated framebuffers. Takes effect after [`reload()`](Self::reload).
+    pub fn set_layer_buffer_address(&self, layer: Layer, address: u32) {
+        self._ltdc
+            .layer(layer as usize)
+            .cfbar()
+            .write(|w| w.cfbadd().set(address));
+        self.reload_on_vblank();
+    }
+
+    /// Enable color keying on a layer.
+    ///
+    /// Pixels matching `color_key` (RGB888 format, 24-bit) become fully
+    /// transparent, allowing the layer below to show through.
+    /// Takes effect after [`reload()`](Self::reload).
+    pub fn set_color_keying(&mut self, layer: Layer, color_key: u32) {
+        let l = self._ltdc.layer(layer as usize);
+        l.ckcr()
+            .write(|w| unsafe { w.bits(color_key & 0x00FF_FFFF) });
+        l.cr().modify(|_, w| w.colken().set_bit());
+        self.reload_on_vblank();
+    }
+
     /// Draw hardware accelerated rectangle
     ///
     /// # Safety
     ///
-    /// TODO: use safer DMA transfers
+    /// The caller must ensure:
+    /// - The framebuffer for `layer` has been configured via [`config_layer()`](Self::config_layer)
+    /// - `top_left` and `bottom_right` coordinates are within the display bounds
+    /// - No other DMA2D operation is in progress
+    ///
+    /// This method uses DMA2D register-to-memory mode to fill the rectangle.
+    /// A future version may provide a safe wrapper with proper DMA completion tracking.
     pub unsafe fn draw_rectangle(
         &mut self,
         layer: Layer,
@@ -544,12 +671,87 @@ impl<T: 'static + SupportedWord> DisplayController<T> {
         self._dma2d
             .cr()
             .modify(|_, w| w.mode().bits(0b11).start().set_bit());
+        // Wait for DMA2D transfer to complete
+        while self._dma2d.cr().read().start().bit_is_set() {}
     }
 
     /// Reload display controller immediatly
     pub fn reload(&self) {
         // Reload ltdc config immediatly
         self._ltdc.srcr().modify(|_, w| w.imr().set_bit());
+    }
+
+    /// Reload display controller on next vertical blanking
+    pub fn reload_on_vblank(&self) {
+        self._ltdc.srcr().modify(|_, w| w.vbr().set_bit());
+    }
+}
+
+/// A framebuffer wrapper that implements [`DrawTarget`] for use with
+/// `embedded-graphics`.
+///
+/// `LtdcFramebuffer` owns a `&'static mut [T]` SDRAM buffer and provides
+/// pixel-level drawing via the `embedded-graphics` `DrawTarget` trait.
+///
+/// # Usage
+///
+/// ```ignore
+/// let mut fb = LtdcFramebuffer::new(buffer, 480, 800);
+/// fb.clear(Rgb565::BLACK).ok();
+/// // ... draw with embedded-graphics ...
+/// let buffer = fb.into_inner();
+/// display_ctrl.config_layer(Layer::L1, buffer, PixelFormat::RGB565);
+/// ```
+#[cfg(feature = "framebuffer")]
+pub struct LtdcFramebuffer<T: 'static + SupportedWord> {
+    buf: &'static mut [T],
+    width: u16,
+    height: u16,
+}
+
+#[cfg(feature = "framebuffer")]
+impl<T: 'static + SupportedWord> LtdcFramebuffer<T> {
+    /// Create a new framebuffer wrapper.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `buf.len() != width * height`.
+    pub fn new(buf: &'static mut [T], width: u16, height: u16) -> Self {
+        assert!(buf.len() == (width as usize) * (height as usize));
+        Self { buf, width, height }
+    }
+
+    /// Consume the framebuffer and return the underlying buffer.
+    pub fn into_inner(self) -> &'static mut [T] {
+        self.buf
+    }
+}
+
+#[cfg(feature = "framebuffer")]
+impl DrawTarget for LtdcFramebuffer<u16> {
+    type Color = Rgb565;
+    type Error = core::convert::Infallible;
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Pixel<Self::Color>>,
+    {
+        let w = self.width as i32;
+        let h = self.height as i32;
+        for Pixel(coord, color) in pixels {
+            let (x, y): (i32, i32) = coord.into();
+            if x >= 0 && x < w && y >= 0 && y < h {
+                self.buf[y as usize * self.width as usize + x as usize] = color.into_storage();
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(feature = "framebuffer")]
+impl<T: 'static + SupportedWord> OriginDimensions for LtdcFramebuffer<T> {
+    fn size(&self) -> Size {
+        Size::new(self.width as u32, self.height as u32)
     }
 }
 

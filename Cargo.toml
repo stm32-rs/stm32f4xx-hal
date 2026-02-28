@@ -40,6 +40,7 @@ synopsys-usb-otg = { version = "0.4.0", features = [
 sdio-host = { version = "0.9.0", optional = true }
 embedded-dma = "0.2.0"
 embedded-display-controller = { version = "^0.2.0", optional = true }
+otm8009a = { version = "0.1", optional = true }
 bare-metal = { version = "1" }
 void = { default-features = false, version = "1.0.2" }
 display-interface = { version = "0.5.0", optional = true }
@@ -92,6 +93,10 @@ version = "0.6.1"
 version = "0.5.0"
 optional = true
 
+[dependencies.embedded-graphics-core]
+version = "0.4"
+optional = true
+
 [dev-dependencies]
 static_cell = "2.1.1"
 defmt = "1.0.1"
@@ -120,6 +125,7 @@ display-interface = "0.5"
 display-interface-04 = { package = "display-interface", version = "0.4.1" }
 ft6x06 = "0.1.2"
 otm8009a = "0.1"
+nt35510 = "0.1.0"
 ushell = "0.3.6"
 
 [dev-dependencies.time]
@@ -518,6 +524,7 @@ dfsdm1 = ["dfsdm"]
 dfsdm2 = ["dfsdm"]
 dma2d = []
 dsihost = ["embedded-display-controller"]
+otm8009a = ["dep:otm8009a", "dsihost"]
 eth = []
 fmc = []
 fsmc = []
@@ -532,6 +539,7 @@ gpiok = []
 i2c3 = []
 lptim1 = []
 ltdc = ["dep:micromath"]
+framebuffer = ["dep:embedded-graphics-core"]
 quadspi = []
 otg-fs = []
 otg-hs = []
@@ -620,9 +628,31 @@ required-features = [
     "fsmc_lcd",
 ] # stm32f413
 
+
+[[example]]
+name = "f469disco-hello-eg"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost"]
+
+[[example]]
+name = "f469disco-image-slider"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost"]
+
 [[example]]
 name = "f469disco-lcd-test"
-required-features = ["stm32f469", "defmt"]
+required-features = ["stm32f469", "stm32-fmc", "dsihost"]
+
+[[example]]
+name = "f469disco-paint"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost"]
+
+[[example]]
+name = "f469disco-touch-debug"
+required-features = ["stm32f469", "stm32-fmc"]
+
+
+[[example]]
+name = "f469disco-slideshow"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost"]
 
 [[example]]
 name = "hd44780"
