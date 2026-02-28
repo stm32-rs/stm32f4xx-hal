@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - LTDC: add DSI-compatible constructor (`new_dsi()`) for DSI-driven displays that don't need LTDC pin configuration
  - LTDC: add `LtdcFramebuffer` with embedded-graphics `DrawTarget` support (behind `framebuffer` feature)
  - LTDC: add `layer_buffer_mut()`, `set_layer_transparency()`, `set_layer_buffer_address()`, `set_color_keying()` methods
+ - F469-Disco display examples: hello-eg, paint, slideshow, image-slider, lcd-test, touch-debug
 
 ### Changed
 

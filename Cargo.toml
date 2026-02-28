@@ -125,6 +125,7 @@ display-interface = "0.5"
 display-interface-04 = { package = "display-interface", version = "0.4.1" }
 ft6x06 = "0.1.2"
 otm8009a = "0.1"
+nt35510 = "0.1.0"
 ushell = "0.3.6"
 
 [dev-dependencies.time]
@@ -629,8 +630,29 @@ required-features = [
 
 
 [[example]]
+name = "f469disco-hello-eg"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost"]
+
+[[example]]
+name = "f469disco-image-slider"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost"]
+
+[[example]]
 name = "f469disco-lcd-test"
-required-features = ["stm32f469", "defmt"]
+required-features = ["stm32f469", "stm32-fmc", "dsihost"]
+
+[[example]]
+name = "f469disco-paint"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost"]
+
+[[example]]
+name = "f469disco-touch-debug"
+required-features = ["stm32f469", "stm32-fmc"]
+
+
+[[example]]
+name = "f469disco-slideshow"
+required-features = ["stm32f469", "stm32-fmc", "framebuffer", "dsihost"]
 
 [[example]]
 name = "hd44780"
