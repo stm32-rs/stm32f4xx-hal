@@ -821,3 +821,9 @@ required-features = ["stm32f469", "stm32-fmc"]
 [[example]]
 name = "rtic2-timer-input-capture"
 required-features = ["rtic2"]
+
+# Patch ft6x06 to fix panic on spurious multi-touch values
+# See: https://github.com/Srg213/ft6x06/issues/4 and https://github.com/Srg213/ft6x06/pull/5
+# This patch clamps ntouch to FT6X06_MAX_NB_TOUCH instead of asserting
+[patch.crates-io]
+ft6x06 = { git = "https://github.com/DougAnderson444/ft6x06", rev = "cc352f80b12fd985da4c4847771a26ebc03ece62" }
