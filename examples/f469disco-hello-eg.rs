@@ -37,11 +37,8 @@ use embedded_graphics::{
     text::Text,
 };
 
-#[path = "f469disco/board.rs"]
-mod board;
-
-use board::{FB_SIZE, HEIGHT, WIDTH};
 use stm32_fmc::devices::is42s32400f_6;
+use stm32f469i_disc::lcd::{self as board, FB_SIZE, HEIGHT, WIDTH};
 
 macro_rules! fmc_pins {
     ($($alt:ident: $pin:expr,)*) => {

@@ -31,12 +31,13 @@ Separate generic MCU HAL functionality from board-specific BSP functionality, an
 The FT6X06 driver can panic on spurious multi-touch values without the PR #5 fix. The repository must use commit `cc352f80b12fd985da4c4847771a26ebc03ece62` so `detect_touch` clamps count instead of asserting.
 
 ### Execution Checklist
-1. Ensure patch override exists in both root manifest and BSP manifest.
+1. Pin `ft6x06` directly to commit `cc352f80b12fd985da4c4847771a26ebc03ece62` in each standalone STM32F469 consumer manifest.
 2. Keep touch-driver handling in BSP (`stm32f469i-disc`), not HAL core.
-3. Verify BSP + F469 examples build with patched touch dependency.
-4. Keep HAL PRs free of board-specific logic.
+3. Ensure HAL F469 examples use BSP display helpers rather than local board modules.
+4. Verify BSP + F469 examples build with the pinned touch dependency.
+5. Keep HAL PRs free of board-specific logic.
 
 ### Done Criteria
 - HAL branch diff contains only generic peripheral functionality.
 - BSP branch diff contains board-specific display/touch policy.
-- FT6X06 panic path is neutralized via patched dependency in active manifests.
+- FT6X06 panic path is neutralized via commit-pinned dependency in active manifests.

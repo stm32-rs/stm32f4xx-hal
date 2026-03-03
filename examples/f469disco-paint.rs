@@ -44,11 +44,8 @@ use embedded_graphics_core::{
 
 use ft6x06::Ft6X06;
 
-#[path = "f469disco/board.rs"]
-mod board;
-
-use board::{FB_SIZE, HEIGHT, WIDTH};
 use stm32_fmc::devices::is42s32400f_6;
+use stm32f469i_disc::lcd::{self as board, FB_SIZE, HEIGHT, WIDTH};
 
 const PALETTE_H: i32 = 48;
 const BRUSH_R: i32 = 8;

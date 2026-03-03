@@ -28,7 +28,7 @@ defmt = { version = "1.0", optional = true }
 stm32-fmc = "0.4"
 otm8009a = "0.1"
 nt35510 = "0.1.0"
-ft6x06 = "0.1.2"
+ft6x06 = { git = "https://github.com/DougAnderson444/ft6x06", rev = "cc352f80b12fd985da4c4847771a26ebc03ece62" }
 
 [dependencies.embedded-hal]
 version = "1.0"
@@ -75,6 +75,3 @@ rpath = false
 debug = true
 lto = true
 opt-level = "s"
-
-[patch.crates-io]
-ft6x06 = { git = "https://github.com/DougAnderson444/ft6x06", rev = "cc352f80b12fd985da4c4847771a26ebc03ece62" }
