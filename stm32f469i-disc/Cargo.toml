@@ -75,3 +75,6 @@ rpath = false
 debug = true
 lto = true
 opt-level = "s"
+
+[patch.crates-io]
+ft6x06 = { git = "https://github.com/DougAnderson444/ft6x06", rev = "cc352f80b12fd985da4c4847771a26ebc03ece62" }
