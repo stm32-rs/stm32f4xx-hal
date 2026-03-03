@@ -1,0 +1,15 @@
+# For an explanation of the configuration and more config values, visit https://github.com/probe-rs/cargo-embed/blob/master/src/config/default.toml
+[default.probe]
+protocol = "Swd"
+
+[default.flashing]
+enabled = true
+restore_unwritten_bytes = false
+
+[default.reset]
+enabled = true
+halt_afterwards = false
+
+[default.general]
+chip = "STM32F469NIHx"
+log_level = "WARN"
