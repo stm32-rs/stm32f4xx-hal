@@ -33,4 +33,17 @@ fn main() {
     .strip_prefix("CARGO_FEATURE_")
     .unwrap()
     .to_ascii_lowercase();
+
+    // Only generate memory.x when building the HAL as the primary package,
+    // not when building as a dependency (e.g., for BSPs that have their own memory.x)
+    let is_primary = env::var("CARGO_PRIMARY_PACKAGE").is_ok();
+    
+    if is_primary {
+        let out = &std::path::PathBuf::from(env::var_os("OUT_DIR").unwrap());
+        let memory_x = include_bytes!("memory.x");
+        std::fs::write(out.join("memory.x"), memory_x).unwrap();
+        println!("cargo:rustc-link-search={}", out.display());
+    }
+    
+    println!("cargo:rerun-if-changed=memory.x");
 }
