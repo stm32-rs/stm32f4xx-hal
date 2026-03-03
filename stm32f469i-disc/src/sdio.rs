@@ -53,6 +53,7 @@ pub fn init(
     // Initialize SDIO peripheral with 4-bit bus
     let sdio = Sdio::new(sdio_pac, (clk, cmd, d0, d1, d2, d3), rcc);
 
-    // Return SDIO host and touch interrupt pin (PC1)
-    (sdio, remainders.pc1)
+    // Return SDIO host and touch interrupt pin (PC1) configured with pull-down
+    // FT6X06 touch interrupt is active-LOW, needs pull-down for defined idle state
+    (sdio, remainders.pc1.into_pull_down_input())
 }
