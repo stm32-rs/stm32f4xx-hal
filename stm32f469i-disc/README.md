@@ -1,6 +1,35 @@
 stm32f469i-disc
 ===============
 Board support package for the STM32F469I-DISCOVERY kit.
+Quick Start
+-----------
+
+```toml
+[dependencies.stm32f469i-disc]
+git = "https://github.com/Amperstrand/stm32f4xx-hal"
+features = ["defmt"]
+```
+
+```bash
+cargo run --release --example gpio_hal_blinky
+```
+
+
+Module Overview
+---------------
+- `lcd` - Display with auto-detection
+- `led` - On-board LEDs
+- `sdram` - 16MB SDRAM
+- `touch` - FT6X06 controller
+- `sdio` - SD card
+- `button` - User button
+- `usb` - USB OTG FS
+
+Documentation Links
+-------------------
+- [USB Guide](docs/USB-GUIDE.md) - USB OTG FS setup and CDC-ACM
+- [Pin Consumption](docs/PIN-CONSUMPTION.md) - Which pins SDRAM consumes
+- [Testing Guide](../STM32F469_HAL_BSP_TESTING.md) - Full HAL/BSP testing instructions
 
 Peripheral Support
 ------------------
@@ -17,6 +46,7 @@ Examples
 - `display_dsi_lcd` — Rolling gradient animation on DSI display
 - `display_hello_eg` — Text and shapes using embedded-graphics
 - `display_touch` — Touch input with swipe gesture detection
+- `usb_cdc_serial` — USB CDC-ACM virtual serial port echo test
 
 Building
 --------
