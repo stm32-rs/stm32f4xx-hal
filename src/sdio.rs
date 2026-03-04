@@ -237,6 +237,7 @@ impl<P: SdioPeripheral> Sdio<P> {
         self.cmd(common_cmd::read_single_block(blockaddr))?;
 
         let mut i = 0;
+        let mut timeout: u32 = 0x00FF_FFFF;
 
         let status = loop {
             let sta = self.sdio.sta().read();
@@ -256,12 +257,23 @@ impl<P: SdioPeripheral> Sdio<P> {
             if i == block.len() {
                 break sta;
             }
+
+            if timeout == 0 {
+                return Err(Error::SoftwareTimeout);
+            }
+            timeout -= 1;
         };
 
         status_to_error(status)?;
 
         // Wait for card to be ready
-        while !self.card_ready()? {}
+        let mut ready_timeout: u32 = 0x00FF_FFFF;
+        while !self.card_ready()? {
+            if ready_timeout == 0 {
+                return Err(Error::SoftwareTimeout);
+            }
+            ready_timeout -= 1;
+        }
 
         Ok(())
     }
@@ -281,6 +293,7 @@ impl<P: SdioPeripheral> Sdio<P> {
         self.cmd(common_cmd::write_single_block(blockaddr))?;
 
         let mut i = 0;
+        let mut timeout: u32 = 0x00FF_FFFF;
 
         let status = loop {
             let sta = self.sdio.sta().read();
@@ -302,20 +315,37 @@ impl<P: SdioPeripheral> Sdio<P> {
             if i == block.len() {
                 break sta;
             }
+
+            if timeout == 0 {
+                return Err(Error::SoftwareTimeout);
+            }
+            timeout -= 1;
         };
 
         status_to_error(status)?;
 
         // Wait for SDIO module to finish transmitting data
+        let mut tx_timeout: u32 = 0x00FF_FFFF;
         loop {
             let sta = self.sdio.sta().read();
             if !sta.txact().bit_is_set() {
                 break;
             }
+
+            if tx_timeout == 0 {
+                return Err(Error::SoftwareTimeout);
+            }
+            tx_timeout -= 1;
         }
 
         // Wait for card to finish writing data
-        while !self.card_ready()? {}
+        let mut ready_timeout: u32 = 0x00FF_FFFF;
+        while !self.card_ready()? {
+            if ready_timeout == 0 {
+                return Err(Error::SoftwareTimeout);
+            }
+            ready_timeout -= 1;
+        }
 
         Ok(())
     }
@@ -327,6 +357,7 @@ impl<P: SdioPeripheral> Sdio<P> {
         assert!(block_size <= 14);
 
         // Command AND Data state machines must be idle
+        let mut timeout: u32 = 0x00FF_FFFF;
         loop {
             let status = self.sdio.sta().read();
 
@@ -336,6 +367,11 @@ impl<P: SdioPeripheral> Sdio<P> {
             {
                 break;
             }
+
+            if timeout == 0 {
+                break;
+            }
+            timeout -= 1;
         }
 
         let dtdir = if card_to_controller {
