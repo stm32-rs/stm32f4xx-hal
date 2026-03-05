@@ -654,7 +654,7 @@ impl Sdio<SdCard> {
     }
 
     /// Set bus width and clock frequency
-    fn set_bus(&self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
+    pub fn set_bus(&mut self, width: Buswidth, freq: ClockFreq) -> Result<(), Error> {
         use crate::pac::sdio::clkcr::WIDBUS;
 
         let card_widebus = self.card()?.supports_widebus();
