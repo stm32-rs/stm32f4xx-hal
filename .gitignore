@@ -7,3 +7,26 @@ Cargo.lock
 .vscode
 .idea
 .lapce
+
+
+# Build artifacts
+*.elf
+*.bin
+*.hex
+*.map
+
+# Temp files
+*.bak
+*.bak*
+*.tmp
+
+# OS files
+.DS_Store
+
+# Project-specific temp
+.sisyphus/
+dist/
+
+# BSP is in separate repo
+stm32f469i-disc/
+# STM32f469i-disc/
