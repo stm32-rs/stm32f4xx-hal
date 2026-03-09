@@ -72,9 +72,8 @@ version = "0.16.0"
 features = ["atomics"]
 
 [dependencies.time]
-version = "0.3.44"
+version = "0.3.41"  # pinned to pre-edition2024 for CI compatibility
 default-features = false
-
 [dependencies.embedded-hal-02]
 package = "embedded-hal"
 version = "0.2.7"
@@ -128,8 +127,7 @@ otm8009a = "0.1"
 ushell = "0.3.6"
 
 [dev-dependencies.time]
-version = "0.3"
-default-features = false
+version = "0.3.41"  # pinned to pre-edition2024 for CI compatibility
 features = ["macros"]
 
 [features]
