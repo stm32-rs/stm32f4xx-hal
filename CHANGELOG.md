@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+ - DSI host: implement missing DCS short write (P0) and Generic short write (P0, P1, P2) commands
+ - LTDC: add DSI-compatible constructor (`new_dsi()`) for DSI-driven displays that don't need LTDC pin configuration
+ - LTDC: add `LtdcFramebuffer` with embedded-graphics `DrawTarget` support (behind `framebuffer` feature)
+ - LTDC: add `layer_buffer_mut()`, `set_layer_transparency()`, `set_layer_buffer_address()`, `set_color_keying()` methods
+
+### Changed
+
+ - Decouple `otm8009a` from `dsihost` feature flag — `otm8009a` is now a separate opt-in feature that auto-enables `dsihost`
+
+### Fixed
+
+ - LTDC: fix ARGB4444 bytes-per-pixel value (was 16, now correctly 2)
+
 ## [v0.23.0] - 2025-09-22
 
  - Implement `embedded_hal::i2c::I2c` for `I2cMasterDma` [#838]
