@@ -1,0 +1,5 @@
+=== Build with defmt ===
+cargo build --release --example f469disco-lcd-test --features="stm32f469,stm32-fmc,dsihost,defmt" --target thumbv7em-none-eabihf
+Result: Finished release profile [optimized + debuginfo] — EXIT 0
+Binary: target/thumbv7em-none-eabihf/release/examples/f469disco-lcd-test
+-rwxr-xr-x  1 macbook  staff  1115772 Feb 27 14:26 target/thumbv7em-none-eabihf/release/examples/f469disco-lcd-test

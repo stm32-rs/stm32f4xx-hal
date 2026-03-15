@@ -1,0 +1,430 @@
+    Checking nb v1.1.0
+    Checking arrayvec v0.7.6
+    Checking serde_core v1.0.228
+    Checking bitcoin-io v0.1.4
+    Checking void v1.0.2
+    Checking critical-section v1.2.0
+    Checking bech32 v0.11.1
+    Checking hex_lit v0.1.1
+    Checking secp256k1-sys v0.10.1
+    Checking vcell v0.1.3
+    Checking byteorder v1.5.0
+    Checking bare-metal v0.2.5
+    Checking bitfield v0.13.2
+    Checking volatile-register v0.2.2
+    Checking hex v0.4.3
+    Checking nb v0.1.3
+    Checking memchr v2.7.6
+    Checking log v0.4.29
+    Checking zerocopy v0.8.33
+    Checking embedded-hal v0.2.7
+    Checking portable-atomic v1.13.1
+    Checking ufmt-write v0.1.0
+    Checking stable_deref_trait v1.2.1
+    Checking cfg-if v1.0.4
+    Checking hash32 v0.3.1
+    Checking chunked-buffer v0.2.0
+    Checking libm v0.2.15
+    Checking az v1.2.1
+    Checking hex-conservative v0.2.2
+    Checking possiblyrandom v0.2.0
+    Checking heapless v0.8.0
+    Checking tracing-core v0.1.36
+    Checking cortex-m v0.7.7
+    Checking dnssec-prover v0.6.8
+    Checking bytes v1.11.0
+    Checking core2 v0.3.3
+    Checking either v1.15.0
+    Checking pin-project-lite v0.2.16
+    Checking embedded-hal v1.0.0
+    Checking anyhow v1.0.100
+    Checking scopeguard v1.2.0
+    Checking micromath v2.1.0
+    Checking itertools v0.10.5
+    Checking powerfmt v0.2.0
+    Checking tracing v0.1.44
+    Checking gcd v2.3.0
+    Checking embedded-display-controller v0.2.0
+    Checking cortex-m-rt v0.7.5
+    Checking fugit v0.3.9
+    Checking num-traits v0.2.19
+    Checking deranged v0.5.5
+    Checking rtt-target v0.3.1
+    Checking time-core v0.1.6
+    Checking embedded-io v0.6.1
+    Checking usb-device v0.3.2
+    Checking num-conv v0.1.0
+    Checking enumflags2 v0.7.12
+    Checking panic-probe v0.2.1
+    Checking fugit-timer v0.1.3
+    Checking stm32f4 v0.16.0
+    Checking embedded-hal-nb v1.0.0
+    Checking stm32-fmc v0.4.0
+    Checking embedded-dma v0.2.0
+    Checking as-any v0.3.2
+    Checking rand_core v0.9.5
+    Checking bare-metal v1.0.0
+    Checking rand_core v0.6.4
+    Checking embedded-storage v0.3.1
+    Checking sdio-host v0.9.0
+    Checking ft6x06 v0.1.2 (https://github.com/DougAnderson444/ft6x06?rev=cc352f80b12fd985da4c4847771a26ebc03ece62#cc352f80)
+    Checking synopsys-usb-otg v0.4.0
+    Checking zmij v1.0.12
+    Checking nt35510 v0.1.0
+    Checking otm8009a v0.1.0
+    Checking rtt-target v0.5.0
+    Checking bitflags v2.10.0
+    Checking linked_list_allocator v0.10.5
+    Checking itoa v1.0.17
+    Checking bit-vec v0.6.3
+    Checking embedded-graphics-core v0.4.1
+    Checking fatfs v0.4.0 (https://github.com/rafalh/rust-fatfs.git#4eccb50d)
+    Checking alloc-cortex-m v0.4.4
+    Checking panic-probe v1.0.0
+    Checking usbd-serial v0.2.2
+    Checking rtt-target v0.6.2
+    Checking float-cmp v0.9.0
+    Checking ahash v0.8.12
+    Checking embedded-graphics v0.8.2
+    Checking hashbrown v0.13.2
+    Checking time v0.3.44
+    Checking serde v1.0.228
+    Checking serde_with v3.16.1
+    Checking serde_json v1.0.149
+    Checking bitcoin_hashes v0.14.1
+    Checking bitcoin-internals v0.3.0
+    Checking bitcoin-units v0.1.2
+    Checking profont v0.7.0
+    Checking base58ck v0.1.0
+    Checking secp256k1 v0.29.1
+    Checking bitcoin v0.32.8
+    Checking lightning-types v0.2.0
+    Checking serde_bolt v0.5.1
+    Checking vls-common v0.15.0-rc.1 (/Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-common)
+    Checking bitcoin-push-decoder v0.4.0
+    Checking txoo v0.10.0
+    Checking lightning-invoice v0.33.2
+    Checking lightning v0.1.8
+    Checking stm32f4xx-hal v0.23.0 (/Users/macbook/src/stm32f4xx-hal)
+warning: unused import: `gpio`
+   --> /Users/macbook/src/stm32f4xx-hal/src/gpio.rs:607:5
+    |
+607 | use gpio;
+    |     ^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `address`
+   --> /Users/macbook/src/stm32f4xx-hal/src/dma/traits.rs:299:5
+    |
+299 | use address;
+    |     ^^^^^^^
+
+warning: unused import: `dma_map`
+   --> /Users/macbook/src/stm32f4xx-hal/src/dma/traits.rs:334:5
+    |
+334 | use dma_map;
+    |     ^^^^^^^
+
+warning: unused import: `bus_struct`
+   --> /Users/macbook/src/stm32f4xx-hal/src/rcc/mod.rs:235:5
+    |
+235 | use bus_struct;
+    |     ^^^^^^^^^^
+
+warning: unused import: `halUsart`
+   --> /Users/macbook/src/stm32f4xx-hal/src/serial.rs:396:16
+    |
+396 | pub(crate) use halUsart;
+    |                ^^^^^^^^
+
+warning: unused import: `hal`
+   --> /Users/macbook/src/stm32f4xx-hal/src/timer.rs:771:5
+    |
+771 | use hal;
+    |     ^^^
+
+warning: `stm32f4xx-hal` (lib) generated 6 warnings (run `cargo fix --lib -p stm32f4xx-hal` to apply 6 suggestions)
+    Checking stm32f469i-disc v0.4.0 (/Users/macbook/src/stm32f4xx-hal/stm32f469i-disc)
+    Checking vls-core v0.15.0-rc.1 (/Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core)
+warning: unused import: `Txid`
+  --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/channel.rs:12:74
+   |
+12 | use bitcoin::{Amount, Network, OutPoint, Script, ScriptBuf, Transaction, Txid};
+   |                                                                          ^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `fee_rate`
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/channel.rs:1372:9
+     |
+1372 |         fee_rate: u32,
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_fee_rate`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `fee_utxo`
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/channel.rs:1373:9
+     |
+1373 |         fee_utxo: &[InputUtxo],
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_fee_utxo`
+
+warning: unused variable: `e`
+  --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/policy/mod.rs:83:16
+   |
+83 |     if let Err(ref e) = res {
+   |                ^^^^^ help: if this is intentional, prefix it with an underscore: `_e`
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/channel.rs:2871:20
+     |
+2871 |     fn get_channel(&self) -> MutexGuard<ChannelSlot> {
+     |                    ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+     |                    |
+     |                    the lifetime is elided here
+     |
+     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+     = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+     |
+2871 |     fn get_channel(&self) -> MutexGuard<'_, ChannelSlot> {
+     |                                         +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/monitor.rs:936:18
+    |
+936 |     fn get_state(&self) -> MutexGuard<State> {
+    |                  ^^^^^     ^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                  |
+    |                  the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+936 |     fn get_state(&self) -> MutexGuard<'_, State> {
+    |                                       +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/monitor.rs:963:22
+    |
+963 |     pub fn get_state(&self) -> MutexGuard<State> {
+    |                      ^^^^^     ^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                      |
+    |                      the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+963 |     pub fn get_state(&self) -> MutexGuard<'_, State> {
+    |                                           +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/node.rs:1560:22
+     |
+1560 |     pub fn get_state(&self) -> MutexGuard<NodeState> {
+     |                      ^^^^^     ^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+     |                      |
+     |                      the lifetime is elided here
+     |
+     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+     |
+1560 |     pub fn get_state(&self) -> MutexGuard<'_, NodeState> {
+     |                                           +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/node.rs:2508:37
+     |
+2508 |     pub(crate) fn validator_factory(&self) -> MutexGuard<Arc<dyn ValidatorFactory>> {
+     |                                     ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+     |                                     |
+     |                                     the lifetime is elided here
+     |
+     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+     |
+2508 |     pub(crate) fn validator_factory(&self) -> MutexGuard<'_, Arc<dyn ValidatorFactory>> {
+     |                                                          +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/node.rs:2551:25
+     |
+2551 |     pub fn get_channels(&self) -> MutexGuard<OrderedMap<ChannelId, Arc<Mutex<ChannelSlot>>>> {
+     |                         ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+     |                         |
+     |                         the lifetime is elided here
+     |
+     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+     |
+2551 |     pub fn get_channels(&self) -> MutexGuard<'_, OrderedMap<ChannelId, Arc<Mutex<ChannelSlot>>>> {
+     |                                              +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/nostd.rs:20:17
+   |
+20 |     pub fn lock(&self) -> Result<MutexGuard<T>, ()> {
+   |                 ^^^^^            ^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+20 |     pub fn lock(&self) -> Result<MutexGuard<'_, T>, ()> {
+   |                                             +++
+
+warning: `vls-core` (lib) generated 11 warnings (run `cargo fix --lib -p vls-core` to apply 11 suggestions)
+    Checking vls-protocol v0.15.0-rc.1 (/Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-protocol)
+    Checking vls-persist v0.15.0-rc.1 (/Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-persist)
+    Checking vls-protocol-signer v0.15.0-rc.1 (/Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-protocol-signer)
+warning: unused import: `core::time::Duration`
+   --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-protocol-signer/src/handler.rs:888:25
+    |
+888 |                     use core::time::Duration;
+    |                         ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `header`
+   --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-protocol-signer/src/handler.rs:889:25
+    |
+889 |                     let header: BlockHeader =
+    |                         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_header`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `vls-protocol-signer` (lib) generated 2 warnings (run `cargo fix --lib -p vls-protocol-signer` to apply 2 suggestions)
+    Checking vls-signer-stm32 v0.1.0 (/Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-signer-stm32)
+warning: unused import: `otg_fs::USB`
+  --> src/device/mod.rs:32:5
+   |
+32 |     otg_fs::USB,
+   |     ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `SCREEN_HEIGHT` and `SCREEN_WIDTH`
+  --> src/device/mod.rs:67:34
+   |
+67 |     CHOICE_TOUCH_POSITIONS, I2C, SCREEN_HEIGHT, SCREEN_WIDTH, VCENTER_PIX,
+   |                                  ^^^^^^^^^^^^^  ^^^^^^^^^^^^
+
+warning: use of deprecated associated function `vls_protocol::serde_bolt::bitcoin::secp256k1::Message::from_slice`: use from_digest_slice instead
+  --> src/bench_crypto.rs:55:24
+   |
+55 |     let msg = Message::from_slice(&[0x33; 32]).unwrap();
+   |                        ^^^^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated associated function `vls_protocol::serde_bolt::bitcoin::secp256k1::Message::from_slice`: use from_digest_slice instead
+  --> src/bench_crypto.rs:67:24
+   |
+67 |     let msg = Message::from_slice(&[0x33; 32]).unwrap();
+   |                        ^^^^^^^^^^
+
+warning: use of deprecated associated function `vls_protocol::serde_bolt::bitcoin::secp256k1::Message::from_slice`: use from_digest_slice instead
+  --> src/bench_crypto.rs:80:24
+   |
+80 |     let msg = Message::from_slice(&[0x33; 32]).unwrap();
+   |                        ^^^^^^^^^^
+
+warning: creating a shared reference to mutable static
+  --> src/timer.rs:32:17
+   |
+32 |         assert!(TIMER_TIM2.is_none());
+   |                 ^^^^^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+   = note: `#[warn(static_mut_refs)]` (part of `#[warn(rust_2024_compatibility)]`) on by default
+
+warning: creating a mutable reference to mutable static
+  --> src/timer.rs:33:9
+   |
+33 |         TIMER_LISTENERS.push(listener);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ mutable reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: mutable references to mutable statics are dangerous; it's undefined behavior if any other pointer to the static is used or if any other reference is created for the static while the mutable reference lives
+
+warning: creating a mutable reference to mutable static
+  --> src/timer.rs:40:9
+   |
+40 |         TIMER_TIM2.as_mut().unwrap().clear_flags(Flag::Update);
+   |         ^^^^^^^^^^^^^^^^^^^ mutable reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: mutable references to mutable statics are dangerous; it's undefined behavior if any other pointer to the static is used or if any other reference is created for the static while the mutable reference lives
+
+warning: creating a shared reference to mutable static
+  --> src/timer.rs:42:29
+   |
+42 |             for listener in &TIMER_LISTENERS {
+   |                             ^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+help: use `&raw const` instead to create a raw pointer
+   |
+42 |             for listener in &raw const TIMER_LISTENERS {
+   |                              +++++++++
+
+warning: creating a shared reference to mutable static
+  --> src/usbserial.rs:34:16
+   |
+34 |             if USB_BUS.is_none() {
+   |                ^^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+
+warning: creating a shared reference to mutable static
+  --> src/usbserial.rs:42:47
+   |
+42 |         let serial = unsafe { SerialPort::new(USB_BUS.as_ref().unwrap()) };
+   |                                               ^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+
+warning: creating a shared reference to mutable static
+  --> src/usbserial.rs:46:35
+   |
+46 |             UsbDeviceBuilder::new(USB_BUS.as_ref().unwrap(), UsbVidPid(0x16c0, 0x27dd))
+   |                                   ^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+
+warning: `vls-signer-stm32` (bin "bench") generated 12 warnings (run `cargo fix --bin "bench" -p vls-signer-stm32` to apply 2 suggestions)
+warning: field `seed` is never read
+  --> src/setup.rs:61:9
+   |
+59 | pub struct NormalContext {
+   |            ------------- field in this struct
+60 |     pub cmn: CommonContext,
+61 |     pub seed: Secret,
+   |         ^^^^
+   |
+   = note: `NormalContext` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/setup.rs:193:19
+    |
+193 |     pub fn rundir(&self) -> sdcard::DIR {
+    |                   ^^^^^     ^^^^^^^^^^^ the same lifetime is hidden here
+    |                   |
+    |                   the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+193 |     pub fn rundir(&self) -> sdcard::DIR<'_> {
+    |                                        ++++
+
+warning: `vls-signer-stm32` (bin "test") generated 11 warnings (9 duplicates) (run `cargo fix --bin "test" -p vls-signer-stm32` to apply 1 suggestion)
+    Finished `release` profile [optimized + debuginfo] target(s) in 1m 05s

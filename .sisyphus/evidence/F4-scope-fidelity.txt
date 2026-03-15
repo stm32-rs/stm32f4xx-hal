@@ -1,0 +1,62 @@
+## F4 Scope Fidelity Check — 2026-03-01
+
+### Commits Analyzed (Plan-Related)
+- 8727aab feat(examples): add defmt touch coordinate logging to paint example (Task 0/1 baseline)
+- 995f1af fix(f469disco): correct DSI color coding for RGB565 + fix memory.x RAM size (Task 2)
+- 519b722 fix(f469disco): clear force_rx_low_power after panel init (Task 3)
+- c88f2b2 fix(f469disco): add ft6x06 panic guard, IWDG watchdog, and DSI diagnostics (Task 4/6)
+- 148f3f7 fix(ltdc): use VBR reload for runtime changes + DMA2D completion wait (Task 5/7)
+
+### Diff Summary
+```
+ examples/f469disco-lcd-test.rs |  3 ++
+ examples/f469disco-paint.rs    | 99 +++++++++++++++++++++++++++++++-----------
+ examples/f469disco/board.rs    | 10 ++++-
+ memory.x                       |  6 +--
+ src/ltdc.rs                    | 13 ++++--
+ 5 files changed, 98 insertions(+), 33 deletions(-)
+```
+
+### Task Compliance Check
+
+| Task | Spec | Implementation | Status |
+|------|------|----------------|--------|
+| Task 2 | DSI color coding to SixteenBitsConfig1 | board.rs:224-225 changed to `ColorCoding::SixteenBitsConfig1` | ✅ PASS |
+| Task 2 | memory.x RAM = 320K | memory.x:5 changed to `LENGTH = 320K` | ✅ PASS |
+| Task 3 | force_rx_low_power(false) in init_panel() BEFORE AllInHighSpeed | board.rs:299 added clearing call | ✅ PASS |
+| Task 3 | force_rx_low_power(false) in init_display_full() BEFORE AllInHighSpeed | board.rs:408 added clearing call | ✅ PASS |
+| Task 4 | ft6x06 panic guard reads TD_STATUS directly | paint.rs reads register 0x02 via I2C | ✅ PASS |
+| Task 4 | IWDG watchdog added | paint.rs:82-85 adds IndependentWatchdog | ✅ PASS |
+| Task 4 | src/i2c.rs UNCHANGED | `git diff` shows empty | ✅ PASS |
+| Task 5 | reload_on_vblank() method using VBR | ltdc.rs adds `reload_on_vblank()` with `vbr().set_bit()` | ✅ PASS |
+| Task 5 | Runtime callers use VBR | ltdc.rs callers updated | ✅ PASS |
+| Task 6 | DSI ISR polling in main loop | paint.rs:252-266 polls ISR0/ISR1 every 100 iterations | ✅ PASS |
+| Task 7 | DMA2D completion wait | ltdc.rs adds busy-wait after DMA2D start | ✅ PASS |
+
+### Must NOT Have Guardrails Check
+
+| # | Guardrail | Verification | Status |
+|---|-----------|--------------|--------|
+| 1 | No changes to src/i2c.rs | `git diff 8727aab..148f3f7 -- src/i2c.rs` → empty | ✅ CLEAN |
+| 2 | No blind axis swap | TOUCH_X_OFFSET=0, TOUCH_Y_OFFSET=0 unchanged | ✅ CLEAN |
+| 3 | No ARGB8888 changes | `git diff | grep -i argb` → empty | ✅ CLEAN |
+| 4 | No Peripherals::steal() refactoring | No new steal() calls in plan commits | ✅ CLEAN |
+| 5 | No framebuffer pointer model changes | No pointer arithmetic changes | ✅ CLEAN |
+| 6 | No double-buffering | Not present in diff | ✅ CLEAN |
+| 7 | No touch gesture support | Not present in diff | ✅ CLEAN |
+| 8 | No DSI interrupt handler | Only polling in main loop, no ISR | ✅ CLEAN |
+| 9 | No batch-applying fixes | Separate commits per task group | ✅ CLEAN |
+
+### Scope Creep Check
+- Changes limited to: examples/f469disco-paint.rs, examples/f469disco/board.rs, examples/f469disco-lcd-test.rs, memory.x, src/ltdc.rs
+- No changes outside plan scope
+- No commented-out code added
+- No over-engineering detected
+
+### VERDICT
+
+```
+Tasks [9/9 compliant] | Forbidden Changes [9/9 CLEAN] | VERDICT: APPROVE
+```
+
+**F4 Scope Fidelity Check: APPROVED** — All tasks implemented exactly as specified, all guardrails respected, no scope creep.

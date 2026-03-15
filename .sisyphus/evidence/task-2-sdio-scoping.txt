@@ -1,0 +1,116 @@
+# Task 2: SDIO Scoping Fix Verification
+
+## Date
+Mon Mar 02 2026
+
+## Task Summary
+Fix SDIO `gpiod.pd2` scoping for F469 in `validating-lightning-signer/vls-signer-stm32/src/device/mod.rs`.
+
+### Problem
+- SDIO init block used `gpiod.pd2` for cmd pin (line 368)
+- For F469, `gpiod` is NOT split until line 426 (inside F469 display init block)
+- This caused compilation error: `gpiod not found for F469`
+
+### Solution Applied
+1. Wrapped existing SDIO block (lines 356-371) in `#[cfg(not(feature = "stm32f469"))]`
+2. Added new F469-specific SDIO block after F469 display init (after line 443)
+3. F469 SDIO uses `remainders.pd2` from display init, not `gpiod.pd2` directly
+4. Renamed `_remainders` to `remainders` in F469 display init block
+5. Fixed F469 block pattern binding and removed duplicates
+
+### Changes Made
+
+#### 1. F412/F413 SDIO Block (lines 356-372)
+```rust
+// ── SDIO (F412/F413 only) ──
+#[cfg(not(feature = "stm32f469"))]
+let sdio: Sdio<SdCard> = {
+    info!("SDIO setup");
+    let d0 = gpioc.pc8.into_alternate().internal_pull_up(true);
+    let d1 = gpioc.pc9.into_alternate().internal_pull_up(true);
+    let d2 = gpioc.pc10.into_alternate().internal_pull_up(true);
+    let d3 = gpioc.pc11.into_alternate().internal_pull_up(true);
+    let clk = gpioc.pc12.into_alternate().internal_pull_up(false);
+
+    #[cfg(feature = "stm32f413")]
+    let cmd = gpioa.pa6.into_alternate().internal_pull_up(true);
+    #[cfg(not(feature = "stm32f413"))]
+    let cmd = gpiod.pd2.into_alternate().internal_pull_up(true);
+
+    Sdio::new(p.SDIO, (clk, cmd, d0, d1, d2, d3), &mut rcc)
+};
+```
+
+#### 2. F469 Block (lines 425-459)
+```rust
+// --- F469 ---
+#[cfg(feature = "stm32f469")]
+let (disp, mut i2c, ts_int, sdio) = {
+    let gpiod = p.GPIOD.split(&mut rcc);
+    let gpioe = p.GPIOE.split(&mut rcc);
+    let gpiof = p.GPIOF.split(&mut rcc);
+    let gpiog = p.GPIOG.split(&mut rcc);
+    let gpioh = p.GPIOH.split(&mut rcc);
+    let gpioi = p.GPIOI.split(&mut rcc);
+
+    let (disp, remainders) = board::init_display(
+        p.FMC, p.DSI, p.LTDC, p.DMA2D,
+        gpioc.pc0,
+        gpiod, gpioe, gpiof, gpiog, gpioh, gpioi,
+        &mut rcc, &mut delay,
+    );
+
+    let i2c = board::init_i2c(p.I2C1, gpiob.pb8, gpiob.pb9, &mut rcc);
+    let ts_int = board::init_touch_int(gpioc.pc1);
+
+    // ── SDIO (F469) ──
+    let sdio: Sdio<SdCard> = {
+        info!("SDIO setup");
+        let d0 = gpioc.pc8.into_alternate().internal_pull_up(true);
+        let d1 = gpioc.pc9.into_alternate().internal_pull_up(true);
+        let d2 = gpioc.pc10.into_alternate().internal_pull_up(true);
+        let d3 = gpioc.pc11.into_alternate().internal_pull_up(true);
+        let clk = gpioc.pc12.into_alternate().internal_pull_up(false);
+        let cmd = remainders.pd2.into_alternate().internal_pull_up(true);
+        Sdio::new(p.SDIO, (clk, cmd, d0, d1, d2, d3), &mut rcc)
+    };
+
+    (disp, i2c, ts_int, sdio)
+};
+```
+
+## Verification Results
+
+### Cargo Check Output
+```
+warning: unused import: `gpio`
+warning: unused import: `address`
+warning: unused import: `dma_map`
+warning: unused import: `bus_struct`
+warning: unused import: `halUsart`
+warning: unused import: `hal`
+Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.66s
+```
+
+### Result: ✅ PASS
+- **Errors**: 0
+- **Warnings**: 6 (all pre-existing, unrelated to this change)
+- **Build Time**: 3.66s
+- **Exit Code**: 0
+
+## Key Learnings
+
+1. **Board-specific GPIO pin availability**: `gpiod.pd2` only exists after `gpiod.split()` is called. This timing matters for F469 vs F412/F413.
+
+2. **Cfg block ordering**: SDIO initialization must be placed after board-specific GPIO split blocks, not before.
+
+3. **Pattern binding must match tuple size**: The F469 block must return 4 elements `(disp, i2c, ts_int, sdio)` to match the pattern binding.
+
+4. **Pin aliasing**: F469 board init returns `remainders.pd2` (from `p.GPIOD.split()`), which can then be used for SDIO cmd pin.
+
+## Files Modified
+- `validating-lightning-signer/vls-signer-stm32/src/device/mod.rs` (lines 356-372, 425-459)
+
+## Test Coverage
+- Tested with `cargo check --features stm32f469` ✅
+- No runtime tests needed (compilation-only fix)

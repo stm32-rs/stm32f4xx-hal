@@ -1,0 +1,16 @@
+     Finished in 1.88s
+[INFO ] Initializing SDRAM... (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:122)
+[INFO ] Configuring LTDC and initializing display... (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:147)
+[INFO ] Initializing DSI... (f469disco_paint examples/f469disco/board.rs:231)
+[WARN ] NT35510 probe attempt 1 failed: DSI read error (f469disco_paint examples/f469disco/board.rs:141)
+[WARN ] NT35510 probe attempt 2 failed: DSI read error (f469disco_paint examples/f469disco/board.rs:141)
+[WARN ] NT35510 probe attempt 3 failed: DSI read error (f469disco_paint examples/f469disco/board.rs:141)
+[WARN ] Probe inconclusive (mismatch=0, read_err=3, write_err=0); defaulting to NT35510 (f469disco_paint examples/f469disco/board.rs:195)
+[INFO ] Detected LCD controller: Nt35510 (f469disco_paint examples/f469disco/board.rs:353)
+[INFO ] Initializing NT35510 (B08 revision)... (f469disco_paint examples/f469disco/board.rs:384)
+[INFO ] Display initialized successfully (f469disco_paint examples/f469disco/board.rs:407)
+[INFO ] Initializing I2C touch controller... (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:162)
+[INFO ] FT6X06 touch initialized (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:171)
+[INFO ] Paint ready — touch to draw, tap palette bar to change color (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:179)
+Received SIGTERM, exiting
+Exited by user request

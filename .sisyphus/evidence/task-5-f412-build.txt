@@ -1,0 +1,299 @@
+warning: unused import: `Txid`
+  --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/channel.rs:12:74
+   |
+12 | use bitcoin::{Amount, Network, OutPoint, Script, ScriptBuf, Transaction, Txid};
+   |                                                                          ^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `fee_rate`
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/channel.rs:1372:9
+     |
+1372 |         fee_rate: u32,
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_fee_rate`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `fee_utxo`
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/channel.rs:1373:9
+     |
+1373 |         fee_utxo: &[InputUtxo],
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_fee_utxo`
+
+warning: unused variable: `e`
+  --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/policy/mod.rs:83:16
+   |
+83 |     if let Err(ref e) = res {
+   |                ^^^^^ help: if this is intentional, prefix it with an underscore: `_e`
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/channel.rs:2871:20
+     |
+2871 |     fn get_channel(&self) -> MutexGuard<ChannelSlot> {
+     |                    ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+     |                    |
+     |                    the lifetime is elided here
+     |
+     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+     = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+     |
+2871 |     fn get_channel(&self) -> MutexGuard<'_, ChannelSlot> {
+     |                                         +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/monitor.rs:936:18
+    |
+936 |     fn get_state(&self) -> MutexGuard<State> {
+    |                  ^^^^^     ^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                  |
+    |                  the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+936 |     fn get_state(&self) -> MutexGuard<'_, State> {
+    |                                       +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/monitor.rs:963:22
+    |
+963 |     pub fn get_state(&self) -> MutexGuard<State> {
+    |                      ^^^^^     ^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                      |
+    |                      the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+963 |     pub fn get_state(&self) -> MutexGuard<'_, State> {
+    |                                           +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/node.rs:1560:22
+     |
+1560 |     pub fn get_state(&self) -> MutexGuard<NodeState> {
+     |                      ^^^^^     ^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+     |                      |
+     |                      the lifetime is elided here
+     |
+     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+     |
+1560 |     pub fn get_state(&self) -> MutexGuard<'_, NodeState> {
+     |                                           +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/node.rs:2508:37
+     |
+2508 |     pub(crate) fn validator_factory(&self) -> MutexGuard<Arc<dyn ValidatorFactory>> {
+     |                                     ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+     |                                     |
+     |                                     the lifetime is elided here
+     |
+     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+     |
+2508 |     pub(crate) fn validator_factory(&self) -> MutexGuard<'_, Arc<dyn ValidatorFactory>> {
+     |                                                          +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+    --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/node.rs:2551:25
+     |
+2551 |     pub fn get_channels(&self) -> MutexGuard<OrderedMap<ChannelId, Arc<Mutex<ChannelSlot>>>> {
+     |                         ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+     |                         |
+     |                         the lifetime is elided here
+     |
+     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+     |
+2551 |     pub fn get_channels(&self) -> MutexGuard<'_, OrderedMap<ChannelId, Arc<Mutex<ChannelSlot>>>> {
+     |                                              +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-core/src/nostd.rs:20:17
+   |
+20 |     pub fn lock(&self) -> Result<MutexGuard<T>, ()> {
+   |                 ^^^^^            ^^^^^^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+   |
+20 |     pub fn lock(&self) -> Result<MutexGuard<'_, T>, ()> {
+   |                                             +++
+
+warning: `vls-core` (lib) generated 11 warnings (run `cargo fix --lib -p vls-core` to apply 11 suggestions)
+   Compiling stm32f4xx-hal v0.23.0 (/Users/macbook/src/stm32f4xx-hal)
+warning: unused import: `core::time::Duration`
+   --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-protocol-signer/src/handler.rs:888:25
+    |
+888 |                     use core::time::Duration;
+    |                         ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `header`
+   --> /Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-protocol-signer/src/handler.rs:889:25
+    |
+889 |                     let header: BlockHeader =
+    |                         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_header`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `vls-protocol-signer` (lib) generated 2 warnings (run `cargo fix --lib -p vls-protocol-signer` to apply 2 suggestions)
+warning: unused import: `gpio`
+   --> /Users/macbook/src/stm32f4xx-hal/src/gpio.rs:607:5
+    |
+607 | use gpio;
+    |     ^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `address`
+   --> /Users/macbook/src/stm32f4xx-hal/src/dma/traits.rs:299:5
+    |
+299 | use address;
+    |     ^^^^^^^
+
+warning: unused import: `dma_map`
+   --> /Users/macbook/src/stm32f4xx-hal/src/dma/traits.rs:334:5
+    |
+334 | use dma_map;
+    |     ^^^^^^^
+
+warning: unused import: `bus_struct`
+   --> /Users/macbook/src/stm32f4xx-hal/src/rcc/mod.rs:235:5
+    |
+235 | use bus_struct;
+    |     ^^^^^^^^^^
+
+warning: unused import: `halUsart`
+   --> /Users/macbook/src/stm32f4xx-hal/src/serial.rs:396:16
+    |
+396 | pub(crate) use halUsart;
+    |                ^^^^^^^^
+
+warning: unused import: `hal`
+   --> /Users/macbook/src/stm32f4xx-hal/src/timer.rs:771:5
+    |
+771 | use hal;
+    |     ^^^
+
+warning: `stm32f4xx-hal` (lib) generated 6 warnings (run `cargo fix --lib -p stm32f4xx-hal` to apply 6 suggestions)
+   Compiling vls-signer-stm32 v0.1.0 (/Users/macbook/src/stm32f4xx-hal/validating-lightning-signer/vls-signer-stm32)
+warning: unused imports: `SCREEN_HEIGHT` and `SCREEN_WIDTH`
+  --> src/device/mod.rs:67:5
+   |
+67 |     SCREEN_WIDTH, SCREEN_HEIGHT, VCENTER_PIX,
+   |     ^^^^^^^^^^^^  ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/device/f412.rs:157:9
+    |
+157 |     let mut disp = Builder::st7789(interface)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `seed` is never read
+  --> src/setup.rs:61:9
+   |
+59 | pub struct NormalContext {
+   |            ------------- field in this struct
+60 |     pub cmn: CommonContext,
+61 |     pub seed: Secret,
+   |         ^^^^
+   |
+   = note: `NormalContext` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/setup.rs:193:19
+    |
+193 |     pub fn rundir(&self) -> sdcard::DIR {
+    |                   ^^^^^     ^^^^^^^^^^^ the same lifetime is hidden here
+    |                   |
+    |                   the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+193 |     pub fn rundir(&self) -> sdcard::DIR<'_> {
+    |                                        ++++
+
+warning: creating a shared reference to mutable static
+  --> src/timer.rs:32:17
+   |
+32 |         assert!(TIMER_TIM2.is_none());
+   |                 ^^^^^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+   = note: `#[warn(static_mut_refs)]` (part of `#[warn(rust_2024_compatibility)]`) on by default
+
+warning: creating a mutable reference to mutable static
+  --> src/timer.rs:33:9
+   |
+33 |         TIMER_LISTENERS.push(listener);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ mutable reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: mutable references to mutable statics are dangerous; it's undefined behavior if any other pointer to the static is used or if any other reference is created for the static while the mutable reference lives
+
+warning: creating a mutable reference to mutable static
+  --> src/timer.rs:40:9
+   |
+40 |         TIMER_TIM2.as_mut().unwrap().clear_flags(Flag::Update);
+   |         ^^^^^^^^^^^^^^^^^^^ mutable reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: mutable references to mutable statics are dangerous; it's undefined behavior if any other pointer to the static is used or if any other reference is created for the static while the mutable reference lives
+
+warning: creating a shared reference to mutable static
+  --> src/timer.rs:42:29
+   |
+42 |             for listener in &TIMER_LISTENERS {
+   |                             ^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+help: use `&raw const` instead to create a raw pointer
+   |
+42 |             for listener in &raw const TIMER_LISTENERS {
+   |                              +++++++++
+
+warning: creating a shared reference to mutable static
+  --> src/usbserial.rs:34:16
+   |
+34 |             if USB_BUS.is_none() {
+   |                ^^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+
+warning: creating a shared reference to mutable static
+  --> src/usbserial.rs:42:47
+   |
+42 |         let serial = unsafe { SerialPort::new(USB_BUS.as_ref().unwrap()) };
+   |                                               ^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+
+warning: creating a shared reference to mutable static
+  --> src/usbserial.rs:46:35
+   |
+46 |             UsbDeviceBuilder::new(USB_BUS.as_ref().unwrap(), UsbVidPid(0x16c0, 0x27dd))
+   |                                   ^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+

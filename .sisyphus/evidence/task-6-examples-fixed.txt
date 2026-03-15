@@ -1,0 +1,103 @@
+Task 6: F469-Disco examples made defmt-optional
+================================================
+Date: 2026-02-27
+
+## Summary
+
+All 6 f469disco examples now compile both WITH and WITHOUT the `defmt` feature.
+
+## Verification Results
+
+### Without defmt:
+- f469disco-hello-eg:     PASS (features: stm32f469,stm32-fmc,framebuffer,dsihost)
+- f469disco-image-slider: PASS (features: stm32f469,stm32-fmc,framebuffer,dsihost)
+- f469disco-paint:        PASS (features: stm32f469,stm32-fmc,framebuffer,dsihost)
+- f469disco-slideshow:    PASS (features: stm32f469,stm32-fmc,framebuffer,dsihost)
+- f469disco-touch-debug:  PASS (features: stm32f469,stm32-fmc)
+- f469disco-lcd-test:     PASS (features: stm32f469,stm32-fmc,dsihost,otm8009a)
+
+### With defmt:
+- f469disco-hello-eg:     PASS (features: stm32f469,stm32-fmc,framebuffer,dsihost,otm8009a,defmt)
+- f469disco-image-slider: PASS (features: stm32f469,stm32-fmc,framebuffer,dsihost,otm8009a,defmt)
+- f469disco-paint:        PASS (features: stm32f469,stm32-fmc,framebuffer,dsihost,otm8009a,defmt)
+- f469disco-slideshow:    PASS (features: stm32f469,stm32-fmc,framebuffer,dsihost,otm8009a,defmt)
+- f469disco-touch-debug:  PASS (features: stm32f469,stm32-fmc,defmt)
+- f469disco-lcd-test:     PASS (features: stm32f469,stm32-fmc,dsihost,otm8009a,defmt)
+
+## Files Changed
+
+- Cargo.toml: removed `defmt` from required-features for all 6 examples
+- examples/f469disco/board.rs: fixed unused variable warnings (attempt, mismatch_id)
+- examples/f469disco-hello-eg.rs: defmt optional
+- examples/f469disco-image-slider.rs: defmt optional
+- examples/f469disco-paint.rs: defmt optional
+- examples/f469disco-slideshow.rs: defmt optional
+- examples/f469disco-touch-debug.rs: defmt optional
+- examples/f469disco-lcd-test.rs: defmt optional (most complex — fixed multiple brace issues from prior editing)
+
+## Patterns Used
+
+```rust
+// Panic handler (top of each example):
+#[cfg(feature = "defmt")]
+use defmt_rtt as _;
+#[cfg(feature = "defmt")]
+use panic_probe as _;
+#[cfg(not(feature = "defmt"))]
+use panic_halt as _;
+
+// Logging calls:
+#[cfg(feature = "defmt")]
+defmt::info!("message");
+
+// defmt::panic! pattern:
+Err(e) => {
+    #[cfg(not(feature = "defmt"))]
+    let _ = e;
+    #[cfg(feature = "defmt")]
+    defmt::panic!("msg: {:?}", e);
+    #[cfg(not(feature = "defmt"))]
+    panic!("msg");
+}
+
+// Unused loop variable (only used in defmt macros):
+for attempt in 0..MAX {
+    #[cfg(not(feature = "defmt"))]
+    let _ = attempt;
+    // ...
+}
+```
+
+## Task 6 Part 2: dead_code and clippy fixes
+=============================================
+Date: 2026-02-27
+
+### Changes Made
+
+#### examples/f469disco/board.rs
+- Removed blanket `#![allow(dead_code)]` at line 12
+- Replaced with comment explaining per-item annotation strategy
+- Added `#[allow(dead_code)]` on `BoardHint` enum (variants NewRevisionLikely/LegacyRevisionLikely 
+  used in detection logic but not constructed by every example)
+- Added `#[allow(dead_code)]` on `init_dsi_with_delay()` (unused public helper)
+- Added `#[allow(dead_code)]` on `init_panel()` (unused public helper)
+- Added `#[allow(dead_code)]` on `init_ltdc_rgb565()` (unused public helper)
+- Added `#[allow(dead_code)]` on `init_ltdc_argb8888()` (unused public helper)
+
+#### examples/f469disco/nt35510.rs
+- Added `#[allow(clippy::new_without_default)]` on `impl Nt35510` block
+- Added comment: "No meaningful default for a display driver that tracks initialization state."
+
+#### examples/f469disco/images.rs
+- No changes (per-item #[allow(dead_code)] already correct and justified)
+
+### Compilation Verification (without defmt)
+- f469disco-hello-eg:  PASS
+- f469disco-paint:     PASS
+
+### Analysis: board.rs dead_code
+- 4 examples use board.rs: hello-eg, paint, image-slider, slideshow
+- All use: FB_SIZE, HEIGHT, WIDTH, init_display_full(), BoardHint::Unknown
+- Items used internally (no annotation needed): init_dsi, detect_lcd_controller, consts
+- Items never used externally (need annotation): init_dsi_with_delay, init_panel, init_ltdc_rgb565, init_ltdc_argb8888
+- BoardHint variants: NewRevisionLikely/LegacyRevisionLikely only matched, never constructed

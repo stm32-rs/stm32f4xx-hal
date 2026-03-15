@@ -1,0 +1,2 @@
+- 2026-02-26: No unresolved technical problems identified for Commit 2 scope.
+- 2026-02-26: Remote hardware retest remains unresolved: `f469disco-lcd-test` hardfaults immediately (`HardFault_ @ 0x08002802`) on STM32F469NIHx, so display/touch initialization and touch-event readiness could not be validated.

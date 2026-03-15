@@ -1,0 +1,40 @@
+Task 4: Remove src/display/ and move board helpers to examples/f469disco/board.rs
+=================================================================================
+Date: 2026-02-27
+
+VERIFICATION STEPS
+------------------
+
+1. src/display/ directory is gone:
+   $ ls src/display/ 2>&1
+   ls: src/display/: No such file or directory
+
+2. pub mod display removed from src/lib.rs:
+   $ grep -n 'mod display' src/lib.rs
+   (no output)
+
+3. examples/f469disco/board.rs exists:
+   $ ls examples/f469disco/board.rs
+   examples/f469disco/board.rs
+
+4. Full cargo check passes (all 6 f469disco examples):
+   $ cargo check --features=stm32f469,stm32-fmc,framebuffer,dsihost,defmt --examples --target thumbv7em-none-eabihf
+   warning: unused import: `gpio`  [pre-existing warnings, unrelated to this task]
+   ...
+   Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.94s
+
+CHANGES MADE
+------------
+- Deleted: src/display/mod.rs
+- Deleted: src/display/nt35510.rs
+- Deleted: src/display/f469disco.rs
+- Modified: src/lib.rs  — removed `pub mod display;` cfg block
+- Created:  examples/f469disco/board.rs  — moved from src/display/f469disco.rs
+- Modified: examples/f469disco-hello-eg.rs       — use local board mod
+- Modified: examples/f469disco-image-slider.rs   — use local board mod
+- Modified: examples/f469disco-slideshow.rs      — use local board mod
+- Modified: examples/f469disco-paint.rs          — use local board mod (+ fixed duplicate constants)
+- Unchanged: examples/f469disco-lcd-test.rs      — already uses own inline init
+- Unchanged: examples/f469disco-touch-debug.rs   — already uses own inline init
+
+RESULT: PASS

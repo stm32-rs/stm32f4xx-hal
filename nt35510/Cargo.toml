@@ -1,0 +1,19 @@
+[package]
+name = "nt35510"
+version = "0.1.0"
+edition = "2021"
+license = "0BSD"
+description = "Trait-based NT35510 DSI LCD controller driver"
+repository = "https://github.com/Amperstrand/nt35510"
+categories = ["embedded", "hardware-support", "no-std"]
+keywords = ["dsi", "mipi", "lcd", "nt35510", "display"]
+readme = "README.md"
+
+[lib]
+test = false
+bench = false
+doctest = false
+
+[dependencies]
+embedded-hal = "1.0"
+embedded-display-controller = "0.2"

@@ -1,0 +1,19 @@
+Task: Create standalone nt35510 crate extracted from src/display/nt35510.rs
+Date: 2026-02-27
+
+Created files:
+- nt35510/Cargo.toml
+- nt35510/src/lib.rs
+- nt35510/README.md
+
+Verification commands and outcomes:
+- CARGO_TARGET_DIR=target cargo check --manifest-path nt35510/Cargo.toml
+  Result: success
+- CARGO_TARGET_DIR=target cargo doc --manifest-path nt35510/Cargo.toml --no-deps
+  Result: success, docs generated at target/thumbv7em-none-eabihf/doc/nt35510/index.html
+- grep -r 'stm32f4xx' nt35510/
+  Result: no matches
+
+Additional verification:
+- lsp_diagnostics on nt35510/src/lib.rs
+  Result: no diagnostics
