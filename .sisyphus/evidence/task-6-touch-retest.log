@@ -1,0 +1,10 @@
+     Finished in 1.12s
+Firmware exited unexpectedly: Multiple
+[33m WARN[0m [2mprobe_rs::probe::stlink[0m[2m:[0m send_jtag_command 242 failed: SwdApFault
+[33m WARN[0m [2mprobe_rs_debug::debug_info[0m[2m:[0m UNWIND: Error while checking for exception context. The stack trace will not include the calling frames. : Probe(Arm(Probe(ProbeSpecific(BoxedProbeError(CommandFailed(SwdApFault))))))
+Core 0
+    Frame 0: HardFault_ @ 0x08002802
+       /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cortex-m-rt-0.7.5/src/lib.rs:1103:1
+    Frame 1: UNWIND: Error while checking for exception context. The stack trace will not include the calling frames. : Probe(Arm(Probe(ProbeSpecific(BoxedProbeError(CommandFailed(SwdApFault)))))) @ 0x08002802
+
+Error: Multiple

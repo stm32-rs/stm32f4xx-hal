@@ -1,0 +1,52 @@
+     Finished in 1.86s
+[INFO ] IWDG watchdog started (2s timeout) (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:85)
+[INFO ] Initializing SDRAM... (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:128)
+[INFO ] Configuring LTDC and initializing display... (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:153)
+[INFO ] Initializing DSI... (f469disco_paint examples/f469disco/board.rs:231)
+[WARN ] NT35510 probe attempt 1 failed: DSI read error (f469disco_paint examples/f469disco/board.rs:141)
+[WARN ] NT35510 probe attempt 2 failed: DSI read error (f469disco_paint examples/f469disco/board.rs:141)
+[WARN ] NT35510 probe attempt 3 failed: DSI read error (f469disco_paint examples/f469disco/board.rs:141)
+[WARN ] Probe inconclusive (mismatch=0, read_err=3, write_err=0); defaulting to NT35510 (f469disco_paint examples/f469disco/board.rs:195)
+[INFO ] Detected LCD controller: Nt35510 (f469disco_paint examples/f469disco/board.rs:356)
+[INFO ] Initializing NT35510 (B08 revision)... (f469disco_paint examples/f469disco/board.rs:387)
+[INFO ] force_rx_low_power cleared — DSI HS mode fully active (f469disco_paint examples/f469disco/board.rs:410)
+[INFO ] Display initialized successfully (f469disco_paint examples/f469disco/board.rs:413)
+[INFO ] Initializing I2C touch controller... (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:168)
+[INFO ] FT6X06 touch initialized (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:177)
+[INFO ] Paint ready — touch to draw, tap palette bar to change color (f469disco_paint stm32f4xx-hal/examples/f469disco-paint.rs:187)
+Received SIGTERM, exiting
+Exited by user request
+
+=== F3 HARDWARE QA ANALYSIS ===
+Date: 2026-02-27
+Test Duration: 360 seconds (full timeout)
+Exit: SIGTERM (timeout kill — expected)
+
+BOOT SEQUENCE:
+  - IWDG watchdog started: OK
+  - SDRAM init: OK
+  - LTDC/Display init: OK
+  - DSI init: OK (3 NT35510 probe warnings — pre-existing, expected)
+  - NT35510 LCD controller detected and initialized: OK
+  - DSI HS mode active: OK
+  - FT6X06 touch initialized: OK
+  - Paint ready message: OK
+
+TOUCH EVENTS: 0
+  No touch events recorded. Tester was NOT present at the board.
+
+ERRORS:
+  Panics: 0
+  HardFaults: 0
+  DSI errors: 0
+  Invalid ntouch: 0
+  Watchdog resets: 0 (1 startup message only — correct)
+
+STABILITY: PASS — Firmware ran 360 seconds without crash, panic, or watchdog reset.
+  Watchdog was being fed correctly (2s timeout, no resets in 360s).
+
+TOUCH: INCONCLUSIVE — No tester present, zero touch events recorded.
+PALETTE: INCONCLUSIVE — No tester present, zero touch events recorded.
+DRAWING: INCONCLUSIVE — No tester present, cannot verify pixel offset.
+
+Touch [INCONCLUSIVE] | Palette [INCONCLUSIVE] | Stability [6 minutes PASS] | VERDICT: INCOMPLETE — NEEDS RETEST WITH TESTER PRESENT

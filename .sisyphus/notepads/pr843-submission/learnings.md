@@ -1,0 +1,3 @@
+- 2026-02-26: `dep:otm8009a` in features requires `otm8009a` to be an optional package dependency under `[dependencies]`; optional dev-dependencies are invalid.
+- 2026-02-26: F469 display module must be gated behind `dma2d + ltdc + dsihost` to avoid exposing display APIs without DSI host support.
+- 2026-02-26: On the remote board host, `cargo run` for this example uses a default runner chip (`STM32F411CEUx`); for F469 hardware retests, build first then invoke `probe-rs run --chip STM32F469NIHx` explicitly.

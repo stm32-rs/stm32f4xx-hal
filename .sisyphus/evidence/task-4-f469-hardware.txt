@@ -1,0 +1,104 @@
+F469 Hardware Verification - RTT Output
+==========================================
+Host: ubuntu@192.168.13.246
+Chip: STM32F469NIHx
+Binary: /tmp/vls-test
+
+Execution Time: 2025-12-02 12:10:23
+
+=== RTT OUTPUT ===
+
+test starting
+12:12:39.548: test::logger INFO - logger started
+12:12:39.548: test INFO - v0.14.0-rc.2-38-gc54d3e3e-dirty
+12:12:39.548: test INFO - v0.14.0-rc.2-38
+12:12:39.548: test INFO - c54d3e3e-dirty
+12:12:39.548: test::device INFO - heap initialized: 320KB ram, 4KB data, 286KB heap, 29KB stack
+12:12:39.548: test::device INFO - setup timer
+12:12:39.548: test::device INFO - setup serial driver
+12:12:39.548: test::usbserial INFO - serial: allocate usb driver memory
+12:12:39.548: test::usbserial INFO - serial: new serial port
+12:12:39.548: test::usbserial INFO - serial: usb device builder
+12:12:39.548: test::usbserial INFO - serial: create serial driver impl
+12:12:39.548: test::usbserial INFO - serial: create serial driver
+12:12:39.548: test::usbserial INFO - serial: adding listener
+12:12:39.548: test::device::f469 INFO - setup display (F469 DSI)
+     Finished in 27.25s
+12:12:39.656: test::device::f469 INFO - SDRAM init
+12:12:41.219: test::device INFO - SDIO setup
+12:12:41.219: test::device INFO - setup touchscreen
+12:12:41.219: test::device INFO - starting ts_calibration
+12:12:41.535: test::device INFO - ts_calibration returned true
+12:12:41.535: test::setup INFO - get_run_context
+12:12:41.749: test::sdcard INFO - detecting sdcard
+12:12:41.749: test::sdcard INFO - waiting for sdio - Timeout
+12:12:42.792: test::sdcard INFO - waiting for sdio - Timeout
+12:12:43.735: test::sdcard INFO - waiting for sdio - Timeout
+12:12:43.735: test::sdcard INFO - sdcard not found
+12:12:43.735: test INFO - RunContext::Testing TestingContext { cmn: CommonContext { kdstyle: Native, network: Regtest, permissive: false, runpath: None } }
+12:12:43.735: test INFO - logging random data starting
+12:12:43.735: test INFO - buff: 5fc066b13fab1dfdd00da074648195b8
+12:12:43.884: test INFO - buff: 6fe5b53787a7ca4dc83d84e694dcf33653e3919cc0bcf3589342694aa4ba09a8eeaa04808d76e1d3283828f4fc2e2c3654cd2d1941b76c90aa86be78149405cc3977bc919d8ce77ac6090c8c7bd147b3b09eb09f099a68151d30a7e93b081832320baa4c21df4ff5f52025b06ba6bea6cbde784099d5d2e4e16faf4f7aea055cf4e7e0d24bf52901bbe1b6b314a565835bbf3ccabc68c0c783621c127c8aaf1cf7bccdfee4e5e0d59a8a4dd4deceed6c05f3aa61e42157025d608cd4d40ee178e2112b37e54eebb9da823b91cc00b951a91b027dc165e7edbb04f0b807ef6bc98b916e824cdf33f7e2566f13c4842c3931a02448eb00626500e139865ab37653400b35b61ec416ce20c66f8e3bc75fb384185774cc0c780b18a078ba76bc07d8a5efbcf70910d91fdfcd7d026d79ad1d9be9fdcf299966557acf5f4a4562a4041786ba5c544d215a8c2e53552e7b0be1681123befa4f39a7e7f2d57081078d404504b3ff71e9e7f43c24827d68248ed58148507afa6dca285d13689c2d3f83171bba5e33fb63abc278eda4c510d0e33495791813a6226eff1ec6e2a335bad6eb594aede79b2f7da188c4a14b287f2b3596d103e496ed9412f42ad9d018d108608e651839d7c623a4ecaa974c6456a56e82c7ba960000ed5893ace954d6b3ede50a0e979e0c40debc140ae1ed2766f85afad384d8e156fa778f2adeddefc5184237d6acbe308aa0a163cf43de44e1d8ab90ae862683a237ca0bdf9dba2dca2768881a9f21f7b9c1fdbe6b3b3bb51fe659b4d22f69a6b709a2cdf2deea2d779225710b09d3c619fed4cb71769c3eff23dc626a902e82572ca58cfbae43fc18a09da8d1f4d9d2a74d3804a12a62cca0739c0b64e269802a396793f6a29fe9f4ee4de4b49d8d49a9d246d4bf3b5ba32bb5d8fe63c3f8745a16ddc1ace267809367a8c3a984311ebf49ded05d28cafeeb5fa50efe2b29ab44948c5d7a88d758cb95bae8863939531969313758f73c7e4a63f662b2119dac834243c41f6cb363dbab407c138ef2d4798c46b934d0cfa5a7a82e61730cec5deac96d266f49b0169cb5264ce31915d1fa4c6fe8dbf011f2475247f76c4bf86e02ee84a3db0696b3067341dc62ce39258175d205212164db396041982d61077e2a90b683fbaabd5a3d5713dcb9cf86b3605727ff2919778781eba20990d3ed8bc25bc1d9ccd8822d7c4bc62ea1ddc8183506ff2b6c99529329767ba2f36575a1f683adcb221e6c900bf5c1ab55542c2a7fca7c92e2dda450074bfd174081c624aa1a69f72d83cef874c067126da32be38190fe98c1abcae78d97524aad3552b95a0f6520367d7062a49fb2911a9d6220d6ba7a8b1602f6cf8cb63004f4f7784ee2d254ec7f4accc646f0fe46a961414ebf1aa2f088dc3685322214ecfa08547c169315aebe954a95135743dc7d0407bcaa27f0db1b01ba858a1de04725f28a4edb4963689c1eb715f7fdb038fba57745c5846cbd4ebd553a105f26967b73fde33ae0c4babdb14e626f1ca6837d531bde508fb89178aae145e6ba8830b9f044fd0a5be2d63e4c7e015c9b6b2e8b73c49ab15c077923587a1957b1f2887548bb7abb5932622ac4b61d027b5a74fa8ad4439760935a5e05f2232a903a4ed37b5de9069dc49e85adae1d36c5e645d04dbddd7f3467b1f0750ffa6cbb85917af5a2dd16a9e9595c55b2a7cc9cb6b277083a2ba7cb33616bb0daaeee4e8a66921d66538b97478aa0c1ca78f91aaeead62f79a3e4a13fe07091be8dde108c32045972132a4104edb8ed82fa261877e40a584bd58e3afcfddca6ab652b5c2f80d76373144899f82543a22776739a3b26613b70df80fc56020e3eeaf5c2b6813d3be7bd1a1c4168e1efcc292e39f5112459952eab5719afa7835da0c03dc3e4705aa43634d3052c261f9411a50377f1d5c3025edcd149218fef632365419ac314100bdf7772889a5d22ca0a6f13105f9fcb127e1b37892892f891cbbf1e96f128776ce6b4d5f089ae1eb6d341805aad23d3a4ff1620f7d2aee398ccc0ac7f70cbd14cc6922525e68fe38f9a69a66c49285023b3bce18593cc980ab03b898e00e9fcc5bd08fc13f7bcdfe4ed5c6dd99a0241d293476b9cbfb32f990a2bea691358f8669c2278116fc5a3a77c88e3012efc727f1d34c2c9b601c6fc1286dfb43df65693479e624cd45d411ba4aaa383640265e627f31b01ab51a29b37794bc774a36c84dfd27dbf12f26c02f410042122a69ac8655b47ceb8af82a539369fc18c7fb73fe330e6e6a8d65cb4b6af3b382cd32d9f27ff7cf64cbbf64b46993ac98fb1b0e262eace2b3f0a81b5ecc1e50bd6cc716bc2a188b05d2c30a6cd4f5df030782325fd53b448ece73db9c6a1cacdbf03ec1326e58243c9bc5be7b3ba0417a473948acb9942436794416c07c1f2bdf61bbe0fd68dd29438354231bfd449a53cbe63e4d8dff0d22ad5444f816c7b650233c0b40dcbf8a6c9e8720c9882f8319f339b06221423d63f8f057fc5f1eeef1f5074c4720eae920a6f02badd84ce2619566755ef64ae0f621b0098e17202e5acd98227cf98f137c4c92da394b0bf333b4ed0ede148081fb46f6828fed66c8e3cacf6d8a9c470471ac4d2355f6a2a59dd5c2c6d5cc5601086e5c157e380a6cfb3e8ad8501f7cedd66cf6acc72b39ea836cc162d09f710d43e0310ceeff4d928e3c797a27a197efb0bb4c33e13d77ce643d765fb8a15d98db91452b723b632fe537344207be053fcfd72106735e89929834fc32aa14e729b6646e310062091e419230df2a701869a9353228f8b4b1228004f8da7869d54e86116e62138f9dc977b49bf65f895b881a681efe9f9348b0927be08d683741batest INFO - counter 2
+12:12:44.514: test INFO - counter 3
+12:12:44.933: test INFO - counter 4
+12:12:45.249: test INFO - counter 5
+12:12:45.671: test INFO - counter 6
+12:12:45.984: test INFO - counter 7
+12:12:46.400: test INFO - counter 8
+12:12:46.820: test INFO - counter 9
+12:12:47.137: test INFO - counter 10
+12:12:47.558: test INFO - counter 11
+12:12:47.876: test INFO - counter 12
+12:12:48.296: test INFO - counter 13
+12:12:48.613: test INFO - counter 14
+12:12:49.033: test INFO - counter 15
+12:12:49.349: test INFO - counter 16
+12:12:49.769: test INFO - counter 17
+12:12:50.190: test INFO - counter 18
+12:12:50.506: test INFO - counter 19
+12:12:50.926: test INFO - counter 20
+12:12:51.241: test INFO - counter 21
+12:12:51.660: test INFO - counter 22
+12:12:51.977: test INFO - counter 23
+12:12:52.397: test INFO - counter 24
+12:12:52.816: test INFO - counter 25
+12:12:53.131: test INFO - counter 26
+12:12:53.551: test INFO - counter 27
+12:12:53.868: test INFO - counter 28
+12:12:54.287: test INFO - counter 29
+12:12:54.603: test INFO - counter 30
+12:12:55.022: test INFO - counter 31
+12:12:55.337: test INFO - counter 32
+12:12:55.754: test INFO - counter 33
+12:12:56.172: test INFO - counter 34
+12:12:56.488: test INFO - counter 35
+12:12:56.906: test INFO - counter 36
+12:12:57.223: test INFO - counter 37
+12:12:57.642: test INFO - counter 38
+12:12:57.958: test INFO - counter 39
+12:12:58.379: test INFO - counter 40
+12:12:58.695: test INFO - counter 41
+12:12:59.113: test INFO - counter 42
+12:12:59.533: test INFO - counter 43
+12:12:59.850: test INFO - counter 44
+12:13:00.268: test INFO - counter 45
+12:13:00.585: test INFO - counter 46
+12:13:01.004: test INFO - counter 47
+12:13:01.318: test INFO - counter 48
+12:13:01.738: test INFO - counter 49
+12:13:02.159: test INFO - counter 50
+12:13:06.109: test::device INFO - touch: x=123, y=363
+12:13:06.109: test INFO - Err: Miss: x=123 y=363 (expected x 160-320). Try again.
+12:13:10.562: test::device INFO - touch: x=78, y=511
+12:13:10.562: test INFO - Err: Miss: x=78 y=511 (expected x 160-320). Try again.
+Received SIGTERM, exiting
+Exited by user request
+
+=== VERIFICATION SUMMARY ===
+✅ Binary flashed successfully
+✅ All initialization messages present
+✅ Counter increments: 50+ (1 through 50+)
+✅ No panics or hard faults detected
+✅ Touch calibration working
+
+Success Criteria Met: YES

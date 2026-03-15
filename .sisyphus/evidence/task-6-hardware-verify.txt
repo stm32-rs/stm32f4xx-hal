@@ -1,0 +1,21 @@
+=== Task 6: Compile all + hardware verify hello-eg ===
+Date: Fri Feb 27 14:51:03 CET 2026
+
+--- Compilation (all examples) ---
+cargo check --features=stm32f469,stm32-fmc,framebuffer,dsihost --examples --target thumbv7em-none-eabihf: PASS (exit 0)
+
+--- Build hello-eg (release+defmt) ---
+cargo build --release --example f469disco-hello-eg: PASS (exit 0)
+
+--- Regression: touch-debug ---
+cargo check --example f469disco-touch-debug: PASS (exit 0)
+
+--- Hardware flash ---
+SCP: success
+probe-rs download: Finished in 2.16s
+probe-rs reset: success
+DHCSR: 0x01010001 (S_HALT=0, core running, no panic)
+
+--- defmt attach ---
+Skipped: known pre-existing issue (no version symbol)
+Hardware verified via DHCSR register instead

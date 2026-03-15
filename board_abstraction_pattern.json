@@ -1,0 +1,273 @@
+{
+  "title": "Board Abstraction Pattern: Narrow Waist + BSP Adapter (STM32F4)",
+  "version": "1.0",
+  "generated_on": "2026-03-04",
+  "intended_audience": "LLM/maintainer implementing multi-board embedded Rust support (stm32f4xx-hal + optional BSP)",
+  "context": {
+    "boards": [
+      {
+        "feature": "stm32f412",
+        "name": "STM32F412G-DISCO",
+        "stack": [
+          "stm32f4xx-hal"
+        ],
+        "bsp": false
+      },
+      {
+        "feature": "stm32f413",
+        "name": "STM32F413H-DISCO",
+        "stack": [
+          "stm32f4xx-hal"
+        ],
+        "bsp": false
+      },
+      {
+        "feature": "stm32f469",
+        "name": "STM32F469I-DISCO",
+        "stack": [
+          "stm32f4xx-hal",
+          "BSP"
+        ],
+        "bsp": true
+      }
+    ],
+    "constraints": [
+      "Maintain support for F412 and F413 without requiring a separate BSP crate.",
+      "Support F469 using both HAL and BSP (BSP may be modified).",
+      "The implementer is allowed to change both BSP APIs and HAL integration for cleanliness and type unification.",
+      "Shared application code should remain board-agnostic."
+    ],
+    "primary_goal": "Remove board-specific branching and BSP leakage from shared init by introducing a narrow, stable board interface."
+  },
+  "pattern_summary": {
+    "name": "Narrow Waist Board Interface + BSP Adapter",
+    "one_sentence": "Expose a small, stable Board API used by the app; implement it per-board (HAL-only for F412/F413, BSP-adapted for F469) so board differences don't leak into shared code.",
+    "why_it_helps": [
+      "Minimizes #cfg sprawl in shared code",
+      "Prevents BSP-only concepts (e.g., 'remainders') from leaking into the application",
+      "Makes adding new boards predictable",
+      "Reduces tuple-return brittleness by standardizing return shape"
+    ]
+  },
+  "design_principles": [
+    "Single board entrypoint: shared code calls one function to obtain a uniform struct of initialized peripherals.",
+    "Standard return shape: avoid per-board tuple variations; prefer a named struct.",
+    "Board-private complexity: GPIO splitting, peripheral ownership juggling, BSP remainder plumbing must stay inside the board module/BSP.",
+    "Trait-first interoperability: prefer returning types that implement embedded-hal and embedded-graphics traits.",
+    "Avoid HAL/PAC version skew: ensure BSP and app share the same HAL/PAC types (re-export or unify versions/features).",
+    "Keep cfg limited: only board selection should be cfg'd in shared code."
+  ],
+  "narrow_waist_api": {
+    "shared_structs": {
+      "BoardIo": {
+        "description": "Uniform set of initialized peripherals the app depends on.",
+        "fields": [
+          {
+            "name": "disp",
+            "type": "Display",
+            "notes": "Wraps board::DisplayInner implementing embedded-graphics traits"
+          },
+          {
+            "name": "i2c",
+            "type": "I2C",
+            "notes": "Board-specific type alias; must satisfy embedded-hal i2c traits used by touch"
+          },
+          {
+            "name": "touch",
+            "type": "TouchDriver",
+            "notes": "Preferred: ft6x06::Ft6X06 driver or wrapper exposing same methods"
+          },
+          {
+            "name": "sdio",
+            "type": "Option<Sdio<SdCard>>",
+            "notes": "None if not supported/desired"
+          },
+          {
+            "name": "button",
+            "type": "Button",
+            "notes": "Board-specific type alias; may be HAL pin or BSP wrapper"
+          },
+          {
+            "name": "serial",
+            "type": "SerialDriver",
+            "notes": "USB serial abstraction used by app"
+          }
+        ]
+      }
+    },
+    "board_module_contract": {
+      "type_aliases": [
+        {
+          "name": "I2C",
+          "purpose": "Concrete I2C peripheral type for the board"
+        },
+        {
+          "name": "Button",
+          "purpose": "Concrete button type for the board"
+        },
+        {
+          "name": "DisplayInner",
+          "purpose": "Concrete display driver or wrapper type"
+        },
+        {
+          "name": "TouchInterruptPin",
+          "purpose": "Concrete touch interrupt pin type if used by touch driver"
+        }
+      ],
+      "constants_and_helpers": [
+        "SCREEN_WIDTH, SCREEN_HEIGHT (and any derived layout constants)",
+        "transform_touch_coords(...) and/or touch_to_grid(...) as needed",
+        "Any board-specific coordinate rotation/axis swap logic"
+      ],
+      "init_entrypoint": {
+        "name": "init_board_io",
+        "recommended_signature": "fn init_board_io(p: pac::Peripherals, cp: pac::CorePeripherals) -> (BoardIo, Rcc, SysDelay)",
+        "alternatives": [
+          "Return only BoardIo and keep clocks/delay in shared init",
+          "Return a BoardParts struct including clocks/delay if that's cleaner"
+        ],
+        "hard_requirement": "The application should be able to initialize a board using one call and receive a uniform BoardIo (or equivalent named struct)."
+      }
+    }
+  },
+  "bsp_integration_guidance_for_f469": {
+    "core_rule": "Treat the BSP as an implementation detail hidden behind the same narrow waist API.",
+    "do_not_leak": [
+      "BSP-specific 'remainders' objects or pin ownership artifacts",
+      "Board-specific tuple return shapes",
+      "BSP-only wrapper types that do not exist on HAL-only boards (unless wrapped behind common traits/types)"
+    ],
+    "preferred_shapes": [
+      "BSP returns stm32f4xx-hal types directly (best), OR",
+      "BSP returns wrappers/newtypes that implement the same embedded-hal / embedded-graphics traits used by the app"
+    ],
+    "recommended_bsp_changes": [
+      "Add bsp::hal and bsp::pac re-exports to avoid version skew",
+      "Make BSP init functions return types compatible with the app\u2019s BoardIo fields",
+      "Keep remainder plumbing private inside BSP; expose only final peripherals/handles"
+    ],
+    "trait_alignment": {
+      "display": [
+        "Must support embedded-graphics DrawTarget<Color=Rgb565> and OriginDimensions (or the subset the app uses).",
+        "If BSP display type differs, wrap it in a newtype implementing the traits and use that as board::DisplayInner."
+      ],
+      "i2c": [
+        "Must implement the embedded-hal I2C traits required by the touch driver.",
+        "Prefer using the same i2c driver type across boards (at least trait-compatible)."
+      ],
+      "touch": [
+        "Preferred: return ft6x06::Ft6X06<...> directly for all boards to avoid divergent APIs.",
+        "Otherwise provide a wrapper exposing wait_touch_interrupt/detect_touch/get_touch/get_coordinates/calibration."
+      ],
+      "usb_serial": [
+        "Either standardize SerialDriver::new signature, or hide USB bus init behind board::init_serial returning SerialDriver."
+      ]
+    }
+  },
+  "shared_code_rules": {
+    "cfg_policy": [
+      "Allow cfg only for selecting which board module is active.",
+      "Avoid cfg branches inside shared make_devices() for board-specific init; push that into board modules."
+    ],
+    "return_shapes": [
+      "Avoid tuples with >3 elements for board init; use named structs (BoardIo/Parts) for clarity and stability."
+    ]
+  },
+  "recommended_refactor_plan": [
+    {
+      "step": 1,
+      "action": "Introduce BoardIo (and any BoardParts wrapper) in the shared board abstraction module.",
+      "success_criteria": "A single struct represents all peripherals the app needs from a board."
+    },
+    {
+      "step": 2,
+      "action": "Define init_board_io(...) in each board module (f412/f413/f469) returning BoardIo.",
+      "success_criteria": "Shared code can build DeviceContext without per-board branching."
+    },
+    {
+      "step": 3,
+      "action": "Move GPIO splitting and init ceremony fully into each board module.",
+      "success_criteria": "Shared init never splits ports or handles board-specific pins directly."
+    },
+    {
+      "step": 4,
+      "action": "Adapt/modify F469 BSP so it returns HAL-compatible or trait-compatible types; keep 'remainders' private.",
+      "success_criteria": "f469.rs has minimal glue; no BSP-private objects appear outside the board module."
+    },
+    {
+      "step": 5,
+      "action": "Standardize touch initialization: board module creates TouchDriver for all boards.",
+      "success_criteria": "Shared code never handles touch interrupt pins or touch I2C address directly."
+    },
+    {
+      "step": 6,
+      "action": "Delete shared cfg branches like #[cfg(not(feature='stm32f469'))] by using the uniform BoardIo.",
+      "success_criteria": "make_devices() becomes uniform across boards."
+    },
+    {
+      "step": 7,
+      "action": "Add compile-time guards to enforce exactly one board feature.",
+      "success_criteria": "Misconfigured builds fail fast with clear messages."
+    }
+  ],
+  "compile_time_guards": {
+    "description": "Enforce that exactly one board feature is enabled.",
+    "snippet": [
+      "#[cfg(not(any(feature=\"stm32f412\", feature=\"stm32f413\", feature=\"stm32f469\")))]",
+      "compile_error!(\"Enable exactly one board feature: stm32f412 | stm32f413 | stm32f469\");",
+      "",
+      "#[cfg(any(",
+      "    all(feature=\"stm32f412\", feature=\"stm32f413\"),",
+      "    all(feature=\"stm32f412\", feature=\"stm32f469\"),",
+      "    all(feature=\"stm32f413\", feature=\"stm32f469\"),",
+      "))]",
+      "compile_error!(\"Enable only one board feature at a time.\");"
+    ]
+  },
+  "do_and_dont": {
+    "do": [
+      "Keep board-specific peripheral ownership juggling inside the board module/BSP.",
+      "Return types that implement embedded-hal / embedded-graphics traits used by the app.",
+      "Use named structs (BoardIo/Parts) instead of large tuples.",
+      "Re-export HAL/PAC from BSP to avoid duplicate types.",
+      "Standardize touch/display interfaces across boards via wrappers if needed."
+    ],
+    "dont": [
+      "Don\u2019t let BSP-only concepts like 'remainders' leak into shared code.",
+      "Don\u2019t branch shared init logic per board beyond selecting the active board module.",
+      "Don\u2019t allow BSP and app to depend on different HAL versions/features.",
+      "Don\u2019t use divergent APIs for touch/display unless wrapped behind the narrow waist."
+    ]
+  },
+  "acceptance_criteria": [
+    "Shared DeviceContext/make_devices() compiles unchanged across all three board features (except for module selection).",
+    "No BSP-private types appear in shared modules.",
+    "Board init returns a single named struct with consistent field names across boards.",
+    "F469 remains free to use BSP internally while exporting the same narrow waist API as HAL-only boards.",
+    "Adding a new board requires: new board module implementing init_board_io + exports, plus feature wiring\u2014no changes in app logic."
+  ],
+  "common_pitfalls_and_mitigations": [
+    {
+      "pitfall": "HAL/PAC type mismatch between BSP and app",
+      "mitigation": "Re-export hal/pac from BSP and/or ensure a single dependency instance with identical features/versions."
+    },
+    {
+      "pitfall": "BSP returns wrapper types that don\u2019t implement required traits",
+      "mitigation": "Add thin newtype adapters implementing embedded-hal/embedded-graphics traits; keep adapters in board module or BSP."
+    },
+    {
+      "pitfall": "Touch init differs (interrupt pin, address, calibration) and leaks into shared code",
+      "mitigation": "Move all touch setup and calibration into board::init_board_io; return a uniform TouchDriver."
+    },
+    {
+      "pitfall": "Large tuple returns become unmaintainable and error-prone",
+      "mitigation": "Replace tuples with named structs everywhere at the board boundary."
+    }
+  ],
+  "glossary": {
+    "narrow_waist": "A small, stable interface layer between two complex subsystems (app and board init).",
+    "bsp_adapter": "Code that converts BSP-specific initialization outputs into the narrow waist types expected by the app.",
+    "trait_alignment": "Ensuring returned objects implement common embedded traits (embedded-hal, embedded-graphics) so higher layers stay generic.",
+    "cfg_sprawl": "Excessive conditional compilation branches scattered through shared code."
+  }
+}

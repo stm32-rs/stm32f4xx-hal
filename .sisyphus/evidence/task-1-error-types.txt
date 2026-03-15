@@ -1,0 +1,4 @@
+450:            Err(nt35510::Error::DsiRead) => {
+455:            Err(nt35510::Error::DsiWrite) => {
+459:            Err(nt35510::Error::ProbeMismatch(id)) => {
+473:            Err(nt35510::Error::InvalidDimensions) => {}

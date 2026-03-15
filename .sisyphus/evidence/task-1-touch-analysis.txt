@@ -1,0 +1,53 @@
+# Task 1: Touch Coordinate Analysis — DEFINITIVE RESULT
+
+## Test: Full diagonal swipe from bottom-left to top-right corner
+
+### Data Summary
+
+| Position          | point.x (raw) | point.y (raw) |
+|-------------------|---------------|---------------|
+| Bottom-left start | 0             | 799           |
+| Mid-screen        | ~240          | ~400          |
+| Top-right end     | 474           | 1-2           |
+
+### Axis Mapping (CONFIRMED)
+
+- `point.x` range: 0 → 474 → maps to screen X (WIDTH=480), left-to-right ✓
+- `point.y` range: 799 → 1 → maps to screen Y (HEIGHT=800), bottom-to-top ✓
+
+In standard display coordinates:
+- (0, 0) = top-left corner
+- (479, 799) = bottom-right corner
+
+The swipe from bottom-left corner produced raw=(0, 799) → raw=(474, 2)
+This is EXACTLY correct: bottom-left=(x=0, y=799), top-right=(x≈480, y≈0)
+
+### Conclusion: NO SWAP, NO INVERSION, NO OFFSET NEEDED
+
+The current code is correct:
+```rust
+let x = (point.x as i32 + TOUCH_X_OFFSET).clamp(0, WIDTH as i32 - 1);
+let y = (point.y as i32 + TOUCH_Y_OFFSET).clamp(0, HEIGHT as i32 - 1);
+```
+
+With TOUCH_X_OFFSET=0 and TOUCH_Y_OFFSET=0, coordinates map 1:1 to screen pixels.
+ST BSP's `TS_SWAP_NONE` for portrait mode is CONFIRMED CORRECT.
+
+### BONUS FINDING: Root cause of "display freeze" crash
+
+After ~200+ touch samples, the FT6X06 crate panicked:
+```
+panicked at ft6x06-0.1.2/src/lib.rs:332:9:
+assertion failed: ntouch <= FT6X06_MAX_NB_TOUCH as u8
+```
+
+The `detect_touch()` function reads an I2C register for number of touches, gets a
+garbage value > FT6X06_MAX_NB_TOUCH (2), and panics via assertion. This assertion
+crash is almost certainly the "display freeze" bug — the system HardFaults after
+a stale I2C read returns invalid data.
+
+FIX NEEDED: Wrap detect_touch() and get_touch() in the example to handle errors
+gracefully instead of allowing the crate's internal panic to crash the system.
+
+### Data File
+Full raw data: task-1-swipe-diagonal.txt

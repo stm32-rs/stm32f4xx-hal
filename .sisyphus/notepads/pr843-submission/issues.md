@@ -1,0 +1,4 @@
+- 2026-02-26: Initial Cargo edit made `otm8009a` optional under `[dev-dependencies]`, which caused manifest parse failure (`dev-dependencies are not allowed to be optional`).
+- 2026-02-26: Resolved by restoring dev-dependency entry and adding an optional `[dependencies]` entry for feature wiring.
+- 2026-02-26: Hardware retest command from task (`--features "stm32f469,stm32-fmc,framebuffer,dsihost,defmt"`) failed immediately because current remote checkout has no `framebuffer` feature.
+- 2026-02-26: Probe access was blocked by a stale `probe-rs run` process on the remote host; after killing it, flashing proceeded but firmware entered `HardFault_` at `0x08002802` before any defmt init logs.

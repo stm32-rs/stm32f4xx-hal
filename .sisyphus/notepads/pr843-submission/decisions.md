@@ -1,0 +1,2 @@
+- 2026-02-26: Kept single-line attribution comments in `src/display/nt35510.rs` and `src/display/f469disco.rs` to match existing repository attribution style.
+- 2026-02-26: Updated stale f469disco helper reference to `examples/f469disco-lcd-test.rs` to align docs with current example path.

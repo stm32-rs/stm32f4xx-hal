@@ -1,0 +1,41 @@
+   Compiling stm32f4xx-hal v0.23.0 (/Users/macbook/src/stm32f4xx-hal)
+warning: unused import: `gpio`
+   --> src/gpio.rs:607:5
+    |
+607 | use gpio;
+    |     ^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `address`
+   --> src/dma/traits.rs:299:5
+    |
+299 | use address;
+    |     ^^^^^^^
+
+warning: unused import: `dma_map`
+   --> src/dma/traits.rs:334:5
+    |
+334 | use dma_map;
+    |     ^^^^^^^
+
+warning: unused import: `bus_struct`
+   --> src/rcc/mod.rs:235:5
+    |
+235 | use bus_struct;
+    |     ^^^^^^^^^^
+
+warning: unused import: `halUsart`
+   --> src/serial.rs:396:16
+    |
+396 | pub(crate) use halUsart;
+    |                ^^^^^^^^
+
+warning: unused import: `hal`
+   --> src/timer.rs:771:5
+    |
+771 | use hal;
+    |     ^^^
+
+warning: `stm32f4xx-hal` (lib) generated 6 warnings (run `cargo fix --lib -p stm32f4xx-hal` to apply 6 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 39.11s

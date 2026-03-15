@@ -1,0 +1,10 @@
+{
+  "active_plan": "/Users/macbook/src/stm32f4xx-hal/.sisyphus/plans/upstream-pr-preparation.md",
+  "started_at": "2026-03-06T09:55:00.000Z",
+  "session_ids": [
+    "ses_345ee6753ffefAYdEBgBNAf1cu"
+  ],
+  "plan_name": "upstream-pr-preparation",
+  "agent": "atlas",
+  "completed_plans": ["board-abstraction-refactor"]
+}

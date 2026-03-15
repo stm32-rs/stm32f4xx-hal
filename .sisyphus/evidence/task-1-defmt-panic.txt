@@ -1,0 +1,3 @@
+173:            defmt::panic!("DSI host initialization failed: {:?}", e);
+220:                defmt::panic!("NT35510 init failed");
+238:                defmt::panic!("OTM8009A init failed: {:?}", _e);

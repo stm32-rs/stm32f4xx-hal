@@ -1,0 +1,3 @@
+=== Build without defmt ===
+cargo build --release --example f469disco-lcd-test --features="stm32f469,stm32-fmc,dsihost" --target thumbv7em-none-eabihf
+Result: Finished release profile [optimized + debuginfo] — EXIT 0
