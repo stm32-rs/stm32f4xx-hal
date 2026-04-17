@@ -10,8 +10,7 @@ use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 use enumflags2::BitFlags;
 
-use crate::bb;
-use crate::pac;
+use crate::{bb, cfg_if, pac};
 
 use crate::dma::traits::PeriAddress;
 use crate::rcc::Rcc;
@@ -24,34 +23,30 @@ pub mod delay;
 pub use delay::*;
 pub mod pwm;
 pub use pwm::*;
-#[cfg(not(feature = "gpio-f410"))]
-pub mod pwm_input;
-#[cfg(not(feature = "gpio-f410"))]
-pub use pwm_input::PwmInput;
-#[cfg(not(feature = "gpio-f410"))]
-pub mod capture;
-#[cfg(not(feature = "gpio-f410"))]
-pub use capture::*;
-#[cfg(feature = "rtic1")]
-pub mod monotonic;
-#[cfg(feature = "rtic1")]
-pub use monotonic::*;
-#[cfg(feature = "rtic2")]
-#[cfg(any(
-    feature = "rtic-tim2",
-    feature = "rtic-tim3",
-    feature = "rtic-tim4",
-    feature = "rtic-tim5"
-))]
-pub mod monotonics;
-#[cfg(feature = "rtic2")]
-#[cfg(any(
-    feature = "rtic-tim2",
-    feature = "rtic-tim3",
-    feature = "rtic-tim4",
-    feature = "rtic-tim5"
-))]
-pub use monotonics::*;
+cfg_if! {not(feature = "gpio-f410") => {
+    pub mod pwm_input;
+    pub use pwm_input::PwmInput;
+    pub mod capture;
+    pub use capture::*;
+}}
+cfg_select! {
+    feature = "rtic1" => {
+        pub mod monotonic;
+        pub use monotonic::*;
+    }
+    all(feature = "rtic2",
+        any(
+            feature = "rtic-tim2",
+            feature = "rtic-tim3",
+            feature = "rtic-tim4",
+            feature = "rtic-tim5"
+        )
+    ) => {
+        pub mod monotonics;
+        pub use monotonics::*;
+    }
+    _ => {}
+}
 
 mod hal_02;
 mod hal_1;
@@ -766,7 +761,6 @@ macro_rules! hal {
         })?
     };
 }
-use hal;
 
 macro_rules! with_dmar {
     ($TIM:ty, $memsize:ty) => {
@@ -1044,26 +1038,32 @@ impl<TIM: Instance, const FREQ: u32> crate::ReadFlags for FTimer<TIM, FREQ> {
     }
 }
 
-#[cfg(not(feature = "gpio-f410"))]
 #[cfg(feature = "tim1")]
-hal!(pac::TIM1: [Timer1, u16, dmar: u32, c: (4, _aoe), m: tim1,]);
+cfg_select! {
+    feature = "gpio-f410" => {
+        hal!(pac::TIM1: [Timer1, u16, dmar: u16, c: (4, _aoe), m: tim1,]);
+    }
+    _ => {
+        hal!(pac::TIM1: [Timer1, u16, dmar: u32, c: (4, _aoe), m: tim1,]);
+    }
+}
 #[cfg(feature = "tim2")]
 hal!(pac::TIM2: [Timer2, u32, dmar: u16, c: (4), m: tim2,]);
 #[cfg(feature = "tim3")]
 hal!(pac::TIM3: [Timer3, u16, dmar: u16, c: (4), m: tim3,]);
 #[cfg(feature = "tim4")]
 hal!(pac::TIM4: [Timer4, u16, dmar: u16, c: (4), m: tim3,]);
-#[cfg(not(feature = "gpio-f410"))]
-#[cfg(feature = "tim5")]
-hal!(pac::TIM5: [Timer5, u32, dmar: u16, c: (4), m: tim5,]);
 
-// TIM5 on F410 is 16-bit
-#[cfg(feature = "gpio-f410")]
-#[cfg(feature = "tim1")]
-hal!(pac::TIM1: [Timer1, u16, dmar: u16, c: (4, _aoe), m: tim1,]);
-#[cfg(feature = "gpio-f410")]
 #[cfg(feature = "tim5")]
-hal!(pac::TIM5: [Timer5, u16, dmar: u16, c: (4), m: tim5,]);
+cfg_select! {
+    feature = "gpio-f410" => {
+        // TIM5 on F410 is 16-bit
+        hal!(pac::TIM5: [Timer5, u16, dmar: u16, c: (4), m: tim5,]);
+    }
+    _ => {
+        hal!(pac::TIM5: [Timer5, u32, dmar: u16, c: (4), m: tim5,]);
+    }
+}
 
 #[cfg(feature = "tim6")]
 hal!(pac::TIM6: [Timer6, u16, m: tim6,]);

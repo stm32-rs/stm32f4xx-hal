@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
  - Add `rcc::Instance` trait
+- Use `cfg_select` macro
 
 ## [v0.23.0] - 2025-09-22
 

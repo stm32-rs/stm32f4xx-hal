@@ -1,5 +1,5 @@
 use super::*;
-use crate::bb;
+use crate::{bb, cfg_if};
 
 macro_rules! bus_enable {
     ($PER:ident => $bit:literal) => {
@@ -80,17 +80,14 @@ macro_rules! bus {
     }
 }
 
-#[cfg(feature = "quadspi")]
-impl crate::rcc::Instance for crate::pac::QUADSPI {}
-#[cfg(feature = "quadspi")]
-impl RccBus for crate::pac::QUADSPI {
-    type Bus = AHB3;
-}
-
-#[cfg(feature = "quadspi")]
-bus_enable! { QUADSPI => 1 }
-#[cfg(feature = "quadspi")]
-bus_reset! { QUADSPI => 1 }
+cfg_if! {feature = "quadspi" => {
+    impl crate::rcc::Instance for crate::pac::QUADSPI {}
+    impl RccBus for crate::pac::QUADSPI {
+        type Bus = AHB3;
+    }
+    bus_enable! { QUADSPI => 1 }
+    bus_reset! { QUADSPI => 1 }
+}}
 
 bus! {
     CRC => (AHB1, 12),
@@ -147,17 +144,15 @@ bus! {
     FMC => (AHB3, 0),
 }
 
-#[cfg(feature = "fsmc")]
-impl crate::rcc::Instance for crate::pac::FSMC {}
 // TODO: fix absent ahb3lpenr
-#[cfg(feature = "fsmc")]
-impl RccBus for crate::pac::FSMC {
-    type Bus = AHB3;
-}
-#[cfg(feature = "fsmc")]
-bus_enable!(FSMC => 0);
-#[cfg(feature = "fsmc")]
-bus_reset!(FSMC => 0);
+cfg_if! {feature = "fsmc" => {
+    impl crate::rcc::Instance for crate::pac::FSMC {}
+    impl RccBus for crate::pac::FSMC {
+        type Bus = AHB3;
+    }
+    bus_enable!(FSMC => 0);
+    bus_reset!(FSMC => 0);
+}}
 
 bus! {
     PWR => (APB1, 28),
@@ -251,45 +246,47 @@ bus! {
     ADC1 => (APB2, 8),
 }
 
-#[cfg(feature = "adc2")]
-impl crate::rcc::Instance for crate::pac::ADC2 {}
-#[cfg(feature = "adc2")]
-impl RccBus for crate::pac::ADC2 {
-    type Bus = APB2;
-}
-#[cfg(feature = "adc2")]
-bus_enable!(ADC2 => 9);
-#[cfg(feature = "adc2")]
-bus_lpenable!(ADC2 => 9);
-#[cfg(feature = "adc2")]
-bus_reset!(ADC2 => 8);
+cfg_if! {feature = "adc2" => {
+    impl crate::rcc::Instance for crate::pac::ADC2 {}
+    impl RccBus for crate::pac::ADC2 {
+        type Bus = APB2;
+    }
+    bus_enable!(ADC2 => 9);
+    bus_lpenable!(ADC2 => 9);
+    bus_reset!(ADC2 => 8);
+}}
 
-#[cfg(feature = "adc3")]
-impl crate::rcc::Instance for crate::pac::ADC3 {}
-#[cfg(feature = "adc3")]
-impl RccBus for crate::pac::ADC3 {
-    type Bus = APB2;
-}
-#[cfg(feature = "adc3")]
-bus_enable!(ADC3 => 10);
-#[cfg(feature = "adc3")]
-bus_lpenable!(ADC3 => 10);
-#[cfg(feature = "adc3")]
-bus_reset!(ADC3 => 8);
+cfg_if! {feature = "adc3" => {
+    impl crate::rcc::Instance for crate::pac::ADC3 {}
+    impl RccBus for crate::pac::ADC3 {
+        type Bus = APB2;
+    }
+    bus_enable!(ADC3 => 10);
+    bus_lpenable!(ADC3 => 10);
+    bus_reset!(ADC3 => 8);
+}}
 
-#[cfg(any(
-    feature = "gpio-f413",
-    feature = "gpio-f469",
-    feature = "stm32f429",
-    feature = "stm32f439"
-))]
-bus! {
-    SAI => (APB2, 22),
-}
-
-#[cfg(any(feature = "stm32f427", feature = "stm32f437", feature = "stm32f446"))]
-bus! {
-    SAI1 => (APB2, 22),
+cfg_select! {
+    any(
+        feature = "gpio-f413",
+        feature = "gpio-f469",
+        feature = "stm32f429",
+        feature = "stm32f439"
+    ) => {
+        bus! {
+            SAI => (APB2, 22),
+        }
+    }
+    any(
+        feature = "stm32f427",
+        feature = "stm32f437",
+        feature = "stm32f446"
+    ) => {
+        bus! {
+            SAI1 => (APB2, 22),
+        }
+    }
+    _ => {}
 }
 
 #[cfg(feature = "sai2")]

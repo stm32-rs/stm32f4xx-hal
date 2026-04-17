@@ -218,7 +218,6 @@ macro_rules! bus_struct {
         )+
     };
 }
-use bus_struct;
 
 bus_struct! {
     APB1 => (APB1ENR, apb1enr, APB1LPENR, apb1lpenr, APB1RSTR, apb1rstr, "Advanced Peripheral Bus 1 (APB1) registers"),

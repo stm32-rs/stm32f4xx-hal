@@ -385,7 +385,6 @@ macro_rules! halUsart {
         impl Instance for $USART {}
     };
 }
-pub(crate) use halUsart;
 
 halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
 halUsart! { pac::USART2, Serial2, Rx2, Tx2 }

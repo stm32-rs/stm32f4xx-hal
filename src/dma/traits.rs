@@ -1,5 +1,6 @@
 use super::*;
 use crate::{
+    cfg_if,
     pac::{self, DMA1, DMA2},
     timer,
 };
@@ -295,7 +296,6 @@ macro_rules! address {
         )+
     };
 }
-use address;
 
 /// Type alias to a DMA RegisterBlock.
 pub type DMARegisterBlock = pac::dma1::RegisterBlock;
@@ -327,17 +327,16 @@ macro_rules! dma_map {
         )+
     };
 }
-use dma_map;
 
 mod f4;
 
-#[cfg(feature = "dfsdm")]
-pub struct FLT<T, const F: u8> {
-    _per: PhantomData<T>,
-}
+cfg_if! {feature = "dfsdm" => {
+    pub struct FLT<T, const F: u8> {
+        _per: PhantomData<T>,
+    }
 
-#[cfg(feature = "dfsdm")]
-impl<T, const F: u8> crate::Sealed for FLT<T, F> {}
+    impl<T, const F: u8> crate::Sealed for FLT<T, F> {}
+}}
 
 #[cfg(feature = "sai")]
 pub use crate::sai::SAICH;
@@ -356,46 +355,48 @@ dma_map!(
 #[cfg(feature = "spdifrx")]
 address!((pac::SPDIFRX, dr, u32),);
 
-#[cfg(feature = "aes")]
-#[non_exhaustive]
-pub struct AES_IN;
-#[cfg(feature = "aes")]
-#[non_exhaustive]
-pub struct AES_OUT;
+cfg_select! {
+    feature = "aes" => {
+        #[non_exhaustive]
+        pub struct AES_IN;
 
-#[cfg(feature = "aes")]
-unsafe impl PeriAddress for AES_IN {
-    fn address(&self) -> u32 {
-        unsafe { (*pac::AES::ptr()).dinr().as_ptr() as u32 }
-    }
-    type MemSize = u32;
-}
-#[cfg(feature = "aes")]
-unsafe impl PeriAddress for AES_OUT {
-    fn address(&self) -> u32 {
-        unsafe { (*pac::AES::ptr()).doutr().as_ptr() as u32 }
-    }
-    type MemSize = u32;
-}
+        #[non_exhaustive]
+        pub struct AES_OUT;
 
-#[cfg(feature = "cryp")]
-#[non_exhaustive]
-pub struct CRYP_IN;
-#[cfg(feature = "cryp")]
-#[non_exhaustive]
-pub struct CRYP_OUT;
+        unsafe impl PeriAddress for AES_IN {
+            fn address(&self) -> u32 {
+                unsafe { (*pac::AES::ptr()).dinr().as_ptr() as u32 }
+            }
+            type MemSize = u32;
+        }
 
-#[cfg(feature = "cryp")]
-unsafe impl PeriAddress for CRYP_IN {
-    fn address(&self) -> u32 {
-        unsafe { (*pac::CRYP::ptr()).din().as_ptr() as u32 }
+        unsafe impl PeriAddress for AES_OUT {
+            fn address(&self) -> u32 {
+                unsafe { (*pac::AES::ptr()).doutr().as_ptr() as u32 }
+            }
+            type MemSize = u32;
+        }
     }
-    type MemSize = u32;
-}
-#[cfg(feature = "cryp")]
-unsafe impl PeriAddress for CRYP_OUT {
-    fn address(&self) -> u32 {
-        unsafe { (*pac::CRYP::ptr()).dout().as_ptr() as u32 }
+    feature = "cryp" => {
+        #[non_exhaustive]
+        pub struct CRYP_IN;
+
+        #[non_exhaustive]
+        pub struct CRYP_OUT;
+
+        unsafe impl PeriAddress for CRYP_IN {
+            fn address(&self) -> u32 {
+                unsafe { (*pac::CRYP::ptr()).din().as_ptr() as u32 }
+            }
+            type MemSize = u32;
+        }
+
+        unsafe impl PeriAddress for CRYP_OUT {
+            fn address(&self) -> u32 {
+                unsafe { (*pac::CRYP::ptr()).dout().as_ptr() as u32 }
+            }
+            type MemSize = u32;
+        }
     }
-    type MemSize = u32;
+    _ => {}
 }

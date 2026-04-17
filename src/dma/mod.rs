@@ -381,15 +381,19 @@ impl<DMA, const S: u8> StreamX<DMA, S> {
 }
 
 impl<DMA: Instance, const S: u8> StreamX<DMA, S> {
-    #[cfg(not(any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410")))]
-    #[inline(always)]
-    unsafe fn st() -> &'static pac::dma2::ST {
-        (*DMA::ptr()).st(S as usize)
-    }
-    #[cfg(any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410"))]
-    #[inline(always)]
-    unsafe fn st() -> &'static pac::dma1::ST {
-        (*DMA::ptr()).st(S as usize)
+    cfg_select! {
+        any(feature = "gpio-f411", feature = "gpio-f413", feature = "gpio-f410") => {
+            #[inline(always)]
+            unsafe fn st() -> &'static pac::dma1::ST {
+                (*DMA::ptr()).st(S as usize)
+            }
+        }
+        _ => {
+            #[inline(always)]
+            unsafe fn st() -> &'static pac::dma2::ST {
+                (*DMA::ptr()).st(S as usize)
+            }
+        }
     }
 }
 
@@ -720,7 +724,7 @@ macro_rules! dma_stream {
                     //NOTE(unsafe) Atomic read with no side effects
                     let dma = unsafe { &*I::ptr() };
                     BitFlags::from_bits_truncate(
-                        ((dma.$isr().read().bits() >> $isr_shift))
+                        dma.$isr().read().bits() >> $isr_shift
                     )
                 }
             }

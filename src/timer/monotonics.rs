@@ -268,17 +268,24 @@ macro_rules! make_timer {
     };
 }
 
-#[cfg(all(feature = "tim2", feature = "rtic-tim2"))]
-make_timer!(tim2, TIM2, TIMER2_OVERFLOWS, TIMER2_TQ);
-
-#[cfg(all(feature = "tim3", feature = "rtic-tim3"))]
-make_timer!(tim3, TIM3, TIMER3_OVERFLOWS, TIMER3_TQ);
-
-#[cfg(all(feature = "tim4", feature = "rtic-tim4"))]
-make_timer!(tim4, TIM4, TIMER4_OVERFLOWS, TIMER4_TQ);
-
-#[cfg(all(feature = "tim5", feature = "rtic-tim5"))]
-make_timer!(tim5, TIM5, TIMER5_OVERFLOWS, TIMER5_TQ);
+cfg_select! {
+    feature = "rtic-tim2" => {
+        #[cfg(feature = "tim2")]
+        make_timer!(tim2, TIM2, TIMER2_OVERFLOWS, TIMER2_TQ);
+    }
+    feature = "rtic-tim3" => {
+        #[cfg(feature = "tim3")]
+        make_timer!(tim3, TIM3, TIMER3_OVERFLOWS, TIMER3_TQ);
+    }
+    feature = "rtic-tim4" => {
+        #[cfg(feature = "tim4")]
+        make_timer!(tim4, TIM4, TIMER4_OVERFLOWS, TIMER4_TQ);
+    }
+    feature = "rtic-tim5" => {
+        #[cfg(feature = "tim5")]
+        make_timer!(tim5, TIM5, TIMER5_OVERFLOWS, TIMER5_TQ);
+    }
+}
 
 pub trait Irq {
     const IRQ: pac::Interrupt;

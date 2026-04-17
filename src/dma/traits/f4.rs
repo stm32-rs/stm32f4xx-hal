@@ -459,20 +459,19 @@ dma_map!(
 #[cfg(feature = "sai1")]
 mod sai1 {
     use super::*;
-    #[cfg(not(any(
-        feature = "gpio-f446",
-        feature = "stm32f417",
-        feature = "stm32f427",
-        feature = "stm32f437"
-    )))]
-    use pac::SAI as SAI1;
-    #[cfg(any(
-        feature = "gpio-f446",
-        feature = "stm32f417",
-        feature = "stm32f427",
-        feature = "stm32f437"
-    ))]
-    use pac::SAI1;
+    cfg_select! {
+        any(
+            feature = "gpio-f446",
+            feature = "stm32f417",
+            feature = "stm32f427",
+            feature = "stm32f437"
+        ) => {
+            use pac::SAI1;
+        }
+        _ => {
+            use pac::SAI as SAI1;
+        }
+    }
 
     dma_map!(
         (Stream1<DMA2>:0, SAICH<SAI1, false>, [MemoryToPeripheral | PeripheralToMemory]), //SAI1_A

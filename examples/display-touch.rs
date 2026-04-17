@@ -31,10 +31,14 @@ use embedded_graphics_07::{
     primitives::{Circle, PrimitiveStyle},
 };
 
-#[cfg(feature = "stm32f413")]
-use stm32f4xx_hal::fmpi2c::I2c;
-#[cfg(feature = "stm32f412")]
-use stm32f4xx_hal::i2c::I2c;
+cfg_select! {
+    feature = "stm32f413" => {
+        use stm32f4xx_hal::fmpi2c::I2c;
+    }
+    feature = "stm32f412" => {
+        use stm32f4xx_hal::i2c::I2c;
+    }
+}
 
 #[allow(unused_imports)]
 use panic_semihosting;
@@ -74,27 +78,37 @@ fn main() -> ! {
         alt::Address::from(gpiof.pf0),
         gpiod.pd4,
         gpiod.pd5,
-        #[cfg(feature = "stm32f413")]
-        alt::ChipSelect3::from(gpiog.pg10),
-        #[cfg(feature = "stm32f412")]
-        alt::ChipSelect1::from(gpiod.pd7),
+        cfg_select! {
+            feature = "stm32f413" => {
+                alt::ChipSelect3::from(gpiog.pg10)
+            }
+            feature = "stm32f412" => {
+                alt::ChipSelect1::from(gpiod.pd7)
+            }
+        },
     );
 
     // Enable backlight
-    #[cfg(feature = "stm32f413")]
-    let mut backlight_control = gpioe.pe5.into_push_pull_output();
-
-    #[cfg(feature = "stm32f412")]
-    let mut backlight_control = gpiof.pf5.into_push_pull_output();
+    let mut backlight_control = cfg_select! {
+        feature = "stm32f413" => {
+            gpioe.pe5.into_push_pull_output()
+        }
+        feature = "stm32f412" => {
+            gpiof.pf5.into_push_pull_output()
+        }
+    };
 
     backlight_control.set_high();
 
     // Setup the RESET pin
-    #[cfg(feature = "stm32f413")]
-    let mut lcd_reset = gpiob.pb13.into_push_pull_output().speed(Speed::VeryHigh);
-
-    #[cfg(feature = "stm32f412")]
-    let lcd_reset = gpiod.pd11.into_push_pull_output().speed(Speed::VeryHigh);
+    let mut lcd_reset = cfg_select! {
+        feature = "stm32f413" => {
+            gpiob.pb13.into_push_pull_output().speed(Speed::VeryHigh)
+        }
+        feature = "stm32f412" => {
+            gpiod.pd11.into_push_pull_output().speed(Speed::VeryHigh)
+        }
+    };
 
     #[cfg(feature = "stm32f412")]
     let mut ts_reset = gpiof.pf12.into_push_pull_output().speed(Speed::VeryHigh);
@@ -107,10 +121,18 @@ fn main() -> ! {
     //
     // Perform a longer reset here first.
     //
-    #[cfg(feature = "stm32f412")]
-    long_hard_reset(&mut ts_reset, &mut delay).expect("long hard reset");
-    #[cfg(feature = "stm32f413")]
-    long_hard_reset(&mut lcd_reset, &mut delay).expect("long hard reset");
+    long_hard_reset(
+        cfg_select! {
+            feature = "stm32f412" => {
+                &mut ts_reset
+            }
+            feature = "stm32f413" => {
+                &mut lcd_reset
+            }
+        },
+        &mut delay,
+    )
+    .expect("long hard reset");
 
     // We're not using the "tearing" signal from the display
     let mut _te = gpiob.pb14.into_floating_input();
@@ -143,20 +165,20 @@ fn main() -> ! {
     rprintln!("Connecting to I2c");
 
     // Declare the pins for i2c address bus on each board.
-    // STM32F412 uses I2c1 type for i2c bus.
-    // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f412zg-mcu-stmicroelectronics
-    #[cfg(feature = "stm32f412")]
-    let mut i2c = { I2c::new(p.I2C1, (gpiob.pb6, gpiob.pb7), 400.kHz(), &mut rcc) };
-
-    // STM32F413 uses FMPI2C1 type.
-    // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f413zh-mcu-stmicroelectronics
-    #[cfg(feature = "stm32f413")]
-    let mut i2c = { I2c::new(p.FMPI2C1, (gpioc.pc6, gpioc.pc7), 400.kHz()) };
-
-    #[cfg(feature = "stm32f412")]
-    let ts_int = gpiog.pg5.into_pull_down_input();
-    #[cfg(feature = "stm32f413")]
-    let ts_int = gpioc.pc1.into_pull_down_input();
+    let (mut i2c, ts_int) = cfg_select! {
+        // STM32F412 uses I2c1 type for i2c bus.
+        // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f412zg-mcu-stmicroelectronics
+        feature = "stm32f412" => {(
+            I2c::new(p.I2C1, (gpiob.pb6, gpiob.pb7), 400.kHz(), &mut rcc),
+            gpiog.pg5.into_pull_down_input()
+        )}
+        // STM32F413 uses FMPI2C1 type.
+        // The pins are mentioned in documentation -um2135-discovery-kit-with-stm32f413zh-mcu-stmicroelectronics
+        feature = "stm32f413" => {(
+            I2c::new(p.FMPI2C1, (gpioc.pc6, gpioc.pc7), 400.kHz()),
+            gpioc.pc1.into_pull_down_input()
+        )}
+    };
 
     // Create a struct of ft6x06 driver for touchscreen.
     let mut touch = Ft6X06::new(&i2c, 0x38, ts_int).unwrap();

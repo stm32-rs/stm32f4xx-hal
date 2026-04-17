@@ -17,10 +17,14 @@
 use stm32f4xx_hal as hal;
 use stm32f4xx_hal::rcc::Config;
 
-#[cfg(not(debug_assertions))]
-use panic_halt as _;
-#[cfg(debug_assertions)]
-use panic_semihosting as _;
+cfg_select! {
+    debug_assertions => {
+        use panic_semihosting as _;
+    }
+    _ => {
+        use panic_halt as _;
+    }
+}
 
 use cortex_m_rt::ExceptionFrame;
 use cortex_m_rt::{entry, exception};
