@@ -113,8 +113,8 @@ st7789 = "0.7.0"
 rtt-target = { version = "0.6.1" }
 display-interface-spi-04 = { package = "display-interface-spi", version = "0.4.1" }
 ist7920 = "0.1.1"
-smart-leds = "0.4.0"
-ws2812-spi = { version = "0.5.1", features = [] }
+smart-leds = "0.3.0"
+ws2812-spi = { version = "0.4.0", features = [] }
 hd44780-driver = "0.4.0"
 display-interface = "0.5"
 display-interface-04 = { package = "display-interface", version = "0.4.1" }
