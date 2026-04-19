@@ -23,7 +23,11 @@ pub extern crate stm32_i2s_v12x;
 
 /// Trait for SPI peripheral with i2s capability.
 pub trait Instance:
-    I2sFreq + rcc::Enable + rcc::Reset + gpio::alt::I2sCommon + gpio::alt::I2sMaster
+    rcc::Instance
+    + crate::Ptr<RB = pac::spi1::RegisterBlock>
+    + rcc::RccBus<Bus: I2sFreq>
+    + gpio::alt::I2sCommon
+    + gpio::alt::I2sMaster
 {
 }
 
@@ -38,16 +42,6 @@ pub trait I2sFreq {
     fn try_i2s_freq(clocks: &Clocks) -> Option<Hertz>;
     fn i2s_freq(clocks: &Clocks) -> Hertz {
         Self::try_i2s_freq(clocks).expect("I2S clock input for SPI not enabled")
-    }
-}
-
-impl<T> I2sFreq for T
-where
-    T: rcc::RccBus,
-    T::Bus: I2sFreq,
-{
-    fn try_i2s_freq(clocks: &Clocks) -> Option<Hertz> {
-        T::Bus::try_i2s_freq(clocks)
     }
 }
 
@@ -173,7 +167,7 @@ impl<SPI: Instance> I2s<SPI> {
         ),
         rcc: &mut Rcc,
     ) -> Self {
-        let input_clock = SPI::i2s_freq(&rcc.clocks);
+        let input_clock = SPI::Bus::i2s_freq(&rcc.clocks);
         // Enable clock, enable reset, clear, reset
         SPI::enable(rcc);
         SPI::reset(rcc);
@@ -319,7 +313,7 @@ impl<SPI: DualInstance> DualI2s<SPI> {
         ),
         rcc: &mut Rcc,
     ) -> Self {
-        let input_clock = SPI::i2s_freq(&rcc.clocks);
+        let input_clock = SPI::Bus::i2s_freq(&rcc.clocks);
         // Enable clock, enable reset, clear, reset
         // Note: this also affect the I2SEXT peripheral
         SPI::enable(rcc);
@@ -458,7 +452,6 @@ mod dma {
     use crate::dma::traits::{DMASet, PeriAddress};
     use crate::pac::spi1::RegisterBlock;
     use core::marker::PhantomData;
-    use core::ops::Deref;
     use stm32_i2s_v12x::driver::{I2sCore, I2sDriver};
     use stm32_i2s_v12x::transfer::{Ext, Main};
     use stm32_i2s_v12x::DualI2sPeripheral;
@@ -467,7 +460,6 @@ mod dma {
     unsafe impl<SPI: Instance, MS, TR, STD> PeriAddress for I2sDriver<I2s<SPI>, MS, TR, STD>
     where
         I2s<SPI>: stm32_i2s_v12x::I2sPeripheral,
-        SPI: Deref<Target = crate::pac::spi1::RegisterBlock>,
     {
         /// SPI_DR is only 16 bits. Multiple transfers are needed for a 24-bit or 32-bit sample,
         /// as explained in the reference manual.

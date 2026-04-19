@@ -5,7 +5,7 @@ use crate::gpio;
 use crate::pac::{self, RCC};
 use crate::rcc;
 
-pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + gpio::alt::CanCommon {}
+pub trait Instance: rcc::Instance + gpio::alt::CanCommon {}
 
 macro_rules! can {
     ($CAN:ty: $Can:ident) => {
