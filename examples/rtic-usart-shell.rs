@@ -77,8 +77,7 @@ mod usart_shell {
             Config::default().baudrate(115_200.bps()).wordlength_8(),
             &mut rcc,
         )
-        .unwrap()
-        .with_u8_data();
+        .unwrap();
         serial.listen(serial::Event::RxNotEmpty);
         // ushell
         let autocomplete = StaticAutocomplete(["clear", "help", "off", "on", "status"]);
