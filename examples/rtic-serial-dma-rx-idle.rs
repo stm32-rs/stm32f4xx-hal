@@ -76,7 +76,7 @@ mod app {
             .unwrap();
 
         // Listen UART IDLE event, which will be call USART1 interrupt
-        rx.listen_idle();
+        rx.listen(serial::RxEvent::Idle);
 
         let dma2 = StreamsTuple::new(dp.DMA2, &mut rcc);
 

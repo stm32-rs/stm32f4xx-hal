@@ -1,6 +1,6 @@
 use core::{marker::PhantomData, mem::transmute};
 
-use super::{Instance, RegisterBlockImpl, Serial};
+use super::{Instance, RBExt, Serial};
 use crate::dma::{
     config::DmaConfig,
     traits::{Channel, DMASet, DmaFlagExt, PeriAddress, Stream, StreamISR},
