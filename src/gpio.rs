@@ -604,7 +604,6 @@ macro_rules! gpio {
         pub use $gpiox::{ $($PXi,)+ };
     }
 }
-use gpio;
 
 mod f4;
 pub use f4::*;

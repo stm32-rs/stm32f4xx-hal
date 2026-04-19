@@ -1,3 +1,4 @@
+use crate::cfg_if;
 mod f4;
 pub use f4::*;
 
@@ -272,32 +273,33 @@ pub trait CanCommon {
 }
 
 // DFSDM pins
-#[cfg(feature = "dfsdm")]
-pub trait DfsdmBasic {
-    type Ckin0;
-    type Ckin1;
-    type Ckout;
-    type Datin0;
-    type Datin1;
-}
-#[cfg(feature = "dfsdm")]
-pub trait DfsdmGeneral: DfsdmBasic {
-    type Ckin2;
-    type Ckin3;
-    type Datin2;
-    type Datin3;
-}
-#[cfg(feature = "dfsdm")]
-pub trait DfsdmAdvanced: DfsdmGeneral {
-    type Ckin4;
-    type Ckin5;
-    type Ckin6;
-    type Ckin7;
-    type Datin4;
-    type Datin5;
-    type Datin6;
-    type Datin7;
-}
+cfg_if! {feature = "dfsdm" => {
+    pub trait DfsdmBasic {
+        type Ckin0;
+        type Ckin1;
+        type Ckout;
+        type Datin0;
+        type Datin1;
+    }
+
+    pub trait DfsdmGeneral: DfsdmBasic {
+        type Ckin2;
+        type Ckin3;
+        type Datin2;
+        type Datin3;
+    }
+
+    pub trait DfsdmAdvanced: DfsdmGeneral {
+        type Ckin4;
+        type Ckin5;
+        type Ckin6;
+        type Ckin7;
+        type Datin4;
+        type Datin5;
+        type Datin6;
+        type Datin7;
+    }
+}}
 
 // Serial pins
 pub trait SerialAsync {
@@ -339,37 +341,37 @@ pub trait I2sExtPin {
 }
 
 // QuadSPI pins
+cfg_if! {feature = "quadspi" => {
+    pub trait QuadSpiBanks {
+        type Bank1;
+        type Bank2;
+    }
 
-#[cfg(feature = "quadspi")]
-pub trait QuadSpiBanks {
-    type Bank1;
-    type Bank2;
-}
-#[cfg(feature = "quadspi")]
-pub trait QuadSpiBank {
-    type Io0: crate::gpio::PinSpeed;
-    type Io1: crate::gpio::PinSpeed;
-    type Io2: crate::gpio::PinSpeed;
-    type Io3: crate::gpio::PinSpeed;
-    type Ncs: crate::gpio::PinSpeed;
-}
+    pub trait QuadSpiBank {
+        type Io0: crate::gpio::PinSpeed;
+        type Io1: crate::gpio::PinSpeed;
+        type Io2: crate::gpio::PinSpeed;
+        type Io3: crate::gpio::PinSpeed;
+        type Ncs: crate::gpio::PinSpeed;
+    }
+}}
 
 // SAI pins
+cfg_if! {feature = "sai1" => {
+    pub trait SaiChannels {
+        type A;
+        type B;
+    }
 
-#[cfg(feature = "sai1")]
-pub trait SaiChannels {
-    type A;
-    type B;
-}
-#[cfg(feature = "sai1")]
-pub trait SaiChannel {
-    #[allow(non_upper_case_globals)]
-    const NoMclk: Option<Self::Mclk> = None;
-    type Fs;
-    type Mclk;
-    type Sck;
-    type Sd;
-}
+    pub trait SaiChannel {
+        #[allow(non_upper_case_globals)]
+        const NoMclk: Option<Self::Mclk> = None;
+        type Fs;
+        type Mclk;
+        type Sck;
+        type Sd;
+    }
+}}
 
 // SPDIFRX pins
 
