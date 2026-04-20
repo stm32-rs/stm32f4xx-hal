@@ -101,14 +101,14 @@ fn main() -> ! {
     backlight_control.set_high();
 
     // Setup the RESET pin
-    let mut lcd_reset = cfg_select! {
+    cfg_select! {
         feature = "stm32f413" => {
-            gpiob.pb13.into_push_pull_output().speed(Speed::VeryHigh)
+            let mut lcd_reset = gpiob.pb13.into_push_pull_output().speed(Speed::VeryHigh);
         }
         feature = "stm32f412" => {
-            gpiod.pd11.into_push_pull_output().speed(Speed::VeryHigh)
+            let lcd_reset = gpiod.pd11.into_push_pull_output().speed(Speed::VeryHigh);
         }
-    };
+    }
 
     #[cfg(feature = "stm32f412")]
     let mut ts_reset = gpiof.pf12.into_push_pull_output().speed(Speed::VeryHigh);
