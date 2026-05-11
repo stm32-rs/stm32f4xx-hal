@@ -105,6 +105,22 @@ mod io {
     use super::super::{Error, Instance, Rx, Serial, Tx};
     use embedded_io::Write;
 
+    impl core::fmt::Display for Error {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            let message = match self {
+                Error::Overrun => "serial receive buffer overrun",
+                Error::FrameFormat => "serial frame format error",
+                Error::Parity => "serial parity error",
+                Error::Noise => "serial noise error",
+                Error::Other => "serial error",
+            };
+
+            formatter.write_str(message)
+        }
+    }
+
+    impl core::error::Error for Error {}
+
     impl embedded_io::Error for Error {
         // TODO: fix error conversion
         fn kind(&self) -> embedded_io::ErrorKind {
