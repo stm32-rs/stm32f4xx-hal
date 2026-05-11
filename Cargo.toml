@@ -1098,8 +1098,6 @@ uart10 = []
 usb = []                                  # "dep:stm32-usbd"
 v_ref = []
 
-disabled = []
-
 [profile.dev]
 debug = true
 lto = true

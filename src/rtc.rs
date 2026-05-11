@@ -688,34 +688,42 @@ impl Rtc {
         self.modify(false, |regs| match event {
             Event::AlarmA => {
                 exti.rtsr().modify(|_, w| w.tr17().enabled());
-                #[cfg(not(feature = "gpio-f72x"))]
-                exti.imr().modify(|_, w| w.mr17().set_bit());
-                #[cfg(feature = "gpio-f72x")]
-                exti.imr().modify(|_, w| w.im17().set_bit());
+                exti.imr().modify(|_, w| {
+                    cfg_select! {
+                        feature = "gpio-f72x" => { w.im17().set_bit() }
+                        _                     => { w.mr17().set_bit() }
+                    }
+                });
                 regs.cr().modify(|_, w| w.alraie().set_bit());
             }
             Event::AlarmB => {
                 exti.rtsr().modify(|_, w| w.tr17().enabled());
-                #[cfg(not(feature = "gpio-f72x"))]
-                exti.imr().modify(|_, w| w.mr17().set_bit());
-                #[cfg(feature = "gpio-f72x")]
-                exti.imr().modify(|_, w| w.im17().set_bit());
+                exti.imr().modify(|_, w| {
+                    cfg_select! {
+                        feature = "gpio-f72x" => { w.im17().set_bit() }
+                        _                     => { w.mr17().set_bit() }
+                    }
+                });
                 regs.cr().modify(|_, w| w.alrbie().set_bit());
             }
             Event::Wakeup => {
                 exti.rtsr().modify(|_, w| w.tr22().enabled());
-                #[cfg(not(feature = "gpio-f72x"))]
-                exti.imr().modify(|_, w| w.mr22().set_bit());
-                #[cfg(feature = "gpio-f72x")]
-                exti.imr().modify(|_, w| w.im22().set_bit());
+                exti.imr().modify(|_, w| {
+                    cfg_select! {
+                        feature = "gpio-f72x" => { w.im22().set_bit() }
+                        _                     => { w.mr22().set_bit() }
+                    }
+                });
                 regs.cr().modify(|_, w| w.wutie().set_bit());
             }
             Event::Timestamp => {
                 exti.rtsr().modify(|_, w| w.tr21().enabled());
-                #[cfg(not(feature = "gpio-f72x"))]
-                exti.imr().modify(|_, w| w.mr21().set_bit());
-                #[cfg(feature = "gpio-f72x")]
-                exti.imr().modify(|_, w| w.im21().set_bit());
+                exti.imr().modify(|_, w| {
+                    cfg_select! {
+                        feature = "gpio-f72x" => { w.im21().set_bit() }
+                        _                     => { w.mr21().set_bit() }
+                    }
+                });
                 regs.cr().modify(|_, w| w.tsie().set_bit());
             }
         });
@@ -727,34 +735,42 @@ impl Rtc {
         self.modify(false, |regs| match event {
             Event::AlarmA => {
                 regs.cr().modify(|_, w| w.alraie().clear_bit());
-                #[cfg(not(feature = "gpio-f72x"))]
-                exti.imr().modify(|_, w| w.mr17().clear_bit());
-                #[cfg(feature = "gpio-f72x")]
-                exti.imr().modify(|_, w| w.im17().clear_bit());
+                exti.imr().modify(|_, w| {
+                    cfg_select! {
+                        feature = "gpio-f72x" => { w.im17().clear_bit() }
+                        _                     => { w.mr17().clear_bit() }
+                    }
+                });
                 exti.rtsr().modify(|_, w| w.tr17().disabled());
             }
             Event::AlarmB => {
                 regs.cr().modify(|_, w| w.alrbie().clear_bit());
-                #[cfg(not(feature = "gpio-f72x"))]
-                exti.imr().modify(|_, w| w.mr17().clear_bit());
-                #[cfg(feature = "gpio-f72x")]
-                exti.imr().modify(|_, w| w.im17().clear_bit());
+                exti.imr().modify(|_, w| {
+                    cfg_select! {
+                        feature = "gpio-f72x" => { w.im17().clear_bit() }
+                        _                     => { w.mr17().clear_bit() }
+                    }
+                });
                 exti.rtsr().modify(|_, w| w.tr17().disabled());
             }
             Event::Wakeup => {
                 regs.cr().modify(|_, w| w.wutie().clear_bit());
-                #[cfg(not(feature = "gpio-f72x"))]
-                exti.imr().modify(|_, w| w.mr22().clear_bit());
-                #[cfg(feature = "gpio-f72x")]
-                exti.imr().modify(|_, w| w.im22().clear_bit());
+                exti.imr().modify(|_, w| {
+                    cfg_select! {
+                        feature = "gpio-f72x" => { w.im22().clear_bit() }
+                        _                     => { w.mr22().clear_bit() }
+                    }
+                });
                 exti.rtsr().modify(|_, w| w.tr22().disabled());
             }
             Event::Timestamp => {
                 regs.cr().modify(|_, w| w.tsie().clear_bit());
-                #[cfg(not(feature = "gpio-f72x"))]
-                exti.imr().modify(|_, w| w.mr21().clear_bit());
-                #[cfg(feature = "gpio-f72x")]
-                exti.imr().modify(|_, w| w.im21().clear_bit());
+                exti.imr().modify(|_, w| {
+                    cfg_select! {
+                        feature = "gpio-f72x" => { w.im21().clear_bit() }
+                        _                     => { w.mr21().clear_bit() }
+                    }
+                });
                 exti.rtsr().modify(|_, w| w.tr21().disabled());
             }
         });

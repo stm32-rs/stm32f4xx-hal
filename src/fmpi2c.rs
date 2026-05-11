@@ -22,10 +22,10 @@ mod hal_02;
 #[path = "i2c/hal_1.rs"]
 mod hal_1;
 
-#[cfg(feature = "fmpi2c1")]
-type I2cSel = rcc::dckcfgr2::FMPI2C1SEL;
-#[cfg(feature = "i2c_v2")]
-type I2cSel = rcc::dckcfgr2::I2C1SEL;
+type I2cSel = cfg_select! {
+    feature = "fmpi2c1" => { rcc::dckcfgr2::FMPI2C1SEL }
+    feature = "i2c_v2" => { rcc::dckcfgr2::I2C1SEL }
+};
 
 pub trait Instance:
     crate::rcc::Instance + crate::Ptr<RB = i2c1::RegisterBlock> + gpio::alt::I2cCommon
@@ -45,19 +45,20 @@ macro_rules! i2c {
     };
 }
 
-#[cfg(feature = "fmpi2c1")]
-i2c!(pac::FMPI2C1, fmpi2c1sel, FMPI2c1);
-#[cfg(feature = "i2c_v2")]
-i2c!(pac::I2C1, i2c1sel, I2c1);
-#[cfg(feature = "i2c_v2")]
-#[cfg(feature = "i2c2")]
-i2c!(pac::I2C2, i2c2sel, I2c2);
-#[cfg(feature = "i2c_v2")]
-#[cfg(feature = "i2c3")]
-i2c!(pac::I2C3, i2c3sel, I2c3);
-#[cfg(feature = "i2c_v2")]
-#[cfg(feature = "i2c4")]
-i2c!(pac::I2C4, i2c4sel, I2c4);
+cfg_select! {
+    feature = "fmpi2c1" => {
+        i2c!(pac::FMPI2C1, fmpi2c1sel, FMPI2c1);
+    }
+    feature = "i2c_v2" => {
+        i2c!(pac::I2C1, i2c1sel, I2c1);
+        #[cfg(feature = "i2c2")]
+        i2c!(pac::I2C2, i2c2sel, I2c2);
+        #[cfg(feature = "i2c3")]
+        i2c!(pac::I2C3, i2c3sel, I2c3);
+        #[cfg(feature = "i2c4")]
+        i2c!(pac::I2C4, i2c4sel, I2c4);
+    }
+}
 
 /// I2C FastMode+ abstraction
 pub struct I2c<I2C: Instance> {

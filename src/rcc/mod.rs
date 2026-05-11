@@ -42,15 +42,16 @@
 
 mod enable;
 
-#[cfg(feature = "f4")]
-mod f4;
-#[cfg(feature = "f4")]
-pub use f4::*;
-
-#[cfg(feature = "f7")]
-mod f7;
-#[cfg(feature = "f7")]
-pub use f7::*;
+cfg_select! {
+    feature = "f4" => {
+        mod f4;
+        pub use f4::*;
+    }
+    feature = "f7" => {
+        mod f7;
+        pub use f7::*;
+    }
+}
 
 use crate::pac::rcc::{self, RegisterBlock as RccRB};
 use crate::pac::RCC;

@@ -25,20 +25,19 @@ use crate::gpio::alt::SaiChannel;
 use crate::pac::RCC;
 #[cfg(feature = "sai2")]
 use crate::pac::SAI2;
-#[cfg(any(
-    feature = "gpio-f413",
-    feature = "gpio-f469",
-    feature = "stm32f429",
-    feature = "stm32f439"
-))]
-use crate::pac::{sai, SAI as SAI1};
-#[cfg(any(
-    feature = "f7",
-    feature = "stm32f427",
-    feature = "stm32f437",
-    feature = "stm32f446"
-))]
-use crate::pac::{sai1 as sai, SAI1};
+cfg_select! {
+    any(
+        feature = "gpio-f413",
+        feature = "gpio-f469",
+        feature = "stm32f429",
+        feature = "stm32f439"
+    ) => {
+        use crate::pac::{sai, SAI as SAI1};
+    }
+    _ => {
+        use crate::pac::{sai1 as sai, SAI1};
+    }
+}
 use crate::rcc;
 use crate::time::Hertz;
 

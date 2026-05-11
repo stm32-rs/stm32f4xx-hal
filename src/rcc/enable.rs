@@ -20,35 +20,31 @@ macro_rules! bus_enable {
             #[inline(always)]
             fn enable(rcc: &mut RCC) {
                 let reg = Self::Bus::enr(rcc);
-                #[cfg(feature = "bb")]
-                unsafe {
-                    $crate::bb::set(reg, $bit);
+                cfg_select! {
+                    feature = "bb" => { unsafe {
+                        $crate::bb::set(reg, $bit);
+                    } }
+                    _ => { reg.modify(|_, w| w.$en().set_bit()); }
                 }
-                #[cfg(not(feature = "bb"))]
-                reg.modify(|_, w| w.$en().set_bit());
                 // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
             fn disable(rcc: &mut RCC) {
                 let reg = Self::Bus::enr(rcc);
-                #[cfg(feature = "bb")]
-                unsafe {
-                    $crate::bb::clear(reg, $bit);
+                cfg_select! {
+                    feature = "bb" => { unsafe {
+                        $crate::bb::clear(reg, $bit);
+                    } }
+                    _ => { reg.modify(|_, w| w.$en().clear_bit()); }
                 }
-                #[cfg(not(feature = "bb"))]
-                reg.modify(|_, w| w.$en().clear_bit());
             }
             #[inline(always)]
             fn is_enabled() -> bool {
                 let reg = Self::Bus::enr(unsafe { &*RCC::ptr() });
-                #[cfg(feature = "bb")]
-                {
-                    (reg.read().bits() >> $bit) & 0x1 != 0
-                }
-                #[cfg(not(feature = "bb"))]
-                {
-                    reg.read().$en().bit_is_set()
+                cfg_select! {
+                    feature = "bb" => { (reg.read().bits() >> $bit) & 0x1 != 0 }
+                    _ => { reg.read().$en().bit_is_set() }
                 }
             }
         }
@@ -61,36 +57,32 @@ macro_rules! bus_lpenable {
             #[inline(always)]
             fn enable_in_low_power(rcc: &mut RCC) {
                 let reg = Self::Bus::lpenr(rcc);
-                #[cfg(feature = "bb")]
-                unsafe {
-                    $crate::bb::set(reg, $bit);
+                cfg_select! {
+                    feature = "bb" => { unsafe {
+                        $crate::bb::set(reg, $bit);
+                    } }
+                    _ => { reg.modify(|_, w| w.$lpen().set_bit()); }
                 }
-                #[cfg(not(feature = "bb"))]
-                reg.modify(|_, w| w.$lpen().set_bit());
                 // Stall the pipeline to work around erratum 2.1.13 (DM00037591)
                 cortex_m::asm::dsb();
             }
             #[inline(always)]
             fn disable_in_low_power(rcc: &mut RCC) {
                 let reg = Self::Bus::lpenr(rcc);
-                #[cfg(feature = "bb")]
-                unsafe {
-                    $crate::bb::clear(reg, $bit);
+                cfg_select! {
+                    feature = "bb" => { unsafe {
+                        $crate::bb::clear(reg, $bit);
+                    } }
+                    _ => {  reg.modify(|_, w| w.$lpen().clear_bit()); }
                 }
-                #[cfg(not(feature = "bb"))]
-                reg.modify(|_, w| w.$lpen().clear_bit());
             }
             #[inline(always)]
             fn is_enabled_in_low_power() -> bool {
                 let rcc = RCC::ptr();
                 let reg = Self::Bus::lpenr(unsafe { &*rcc });
-                #[cfg(feature = "bb")]
-                {
-                    (reg.read().bits() >> $bit) & 0x1 != 0
-                }
-                #[cfg(not(feature = "bb"))]
-                {
-                    reg.read().$lpen().bit_is_set()
+                cfg_select! {
+                    feature = "bb" => { (reg.read().bits() >> $bit) & 0x1 != 0 }
+                    _ => { reg.read().$lpen().bit_is_set() }
                 }
             }
         }
@@ -104,15 +96,15 @@ macro_rules! bus_reset {
             #[inline(always)]
             fn reset(rcc: &mut RCC) {
                 let reg = Self::Bus::rstr(rcc);
-                #[cfg(feature = "bb")]
-                unsafe {
-                    $crate::bb::set(reg, $bit);
-                    $crate::bb::clear(reg, $bit);
-                }
-                #[cfg(not(feature = "bb"))]
-                {
-                    let bits = reg.modify(|_, w| w.$rst().set_bit());
-                    reg.write(|w| unsafe { w.bits(bits).$rst().clear_bit() });
+                cfg_select! {
+                    feature = "bb" => { unsafe {
+                        $crate::bb::set(reg, $bit);
+                        $crate::bb::clear(reg, $bit);
+                    } }
+                    _ => {
+                        let bits = reg.modify(|_, w| w.$rst().set_bit());
+                        reg.write(|w| unsafe { w.bits(bits).$rst().clear_bit() });
+                    }
                 }
             }
         }

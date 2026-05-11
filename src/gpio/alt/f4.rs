@@ -349,10 +349,14 @@ pub mod dfsdm1 {
         ],
     }
 
-    #[cfg(feature = "gpio-f412")]
-    use crate::pac::DFSDM;
-    #[cfg(feature = "gpio-f413")]
-    use crate::pac::DFSDM1 as DFSDM;
+    cfg_select! {
+        feature = "gpio-f412" => {
+            use crate::pac::DFSDM;
+        }
+        feature = "gpio-f413" => {
+            use crate::pac::DFSDM1 as DFSDM;
+        }
+    }
     impl DfsdmBasic for DFSDM {
         type Ckin0 = Ckin0;
         type Ckin1 = Ckin1;

@@ -361,10 +361,14 @@ pub mod dfsdm1 {
         ],
     }
 
-    #[cfg(not(feature = "stm32f765"))]
-    use crate::pac::DFSDM;
-    #[cfg(feature = "stm32f765")]
-    use crate::pac::DFSDM1 as DFSDM;
+    cfg_select! {
+        feature = "stm32f765" => {
+            use crate::pac::DFSDM1 as DFSDM;
+        }
+        _ => {
+            use crate::pac::DFSDM;
+        }
+    }
     impl DfsdmBasic for DFSDM {
         type Ckin0 = Ckin0;
         type Ckin1 = Ckin1;
