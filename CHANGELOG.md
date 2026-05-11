@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - `Serial` implements `Write<WORD>` and `Read<WORD>` for `WORD` simultaneously as `u8` and `u16`
  - Add inherent impl of `read`/`write` methods on `Serial`
  - use `Listen` for `Rx/Tx`
+ - bumped `embedded-io` dependency to v0.7 and added Display Implementation for `embedded-io` `Error` Type.
 
 ## [v0.23.0] - 2025-09-22
 
