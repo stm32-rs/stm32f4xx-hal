@@ -28,7 +28,6 @@ use crate::rcc::{Enable, Rcc, Reset};
 use core::num::NonZeroU32;
 use core::ops::Shl;
 use embedded_hal_02::blocking::rng;
-use fugit::RateExtU32;
 
 /// Random number generator specific errors
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -81,17 +80,29 @@ pub trait RngExt {
 impl RngExt for RNG {
     fn constrain(self, rcc: &mut Rcc) -> Rng {
         cortex_m::interrupt::free(|_| {
+            // need set enable pll for this operation
+            if rcc.cr().read().pllrdy().bit_is_clear() {
+                rcc.cr().modify(|_, w| w.pllon().set_bit());
+                // wait till pll is ready
+                while rcc.cr().read().pllrdy().bit_is_clear() {}
+            }
+
+            // enable RNG_CLK (peripheral clock)
             // enable RNG_CLK (peripheral clock)
             RNG::enable(rcc);
+            // give RNG_CLK time to start
+            RNG::is_enabled();
             RNG::reset(rcc);
-
-            // verify the clock configuration is valid
-            let hclk = rcc.clocks.hclk();
-            let rng_clk = rcc.clocks.pll48clk().unwrap_or_else(|| 0.Hz());
-            assert!(rng_clk >= (hclk / 16));
 
             // enable the RNG peripheral
             self.cr().modify(|_, w| w.rngen().set_bit());
+            // hardware check for clock is used
+            // instead of software calculation, which may be inaccurate.
+            // until data is available we will check for CECS flag, if it is set
+            // means that clock error occured
+            while !self.sr().read().drdy().bit() {
+                assert!(!self.sr().read().cecs().bit());
+            }
         });
 
         Rng { rb: self }

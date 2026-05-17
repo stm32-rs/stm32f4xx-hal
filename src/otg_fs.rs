@@ -46,20 +46,21 @@ unsafe impl UsbPeripheral for USB {
     const HIGH_SPEED: bool = false;
     const FIFO_DEPTH_WORDS: usize = 320;
 
-    #[cfg(any(
-        feature = "gpio-f401",
-        feature = "gpio-f411",
-        feature = "gpio-f417",
-        feature = "gpio-f427",
-    ))]
-    const ENDPOINT_COUNT: usize = 4;
-    #[cfg(any(
-        feature = "gpio-f412",
-        feature = "gpio-f413",
-        feature = "gpio-f446",
-        feature = "gpio-f469",
-    ))]
-    const ENDPOINT_COUNT: usize = 6;
+    const ENDPOINT_COUNT: usize = cfg_select! {
+        any(
+            feature = "gpio-f401",
+            feature = "gpio-f411",
+            feature = "gpio-f417",
+            feature = "gpio-f427",
+        ) => { 4 }
+        any(
+            feature = "gpio-f412",
+            feature = "gpio-f413",
+            feature = "gpio-f446",
+            feature = "gpio-f469",
+            feature = "f7",
+        ) => { 6 }
+    };
 
     fn enable() {
         cortex_m::interrupt::free(|_| {

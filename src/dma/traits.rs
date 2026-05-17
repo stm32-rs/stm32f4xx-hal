@@ -282,6 +282,7 @@ pub unsafe trait PeriAddress {
 }
 
 // Convenience macro for implementing addresses on peripherals
+#[allow(unused)]
 macro_rules! address {
     ($(($peripheral:ty, $register:ident, $size: ty)),+ $(,)*) => {
         $(
@@ -296,6 +297,8 @@ macro_rules! address {
         )+
     };
 }
+#[allow(unused)]
+use address;
 
 /// Type alias to a DMA RegisterBlock.
 pub type DMARegisterBlock = pac::dma1::RegisterBlock;
@@ -328,7 +331,18 @@ macro_rules! dma_map {
     };
 }
 
-mod f4;
+cfg_select! {
+    feature = "f4" => {
+        mod f4;
+        #[allow(unused)]
+        pub use f4::*;
+    }
+    feature = "f7" => {
+        mod f7;
+        #[allow(unused)]
+        pub use f7::*;
+    }
+}
 
 cfg_if! {feature = "dfsdm" => {
     pub struct FLT<T, const F: u8> {

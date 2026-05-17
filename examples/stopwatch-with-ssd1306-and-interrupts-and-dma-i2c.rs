@@ -25,7 +25,6 @@ use crate::hal::{
     dma::{Stream1, StreamsTuple},
     gpio::*,
     i2c::dma::{I2CMasterDma, NoDMA, TxDMA},
-    i2c::I2c,
     interrupt, pac,
     pac::{DMA1, I2C1},
     prelude::*,
@@ -162,7 +161,7 @@ fn main() -> ! {
     if let (Some(mut dp), Some(cp)) = (pac::Peripherals::take(), cortex_m::Peripherals::take()) {
         let mut rcc = setup_clocks(dp.RCC);
         let gpiob = dp.GPIOB.split(&mut rcc);
-        let i2c = I2c::new(dp.I2C1, (gpiob.pb8, gpiob.pb9), 400.kHz(), &mut rcc);
+        let i2c = dp.I2C1.i2c((gpiob.pb8, gpiob.pb9), 400.kHz(), &mut rcc);
 
         // Then convert it to DMA
         let streams = StreamsTuple::new(dp.DMA1, &mut rcc);

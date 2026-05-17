@@ -349,10 +349,14 @@ pub mod dfsdm1 {
         ],
     }
 
-    #[cfg(feature = "gpio-f412")]
-    use crate::pac::DFSDM;
-    #[cfg(feature = "gpio-f413")]
-    use crate::pac::DFSDM1 as DFSDM;
+    cfg_select! {
+        feature = "gpio-f412" => {
+            use crate::pac::DFSDM;
+        }
+        feature = "gpio-f413" => {
+            use crate::pac::DFSDM1 as DFSDM;
+        }
+    }
     impl DfsdmBasic for DFSDM {
         type Ckin0 = Ckin0;
         type Ckin1 = Ckin1;
@@ -634,7 +638,7 @@ pub mod eth {
 }
 
 #[cfg(any(feature = "fmc", feature = "fsmc"))]
-pub use fmc as fsmc;
+pub use self::fmc as fsmc;
 
 /// Pins available on all STM32F4 models that have an FSMC/FMC
 #[cfg(any(feature = "fmc", feature = "fsmc"))]

@@ -72,14 +72,16 @@ use crate::pac::RCC;
 use crate::rcc::{Enable, Reset};
 
 // Use the FMC or FSMC, whichever is available, and treat it like an FSMC
-#[cfg(feature = "fmc")]
-use crate::pac::fmc as fsmc;
-#[cfg(feature = "fsmc")]
-use crate::pac::fsmc;
-#[cfg(feature = "fmc")]
-use crate::pac::FMC as FSMC;
-#[cfg(feature = "fsmc")]
-use crate::pac::FSMC;
+cfg_select! {
+    feature = "fmc" => {
+        use crate::pac::fmc as fsmc;
+        use crate::pac::FMC as FSMC;
+    }
+    feature = "fsmc" => {
+        use crate::pac::fsmc;
+        use crate::pac::FSMC;
+    }
+}
 
 /// A sub-bank of bank 1, with its own chip select output
 pub trait SubBank: sealed::SealedSubBank {}
