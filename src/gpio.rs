@@ -6,7 +6,11 @@
 //! ```rust
 //! // Acquire the GPIOC peripheral
 //! // NOTE: `dp` is the device peripherals from the `PAC` crate
-//! let mut gpioa = dp.GPIOA.split();
+//! use stm32f4xx_hal::{gpio::GpioExt, pac, prelude::*};
+//!
+//! let dp = pac::Peripherals::take().unwrap();
+//! let mut rcc = dp.RCC.constrain();
+//! let mut gpioa = dp.GPIOA.split(&mut rcc);
 //! ```
 //!
 //! This gives you a struct containing all the pins `px0..px15`.
