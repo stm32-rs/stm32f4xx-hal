@@ -10,7 +10,7 @@ use rtt_target::{rprint, rprintln, rtt_init_print};
 
 use cortex_m_rt::entry;
 
-use stm32f4xx_hal::{self as hal, gpio::GpioExt, i2c::I2c, pac, prelude::*};
+use stm32f4xx_hal::{gpio::GpioExt, i2c, pac, prelude::*};
 
 const VALID_ADDR_RANGE: Range<u8> = 0x08..0x78;
 
@@ -26,11 +26,13 @@ fn main() -> ! {
     // Configure I2C1
     let scl = gpiob.pb8;
     let sda = gpiob.pb7;
-    let mut i2c = I2c::new(
+    let mut i2c = i2c::I2c::new(
         dp.I2C1,
         (scl, sda),
-        hal::i2c::Mode::standard(100.kHz()),
+        i2c::Mode::standard(100.kHz()),
         &mut rcc,
+        #[cfg(feature = "i2c_v2")]
+        i2c::ClockSource::Apb,
     );
 
     rprintln!("Start i2c scanning...");

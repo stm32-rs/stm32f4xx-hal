@@ -23,7 +23,6 @@ use stm32f4xx_hal::{self as hal, rcc::Config};
 
 use crate::hal::{
     gpio::{Edge, Input, PC13},
-    i2c::I2c,
     interrupt, pac,
     prelude::*,
     rcc::Rcc,
@@ -64,7 +63,7 @@ fn main() -> ! {
     if let (Some(mut dp), Some(cp)) = (pac::Peripherals::take(), cortex_m::Peripherals::take()) {
         let mut rcc = setup_clocks(dp.RCC);
         let gpiob = dp.GPIOB.split(&mut rcc);
-        let i2c = I2c::new(dp.I2C1, (gpiob.pb8, gpiob.pb9), 400.kHz(), &mut rcc);
+        let i2c = dp.I2C1.i2c((gpiob.pb8, gpiob.pb9), 400.kHz(), &mut rcc);
 
         let mut syscfg = dp.SYSCFG.constrain(&mut rcc);
 

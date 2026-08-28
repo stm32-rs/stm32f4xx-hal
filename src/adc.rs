@@ -140,7 +140,11 @@ use crate::{
 use core::fmt;
 
 pub mod config;
-mod f4;
+
+cfg_select! {
+    feature = "f4" => { mod f4; }
+    feature = "f7" => { mod f7; }
+}
 
 /// Vref internal signal, used for calibration
 pub struct Vref;

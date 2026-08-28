@@ -30,7 +30,14 @@ pub struct Uid {
     y: u16,
     waf_lot: [u8; 8],
 }
-define_ptr_type!(Uid, 0x1FFF_7A10);
+cfg_select! {
+    feature = "f4" => {
+        define_ptr_type!(Uid, 0x1FFF_7A10);
+    }
+    feature = "f7" => {
+        define_ptr_type!(Uid, 0x1FF0_F420);
+    }
+}
 
 impl Uid {
     /// X coordinate on wafer
@@ -52,13 +59,25 @@ impl Uid {
     pub fn lot_num(&self) -> &str {
         unsafe { from_utf8_unchecked(&self.waf_lot[1..]) }
     }
+
+    /// As a byte array
+    pub fn as_bytes() -> &'static [u8; 12] {
+        unsafe { &*(Self::ptr() as *const _) }
+    }
 }
 
 /// Size of integrated flash
 #[derive(Debug)]
 #[repr(C)]
 pub struct FlashSize(u16);
-define_ptr_type!(FlashSize, 0x1FFF_7A22);
+cfg_select! {
+    feature = "f4" => {
+        define_ptr_type!(FlashSize, 0x1FFF_7A22);
+    }
+    feature = "f7" => {
+        define_ptr_type!(FlashSize, 0x1FF0_F442);
+    }
+}
 
 impl FlashSize {
     /// Read flash size in kilobytes
@@ -76,7 +95,14 @@ impl FlashSize {
 #[derive(Debug)]
 #[repr(C)]
 pub struct VrefCal(u16);
-define_ptr_type!(VrefCal, 0x1FFF_7A2A);
+cfg_select! {
+    feature = "f4" => {
+        define_ptr_type!(VrefCal, 0x1FFF_7A2A);
+    }
+    feature = "f7" => {
+        define_ptr_type!(VrefCal, 0x1FF0_F44A);
+    }
+}
 
 impl VrefCal {
     /// Read calibration value
@@ -89,7 +115,14 @@ impl VrefCal {
 #[derive(Debug)]
 #[repr(C)]
 pub struct VtempCal30(u16);
-define_ptr_type!(VtempCal30, 0x1FFF_7A2C);
+cfg_select! {
+    feature = "f4" => {
+        define_ptr_type!(VtempCal30, 0x1FFF_7A2C);
+    }
+    feature = "f7" => {
+        define_ptr_type!(VtempCal30, 0x1FF0_F44C);
+    }
+}
 
 impl VtempCal30 {
     /// Read calibration value
@@ -102,7 +135,14 @@ impl VtempCal30 {
 #[derive(Debug)]
 #[repr(C)]
 pub struct VtempCal110(u16);
-define_ptr_type!(VtempCal110, 0x1FFF_7A2E);
+cfg_select! {
+    feature = "f4" => {
+        define_ptr_type!(VtempCal110, 0x1FFF_7A2E);
+    }
+    feature = "f7" => {
+        define_ptr_type!(VtempCal110, 0x1FF0_F44E);
+    }
+}
 
 impl VtempCal110 {
     /// Read calibration value

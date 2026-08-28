@@ -60,6 +60,7 @@ pub enum Error {
 }
 
 /// UART interrupt events
+#[cfg(feature = "uart_v2")]
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -78,10 +79,34 @@ pub enum Event {
 }
 
 /// UART interrupt events
+#[cfg(feature = "uart_v3")]
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u16)]
+#[repr(u32)]
+pub enum Event {
+    /// IDLE interrupt enable
+    Idle = 1 << 4,
+    /// RXNE interrupt enable
+    RxNotEmpty = 1 << 5,
+    /// Transmission complete interrupt enable
+    TransmissionComplete = 1 << 6,
+    /// TXE interrupt enable
+    TxEmpty = 1 << 7,
+    /// PE interrupt enable
+    ParityError = 1 << 8,
+    /// Character match interrupt enable
+    CharacterMatch = 1 << 14,
+    /// End of Block interrupt enable
+    EndOfBlock = 1 << 27,
+}
+
+/// UART interrupt events
+#[enumflags2::bitflags]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "uart_v2", repr(u16))]
+#[cfg_attr(feature = "uart_v3", repr(u32))]
 pub enum RxEvent {
     /// IDLE interrupt enable
     Idle = 1 << 4,
@@ -95,7 +120,8 @@ pub enum RxEvent {
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[repr(u16)]
+#[cfg_attr(feature = "uart_v2", repr(u16))]
+#[cfg_attr(feature = "uart_v3", repr(u32))]
 pub enum TxEvent {
     /// Transmission complete interrupt enable
     TransmissionComplete = 1 << 6,
@@ -104,6 +130,7 @@ pub enum TxEvent {
 }
 
 /// UART/USART status flags
+#[cfg(feature = "uart_v2")]
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -128,10 +155,60 @@ pub enum Flag {
     /// LIN break detection flag
     LinBreak = 1 << 8,
     /// CTS flag
-    Cts = 1 << 9,
+    CtsInterrupt = 1 << 9,
+}
+
+/// UART/USART status flags
+#[enumflags2::bitflags]
+#[cfg(feature = "uart_v3")]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[repr(u32)]
+pub enum Flag {
+    /// Parity error
+    ParityError = 1 << 0,
+    /// Framing error
+    FramingError = 1 << 1,
+    /// Noise detected flag
+    Noise = 1 << 2,
+    /// Overrun error
+    Overrun = 1 << 3,
+    /// IDLE line detected
+    Idle = 1 << 4,
+    /// Read data register not empty
+    RxNotEmpty = 1 << 5,
+    /// Transmission complete
+    TransmissionComplete = 1 << 6,
+    /// Transmit data register empty
+    TxEmpty = 1 << 7,
+    /// LIN break detection flag
+    LinBreak = 1 << 8,
+    /// CTS interrupt
+    CtsInterrupt = 1 << 9,
+    /// CTS flag
+    CtsStatus = 1 << 10,
+    /// Receiver timeout
+    ReceiverTimeout = 1 << 11,
+    /// End of block
+    EndOfBlock = 1 << 12,
+    /// Auto baud rate error
+    AutoBaudRateError = 1 << 14,
+    /// Auto baud rate
+    AutoBaudRateFlag = 1 << 15,
+    /// Busy flag
+    Busy = 1 << 16,
+    /// Character match
+    CharacterMatch = 1 << 17,
+    /// Send break
+    SendBreak = 1 << 18,
+    /// Receiver wakeup from Mute mode
+    ReceiverWakeup = 1 << 19,
+    /// Transmit enable acknowledge
+    TransmitEnableAck = 1 << 21,
 }
 
 /// UART clearable flags
+#[cfg(feature = "uart_v2")]
 #[enumflags2::bitflags]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -145,6 +222,37 @@ pub enum CFlag {
     LinBreak = 1 << 8,
 }
 
+/// UART clearable flags
+#[cfg(feature = "uart_v3")]
+#[enumflags2::bitflags]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[repr(u32)]
+pub enum CFlag {
+    /// Parity error
+    ParityError = 1 << 0,
+    /// Framing error
+    FramingError = 1 << 1,
+    /// Noise detected
+    Noise = 1 << 2,
+    /// Overrun error
+    Overrun = 1 << 3,
+    /// Idle line detected
+    Idle = 1 << 4,
+    /// Transmission complete
+    TransmissionComplete = 1 << 6,
+    /// LIN break detection flag
+    LinBreak = 1 << 8,
+    /// CTS interrupt
+    CtsInterrupt = 1 << 9,
+    /// Receiver timeout
+    ReceiverTimeout = 1 << 11,
+    /// End of block
+    EndOfBlock = 1 << 12,
+    /// Character match
+    CharacterMatch = 1 << 17,
+}
+
 pub mod config;
 
 pub use config::Config;
@@ -155,8 +263,13 @@ pub use gpio::alt::SerialAsync as CommonPins;
 pub trait Instance: rcc::Instance + crate::Ptr<RB: RBExt> + CommonPins {
     #[doc(hidden)]
     #[inline(always)]
-    fn peri_address() -> u32 {
-        unsafe { &*Self::PTR }.peri_address()
+    fn tx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.tx_peri_address()
+    }
+    #[doc(hidden)]
+    #[inline(always)]
+    fn rx_peri_address() -> u32 {
+        unsafe { &*Self::ptr() }.rx_peri_address()
     }
 }
 
@@ -287,7 +400,7 @@ impl<USART: Instance> Serial<USART> {
             calculate_brr(pclk_freq, baud)?
         };
 
-        uart.brr().write(|w| unsafe { w.bits(div as u16) });
+        uart.brr().write(|w| unsafe { w.bits(div as _) });
 
         // Reset other registers to disable advanced USART features
         uart.cr2().reset();
@@ -304,12 +417,22 @@ impl<USART: Instance> Serial<USART> {
         // Enable transmission and receiving
         // and configure frame
 
+        // M[1:0] are used to set data bits
+        // M[1:0] = 00: 1 Start bit, 8 data bits, n stop bits
+        // M[1:0] = 01: 1 Start bit, 9 data bits, n stop bits
+        // M[1:0] = 10: 1 Start bit, 7 data bits, n stop bits
         uart.cr1().write(|w| {
             w.ue().set_bit();
             w.over8().bit(over8);
             w.te().set_bit();
             w.re().set_bit();
+            #[cfg(feature = "uart_v2")]
             w.m().bit(config.wordlength == WordLength::DataBits9);
+            #[cfg(feature = "uart_v3")]
+            {
+                w.m0().bit(config.wordlength == WordLength::DataBits9);
+                w.m1().bit(config.wordlength == WordLength::DataBits7);
+            }
             w.pce().bit(config.parity != Parity::ParityNone);
             w.ps().bit(config.parity == Parity::ParityOdd)
         });
@@ -402,12 +525,24 @@ macro_rules! halUsart {
     };
 }
 
+#[cfg(feature = "usart1")]
 halUsart! { pac::USART1, Serial1, Rx1, Tx1 }
+#[cfg(feature = "usart2")]
 halUsart! { pac::USART2, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
-
 #[cfg(feature = "usart3")]
 halUsart! { pac::USART3, Serial3, Rx3, Tx3 }
+#[cfg(feature = "usart4")]
+halUsart! { pac::USART4, Serial4, Rx4, Tx4 }
+#[cfg(feature = "usart5")]
+halUsart! { pac::USART5, Serial5, Rx5, Tx5 }
+#[cfg(feature = "usart6")]
+halUsart! { pac::USART6, Serial6, Rx6, Tx6 }
+#[cfg(feature = "usart7")]
+halUsart! { pac::USART7, Serial7, Rx7, Tx7 }
+#[cfg(feature = "usart8")]
+halUsart! { pac::USART8, Serial8, Rx8, Tx8 }
+#[cfg(feature = "usart10")]
+halUsart! { pac::USART10, Serial10, Rx10, Tx10 }
 
 #[cfg(feature = "uart4")]
 macro_rules! halUart {
@@ -641,7 +776,7 @@ impl<UART: Instance> Serial<UART> {
 unsafe impl<UART: Instance> PeriAddress for Rx<UART> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        self.usart.peri_address()
+        self.usart.rx_peri_address()
     }
 
     type MemSize = u8;
@@ -657,7 +792,7 @@ where
 unsafe impl<UART: Instance> PeriAddress for Tx<UART> {
     #[inline(always)]
     fn address(&self) -> u32 {
-        self.usart.peri_address()
+        self.usart.tx_peri_address()
     }
 
     type MemSize = u8;
