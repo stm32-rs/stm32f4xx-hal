@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+ - Select I2S/SAI clock sources before enabling PLLs, as `RCC_DCKCFGR` requires [#880]
  - Fix `rcc` module-level doc example to use current `Config/freeze` API [#876]
 
 ### Changed
@@ -52,6 +53,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 [#841]: https://github.com/stm32-rs/stm32f4xx-hal/pull/841
 [#859]: https://github.com/stm32-rs/stm32f4xx-hal/pull/859
 [#876]: https://github.com/stm32-rs/stm32f4xx-hal/pull/876
+[#880]: https://github.com/stm32-rs/stm32f4xx-hal/pull/880
 
 ## [v0.22.1] - 2024-11-03
 

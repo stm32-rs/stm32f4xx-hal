@@ -439,6 +439,12 @@ impl Rcc {
             while rcc.cr().read().hserdy().bit_is_clear() {}
         }
 
+        // Select I2S and SAI clocks. The clock selection bits must be written
+        // while the PLLs are disabled (see e.g. RM0402, RCC_DCKCFGR).
+        plls.i2s.config_clocksel();
+        #[cfg(feature = "sai")]
+        plls.sai.config_clocksel();
+
         if plls.use_pll {
             // Enable PLL
             rcc.cr().modify(|_, w| w.pllon().set_bit());
@@ -481,11 +487,6 @@ impl Rcc {
             // Wait for PLL to stabilise
             while rcc.cr().read().pllsairdy().bit_is_clear() {}
         }
-
-        // Select I2S and SAI clocks
-        plls.i2s.config_clocksel();
-        #[cfg(feature = "sai")]
-        plls.sai.config_clocksel();
 
         // Set scaling factors
         rcc.cfgr().modify(|_, w| unsafe {
